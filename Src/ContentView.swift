@@ -1,0 +1,1784 @@
+// --------------------------------------------------------------------------------------------------
+// @file       ContentView.swift
+// @brief      Kanban board screen and reusable board views
+// @details    Defines the board container, lists, cards, and navigation into card details
+//
+// @notes      Views remain composable and keep presentation logic close to the rendered component
+//
+// --------------------------------------------------------------------------------------------------
+import SwiftUI
+
+
+struct BoardDisplaySettings {
+    var showChecklistProgress = true    /* Display checklist progress on cards */
+    var showCommentCounts     = true    /* Display comment counts on cards     */
+    var showDueDateBadges     = true    /* Display due date badges on cards    */
+}
+
+
+// -------------------------------------- MARK: - Board View ------------------------------------ //
+
+///
+/// Displays the horizontally scrollable Plenact kanban board
+///
+/// @section    Purpose
+///     Install the board background, header, paged list surface, and navigation path into card details
+///
+struct ContentView: View {
+
+    @State private var lists: [KanbanList]           = KanbanBoardPersistence.loadLists() /* Kanban board lists                     */
+    @State private var labelLibrary                  = LabelLibraryStore.load() /* Label library containing all available labels    */
+    @State private var displaySettings               = BoardDisplaySettings()   /* Board display settings                           */
+    @State private var memberColors: [String: Color] = [:]                      /* Mapping of member names to their assigned colors */
+    @State private var currentUserName               = "Justin Reina"           /* Current user's name                              */
+
+
+    ///
+    /// @fcn        ContentView.activeMembers
+    /// @brief      Return unique users assigned to active cards
+    /// @details    Traverses cards in board order, excludes divider items, trims surrounding whitespace,
+    ///             and retains the first occurrence of each member name using case-insensitive matching
+    ///
+    /// @return     ([String]) ordered member names currently assigned to non-divider cards
+    ///
+    /// @pre        lists contains the current in-memory board state
+    /// @post       No board data is modified; duplicate and empty names are omitted from the result
+    ///
+    private var activeMembers: [String] {
+
+        var seenMembers: Set<String> = []       /* Track unique members to avoid duplicates */
+
+        return lists
+            .flatMap(\.cards)
+            .filter { !$0.isSectionDivider }
+            .flatMap(\.members)
+            .compactMap { member in
+
+                let trimmedMember    = member.trimmingCharacters(in: .whitespacesAndNewlines)   /* Trim whitespace and newlines from the member name         */
+                let normalizedMember = trimmedMember.lowercased()                               /* Normalize the member name for case-insensitive comparison */
+
+                guard !trimmedMember.isEmpty, seenMembers.insert(normalizedMember).inserted else {
+                    return nil
+                }
+
+                return trimmedMember
+            }
+    }
+
+    ///
+    /// @fcn        ContentView.renameMember(from:to:)
+    /// @brief      Rename a member across the board
+    /// @details    Replaces matching card assignments and comment authors, updates the current-user name
+    ///             when applicable, and migrates the member's icon color to the new normalized key
+    ///
+    /// @param[in]  currentName  Existing member name to replace
+    /// @param[in]  proposedName Proposed new name; surrounding whitespace is trimmed
+    ///
+    /// @return     (Void) updates card assignments, authored comments, current-user display, and color mapping
+    ///
+    /// @pre        currentName identifies the member being renamed
+    /// @post       Matching names are replaced; duplicate assignments within each card are removed
+    ///
+    /// @note       An empty proposed name is ignored; if the new name already has a color, that color is retained
+    ///
+    private func renameMember(from currentName: String, to proposedName: String) {
+
+        let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !updatedName.isEmpty else { return }
+
+        let currentKey = currentName.lowercased()       /* Normalized key for the current member name */
+        let updatedKey = updatedName.lowercased()       /* Normalized key for the updated member name */    
+
+        for listIndex in lists.indices {
+
+            for cardIndex in lists[listIndex].cards.indices {
+
+                var updatedCard            = lists[listIndex].cards[cardIndex]  /* Copy of the current card for in-place updates     */
+                var seenNames: Set<String> = []                                 /* Track unique member names within the current card */
+
+                updatedCard.members = updatedCard.members.compactMap { member in
+
+                    let trimmedMember  = member.trimmingCharacters(in: .whitespacesAndNewlines)                 /* Trim whitespace and newlines from the member name      */
+                    let renamedMember  = trimmedMember.lowercased() == currentKey ? updatedName : trimmedMember /* Determine the new member name based on the current key */
+                    let normalizedName = renamedMember.lowercased()                                             /* Normalized key for the renamed member                  */
+
+                    guard !renamedMember.isEmpty, seenNames.insert(normalizedName).inserted else {
+                        return nil
+                    }
+
+                    return renamedMember
+                }
+
+                updatedCard.comments = updatedCard.comments.map { comment in
+
+                    guard comment.author.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == currentKey else {
+                        return comment
+                    }
+
+                    return KanbanComment(
+                        id:        comment.id,
+                        author:    updatedName,
+                        body:      comment.body,
+                        createdAt: comment.createdAt
+                    )
+                }
+
+                lists[listIndex].cards[cardIndex] = updatedCard
+            }
+        }
+
+        if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == currentKey {
+            currentUserName = updatedName
+        }
+
+        if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey) {
+            memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
+        }
+    }
+
+
+    ///
+    /// @fcn        ContentView.setMemberColor(_:color:)
+    /// @brief      Store the shared icon color for a member
+    /// @details    Writes the selected color under the member's lowercased name so all matching icons resolve consistently
+    ///
+    /// @param[in]  memberName  Name of the member whose icon color is being changed
+    /// @param[in]  color       New color selected for that member
+    ///
+    /// @return     (Void) updates the board-level member color mapping
+    ///
+    /// @pre        memberName identifies an active member
+    /// @post       Views using the normalized member key receive the selected color
+    ///
+    private func setMemberColor(_ memberName: String, color: Color) {
+        memberColors[memberName.lowercased()] = color
+    }
+
+
+    ///
+    /// @fcn        ContentView.addList
+    /// @brief      Append a new empty list to the board
+    /// @details    Assigns the next available list identifier and generates a title that does not duplicate an existing list name
+    ///
+    /// @return     (Void) updates the board's in-memory list collection
+    ///
+    /// @pre        The board list collection has been initialized
+    /// @post       A uniquely identified empty list is appended to the board
+    ///
+    private func addList() {
+        let nextListID     = (lists.map(\.id).max() ?? -1) + 1
+        let existingTitles = Set(lists.map { $0.title.lowercased() })
+        var newTitle       = "New List"
+        var suffix         = 2
+
+        while existingTitles.contains(newTitle.lowercased()) {
+            newTitle = "New List \(suffix)"
+            suffix  += 1
+        }
+
+        lists.append(KanbanList(id: nextListID, title: newTitle, cards: []))
+    }
+
+
+    ///
+    /// @fcn        ContentView.safeFrameDimension(_:subtracting:)
+    /// @brief      Return a finite positive frame dimension after applying an inset
+    /// @details    Subtracts the requested inset and substitutes a one-point minimum when the result is non-finite or too small
+    ///
+    /// @param[in]  dimension  Proposed source dimension from the parent geometry
+    /// @param[in]  inset      Amount to subtract from the source dimension
+    ///
+    /// @return     (CGFloat) finite dimension of at least one point
+    ///
+    /// @pre        No input range is required; non-finite and undersized results are handled
+    /// @post       The result is finite and greater than zero
+    ///
+    private func safeFrameDimension(_ dimension: CGFloat, subtracting inset: CGFloat) -> CGFloat {
+
+        let availableDimension = (dimension - inset)
+        
+        guard availableDimension.isFinite else { return 1 }
+        
+        return max(availableDimension, 1)
+    }
+
+
+    ///
+    /// @fcn        ContentView.addCard(to:title:description:)
+    /// @brief      Add a completed card form to the end of the selected list
+    /// @details    Allocates a board-wide unique card identifier and stores the supplied title and description
+    ///
+    /// @param[in]  listID  Stable identifier of the list receiving the card
+    /// @param[in]  title   User-entered card title
+    /// @param[in]  description User-entered card description
+    ///
+    /// @return     (Void) updates the matching list in the board state
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       The new card appears as the last card in the selected list
+    ///
+    private func addCard(to listID: Int, title: String, description: String) {
+
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        let nextCardID  = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
+        var updatedList = lists[listIndex]
+
+        /// Append the new card to the list's cards array
+        updatedList.cards.append(
+            KanbanCard(
+                id:                  nextCardID,
+                word:                title,
+                listTitle:           updatedList.title,
+                isDivider:           KanbanCard.isDividerTitle(title),
+                descriptionOverride: description
+            )
+        )
+
+        lists[listIndex] = updatedList
+    }
+
+
+    ///
+    /// @fcn        ContentView.deleteCard(in:cardID:)
+    /// @brief      Remove one card from a board list
+    /// @details    Finds the list by its stable identifier and removes the card matching its identifier
+    ///
+    /// @param[in]  listID  Stable identifier of the list containing the card
+    /// @param[in]  cardID  Stable identifier of the card to delete
+    ///
+    /// @return     (Void) updates the selected list in the board state
+    ///
+    /// @pre        listID identifies a list in the board
+    /// @post       The matching card no longer appears in that list
+    ///
+    private func deleteCard(in listID: Int, cardID: Int) {
+
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        lists[listIndex].cards.removeAll { $0.id == cardID }
+
+        pruneUnreferencedAttachments()
+    }
+
+
+    ///
+    /// @fcn        ContentView.moveCard(in:cardID:toIndex:)
+    /// @brief      Reorder one card within a board list
+    /// @details    Removes the source card and inserts it at the target card's position
+    ///
+    /// @param[in]  listID    Stable identifier of the list to reorder
+    /// @param[in]  cardID           Stable identifier of the card being moved
+    /// @param[in]  destinationIndex Zero-based destination index in the list
+    ///
+    /// @return     (Void) updates the card order in the selected list
+    ///
+    /// @pre        listID identifies a list containing cardID
+    /// @post       The card occupies the requested destination index within the list
+    ///
+    private func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int) {
+
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        var cards = lists[listIndex].cards
+
+        guard let sourceIndex = cards.firstIndex(where: { $0.id == cardID }), !cards.isEmpty else { return }
+
+        let safeDestinationIndex = min(max(destinationIndex, 0), cards.count - 1)
+
+        guard sourceIndex != safeDestinationIndex else { return }
+
+        let movedCard = cards.remove(at: sourceIndex)
+
+        cards.insert(movedCard, at: safeDestinationIndex)
+
+        // Update the list with the reordered cards, animating the change for a smooth user experience
+        withAnimation(.easeInOut(duration: 0.2)) {
+            lists[listIndex].cards = cards
+        }
+    }
+
+
+    ///
+    /// @fcn        ContentView.copyList(with:)
+    /// @brief      Insert a copy of the selected list beside its source
+    /// @details    Creates new list and card identifiers while copying card content and current card state
+    ///
+    /// @param[in]  listID  Stable identifier of the list to copy
+    ///
+    /// @return     (Void) inserts the copied list immediately after the source list
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       The board contains a distinct copy with unique list and card identifiers
+    ///
+    private func copyList(with listID: Int) {
+
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        let source       = lists[sourceIndex]
+        let copiedTitle  = "\(source.title) Copy"
+        let copiedListID = (lists.map(\.id).max() ?? -1) + 1
+        var nextCardID   = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
+
+        let copiedCards = source.cards.map { card in
+        
+            let copy = KanbanCard(
+                id:                   nextCardID,
+                word:                 card.word,
+                listTitle:            copiedTitle,
+                isDivider:            card.isSectionDivider,
+                isTitleChecked:       card.isTitleChecked,
+                startDate:            card.startDate,
+                dueDate:              card.dueDate,
+                checklists:           card.checklists,
+                comments:             card.comments,
+                members:              card.members,
+                labelIDs:             card.labelIDs,
+                attachments:          card.attachments,
+                dismissedActivityIDs: card.dismissedActivityIDs,
+                descriptionOverride:  card.descriptionOverride,
+                subtitleOverride:     card.subtitleOverride
+            )
+
+            nextCardID += 1
+            
+            return copy
+        }
+
+        lists.insert(KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards), at: sourceIndex + 1)
+    }
+
+
+    ///
+    /// @fcn        ContentView.moveList(with:by:)
+    /// @brief      Move a list relative to its current board position
+    /// @details    Removes the matching list and reinserts it at the index specified by the offset
+    ///
+    /// @param[in]  listID  Stable identifier of the list to move
+    /// @param[in]  offset  Number of positions to move; negative moves earlier and positive moves later
+    ///
+    /// @return     (Void) reorders the board when the destination index is valid
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       The list occupies its destination index, or the board is unchanged for an invalid destination
+    ///
+    private func moveList(with listID: Int, by offset: Int) {
+
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        let destinationIndex = sourceIndex + offset
+
+        guard lists.indices.contains(destinationIndex) else { return }
+
+        let movedList = lists.remove(at: sourceIndex)
+
+        lists.insert(movedList, at: destinationIndex)
+    }
+
+
+    ///
+    /// @fcn        ContentView.sortList(with:ascending:)
+    /// @brief      Sort a list's cards by their titles
+    /// @details    Uses localized standard comparison to order card titles in the requested direction
+    ///
+    /// @param[in]  listID     Stable identifier of the list to sort
+    /// @param[in]  ascending  Whether to sort from A to Z; false sorts from Z to A
+    ///
+    /// @return     (Void) replaces the card order in the matching board list
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       Cards in the list are ordered by title in the requested direction
+    ///
+    private func sortList(with listID: Int, ascending: Bool) {
+
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        var updatedList = lists[listIndex]
+
+        var sortedCards:    [KanbanCard] = []
+        var currentSection: [KanbanCard] = []
+
+        // Iterate through each card in the list, grouping them by sections and sorting within each section
+        for card in updatedList.cards {
+
+            guard card.isSectionDivider else {
+                currentSection.append(card)
+                continue
+            }
+
+            // When encountering a section divider, sort the current section and append it to the sorted 
+            // cards before adding the divider itself
+            sortedCards.append(contentsOf: currentSection.sorted {
+                let comparison = $0.word.localizedStandardCompare($1.word)
+                return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
+            })
+            currentSection.removeAll()
+            sortedCards.append(card)
+        }
+
+        sortedCards.append(contentsOf: currentSection.sorted {
+
+            let comparison = $0.word.localizedStandardCompare($1.word)
+
+            return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
+        })
+
+        updatedList.cards = sortedCards
+        
+        lists[listIndex] = updatedList
+    }
+
+
+    ///
+    /// @fcn        ContentView.archiveCompletedCards(in:)
+    /// @brief      Remove completed cards from a list
+    /// @details    Filters out cards whose title checkbox is selected
+    ///
+    /// @param[in]  listID  Stable identifier of the list to update
+    ///
+    /// @return     (Void) updates the matching list in the board state
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       Cards marked complete no longer appear in the active list
+    ///
+    private func archiveCompletedCards(in listID: Int) {
+
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        lists[listIndex].cards.removeAll { !$0.isSectionDivider && $0.isTitleChecked }
+
+        pruneUnreferencedAttachments()
+    }
+
+
+    ///
+    /// @fcn        ContentView.archiveList(with:)
+    /// @brief      Remove a list from the active board
+    /// @details    Deletes the list entry matching the supplied stable identifier
+    ///
+    /// @param[in]  listID  Stable identifier of the list to remove
+    ///
+    /// @return     (Void) updates the board's in-memory list collection
+    ///
+    /// @pre        listID identifies a list in the current board
+    /// @post       The list and its cards no longer appear on the active board
+    ///
+    private func archiveList(with listID: Int) {
+        lists.removeAll { $0.id == listID }
+
+        pruneUnreferencedAttachments()
+    }
+
+
+    ///
+    /// @fcn        ContentView.toggleCardTitle
+    /// @brief      Toggle the selected state for one board card title checkbox
+    /// @details    Finds the matching card within the selected list and flips its persisted
+    ///             checked state so the root board view and detail view stay in sync
+    ///
+    /// @param[in]  listIndex   Zero-based index of the list containing the card
+    /// @param[in]  cardID      Stable identifier of the card whose title checkbox is toggled
+    ///
+    /// @return     (Void) updates the local board state in place
+    ///
+    /// @pre        listIndex must reference a valid list in the board state
+    /// @post       The selected card's checked state is inverted and the board re-renders
+    ///
+    private func toggleCardTitle(in listIndex: Int, cardID: Int) {
+
+        guard lists.indices.contains(listIndex) else { return }
+
+        var updatedList     = lists[listIndex]
+
+        guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == cardID }) else { return }
+
+        var updatedCard     = updatedList.cards[cardIndex]
+
+        updatedCard.isTitleChecked.toggle()
+
+        updatedList.cards[cardIndex] = updatedCard
+        lists[listIndex]             = updatedList
+    }
+
+
+    ///
+    /// @fcn        ContentView.updateCard
+    /// @brief      Replace an existing card with the latest edited version
+    /// @details    Scans the current board data for the matching card identifier and stores the
+    ///             latest value so navigation changes persist across list and detail views
+    ///
+    /// @param[in]  updatedCard   Card instance containing the latest state to save
+    ///
+    /// @return     (Void) updates the board's in-memory card collection
+    ///
+    /// @pre        updatedCard must contain a valid id that exists within the board state
+    /// @post       The matching card in the list state reflects the updated values
+    ///
+    private func updateCard(_ updatedCard: KanbanCard) {
+
+        for listIndex in lists.indices {
+
+            var updatedList = lists[listIndex]
+
+            guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == updatedCard.id }) else {
+                continue
+            }
+
+            updatedList.cards[cardIndex] = updatedCard
+            lists[listIndex]             = updatedList
+
+            pruneUnreferencedAttachments()
+
+            return
+        }
+    }
+
+
+    ///
+    /// @fcn        ContentView.pruneUnreferencedAttachments
+    /// @brief      Remove stored photo files that are no longer assigned to any card
+    /// @details    Collects attachment filenames referenced by the current board and asks the attachment store
+    ///             to remove files outside that set
+    ///
+    /// @return     (Void) cleans unreferenced image files from the app's attachment directory
+    ///
+    /// @pre        lists reflects the current board state after a card or list mutation
+    /// @post       Files referenced by cards remain available; unreferenced files are removed when possible
+    ///
+    /// @note       File-system cleanup failures are ignored by CardAttachmentStore
+    ///
+    private func pruneUnreferencedAttachments() {
+        
+        let referencedFileNames = Set(
+            lists
+                .flatMap(\.cards)
+                .flatMap { $0.attachments ?? [] }
+                .compactMap(\.fileName)
+        )
+
+        CardAttachmentStore.removeUnreferencedFiles(keeping: referencedFileNames)
+    }
+
+
+    ///
+    /// @fcn        ContentView.moveCard(_:toListID:)
+    /// @brief      Move an existing card into a different board list
+    /// @details    Finds the card by its stable identifier, removes it from its current list,
+    ///             updates its list title, and appends it to the destination list while retaining its state
+    ///
+    /// @param[in]  cardID             Stable identifier of the card being moved
+    /// @param[in]  destinationListID  Stable identifier of the list receiving the card
+    ///
+    /// @return     (Void) updates the source and destination lists in the board state
+    ///
+    /// @pre        cardID exists in a board list and destinationListID identifies another list
+    /// @post       The card is removed from its source list and appears at the end of the destination list
+    ///             with its existing card data preserved
+    ///
+    /// @note       The operation leaves board state unchanged if the card or destination is missing,
+    ///             or if the destination is the card's current list
+    ///
+    private func moveCard(_ cardID: Int, toListID destinationListID: Int) {
+
+        guard let sourceListIndex = lists.firstIndex(where: { list in
+                  list.cards.contains(where: { $0.id == cardID })
+              }),
+
+              let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }),
+
+              sourceListIndex != destinationListIndex,
+
+              let cardIndex = lists[sourceListIndex].cards.firstIndex(where: { $0.id == cardID }) else {
+
+            return
+        }
+
+        var movedCard       = lists[sourceListIndex].cards.remove(at: cardIndex)
+        movedCard.listTitle = lists[destinationListIndex].title
+        
+        lists[destinationListIndex].cards.append(movedCard)
+    }
+    
+
+    /// Builds the board scene and its horizontally scrollable list collection.
+    var body: some View {
+
+        NavigationStack {
+            
+            GeometryReader { screen in
+
+                ZStack {
+                    LinearGradient(
+                        colors: [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
+
+                    VStack(spacing: 0) {
+
+                        BoardHeader(
+                            settings:         $displaySettings,
+                            activeMembers:    activeMembers,
+                            memberColors:     memberColors,
+                            onRenameMember:   renameMember,
+                            onSetMemberColor: setMemberColor,
+                            onAddList:        addList
+                        )
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+
+                            HStack(spacing: 12) {
+
+                                ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
+
+                                    KanbanListView(
+                                        list:            list,
+                                        screenSize:      screen.size,
+                                        displaySettings: displaySettings,
+                                        labelLibrary:    labelLibrary,
+                                        toggleCardTitle: { cardID in
+                                            toggleCardTitle(in: listIndex, cardID: cardID)
+                                        },
+                                        canMoveEarlier: listIndex > 0,
+                                        canMoveLater: listIndex < lists.count - 1,
+                                        onAddCard: { title, description in
+                                            addCard(to: list.id, title: title, description: description)
+                                        },
+                                        onCopyList: { copyList(with: list.id) },
+                                        onMoveList: { offset in moveList(with: list.id, by: offset) },
+                                        onSortList: { ascending in sortList(with: list.id, ascending: ascending) },
+                                        onArchiveCompleted: { archiveCompletedCards(in: list.id) },
+                                        onArchiveList: { archiveList(with: list.id) },
+                                        onDeleteCard: { cardID in deleteCard(in: list.id, cardID: cardID) },
+                                        onUpdateCard: updateCard,
+                                        onMoveCard: { cardID, destinationIndex in
+                                            moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
+                                        }
+                                    )
+                                    .frame(
+                                        width:  safeFrameDimension(screen.size.width, subtracting:  28),
+                                        height: safeFrameDimension(screen.size.height, subtracting: 86)
+                                    )
+                                }
+                            }
+                            .scrollTargetLayout()
+                            .padding(.horizontal, 14)
+                        }
+                        .scrollTargetBehavior(.viewAligned)
+                    }
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: KanbanCard.self) { card in
+                CardDetailView(
+                    card:           card,
+                    labelLibrary:   $labelLibrary,
+                    availableLists: lists.filter { list in
+                        !list.cards.contains(where: { $0.id == card.id })
+                    },
+                    memberColors:    memberColors,
+                    currentUserName: currentUserName,
+                    onTitleToggle:   { updatedCard in
+                        updateCard(updatedCard)
+                    },
+                    onMoveToList:    { destinationListID in
+                        moveCard(card.id, toListID: destinationListID)
+                    }
+                )
+            }
+            .onChange(of: lists) { _, updatedLists in
+                KanbanBoardPersistence.saveLists(updatedLists)
+            }
+            .onChange(of: labelLibrary) { _, updatedLibrary in
+                LabelLibraryStore.save(updatedLibrary)
+            }
+        }
+    }
+}
+
+
+// -------------------------------------- MARK: - Board Header ---------------------------------- //
+
+///
+/// Displays the board title and board-level actions
+///
+/// @section    Purpose
+///     Establish the visual identity of the board and expose board-level controls
+///
+struct BoardHeader: View {
+
+    @Binding var settings: BoardDisplaySettings     /* Board display settings                              */
+    let activeMembers: [String]                     /* Unique users assigned to active cards               */
+    let memberColors: [String: Color]               /* Icon colors keyed by normalized member name         */
+    let onRenameMember: (String, String) -> Void    /* Rename a member across all card assignments         */
+    let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color                 */
+
+    let onAddList: () -> Void                       /* Callback for adding a new list                      */
+
+    @State private var showingSettings = false      /* Controls the visibility of the board settings sheet */
+
+    /// Builds the title block and board action controls.
+    var body: some View {
+
+        HStack {
+
+            VStack(alignment: .leading, spacing: 2) {
+
+                Text("Plenact")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(.white)
+
+                Text("Work Week Board")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.75))
+            }
+
+            Spacer()
+
+            Menu {
+                Button("Add blank list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+            }
+            .accessibilityLabel("Add list")
+
+            Button {
+                showingSettings = true
+            } label: {
+                Image(systemName: "ellipsis.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+            }
+            .accessibilityLabel("Board options")
+        }
+        .padding(.horizontal, 18)
+        .padding(.top,        12)
+        .padding(.bottom,     10)
+        .sheet(isPresented: $showingSettings) {
+            BoardSettingsView(
+                settings:         $settings,
+                activeMembers:    activeMembers,
+                memberColors:     memberColors,
+                onRenameMember:   onRenameMember,
+                onSetMemberColor: onSetMemberColor
+            )
+        }
+    }
+}
+
+
+/// @section    Purpose
+///     Let the user control which metadata badges appear on board cards
+///
+/// @note   Settings are bound to ContentView and take effect immediately
+///
+private struct BoardSettingsView: View {
+
+    @Binding var settings: BoardDisplaySettings     /* Bound to the board's display preferences       */
+    let activeMembers: [String]                     /* Active assigned users in board order            */
+    let memberColors: [String: Color]               /* Member icon colors keyed by normalized name     */
+    let onRenameMember: (String, String) -> Void    /* Rename a member across all assigned cards       */
+    let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color             */
+    @Environment(\.dismiss) private var dismiss     /* Dismiss action for the settings sheet           */
+    @State private var editingMember: String?       /* The member currently being edited               */
+    @State private var memberNameDraft  = ""        /* Draft of the member's new name                  */
+    @State private var isRenamingMember = false     /* Whether the user is currently renaming a member */
+
+    @State private var selectedMemberColor: MemberColorTarget?  /* The member whose color is currently being edited */
+
+    private var trimmedMemberNameDraft: String {
+        memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    ///
+    /// @fcn        BoardSettingsView.body
+    /// @brief      Build the board settings form
+    /// @details    Presents toggles for checklist progress, comment counts, and due-date badges
+    ///
+    /// @return     (some View) settings sheet content with a Done action
+    ///
+    /// @pre        settings is bound to the board's display preferences
+    /// @post       Changes update the bound settings and are reflected by the board cards
+    ///
+    var body: some View {
+
+        NavigationStack {
+
+            Form {
+
+                Section("Card badges") {
+                    Toggle("Checklist progress", isOn: $settings.showChecklistProgress)
+                    Toggle("Comment counts",     isOn: $settings.showCommentCounts)
+                    Toggle("Due-date badges",    isOn: $settings.showDueDateBadges)
+                }
+
+                Section("Members") {
+
+                    if activeMembers.isEmpty {
+
+                        Text("No active members")
+                            .foregroundStyle(.secondary)
+
+                    } else {
+
+                        ForEach(Array(activeMembers.enumerated()), id: \.offset) { _, member in
+
+                            HStack(spacing: 12) {
+
+                                let memberColor = memberColors[member.lowercased()] ?? .accentColor     /* Fallback to accent color if no custom color is set */
+
+                                Button {
+                                    selectedMemberColor = MemberColorTarget(member: member, color: memberColor)
+
+                                } label: {
+
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(memberColor)
+                                        .frame(width: 36, height: 36)
+                                        .contentShape(Rectangle())
+
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Change icon color for \(member)")
+
+                                Button {
+                                    editingMember    = member
+                                    memberNameDraft  = member
+                                    isRenamingMember = true
+
+                                } label: {
+                                    Text(member)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Edit \(member)")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Board Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("Edit member", isPresented: $isRenamingMember) {
+
+                TextField("Name or email", text: $memberNameDraft)
+                    .textInputAutocapitalization(.never)
+
+                Button("Cancel", role: .cancel) {}
+
+                Button("Save") {
+                    guard let editingMember else { return }
+
+                    onRenameMember(editingMember, trimmedMemberNameDraft)
+                }
+                .disabled(trimmedMemberNameDraft.isEmpty)
+            } message: {
+
+                Text("This updates the member name on every assigned card.")
+            }
+            .sheet(item: $selectedMemberColor) { target in
+
+                MemberColorEditorSheet(memberName: target.member, initialColor: target.color) { color in
+                    onSetMemberColor(target.member, color)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+
+///
+/// Carries the selected member and current color while the color editor sheet is presented
+///
+/// @section    Purpose
+///     Provide a stable identifiable sheet item containing the values needed to edit a member icon color
+///
+/// @details    The member's lowercased name is used as the sheet identity, and the current color seeds the editor
+///
+/// @note       This is transient presentation state; saving is handled by MemberColorEditorSheet
+///
+private struct MemberColorTarget: Identifiable {
+
+    let member: String                          /* The name of the member whose color is being edited */    
+    let color: Color                            /* The current color of the member's icon             */
+
+    var id: String { member.lowercased() }      /* Use the lowercased member name as the unique identifier for the sheet */
+}
+
+
+///
+/// Presents the system color picker for one member's icon
+///
+/// @section    Purpose
+///     Let the user preview, change, save, or cancel a member's shared icon color
+///
+/// @details    Holds the selected color locally until Save invokes onSave; Cancel dismisses without applying changes
+///
+/// @note       Opacity selection is disabled so the icon remains fully visible
+///
+private struct MemberColorEditorSheet: View {
+
+    let memberName: String              /* The name of the member whose color is being edited         */
+    let onSave: (Color) -> Void         /* The closure to call when the user saves the selected color */
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedColor: Color
+
+    init(memberName: String, initialColor: Color, onSave: @escaping (Color) -> Void) {
+        self.memberName = memberName
+        self.onSave     = onSave
+        _selectedColor  = State(initialValue: initialColor)
+    }
+
+    var body: some View {
+
+        NavigationStack {
+
+            Form {
+                Section(memberName) {
+                    ColorPicker("Icon color", selection: $selectedColor, supportsOpacity: false)
+                }
+            }
+            .navigationTitle("Member icon")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(selectedColor)
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
+
+// -------------------------------------- MARK: - Kanban List ----------------------------------- //
+
+///
+/// Displays one kanban list and its cards
+///
+/// @section    Purpose
+///     Keep a list title, list metadata, add-card action, and vertically scrollable card collection together
+///
+struct KanbanListView: View {
+
+    // description of the active sheet types used in the Kanban list view
+    private enum ActiveSheet: String, Identifiable {
+        case listActions
+        case newCard
+
+        var id: String { rawValue }
+    }
+
+    let list: KanbanList                        /* The kanban list data rendered by the view                      */
+    let screenSize: CGSize                      /* The size of the device screen used for layout calculations     */    
+    let displaySettings: BoardDisplaySettings   /* The board's display settings affecting card and list rendering */
+    let labelLibrary: LabelLibrary              /* Shared categorized labels available to the cards               */
+    let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
+    let canMoveEarlier: Bool                    /* Indicates whether the list can be moved earlier in the board   */
+    let canMoveLater:  Bool                     /* Indicates whether the list can be moved later in the board     */
+    let onAddCard: (String, String) -> Void     /* The action invoked to add a new card to the list               */
+    let onCopyList: () -> Void                  /* The action invoked to copy the list                            */
+    let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
+    let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
+    let onArchiveCompleted: () -> Void          /* The action invoked to archive all completed cards in the list  */
+    let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
+    let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
+    let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
+    let onMoveCard: (Int, Int) -> Void          /* Move a card to a destination index in this list                */
+
+    @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
+    @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
+    @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
+    @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
+
+    /// Maintains the original quarter-screen card sizing requirement
+    private var cardHeight: CGFloat {
+
+        let quarterHeight = screenSize.height * 0.25
+        
+        return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
+    }
+
+    /// Builds one list panel and its card navigation destinations
+    var body: some View {
+
+        VStack(spacing: 0) {
+
+            HStack(alignment: .top) {
+
+                VStack(alignment: .leading, spacing: 3) {
+
+                    Text(list.title)
+                        .font(.title3.weight(.bold))
+
+                    Text(list.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        editMode = editMode == .active ? .inactive : .active
+                    }
+                } label: {
+
+                    Image(systemName: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(editMode == .active ? "Done reordering cards" : "Reorder cards")
+
+                if isWatching {
+
+                    Image(systemName: "eye.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    activeSheet = .listActions
+                } label: {
+
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(list.title) list actions")
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            List {
+
+                ForEach(list.cards) { card in
+
+                    if card.isSectionDivider {
+
+                        NavigationLink(value: card) {
+
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.45))
+                                .frame(height: 2)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .modifier(HideNavigationLinkIndicator())
+                        .accessibilityLabel("Open section divider")
+                            .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    } else {
+
+                        NavigationLink(value: card) {
+
+                            KanbanCardView(
+                                card:            card,
+                                height:          cardHeight,
+                                displaySettings: displaySettings,
+                                labelLibrary:    labelLibrary,
+                                onUpdateCard:    onUpdateCard,
+                                onDeleteCard:    { onDeleteCard(card.id) }
+                            ) {
+                                toggleCardTitle(card.id)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .modifier(HideNavigationLinkIndicator())
+                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                onDeleteCard(card.id)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+                .onMove { sourceOffsets, destinationOffset in
+
+                    guard let sourceIndex = sourceOffsets.first,
+                          list.cards.indices.contains(sourceIndex) else {
+                        return
+                    }
+
+                    let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset
+
+                    onMoveCard(list.cards[sourceIndex].id, finalIndex)
+                }
+
+                Button {
+                    activeSheet = .newCard
+                } label: {
+                    Label("Add card", systemImage: "plus")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                }
+                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+            .listStyle(.plain)
+            .environment(\.editMode, $editMode)
+            .scrollContentBackground(.hidden)
+            .background(.clear)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
+        }
+        .background(listTint.color)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
+        .sheet(item: $activeSheet) { presentedSheet in
+            switch presentedSheet {
+            case .listActions:
+                KanbanListActionsSheet(
+                    list:               list,
+                    canMoveEarlier:     canMoveEarlier,
+                    canMoveLater:       canMoveLater,
+                    isWatching:         $isWatching,
+                    listTint:           $listTint,
+                    onAddCard:          { activeSheet = .newCard },
+                    onCopyList:         onCopyList,
+                    onMoveList:         onMoveList,
+                    onSortList:         onSortList,
+                    onArchiveCompleted: onArchiveCompleted,
+                    onArchiveList:      onArchiveList
+                )
+            case .newCard:
+                NewKanbanCardSheet(listTitle: list.title, onCreate: onAddCard)
+            }
+        }
+    }
+}
+
+
+///
+/// Hides the automatic trailing indicator on navigation links when supported
+///
+/// @section    Purpose
+///     Keep list rows fully tappable without displaying a redundant disclosure chevron
+///
+/// @details    Uses SwiftUI's navigation indicator visibility API on iOS 18 and later, while preserving content on earlier versions
+///
+/// @note       Apply this modifier to navigation links whose destination is indicated by the row itself
+///
+private struct HideNavigationLinkIndicator: ViewModifier {
+
+    @ViewBuilder
+    ///
+    /// @fcn        HideNavigationLinkIndicator.body(content:)
+    /// @brief      Configure navigation indicator visibility for the modified content
+    /// @details    Hides navigation link indicators on iOS 18 and later; earlier iOS versions receive the content unchanged
+    ///
+    /// @param[in]  content  View content to which this modifier is applied
+    ///
+    /// @return     (some View) modified content with the navigation indicator hidden when supported
+    ///
+    /// @pre        SwiftUI invokes this function when the modifier is applied to a view
+    /// @post       The original content is preserved, with supported navigation indicators hidden
+    ///
+    func body(content: Content) -> some View {
+
+        if #available(iOS 18.0, *) {
+
+            content.navigationLinkIndicatorVisibility(.hidden)
+            
+        } else {
+            content
+        }
+    }
+}
+
+
+///
+/// Presents a form for creating a card in the selected kanban list
+///
+/// @section    Purpose
+///     Collect a card title and optional description, then return the trimmed values to the owning list view
+///
+/// @details    The title field also accepts the divider marker, allowing the list to create a movable section divider
+///
+/// @note       Dismissing with Cancel does not invoke the creation callback
+///
+private struct NewKanbanCardSheet: View {
+
+    let listTitle: String                               /* Title of the kanban list to which the new card will be added                             */
+    let onCreate: (String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
+
+    @Environment(\.dismiss) private var dismiss         /* Environment variable to dismiss the current view */
+    @State private var title       = ""                 /* User-entered card title                          */
+    @State private var description = ""                 /* User-entered card description                    */
+
+    private var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+
+        NavigationStack {
+
+            Form {
+
+                Section("Card details") {
+                    TextField("Title (or --- for divider)", text: $title)
+                        .textInputAutocapitalization(.never)
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(3...8)
+                }
+            }
+            .navigationTitle("New Card")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        onCreate(trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        dismiss()
+                    }
+                    .disabled(trimmedTitle.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+
+///
+/// Defines the selectable background tints for kanban lists
+///
+/// @section    Purpose
+///     Provide consistent, subtle colors that help distinguish lists without changing their card content
+///
+/// @details    Each case exposes a stable raw-value identity, a user-facing title, and a corresponding list background color
+///
+/// @note       Case ordering controls the options presented by the list color picker
+///
+private enum KanbanListTint: String, CaseIterable, Identifiable {
+    case neutral
+    case blue
+    case green
+    case orange
+    case red
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+            case .neutral: "Default"
+            case .blue:    "Blue"
+            case .green:   "Green"
+            case .orange:  "Orange"
+            case .red:     "Red"
+        }
+    }
+
+    var color: Color {
+        switch self {
+            case .neutral: Color(.systemGray6)
+            case .blue:    Color.blue.opacity(0.12)
+            case .green:   Color.green.opacity(0.12)
+            case .orange:  Color.orange.opacity(0.12)
+            case .red:     Color.red.opacity(0.12)
+        }
+    }
+}
+
+
+private struct KanbanListActionsSheet: View {
+
+    let list: KanbanList                   /* The Kanban list this sheet is associated with                                 */
+    let canMoveEarlier: Bool               /* Indicates if the list can be moved earlier                                    */
+    let canMoveLater: Bool                 /* Indicates if the list can be moved later                                      */
+    @Binding var isWatching: Bool          /* Indicates if the user is watching the list                                    */
+    @Binding var listTint: KanbanListTint  /* The current tint color of the list                                            */
+    let onAddCard: () -> Void              /* Action to perform when adding a card                                          */
+    let onCopyList: () -> Void             /* Action to perform when copying the list                                       */
+    let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
+    let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
+    let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
+    let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmingArchive = false
+
+    var body: some View {
+        
+        NavigationStack {
+
+            List {
+
+                Section {
+
+                    Button {
+                        onAddCard()
+                        dismiss()
+                    } label: {
+                        Label("Add card", systemImage: "plus")
+                    }
+
+                    Button {
+                        onCopyList()
+                        dismiss()
+                    } label: {
+                        Label("Copy list", systemImage: "doc.on.doc")
+                    }
+
+                    Menu {
+                        Button("Move earlier") {
+                            onMoveList(-1)
+                            dismiss()
+                        }
+                        .disabled(!canMoveEarlier)
+
+                        Button("Move later") {
+                            onMoveList(1)
+                            dismiss()
+                        }
+                        .disabled(!canMoveLater)
+                    } label: {
+                        Label("Move list", systemImage: "arrow.left.arrow.right")
+                            .foregroundStyle(.primary)
+                    }
+
+                    Menu {
+                        Button("Title A to Z") {
+                            onSortList(true)
+                            dismiss()
+                        }
+                        Button("Title Z to A") {
+                            onSortList(false)
+                            dismiss()
+                        }
+                    } label: {
+                        Label("Sort list", systemImage: "arrow.up.arrow.down")
+                            .foregroundStyle(.primary)
+                    }
+
+                    Menu {
+                        ForEach(KanbanListTint.allCases) { tint in
+                            Button {
+                                listTint = tint
+                            } label: {
+                                Label(tint.title, systemImage: listTint == tint ? "checkmark.circle.fill" : "circle.fill")
+                            }
+                        }
+                    } label: {
+                        Label("Change list color", systemImage: "paintpalette")
+                            .foregroundStyle(.primary)
+                    }
+
+                    Button {
+                        isWatching.toggle()
+                    } label: {
+                        Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
+                    }
+                }
+
+                Section {
+                    Button {
+                        onArchiveCompleted()
+                        dismiss()
+                    } label: {
+                        Label("Archive completed cards", systemImage: "archivebox")
+                    }
+
+                    Button(role: .destructive) {
+                        confirmingArchive = true
+                    } label: {
+                        Label("Archive list", systemImage: "archivebox")
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("List actions")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close", systemImage: "xmark") {
+                        dismiss()
+                    }
+                }
+            }
+            .confirmationDialog("Archive \(list.title)?", isPresented: $confirmingArchive, titleVisibility: .visible) {
+
+                Button("Archive list", role: .destructive) {
+                    onArchiveList()
+                    dismiss()
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(28)
+    }
+}
+
+
+// -------------------------------------- MARK: - Kanban Card ----------------------------------- //
+
+///
+/// Displays a compact summary of a kanban card
+///
+/// @section    Purpose
+///     Present the title, supporting copy, and compact metadata used to scan cards on the board
+///
+struct KanbanCardView: View {
+
+    let card: KanbanCard                            /* The kanban card being displayed                               */
+    let height: CGFloat                             /* The fixed height of the card view                             */
+    let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
+    let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
+    let onUpdateCard: (KanbanCard) -> Void          /* The action invoked when card details are updated              */
+    let onDeleteCard: () -> Void                    /* The action invoked when this card is deleted                  */
+    let onToggle: () -> Void                        /* Callback invoked when the card's title checkbox is toggled    */
+
+    @State private var renameDraft        = ""      /* Draft text for the rename operation                           */
+    @State private var isRenaming         = false   /* Flag indicating if the rename operation is active             */
+    @State private var isEditingInfo      = false   /* Flag indicating if the card info editing mode is active       */
+    @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
+
+
+    private var trimmedRenameDraft: String {
+        renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var cardLabels: [KanbanLabel] {
+        card.labelIDs.compactMap { labelID in
+            labelLibrary.labels.first(where: { $0.id == labelID })
+        }
+    }
+
+
+    ///
+    /// @fcn        KanbanCardView.cardUpdated(title:subtitle:description:)
+    /// @brief      Create a card snapshot containing edited display information
+    /// @details    Replaces the title, subtitle, and description while preserving the card's identity and other state
+    ///
+    /// @param[in]  title        Updated card title
+    /// @param[in]  subtitle     Optional board subtitle override
+    /// @param[in]  description  Updated detail description
+    ///
+    /// @return     (KanbanCard) updated card retaining its dates, checklist, comments, completion, and activity state
+    ///
+    /// @pre        Values come from the current card edit operation
+    /// @post       The original card remains unchanged; the returned snapshot contains the requested display values
+    ///
+    private func cardUpdated(title: String, subtitle: String?, description: String?) -> KanbanCard {
+        KanbanCard(
+            id:                   card.id,
+            word:                 title,
+            listTitle:            card.listTitle,
+            isDivider:            card.isDivider,
+            isTitleChecked:       card.isTitleChecked,
+            startDate:            card.startDate,
+            dueDate:              card.dueDate,
+            checklists:           card.checklists,
+            comments:             card.comments,
+            members:              card.members,
+            labelIDs:             card.labelIDs,
+            attachments:          card.attachments,
+            dismissedActivityIDs: card.dismissedActivityIDs,
+            descriptionOverride:  description,
+            subtitleOverride:     subtitle
+        )
+    }
+
+
+    ///
+    /// @fcn        KanbanCardView.renameCard
+    /// @brief      Submit the renamed card title
+    /// @details    Trims the title draft, ignores an empty result, and sends the updated card to the board callback
+    ///
+    /// @return     (Void) requests a card update when the trimmed title is not empty
+    ///
+    /// @pre        renameDraft contains the title entered in the Rename Card alert
+    /// @post       A valid title is synchronized to board state; an empty title causes no change
+    ///
+    private func renameCard() {
+        
+        guard !trimmedRenameDraft.isEmpty else { return }
+
+        onUpdateCard(cardUpdated(
+            title:       trimmedRenameDraft,
+            subtitle:    card.subtitleOverride,
+            description: card.descriptionOverride
+        ))
+    }
+
+    /// Builds a fixed-height card summary within its parent list
+    var body: some View {
+
+        VStack(alignment: .leading, spacing: 9) {
+
+            HStack(alignment: .center, spacing: 8) {
+
+                Button {
+                    onToggle()
+                } label: {
+                    Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
+                        .font(.headline)
+                        .foregroundStyle(card.isTitleChecked ? .green : .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+
+                Text(card.word)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 4)
+
+                Menu {
+                    Button(role: .destructive) {
+                        isConfirmingDelete = true
+                    } label: {
+                        Label("Delete Card", systemImage: "trash")
+                    }
+
+                    Button {
+                        renameDraft = card.word
+                        isRenaming = true
+                    } label: {
+                        Label("Rename Card", systemImage: "pencil")
+                    }
+
+                    Button {
+                        isEditingInfo = true
+                    } label: {
+                        Label("Update Card Info", systemImage: "slider.horizontal.3")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Card actions")
+            }
+
+            Text(card.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            if !cardLabels.isEmpty {
+                HStack(spacing: 5) {
+                    ForEach(cardLabels.prefix(3)) { label in
+                        KanbanLabelChip(label: label)
+                    }
+
+                    if cardLabels.count > 3 {
+                        Text("+\(cardLabels.count - 3)")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            HStack(spacing: 14) {
+
+                if displaySettings.showCommentCounts {
+                    Label("\(card.commentCount)", systemImage: "text.bubble")
+                }
+
+                if displaySettings.showChecklistProgress {
+                    Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
+                }
+
+                if displaySettings.showDueDateBadges && card.hasDueDate {
+                    Label("Today", systemImage: "calendar")
+                }
+
+                Spacer()
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: max(height - 8, 40), alignment: .top)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
+        .padding(.horizontal, 4)
+        .alert("Rename Card", isPresented: $isRenaming) {
+            TextField("Card title", text: $renameDraft)
+                .textInputAutocapitalization(.never)
+            Button("Cancel", role: .cancel) {}
+            Button("Rename", action: renameCard)
+                .disabled(trimmedRenameDraft.isEmpty)
+        } message: {
+            Text("Enter a new title for this card.")
+        }
+        .confirmationDialog("Delete \(card.word)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive, action: onDeleteCard)
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $isEditingInfo) {
+            CardInfoEditorSheet(card: card) { title, subtitle, description in
+                onUpdateCard(cardUpdated(title: title, subtitle: subtitle, description: description))
+            }
+        }
+    }
+}
+
+
+/// Presents the full editor for a card's title, board subtitle, and detail description
+///
+/// @section    Purpose
+///     Collect card display text and submit the completed values through the supplied save callback
+///
+/// @note   The parent card view owns persistence; cancel dismisses without invoking the callback
+///
+private struct CardInfoEditorSheet: View {
+
+    let onSave: (String, String, String) -> Void
+
+    @Environment(\.dismiss) private var dismiss     /* Dismiss action for the sheet         */
+    @State private var title:       String          /* Draft text for the title field       */
+    @State private var subtitle:    String          /* Draft text for the subtitle field    */
+    @State private var description: String          /* Draft text for the description field */
+
+    ///
+    /// @fcn        CardInfoEditorSheet.trimmedTitle
+    /// @brief      Return the title draft without surrounding whitespace
+    /// @details    Trims leading and trailing whitespace and newline characters before validation or saving
+    ///
+    /// @return     (String) normalized title draft; may be empty when the input contains only whitespace
+    ///
+    /// @pre        title contains the current text-field value
+    /// @post       The stored title draft is unchanged
+    ///
+    private var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+
+    ///
+    /// @fcn        CardInfoEditorSheet.init(card:onSave:)
+    /// @brief      Initialize the card information editor
+    /// @details    Seeds the title, subtitle, and description fields from the selected card and stores its save callback
+    ///
+    /// @param[in]  card    Card whose information will be edited
+    /// @param[in]  onSave  Callback that applies the edited title, subtitle, and description
+    ///
+    /// @return     (CardInfoEditorSheet) configured card information form
+    ///
+    /// @pre        card contains the current values to present in the form
+    /// @post       All editable fields begin with the selected card's current display values
+    ///
+    init(card: KanbanCard, onSave: @escaping (String, String, String) -> Void) {
+
+        self.onSave  = onSave
+        _title       = State(initialValue: card.word)
+        _subtitle    = State(initialValue: card.subtitle)
+        _description = State(initialValue: card.funParagraph)
+    }
+    
+
+    ///
+    /// @fcn        CardInfoEditorSheet.body
+    /// @brief      Build the card information editing form
+    /// @details    Presents title, subtitle, and description fields with Cancel and validated Save actions
+    ///
+    /// @return     (some View) modal form for updating card display information
+    ///
+    /// @pre        Editor state has been initialized from the selected card
+    /// @post       Save invokes onSave with the edited values; Cancel dismisses without applying them
+    ///
+    var body: some View {
+
+        NavigationStack {
+
+            Form {
+                Section("Card details") {
+                    TextField("Title", text: $title)
+                        .textInputAutocapitalization(.never)
+                    TextField("Subtitle", text: $subtitle)
+                        .textInputAutocapitalization(.never)
+                }
+
+                Section("Description") {
+                    TextField("Description", text: $description, axis: .vertical)
+                        .lineLimit(4...12)
+                }
+            }
+            .navigationTitle("Update Card Info")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(trimmedTitle, subtitle, description)
+                        dismiss()
+                    }
+                    .disabled(trimmedTitle.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+
+// -------------------------------------- MARK: - Previews -------------------------------------- //
+
+/// Preview the complete board presentation with deterministic sample data
+#Preview {
+    ContentView()
+}

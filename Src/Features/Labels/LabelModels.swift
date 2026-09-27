@@ -1,4 +1,4 @@
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // @file       LabelModels.swift
 // @brief      Shared label catalog models, persistence, palette, and chip presentation
 // @details    Defines reusable categorized labels, stable card assignments, local catalog storage,
@@ -6,7 +6,7 @@
 //
 // @notes      Card assignments store label IDs; the shared catalog owns label names, categories, and colors
 //
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 import Foundation
 import SwiftUI
 
@@ -19,7 +19,8 @@ import SwiftUI
 /// @section    Purpose
 ///     Provide stable, serializable color choices for label definitions
 ///
-/// @note       Raw values are persisted; color values are resolved into SwiftUI colors for presentation
+/// @note       Raw values are persisted; color values are resolved into SwiftUI colors for
+///             presentation
 ///
 enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     case mint
@@ -119,7 +120,8 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 /// @section    Purpose
 ///     Supply a shared catalog that cards can reference by stable label ID
 ///
-/// @details    The starter catalog seeds common categories and labels when no saved catalog is available
+/// @details    The starter catalog seeds common categories and labels when no saved catalog is
+///             available
 ///
 struct LabelLibrary: Hashable, Codable {
 
@@ -182,7 +184,8 @@ enum LabelLibraryStore {
     ///
     /// @fcn        LabelLibraryStore.load
     /// @brief      Load the saved label catalog
-    /// @details    Decodes the local JSON snapshot and returns the starter catalog when no valid saved catalog exists
+    /// @details    Decodes the local JSON snapshot and returns the starter catalog when no valid
+    ///             saved catalog exists
     ///
     /// @return     (LabelLibrary) restored catalog or starter catalog
     ///
@@ -208,7 +211,8 @@ enum LabelLibraryStore {
     /// @return     (Void) saves the encoded catalog when encoding succeeds
     ///
     /// @pre        library contains the current in-memory label definitions
-    /// @post       A valid encoded snapshot is stored locally; encoding failure leaves prior data unchanged
+    /// @post       A valid encoded snapshot is stored locally; encoding failure leaves prior data
+    ///             unchanged
     ///
     static func save(_ library: LabelLibrary) {
         guard let data = try? JSONEncoder().encode(library) else { return }

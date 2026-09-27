@@ -1,4 +1,4 @@
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // @file       CardLabelsSheet.swift
 // @brief      Categorized label browser and card assignment editor
 // @details    Lets users browse a shared label catalog, toggle card assignments, and create labels
@@ -6,7 +6,7 @@
 //
 // @notes      Catalog and assignment edits remain local to this sheet until the user saves
 //
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
@@ -14,9 +14,11 @@ import SwiftUI
 /// Presents the persistent label library and current card label assignments
 ///
 /// @section    Purpose
-///     Let users browse labels by category, attach or detach them from a card, and add labels to the shared library
+///     Let users browse labels by category, attach or detach them from a card, and add labels to
+///     the shared library
 ///
-/// @details    Maintains a draft catalog and selected label IDs until Save returns them to the owning card detail view
+/// @details    Maintains a draft catalog and selected label IDs until Save returns them to the
+///             owning card detail view
 ///
 /// @note       Cancel dismisses the sheet without applying draft catalog or assignment changes
 ///
@@ -24,13 +26,13 @@ struct CardLabelsSheet: View {
 
     let onSave: (LabelLibrary, [String]) -> Void
 
-    @Environment(\.dismiss) private var dismiss                         /* Dismiss action for the sheet               */
-    @State private var library: LabelLibrary                            /* Draft label library                        */
-    @State private var selectedLabelIDs: [String]                       /* Currently selected label IDs               */
-    @State private var labelNameDraft                  = ""             /* Draft name for the new label               */
-    @State private var categorySelection               = ""             /* Currently selected category                */
-    @State private var newCategoryDraft                = ""             /* Draft name for a new category              */
-    @State private var selectedColor: KanbanLabelColor = .yellow        /* Currently selected color for the new label */
+    @Environment(\.dismiss) private var dismiss                     /* Dismiss action for sheet   */
+    @State private var library: LabelLibrary                        /* Draft label library        */
+    @State private var selectedLabelIDs: [String]                   /* Currently selected IDs     */
+    @State private var labelNameDraft                  = ""         /* Draft name for new label   */
+    @State private var categorySelection               = ""         /* Currently selected cat.    */
+    @State private var newCategoryDraft                = ""         /* Draft name for new cat.    */
+    @State private var selectedColor: KanbanLabelColor = .yellow    /* Currently selected color   */
 
     private let newCategoryID = "__new_category__"
 
@@ -59,7 +61,8 @@ struct CardLabelsSheet: View {
     ///
     /// @fcn        CardLabelsSheet.canCreateLabel
     /// @brief      Determine whether the current label draft is valid to create
-    /// @details    Requires a non-empty label name and either an existing category or a non-empty new category name
+    /// @details    Requires a non-empty label name and either an existing category or a non-empty
+    ///             new category name
     ///
     /// @return     (Bool) true when the current form can create a label
     ///
@@ -74,7 +77,8 @@ struct CardLabelsSheet: View {
     ///
     /// @fcn        CardLabelsSheet.init(library:selectedLabelIDs:onSave:)
     /// @brief      Initialize the card label editor
-    /// @details    Creates local drafts from the shared catalog and this card's current label assignments
+    /// @details    Creates local drafts from the shared catalog and this card's current label
+    ///             assignments
     ///
     /// @param[in]  library          Shared category and label definitions
     /// @param[in]  selectedLabelIDs Stable IDs currently assigned to the card
@@ -115,8 +119,8 @@ struct CardLabelsSheet: View {
     ///
     /// @fcn        CardLabelsSheet.createLabel
     /// @brief      Create a reusable label and assign it to the current card
-    /// @details    Validates the drafts, reuses a case-insensitive matching category or creates one,
-    ///             then appends the label and selects its stable ID
+    /// @details    Validates the drafts, reuses a case-insensitive matching category or creates
+    ///             one, then appends the label and selects its stable ID
     ///
     /// @return     (Void) updates the local catalog and card-assignment drafts
     ///
@@ -156,7 +160,8 @@ struct CardLabelsSheet: View {
     ///
     /// @fcn        CardLabelsSheet.body
     /// @brief      Build the categorized label assignment interface
-    /// @details    Lists labels by category, indicates current selections, and provides label/category creation fields
+    /// @details    Lists labels by category, indicates current selections, and provides
+    ///             label/category creation fields
     ///
     /// @return     (some View) card label editor with Save and Cancel actions
     ///
@@ -164,28 +169,44 @@ struct CardLabelsSheet: View {
     /// @post       Save returns the edited catalog and assignments; Cancel discards them
     ///
     var body: some View {
+        
         NavigationStack {
+            
             List {
+                
                 ForEach(library.categories) { category in
+                    
                     Section(category.name) {
+                        
                         let categoryLabels = library.labels.filter { $0.categoryID == category.id }
 
                         if categoryLabels.isEmpty {
+                            
                             Text("No labels yet")
                                 .foregroundStyle(.secondary)
+                            
                         } else {
+                            
                             ForEach(categoryLabels) { label in
+                                
                                 Button {
                                     toggleLabel(label.id)
+                                    
                                 } label: {
+                                    
                                     HStack(spacing: 10) {
+                                        
                                         Circle()
                                             .fill(label.color.color)
                                             .frame(width: 10, height: 10)
+                                        
                                         Text(label.name)
                                             .foregroundStyle(.primary)
+                                        
                                         Spacer()
+                                        
                                         if selectedLabelIDs.contains(label.id) {
+                                            
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(.tint)
                                         }

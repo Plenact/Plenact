@@ -944,14 +944,18 @@ private struct BoardSettingsView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Change icon color for \(member)")
 
+                                Text(member)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
                                 Button {
                                     editingMember    = member
                                     memberNameDraft  = member
                                     isRenamingMember = true
 
                                 } label: {
-                                    Text(member)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    Image(systemName: "pencil")
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 44, height: 44)
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)

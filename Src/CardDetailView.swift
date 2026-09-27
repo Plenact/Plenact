@@ -1,4 +1,4 @@
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // @file       CardDetailView.swift
 // @brief      Detailed kanban card presentation and supporting components
 // @details    Defines the card detail screen, sections, actions, metadata rows, and activity feed
@@ -8,7 +8,7 @@
 // @section    Opens
 //     Modularize into separate files
 //
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 import SwiftUI
 import PhotosUI
 import UIKit
@@ -42,7 +42,7 @@ enum ChecklistMoveDirection {
 ///
 struct CardDetailView: View {
 
-    // -------------------------------------- MARK: - Date Field Enum ------------------------------- //
+    // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
 
     private enum DateField: String, Identifiable, Equatable {
 
@@ -65,7 +65,8 @@ struct CardDetailView: View {
     /// @section    Purpose
     ///     Distinguish date-picker presentation from the card-member management sheet
     ///
-    /// @details    Each case supplies a stable identity so SwiftUI can update or replace the active sheet reliably
+    /// @details    Each case supplies a stable identity so SwiftUI can update or replace the
+    ///             active sheet reliably
     ///
     /// @note       The date case carries the specific start or due date field to edit
     ///
@@ -91,10 +92,11 @@ struct CardDetailView: View {
         }
     }
 
-    /// Stable identifiers and display copy for the card's generated activity entries.
+    /// Stable identifiers and display copy for the card's generated activity entries
     ///
     /// @section    Purpose
-    ///     Keep generated activity text identifiable so a user's deletion remains associated with the card
+    ///     Keep generated activity text identifiable so a user's deletion remains associated with
+    ///     the card
     ///
     private enum GeneratedActivity: String, CaseIterable, Identifiable {
         case addedCard          /* Card was added to the board           */
@@ -106,7 +108,8 @@ struct CardDetailView: View {
         ///
         /// @fcn        GeneratedActivity.text(for:actorName:)
         /// @brief      Generate the display text for an activity entry
-        /// @details    Resolves this activity type into user-visible copy using the selected card's title and list
+        /// @details    Resolves this activity type into user-visible copy using the selected
+        ///             card's title and list
         ///
         /// @param[in]  card       Card whose activity feed is being rendered
         /// @param[in]  actorName  Current user name shown as the activity actor
@@ -117,6 +120,7 @@ struct CardDetailView: View {
         /// @post       No card or activity state is modified
         ///
         func text(for card: KanbanCard, actorName: String) -> String {
+            
             switch self {
                 case .addedCard:
                     return "\(actorName) added \(card.word) to this card"
@@ -267,6 +271,7 @@ struct CardDetailView: View {
         var importFailed = false
 
         for photoItem in photoItems {
+            
             do {
                 guard let mediaData = try await photoItem.loadTransferable(type: Data.self) else {
                     importFailed = true
@@ -287,7 +292,7 @@ struct CardDetailView: View {
         }
 
         selectedPhotoItems = []
-        activeSheet = nil
+        activeSheet        = nil
 
         syncCardState(attachments: attachments)
 
@@ -304,12 +309,15 @@ struct CardDetailView: View {
     }
 
     private func addClipboardLink() {
+        
         let clipboardText = UIPasteboard.general.url?.absoluteString ?? UIPasteboard.general.string ?? ""
 
         guard let url = CardAttachmentStore.webURL(from: clipboardText) else {
+            
             attachmentNoticeMessage = "The clipboard does not contain a valid web link."
             showingAttachmentNotice = true
-            activeSheet = nil
+            activeSheet             = nil
+            
             return
         }
 
@@ -317,9 +325,10 @@ struct CardDetailView: View {
     }
 
     private func showAttachmentSourceComingSoon(_ source: String) {
+        
         attachmentNoticeMessage = "\(source) attachments are coming soon."
         showingAttachmentNotice = true
-        activeSheet = nil
+        activeSheet             = nil
     }
 
     ///
@@ -355,19 +364,19 @@ struct CardDetailView: View {
     /// @post       The parent view receives the current card state for persistence
     ///
     private func syncCardState(
-        title:          String?   = nil,
-        subtitle:       String?   = nil,
-        members:        [String]? = nil,
-        labelIDs:       [String]? = nil,
+        title:          String?             = nil,
+        subtitle:       String?             = nil,
+        members:        [String]?           = nil,
+        labelIDs:       [String]?           = nil,
         attachments:    [KanbanAttachment]? = nil,
-        titleChecked:   Bool?     = nil,
-        startDate:      Date?     = nil,
-        dueDate:        Date?     = nil,
-        clearStartDate: Bool      = false,
-        clearDueDate:   Bool      = false
+        titleChecked:   Bool?               = nil,
+        startDate:      Date?               = nil,
+        dueDate:        Date?               = nil,
+        clearStartDate: Bool                = false,
+        clearDueDate:   Bool                = false
     ) {
 
-        let nextTitleChecked = titleChecked                      ?? self.titleChecked
+        let nextTitleChecked = titleChecked   ?? self.titleChecked
         let nextTitle         = title         ?? titleText
         let nextSubtitle      = subtitle      ?? (card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText)
         let nextMembers       = members       ?? self.members
@@ -400,8 +409,8 @@ struct CardDetailView: View {
 
     ///
     /// @brief      Toggle the checked state of the card's title
-    /// @details    Flips the boolean value representing whether the card's main title checkbox is selected and synchronizes 
-    ///             this change with the parent board
+    /// @details    Flips the boolean value representing whether the card's main title checkbox is
+    ///             selected and synchronizes this change with the parent board
     ///
     private func toggleCardTitle() {
 
@@ -432,14 +441,15 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.deleteComment(with:)
     /// @brief      Delete a posted comment from the current card
-    /// @details    Removes the comment matching its stable identifier and synchronizes the updated card with the board
+    /// @details    Removes the comment matching its stable identifier and synchronizes the updated
+    ///             card with the board
     ///
     /// @param[in]  commentID  Stable identifier of the comment to remove
     ///
     /// @return     (Void) the comment collection and parent card state are updated in place
     ///
     /// @pre        commentID identifies a comment in the current card
-    /// @post       The comment is absent from the Activity feed and remains deleted after reopening the card
+    /// @post       Comment is absent from Activity feed & remains deleted after reopening card
     ///
     private func deleteComment(with commentID: UUID) {
         comments.removeAll { $0.id == commentID }
@@ -450,7 +460,8 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.dismissGeneratedActivity(_:)
     /// @brief      Dismiss one generated activity entry from the current card
-    /// @details    Records the entry's stable identifier as dismissed and synchronizes that state with the board
+    /// @details    Records the entry's stable identifier as dismissed and synchronizes that state
+    ///              with the board
     ///
     /// @param[in]  activity  Generated activity entry selected for removal
     ///
@@ -547,7 +558,7 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.dateRow(for:)
     /// @brief      Build one start-date or due-date row
-    /// @details    Opens the date picker when tapped and enables swipe-to-remove only while a date is set
+    /// @details    Opens date picker when tapped & enables swipe-to-remove only while date is set
     ///
     /// @param[in]  field  Date field represented by this row
     ///
@@ -600,7 +611,8 @@ struct CardDetailView: View {
 
     ///
     /// @brief      Append a new empty checklist to the selected card's detail state
-    /// @details    Adds a default checklist with its first item, syncs it to the card, scrolls it into view, and focuses the item
+    /// @details    Adds a default checklist with its first item, syncs it to the card, scrolls it
+    ///             into view, and focuses the item
     ///
     /// @param[in]  scrollProxy  Proxy used to scroll the new checklist into view
     ///
@@ -642,7 +654,8 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.renameChecklist(with:to:)
     /// @brief      Rename a checklist on the current card
-    /// @details    Trims the proposed title, preserves the checklist's items and completion state, and syncs the card
+    /// @details    Trims the proposed title, preserves the checklist's items and completion state,
+    ///             and syncs the card
     ///
     /// @param[in]  checklistID  Stable identifier of the checklist to rename
     /// @param[in]  title        Proposed checklist title
@@ -675,7 +688,8 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.toggleAllItems(in:)
     /// @brief      Check every item or clear all checks in one checklist
-    /// @details    Clears completion when all non-empty items are already checked; otherwise checks every item
+    /// @details    Clears completion when all non-empty items are already checked; otherwise
+    ///             checks every item
     ///
     /// @param[in]  checklistID  Stable identifier of the checklist to update
     ///
@@ -714,7 +728,8 @@ struct CardDetailView: View {
     /// @return     (Void) updates checklist order and synchronizes the card
     ///
     /// @pre        checklistID identifies a checklist on the current card
-    /// @post       The checklist occupies the requested position; boundary and single-checklist moves leave order unchanged
+    /// @post       The checklist occupies the requested position; boundary and single-checklist
+    ///             moves leave order unchanged
     ///
     private func moveChecklist(with checklistID: UUID, direction: ChecklistMoveDirection) {
 
@@ -749,7 +764,7 @@ struct CardDetailView: View {
     
     ///
     /// @brief      Append a new item to a checklist
-    /// @details    Replaces the matching value-type checklist with a copy containing one additional item
+    /// @details    Replaces matching value-type checklist with copy containing one addtnl item
     ///
     /// @param[in]  checklistID  Identifier of the checklist receiving the new item
     ///
@@ -791,8 +806,8 @@ struct CardDetailView: View {
             return
         }
 
-        let checklist = checklists[checklistIndex]                      /* Retrieve the checklist being updated           */
-        var completedItemIndices = checklist.completedItemIndices       /* Copy the current set of completed item indices */
+        let checklist = checklists[checklistIndex]                  /* Retrieve the checklist being updated       */
+        var completedItemIndices = checklist.completedItemIndices   /* Copy current set of completed item indices */
 
         // Toggle the completion state of the specified item within the checklist
         if completedItemIndices.contains(itemIndex) {
@@ -945,8 +960,8 @@ struct CardDetailView: View {
             onMove: { direction in
                 moveChecklist(with: checklist.id, direction: direction)
             },
-            canMoveUp: checklistIndex > 0,
-            canMoveDown: checklistIndex < checklists.count - 1,
+            canMoveUp:      checklistIndex > 0,
+            canMoveDown:    checklistIndex < checklists.count - 1,
             focusFirstItem: checklist.id == checklistToFocus,
             onFirstItemFocused: {
                 checklistToFocus = nil
@@ -1050,32 +1065,34 @@ struct CardDetailView: View {
                     }
                     .padding(16)
 
-                    //***********************************************************************************************//
-                    // SECTION: Quick Actions                                                                        //
-                    //                                                                                               //
-                    //          Presents the primary actions available for the selected card                         //
-                    //***********************************************************************************************//
+                    //****************************************************************************//
+                    // SECTION: Quick Actions                                                     //
+                    //                                                                            //
+                    //          Presents the primary actions available for the selected card      //
+                    //****************************************************************************//
                     DetailSection(title: "Quick Actions") {
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
 
-                            ActionTile(title: "Add Checklist",  icon: "checklist", color: .green,  action: { addChecklist(using: scrollProxy) })
-                            ActionTile(
-                                title: "Add Attachment",
-                                icon: "paperclip",
-                                color: .cyan,
-                                action: { activeSheet = .attachmentSources }
+                            ActionTile(title: "Add Checklist",  icon: "checklist", color: .green, action: { addChecklist(using: scrollProxy) })
+                            ActionTile(title: "Add Attachment", icon: "paperclip", color: .cyan,  action: { activeSheet = .attachmentSources }
                             )
                             ActionTile(title: "Members",        icon: "person.2",  color: .purple, action: { activeSheet = .members })
                         }
                     }
 
                     if !attachments.isEmpty {
+                        
                         DetailSection(title: "Attachments") {
+                            
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
+                                
                                 ForEach(attachments) { attachment in
+                                    
                                     Group {
+                                        
                                         if let url = attachment.url {
+                                            
                                             Link(destination: url) {
                                                 CardAttachmentThumbnail(attachment: attachment)
                                             }
@@ -1101,12 +1118,12 @@ struct CardDetailView: View {
                         }
                     }
 
-                    //***********************************************************************************************//
-                    // SECTION: Description                                                                          //
-                    //                                                                                               //
-                    //          Presents the humorous context associated with the selected card. The text expands    //
-                    //          vertically so the complete description remains readable                              //
-                    //***********************************************************************************************//
+                    //****************************************************************************//
+                    // SECTION: Description                                                       //
+                    //                                                                            //
+                    //          Presents humorous context assoc with selected card. Text expands  //
+                    //          vertically so the complete description remains readable           //
+                    //****************************************************************************//
                     DetailSection(title: "Description") {
 
                         TextField("Description", text: $descriptionText, axis: .vertical)
@@ -1138,11 +1155,11 @@ struct CardDetailView: View {
                             }
                     }
 
-                    //***********************************************************************************************//
-                    // SECTION: Details                                                                              //
-                    //                                                                                               //
-                    //          Presents the selected card's dates, labels, and member metadata in aligned rows      //
-                    //***********************************************************************************************//
+                    //****************************************************************************//
+                    // SECTION: Details                                                           //
+                    //                                                                            //
+                    //          Presents selected card's dates, labels & meta in aligned rows     //
+                    //****************************************************************************//
                     DetailSection(title: "Details") {
 
                         if startDate != nil {
@@ -1234,12 +1251,12 @@ struct CardDetailView: View {
                         .accessibilityLabel("Edit assigned members")
                     }
 
-                    //***********************************************************************************************//
-                    // SECTION: Checklists                                                                           //
-                    //                                                                                               //
-                    //          Presents the card's checklist groups and their completion state. Checklist creation  //
-                    //          and deletion update the local collection rendered here                               //
-                    //***********************************************************************************************//
+                    //****************************************************************************//
+                    // SECTION: Checklists                                                        //
+                    //                                                                            //
+                    //          Presents card's checklist groups & completion state. Checklist    //
+                    //          creation & deletion update the local collection rendered here     //
+                    //****************************************************************************//
                     DetailSection(title: "Checklists", trailing: "plus", trailingAction: { addChecklist(using: scrollProxy) }) {
 
                         ForEach(checklists) { checklist in
@@ -1247,11 +1264,11 @@ struct CardDetailView: View {
                         }
                     }
 
-                    //***********************************************************************************************//
-                    // SECTION: Activity                                                                             //
-                    //                                                                                               //
-                    //          Presents the recent events associated with the selected card                         //
-                    //***********************************************************************************************//
+                    //****************************************************************************//
+                    // SECTION: Activity                                                          //
+                    //                                                                            //
+                    //          Presents the recent events associated with the selected card      //
+                    //****************************************************************************//
                     VStack(alignment: .leading, spacing: 10) {
 
                         HStack {
@@ -1499,7 +1516,8 @@ struct CardDetailView: View {
 /// @section    Purpose
 ///     Provide one interface for viewing, editing, adding, and removing users assigned to a card
 ///
-/// @details    Keeps draft edits local until Save, trims names, removes case-insensitive duplicates, and supports swipe-to-remove
+/// @details    Keeps draft edits local until Save, trims names, removes case-insensitive duplicates,
+///             and supports swipe-to-remove
 ///
 /// @note       Member entries are stored as names or email strings; no separate user directory is required
 ///
@@ -1559,12 +1577,13 @@ private struct CardMembersSheet: View {
     ///
     /// @fcn        CardMembersSheet.addMember
     /// @brief      Add the current member draft to the assigned-user list
-    /// @details    Appends the trimmed draft and clears the input when it is non-empty and not already assigned
+    /// @details    Appends trimmed draft & clears input when non-empty & not already assigned
     ///
     /// @return     (Void) updates the sheet's member draft and local assignment list
     ///
     /// @pre        memberDraft contains the current text entered in the Add user field
-    /// @post       A valid unique name is appended and memberDraft is cleared; invalid or duplicate drafts are unchanged
+    /// @post       A valid unique name is appended and memberDraft is cleared; invalid or duplicate
+    ///             drafts are unchanged
     ///
     /// @note       Duplicate detection is case-insensitive
     ///
@@ -1650,7 +1669,7 @@ private struct CardMembersSheet: View {
 }
 
 
-// -------------------------------------- MARK: - Detail Section ------------------------------- //
+// --------------------------------------- MARK: - Detail Section ------------------------------- //
 
 ///
 /// Groups a detail subsection with an optional trailing symbol
@@ -1737,10 +1756,11 @@ struct DetailSection<Content: View>: View {
 }
 
 
-// -------------------------------------- MARK: - Action Tile ---------------------------------- //
+// --------------------------------------- MARK: - Action Tile ---------------------------------- //
 
 ///
 /// Displays a labeled action tile in a card detail section
+///
 /// @section    Purpose
 ///     Present a labeled action with a symbol and accent color in the quick-actions grid
 ///
@@ -1774,7 +1794,7 @@ struct ActionTile: View {
 }
 
 
-// -------------------------------------- MARK: - Detail Row ----------------------------------- //
+// --------------------------------------- MARK: - Detail Row ----------------------------------- //
 
 ///
 /// Displays one icon, label, and value row in the card metadata
@@ -1815,7 +1835,7 @@ struct DetailRow: View {
 }
 
 
-// -------------------------------------- MARK: - Checklist ------------------------------------ //
+// --------------------------------------- MARK: - Checklist ------------------------------------ //
 
 ///
 /// Displays a checklist group and its completion count
@@ -1828,12 +1848,12 @@ struct DetailRow: View {
 struct ChecklistBlock: View {
 
     let checklist: KanbanChecklist          /* The checklist data rendered by the block                                */
-    let onDelete: () -> Void                /* The action invoked when the checklist is deleted                        */
-    let onAddItem: () -> Void               /* The action invoked when a new item is added                             */
+    let onDelete: ()        -> Void         /* The action invoked when the checklist is deleted                        */
+    let onAddItem: ()       -> Void         /* The action invoked when a new item is added                             */
     let onToggleItem: (Int) -> Void         /* The action invoked when an item is toggled                              */
     let onUpdateItem: (Int, String) -> Void /* The action invoked when item text is edited                             */
-    let onDeleteItem: (Int) -> Void         /* The action invoked when an item is deleted                              */
-    let onRename: (String) -> Void          /* The action invoked when the checklist title is renamed                  */
+    let onDeleteItem: (Int)  -> Void        /* The action invoked when an item is deleted                              */
+    let onRename: (String)   -> Void        /* The action invoked when the checklist title is renamed                  */
     let onToggleAllItems: () -> Void        /* The action invoked when all items are toggled                           */
     let onMove: (ChecklistMoveDirection) -> Void /* The action invoked when the checklist is moved                     */
     let canMoveUp: Bool                     /* Whether the checklist can be moved up in the list                       */
@@ -2024,7 +2044,7 @@ struct ChecklistBlock: View {
 }
 
 
-// -------------------------------------- MARK: - Checklist Item Row --------------------------- //
+// --------------------------------------- MARK: - Checklist Item Row --------------------------- //
 
 ///
 /// Displays one touch-friendly checklist item with a custom swipe-to-delete interaction
@@ -2121,7 +2141,7 @@ struct ChecklistItemRow: View {
 }
 
 
-// -------------------------------------- MARK: - Activity ------------------------------------- //
+// --------------------------------------- MARK: - Activity ------------------------------------- //
 
 ///
 /// Displays one activity event associated with the card
@@ -2271,7 +2291,7 @@ struct CommentActivityRow: View {
     }
 
     
-// -------------------------------------- MARK: - Card Detail Preview ------------------------- //
+// -------------------------------------- MARK: - Card Detail Preview --------------------------- //
 
     ///
     /// @fcn        CardDetailView.Preview

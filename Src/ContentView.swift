@@ -1,11 +1,11 @@
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // @file       ContentView.swift
 // @brief      Kanban board screen and reusable board views
 // @details    Defines the board container, lists, cards, and navigation into card details
 //
 // @notes      Views remain composable and keep presentation logic close to the rendered component
 //
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
@@ -26,11 +26,11 @@ struct BoardDisplaySettings {
 ///
 struct ContentView: View {
 
-    @State private var lists: [KanbanList]           = KanbanBoardPersistence.loadLists() /* Kanban board lists                     */
-    @State private var labelLibrary                  = LabelLibraryStore.load() /* Label library containing all available labels    */
-    @State private var displaySettings               = BoardDisplaySettings()   /* Board display settings                           */
-    @State private var memberColors: [String: Color] = [:]                      /* Mapping of member names to their assigned colors */
-    @State private var currentUserName               = "Justin Reina"           /* Current user's name                              */
+    @State private var lists: [KanbanList]           = KanbanBoardPersistence.loadLists()   /* Kanban board lists                               */
+    @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
+    @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
+    @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
+    @State private var currentUserName               = "Justin Reina"                       /* Current user's name                              */
 
 
     ///
@@ -65,6 +65,7 @@ struct ContentView: View {
             }
     }
 
+    
     ///
     /// @fcn        ContentView.renameMember(from:to:)
     /// @brief      Rename a member across the board
@@ -141,7 +142,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.setMemberColor(_:color:)
     /// @brief      Store the shared icon color for a member
-    /// @details    Writes the selected color under the member's lowercased name so all matching icons resolve consistently
+    /// @details    Writes the selected color under the member's lowercased name so all matching
+    ///             icons resolve consistently
     ///
     /// @param[in]  memberName  Name of the member whose icon color is being changed
     /// @param[in]  color       New color selected for that member
@@ -159,7 +161,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.addList
     /// @brief      Append a new empty list to the board
-    /// @details    Assigns the next available list identifier and generates a title that does not duplicate an existing list name
+    /// @details    Assigns the next available list identifier and generates a title that does not
+    ///             duplicate an existing list name
     ///
     /// @return     (Void) updates the board's in-memory list collection
     ///
@@ -184,7 +187,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.safeFrameDimension(_:subtracting:)
     /// @brief      Return a finite positive frame dimension after applying an inset
-    /// @details    Subtracts the requested inset and substitutes a one-point minimum when the result is non-finite or too small
+    /// @details    Subtracts the requested inset and substitutes a one-point minimum when the
+    ///             result is non-finite or too small
     ///
     /// @param[in]  dimension  Proposed source dimension from the parent geometry
     /// @param[in]  inset      Amount to subtract from the source dimension
@@ -634,27 +638,24 @@ struct ContentView: View {
                                 ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 
                                     KanbanListView(
-                                        list:            list,
-                                        screenSize:      screen.size,
-                                        displaySettings: displaySettings,
-                                        labelLibrary:    labelLibrary,
-                                        toggleCardTitle: { cardID in
-                                            toggleCardTitle(in: listIndex, cardID: cardID)
+                                        list:               list,
+                                        screenSize:         screen.size,
+                                        displaySettings:    displaySettings,
+                                        labelLibrary:       labelLibrary,
+                                        toggleCardTitle:    { cardID in toggleCardTitle(in: listIndex, cardID: cardID)
                                         },
-                                        canMoveEarlier: listIndex > 0,
-                                        canMoveLater: listIndex < lists.count - 1,
-                                        onAddCard: { title, description in
-                                            addCard(to: list.id, title: title, description: description)
+                                        canMoveEarlier:     listIndex > 0,
+                                        canMoveLater:       listIndex < lists.count - 1,
+                                        onAddCard:          { title, description in addCard(to: list.id, title: title, description: description)
                                         },
-                                        onCopyList: { copyList(with: list.id) },
-                                        onMoveList: { offset in moveList(with: list.id, by: offset) },
-                                        onSortList: { ascending in sortList(with: list.id, ascending: ascending) },
+                                        onCopyList:         { copyList(with: list.id) },
+                                        onMoveList:         { offset in moveList(with: list.id, by: offset) },
+                                        onSortList:         { ascending in sortList(with: list.id, ascending: ascending) },
                                         onArchiveCompleted: { archiveCompletedCards(in: list.id) },
-                                        onArchiveList: { archiveList(with: list.id) },
-                                        onDeleteCard: { cardID in deleteCard(in: list.id, cardID: cardID) },
-                                        onUpdateCard: updateCard,
-                                        onMoveCard: { cardID, destinationIndex in
-                                            moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
+                                        onArchiveList:      { archiveList(with: list.id) },
+                                        onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
+                                        onUpdateCard:       updateCard,
+                                        onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
                                         }
                                     )
                                     .frame(
@@ -709,15 +710,15 @@ struct ContentView: View {
 ///
 struct BoardHeader: View {
 
-    @Binding var settings: BoardDisplaySettings     /* Board display settings                              */
-    let activeMembers: [String]                     /* Unique users assigned to active cards               */
-    let memberColors: [String: Color]               /* Icon colors keyed by normalized member name         */
-    let onRenameMember: (String, String) -> Void    /* Rename a member across all card assignments         */
-    let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color                 */
+    @Binding var settings: BoardDisplaySettings      /* Board display settings                              */
+    let activeMembers:     [String]                  /* Unique users assigned to active cards               */
+    let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name         */
+    let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
+    let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
 
-    let onAddList: () -> Void                       /* Callback for adding a new list                      */
+    let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
-    @State private var showingSettings = false      /* Controls the visibility of the board settings sheet */
+    @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
 
     /// Builds the title block and board action controls.
     var body: some View {
@@ -738,8 +739,11 @@ struct BoardHeader: View {
             Spacer()
 
             Menu {
+                
                 Button("Add blank list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
+                
             } label: {
+                
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
                     .foregroundStyle(.white)
@@ -748,6 +752,7 @@ struct BoardHeader: View {
 
             Button {
                 showingSettings = true
+                
             } label: {
                 Image(systemName: "ellipsis.circle.fill")
                     .font(.title2)
@@ -759,6 +764,7 @@ struct BoardHeader: View {
         .padding(.top,        12)
         .padding(.bottom,     10)
         .sheet(isPresented: $showingSettings) {
+            
             BoardSettingsView(
                 settings:         $settings,
                 activeMembers:    activeMembers,
@@ -779,10 +785,10 @@ struct BoardHeader: View {
 private struct BoardSettingsView: View {
 
     @Binding var settings: BoardDisplaySettings     /* Bound to the board's display preferences       */
-    let activeMembers: [String]                     /* Active assigned users in board order            */
-    let memberColors: [String: Color]               /* Member icon colors keyed by normalized name     */
-    let onRenameMember: (String, String) -> Void    /* Rename a member across all assigned cards       */
-    let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color             */
+    let activeMembers:     [String]                 /* Active assigned users in board order            */
+    let memberColors:      [String: Color]          /* Member icon colors keyed by normalized name     */
+    let onRenameMember:    (String, String) -> Void /* Rename a member across all assigned cards       */
+    let onSetMemberColor:  (String, Color) -> Void  /* Update a member's shared icon color             */
     @Environment(\.dismiss) private var dismiss     /* Dismiss action for the settings sheet           */
     @State private var editingMember: String?       /* The member currently being edited               */
     @State private var memberNameDraft  = ""        /* Draft of the member's new name                  */
@@ -1200,7 +1206,8 @@ struct KanbanListView: View {
 /// @section    Purpose
 ///     Keep list rows fully tappable without displaying a redundant disclosure chevron
 ///
-/// @details    Uses SwiftUI's navigation indicator visibility API on iOS 18 and later, while preserving content on earlier versions
+/// @details    Uses SwiftUI's navigation indicator visibility API on iOS 18 and later, while
+///             preserving content on earlier versions
 ///
 /// @note       Apply this modifier to navigation links whose destination is indicated by the row itself
 ///
@@ -1210,7 +1217,8 @@ private struct HideNavigationLinkIndicator: ViewModifier {
     ///
     /// @fcn        HideNavigationLinkIndicator.body(content:)
     /// @brief      Configure navigation indicator visibility for the modified content
-    /// @details    Hides navigation link indicators on iOS 18 and later; earlier iOS versions receive the content unchanged
+    /// @details    Hides navigation link indicators on iOS 18 and later; earlier iOS versions receive
+    ///             the content unchanged
     ///
     /// @param[in]  content  View content to which this modifier is applied
     ///
@@ -1236,9 +1244,11 @@ private struct HideNavigationLinkIndicator: ViewModifier {
 /// Presents a form for creating a card in the selected kanban list
 ///
 /// @section    Purpose
-///     Collect a card title and optional description, then return the trimmed values to the owning list view
+///     Collect a card title and optional description, then return the trimmed values to the
+///     owning list view
 ///
-/// @details    The title field also accepts the divider marker, allowing the list to create a movable section divider
+/// @details    The title field also accepts the divider marker, allowing the list to create a
+///             movable section divider
 ///
 /// @note       Dismissing with Cancel does not invoke the creation callback
 ///
@@ -1271,12 +1281,16 @@ private struct NewKanbanCardSheet: View {
             .navigationTitle("New Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                
                 ToolbarItem(placement: .cancellationAction) {
+                    
                     Button("Cancel") {
                         dismiss()
                     }
                 }
+                
                 ToolbarItem(placement: .confirmationAction) {
+                    
                     Button("Add") {
                         onCreate(trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
@@ -1297,7 +1311,8 @@ private struct NewKanbanCardSheet: View {
 /// @section    Purpose
 ///     Provide consistent, subtle colors that help distinguish lists without changing their card content
 ///
-/// @details    Each case exposes a stable raw-value identity, a user-facing title, and a corresponding list background color
+/// @details    Each case exposes a stable raw-value identity, a user-facing title, and a
+///             corresponding list background color
 ///
 /// @note       Case ordering controls the options presented by the list color picker
 ///
@@ -1383,7 +1398,9 @@ private struct KanbanListActionsSheet: View {
                             dismiss()
                         }
                         .disabled(!canMoveLater)
+                        
                     } label: {
+                        
                         Label("Move list", systemImage: "arrow.left.arrow.right")
                             .foregroundStyle(.primary)
                     }
@@ -1417,6 +1434,7 @@ private struct KanbanListActionsSheet: View {
 
                     Button {
                         isWatching.toggle()
+                        
                     } label: {
                         Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
                     }
@@ -1426,12 +1444,14 @@ private struct KanbanListActionsSheet: View {
                     Button {
                         onArchiveCompleted()
                         dismiss()
+                        
                     } label: {
                         Label("Archive completed cards", systemImage: "archivebox")
                     }
 
                     Button(role: .destructive) {
                         confirmingArchive = true
+                        
                     } label: {
                         Label("Archive list", systemImage: "archivebox")
                     }
@@ -1535,7 +1555,8 @@ struct KanbanCardView: View {
     ///
     /// @fcn        KanbanCardView.renameCard
     /// @brief      Submit the renamed card title
-    /// @details    Trims the title draft, ignores an empty result, and sends the updated card to the board callback
+    /// @details    Trims the title draft, ignores an empty result, and sends the updated card to
+    ///             the board callback
     ///
     /// @return     (Void) requests a card update when the trimmed title is not empty
     ///
@@ -1586,12 +1607,14 @@ struct KanbanCardView: View {
                     Button {
                         renameDraft = card.word
                         isRenaming = true
+                        
                     } label: {
                         Label("Rename Card", systemImage: "pencil")
                     }
 
                     Button {
                         isEditingInfo = true
+                        
                     } label: {
                         Label("Update Card Info", systemImage: "slider.horizontal.3")
                     }
@@ -1612,7 +1635,9 @@ struct KanbanCardView: View {
                 .truncationMode(.tail)
 
             if !cardLabels.isEmpty {
+                
                 HStack(spacing: 5) {
+                    
                     ForEach(cardLabels.prefix(3)) { label in
                         KanbanLabelChip(label: label)
                     }
@@ -1652,15 +1677,21 @@ struct KanbanCardView: View {
         .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
         .alert("Rename Card", isPresented: $isRenaming) {
+            
             TextField("Card title", text: $renameDraft)
                 .textInputAutocapitalization(.never)
+            
             Button("Cancel", role: .cancel) {}
+            
             Button("Rename", action: renameCard)
                 .disabled(trimmedRenameDraft.isEmpty)
+            
         } message: {
+            
             Text("Enter a new title for this card.")
         }
         .confirmationDialog("Delete \(card.word)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            
             Button("Delete Card", role: .destructive, action: onDeleteCard)
             Button("Cancel", role: .cancel) {}
         }
@@ -1707,7 +1738,8 @@ private struct CardInfoEditorSheet: View {
     ///
     /// @fcn        CardInfoEditorSheet.init(card:onSave:)
     /// @brief      Initialize the card information editor
-    /// @details    Seeds the title, subtitle, and description fields from the selected card and stores its save callback
+    /// @details    Seeds the title, subtitle, and description fields from the selected card and
+    ///             stores its save callback
     ///
     /// @param[in]  card    Card whose information will be edited
     /// @param[in]  onSave  Callback that applies the edited title, subtitle, and description
@@ -1742,8 +1774,10 @@ private struct CardInfoEditorSheet: View {
 
             Form {
                 Section("Card details") {
+                    
                     TextField("Title", text: $title)
                         .textInputAutocapitalization(.never)
+                    
                     TextField("Subtitle", text: $subtitle)
                         .textInputAutocapitalization(.never)
                 }

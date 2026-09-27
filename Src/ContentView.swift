@@ -26,11 +26,31 @@ struct BoardDisplaySettings {
 ///
 struct ContentView: View {
 
-    @State private var lists: [KanbanList]           = KanbanBoardPersistence.loadLists()   /* Kanban board lists                               */
+    @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
+    @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
     @State private var currentUserName               = "Justin Reina"                       /* Current user's name                              */
+
+
+    ///
+    /// @fcn        ContentView.init(lists:boardTargetListID:)
+    /// @brief      Initialize the Board view with shared list state and an optional navigation target
+    /// @details    The app root owns the persisted board snapshot; previews may omit the target binding
+    ///
+    /// @param[in]  lists                Binding to the board's shared list collection
+    /// @param[in]  boardTargetListID    Optional list ID to reveal after navigation from Today
+    ///
+    /// @return     (ContentView) configured kanban board screen
+    ///
+    /// @pre        lists contains the board state to display
+    /// @post       Board edits update the shared collection and requested navigation remains observable
+    ///
+    init(lists: Binding<[KanbanList]>, boardTargetListID: Binding<Int?> = .constant(nil)) {
+        _lists = lists
+        _boardTargetListID = boardTargetListID
+    }
 
 
     ///
@@ -135,6 +155,45 @@ struct ContentView: View {
 
         if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey) {
             memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
+        }
+    }
+
+
+    ///
+    /// @fcn        ContentView.removeMember(_:)
+    /// @brief      Remove a member from board assignments
+    /// @details    Removes matching names from every card and clears their board icon color while
+    ///             preserving historical comments
+    ///
+    /// @param[in]  memberName  Member name to remove; comparison ignores surrounding whitespace and case
+    ///
+    /// @return     (Void) updates the board and member color state
+    ///
+    /// @pre        memberName identifies a member currently assigned to at least one card
+    /// @post       The member no longer appears in card assignments; existing comments remain unchanged
+    ///
+    private func removeMember(_ memberName: String) {
+
+        let normalizedMemberName = memberName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        guard !normalizedMemberName.isEmpty else { return }
+
+        for listIndex in lists.indices {
+
+            for cardIndex in lists[listIndex].cards.indices {
+
+                lists[listIndex].cards[cardIndex].members.removeAll { member in
+
+                    member.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName
+                }
+            }
+        }
+
+        memberColors.removeValue(forKey: normalizedMemberName)
+
+        if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName {
+
+            currentUserName = "You"
         }
     }
 
@@ -627,47 +686,72 @@ struct ContentView: View {
                             activeMembers:    activeMembers,
                             memberColors:     memberColors,
                             onRenameMember:   renameMember,
+                            onDeleteMember:   removeMember,
                             onSetMemberColor: setMemberColor,
                             onAddList:        addList
                         )
 
-                        ScrollView(.horizontal, showsIndicators: false) {
+                        ScrollViewReader { listProxy in
 
-                            HStack(spacing: 12) {
+                            ScrollView(.horizontal, showsIndicators: false) {
 
-                                ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
+                                HStack(spacing: 12) {
 
-                                    KanbanListView(
-                                        list:               list,
-                                        screenSize:         screen.size,
-                                        displaySettings:    displaySettings,
-                                        labelLibrary:       labelLibrary,
-                                        toggleCardTitle:    { cardID in toggleCardTitle(in: listIndex, cardID: cardID)
-                                        },
-                                        canMoveEarlier:     listIndex > 0,
-                                        canMoveLater:       listIndex < lists.count - 1,
-                                        onAddCard:          { title, description in addCard(to: list.id, title: title, description: description)
-                                        },
-                                        onCopyList:         { copyList(with: list.id) },
-                                        onMoveList:         { offset in moveList(with: list.id, by: offset) },
-                                        onSortList:         { ascending in sortList(with: list.id, ascending: ascending) },
-                                        onArchiveCompleted: { archiveCompletedCards(in: list.id) },
-                                        onArchiveList:      { archiveList(with: list.id) },
-                                        onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
-                                        onUpdateCard:       updateCard,
-                                        onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
-                                        }
-                                    )
-                                    .frame(
-                                        width:  safeFrameDimension(screen.size.width, subtracting:  28),
-                                        height: safeFrameDimension(screen.size.height, subtracting: 86)
-                                    )
+                                    ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
+
+                                        KanbanListView(
+                                            list:               list,
+                                            screenSize:         screen.size,
+                                            displaySettings:    displaySettings,
+                                            labelLibrary:       labelLibrary,
+                                            toggleCardTitle:    { cardID in toggleCardTitle(in: listIndex, cardID: cardID)
+                                            },
+                                            canMoveEarlier:     listIndex > 0,
+                                            canMoveLater:       listIndex < lists.count - 1,
+                                            onAddCard:          { title, description in addCard(to: list.id, title: title, description: description)
+                                            },
+                                            onCopyList:         { copyList(with: list.id) },
+                                            onMoveList:         { offset in moveList(with: list.id, by: offset) },
+                                            onSortList:         { ascending in sortList(with: list.id, ascending: ascending) },
+                                            onArchiveCompleted: { archiveCompletedCards(in: list.id) },
+                                            onArchiveList:      { archiveList(with: list.id) },
+                                            onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
+                                            onUpdateCard:       updateCard,
+                                            onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
+                                            }
+                                        )
+                                        .frame(
+                                            width:  safeFrameDimension(screen.size.width, subtracting:  28),
+                                            height: safeFrameDimension(screen.size.height, subtracting: 86)
+                                        )
+                                        .id(list.id)
+                                    }
                                 }
+                                .scrollTargetLayout()
+                                .padding(.horizontal, 14)
                             }
-                            .scrollTargetLayout()
-                            .padding(.horizontal, 14)
+                            .scrollTargetBehavior(.viewAligned)
+                            .onChange(of: boardTargetListID) { _, targetListID in
+                                guard let targetListID,
+                                      lists.contains(where: { $0.id == targetListID }) else {
+                                    boardTargetListID = nil
+                                    return
+                                }
+
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    listProxy.scrollTo(targetListID, anchor: .center)
+                                }
+
+                                boardTargetListID = nil
+                            }
+                            .onAppear {
+                                guard let targetListID = boardTargetListID,
+                                      lists.contains(where: { $0.id == targetListID }) else { return }
+
+                                listProxy.scrollTo(targetListID, anchor: .center)
+                                boardTargetListID = nil
+                            }
                         }
-                        .scrollTargetBehavior(.viewAligned)
                     }
                 }
             }
@@ -714,6 +798,7 @@ struct BoardHeader: View {
     let activeMembers:     [String]                  /* Unique users assigned to active cards               */
     let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name         */
     let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
+    let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments           */
     let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
@@ -770,6 +855,7 @@ struct BoardHeader: View {
                 activeMembers:    activeMembers,
                 memberColors:     memberColors,
                 onRenameMember:   onRenameMember,
+                onDeleteMember:   onDeleteMember,
                 onSetMemberColor: onSetMemberColor
             )
         }
@@ -784,17 +870,23 @@ struct BoardHeader: View {
 ///
 private struct BoardSettingsView: View {
 
-    @Binding var settings: BoardDisplaySettings     /* Bound to the board's display preferences       */
-    let activeMembers:     [String]                 /* Active assigned users in board order            */
-    let memberColors:      [String: Color]          /* Member icon colors keyed by normalized name     */
-    let onRenameMember:    (String, String) -> Void /* Rename a member across all assigned cards       */
-    let onSetMemberColor:  (String, Color) -> Void  /* Update a member's shared icon color             */
-    @Environment(\.dismiss) private var dismiss     /* Dismiss action for the settings sheet           */
-    @State private var editingMember: String?       /* The member currently being edited               */
-    @State private var memberNameDraft  = ""        /* Draft of the member's new name                  */
-    @State private var isRenamingMember = false     /* Whether the user is currently renaming a member */
+    @Binding var settings: BoardDisplaySettings             /* Bound to the board's display preferences        */
 
-    @State private var selectedMemberColor: MemberColorTarget?  /* The member whose color is currently being edited */
+    @Environment(\.dismiss) private var dismiss             /* Dismiss action for the settings sheet           */
+
+    let activeMembers:     [String]                         /* Active assigned users in board order            */        
+    let memberColors:      [String: Color]                  /* Member icon colors keyed by normalized name     */
+    let onRenameMember:    (String, String)   -> Void       /* Rename a member across all assigned cards       */
+    let onDeleteMember:    (String)           -> Void       /* Remove a member from all assigned cards         */
+    let onSetMemberColor:  (String, Color)    -> Void       /* Update a member's shared icon color             */
+
+    @State private var memberNameDraft  = ""                /* Draft name for renaming a member                */
+    @State private var isRenamingMember = false             /* Flag indicating if member rename in progress    */
+
+    @State private var editingMember: String?               /* Currently edited member name                    */
+    @State private var memberToDelete: String?              /* Member slated for deletion                      */
+    @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection           */
+
 
     private var trimmedMemberNameDraft: String {
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -831,7 +923,7 @@ private struct BoardSettingsView: View {
 
                     } else {
 
-                        ForEach(Array(activeMembers.enumerated()), id: \.offset) { _, member in
+                        ForEach(activeMembers, id: \.self) { member in
 
                             HStack(spacing: 12) {
 
@@ -865,6 +957,15 @@ private struct BoardSettingsView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Edit \(member)")
                             }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+
+                                Button(role: .destructive) {
+                                    memberToDelete = member
+
+                                } label: {
+                                    Label("Remove", systemImage: "person.crop.circle.badge.minus")
+                                }
+                            }
                         }
                     }
                 }
@@ -894,6 +995,32 @@ private struct BoardSettingsView: View {
             } message: {
 
                 Text("This updates the member name on every assigned card.")
+            }
+            .confirmationDialog(
+
+                "Remove \(memberToDelete ?? "member") from the board?",
+
+                isPresented: Binding(
+                    get: { memberToDelete != nil },
+                    set: { if !$0 { memberToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Remove member", role: .destructive) {
+
+                    guard let memberToDelete else { return }
+
+                    onDeleteMember(memberToDelete)
+
+                    self.memberToDelete = nil
+                }
+
+                Button("Cancel", role: .cancel) {
+                    memberToDelete = nil
+                }
+
+            } message: {
+                Text("This removes the member from all card assignments. Existing comments are kept.")
             }
             .sheet(item: $selectedMemberColor) { target in
 
@@ -1814,5 +1941,5 @@ private struct CardInfoEditorSheet: View {
 
 /// Preview the complete board presentation with deterministic sample data
 #Preview {
-    ContentView()
+    ContentView(lists: .constant(SampleData.lists))
 }

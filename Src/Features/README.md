@@ -5,6 +5,7 @@ This directory contains cohesive features that support the Board and card-detail
 ## Available Features
 
 - [`Boards/`](Boards/README.md): lists, cards, board navigation, card details, persistence, and checklist actions.
+- [`Profile/`](Profile/README.md): local identity, Today avatar, personalization, and Account & Settings.
 - [`Attachments/`](Attachments/README.md): local photo/video storage, web-link validation, pickers, previews, and attachment UI.
 - [`Labels/`](Labels/README.md): reusable categorized labels and card-label assignment.
 

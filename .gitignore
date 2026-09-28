@@ -5,7 +5,7 @@
  #
  #  @author     Justin Reina, Firmware Engineer
  #  @created    9/27/26
- #  @last rev   9/27/26
+ #  @last rev   9/28/26
  #
  #  @section    Legal Disclaimer
  #      © 2026 Justin Reina, All rights reserved. All contents of this source file and/or any other 
@@ -18,7 +18,7 @@
 ##                                            IGNORED                                             ##
 ####################################################################################################
 .Archived/
-
+Doc/Demo/.Archived/
 
 ####################################################################################################
 ##                                             APPLE                                              ##

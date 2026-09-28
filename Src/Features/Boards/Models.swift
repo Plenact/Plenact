@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------------------------------
 // @file       Models.swift
 // @brief      Domain models and deterministic sample data for the Plenact board
-// @details    Defines cards, lists, derived display values, and preview content generation
+// @details    Defines cards, lists, derived display values, and weekday starter content
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
@@ -24,21 +24,24 @@ import Foundation
 ///
 struct KanbanCard: Identifiable, Hashable, Codable {
 
-    let id:             Int                 /* Stable numeric identifier for the card             */
-    let word:           String              /* Display word shown as the card's title             */
-    var listTitle:      String              /* Name of the list where the card resides            */
-    var isDivider:      Bool                /* Whether this item is a movable section divider     */
-    var isTitleChecked: Bool                /* Whether the card's main title checkbox is selected */
-    var startDate:      Date?               /* Optional start date for the card                   */
-    var dueDate:        Date?               /* Optional due date for the card                     */
-    var checklists:     [KanbanChecklist]   /* List of checklists associated with the card        */
-    var comments:       [KanbanComment]     /* Comments posted to the card's activity             */
-    var members:        [String]            /* User names assigned to the card                    */
-    var labelIDs:       [String]            /* Stable IDs of labels assigned to the card          */
-    var attachments:    [KanbanAttachment]? /* Photo attachments stored with the card            */
-    var dismissedActivityIDs: Set<String>   /* Generated activity entries removed by the user     */
-    var descriptionOverride: String?        /* Optional user-edited description                   */
-    var subtitleOverride: String?           /* Optional user-edited board subtitle                */
+    let id:                   Int                 /* Stable numeric identifier for the card             */
+    let word:                 String              /* Display word shown as the card's title             */
+    var listTitle:            String              /* Name of the list where the card resides            */
+    var isDivider:            Bool                /* Whether this item is a movable section divider     */
+    var isTitleChecked:       Bool                /* Whether the card's main title checkbox is selected */
+    var members:              [String]            /* User names assigned to the card                    */
+    var labelIDs:             [String]            /* Stable IDs of labels assigned to the card          */
+
+    var startDate:            Date?               /* Optional start date for the card                   */
+    var dueDate:              Date?               /* Optional due date for the card                     */
+    var descriptionOverride:  String?             /* Optional user-edited description                   */
+    var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
+
+    var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
+    var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
+    var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
+
+    var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
     /// Indicates whether this item should render and behave as a section divider
     var isSectionDivider: Bool {
@@ -740,26 +743,75 @@ enum KanbanBoardPersistence {
 /// Provides deterministic sample content used by the board and previews
 ///
 /// @section    Purpose
-///     Construct five lists with ten cards each and representative divider rows without requiring persistence
+///     Construct seven weekday lists with realistic planning cards and representative divider rows
+///     without requiring persistence
 ///
 enum SampleData {
 
-    /// Words assigned to the sample cards in repeatable order
-    static let words: [String] = [
-        "rabbit",    "toaster",    "kazoo",     "lampshade",  "spatula",
-        "narwhal",   "cactus",     "bagpipe",   "waffle",     "penguin",
-        "gnome",     "trombone",   "pickle",    "yeti",       "flamingo",
-        "banjo",     "pretzel",    "octopus",   "unicorn",    "turnip",
-        "walrus",    "accordion",  "hedgehog",  "kettle",     "tumbleweed",
-        "platypus",  "harmonica",  "meatball",  "raccoon",    "umbrella",
-        "otter",     "xylophone",  "dumpling",  "chinchilla", "teapot",
-        "armadillo", "clarinet",   "burrito",   "mongoose",   "whisk",
-        "llama",     "ukulele",    "croissant", "wombat",     "colander",
-        "ferret",    "tambourine", "avocado",   "meerkat",    "spork"
+    /// Titles assigned to the seven horizontally navigable Board lists.
+    static let listTitles = [
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     ]
 
-    /// Titles assigned to the five horizontally navigable board lists
-    static let listTitles = ["First", "Second", "Third", "Fourth", "Fifth"]
+    /// Planning-oriented card titles aligned with each weekday list.
+    static let cardTitlesByDay: [[String]] = [
+        [
+            "Review the week ahead",
+            "Set three priorities",
+            "Prepare for focused work",
+            "Laundry session",
+            "Take a movement break",
+            "Evening reset"
+        ],
+        [
+            "Review today's schedule",
+            "Focus session",
+            "Reply to important messages",
+            "Plan groceries",
+            "Capture a new idea",
+            "Prepare for tomorrow"
+        ],
+        [
+            "Midweek check-in",
+            "Project work session",
+            "Review daily finances",
+            "Reset the home space",
+            "Take a walk",
+            "Review recent notes"
+        ],
+        [
+            "Choose today's focus",
+            "Deep work block",
+            "Make an important call",
+            "Complete errands",
+            "Make time for creativity",
+            "Evening review"
+        ],
+        [
+            "Close weekly priorities",
+            "Finish the current task",
+            "Tidy the workspace",
+            "Complete personal admin",
+            "Plan the weekend",
+            "Weekly reflection"
+        ],
+        [
+            "Plan a slower morning",
+            "Work on a home project",
+            "Laundry and linens",
+            "Spend time outdoors",
+            "Connect with someone",
+            "Prepare for Sunday"
+        ],
+        [
+            "Weekly reflection",
+            "Review the upcoming calendar",
+            "Plan Monday priorities",
+            "Prepare meals",
+            "Rest and recharge",
+            "Capture notes and ideas"
+        ]
+    ]
 
     ///
     /// @fcn        SampleData.actionDetail(title:description:steps:comment:)
@@ -839,18 +891,18 @@ enum SampleData {
     }
 
 
-    /// Complete sample board generated from the titles and card words
+    /// Complete starter Board generated from weekday lists and planning cards.
     static let lists: [KanbanList] = {
 
         var globalIndex = 0
 
         var initializedLists = listTitles.enumerated().map { listIndex, title in
 
-            let cards = (0..<10).map { _ -> KanbanCard in
+            let cards = cardTitlesByDay[listIndex].map { cardTitle -> KanbanCard in
 
                 let card = KanbanCard(
                     id:             globalIndex,
-                    word:           words[globalIndex % words.count],
+                    word:           cardTitle,
                     listTitle:      title,
                     isTitleChecked: globalIndex % 3 == 0,
                     members:        ["Justin Reina"],
@@ -866,13 +918,7 @@ enum SampleData {
         }
 
         // Positions at which divider rows should be inserted for each list
-        let dividerPositionsByList: [[Int]] = [
-            [3, 7],
-            [],
-            [5],
-            [],
-            [4]
-        ]
+        let dividerPositionsByList = Array(repeating: [3], count: listTitles.count)   /* Daily focus divider */
 
         // Insert divider rows into the initialized lists at the specified positions
         for listIndex in dividerPositionsByList.indices {

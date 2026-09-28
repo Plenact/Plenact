@@ -5,6 +5,9 @@
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
+// @section    Opens
+//      Rename to board organized naming
+//
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
@@ -21,21 +24,25 @@ import Foundation
 ///
 struct KanbanCard: Identifiable, Hashable, Codable {
 
-    let id:             Int                 /* Stable numeric identifier for the card             */
-    let word:           String              /* Display word shown as the card's title             */
-    var listTitle:      String              /* Name of the list where the card resides            */
-    var isDivider:      Bool                /* Whether this item is a movable section divider     */
-    var isTitleChecked: Bool                /* Whether the card's main title checkbox is selected */
-    var startDate:      Date?               /* Optional start date for the card                   */
-    var dueDate:        Date?               /* Optional due date for the card                     */
-    var checklists:     [KanbanChecklist]   /* List of checklists associated with the card        */
-    var comments:       [KanbanComment]     /* Comments posted to the card's activity             */
-    var members:        [String]            /* User names assigned to the card                    */
-    var labelIDs:       [String]            /* Stable IDs of labels assigned to the card          */
-    var attachments:    [KanbanAttachment]? /* Photo attachments stored with the card            */
-    var dismissedActivityIDs: Set<String>   /* Generated activity entries removed by the user     */
-    var descriptionOverride: String?        /* Optional user-edited description                   */
-    var subtitleOverride: String?           /* Optional user-edited board subtitle                */
+    let id:                   Int                 /* Stable numeric identifier for the card             */
+    let word:                 String              /* Display word shown as the card's title             */
+    var listTitle:            String              /* Name of the list where the card resides            */
+    var isDivider:            Bool                /* Whether this item is a movable section divider     */
+    var isTitleChecked:       Bool                /* Whether the card's main title checkbox is selected */
+
+    var members:              [String]            /* User names assigned to the card                    */
+    var labelIDs:             [String]            /* Stable IDs of labels assigned to the card          */
+
+    var startDate:            Date?               /* Optional start date for the card                   */
+    var dueDate:              Date?               /* Optional due date for the card                     */
+    var descriptionOverride:  String?             /* Optional user-edited description                   */
+    var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
+
+    var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
+    var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
+    var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
+
+    var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
     /// Indicates whether this item should render and behave as a section divider
     var isSectionDivider: Bool {
@@ -143,11 +150,13 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 
     /// Checklist labels used by the card detail presentation
     var checklistItems: [String] {
+
         checklists.first?.items.map(\.title) ?? []
     }
 
     /// Number of checklist items shown as complete for this sample card
     var completedChecklistItems: Int {
+        
         checklists.first?.completed ?? 0
     }
 
@@ -278,6 +287,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     /// @return     (KanbanChecklistItem) incomplete standard action with a new identity
     ///
     init(stringLiteral value: String) {
+
         self.init(title: value)
     }
 }
@@ -308,6 +318,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     /// @post       No item state is modified
     ///
     var completedItemIndices: Set<Int> {   /* Completed UI positions */
+
         Set(items.indices.filter { items[$0].isCompleted })
     }
 
@@ -322,6 +333,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     /// @post       No item state is modified
     ///
     var completed: Int {                   /* Completed action count */
+
         items.lazy.filter(\.isCompleted).count
     }
 
@@ -344,12 +356,16 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         var normalizedItems = items       /* Mutable item snapshot */
 
         if let completedItemIndices {   /* Explicit completion positions */
+
             for index in normalizedItems.indices {
+
                 normalizedItems[index].isCompleted = completedItemIndices.contains(index)
             }
 
         } else if let completed {       /* Leading completion count */
+
             for index in normalizedItems.indices {
+
                 normalizedItems[index].isCompleted = index < min(completed, normalizedItems.count)
             }
         }
@@ -380,7 +396,9 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items) { /* Current actions */
 
             if let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) { /* Legacy completion */
+
                 for index in currentItems.indices {
+
                     currentItems[index].isCompleted = legacyCompletedIndices.contains(index)
                 }
             }
@@ -473,9 +491,9 @@ struct KanbanComment: Identifiable, Hashable, Codable {
     let createdAt: Date         /* Timestamp indicating when the comment was created */
 
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now) {
-        self.id = id
-        self.author = author
-        self.body = body
+        self.id        = id
+        self.author    = author
+        self.body      = body
         self.createdAt = createdAt
     }
 }

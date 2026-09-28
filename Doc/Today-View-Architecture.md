@@ -11,11 +11,12 @@ The originating workflow is a weekly kanban board: one list per day, ordered car
 ## Current Foundation
 
 - `App.swift` installs a tab root with Today and Board destinations. Today can select a board list for the current date or browse all lists; opening a list switches to Board and targets its stable ID.
+- `Src/Features/Profile/` provides the local Today avatar, Account & Settings, personalization, and profile persistence without online authentication.
 - `Src/Features/Boards/ContentView.swift` implements the Board destination and owns board interactions, label state, and navigation to card details. Board lists are shared with the root view and persisted through the existing local store.
 - `Src/Features/Boards/Models.swift` defines Codable lists, cards, checklists, comments, and board persistence. Cards have stable IDs, list membership, optional start and due dates, and a title-completion flag.
 - The board is stored as a JSON snapshot in local `UserDefaults`; the label library is also local. Photo files live in the app's private Documents directory, with attachment metadata on cards.
-- There is no implemented calendar integration, standalone notes feature, account system, team sync, or remote database.
-- The supplied Trello screenshot and JSON export illustrate the user's planning method. They are reference material, not data currently imported by Plenact. The current sample board uses generic list titles, and `KanbanList` has no weekday or date property.
+- There is no implemented calendar integration, standalone notes feature, online account system, team sync, or remote database.
+- The supplied Trello screenshot and JSON export illustrate the user's planning method. They are reference material, not data currently imported by Plenact. New installations receive Monday-through-Sunday starter lists, but `KanbanList` still has no structured weekday or date property.
 
 These existing persistence formats are user-data contracts. New work should preserve them or include a deliberate, tested migration. Do not silently replace unreadable saved data with sample content or delete attachment files as a migration shortcut.
 

@@ -781,10 +781,9 @@ struct CardDetailView: View {
         let itemNumber = checklist.items.count + 1
 
         checklists[checklistIndex] = KanbanChecklist(
-            id:        checklist.id,
-            title:     checklist.title,
-            items:     checklist.items + ["Item \(itemNumber)"],
-            completed: checklist.completed
+            id:    checklist.id,
+            title: checklist.title,
+            items: checklist.items + [KanbanChecklistItem(title: "Item \(itemNumber)")]
         )
         syncCardState()
     }
@@ -852,8 +851,8 @@ struct CardDetailView: View {
             return
         }
 
-        var items = checklist.items     /* Copy the current list of items for modification            */
-        items[itemIndex] = text         /* Update the text of the specified item within the checklist */
+        var items = checklist.items       /* Copy the current list of items for modification            */
+        items[itemIndex].title = text     /* Update the text while preserving stable item identity       */
 
         // Update the checklist with the modified items array
         checklists[checklistIndex] = KanbanChecklist(
@@ -1887,12 +1886,12 @@ struct ChecklistBlock: View {
     /// @brief      Return checklist items visible under the current display filter
     /// @details    Preserves each item's original index while omitting completed items when Hide Completed is enabled
     ///
-    /// @return     ([(offset: Int, element: String)]) visible item and original-index pairs
+    /// @return     ([(offset: Int, element: KanbanChecklistItem)]) visible item and original-index pairs
     ///
     /// @pre        Checklist data and Hide Completed state are current
     /// @post       Checklist data and completion state remain unchanged
     ///
-    private var visibleItems: [(offset: Int, element: String)] {
+    private var visibleItems: [(offset: Int, element: KanbanChecklistItem)] {  /* Filtered actions */
 
         /// Filter the checklist items based on the hideCompletedItems flag
         checklist.items.enumerated().filter { item in
@@ -1999,7 +1998,7 @@ struct ChecklistBlock: View {
                 ForEach(visibleItems, id: \.offset) { entry in
 
                     ChecklistItemRow(
-                        item: entry.element,
+                        item: entry.element.title,
                         isCompleted: checklist.completedItemIndices.contains(entry.offset),
 
                         onToggle: {

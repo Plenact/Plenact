@@ -5,6 +5,9 @@
 //
 // @notes      Views remain composable and keep presentation logic close to the rendered component
 //
+// @section    Opens
+//     Consider more board\ specific naming to file
+//
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
 

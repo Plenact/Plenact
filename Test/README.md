@@ -4,7 +4,7 @@ This directory contains the active unit-test target for Plenact.
 
 ## Current Coverage
 
-`ChecklistMigrationTests.swift` verifies that revision 0 string-based checklist data decodes into stable checklist-item records, preserves completion, receives repeatable migration IDs, and round-trips in the current format.
+`ChecklistMigrationTests.swift` verifies revision 0 string migration, earlier stable-item compatibility, repeatable migration IDs, rich action round trips, and the linked-card/Action Detail contract for every seeded activity card.
 
 ## Running Tests
 

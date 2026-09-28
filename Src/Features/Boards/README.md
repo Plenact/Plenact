@@ -23,7 +23,7 @@ Labels and attachments remain sibling features because they have their own model
 
 `KanbanBoardPersistence` stores lists and cards as local JSON under the versioned `Plenact.Board.v1` key. Persisted Codable fields, stable card/list/checklist IDs, and attachment filenames are compatibility contracts.
 
-Revision 0 string checklist items migrate to stable `KanbanChecklistItem` records during decoding. See [`../../../Doc/Checklist-Actions-Architecture.md`](../../../Doc/Checklist-Actions-Architecture.md) and [`../../../Test/`](../../../Test/README.md).
+Revision 0 string checklist items migrate to stable `KanbanChecklistItem` records during decoding. Checklist actions can contain standard text, a stable link to another Board card, or reduced Action Detail content. See [`../../../Doc/Checklist-Actions-Architecture.md`](../../../Doc/Checklist-Actions-Architecture.md) and [`../../../Test/`](../../../Test/README.md).
 
 Do not clear saved data to resolve decoding failures. Add compatibility tests before changing stored models or IDs.
 

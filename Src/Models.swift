@@ -5,9 +5,6 @@
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
-// @section    Opens
-//     Consider more board\ specific naming to file
-//
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
@@ -236,141 +233,6 @@ struct KanbanList: Identifiable, Hashable, Codable {
 }
 
 
-// -------------------------------------- MARK: - Checklist Action Detail ---------------------- //
-
-///
-/// Stores reduced card-like context owned by one checklist action
-///
-/// @section    Purpose
-///     Let an action gain description, checklist, and comment context without becoming an
-///     independent card on the Board
-///
-/// @note   Action Details are reached only through their owning checklist item
-///
-struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable {
-
-    let id:          UUID                /* Stable Action Detail ID */
-    var description: String              /* Supporting action text */
-    var checklists:  [KanbanChecklist]   /* Nested standard actions */
-    var comments:    [KanbanComment]     /* Action discussion       */
-
-    ///
-    /// @fcn        KanbanChecklistActionDetail.init(id:description:checklists:comments:)
-    /// @brief      Initialize reduced detail content for one checklist action
-    /// @details    Stores only the context required below a checklist item and does not create
-    ///             Board list membership
-    ///
-    /// @param[in]  id           Stable Action Detail identifier
-    /// @param[in]  description  Supporting action description
-    /// @param[in]  checklists   Nested checklist groups owned by this detail
-    /// @param[in]  comments     Comments posted within this detail
-    ///
-    /// @return     (KanbanChecklistActionDetail) configured reduced detail record
-    ///
-    init(id: UUID = UUID(), description: String = "", checklists: [KanbanChecklist] = [], comments: [KanbanComment] = []) {
-
-        self.id          = id
-        self.description = description
-        self.checklists  = checklists
-        self.comments    = comments
-    }
-}
-
-
-// -------------------------------------- MARK: - Checklist Action Content --------------------- //
-
-///
-/// Identifies the behavior and owned content of one checklist action
-///
-/// @section    Purpose
-///     Distinguish plain text, navigation to an existing card, and reduced owned detail while
-///     keeping one stable checklist-item identity
-///
-enum KanbanChecklistActionContent: Hashable, Codable {
-
-    case standard                                      /* Plain text action       */
-    case linkedCard(cardID: Int)                       /* Existing card reference */
-    case actionDetail(KanbanChecklistActionDetail)     /* Owned reduced detail    */
-
-    ///
-    /// Identifies the persisted action-content discriminator
-    ///
-    /// @section    Purpose
-    ///     Keep the encoded representation explicit and stable across associated-value changes
-    ///
-    private enum Kind: String, Codable {
-        case standard       /* Plain text action kind  */
-        case linkedCard     /* Existing card link kind */
-        case actionDetail   /* Reduced detail kind     */
-    }
-
-    ///
-    /// Identifies fields used by the explicit action-content representation
-    ///
-    /// @section    Purpose
-    ///     Separate the content discriminator from its optional associated payload
-    ///
-    private enum CodingKeys: String, CodingKey {
-        case kind       /* Content discriminator */
-        case cardID     /* Linked card identity  */
-        case detail     /* Owned Action Detail   */
-    }
-
-    ///
-    /// @fcn        KanbanChecklistActionContent.init(from:)
-    /// @brief      Decode one explicit checklist action-content value
-    /// @details    Requires the payload associated with linked-card and Action Detail kinds
-    ///
-    /// @param[in]  decoder  Decoder containing action-content fields
-    ///
-    /// @return     (KanbanChecklistActionContent) decoded action behavior
-    ///
-    /// @throws     DecodingError when the discriminator or required payload is invalid
-    ///
-    init(from decoder: Decoder) throws {
-
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
-        let kind      = try container.decode(Kind.self, forKey: .kind)    /* Action kind      */
-
-        switch kind {
-            case .standard:
-                self = .standard
-            case .linkedCard:
-                self = .linkedCard(cardID: try container.decode(Int.self, forKey: .cardID))
-            case .actionDetail:
-                self = .actionDetail(try container.decode(KanbanChecklistActionDetail.self, forKey: .detail))
-        }
-    }
-
-    ///
-    /// @fcn        KanbanChecklistActionContent.encode(to:)
-    /// @brief      Encode one explicit checklist action-content value
-    /// @details    Writes the discriminator and only the payload required by the selected kind
-    ///
-    /// @param[in]  encoder  Encoder receiving action-content fields
-    ///
-    /// @return     (Void) writes the selected action behavior
-    ///
-    /// @throws     EncodingError when the discriminator or payload cannot be encoded
-    ///
-    func encode(to encoder: Encoder) throws {
-
-        var container = encoder.container(keyedBy: CodingKeys.self)   /* Output fields */
-
-        switch self {
-            case .standard:
-                try container.encode(Kind.standard, forKey: .kind)
-            case .linkedCard(let cardID):
-                try container.encode(Kind.linkedCard, forKey: .kind)
-                try container.encode(cardID, forKey: .cardID)
-            case .actionDetail(let detail):
-                try container.encode(Kind.actionDetail, forKey: .kind)
-                try container.encode(detail, forKey: .detail)
-        }
-    }
-}
-
-
 // -------------------------------------- MARK: - Checklist Item Model ------------------------- //
 
 ///
@@ -384,29 +246,26 @@ enum KanbanChecklistActionContent: Hashable, Codable {
 ///
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
 
-    let id:        UUID                           /* Stable checklist action ID */
-    var title:     String                         /* User-facing action text    */
-    var isCompleted: Bool                         /* Current completion state   */
-    var content:   KanbanChecklistActionContent   /* Action behavior and data  */
+    let id:        UUID      /* Stable checklist action ID */
+    var title:     String    /* User-facing action text    */
+    var isCompleted: Bool    /* Current completion state   */
 
     ///
-    /// @fcn        KanbanChecklistItem.init(id:title:isCompleted:content:)
+    /// @fcn        KanbanChecklistItem.init(id:title:isCompleted:)
     /// @brief      Initialize a stable standard checklist action
     /// @details    Stores identity, editable text, and completion without assigning richer content
     ///
     /// @param[in]  id           Stable identifier for the checklist item
     /// @param[in]  title        User-facing action text
     /// @param[in]  isCompleted  Whether the action begins complete
-    /// @param[in]  content      Action behavior and associated content
     ///
     /// @return     (KanbanChecklistItem) configured standard action
     ///
-    init(id: UUID = UUID(), title: String, isCompleted: Bool = false, content: KanbanChecklistActionContent = .standard) {
+    init(id: UUID = UUID(), title: String, isCompleted: Bool = false) {
 
         self.id          = id
         self.title       = title
         self.isCompleted = isCompleted
-        self.content     = content
     }
 
     ///
@@ -420,61 +279,6 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///
     init(stringLiteral value: String) {
         self.init(title: value)
-    }
-
-    ///
-    /// @fcn        KanbanChecklistItem.init(from:)
-    /// @brief      Decode current action state or default earlier item records to standard text
-    /// @details    Item records written before action types existed omit content and remain compatible
-    ///
-    /// @param[in]  decoder  Decoder containing checklist-item fields
-    ///
-    /// @return     (KanbanChecklistItem) decoded checklist action
-    ///
-    /// @throws     DecodingError when required identity, title, or completion fields are invalid
-    ///
-    init(from decoder: Decoder) throws {
-
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
-
-        id          = try container.decode(UUID.self, forKey: .id)
-        title       = try container.decode(String.self, forKey: .title)
-        isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
-        content     = try container.decodeIfPresent(KanbanChecklistActionContent.self, forKey: .content) ?? .standard
-    }
-
-    ///
-    /// @fcn        KanbanChecklistItem.encode(to:)
-    /// @brief      Encode stable item state and its explicit action content
-    /// @details    Writes content for every new snapshot, including the standard discriminator
-    ///
-    /// @param[in]  encoder  Encoder receiving checklist-item fields
-    ///
-    /// @return     (Void) writes the current checklist action
-    ///
-    /// @throws     EncodingError when checklist-item fields cannot be encoded
-    ///
-    func encode(to encoder: Encoder) throws {
-
-        var container = encoder.container(keyedBy: CodingKeys.self)   /* Output fields */
-
-        try container.encode(id,          forKey: .id)
-        try container.encode(title,       forKey: .title)
-        try container.encode(isCompleted, forKey: .isCompleted)
-        try container.encode(content,     forKey: .content)
-    }
-
-    ///
-    /// Identifies persisted checklist-item fields
-    ///
-    /// @section    Purpose
-    ///     Keep missing content backward-compatible while requiring established item state
-    ///
-    private enum CodingKeys: String, CodingKey {
-        case id            /* Stable action identity */
-        case title         /* User-facing action text */
-        case isCompleted   /* Direct completion state */
-        case content       /* Action behavior payload */
     }
 }
 
@@ -761,83 +565,6 @@ enum SampleData {
     /// Titles assigned to the five horizontally navigable board lists
     static let listTitles = ["First", "Second", "Third", "Fourth", "Fifth"]
 
-    ///
-    /// @fcn        SampleData.actionDetail(title:description:steps:comment:)
-    /// @brief      Build one deterministic reduced-detail demonstration
-    /// @details    Creates standard nested actions and one respectful sample comment without
-    ///             introducing recursive linked or detailed actions
-    ///
-    /// @param[in]  title        Nested checklist title
-    /// @param[in]  description  Supporting Action Detail text
-    /// @param[in]  steps        Standard nested action titles
-    /// @param[in]  comment      Sample comment body
-    ///
-    /// @return     (KanbanChecklistActionDetail) configured demonstration detail
-    ///
-    private static func actionDetail(title: String, description: String, steps: [String], comment: String) -> KanbanChecklistActionDetail {
-
-        let nestedItems = steps.map { KanbanChecklistItem(title: $0) }   /* Standard nested actions */
-        let checklist   = KanbanChecklist(title: title, items: nestedItems) /* Nested checklist    */
-        let sampleDate  = Date(timeIntervalSince1970: 1_790_467_200)     /* Stable sample date      */
-        let comments    = [KanbanComment(author: "Plenact Demo", body: comment, createdAt: sampleDate)] /* Sample discussion */
-
-        return KanbanChecklistActionDetail(
-            description: description,
-            checklists:  [checklist],
-            comments:    comments
-        )
-    }
-
-    ///
-    /// @fcn        SampleData.enrichedChecklists(for:linkedCard:)
-    /// @brief      Add linked-card and Action Detail demonstrations to one starter card
-    /// @details    Appends one Board-card link and two reduced details to the first seeded checklist
-    ///             while preserving all existing standard actions and checklist groups
-    ///
-    /// @param[in]  card        Starter card receiving demonstration actions
-    /// @param[in]  linkedCard  Existing starter card used as the navigation target
-    ///
-    /// @return     ([KanbanChecklist]) enriched checklist collection
-    ///
-    private static func enrichedChecklists(for card: KanbanCard, linkedCard: KanbanCard) -> [KanbanChecklist] {
-
-        guard let firstChecklist = card.checklists.first else { return card.checklists }
-
-        let linkedAction = KanbanChecklistItem(   /* Existing card link */
-            title:   "Open \(linkedCard.word) card",
-            content: .linkedCard(cardID: linkedCard.id)
-        )
-        let planningDetail = actionDetail(        /* Planning subcard */
-            title:       "Prepare",
-            description: "Collect the context needed before starting the \(card.word) activity.",
-            steps:       ["Choose the next clear step", "Gather anything needed"],
-            comment:     "This detail stays with the checklist action."
-        )
-        let reviewDetail = actionDetail(          /* Review subcard */
-            title:       "Review",
-            description: "Capture what worked and what should happen next for \(card.word).",
-            steps:       ["Note the result", "Choose a follow-up action"],
-            comment:     "A short review can make the next session easier."
-        )
-        let detailActions = [                     /* Owned subcard actions */
-            KanbanChecklistItem(
-                title:   "Prepare \(card.word) details",
-                content: .actionDetail(planningDetail)
-            ),
-            KanbanChecklistItem(
-                title:   "Review \(card.word) outcome",
-                content: .actionDetail(reviewDetail)
-            )
-        ]
-        let enrichedFirstChecklist = KanbanChecklist(   /* Demonstration checklist */
-            id:    firstChecklist.id,
-            title: firstChecklist.title,
-            items: firstChecklist.items + [linkedAction] + detailActions
-        )
-
-        return [enrichedFirstChecklist] + card.checklists.dropFirst()
-    }
-
 
     /// Complete sample board generated from the titles and card words
     static let lists: [KanbanList] = {
@@ -895,29 +622,6 @@ enum SampleData {
             }
         }
 
-        let baseLists = initializedLists   /* Unmodified link-target snapshot */
-
-        for listIndex in initializedLists.indices {
-
-            let targetListIndex = (listIndex + 1) % initializedLists.count   /* Next Board list */
-            let targetCards = baseLists[targetListIndex].cards.filter { !$0.isSectionDivider } /* Link targets */
-
-            for cardIndex in initializedLists[listIndex].cards.indices {
-
-                let sourceCard = initializedLists[listIndex].cards[cardIndex]   /* Card being enriched */
-
-                guard !sourceCard.isSectionDivider, !targetCards.isEmpty else { continue }
-
-                let linkedCard = targetCards[sourceCard.id % targetCards.count] /* Stable target card */
-
-                initializedLists[listIndex].cards[cardIndex].checklists = enrichedChecklists(
-                    for:        sourceCard,
-                    linkedCard: linkedCard
-                )
-            }
-        }
-
         return initializedLists
     }()
 }
-

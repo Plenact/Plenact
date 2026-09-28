@@ -78,7 +78,6 @@ struct CardDetailView: View {
         case attachmentSources                      /* Attachment source chooser                           */
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
-        case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
 
         var id: String {                            /* Stable identity for the active sheet                */
 
@@ -89,8 +88,6 @@ struct CardDetailView: View {
                 case .attachmentSources:                 "attachment-sources"
                 case .addLink:                           "add-link"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)"
-                case .actionDetail(let checklistID, let itemID):
-                    "action-detail-\(checklistID.uuidString)-\(itemID.uuidString)"
             }
         }
     }
@@ -196,20 +193,6 @@ struct CardDetailView: View {
     @State private var activityFilter: ActivityFilter = .all /* The currently selected activity filter for the card          */
     @State private var showingAttachmentNotice = false       /* Whether an attachment notice is presented                    */
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
-
-    ///
-    /// @fcn        CardDetailView.linkedCardsByID
-    /// @brief      Index cards available as checklist-link destinations
-    /// @details    Flattens other Board lists into a stable-ID lookup used by linked checklist rows
-    ///
-    /// @return     ([Int: KanbanCard]) available cards keyed by stable card ID
-    ///
-    /// @pre        availableLists contains current Board lists other than the selected card's list
-    /// @post       No Board or card state is modified
-    ///
-    private var linkedCardsByID: [Int: KanbanCard] {   /* Linked cards by ID */
-        Dictionary(uniqueKeysWithValues: availableLists.flatMap(\.cards).map { ($0.id, $0) })
-    }
 
     ///
     /// @brief      Initialize the card detail state
@@ -934,40 +917,6 @@ struct CardDetailView: View {
     }
 
     ///
-    /// @fcn        CardDetailView.updateActionDetail(checklistID:itemID:detail:)
-    /// @brief      Save reduced detail content into its owning checklist action
-    /// @details    Replaces only the selected item's content while preserving checklist and item identity
-    ///
-    /// @param[in]  checklistID  Stable identity of the containing checklist
-    /// @param[in]  itemID       Stable identity of the owning checklist action
-    /// @param[in]  detail       Updated reduced detail content
-    ///
-    /// @return     (Void) updates checklist state and synchronizes the parent card
-    ///
-    /// @pre        checklistID and itemID identify an Action Detail item on the current card
-    /// @post       The parent card contains the updated Action Detail when both IDs resolve
-    ///
-    private func updateActionDetail(checklistID: UUID, itemID: UUID, detail: KanbanChecklistActionDetail) {
-
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { return }
-
-        let checklist = checklists[checklistIndex]                              /* Owning checklist */
-
-        guard let itemIndex = checklist.items.firstIndex(where: { $0.id == itemID }) else { return }
-
-        var items = checklist.items                                             /* Updated actions */
-        items[itemIndex].content = .actionDetail(detail)
-
-        checklists[checklistIndex] = KanbanChecklist(
-            id:    checklist.id,
-            title: checklist.title,
-            items: items
-        )
-
-        syncCardState()
-    }
-
-    ///
     /// @fcn        CardDetailView.checklistBlock(for:)
     /// @brief      Build a checklist block wired to card checklist actions
     /// @details    Connects row actions to checklist state handlers and supplies the one-time first-item focus request
@@ -986,7 +935,6 @@ struct CardDetailView: View {
 
         ChecklistBlock(
             checklist: checklist,
-            linkedCardsByID: linkedCardsByID,
             onDelete: {
                 deleteChecklist(with: checklist.id)
             },
@@ -1001,9 +949,6 @@ struct CardDetailView: View {
             },
             onDeleteItem: { itemIndex in
                 deleteItem(in: checklist.id, at: itemIndex)
-            },
-            onOpenActionDetail: { itemID in
-                activeSheet = .actionDetail(checklist.id, itemID)
             },
             onRename: { title in
                 renameChecklist(with: checklist.id, to: title)
@@ -1557,222 +1502,9 @@ struct CardDetailView: View {
 
                 case .attachmentPreview(let attachment):
                     CardAttachmentPreview(attachment: attachment)
-
-                case .actionDetail(let checklistID, let itemID):
-                    if let checklist = checklists.first(where: { $0.id == checklistID }),
-                       let item = checklist.items.first(where: { $0.id == itemID }),
-                       case .actionDetail(let detail) = item.content {
-
-                        ChecklistActionDetailView(
-                            title:           item.title,
-                            detail:          detail,
-                            currentUserName: currentUserName
-                        ) { updatedDetail in
-                            updateActionDetail(
-                                checklistID: checklistID,
-                                itemID:      itemID,
-                                detail:      updatedDetail
-                            )
-                        }
-
-                    } else {
-                        ContentUnavailableView(
-                            "Action unavailable",
-                            systemImage: "doc.text.magnifyingglass",
-                            description: Text("This checklist action could not be found.")
-                        )
-                    }
             }
         }
         }
-    }
-}
-
-
-// --------------------------------------- MARK: - Action Detail ------------------------------- //
-
-///
-/// Presents reduced card-like context owned by one checklist action
-///
-/// @section    Purpose
-///     Edit an action's description, nested checklist completion, and comments without creating
-///     an independent Board card or allowing recursive Action Details
-///
-private struct ChecklistActionDetailView: View {
-
-    let title:           String                                 /* Owning action title */
-    let currentUserName: String                                 /* Comment author name */
-    let onSave:          (KanbanChecklistActionDetail) -> Void  /* Save callback       */
-
-    @Environment(\.dismiss) private var dismiss                 /* Sheet dismissal     */
-
-    @State private var detailID:        UUID                    /* Stable detail ID     */
-    @State private var descriptionText: String                  /* Description draft   */
-    @State private var checklists:      [KanbanChecklist]       /* Nested actions      */
-    @State private var comments:        [KanbanComment]         /* Detail comments     */
-    @State private var commentDraft     = ""                    /* New comment draft   */
-
-    ///
-    /// @fcn        ChecklistActionDetailView.init(title:detail:currentUserName:onSave:)
-    /// @brief      Initialize the reduced Action Detail editor
-    /// @details    Copies persisted values into local draft state so Cancel remains non-destructive
-    ///
-    /// @param[in]  title            Owning checklist action title
-    /// @param[in]  detail           Persisted reduced detail content
-    /// @param[in]  currentUserName  Name used for newly posted comments
-    /// @param[in]  onSave           Callback receiving the completed detail snapshot
-    ///
-    /// @return     (ChecklistActionDetailView) configured reduced detail editor
-    ///
-    init(
-        title: String,
-        detail: KanbanChecklistActionDetail,
-        currentUserName: String,
-        onSave: @escaping (KanbanChecklistActionDetail) -> Void
-    ) {
-
-        self.title           = title
-        self.currentUserName = currentUserName
-        self.onSave          = onSave
-
-        _detailID        = State(initialValue: detail.id)
-        _descriptionText = State(initialValue: detail.description)
-        _checklists      = State(initialValue: detail.checklists)
-        _comments        = State(initialValue: detail.comments)
-    }
-
-    ///
-    /// @fcn        ChecklistActionDetailView.toggleItem(checklistID:itemID:)
-    /// @brief      Toggle one nested standard action
-    /// @details    Updates completion by stable checklist and item identity
-    ///
-    /// @param[in]  checklistID  Stable nested checklist identity
-    /// @param[in]  itemID       Stable nested action identity
-    ///
-    /// @return     (Void) updates local Action Detail draft state
-    ///
-    private func toggleItem(checklistID: UUID, itemID: UUID) {
-
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { return }
-
-        let checklist = checklists[checklistIndex]                              /* Nested checklist */
-
-        guard let itemIndex = checklist.items.firstIndex(where: { $0.id == itemID }) else { return }
-
-        var items = checklist.items                                             /* Updated actions */
-        items[itemIndex].isCompleted.toggle()
-
-        checklists[checklistIndex] = KanbanChecklist(
-            id:    checklist.id,
-            title: checklist.title,
-            items: items
-        )
-    }
-
-    ///
-    /// @fcn        ChecklistActionDetailView.postComment
-    /// @brief      Append the current non-empty comment draft
-    /// @details    Trims surrounding whitespace and attributes the comment to the current actor
-    ///
-    /// @return     (Void) updates local comments and clears a valid draft
-    ///
-    private func postComment() {
-
-        let trimmedDraft = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines)   /* Normalized comment */
-
-        guard !trimmedDraft.isEmpty else { return }
-
-        comments.append(KanbanComment(author: currentUserName, body: trimmedDraft))
-        commentDraft = ""
-    }
-
-    ///
-    /// @fcn        ChecklistActionDetailView.body
-    /// @brief      Build the reduced Action Detail form
-    /// @details    Presents description, nested completion, comments, and explicit Save/Cancel actions
-    ///
-    /// @return     (some View) reduced detail editing sheet
-    ///
-    var body: some View {
-
-        NavigationStack {
-
-            Form {
-
-                Section("Description") {
-                    TextField("Description", text: $descriptionText, axis: .vertical)
-                        .lineLimit(3...8)
-                }
-
-                ForEach(checklists) { checklist in
-                    Section(checklist.title) {
-                        ForEach(checklist.items) { item in
-                            Button {
-                                toggleItem(checklistID: checklist.id, itemID: item.id)
-                            } label: {
-                                Label(
-                                    item.title,
-                                    systemImage: item.isCompleted ? "checkmark.square.fill" : "square"
-                                )
-                                .foregroundStyle(item.isCompleted ? .secondary : .primary)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(item.isCompleted ? "Mark \(item.title) incomplete" : "Mark \(item.title) complete")
-                        }
-                    }
-                }
-
-                Section("Comments") {
-
-                    if comments.isEmpty {
-                        Text("No comments yet")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    ForEach(comments) { comment in
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(comment.author)
-                                .font(.caption.weight(.semibold))
-                            Text(comment.body)
-                        }
-                    }
-
-                    HStack {
-                        TextField("Add comment", text: $commentDraft)
-                            .onSubmit(postComment)
-
-                        Button(action: postComment) {
-                            Image(systemName: "paperplane.fill")
-                        }
-                        .disabled(commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .accessibilityLabel("Post action comment")
-                    }
-                }
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(KanbanChecklistActionDetail(
-                            id:          detailID,
-                            description: descriptionText,
-                            checklists:  checklists,
-                            comments:    comments
-                        ))
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 }
 
@@ -2115,13 +1847,11 @@ struct DetailRow: View {
 struct ChecklistBlock: View {
 
     let checklist: KanbanChecklist          /* The checklist data rendered by the block                                */
-    let linkedCardsByID: [Int: KanbanCard]  /* Linked cards keyed by stable ID                                          */
     let onDelete: ()        -> Void         /* The action invoked when the checklist is deleted                        */
     let onAddItem: ()       -> Void         /* The action invoked when a new item is added                             */
     let onToggleItem: (Int) -> Void         /* The action invoked when an item is toggled                              */
     let onUpdateItem: (Int, String) -> Void /* The action invoked when item text is edited                             */
     let onDeleteItem: (Int)  -> Void        /* The action invoked when an item is deleted                              */
-    let onOpenActionDetail: (UUID) -> Void  /* The action invoked for reduced detail                                  */
     let onRename: (String)   -> Void        /* The action invoked when the checklist title is renamed                  */
     let onToggleAllItems: () -> Void        /* The action invoked when all items are toggled                           */
     let onMove: (ChecklistMoveDirection) -> Void /* The action invoked when the checklist is moved                     */
@@ -2166,57 +1896,6 @@ struct ChecklistBlock: View {
         /// Filter the checklist items based on the hideCompletedItems flag
         checklist.items.enumerated().filter { item in
             !hideCompletedItems || !checklist.completedItemIndices.contains(item.offset)
-        }
-    }
-
-    ///
-    /// @fcn        ChecklistBlock.actionRow(for:)
-    /// @brief      Build the row behavior for one checklist action type
-    /// @details    Keeps the main checklist body small while preserving shared completion and deletion
-    ///
-    /// @param[in]  entry  Original item position and stable checklist action
-    ///
-    /// @return     (some View) standard editor, linked-card navigation, or Action Detail button
-    ///
-    @ViewBuilder
-    private func actionRow(for entry: (offset: Int, element: KanbanChecklistItem)) -> some View {
-
-        switch entry.element.content {
-            case .standard:
-                ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { text in onUpdateItem(entry.offset, text) },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: focusFirstItem && entry.offset == 0,
-                    onFocusHandled: onFirstItemFocused
-                )
-
-            case .linkedCard(let cardID):
-                ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    linkedCardID: cardID,
-                    linkedCard: linkedCardsByID[cardID],
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { _ in },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: false,
-                    onFocusHandled: {}
-                )
-
-            case .actionDetail:
-                ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    onOpenDetail: { onOpenActionDetail(entry.element.id) },
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { _ in },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: false,
-                    onFocusHandled: {}
-                )
         }
     }
 
@@ -2317,7 +1996,25 @@ struct ChecklistBlock: View {
             if !isCollapsed {
 
                 ForEach(visibleItems, id: \.offset) { entry in
-                    actionRow(for: entry)
+
+                    ChecklistItemRow(
+                        item: entry.element.title,
+                        isCompleted: checklist.completedItemIndices.contains(entry.offset),
+
+                        onToggle: {
+                            onToggleItem(entry.offset)
+                        },
+
+                        onUpdate: { text in
+                            onUpdateItem(entry.offset, text)
+                        },
+
+                        onDelete: {
+                            onDeleteItem(entry.offset)
+                        },
+                        shouldFocus: focusFirstItem && entry.offset == 0,
+                        onFocusHandled: onFirstItemFocused
+                    )
                 }
 
                 Button(action: onAddItem) {
@@ -2358,9 +2055,6 @@ struct ChecklistItemRow: View {
 
     let item: String                  /* The editable item text                                        */
     let isCompleted: Bool             /* The current completion state                                  */
-    let linkedCardID: Int?            /* Stable linked card ID, when present                           */
-    let linkedCard: KanbanCard?       /* Resolved linked card, when available                          */
-    let onOpenDetail: (() -> Void)?   /* Action Detail presentation callback                           */
     let onToggle: () -> Void          /* The action invoked by the checkbox                            */
     let onUpdate: (String) -> Void    /* The action invoked by text editing                            */
     let onDelete: () -> Void          /* The action invoked by delete                                  */
@@ -2369,39 +2063,6 @@ struct ChecklistItemRow: View {
 
     @State private var horizontalOffset: CGFloat = 0
     @FocusState private var isTextFocused: Bool
-
-    ///
-    /// @fcn        ChecklistItemRow.init(item:isCompleted:linkedCardID:linkedCard:onOpenDetail:onToggle:onUpdate:onDelete:shouldFocus:onFocusHandled:)
-    /// @brief      Initialize a standard, linked-card, or Action Detail checklist row
-    /// @details    Optional navigation inputs determine the title control while completion and deletion
-    ///             remain available for every action type
-    ///
-    /// @return     (ChecklistItemRow) configured action row
-    ///
-    init(
-        item: String,
-        isCompleted: Bool,
-        linkedCardID: Int? = nil,
-        linkedCard: KanbanCard? = nil,
-        onOpenDetail: (() -> Void)? = nil,
-        onToggle: @escaping () -> Void,
-        onUpdate: @escaping (String) -> Void,
-        onDelete: @escaping () -> Void,
-        shouldFocus: Bool,
-        onFocusHandled: @escaping () -> Void
-    ) {
-
-        self.item           = item
-        self.isCompleted    = isCompleted
-        self.linkedCardID   = linkedCardID
-        self.linkedCard     = linkedCard
-        self.onOpenDetail   = onOpenDetail
-        self.onToggle       = onToggle
-        self.onUpdate       = onUpdate
-        self.onDelete       = onDelete
-        self.shouldFocus    = shouldFocus
-        self.onFocusHandled = onFocusHandled
-    }
 
 
     var body: some View {
@@ -2429,46 +2090,17 @@ struct ChecklistItemRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
 
-                if let linkedCardID {
-
-                    if let linkedCard {
-                        NavigationLink(value: linkedCard) {
-                            Label(item, systemImage: "link")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Opens the linked card")
-
-                    } else {
-                        Label("\(item) unavailable", systemImage: "link.badge.plus")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityHint("Linked card \(linkedCardID) is unavailable")
-                    }
-
-                } else if let onOpenDetail {
-
-                    Button(action: onOpenDetail) {
-                        Label(item, systemImage: "doc.text")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens action details")
-
-                } else {
-
-                    TextField("Item", text: Binding(
-                        get: { item },
-                        set: onUpdate
-                    ))
-                    .font(.subheadline)
-                    .focused($isTextFocused)
-                    .onAppear {
-                        guard shouldFocus else { return }
-                        DispatchQueue.main.async {
-                            isTextFocused = true
-                            onFocusHandled()
-                        }
+                TextField("Item", text: Binding(
+                    get: { item },
+                    set: onUpdate
+                ))
+                .font(.subheadline)
+                .focused($isTextFocused)
+                .onAppear {
+                    guard shouldFocus else { return }
+                    DispatchQueue.main.async {
+                        isTextFocused = true
+                        onFocusHandled()
                     }
                 }
 

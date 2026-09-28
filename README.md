@@ -10,6 +10,7 @@ Implemented today:
 
 - A Today screen that lets the user choose an existing board list as the current day's plan.
 - A Board with ordered lists, cards, section dividers, completion state, dates, checklists, comments, members, labels, and attachments.
+- Seeded checklist demonstrations that link to existing cards and open reduced Action Details.
 - Direct navigation from Today to any existing board list.
 - Local persistence for board data and the label library.
 - Local photo and video files in the app's private Documents directory, plus web-link attachments.

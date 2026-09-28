@@ -4,7 +4,9 @@ This directory contains the active unit-test target for Plenact.
 
 ## Current Coverage
 
-`ChecklistMigrationTests.swift` verifies revision 0 string migration, earlier stable-item compatibility, repeatable migration IDs, rich action round trips, and the linked-card/Action Detail contract for every seeded activity card.
+`ChecklistMigrationTests.swift` verifies revision 0 string migration, earlier stable-item compatibility, repeatable migration IDs, rich action round trips, the Monday-through-Sunday starter-board contract, and linked-card/Action Detail coverage for every seeded activity card.
+
+`LocalProfileStoreTests.swift` verifies isolated local profile persistence, removal, personalization, and avatar initials without reading production preferences.
 
 ## Running Tests
 

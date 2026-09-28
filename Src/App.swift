@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 // @file       App.swift
-// @brief      Application entry point for the Plenact App kanban board
-// @details    Creates the window hierarchy and installs the board as the root view
+// @brief      Application entry point for the Plenact Today and Board experience
+// @details    Creates the root navigation, shared Board state, and local profile session
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
@@ -17,14 +17,14 @@ import SwiftUI
 /// Application entry point for the Plenact Application
 ///
 /// @section    Purpose
-///     Create the app scene and install the board as the initial root view
+///     Create the app scene and install the primary navigation shell
 ///
 @main
 struct Plenact: App {
 
     ///
     /// @brief      Build the application's initial scene
-    /// @details    Provides the root window and installs ContentView as the initial board surface
+    /// @details    Provides the root window and installs AppRootView as the Today-first surface
     ///
     /// @return     (some Scene) configured application scene
     ///
@@ -89,6 +89,7 @@ private enum TodayListPickerMode: String, Identifiable {
 private struct AppRootView: View {
 
     @State private var lists = KanbanBoardPersistence.loadLists()             /* Shared board state loaded from local persistence        */
+    @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
     @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
     @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
 
@@ -98,10 +99,22 @@ private struct AppRootView: View {
 
         TabView(selection: $selectedDestination) {
 
-            TodayHomeView(lists: lists) { listID in
-                boardTargetListID   = listID
-                selectedDestination = .board
-            }
+            TodayHomeView(
+                lists:   lists,
+                profile: profile,
+                onSaveProfile: { updatedProfile in
+                    profile = updatedProfile
+                    LocalProfileStore.save(updatedProfile)
+                },
+                onRemoveProfile: {
+                    profile = nil
+                    LocalProfileStore.remove()
+                },
+                onOpenBoardList: { listID in
+                    boardTargetListID   = listID
+                    selectedDestination = .board
+                }
+            )
             .tabItem {
                 Label("Today", systemImage: "sun.max")
             }
@@ -128,26 +141,41 @@ private struct AppRootView: View {
 private struct TodayHomeView: View {
 
     let lists: [KanbanList]                        /* Current board lists available to Today             */
+    let profile: LocalProfile?                     /* Current local profile and preferences              */
+    let onSaveProfile: (LocalProfile) -> Void      /* Save local identity and personalization            */
+    let onRemoveProfile: () -> Void                /* Remove only local profile information              */
     let onOpenBoardList: (Int) -> Void             /* Route to Board at the selected list ID             */
 
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
+    @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
 
     /// @brief      Resolve today's saved list selection against the current board
     /// @details    Returns no list when the saved identifier is missing or no longer exists
     private var selectedTodayList: KanbanList? {
 
-        guard let selectedTodayListID else { return nil }
+        let resolvedListID = selectedTodayListID ?? profile?.preferences.defaultListID   /* Effective list ID */
 
-        return lists.first { $0.id == selectedTodayListID }
+        guard let resolvedListID else { return nil }
+
+        return lists.first { $0.id == resolvedListID }
+    }
+
+    /// Return the preferred height for primary Today controls.
+    private var primaryControlHeight: CGFloat {   /* Personalized control height */
+        profile?.preferences.usesLargeControls == true ? 52 : 44
     }
 
     ///
-    /// @fcn        TodayHomeView.init(lists:onOpenBoardList:)
-    /// @brief      Initialize Today with the available board lists and navigation callback
-    /// @details    Restores the list selection stored for the current local calendar date
+    /// @fcn        TodayHomeView.init(lists:profile:onSaveProfile:onRemoveProfile:onOpenBoardList:)
+    /// @brief      Initialize Today with Board lists, local profile state, and callbacks
+    /// @details    Restores the date-specific list selection and connects profile persistence and
+    ///             Board navigation actions
     ///
     /// @param[in]  lists             Current board lists to offer and resolve
+    /// @param[in]  profile           Optional local identity and personalization
+    /// @param[in]  onSaveProfile     Callback that saves a complete local profile
+    /// @param[in]  onRemoveProfile   Callback that removes only local profile data
     /// @param[in]  onOpenBoardList   Callback that opens Board at a selected list ID
     ///
     /// @return     (TodayHomeView) configured Today screen
@@ -155,9 +183,18 @@ private struct TodayHomeView: View {
     /// @pre        lists reflects the current in-memory board state
     /// @post       The saved selection is restored when available; board data is unchanged
     ///
-    init(lists: [KanbanList], onOpenBoardList: @escaping (Int) -> Void) {
+    init(
+        lists:           [KanbanList],
+        profile:         LocalProfile?,
+        onSaveProfile:   @escaping (LocalProfile) -> Void,
+        onRemoveProfile: @escaping () -> Void,
+        onOpenBoardList: @escaping (Int) -> Void
+    ) {
 
         self.lists           = lists
+        self.profile         = profile
+        self.onSaveProfile   = onSaveProfile
+        self.onRemoveProfile = onRemoveProfile
         self.onOpenBoardList = onOpenBoardList
 
         let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int
@@ -239,13 +276,25 @@ private struct TodayHomeView: View {
 
                 VStack(alignment: .leading, spacing: 24) {
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Today")
-                            .font(.largeTitle.weight(.bold))
+                    HStack(alignment: .top, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Today")
+                                .font(.largeTitle.weight(.bold))
 
-                        Text(Date.now.formatted(date: .complete, time: .omitted))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            Text(Date.now.formatted(date: .complete, time: .omitted))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            showsAccountSettings = true
+                        } label: {
+                            ProfileAvatarView(profile: profile, size: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(profile == nil ? "Create local profile" : "Open Account and Settings")
                     }
 
                     VStack(alignment: .leading, spacing: 14) {
@@ -259,15 +308,17 @@ private struct TodayHomeView: View {
                                 Text(selectedTodayList.title)
                                     .font(.headline)
 
-                                Text("\(cardCount(in: selectedTodayList)) items on this list")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                if profile?.preferences.usesReducedContent != true {
+                                    Text("\(cardCount(in: selectedTodayList)) items on this list")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
 
                                 Button {
                                     onOpenBoardList(selectedTodayList.id)
                                 } label: {
                                     Label("Open today's list", systemImage: "arrow.up.right.square")
-                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .frame(maxWidth: .infinity, minHeight: primaryControlHeight)
                                 }
                                 .buttonStyle(.borderedProminent)
 
@@ -278,14 +329,16 @@ private struct TodayHomeView: View {
                             }
                         } else {
 
-                            Text("Choose one of your existing board lists for today's plan.")
-                                .foregroundStyle(.secondary)
+                            if profile?.preferences.usesReducedContent != true {
+                                Text("Choose one of your existing board lists for today's plan.")
+                                    .foregroundStyle(.secondary)
+                            }
 
                             Button("Choose today's list", systemImage: "list.bullet") {
                                 listPickerMode = .chooseToday
                             }
                             .buttonStyle(.borderedProminent)
-                            .frame(minHeight: 44)
+                            .frame(minHeight: primaryControlHeight)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -294,14 +347,16 @@ private struct TodayHomeView: View {
                         Text("Your board")
                             .font(.title2.weight(.semibold))
 
-                        Text("Open any existing list, including open work and custom lists.")
-                            .foregroundStyle(.secondary)
+                        if profile?.preferences.usesReducedContent != true {
+                            Text("Open any existing list, including open work and custom lists.")
+                                .foregroundStyle(.secondary)
+                        }
 
                         Button("Browse all lists", systemImage: "rectangle.3.group") {
                             listPickerMode = .browseAll
                         }
                         .buttonStyle(.bordered)
-                        .frame(minHeight: 44)
+                        .frame(minHeight: primaryControlHeight)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -310,6 +365,14 @@ private struct TodayHomeView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showsAccountSettings) {
+                AccountSettingsView(
+                    profile:  profile,
+                    lists:    lists,
+                    onSave:   onSaveProfile,
+                    onRemove: onRemoveProfile
+                )
+            }
             .sheet(item: $listPickerMode) { mode in
                 NavigationStack {
                     List {

@@ -6,6 +6,7 @@ This directory contains the SwiftUI application code and bundled resources for P
 
 - [`App.swift`](App.swift): application entry point, Today/Board tab shell, and Today list selection.
 - [`Features/Boards/`](Features/Boards/README.md): Board UI, card details, domain models, persistence, and checklist migration.
+- [`Features/Profile/`](Features/Profile/README.md): local profile, Today avatar, preferences, and settings UI.
 - [`../Test/`](../Test/README.md): active unit tests for persistence compatibility and domain behavior.
 - [`Features/`](Features/README.md): focused label and attachment features.
 - `Assets.xcassets/`: app icon and accent-color assets managed by Xcode.
@@ -23,6 +24,7 @@ The project is intentionally compact. Reuse existing models and helpers before a
 - The label library is encoded separately in `UserDefaults`.
 - Attachment metadata is stored with cards; media bytes live in the app's private Documents directory.
 - Today list choices use date-specific local preference keys.
+- The optional local profile is encoded separately under `Plenact.LocalProfile.v1`.
 
 Do not clear stored data to fix decoding problems. Codable changes require compatibility review, migration behavior, and focused tests. Attachment cleanup must preserve every filename still referenced by a card.
 

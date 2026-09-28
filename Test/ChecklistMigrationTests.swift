@@ -253,4 +253,34 @@ final class ChecklistMigrationTests: XCTestCase {
           }
         }
       }
+
+      ///
+      /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists
+      /// @brief      Verify the starter Board represents a complete planning week
+      /// @details    Protects weekday ordering, daily card counts, divider placement, and representative
+      ///             planning content from accidental regression
+      ///
+      /// @return     (Void) succeeds when all seven weekday lists meet the starter contract
+      ///
+      func testStarterBoardUsesWeekdayPlanningLists() {
+
+        let expectedTitles = [   /* Ordered weekday titles */
+          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+        ]
+
+        XCTAssertEqual(SampleData.lists.map(\.title), expectedTitles)
+
+        for list in SampleData.lists {
+
+          let activityCards = list.cards.filter { !$0.isSectionDivider }   /* Daily activity cards */
+          let dividerCards  = list.cards.filter(\.isSectionDivider)        /* Daily dividers       */
+
+          XCTAssertEqual(activityCards.count, 6, "\(list.title) should begin with six activities")
+          XCTAssertEqual(dividerCards.count, 1, "\(list.title) should contain one divider")
+          XCTAssertTrue(activityCards.allSatisfy { $0.listTitle == list.title })
+        }
+
+        XCTAssertTrue(SampleData.lists[0].cards.contains { $0.word == "Laundry session" })
+        XCTAssertTrue(SampleData.lists[6].cards.contains { $0.word == "Review the upcoming calendar" })
+      }
 }

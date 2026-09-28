@@ -155,4 +155,102 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertNil(object["completedItemIndices"])
         XCTAssertEqual(decoded, checklist)
     }
+
+      ///
+      /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction
+      /// @brief      Decode a stable checklist item written before action content existed
+      /// @details    Verifies the absent content field receives standard text behavior
+      ///
+      /// @return     (Void) succeeds when the earlier item remains readable and standard
+      ///
+      /// @throws     Decoding failures when the earlier item representation is incompatible
+      ///
+      func testEarlierStableItemDefaultsToStandardAction() throws {
+
+        let earlierItemJSON = """
+        {
+          "id": "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+          "title": "Existing action",
+          "isCompleted": false
+        }
+        """   /* Pre-content item fixture */
+
+        let item = try JSONDecoder().decode(KanbanChecklistItem.self, from: Data(earlierItemJSON.utf8)) /* Decoded action */
+
+        XCTAssertEqual(item.title, "Existing action")
+        XCTAssertEqual(item.content, .standard)
+      }
+
+      ///
+      /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips
+      /// @brief      Round-trip linked-card and Action Detail payloads
+      /// @details    Protects stable card references and reduced owned content across board saves
+      ///
+      /// @return     (Void) succeeds when both rich action types round-trip without loss
+      ///
+      /// @throws     Encoding or decoding failures for rich checklist actions
+      ///
+      func testRichActionContentRoundTrips() throws {
+
+        let detail = KanbanChecklistActionDetail(   /* Reduced detail */
+          description: "Prepare the laundry session.",
+          checklists:  [KanbanChecklist(title: "Steps", items: ["Sort clothes"])],
+          comments:    [KanbanComment(author: "Plenact Demo", body: "Ready to begin.")]
+        )
+        let checklist = KanbanChecklist(             /* Rich action checklist */
+          title: "Actions",
+          items: [
+            KanbanChecklistItem(title: "Open laundry card", content: .linkedCard(cardID: 42)),
+            KanbanChecklistItem(title: "Prepare details", content: .actionDetail(detail))
+          ]
+        )
+
+        let encoded = try JSONEncoder().encode(checklist)                            /* Rich JSON       */
+        let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)  /* Round-trip data */
+
+        XCTAssertEqual(decoded, checklist)
+      }
+
+      ///
+      /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions
+      /// @brief      Verify every seeded activity card demonstrates linked and detailed actions
+      /// @details    Requires one resolvable cross-list card link and two Action Details while leaving
+      ///             section-divider cards free of demonstration content
+      ///
+      /// @return     (Void) succeeds when the complete starter Board meets the demonstration contract
+      ///
+      func testEveryStarterCardDemonstratesRichActions() {
+
+        let cardsByID = Dictionary(   /* Starter cards by ID */
+          uniqueKeysWithValues: SampleData.lists.flatMap(\.cards).map { ($0.id, $0) }
+        )
+
+        for card in SampleData.lists.flatMap(\.cards) {
+
+          if card.isSectionDivider {
+            XCTAssertTrue(card.checklists.flatMap(\.items).allSatisfy { $0.content == .standard })
+            continue
+          }
+
+          let actions = card.checklists.flatMap(\.items)   /* Card checklist actions */
+          let linkedCardIDs = actions.compactMap { item -> Int? in
+            guard case .linkedCard(let cardID) = item.content else { return nil }
+            return cardID
+          }
+          let detailCount = actions.filter { item in
+            guard case .actionDetail = item.content else { return false }
+            return true
+          }.count
+
+          XCTAssertEqual(linkedCardIDs.count, 1, "\(card.word) should demonstrate one card link")
+          XCTAssertEqual(detailCount, 2, "\(card.word) should demonstrate two Action Details")
+
+          if let linkedCardID = linkedCardIDs.first {
+            let linkedCard = cardsByID[linkedCardID]   /* Resolved sample target */
+
+            XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
+            XCTAssertNotEqual(linkedCard?.listTitle, card.listTitle, "\(card.word) should link across lists")
+          }
+        }
+      }
 }

@@ -1,6 +1,6 @@
 # Checklist Actions Architecture
 
-**Status:** Phase 1 persistence foundation is implemented. Linked-card actions and Action Details are proposed and not yet available in the UI.
+**Status:** Stable action persistence, linked-card navigation, reduced Action Detail editing, and seeded demonstrations are implemented. User-facing controls to create or convert rich action types are not yet implemented.
 
 ## Product Model
 
@@ -12,9 +12,9 @@ Plenact uses three levels of planning information:
 
 An action should remain simple by default and gain more structure only when the user asks for it.
 
-## Proposed Action Types
+## Action Types
 
-1. **Standard action:** editable text and completion state, such as “Go do laundry.” This is the only implemented checklist-item type today.
+1. **Standard action:** editable text and completion state, such as “Go do laundry.”
 2. **Linked-card action:** references an existing Plenact card by stable card ID. Activating the item opens that card without copying or moving it.
 3. **Action Detail:** owns a reduced detail record for an action that needs description, checklists, or comments but should not appear as an independent Board card.
 
@@ -27,6 +27,7 @@ The UI should default to a standard action. Linking a card or adding detail shou
 - A stable UUID independent of item position.
 - Editable action text.
 - Direct completion state.
+- Explicit standard, linked-card, or Action Detail content.
 - Codable and Hashable behavior for persistence and value updates.
 
 `KanbanChecklist.items` stores item records instead of strings. The current checklist UI still uses its existing index-based callbacks through a computed `completedItemIndices` compatibility bridge. Editing text preserves item identity.
@@ -42,11 +43,21 @@ Existing `Plenact.Board.v1` snapshots encode checklist items as `[String]` and c
 
 New snapshots encode item records and no longer write `completedItemIndices`. The board storage key remains unchanged because the decoder accepts both representations.
 
-The active `PlenactTests` target verifies nested legacy board decoding, deterministic migration IDs, arbitrary completion positions, and current-format round trips.
+The active `PlenactTests` target verifies nested legacy board decoding, deterministic migration IDs, arbitrary completion positions, earlier stable-item compatibility, rich action round trips, and seeded demonstration coverage.
+
+## Starter Demonstrations
+
+Every seeded non-divider card receives the following examples in its first checklist:
+
+- One linked-card action targeting a valid card in the next Board list.
+- A preparation Action Detail with description, two nested standard actions, and a comment.
+- A review Action Detail with description, two nested standard actions, and a comment.
+
+Divider cards remain structural and do not receive rich actions. These examples appear only when `SampleData` initializes a new board; existing persisted boards are not overwritten.
 
 ## Linked-Card Rules
 
-When Phase 2 is designed:
+Current linked-card behavior follows these rules:
 
 - Store the linked card's stable ID, not its title, list index, or copied content.
 - Keep checklist completion independent from card completion by default.
@@ -56,13 +67,14 @@ When Phase 2 is designed:
 
 ## Action Detail Rules
 
-When Phase 3 is designed:
+Current Action Detail behavior follows these rules:
 
 - The detail belongs to its checklist item and does not appear independently on the Board.
-- Start with title, description, checklist groups, and comments.
-- Avoid recursive Action Details in the first version.
-- Confirm destructive removal when the detail contains user content.
-- Define promotion to a full Board card separately rather than making conversion implicit.
+- The owning checklist item supplies the title; the sheet edits description, nested checklist completion, and comments.
+- Seeded nested checklists contain standard actions only.
+- Save writes the complete detail back to its owning item; Cancel discards local edits.
+
+Remaining Action Detail work includes creation/conversion controls, nested checklist authoring, destructive-removal confirmation for populated details, and any explicit promotion to a full Board card.
 
 ## Accessibility and Cognitive Load
 

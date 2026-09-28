@@ -5,6 +5,9 @@
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
+// @section    Opens
+//     Consider more board\ specific naming to file
+//
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
@@ -143,7 +146,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 
     /// Checklist labels used by the card detail presentation
     var checklistItems: [String] {
-        checklists.first?.items ?? []
+        checklists.first?.items.map(\.title) ?? []
     }
 
     /// Number of checklist items shown as complete for this sample card
@@ -233,6 +236,56 @@ struct KanbanList: Identifiable, Hashable, Codable {
 }
 
 
+// -------------------------------------- MARK: - Checklist Item Model ------------------------- //
+
+///
+/// Represents one stable action within a card checklist
+///
+/// @section    Purpose
+///     Preserve checklist-item identity, editable text, and completion independently from its
+///     position so richer action types can be introduced without replacing the checklist model
+///
+/// @note   Revision 0 checklist strings migrate to standard items during decoding
+///
+struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
+
+    let id:        UUID      /* Stable checklist action ID */
+    var title:     String    /* User-facing action text    */
+    var isCompleted: Bool    /* Current completion state   */
+
+    ///
+    /// @fcn        KanbanChecklistItem.init(id:title:isCompleted:)
+    /// @brief      Initialize a stable standard checklist action
+    /// @details    Stores identity, editable text, and completion without assigning richer content
+    ///
+    /// @param[in]  id           Stable identifier for the checklist item
+    /// @param[in]  title        User-facing action text
+    /// @param[in]  isCompleted  Whether the action begins complete
+    ///
+    /// @return     (KanbanChecklistItem) configured standard action
+    ///
+    init(id: UUID = UUID(), title: String, isCompleted: Bool = false) {
+
+        self.id          = id
+        self.title       = title
+        self.isCompleted = isCompleted
+    }
+
+    ///
+    /// @fcn        KanbanChecklistItem.init(stringLiteral:)
+    /// @brief      Create a standard action from a string literal
+    /// @details    Keeps deterministic sample declarations and new-item call sites concise
+    ///
+    /// @param[in]  value  Text used as the action title
+    ///
+    /// @return     (KanbanChecklistItem) incomplete standard action with a new identity
+    ///
+    init(stringLiteral value: String) {
+        self.init(title: value)
+    }
+}
+
+
 // -------------------------------------- MARK: - Checklist Model ------------------------------ //
 
 ///
@@ -243,24 +296,172 @@ struct KanbanList: Identifiable, Hashable, Codable {
 ///
 struct KanbanChecklist: Identifiable, Hashable, Codable {
 
-    let id:                    UUID       /* Unique identifier for the checklist       */
-    let title:                 String     /* Title of the checklist                    */
-    let items:                 [String]   /* Items contained within the checklist      */
-    let completedItemIndices:  Set<Int>   /* Zero-based indices of completed items     */
+    let id:    UUID                    /* Stable checklist ID      */
+    let title: String                  /* Checklist display title */
+    let items: [KanbanChecklistItem]   /* Ordered action records  */
 
-    // Number of completed items within the checklist
-    var completed: Int {
-        completedItemIndices.count
+    ///
+    /// @fcn        KanbanChecklist.completedItemIndices
+    /// @brief      Return completed item positions for the current checklist UI
+    /// @details    Derives the legacy index surface from each stable item's direct completion state
+    ///
+    /// @return     (Set<Int>) zero-based positions of completed checklist items
+    ///
+    /// @pre        items contains the current ordered checklist actions
+    /// @post       No item state is modified
+    ///
+    var completedItemIndices: Set<Int> {   /* Completed UI positions */
+        Set(items.indices.filter { items[$0].isCompleted })
+    }
+
+    ///
+    /// @fcn        KanbanChecklist.completed
+    /// @brief      Count completed checklist actions
+    /// @details    Reads direct item completion rather than relying on persisted positions
+    ///
+    /// @return     (Int) number of completed actions
+    ///
+    /// @pre        items contains the current checklist actions
+    /// @post       No item state is modified
+    ///
+    var completed: Int {                   /* Completed action count */
+        items.lazy.filter(\.isCompleted).count
     }
 
 
-    /// Creates a checklist with optional initial completion state.
-    init(id: UUID = UUID(), title: String, items: [String] = [], completed: Int = 0, completedItemIndices: Set<Int>? = nil) {
+    ///
+    /// @fcn        KanbanChecklist.init(id:title:items:completed:completedItemIndices:)
+    /// @brief      Initialize a checklist with stable action records
+    /// @details    Preserves item completion unless a count or explicit legacy index set is supplied
+    ///
+    /// @param[in]  id                    Stable checklist identifier
+    /// @param[in]  title                 User-facing checklist title
+    /// @param[in]  items                 Stable checklist action records
+    /// @param[in]  completed             Optional number of leading items to mark complete
+    /// @param[in]  completedItemIndices  Optional explicit completion positions
+    ///
+    /// @return     (KanbanChecklist) configured checklist
+    ///
+    init(id: UUID = UUID(), title: String, items: [KanbanChecklistItem] = [], completed: Int? = nil, completedItemIndices: Set<Int>? = nil) {
 
-        self.id                   = id
-        self.title                = title
-        self.items                = items
-        self.completedItemIndices = completedItemIndices ?? Set(0..<min(completed, items.count))
+        var normalizedItems = items       /* Mutable item snapshot */
+
+        if let completedItemIndices {   /* Explicit completion positions */
+            for index in normalizedItems.indices {
+                normalizedItems[index].isCompleted = completedItemIndices.contains(index)
+            }
+
+        } else if let completed {       /* Leading completion count */
+            for index in normalizedItems.indices {
+                normalizedItems[index].isCompleted = index < min(completed, normalizedItems.count)
+            }
+        }
+
+        self.id    = id
+        self.title = title
+        self.items = normalizedItems
+    }
+
+    ///
+    /// @fcn        KanbanChecklist.init(from:)
+    /// @brief      Decode current checklist items or migrate revision 0 string items
+    /// @details    Current item records decode directly; legacy strings receive deterministic IDs
+    ///             derived from the checklist identity and item position
+    ///
+    /// @param[in]  decoder  Decoder containing current or legacy checklist data
+    ///
+    /// @return     (KanbanChecklist) decoded or migrated checklist
+    ///
+    /// @throws     DecodingError when required checklist fields or item data are invalid
+    ///
+    init(from decoder: Decoder) throws {
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
+        let id        = try container.decode(UUID.self, forKey: .id)      /* Checklist ID     */
+        let title     = try container.decode(String.self, forKey: .title) /* Checklist title  */
+
+        if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items) { /* Current actions */
+
+            if let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) { /* Legacy completion */
+                for index in currentItems.indices {
+                    currentItems[index].isCompleted = legacyCompletedIndices.contains(index)
+                }
+            }
+
+            self.init(id: id, title: title, items: currentItems)
+            return
+        }
+
+        let legacyTitles           = try container.decode([String].self, forKey: .items) /* Legacy action text */
+        let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? [] /* Legacy completion */
+        let migratedItems          = legacyTitles.enumerated().map { index, itemTitle in /* Migrated actions */
+            KanbanChecklistItem(
+                id:          Self.migratedItemID(checklistID: id, itemIndex: index),
+                title:       itemTitle,
+                isCompleted: legacyCompletedIndices.contains(index)
+            )
+        }
+
+        self.init(id: id, title: title, items: migratedItems)
+    }
+
+    ///
+    /// @fcn        KanbanChecklist.encode(to:)
+    /// @brief      Encode the stable checklist-item representation
+    /// @details    Writes checklist identity, title, and item records without the legacy completion-index field
+    ///
+    /// @param[in]  encoder  Encoder receiving the current checklist representation
+    ///
+    /// @return     (Void) writes the checklist into the supplied encoder
+    ///
+    /// @throws     EncodingError when checklist values cannot be encoded
+    ///
+    func encode(to encoder: Encoder) throws {
+
+        var container = encoder.container(keyedBy: CodingKeys.self)   /* Output fields */
+
+        try container.encode(id,    forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(items, forKey: .items)
+    }
+
+    ///
+    /// Identifies persisted checklist fields across current and revision 0 snapshots
+    ///
+    /// @section    Purpose
+    ///     Keep current item records and the legacy completion field available to custom Codable logic
+    ///
+    private enum CodingKeys: String, CodingKey {
+        case id                     /* Checklist identity       */
+        case title                  /* Checklist display title  */
+        case items                  /* Current or legacy actions */
+        case completedItemIndices   /* Revision 0 completion    */
+    }
+
+    ///
+    /// @fcn        KanbanChecklist.migratedItemID(checklistID:itemIndex:)
+    /// @brief      Produce a repeatable identity for a legacy positional item
+    /// @details    Retains the first 80 bits of checklist identity and uses the legacy item position
+    ///             for the final UUID component
+    ///
+    /// @param[in]  checklistID  Stable identity of the containing legacy checklist
+    /// @param[in]  itemIndex    Zero-based position of the legacy string item
+    ///
+    /// @return     (UUID) repeatable migrated checklist-item identity
+    ///
+    /// @pre        itemIndex is nonnegative and checklistID is a valid UUID
+    /// @post       No checklist or item data is modified
+    ///
+    private static func migratedItemID(checklistID: UUID, itemIndex: Int) -> UUID {
+
+        let components = checklistID.uuidString.split(separator: "-")   /* UUID components */
+
+        guard components.count == 5 else { return UUID() }
+
+        let itemComponent = String(format: "%012llX", UInt64(itemIndex)) /* Position suffix */
+        let migratedValue = "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)" /* Migrated UUID text */
+
+        return UUID(uuidString: migratedValue) ?? UUID()
     }
 }
 

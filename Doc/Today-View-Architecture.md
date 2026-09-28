@@ -11,8 +11,8 @@ The originating workflow is a weekly kanban board: one list per day, ordered car
 ## Current Foundation
 
 - `App.swift` installs a tab root with Today and Board destinations. Today can select a board list for the current date or browse all lists; opening a list switches to Board and targets its stable ID.
-- `ContentView.swift` implements the Board destination and owns board interactions, label state, and navigation to card details. Board lists are shared with the root view and persisted through the existing local store.
-- `Models.swift` defines Codable lists, cards, checklists, comments, and board persistence. Cards have stable IDs, list membership, optional start and due dates, and a title-completion flag.
+- `Src/Features/Boards/ContentView.swift` implements the Board destination and owns board interactions, label state, and navigation to card details. Board lists are shared with the root view and persisted through the existing local store.
+- `Src/Features/Boards/Models.swift` defines Codable lists, cards, checklists, comments, and board persistence. Cards have stable IDs, list membership, optional start and due dates, and a title-completion flag.
 - The board is stored as a JSON snapshot in local `UserDefaults`; the label library is also local. Photo files live in the app's private Documents directory, with attachment metadata on cards.
 - There is no implemented calendar integration, standalone notes feature, account system, team sync, or remote database.
 - The supplied Trello screenshot and JSON export illustrate the user's planning method. They are reference material, not data currently imported by Plenact. The current sample board uses generic list titles, and `KanbanList` has no weekday or date property.

@@ -189,10 +189,12 @@ function private_config_directory(): string
         throw new RuntimeException('Private configuration directory unavailable');
     }
 
-    $documentRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? ''); /* Canonical web root */
+    if (PHP_SAPI !== 'cli') {
+        $documentRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? ''); /* Canonical web root */
 
-    if ($documentRoot !== false && str_starts_with($privateDirectory . DIRECTORY_SEPARATOR, $documentRoot . DIRECTORY_SEPARATOR)) {
-        throw new RuntimeException('Private configuration must be outside the document root');
+        if ($documentRoot !== false && str_starts_with($privateDirectory . DIRECTORY_SEPARATOR, $documentRoot . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException('Private configuration must be outside the document root');
+        }
     }
 
     return $privateDirectory;
@@ -276,7 +278,7 @@ function database_connection_from_config(string $fileName): PDO
  */
 function database_connection(): PDO
 {
-    return database_connection_from_config('database.json');
+    return database_connection_from_config('plenact-database.json');
 }
 
 

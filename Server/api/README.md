@@ -19,4 +19,4 @@ All endpoints require HTTPS. UTF-8 JSON request and response bodies, including A
 
 No endpoint accepts MySQL credentials or client-supplied actor/provenance fields. The API strips local photo/video attachment records from shared snapshots; it does not store binary media
 
-The implementation requires PHP 8.1+ with PDO MySQL. These sources have only been linted and contract-tested locally; deploy only after validation against a disposable Bluehost-compatible database
+The implementation requires PHP 8.1+ with PDO MySQL. It is deployed at `https://plenact.com/api/` on PHP 8.2. Authenticated editor and member login/readback succeeded; the editor initialized SampleData as revision 1. Assignment-only member permissions, stale-revision conflicts, seed-retry behavior, and backup/restore remain unverified

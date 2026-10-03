@@ -98,7 +98,7 @@ try {
              ) VALUES (
                 :batch_id, :idempotency_key, \'sample_data_v1\', \'started\',
                 :source_count, 0, UTC_TIMESTAMP(6), :actor_id
-             ) ON DUPLICATE KEY UPDATE import_batch_id = VALUES(import_batch_id)'
+             ) ON DUPLICATE KEY UPDATE batch_status = batch_status'
         );
         $batchInsert->execute([
             'batch_id' => $importBatchID,

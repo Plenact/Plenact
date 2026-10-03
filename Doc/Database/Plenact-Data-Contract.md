@@ -1,10 +1,17 @@
-**Status:** Draft for review. The local SQL draft is not deployed. No Bluehost database has received this schema or Board content
+**Status:** Confirmed v1 contract. The local SQL draft is not deployed; no Bluehost database has received this schema or Board content
 
 ## Scope
 
 The first database-backed Plenact phase is a shared, non-private demo. Invite/admin-created registered users can discover one another and appear as card assignees alongside manually entered people. All active registered users can browse the shared Board. Jim is its only canonical content editor; other users may add or remove card assignments
 
 Members can add or remove only their own directory-backed assignment; Jim can assign or unassign any active registered user. This is not production multi-tenancy, private Boards, or secure collaboration. Store only synthetic, non-sensitive demo data
+
+## Confirmed V1 Decisions
+
+- Assignment is the only user-to-card relationship; mentions and references are separate future features
+- Preserve the app's current optional date values without adding time-of-day, timezone, all-day, or recurrence semantics
+- The maximum UTF-8 JSON HTTP body is 1,048,576 bytes (1 MiB), including request/response envelopes. The same cap applies to serialized Board documents; clients and the API reject oversized requests/documents, and refuse oversized responses
+- Snapshot retention and restore UX are not part of the initial demo workflow
 
 ## Domain Principles
 
@@ -94,9 +101,8 @@ A later opt-in migration of saved local Boards needs a backup, user confirmation
 
 The initial schema stores optional date-only card fields; it does not model timed events or recurrence. The meanings of **Required**, **Target**, and **Expected** dates are not yet final and are not separate columns in migration 001. A future scheduled event needs explicit start/end, timezone, and all-day behavior. Recurrence and exceptions remain deferred
 
-## Open Decisions
+## Deferred Decisions
 
-- Whether user assignment and mention/reference are distinct actions
-- Exact date-intent semantics and timezone/all-day event behavior
-- Whether Board snapshot size needs a bound and how restore/history is exposed
-- Whether future production needs per-organization ownership or per-card query tables
+- Richer date intent, timezone/all-day event behavior, and recurrence
+- Snapshot retention policy and restore/history UX
+- Future production needs for per-organization ownership or per-card query tables

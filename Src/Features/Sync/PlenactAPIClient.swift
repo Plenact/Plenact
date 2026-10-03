@@ -124,7 +124,7 @@ private struct PlenactCreateMemberRequest: Encodable {
 /// @section    Purpose
 ///     Separate the one-time SampleData seed marker from regular Board writes
 ///
-private struct PlenactBoardWriteRequest: Encodable {
+struct PlenactBoardWriteRequest: Encodable {
 
     let expectedRevision: Int64                /* Revision read before editing */
     let document:         PlenactBoardDocument /* Complete snapshot payload */
@@ -188,6 +188,7 @@ enum PlenactAPIError: LocalizedError {
     case endpointNotConfigured
     case invalidEndpoint
     case invalidResponse
+    case payloadTooLarge
     case unauthorized
     case boardNotSeeded
     case revisionConflict(Int64?)
@@ -203,6 +204,8 @@ enum PlenactAPIError: LocalizedError {
                 return "The shared demo API must use a valid HTTPS URL."
             case .invalidResponse:
                 return "The shared demo API returned an invalid response."
+            case .payloadTooLarge:
+                return "The shared demo payload exceeds the 1 MiB size limit."
             case .unauthorized:
                 return "Sign in again to continue."
             case .boardNotSeeded:
@@ -307,6 +310,12 @@ enum PlenactSessionStore {
 ///     Keep transport, session handling, and revisioned Board operations outside SwiftUI views
 ///
 struct PlenactAPIClient {
+
+    static let maximumJSONBodyBytes = 1_048_576 /* Maximum UTF-8 JSON HTTP body size */
+
+    static func isJSONBodyWithinLimit(_ body: Data) -> Bool {
+        body.count <= maximumJSONBodyBytes
+    }
 
     private let baseURL: URL       /* Validated HTTPS API base URL */
     private let session: URLSession /* Transport used for API requests */
@@ -615,6 +624,7 @@ struct PlenactAPIClient {
     ) async throws -> Response {
 
         let encodedBody = try JSONEncoder().encode(body) /* Encoded request payload */
+        guard Self.isJSONBodyWithinLimit(encodedBody) else { throw PlenactAPIError.payloadTooLarge }
 
         return try await send(path: path, method: method, token: token, bodyData: encodedBody)
     }
@@ -676,6 +686,7 @@ struct PlenactAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else { /* Require an HTTP response */
             throw PlenactAPIError.invalidResponse
         }
+        guard Self.isJSONBodyWithinLimit(data) else { throw PlenactAPIError.payloadTooLarge } /* Bound downloaded JSON */
 
         guard (200..<300).contains(httpResponse.statusCode) else {
 
@@ -685,6 +696,7 @@ struct PlenactAPIClient {
                 case "unauthorized":      throw PlenactAPIError.unauthorized
                 case "board_not_seeded":  throw PlenactAPIError.boardNotSeeded
                 case "revision_conflict": throw PlenactAPIError.revisionConflict(serverError?.currentRevision)
+                case "request_too_large": throw PlenactAPIError.payloadTooLarge
                 default:                  throw PlenactAPIError.server(serverError?.error ?? "http_\(httpResponse.statusCode)")
             }
         }

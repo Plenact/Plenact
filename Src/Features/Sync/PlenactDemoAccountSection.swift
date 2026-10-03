@@ -34,46 +34,53 @@ struct PlenactDemoAccountSection: View {
     @State private var confirmsSeed        = false /* Initial SampleData confirmation state */
 
     /// Indicates whether the editor can initialize the unseeded shared Board
-    private var canInitializeSampleBoard: Bool { /* Editor permission and unseeded revision */
+    private var canInitializeSampleBoard: Bool {                                    /* Editor permission and unseeded revision */
+
         remoteSession?.user.accountRole == "board_editor" && currentRevision == 0
     }
 
     /// Indicates whether the remote draft differs from its last fetched snapshot
-    private var hasUnsavedRemoteEdits: Bool { /* Draft differs from the fetched snapshot */
+    private var hasUnsavedRemoteEdits: Bool {                                       /* Draft differs from the fetched snapshot */
+        
         remoteDraft != nil && remoteDraft != remoteSnapshot?.document
     }
 
     /// Builds the account form, remote directory, and shared Board controls
-    var body: some View { /* Account form, directory, and shared Board controls */
+    var body: some View {                                                           /* Account form, directory, and shared Board controls */
 
         Section("Shared demo") {
 
             if let remoteSession { /* Authenticated server identity */
                 LabeledContent("Signed in", value: remoteSession.user.displayName)
-                LabeledContent("Account", value: "@\(remoteSession.user.username)")
-                LabeledContent("Access", value: remoteSession.user.accountRole == "board_editor" ? "Board editor" : "Member")
+                LabeledContent("Account",   value: "@\(remoteSession.user.username)")
+                LabeledContent("Access",    value: remoteSession.user.accountRole == "board_editor" ? "Board editor" : "Member")
 
                 Button("Refresh shared directory and Board") {
                     Task { await refreshRemoteState() }
                 }
                 .disabled(isWorking || hasUnsavedRemoteEdits)
 
-                if let currentRevision, currentRevision > 0 { /* Initialized shared Board revision */
+                if let currentRevision, currentRevision > 0 {                       /* Initialized shared Board revision */
+
                     LabeledContent("Shared Board", value: "Revision \(currentRevision)")
 
-                    if let remoteSnapshot { /* Most recently fetched Board snapshot */
-                        ForEach(remoteSnapshot.document.lists) { list in
+                    if let remoteSnapshot {                                         /* Most recently fetched Board snapshot */
+                  
+                       ForEach(remoteSnapshot.document.lists) { list in
+                  
                             sharedListContent(list, session: remoteSession, revision: remoteSnapshot.revision)
                         }
                     }
 
                     if remoteSession.user.accountRole == "board_editor", hasUnsavedRemoteEdits {
+
                         Button("Save shared Board changes", systemImage: "arrow.triangle.2.circlepath") {
                             Task { await saveSharedBoard() }
                         }
                         .disabled(isWorking || remoteDraft?.validationMessage != nil)
 
                         if let validationMessage = remoteDraft?.validationMessage { /* Draft validation result */
+                     
                             Text(validationMessage)
                                 .font(.footnote)
                                 .foregroundStyle(.red)
@@ -81,20 +88,24 @@ struct PlenactDemoAccountSection: View {
                     }
 
                     if needsConflictReload {
+
                         Button("Discard edits and refresh") {
+
                             Task {
                                 needsConflictReload = false
-                                remoteDraft = remoteSnapshot?.document
+                                remoteDraft         = remoteSnapshot?.document
                                 await refreshRemoteState()
                             }
                         }
                         .disabled(isWorking)
                     }
                 } else if currentRevision == 0 {
+
                     LabeledContent("Shared Board", value: "Not initialized")
                 }
 
                 if canInitializeSampleBoard {
+
                     Button("Initialize with SampleData", systemImage: "arrow.up.to.line") {
                         confirmsSeed = true
                     }
@@ -102,19 +113,26 @@ struct PlenactDemoAccountSection: View {
                 }
 
                 if !directory.isEmpty {
+
                     ForEach(directory) { user in
+
                         LabeledContent(user.displayName, value: "@\(user.username)")
                     }
                 }
 
                 if remoteSession.user.accountRole == "board_editor" {
+
                     DisclosureGroup("Add demo member") {
+
                         TextField("Username", text: $newMemberUsername)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+
                         TextField("Display name", text: $newMemberDisplayName)
+
                         SecureField("Temporary password", text: $newMemberPassword)
                             .textContentType(.newPassword)
+
                         Button("Create member account") {
                             Task { await createMember() }
                         }
@@ -123,10 +141,13 @@ struct PlenactDemoAccountSection: View {
                 }
 
                 Button("Sign out", role: .destructive) {
+
                     Task { await signOut(remoteSession) }
                 }
                 .disabled(isWorking || hasUnsavedRemoteEdits)
+
             } else {
+
                 TextField("Username", text: $username)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -160,6 +181,7 @@ struct PlenactDemoAccountSection: View {
             titleVisibility: .visible
         ) {
             Button("Publish SampleData", role: .destructive) {
+
                 Task { await initializeSampleBoard() }
             }
 
@@ -190,9 +212,9 @@ struct PlenactDemoAccountSection: View {
         defer { isWorking = false }
 
         do {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client    = try PlenactAPIClient() /* Configured HTTPS API client */
             remoteSession = try await client.login(username: username, password: password)
-            password = ""
+            password      = ""
 
             await refreshRemoteState()
 
@@ -210,23 +232,31 @@ struct PlenactDemoAccountSection: View {
     ///
     @MainActor
     private func refreshRemoteState() async {
-        guard let remoteSession else { return } /* Require an authenticated session */
+
+        guard let remoteSession else { return }                 /* Require an authenticated session */
+
         isWorking = true
+
         defer { isWorking = false }
 
         do {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
-            directory = try await client.directory(token: remoteSession.accessToken)
+            let client      = try PlenactAPIClient()            /* Configured HTTPS API client */
+            directory       = try await client.directory(token: remoteSession.accessToken)
             let snapshot    = try await client.board(token: remoteSession.accessToken) /* Latest shared Board */
             remoteSnapshot  = snapshot
             remoteDraft     = snapshot.document
             currentRevision = snapshot.revision
+
         } catch PlenactAPIError.boardNotSeeded {
+
             remoteSnapshot  = nil
             remoteDraft     = nil
             currentRevision = 0
+
         } catch PlenactAPIError.unauthorized {
+
             PlenactSessionStore.remove()
+
             self.remoteSession = nil
             directory          = []
             remoteSnapshot     = nil
@@ -246,6 +276,7 @@ struct PlenactDemoAccountSection: View {
     ///
     @MainActor
     private func initializeSampleBoard() async {
+
         guard let remoteSession, canInitializeSampleBoard else { return } /* Require the editor seed state */
 
         isWorking = true
@@ -253,7 +284,7 @@ struct PlenactDemoAccountSection: View {
         defer { isWorking = false }
 
         do {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client   = try PlenactAPIClient() /* Configured HTTPS API client */
             let response = try await client.publishSampleData( /* Initial SampleData response */
                 token: remoteSession.accessToken,
                 user: remoteSession.user,
@@ -281,17 +312,22 @@ struct PlenactDemoAccountSection: View {
     ///
     @MainActor
     private func signOut(_ session: PlenactRemoteSession) async {
+        
         isWorking = true
+
         defer { isWorking = false }
+
         if let client = try? PlenactAPIClient() { /* Revoke the session when the endpoint is configured */
             await client.logout(session)
+
         } else {
             PlenactSessionStore.remove()
         }
-        remoteSession = nil
-        directory = []
-        remoteSnapshot = nil
-        remoteDraft = nil
+
+        remoteSession   = nil
+        directory       = []
+        remoteSnapshot  = nil
+        remoteDraft     = nil
         currentRevision = nil
     }
 
@@ -305,8 +341,11 @@ struct PlenactDemoAccountSection: View {
     ///
     @ViewBuilder
     private func sharedListContent(_ list: KanbanList, session: PlenactRemoteSession, revision: Int64) -> some View {
+
         DisclosureGroup("\(list.title) · \(list.cards.filter { !$0.isSectionDivider }.count)") {
+
             ForEach(list.cards.filter { !$0.isSectionDivider }) { card in
+            
                 sharedCardContent(card, session: session, revision: revision)
             }
         }

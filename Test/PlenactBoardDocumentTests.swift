@@ -129,6 +129,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(SampleData.lists[0].cards[0].members[0].kind, .manual)
     }
 
+    /// Verify the complete encoded seed request fits the confirmed v1 JSON body ceiling
+    func testSampleDataSeedRequestFitsJSONBodyLimit() throws {
+
+        let jim = PlenactRemoteUser(
+            userID: "fb13a9ee-9107-47c3-bb4f-dff07fe57eba",
+            username: "jim",
+            displayName: "Jim",
+            accountRole: "board_editor"
+        )
+        let request = PlenactBoardWriteRequest(
+            expectedRevision: 0,
+            document: PlenactAPIClient.sampleDataDocument(for: jim),
+            seedKind: "sample_data_v1"
+        )
+        let encodedRequest = try JSONEncoder().encode(request)
+
+        XCTAssertLessThanOrEqual(encodedRequest.count, PlenactAPIClient.maximumJSONBodyBytes)
+    }
+
+    /// Verify the client accepts exactly 1 MiB and rejects a body one byte over
+    func testJSONBodySizeLimitIncludesExactBoundary() {
+
+        let maximumBody = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes)
+        let oversizedBody = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes + 1)
+
+        XCTAssertTrue(PlenactAPIClient.isJSONBodyWithinLimit(maximumBody))
+        XCTAssertFalse(PlenactAPIClient.isJSONBodyWithinLimit(oversizedBody))
+    }
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testAPIClientRejectsPlainHTTPEndpoint
     /// @brief      Require HTTPS for shared-demo API endpoints

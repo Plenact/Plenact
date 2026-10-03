@@ -36,6 +36,10 @@ try {
             respond_json(404, ['error' => 'board_not_seeded']);
         }
 
+        if (!is_json_body_within_limit((string)$revision['board_document'])) { /* Stored snapshot byte ceiling */
+            respond_json(500, ['error' => 'server_error']);
+        }
+
         $document = json_decode($revision['board_document'], true, PLENACT_JSON_DEPTH, JSON_THROW_ON_ERROR); /* Stored Board payload */
         respond_json(200, [
             'revision' => (int)$revision['revision'],
@@ -75,6 +79,10 @@ try {
         $document,
         JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_SLASHES
     );
+    if (!is_json_body_within_limit($encodedDocument)) {
+        respond_json(413, ['error' => 'request_too_large']);
+    }
+
     $digest     = hash('sha256', $encodedDocument); /* Snapshot integrity digest */
     $cardCount  = array_sum(array_map(static fn ($list /* Board list being counted */): int => count($list['cards']), $document['lists'])); /* Imported card count */
 

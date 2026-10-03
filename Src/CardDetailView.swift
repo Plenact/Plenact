@@ -175,28 +175,30 @@ struct CardDetailView: View {
     let card: KanbanCard                                     /* The kanban card being displayed in detail                    */
     @Binding var labelLibrary: LabelLibrary                  /* Shared label catalog available to every card                 */
     let availableLists: [KanbanList]                         /* Other lists that can receive this card                       */
-    let memberColors: [String: Color]                        /* Shared icon colors keyed by normalized member name           */
+    let memberColors:   [String: Color]                      /* Shared icon colors keyed by normalized member name           */
     let currentUserName: String                              /* Current actor name shown in card activity                    */
-    let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
-    let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
+    let onTitleToggle:   ((KanbanCard) -> Void)?             /* Callback invoked when the card title checkbox is toggled     */
+    let onMoveToList:    ((Int) -> Void)?                    /* Callback invoked to move the card to a selected list         */
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
 
-    @State private var checklists: [KanbanChecklist]         /* The checklist groups associated with the selected card       */
-    @State private var checklistToFocus: UUID?               /* Newly added checklist whose first item should be focused     */
-    @State private var titleChecked: Bool                    /* Whether the card title itself is checked                     */
-    @State private var titleText: String                     /* Editable card title displayed in the detail header           */
-    @State private var subtitleText: String                  /* Editable card subtitle displayed in the detail header        */
-    @State private var startDate: Date?                      /* Optional start date for the selected card                    */
-    @State private var dueDate: Date?                        /* Optional due date for the selected card                      */
-    @State private var descriptionText: String               /* Editable description shown on this card                      */
-    @State private var activeSheet: ActiveSheet?             /* The date picker or member editor currently presented         */
-    @State private var comments: [KanbanComment]             /* Comments saved to this card's activity                       */
-    @State private var members: [String]                     /* Users assigned to the selected card                          */
-    @State private var selectedLabelIDs: [String]            /* Stable IDs of labels assigned to this card                   */
-    @State private var attachments: [KanbanAttachment]       /* Photo attachments currently assigned to the card             */
+    @State private var checklists:         [KanbanChecklist] /* The checklist groups associated with the selected card       */
+    @State private var checklistToFocus:   UUID?             /* Newly added checklist whose first item should be focused     */
+    @State private var titleChecked:       Bool              /* Whether the card title itself is checked                     */
+    @State private var titleText:          String            /* Editable card title displayed in the detail header           */
+    @State private var subtitleText:       String            /* Editable card subtitle displayed in the detail header        */
+    @State private var startDate:          Date?             /* Optional start date for the selected card                    */
+    @State private var dueDate:            Date?             /* Optional due date for the selected card                      */
+    @State private var descriptionText:    String            /* Editable description shown on this card                      */
+    @State private var activeSheet:        ActiveSheet?      /* The date picker or member editor currently presented         */
+    @State private var comments:           [KanbanComment]   /* Comments saved to this card's activity                       */
+    @State private var members:            [String]          /* Users assigned to the selected card                          */
+    @State private var selectedLabelIDs:   [String]          /* Stable IDs of labels assigned to this card                   */
+    @State private var attachments:        [KanbanAttachment]       /* Photo attachments currently assigned to the card             */
+
     @State private var selectedPhotoItems: [PhotosPickerItem] = [] /* Photos selected from the system photo library          */
+
     @State private var commentDraft = ""                     /* Text currently entered in the comment composer               */
     @State private var dismissedActivityIDs: Set<String>     /* IDs of activity entries that have been dismissed by the user */
     @State private var activityFilter: ActivityFilter = .all /* The currently selected activity filter for the card          */

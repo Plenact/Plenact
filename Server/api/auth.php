@@ -54,7 +54,7 @@ try {
     $limitInsert = $pdo->prepare( /* Ensure the throttle row exists */
         'INSERT INTO demo_login_limits (username_key_sha256, failure_count, window_started_at_utc, updated_at_utc)
          VALUES (:key_hash, 0, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
-         ON DUPLICATE KEY UPDATE username_key_sha256 = VALUES(username_key_sha256)'
+         ON DUPLICATE KEY UPDATE failure_count = failure_count'
     );
     $limitInsert->execute(['key_hash' => $usernameHash]);
 

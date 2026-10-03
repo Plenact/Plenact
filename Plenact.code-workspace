@@ -4,5 +4,19 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.exclude": {
+			".gitignore":             true,
+			"Plenact.xcodeproj":      true,
+			"Plenact.code-workspace": true
+    },
+    // Excludes files and folders from global searches (Ctrl+Shift+F)
+    "search.exclude": {
+      "**/build": true,
+      "**/*.log": true
+    },
+    // Optional: Also respect your .gitignore exclusions automatically
+    "explorer.excludeGitIgnore": true
+  }
+	}
 }

@@ -1,4 +1,4 @@
-**Status:** Proposed first data load. No schema has been applied and no content has been uploaded to Bluehost
+**Status:** Initial synthetic seed completed on 2026-10-03. Migration `001` is applied and recorded in the dedicated `justirl2_plenact` database; the Board-editor account was provisioned and the iOS app published `SampleData` as revision 1. Database readback confirms schema version 1, `demo_seed`, a completed import batch, 49 source/result cards, 7 lists, and 13 labels. Both editor and member sign-in/readback succeed, and the app reported that local data was unchanged. Assignment authorization, stale-write, seed-retry, and restore checks remain
 
 ## Goal
 
@@ -43,17 +43,11 @@ Each future canonical Board save or assignment change appends a complete new sna
 - Keep every non-account assignee as a typed manual assignment
 - Re-running the same batch must detect the prior completed batch and avoid creating a duplicate Board or revision
 
-## Execution Sequence
+## Execution Record And Remaining Checks
 
-1. Review [`Plenact-Data-Contract.md`](Plenact-Data-Contract.md), including snapshot revision, dates, placements, and assignment behavior
-2. Confirm the new dedicated Bluehost database and separate administrator/runtime credentials through cPanel. Do not reuse the reference database or token
-3. Test migration `001` on a disposable database with the same MySQL/Percona version as Bluehost
-4. Take a backup, apply the migration once, and record its checksum/operator/UTC time
-5. Provision Jim with a rotated unique demo credential; verify only the password hash is stored
-6. Sign in as Jim in Account & Settings and explicitly initialize the shared Board from the app's `SampleData` action; the current local Board/profile/attachments are not uploaded or replaced
-7. Verify the transaction created one `demo_seed` revision and deterministic import batch with actor, timestamp, schema version, and digest
-8. Verify seven ordered weekday lists, cards/dividers, linked-card references, Action Details, labels, assignment IDs, and document decoding
-9. Retry the same seed, test stale-revision conflict behavior, restore from backup, and verify existing local app data remains unchanged
+Completed: reviewed the v1 contract; tested migration `001` on the matching disposable Bluehost database; applied it once and recorded its checksum/operator/UTC time; provisioned Jim; and initialized the shared Board from the app's synthetic `SampleData`. Database provenance/count readback and app revision-1 readback both succeeded, with local data unchanged
+
+Remaining: independently verify linked-card references; test assignment-only member writes, stale-revision conflicts, and seed retry behavior; verify backup/restore. Do not upload a local personal Board or attachments
 
 ## Acceptance Checks
 

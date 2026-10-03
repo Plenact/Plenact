@@ -28,7 +28,7 @@ struct Plenact: App {
     ///
     /// @return     (some Scene) configured application scene
     ///
-    var body: some Scene {
+    var body: some Scene { /* Root window scene */
 
         WindowGroup {
             AppRootView()
@@ -65,11 +65,11 @@ private enum TodayListPickerMode: String, Identifiable {
 
     /// @brief      Return the stable identity for picker presentation
     /// @details    Uses the enum raw value so SwiftUI can identify the active sheet
-    var id: String { rawValue }
+    var id: String { rawValue } /* Stable tab-selection identity */
 
     /// @brief      Return the user-facing title for the picker mode
     /// @details    Keeps the sheet heading aligned with the action being performed
-    var title: String {
+    var title: String { /* User-facing list-picker title */
         switch self {
             case .chooseToday: "Choose today's list"
             case .browseAll:   "Board lists"
@@ -95,7 +95,7 @@ private struct AppRootView: View {
 
     /// @brief      Build the primary Today and Board tab navigation
     /// @details    Shares board lists between the Today front door and the existing kanban screen
-    var body: some View {
+    var body: some View { /* Primary Today and Board navigation shell */
 
         TabView(selection: $selectedDestination) {
 
@@ -152,11 +152,11 @@ private struct TodayHomeView: View {
 
     /// @brief      Resolve today's saved list selection against the current board
     /// @details    Returns no list when the saved identifier is missing or no longer exists
-    private var selectedTodayList: KanbanList? {
+    private var selectedTodayList: KanbanList? { /* Board list selected for the current date */
 
         let resolvedListID = selectedTodayListID ?? profile?.preferences.defaultListID   /* Effective list ID */
 
-        guard let resolvedListID else { return nil }
+        guard let resolvedListID else { return nil } /* No saved or default list selection */
 
         return lists.first { $0.id == resolvedListID }
     }
@@ -197,7 +197,7 @@ private struct TodayHomeView: View {
         self.onRemoveProfile = onRemoveProfile
         self.onOpenBoardList = onOpenBoardList
 
-        let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int
+        let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int /* Persisted date-specific selection */
         _selectedTodayListID = State(initialValue: savedListID)
     }
 
@@ -215,7 +215,7 @@ private struct TodayHomeView: View {
     ///
     private static func todayListStorageKey(for date: Date) -> String {
 
-        let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let components = Calendar.current.dateComponents([.year, .month, .day], from: date) /* Local calendar date components */
 
         return "Plenact.Today.List.\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
     }
@@ -268,7 +268,7 @@ private struct TodayHomeView: View {
     /// @pre        lists contains the current board state and callbacks are configured
     /// @post       User actions either update the local date-scoped selection or navigate to Board
     ///
-    var body: some View {
+    var body: some View { /* Today screen and list-selection sheets */
 
         NavigationStack {
 
@@ -302,7 +302,7 @@ private struct TodayHomeView: View {
                         Text("Today's plan")
                             .font(.title2.weight(.semibold))
 
-                        if let selectedTodayList {
+                        if let selectedTodayList { /* Resolved Today plan list */
 
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(selectedTodayList.title)

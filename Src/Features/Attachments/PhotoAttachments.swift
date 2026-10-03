@@ -18,7 +18,12 @@ import SwiftUI
 import UIKit
 
 
-/// Identifies the content type of a card attachment.
+///
+/// Identifies the supported content types for card attachments
+///
+/// @section    Purpose
+///     Distinguish local photo/video media from remotely accessible links
+///
 enum KanbanAttachmentKind: String, Codable {
     case photo
     case video
@@ -35,16 +40,26 @@ enum KanbanAttachmentKind: String, Codable {
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable {
 
-    let id:        UUID
-    let fileName:  String?
-    let url:       URL?
-    let mediaKind: KanbanAttachmentKind?
-    let addedAt:   Date
+    let id:        UUID                     /* Stable attachment identity */
+    let fileName:  String?                  /* Device-local media filename */
+    let url:       URL?                     /* Remote web-link destination */
+    let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
+    let addedAt:   Date                     /* Attachment creation time */
 
-    var kind: KanbanAttachmentKind {
+    var kind: KanbanAttachmentKind { /* Resolved kind for legacy and current records */
         mediaKind ?? (url == nil ? .photo : .link)
     }
 
+    /// Create attachment metadata for local media or a remote link
+    ///
+    /// @param[in]  id        Stable attachment identity
+    /// @param[in]  fileName  Local media filename, when stored on this device
+    /// @param[in]  url       Remote web URL, when the attachment is a link
+    /// @param[in]  mediaKind Explicit photo, video, or link content type
+    /// @param[in]  addedAt   Attachment creation time
+    ///
+    /// @return     (KanbanAttachment) configured attachment metadata
+    ///
     init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now) {
         self.id = id
         self.fileName = fileName
@@ -67,7 +82,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable {
 ///
 enum CardAttachmentStore {
 
-    private static let directoryName = "CardAttachments"
+    private static let directoryName = "CardAttachments" /* Local media folder name */
 
     ///
     /// @fcn        CardAttachmentStore.saveMedia(_:kind:fileExtension:)
@@ -89,12 +104,12 @@ enum CardAttachmentStore {
     ///
     static func saveMedia(_ mediaData: Data, kind: KanbanAttachmentKind, fileExtension: String) throws -> KanbanAttachment {
 
-        let attachmentID        = UUID()
-        let normalizedExtension = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ". "))
-        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : "jpg") : normalizedExtension
-        let fileName            = "\(attachmentID.uuidString).\(safeExtension)"
-        let directoryURL        = try attachmentsDirectory()
-        let fileURL             = directoryURL.appendingPathComponent(fileName, isDirectory: false)
+        let attachmentID        = UUID() /* Stable identity for the new media file */
+        let normalizedExtension = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ". ")) /* Clean extension input */
+        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : "jpg") : normalizedExtension /* Valid file extension */
+        let fileName            = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename */
+        let directoryURL        = try attachmentsDirectory() /* App-local media directory */
+        let fileURL             = directoryURL.appendingPathComponent(fileName, isDirectory: false) /* Destination file URL */
 
         try mediaData.write(to: fileURL, options: .atomic)
 
@@ -103,7 +118,7 @@ enum CardAttachmentStore {
 
     
     ///
-    /// @fcn        CardAttachmentStore.imageURL(for:)
+    /// @fcn        CardAttachmentStore.fileURL(for:)
     /// @brief      Resolve an attachment record to its local image URL
     /// @details    Combines the app's Documents directory, attachment subdirectory, and stored
     ///             filename
@@ -117,9 +132,9 @@ enum CardAttachmentStore {
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL? {
 
-        guard let fileName = attachment.fileName,
+        guard let fileName = attachment.fileName, /* Stored local filename */
               
-              let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+              let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
             
             return nil
         }
@@ -129,7 +144,12 @@ enum CardAttachmentStore {
             .appendingPathComponent(fileName, isDirectory: false)
     }
 
-    
+    /// Resolve a local URL only when an attachment represents a photo
+    ///
+    /// @param[in]  attachment Attachment metadata to inspect
+    ///
+    /// @return     (URL?) local photo URL, or nil for other media and unavailable files
+    ///
     static func imageURL(for attachment: KanbanAttachment) -> URL? {
         
         guard attachment.kind == .photo else { return nil }
@@ -137,17 +157,22 @@ enum CardAttachmentStore {
         return fileURL(for: attachment)
     }
 
-    
+    /// Validate and parse a web address entered as text
+    ///
+    /// @param[in]  text Candidate URL text
+    ///
+    /// @return     (URL?) HTTP or HTTPS URL with a host, or nil when invalid
+    ///
     static func webURL(from text: String) -> URL? {
         
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+          let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized pasted or typed URL */
 
-        guard let components = URLComponents(string: trimmedText),
+          guard let components = URLComponents(string: trimmedText), /* Parsed URL components */
               
-              let scheme = components.scheme?.lowercased(),
+              let scheme = components.scheme?.lowercased(), /* Normalized URL scheme */
               ["http", "https"].contains(scheme),
               
-              let host = components.host,
+              let host = components.host, /* Required URL host */
               !host.isEmpty else {
             
             return nil
@@ -172,13 +197,13 @@ enum CardAttachmentStore {
     ///
     static func removeUnreferencedFiles(keeping fileNames: Set<String>) {
 
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
             return
         }
 
-        let directoryURL = documentsURL.appendingPathComponent(directoryName, isDirectory: true)
+        let directoryURL = documentsURL.appendingPathComponent(directoryName, isDirectory: true) /* Attachment folder URL */
 
-        guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else {
+        guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else { /* Files available for cleanup */
             return
         }
 
@@ -202,11 +227,11 @@ enum CardAttachmentStore {
     ///
     private static func attachmentsDirectory() throws -> URL {
 
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
             throw CocoaError(.fileNoSuchFile)
         }
 
-        let directoryURL = documentsURL.appendingPathComponent(directoryName, isDirectory: true)
+        let directoryURL = documentsURL.appendingPathComponent(directoryName, isDirectory: true) /* Attachment folder URL */
 
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
@@ -215,7 +240,12 @@ enum CardAttachmentStore {
 }
 
 
-/// Sources available when adding an attachment to a card.
+///
+/// Identifies the attachment sources available from card detail
+///
+/// @section    Purpose
+///     Provide stable source identities and display metadata for the attachment picker
+///
 enum CardAttachmentSource: String, CaseIterable, Identifiable {
 
     case trello
@@ -229,9 +259,9 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
     case link
     case clipboard
 
-    var id: String { rawValue }
+    var id: String { rawValue } /* Stable picker identity */
 
-    var title: String {
+    var title: String { /* User-facing attachment-source label */
         switch self {
             case .trello:         "Trello"
             case .confluence:     "Confluence"
@@ -246,7 +276,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
         }
     }
 
-    var symbolName: String {
+    var symbolName: String { /* SF Symbol for the picker row */
         switch self {
             case .trello:         "square.split.2x2"
             case .confluence:     "water.waves"
@@ -263,18 +293,29 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
 }
 
 
-/// Presents attachment sources and dispatches supported source actions.
+///
+/// Presents supported attachment sources and dispatches the selected action
+///
+/// @section    Purpose
+///     Connect photo selection, link entry, clipboard import, and unavailable source notices
+///
 struct CardAttachmentSourceSheet: View {
 
-    @Binding var photoSelection: [PhotosPickerItem]
+    @Binding var photoSelection: [PhotosPickerItem] /* Current Photos-picker selection */
     
-    let onAddLink: ()          -> Void
-    let onPasteClipboard: ()   -> Void
-    let onComingSoon: (String) -> Void
+    let onAddLink: ()          -> Void /* Callback opening manual link entry */
+    let onPasteClipboard: ()   -> Void /* Callback importing clipboard link */
+    let onComingSoon: (String) -> Void /* Callback reporting unsupported source */
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
 
     
+    /// Dispatch the action associated with one attachment source
+    ///
+    /// @param[in]  source Selected attachment source
+    ///
+    /// @return     (Void) invokes the matching callback or system picker
+    ///
     private func select(_ source: CardAttachmentSource) {
         switch source {
             case .link:
@@ -289,7 +330,7 @@ struct CardAttachmentSourceSheet: View {
         }
     }
 
-    var body: some View {
+    var body: some View { /* Attachment-source picker */
         
         NavigationStack {
             
@@ -326,19 +367,24 @@ struct CardAttachmentSourceSheet: View {
 }
 
 
-/// Collects and validates a web address to attach to a card.
+///
+/// Collects and validates a web address to attach to a card
+///
+/// @section    Purpose
+///     Accept a valid URL and return it to the owning card-detail view
+///
 struct CardLinkAttachmentSheet: View {
 
-    let onSave: (URL) -> Void
+    let onSave: (URL) -> Void /* Callback receiving the validated URL */
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var urlDraft = ""
+    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
+    @State private var urlDraft = "" /* User-entered URL text */
 
-    private var validatedURL: URL? {
+    private var validatedURL: URL? { /* Parsed URL when the draft is valid */
         CardAttachmentStore.webURL(from: urlDraft)
     }
 
-    var body: some View {
+    var body: some View { /* Manual web-link form */
         NavigationStack {
             Form {
                 Section("Link") {
@@ -369,8 +415,12 @@ struct CardLinkAttachmentSheet: View {
         .presentationDragIndicator(.visible)
     }
 
+    /// Submit the entered URL when it passes web-link validation
+    ///
+    /// @return     (Void) invokes the save callback and dismisses the sheet
+    ///
     private func saveLink() {
-        guard let validatedURL else { return }
+        guard let validatedURL else { return } /* Require a valid web address */
         onSave(validatedURL)
         dismiss()
     }
@@ -385,7 +435,7 @@ struct CardLinkAttachmentSheet: View {
 ///
 struct CardAttachmentThumbnail: View {
 
-    let attachment: KanbanAttachment
+    let attachment: KanbanAttachment /* Attachment represented by the thumbnail */
 
     ///
     /// @fcn        CardAttachmentThumbnail.body
@@ -397,11 +447,11 @@ struct CardAttachmentThumbnail: View {
     /// @pre        attachment contains metadata for a local image file
     /// @post       Rendering does not modify the attachment or stored image data
     ///
-    var body: some View {
+    var body: some View { /* Local image, remote link, or media fallback */
 
         Group {
 
-            if let url = attachment.url {
+            if let url = attachment.url { /* Remote link URL */
                 
                 VStack(spacing: 6) {
                     
@@ -425,9 +475,9 @@ struct CardAttachmentThumbnail: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.secondarySystemGroupedBackground))
                 
-            } else if let imageURL = CardAttachmentStore.imageURL(for: attachment),
+            } else if let imageURL = CardAttachmentStore.imageURL(for: attachment), /* Local photo file URL */
                       
-               let image = UIImage(contentsOfFile: imageURL.path) {
+               let image = UIImage(contentsOfFile: imageURL.path) { /* Decoded local image */
                 
                 Image(uiImage: image)
                     .resizable()
@@ -455,9 +505,9 @@ struct CardAttachmentThumbnail: View {
 ///
 struct CardAttachmentPreview: View {
 
-    let attachment: KanbanAttachment        /* The photo attachment to be previewed */
+    let attachment: KanbanAttachment        /* The media attachment to preview */
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss /* Preview dismissal action */
 
     ///
     /// @fcn        CardAttachmentPreview.body
@@ -469,19 +519,19 @@ struct CardAttachmentPreview: View {
     /// @pre        attachment identifies a photo previously imported for a card
     /// @post       The preview is shown without modifying the image or its metadata
     ///
-    var body: some View {
+    var body: some View { /* Video or image preview with unavailable fallback */
 
         NavigationStack {
             Group {
 
                 if attachment.kind == .video,
                    
-                   let videoURL = CardAttachmentStore.fileURL(for: attachment) {
+                   let videoURL = CardAttachmentStore.fileURL(for: attachment) { /* Local video file URL */
                     VideoPlayer(player: AVPlayer(url: videoURL))
                     
-                } else if let imageURL = CardAttachmentStore.imageURL(for: attachment),
+                } else if let imageURL = CardAttachmentStore.imageURL(for: attachment), /* Local photo file URL */
                           
-                   let image = UIImage(contentsOfFile: imageURL.path) {
+                   let image = UIImage(contentsOfFile: imageURL.path) { /* Decoded local image */
                     
                     Image(uiImage: image)
                         .resizable()

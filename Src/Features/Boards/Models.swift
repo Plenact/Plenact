@@ -15,6 +15,93 @@ import Foundation
 // -------------------------------------- MARK: - Card Model ------------------------------------ //
 
 ///
+/// Identifies whether a card assignment references a registered demo account or a manual name
+///
+/// @section    Purpose
+///     Keep directory-backed identity distinct from free-text assignees during migration and sync
+///
+enum CardAssigneeKind: String, Codable {
+
+    case registeredUser   /* Stable server user reference */
+    case manual           /* User-entered display name     */
+}
+
+
+///
+/// Represents one person associated with a card
+///
+/// @section    Purpose
+///     Preserve a stable registered-user reference or a manual display name without conflating them
+///
+struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
+
+    let id:          UUID               /* Stable assignment row ID */
+    let kind:        CardAssigneeKind   /* Registered or manual     */
+    let userID:      String?            /* Stable registered user ID */
+    var displayName: String             /* Name shown on the card    */
+
+    ///
+    /// @fcn        CardAssignee.init(id:kind:userID:displayName:)
+    /// @brief      Initialize a typed card assignee
+    /// @details    Stores registered identity separately from its user-facing display name
+    ///
+    /// @param[in]  id           Stable assignment identity
+    /// @param[in]  kind         Registered-user or manual assignment kind
+    /// @param[in]  userID       Stable account ID when kind is registeredUser
+    /// @param[in]  displayName  Name shown in card and member views
+    ///
+    /// @return     (CardAssignee) configured card assignment
+    ///
+    init(id: UUID = UUID(), kind: CardAssigneeKind, userID: String? = nil, displayName: String) {
+
+        self.id          = id
+        self.kind        = kind
+        self.userID      = userID
+        self.displayName = displayName
+    }
+
+    ///
+    /// @fcn        CardAssignee.manual(_:)
+    /// @brief      Create a free-text assignment
+    /// @details    Marks the value as manual so it cannot be mistaken for a directory account
+    ///
+    /// @param[in]  displayName  User-entered person name
+    ///
+    /// @return     (CardAssignee) manual assignment with a stable local identity
+    ///
+    static func manual(_ displayName: String) -> CardAssignee {
+        CardAssignee(kind: .manual, displayName: displayName)
+    }
+
+    ///
+    /// @fcn        CardAssignee.registered(userID:displayName:)
+    /// @brief      Create a directory-backed assignment
+    /// @details    Uses the stable server user ID as the durable account reference
+    ///
+    /// @param[in]  userID       Stable ID returned by the authenticated user directory
+    /// @param[in]  displayName  Current directory display name cached for offline rendering
+    ///
+    /// @return     (CardAssignee) registered-user assignment
+    ///
+    static func registered(userID: String, displayName: String) -> CardAssignee {
+        CardAssignee(kind: .registeredUser, userID: userID, displayName: displayName)
+    }
+
+    ///
+    /// @fcn        CardAssignee.init(stringLiteral:)
+    /// @brief      Preserve source compatibility for existing string-based starter members
+    /// @details    Converts a string literal into an explicitly manual assignment
+    ///
+    /// @param[in]  value  User-entered or seeded display name
+    ///
+    /// @return     (CardAssignee) manual assignment with a stable identity
+    ///
+    init(stringLiteral value: String) {
+        self = .manual(value)
+    }
+}
+
+///
 /// Represents one card displayed on a kanban list
 ///
 /// @section    Purpose
@@ -25,11 +112,11 @@ import Foundation
 struct KanbanCard: Identifiable, Hashable, Codable {
 
     let id:                   Int                 /* Stable numeric identifier for the card             */
-    let word:                 String              /* Display word shown as the card's title             */
+    var word:                 String              /* Display word shown as the card's title             */
     var listTitle:            String              /* Name of the list where the card resides            */
     var isDivider:            Bool                /* Whether this item is a movable section divider     */
     var isTitleChecked:       Bool                /* Whether the card's main title checkbox is selected */
-    var members:              [String]            /* User names assigned to the card                    */
+    var members:              [CardAssignee]      /* Registered and manual card assignments             */
     var labelIDs:             [String]            /* Stable IDs of labels assigned to the card          */
 
     var startDate:            Date?               /* Optional start date for the card                   */
@@ -44,15 +131,15 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
     /// Indicates whether this item should render and behave as a section divider
-    var isSectionDivider: Bool {
+    var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
         isDivider || Self.isDividerTitle(word)
     }
 
     /// Recognizes the ASCII marker and dash characters substituted by iOS smart punctuation
     static func isDividerTitle(_ title: String) -> Bool {
 
-        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")
+        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
+        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−") /* Accepted divider dash characters */
 
         guard !trimmedTitle.isEmpty,
               trimmedTitle.unicodeScalars.allSatisfy({ dashCharacters.contains($0) }) else {
@@ -84,7 +171,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @pre        All values should be valid for the board's deterministic sample data
     /// @post       The card contains the provided identity, title text, and checked state
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [String] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -107,10 +194,77 @@ struct KanbanCard: Identifiable, Hashable, Codable {
         ]
     }
 
-    /// Human-readable label for the card's start date
-    var startDateLabel: String {
+    ///
+    /// @fcn        KanbanCard.init(from:)
+    /// @brief      Decode current typed assignments or migrate legacy member strings
+    /// @details    Existing `[String]` members become manual assignees; typed directory references
+    ///             retain their stable user IDs
+    ///
+    /// @param[in]  decoder  Decoder containing a current or previously saved Board card
+    ///
+    /// @return     (KanbanCard) decoded card with preserved member assignments
+    ///
+    /// @throws     DecodingError when required card identity or content is invalid
+    ///
+    init(from decoder: Decoder) throws {
 
-        guard let startDate else {
+        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Card fields */
+        let decodedMembers: [CardAssignee] /* Typed or migrated card assignments */
+
+        if let typedMembers = try? container.decode([CardAssignee].self, forKey: .members) { /* Current typed representation */
+            decodedMembers = typedMembers /* Keep registered identity references */
+        } else {
+            let legacyMembers = try container.decodeIfPresent([String].self, forKey: .members) ?? []   /* Legacy names */
+            decodedMembers = legacyMembers.map(CardAssignee.manual) /* Migrate old names as manual entries */
+        }
+
+        self.init(
+            id:                   try container.decode(Int.self, forKey: .id),
+            word:                 try container.decode(String.self, forKey: .word),
+            listTitle:            try container.decode(String.self, forKey: .listTitle),
+            isDivider:            try container.decodeIfPresent(Bool.self, forKey: .isDivider) ?? false,
+            isTitleChecked:       try container.decodeIfPresent(Bool.self, forKey: .isTitleChecked) ?? false,
+            startDate:            try container.decodeIfPresent(Date.self, forKey: .startDate),
+            dueDate:              try container.decodeIfPresent(Date.self, forKey: .dueDate),
+            checklists:           try container.decodeIfPresent([KanbanChecklist].self, forKey: .checklists),
+            comments:             try container.decodeIfPresent([KanbanComment].self, forKey: .comments) ?? [],
+            members:              decodedMembers,
+            labelIDs:             try container.decodeIfPresent([String].self, forKey: .labelIDs) ?? [],
+            attachments:          try container.decodeIfPresent([KanbanAttachment].self, forKey: .attachments),
+            dismissedActivityIDs: try container.decodeIfPresent(Set<String>.self, forKey: .dismissedActivityIDs) ?? [],
+            descriptionOverride:  try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
+            subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
+        )
+    }
+
+    ///
+    /// Identifies persisted card fields for legacy and typed assignment decoding
+    ///
+    /// @section    Purpose
+    ///     Preserve established Board JSON keys while upgrading only the member value shape
+    ///
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case word
+        case listTitle
+        case isDivider
+        case isTitleChecked
+        case startDate
+        case dueDate
+        case checklists
+        case comments
+        case members
+        case labelIDs
+        case attachments
+        case dismissedActivityIDs
+        case descriptionOverride
+        case subtitleOverride
+    }
+
+    /// Human-readable label for the card's start date
+    var startDateLabel: String { /* Start-date badge text or default */
+
+        guard let startDate else { /* No explicit start date */
             return "Today"
         }
 
@@ -118,9 +272,9 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     }
 
     /// Human-readable label for the card's due date
-    var dueDateLabel: String {
+    var dueDateLabel: String { /* Due-date badge text or default */
 
-        guard let dueDate else {
+        guard let dueDate else { /* No explicit due date */
             return "Tomorrow"
         }
 
@@ -128,9 +282,9 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     }
 
     /// Shared formatter used to render card date labels
-    private static let dateFormatter: DateFormatter = {
+    private static let dateFormatter: DateFormatter = { /* Shared date-only display formatter */
 
-        let formatter       = DateFormatter()
+        let formatter       = DateFormatter() /* Formatter used for card date labels */
 
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
@@ -139,8 +293,8 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     }()
 
     /// Short supporting copy shown beneath the card title
-    var subtitle: String {
-        if let subtitleOverride {
+    var subtitle: String { /* Supporting card text or user override */
+        if let subtitleOverride { /* Explicitly edited subtitle */
             return subtitleOverride
         }
 
@@ -148,33 +302,33 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     }
 
     /// Checklist labels used by the card detail presentation
-    var checklistItems: [String] {
+    var checklistItems: [String] { /* Titles from the first checklist */
         checklists.first?.items.map(\.title) ?? []
     }
 
     /// Number of checklist items shown as complete for this sample card
-    var completedChecklistItems: Int {
+    var completedChecklistItems: Int { /* Completion count for the first checklist */
         checklists.first?.completed ?? 0
     }
 
     /// Number of sample comments shown on the board card
-    var commentCount: Int {
+    var commentCount: Int { /* Number of activity comments */
         comments.count
     }
 
     /// Indicates whether the sample card displays a due-date badge
-    var hasDueDate: Bool {
+    var hasDueDate: Bool { /* Sample badge visibility for the card */
         id % 3 != 1
     }
 
     /// Humorous context paragraph shown in the card detail view
-    var funParagraph: String {
+    var funParagraph: String { /* User description or generated sample context */
 
-        if let descriptionOverride {
+        if let descriptionOverride { /* User-authored description */
             return descriptionOverride
         }
 
-        let templates: [(String, String) -> String] = [
+        let templates: [(String, String) -> String] = [ /* Generated card-context templates */
 
             { word, title in
                 "Deep within the \(title) list, a \(word) staged a one-creature protest, demanding better lighting and a snack table. Management is 'reviewing the request', which is corporate for 'ignoring it politely'."
@@ -208,7 +362,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
             }
         ]
 
-        let template = templates[id % templates.count]
+        let template = templates[id % templates.count] /* Deterministic template for this card */
 
         return template(word, listTitle)
     }
@@ -231,8 +385,8 @@ struct KanbanList: Identifiable, Hashable, Codable {
 
 
     /// Supporting copy shown beneath the list title.
-    var subtitle: String {
-        let subtitles = ["Ideas taking shape", "Ready for a little momentum", "Currently in progress", "Nearly across the finish line", "Done, or at least confidently presented"]
+    var subtitle: String { /* Supporting text for the list header */
+        let subtitles = ["Ideas taking shape", "Ready for a little momentum", "Currently in progress", "Nearly across the finish line", "Done, or at least confidently presented"] /* List subtitle options */
 
         return subtitles[id % subtitles.count]
     }
@@ -363,10 +517,10 @@ enum KanbanChecklistActionContent: Hashable, Codable {
         switch self {
             case .standard:
                 try container.encode(Kind.standard, forKey: .kind)
-            case .linkedCard(let cardID):
+            case .linkedCard(let cardID): /* Referenced Board card identity */
                 try container.encode(Kind.linkedCard, forKey: .kind)
                 try container.encode(cardID, forKey: .cardID)
-            case .actionDetail(let detail):
+            case .actionDetail(let detail): /* Owned reduced Action Detail payload */
                 try container.encode(Kind.actionDetail, forKey: .kind)
                 try container.encode(detail, forKey: .detail)
         }
@@ -671,6 +825,13 @@ struct KanbanComment: Identifiable, Hashable, Codable {
     let body:      String       /* Body text of the comment                          */
     let createdAt: Date         /* Timestamp indicating when the comment was created */
 
+    /// Create a card comment with a stable identity and timestamp
+    ///
+    /// @param[in]  id        Comment identity
+    /// @param[in]  author    Display name of the comment author
+    /// @param[in]  body      Comment text
+    /// @param[in]  createdAt Comment creation time
+    ///
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now) {
         self.id = id
         self.author = author
@@ -692,7 +853,7 @@ struct KanbanComment: Identifiable, Hashable, Codable {
 ///
 enum KanbanBoardPersistence {
 
-    private static let storageKey = "Plenact.Board.v1"
+    private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
 
     ///
     /// @fcn        KanbanBoardPersistence.loadLists
@@ -706,9 +867,9 @@ enum KanbanBoardPersistence {
     ///
     static func loadLists() -> [KanbanList] {
 
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+          guard let data = UserDefaults.standard.data(forKey: storageKey), /* Encoded local Board data */
 
-              let lists = try? JSONDecoder().decode([KanbanList].self, from: data) else {
+              let lists = try? JSONDecoder().decode([KanbanList].self, from: data) else { /* Successfully decoded lists */
                 
             return SampleData.lists
         }
@@ -730,7 +891,7 @@ enum KanbanBoardPersistence {
     ///
     static func saveLists(_ lists: [KanbanList]) {
 
-        guard let data = try? JSONEncoder().encode(lists) else { return }
+        guard let data = try? JSONEncoder().encode(lists) else { return } /* Encoded Board snapshot */
 
         UserDefaults.standard.set(data, forKey: storageKey)
     }
@@ -749,12 +910,12 @@ enum KanbanBoardPersistence {
 enum SampleData {
 
     /// Titles assigned to the seven horizontally navigable Board lists.
-    static let listTitles = [
+    static let listTitles = [ /* Weekday list ordering for the starter Board */
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     ]
 
     /// Planning-oriented card titles aligned with each weekday list.
-    static let cardTitlesByDay: [[String]] = [
+    static let cardTitlesByDay: [[String]] = [ /* Synthetic activity titles grouped by weekday */
         [
             "Review the week ahead",
             "Set three priorities",
@@ -853,7 +1014,7 @@ enum SampleData {
     ///
     private static func enrichedChecklists(for card: KanbanCard, linkedCard: KanbanCard) -> [KanbanChecklist] {
 
-        guard let firstChecklist = card.checklists.first else { return card.checklists }
+        guard let firstChecklist = card.checklists.first else { return card.checklists } /* Checklist receiving sample actions */
 
         let linkedAction = KanbanChecklistItem(   /* Existing card link */
             title:   "Open \(linkedCard.word) card",
@@ -892,15 +1053,15 @@ enum SampleData {
 
 
     /// Complete starter Board generated from weekday lists and planning cards.
-    static let lists: [KanbanList] = {
+    static let lists: [KanbanList] = { /* Deterministic seven-day starter Board */
 
-        var globalIndex = 0
+        var globalIndex = 0 /* Board-wide list/card seed identity counter */
 
-        var initializedLists = listTitles.enumerated().map { listIndex, title in
+        var initializedLists = listTitles.enumerated().map { listIndex, title in /* Seed one list per weekday */
 
-            let cards = cardTitlesByDay[listIndex].map { cardTitle -> KanbanCard in
+            let cards = cardTitlesByDay[listIndex].map { cardTitle -> KanbanCard in /* Seed the day's activities */
 
-                let card = KanbanCard(
+                let card = KanbanCard( /* Construct one synthetic starter card */
                     id:             globalIndex,
                     word:           cardTitle,
                     listTitle:      title,

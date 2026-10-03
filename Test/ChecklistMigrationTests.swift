@@ -233,11 +233,11 @@ final class ChecklistMigrationTests: XCTestCase {
           }
 
           let actions = card.checklists.flatMap(\.items)   /* Card checklist actions */
-          let linkedCardIDs = actions.compactMap { item -> Int? in
-            guard case .linkedCard(let cardID) = item.content else { return nil }
+          let linkedCardIDs = actions.compactMap { item -> Int? in /* Resolved linked-card target IDs */
+            guard case .linkedCard(let cardID) = item.content else { return nil } /* Linked card ID */
             return cardID
           }
-          let detailCount = actions.filter { item in
+          let detailCount = actions.filter { item in /* Count reduced Action Details */
             guard case .actionDetail = item.content else { return false }
             return true
           }.count
@@ -245,7 +245,7 @@ final class ChecklistMigrationTests: XCTestCase {
           XCTAssertEqual(linkedCardIDs.count, 1, "\(card.word) should demonstrate one card link")
           XCTAssertEqual(detailCount, 2, "\(card.word) should demonstrate two Action Details")
 
-          if let linkedCardID = linkedCardIDs.first {
+          if let linkedCardID = linkedCardIDs.first { /* First seeded linked-card target */
             let linkedCard = cardsByID[linkedCardID]   /* Resolved sample target */
 
             XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
@@ -283,4 +283,60 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertTrue(SampleData.lists[0].cards.contains { $0.word == "Laundry session" })
         XCTAssertTrue(SampleData.lists[6].cards.contains { $0.word == "Review the upcoming calendar" })
       }
+
+      ///
+      /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees
+      /// @brief      Preserve revision 0 card member strings as manual assignments
+      /// @details    Confirms old Board snapshots do not accidentally claim registered identities
+      ///
+      /// @return     (Void) succeeds when legacy names remain visible and are explicitly manual
+      ///
+      /// @throws     Decoding failures when the previous card member representation is incompatible
+      ///
+      func testLegacyCardMemberNamesBecomeManualAssignees() throws {
+
+        let legacyJSON = """
+        {
+          "id": 9,
+          "word": "Plan the week",
+          "listTitle": "Monday",
+          "isDivider": false,
+          "isTitleChecked": false,
+          "members": ["Jim", "Sally"]
+        }
+        """   /* Legacy member fixture */
+
+        let card = try JSONDecoder().decode(KanbanCard.self, from: Data(legacyJSON.utf8))   /* Decoded card */
+
+        XCTAssertEqual(card.members.map(\.displayName), ["Jim", "Sally"])
+        XCTAssertTrue(card.members.allSatisfy { $0.kind == .manual && $0.userID == nil })
+    }
+
+    ///
+    /// @fcn        ChecklistMigrationTests.testRegisteredCardAssigneeRoundTripsStableUserID
+    /// @brief      Preserve registered identity separately from its display name
+    /// @details    Verifies the Board Codable model stores a stable user ID for an assignee
+    ///
+    /// @return     (Void) succeeds when the encoded card restores the same registered account link
+    ///
+    /// @throws     Encoding or decoding failures for the card assignment
+    ///
+    func testRegisteredCardAssigneeRoundTripsStableUserID() throws {
+
+        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"   /* Stable demo user ID */
+        let card = KanbanCard(   /* Card with directory assignment */
+            id:        10,
+            word:      "Prepare the week",
+            listTitle: "Monday",
+            members:   [.registered(userID: userID, displayName: "Jim")]
+        )
+
+        let encoded = try JSONEncoder().encode(card)   /* Encoded card */
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)   /* Round-trip card */
+
+        XCTAssertEqual(decoded.members.count, 1)
+        XCTAssertEqual(decoded.members[0].kind, .registeredUser)
+        XCTAssertEqual(decoded.members[0].userID, userID)
+        XCTAssertEqual(decoded.members[0].displayName, "Jim")
+    }
 }

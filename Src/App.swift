@@ -110,6 +110,9 @@ private struct AppRootView: View {
                     profile = nil
                     LocalProfileStore.remove()
                 },
+                onAddCard: { listID, title, description in
+                    addCard(to: listID, title: title, description: description)
+                },
                 onOpenBoardList: { listID in
                     boardTargetListID   = listID
                     selectedDestination = .board
@@ -127,6 +130,26 @@ private struct AppRootView: View {
                 .tag(AppDestination.board)
         }
     }
+
+        private func addCard(to listID: Int, title: String, description: String) {
+
+            guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Destination list index */
+
+            let nextCardID = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
+            var updatedList = lists[listIndex] /* Mutable destination-list copy */
+            updatedList.cards.append(
+                KanbanCard(
+                    id:                  nextCardID,
+                    word:                title,
+                    listTitle:           updatedList.title,
+                    isDivider:           KanbanCard.isDividerTitle(title),
+                    descriptionOverride: description.isEmpty ? nil : description
+                )
+            )
+
+            lists[listIndex] = updatedList
+            KanbanBoardPersistence.saveLists(lists)
+        }
 }
 
 
@@ -144,11 +167,14 @@ private struct TodayHomeView: View {
     let profile: LocalProfile?                     /* Current local profile and preferences              */
     let onSaveProfile: (LocalProfile) -> Void      /* Save local identity and personalization            */
     let onRemoveProfile: () -> Void                /* Remove only local profile information              */
+    let onAddCard: (Int, String, String) -> Void   /* Add a card to an existing Board list                */
     let onOpenBoardList: (Int) -> Void             /* Route to Board at the selected list ID             */
 
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
+    @State private var quickCaptureTitle = ""               /* Draft title for inline card capture      */
+    @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
 
     /// @brief      Resolve today's saved list selection against the current board
     /// @details    Returns no list when the saved identifier is missing or no longer exists
@@ -188,6 +214,7 @@ private struct TodayHomeView: View {
         profile:         LocalProfile?,
         onSaveProfile:   @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
+        onAddCard:       @escaping (Int, String, String) -> Void,
         onOpenBoardList: @escaping (Int) -> Void
     ) {
 
@@ -195,6 +222,7 @@ private struct TodayHomeView: View {
         self.profile         = profile
         self.onSaveProfile   = onSaveProfile
         self.onRemoveProfile = onRemoveProfile
+        self.onAddCard       = onAddCard
         self.onOpenBoardList = onOpenBoardList
 
         let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int /* Persisted date-specific selection */
@@ -235,6 +263,32 @@ private struct TodayHomeView: View {
     private func cardCount(in list: KanbanList) -> Int {
 
         list.cards.filter { !$0.isSectionDivider }.count
+    }
+
+    /// Add the inline capture to the current Today list, prompting for a list when none is selected.
+    private func addQuickCard() {
+
+        let title = quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Clean card title */
+        guard !title.isEmpty else { return }
+
+        guard let selectedTodayList else {
+            listPickerMode = .chooseToday
+            return
+        }
+
+        onAddCard(selectedTodayList.id, title, "")
+        quickCaptureTitle = ""
+    }
+
+    /// Open the detailed composer only after a destination list is selected.
+    private func openQuickNoteEditor() {
+
+        guard selectedTodayList != nil else {
+            listPickerMode = .chooseToday
+            return
+        }
+
+        showsQuickNoteEditor = true
     }
 
     ///
@@ -296,6 +350,8 @@ private struct TodayHomeView: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel(profile == nil ? "Create local profile" : "Open Account and Settings")
                     }
+
+                    quickCaptureSection
 
                     VStack(alignment: .leading, spacing: 14) {
 
@@ -373,6 +429,13 @@ private struct TodayHomeView: View {
                     onRemove: onRemoveProfile
                 )
             }
+            .sheet(isPresented: $showsQuickNoteEditor) {
+                if let selectedTodayList {
+                    QuickNoteComposer(listTitle: selectedTodayList.title) { title, description in
+                        onAddCard(selectedTodayList.id, title, description)
+                    }
+                }
+            }
             .sheet(item: $listPickerMode) { mode in
                 NavigationStack {
                     List {
@@ -421,5 +484,109 @@ private struct TodayHomeView: View {
                 .presentationDetents([.medium, .large])
             }
         }
+    }
+
+    private var quickCaptureSection: some View {
+
+        VStack(alignment: .leading, spacing: 8) {
+
+            Text("Quick capture")
+                .font(.title2.weight(.semibold))
+
+            HStack(spacing: 8) {
+
+                Image(systemName: "plus.square")
+                    .foregroundStyle(.secondary)
+
+                TextField("Add a card to today…", text: $quickCaptureTitle)
+                    .submitLabel(.done)
+                    .onSubmit(addQuickCard)
+                    .accessibilityLabel("Quick capture card title")
+
+                Button(action: openQuickNoteEditor) {
+                    Image(systemName: "arrow.up.right")
+                        .frame(width: 36, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open full card editor")
+
+                Button(action: addQuickCard) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .frame(width: 36, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel("Add card to today's list")
+            }
+            .padding(.horizontal, 12)
+            .background(.background, in: RoundedRectangle(cornerRadius: 8))
+
+            if let selectedTodayList {
+                Text("Adding to \(selectedTodayList.title)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Button("Choose today's list first") {
+                    listPickerMode = .chooseToday
+                }
+                .font(.caption)
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+
+/// Creates a card with optional supporting detail for the selected Today list.
+private struct QuickNoteComposer: View {
+
+    let listTitle: String /* Destination list displayed in the editor */
+    let onSave: (String, String) -> Void /* Create the card in the selected list */
+
+    @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
+    @State private var title = "" /* New card title */
+    @State private var description = "" /* Optional card detail */
+
+    private var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+
+        NavigationStack {
+            Form {
+                Section("Card") {
+                    TextField("Title", text: $title)
+                    TextField("Details (optional)", text: $description, axis: .vertical)
+                        .lineLimit(4...8)
+                }
+
+                Section("Add to") {
+                    Label(listTitle, systemImage: "list.bullet")
+                }
+            }
+            .navigationTitle("New card")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        onSave(trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        dismiss()
+                    }
+                    .disabled(trimmedTitle.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 }

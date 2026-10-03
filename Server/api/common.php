@@ -11,7 +11,7 @@ declare(strict_types=1);
 // -------------------------------------- MARK: - Configuration ------------------------------- //
 
 const PLENACT_JSON_DEPTH          = 512;        /* Maximum depth for JSON decoding            */
-const PLENACT_MAX_REQUEST_BYTES   = 1048576;    /* Maximum allowed request body size in bytes */
+const PLENACT_MAX_JSON_BODY_BYTES  = 1048576;    /* Maximum UTF-8 JSON HTTP body size in bytes */
 const PLENACT_SESSION_TOKEN_BYTES = 32;         /* Length of session tokens in bytes          */
 const PLENACT_MAX_PASSWORD_BYTES  = 72;         /* Maximum allowed password length in bytes   */
 
@@ -41,7 +41,13 @@ function respond_json(int $status, array $body): never
     header('X-Content-Type-Options: nosniff');
 
     try {
-        echo json_encode($body, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
+        $encodedBody = json_encode($body, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE); /* Encoded response bytes */
+        if (!is_json_body_within_limit($encodedBody)) {
+            http_response_code(500);
+            echo '{"error":"server_error"}';
+        } else {
+            echo $encodedBody;
+        }
 
     } catch (Throwable) {
 
@@ -51,6 +57,21 @@ function respond_json(int $status, array $body): never
     }
 
     exit;
+}
+
+
+/**
+ * @fcn        is_json_body_within_limit
+ * @brief      Check an encoded JSON HTTP body against the shared byte ceiling
+ * @details    PHP strings contain UTF-8 bytes here, so strlen matches the wire-size limit
+ *
+ * @param[in]  $body Encoded JSON body
+ *
+ * @return     (bool) true when the body is at most 1 MiB
+ */
+function is_json_body_within_limit(string $body): bool
+{
+    return strlen($body) <= PLENACT_MAX_JSON_BODY_BYTES;
 }
 
 
@@ -97,7 +118,7 @@ function require_https(): void
  * @fcn        read_json_body
  * @brief      Decode a bounded application/json request body
  * @details    The request body must be a valid JSON object and is subject to size limitations 
- *             defined by PLENACT_MAX_REQUEST_BYTES
+ *             defined by PLENACT_MAX_JSON_BODY_BYTES
  * 
  * @return     (array) decoded JSON object
  */
@@ -111,12 +132,12 @@ function read_json_body(): array
 
     $contentLength = $_SERVER['CONTENT_LENGTH'] ?? null; /* Declared request byte count */
 
-    if (is_string($contentLength) && ctype_digit($contentLength) && (int)$contentLength > PLENACT_MAX_REQUEST_BYTES) {
+    if (is_string($contentLength) && ctype_digit($contentLength) && (int)$contentLength > PLENACT_MAX_JSON_BODY_BYTES) {
         respond_json(413, ['error' => 'request_too_large']);
     }
 
     $input = fopen('php://input', 'rb'); /* Raw request stream */
-    $body  = $input === false ? false : stream_get_contents($input, PLENACT_MAX_REQUEST_BYTES + 1); /* Bounded request bytes */
+    $body  = $input === false ? false : stream_get_contents($input, PLENACT_MAX_JSON_BODY_BYTES + 1); /* Bounded request bytes */
 
     if (is_resource($input)) {
         fclose($input);
@@ -126,7 +147,7 @@ function read_json_body(): array
         respond_json(400, ['error' => 'invalid_json']);
     }
 
-    if (strlen($body) > PLENACT_MAX_REQUEST_BYTES) {
+    if (!is_json_body_within_limit($body)) {
         respond_json(413, ['error' => 'request_too_large']);
     }
 

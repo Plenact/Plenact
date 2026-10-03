@@ -80,6 +80,14 @@ check(
     validate_board_document($document, $activeUsers) === null,
     'Valid v1 Board document was rejected.'
 );
+check(
+    is_json_body_within_limit(str_repeat('x', PLENACT_MAX_JSON_BODY_BYTES)),
+    'A JSON body at the maximum byte limit was rejected.'
+);
+check(
+    !is_json_body_within_limit(str_repeat('x', PLENACT_MAX_JSON_BODY_BYTES + 1)),
+    'A JSON body above the maximum byte limit was accepted.'
+);
 
 // -------------------------------------- MARK: - Identity And Label Validation --------------- //
 

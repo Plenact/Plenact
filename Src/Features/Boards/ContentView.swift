@@ -12,6 +12,12 @@
 import SwiftUI
 
 
+///
+/// Stores optional presentation controls for cards on the Board
+///
+/// @section    Purpose
+///     Keep card progress, comment, and date visibility preferences together
+///
 struct BoardDisplaySettings {
     var showChecklistProgress = true    /* Display checklist progress on cards */
     var showCommentCounts     = true    /* Display comment counts on cards     */
@@ -67,7 +73,7 @@ struct ContentView: View {
     /// @pre        lists contains the current in-memory board state
     /// @post       No board data is modified; duplicate and empty names are omitted from the result
     ///
-    private var activeMembers: [String] {
+    private var activeMembers: [String] { /* Unique names assigned to non-divider cards */
 
         var seenMembers: Set<String> = []       /* Track unique members to avoid duplicates */
 
@@ -75,9 +81,9 @@ struct ContentView: View {
             .flatMap(\.cards)
             .filter { !$0.isSectionDivider }
             .flatMap(\.members)
-            .compactMap { member in
+            .compactMap { assignee in
 
-                let trimmedMember    = member.trimmingCharacters(in: .whitespacesAndNewlines)   /* Trim whitespace and newlines from the member name         */
+                let trimmedMember    = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Display name */
                 let normalizedMember = trimmedMember.lowercased()                               /* Normalize the member name for case-insensitive comparison */
 
                 guard !trimmedMember.isEmpty, seenMembers.insert(normalizedMember).inserted else {
@@ -103,11 +109,12 @@ struct ContentView: View {
     /// @pre        currentName identifies the member being renamed
     /// @post       Matching names are replaced; duplicate assignments within each card are removed
     ///
-    /// @note       An empty proposed name is ignored; if the new name already has a color, that color is retained
+    /// @note       An empty proposed name is ignored; if the new name already has a color, that
+    ///             color is retained
     ///
     private func renameMember(from currentName: String, to proposedName: String) {
 
-        let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines) /* Trimmed replacement name */
 
         guard !updatedName.isEmpty else { return }
 
@@ -121,17 +128,26 @@ struct ContentView: View {
                 var updatedCard            = lists[listIndex].cards[cardIndex]  /* Copy of the current card for in-place updates     */
                 var seenNames: Set<String> = []                                 /* Track unique member names within the current card */
 
-                updatedCard.members = updatedCard.members.compactMap { member in
+                updatedCard.members = updatedCard.members.compactMap { assignee in
 
-                    let trimmedMember  = member.trimmingCharacters(in: .whitespacesAndNewlines)                 /* Trim whitespace and newlines from the member name      */
-                    let renamedMember  = trimmedMember.lowercased() == currentKey ? updatedName : trimmedMember /* Determine the new member name based on the current key */
-                    let normalizedName = renamedMember.lowercased()                                             /* Normalized key for the renamed member                  */
+                    let trimmedMember = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Existing display name */
+                    let renamedMember = assignee.kind == .manual && trimmedMember.lowercased() == currentKey /* Match only manual names */
+                        ? updatedName
+                        : trimmedMember /* Name retained or updated for this assignment */
+                    let normalizedName = assignee.kind == .registeredUser /* Namespace stable IDs separately from names */
+                        ? "user:\(assignee.userID ?? assignee.id.uuidString)"
+                        : "manual:\(renamedMember.lowercased())" /* Stable deduplication key */
 
                     guard !renamedMember.isEmpty, seenNames.insert(normalizedName).inserted else {
                         return nil
                     }
 
-                    return renamedMember
+                    return CardAssignee(
+                        id:          assignee.id,
+                        kind:        assignee.kind,
+                        userID:      assignee.userID,
+                        displayName: renamedMember
+                    )
                 }
 
                 updatedCard.comments = updatedCard.comments.map { comment in
@@ -156,7 +172,7 @@ struct ContentView: View {
             currentUserName = updatedName
         }
 
-        if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey) {
+        if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey) { /* Preserve the old icon color */
             memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
         }
     }
@@ -177,7 +193,7 @@ struct ContentView: View {
     ///
     private func removeMember(_ memberName: String) {
 
-        let normalizedMemberName = memberName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedMemberName = memberName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() /* Normalized removal key */
 
         guard !normalizedMemberName.isEmpty else { return }
 
@@ -187,7 +203,7 @@ struct ContentView: View {
 
                 lists[listIndex].cards[cardIndex].members.removeAll { member in
 
-                    member.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName
+                    member.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName
                 }
             }
         }
@@ -232,10 +248,10 @@ struct ContentView: View {
     /// @post       A uniquely identified empty list is appended to the board
     ///
     private func addList() {
-        let nextListID     = (lists.map(\.id).max() ?? -1) + 1
-        let existingTitles = Set(lists.map { $0.title.lowercased() })
-        var newTitle       = "New List"
-        var suffix         = 2
+        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
+        let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Normalized current titles */
+        var newTitle       = "New List" /* First candidate list name */
+        var suffix         = 2 /* Duplicate-title suffix */
 
         while existingTitles.contains(newTitle.lowercased()) {
             newTitle = "New List \(suffix)"
@@ -262,7 +278,7 @@ struct ContentView: View {
     ///
     private func safeFrameDimension(_ dimension: CGFloat, subtracting inset: CGFloat) -> CGFloat {
 
-        let availableDimension = (dimension - inset)
+        let availableDimension = (dimension - inset) /* Dimension remaining after the inset */
         
         guard availableDimension.isFinite else { return 1 }
         
@@ -286,10 +302,10 @@ struct ContentView: View {
     ///
     private func addCard(to listID: Int, title: String, description: String) {
 
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Destination list index */
 
-        let nextCardID  = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
-        var updatedList = lists[listIndex]
+        let nextCardID  = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
+        var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
         /// Append the new card to the list's cards array
         updatedList.cards.append(
@@ -321,7 +337,7 @@ struct ContentView: View {
     ///
     private func deleteCard(in listID: Int, cardID: Int) {
 
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List containing the card */
 
         lists[listIndex].cards.removeAll { $0.id == cardID }
 
@@ -345,17 +361,17 @@ struct ContentView: View {
     ///
     private func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int) {
 
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List being reordered */
 
-        var cards = lists[listIndex].cards
+        var cards = lists[listIndex].cards /* Mutable card-order copy */
 
-        guard let sourceIndex = cards.firstIndex(where: { $0.id == cardID }), !cards.isEmpty else { return }
+        guard let sourceIndex = cards.firstIndex(where: { $0.id == cardID }), !cards.isEmpty else { return } /* Original card position */
 
-        let safeDestinationIndex = min(max(destinationIndex, 0), cards.count - 1)
+        let safeDestinationIndex = min(max(destinationIndex, 0), cards.count - 1) /* Clamped insertion position */
 
         guard sourceIndex != safeDestinationIndex else { return }
 
-        let movedCard = cards.remove(at: sourceIndex)
+        let movedCard = cards.remove(at: sourceIndex) /* Card removed before reinsertion */
 
         cards.insert(movedCard, at: safeDestinationIndex)
 
@@ -380,16 +396,16 @@ struct ContentView: View {
     ///
     private func copyList(with listID: Int) {
 
-        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Source list position */
 
-        let source       = lists[sourceIndex]
-        let copiedTitle  = "\(source.title) Copy"
-        let copiedListID = (lists.map(\.id).max() ?? -1) + 1
-        var nextCardID   = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
+        let source       = lists[sourceIndex] /* Source list snapshot */
+        let copiedTitle  = "\(source.title) Copy" /* New list display title */
+        let copiedListID = (lists.map(\.id).max() ?? -1) + 1 /* New list identity */
+        var nextCardID   = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Next unique card identity */
 
-        let copiedCards = source.cards.map { card in
+        let copiedCards = source.cards.map { card /* Source card being copied */ in
         
-            let copy = KanbanCard(
+            let copy = KanbanCard( /* New card retaining source content */
                 id:                   nextCardID,
                 word:                 card.word,
                 listTitle:            copiedTitle,
@@ -431,13 +447,13 @@ struct ContentView: View {
     ///
     private func moveList(with listID: Int, by offset: Int) {
 
-        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Source list position */
 
-        let destinationIndex = sourceIndex + offset
+        let destinationIndex = sourceIndex + offset /* Requested destination position */
 
         guard lists.indices.contains(destinationIndex) else { return }
 
-        let movedList = lists.remove(at: sourceIndex)
+        let movedList = lists.remove(at: sourceIndex) /* List moved out before reinsertion */
 
         lists.insert(movedList, at: destinationIndex)
     }
@@ -458,15 +474,15 @@ struct ContentView: View {
     ///
     private func sortList(with listID: Int, ascending: Bool) {
 
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List being sorted */
 
-        var updatedList = lists[listIndex]
+        var updatedList = lists[listIndex] /* Mutable list copy */
 
-        var sortedCards:    [KanbanCard] = []
-        var currentSection: [KanbanCard] = []
+        var sortedCards:    [KanbanCard] = [] /* Cards emitted in sorted order */
+        var currentSection: [KanbanCard] = [] /* Cards before the next divider */
 
         // Iterate through each card in the list, grouping them by sections and sorting within each section
-        for card in updatedList.cards {
+        for card in updatedList.cards { /* Preserve divider-separated sections */
 
             guard card.isSectionDivider else {
                 currentSection.append(card)
@@ -476,7 +492,7 @@ struct ContentView: View {
             // When encountering a section divider, sort the current section and append it to the sorted 
             // cards before adding the divider itself
             sortedCards.append(contentsOf: currentSection.sorted {
-                let comparison = $0.word.localizedStandardCompare($1.word)
+                let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
                 return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
             })
             currentSection.removeAll()
@@ -485,7 +501,7 @@ struct ContentView: View {
 
         sortedCards.append(contentsOf: currentSection.sorted {
 
-            let comparison = $0.word.localizedStandardCompare($1.word)
+            let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
 
             return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
         })
@@ -510,7 +526,7 @@ struct ContentView: View {
     ///
     private func archiveCompletedCards(in listID: Int) {
 
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List being archived */
 
         lists[listIndex].cards.removeAll { !$0.isSectionDivider && $0.isTitleChecked }
 
@@ -555,11 +571,11 @@ struct ContentView: View {
 
         guard lists.indices.contains(listIndex) else { return }
 
-        var updatedList     = lists[listIndex]
+        var updatedList     = lists[listIndex] /* Mutable list copy */
 
-        guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == cardID }) else { return }
+        guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == cardID }) else { return } /* Matching card position */
 
-        var updatedCard     = updatedList.cards[cardIndex]
+        var updatedCard     = updatedList.cards[cardIndex] /* Mutable card copy */
 
         updatedCard.isTitleChecked.toggle()
 
@@ -585,9 +601,9 @@ struct ContentView: View {
 
         for listIndex in lists.indices {
 
-            var updatedList = lists[listIndex]
+            var updatedList = lists[listIndex] /* Mutable list being searched */
 
-            guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == updatedCard.id }) else {
+            guard let cardIndex = updatedList.cards.firstIndex(where: { $0.id == updatedCard.id }) else { /* Matching card position */
                 continue
             }
 
@@ -616,7 +632,7 @@ struct ContentView: View {
     ///
     private func pruneUnreferencedAttachments() {
         
-        let referencedFileNames = Set(
+        let referencedFileNames = Set( /* Attachment files retained by current Board cards */
             lists
                 .flatMap(\.cards)
                 .flatMap { $0.attachments ?? [] }
@@ -647,20 +663,20 @@ struct ContentView: View {
     ///
     private func moveCard(_ cardID: Int, toListID destinationListID: Int) {
 
-        guard let sourceListIndex = lists.firstIndex(where: { list in
+          guard let sourceListIndex = lists.firstIndex(where: { list /* Candidate source list */ in
                   list.cards.contains(where: { $0.id == cardID })
-              }),
+              }), /* List currently containing the card */
 
-              let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }),
+              let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }), /* Requested destination list */
 
               sourceListIndex != destinationListIndex,
 
-              let cardIndex = lists[sourceListIndex].cards.firstIndex(where: { $0.id == cardID }) else {
+              let cardIndex = lists[sourceListIndex].cards.firstIndex(where: { $0.id == cardID }) else { /* Card position in the source list */
 
             return
         }
 
-        var movedCard       = lists[sourceListIndex].cards.remove(at: cardIndex)
+        var movedCard       = lists[sourceListIndex].cards.remove(at: cardIndex) /* Card removed before transfer */
         movedCard.listTitle = lists[destinationListIndex].title
         
         lists[destinationListIndex].cards.append(movedCard)
@@ -668,7 +684,7 @@ struct ContentView: View {
     
 
     /// Builds the board scene and its horizontally scrollable list collection.
-    var body: some View {
+    var body: some View { /* Board scene and list collection */
 
         NavigationStack {
             
@@ -735,7 +751,7 @@ struct ContentView: View {
                             }
                             .scrollTargetBehavior(.viewAligned)
                             .onChange(of: boardTargetListID) { _, targetListID in
-                                guard let targetListID,
+                                guard let targetListID, /* Requested Today destination */
                                       lists.contains(where: { $0.id == targetListID }) else {
                                     boardTargetListID = nil
                                     return
@@ -748,7 +764,7 @@ struct ContentView: View {
                                 boardTargetListID = nil
                             }
                             .onAppear {
-                                guard let targetListID = boardTargetListID,
+                                guard let targetListID = boardTargetListID, /* Pending Board navigation target */
                                       lists.contains(where: { $0.id == targetListID }) else { return }
 
                                 listProxy.scrollTo(targetListID, anchor: .center)
@@ -809,7 +825,7 @@ struct BoardHeader: View {
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
 
     /// Builds the title block and board action controls.
-    var body: some View {
+    var body: some View { /* Board header and global actions */
 
         HStack {
 
@@ -891,7 +907,7 @@ private struct BoardSettingsView: View {
     @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection           */
 
 
-    private var trimmedMemberNameDraft: String {
+    private var trimmedMemberNameDraft: String { /* Normalized member rename input */
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -905,7 +921,7 @@ private struct BoardSettingsView: View {
     /// @pre        settings is bound to the board's display preferences
     /// @post       Changes update the bound settings and are reflected by the board cards
     ///
-    var body: some View {
+    var body: some View { /* Board settings and member management form */
 
         NavigationStack {
 
@@ -994,7 +1010,7 @@ private struct BoardSettingsView: View {
                 Button("Cancel", role: .cancel) {}
 
                 Button("Save") {
-                    guard let editingMember else { return }
+                    guard let editingMember else { return } /* Member currently being renamed */
 
                     onRenameMember(editingMember, trimmedMemberNameDraft)
                 }
@@ -1015,7 +1031,7 @@ private struct BoardSettingsView: View {
             ) {
                 Button("Remove member", role: .destructive) {
 
-                    guard let memberToDelete else { return }
+                    guard let memberToDelete else { return } /* Member confirmed for removal */
 
                     onDeleteMember(memberToDelete)
 
@@ -1076,16 +1092,24 @@ private struct MemberColorEditorSheet: View {
     let memberName: String              /* The name of the member whose color is being edited         */
     let onSave: (Color) -> Void         /* The closure to call when the user saves the selected color */
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedColor: Color
+    @Environment(\.dismiss) private var dismiss /* Dismiss action for the color editor */
+    @State private var selectedColor: Color /* Draft member icon color */
 
+    /// Initialize the editor with the selected member's current color
+    ///
+    /// @param[in]  memberName Member whose icon color is being edited
+    /// @param[in]  initialColor Current color shown when the editor opens
+    /// @param[in]  onSave Callback receiving the selected color
+    ///
+    /// @return     (MemberColorEditorSheet) configured editor
+    ///
     init(memberName: String, initialColor: Color, onSave: @escaping (Color) -> Void) {
         self.memberName = memberName
         self.onSave     = onSave
         _selectedColor  = State(initialValue: initialColor)
     }
 
-    var body: some View {
+    var body: some View { /* Member icon color editor */
 
         NavigationStack {
 
@@ -1125,12 +1149,16 @@ private struct MemberColorEditorSheet: View {
 ///
 struct KanbanListView: View {
 
-    // description of the active sheet types used in the Kanban list view
+    /// Identifies the modal sheet currently presented by a kanban list
+    ///
+    /// @section    Purpose
+    ///     Distinguish list actions from new-card entry
+    ///
     private enum ActiveSheet: String, Identifiable {
         case listActions
         case newCard
 
-        var id: String { rawValue }
+        var id: String { rawValue } /* Stable sheet identity */
     }
 
     let list: KanbanList                        /* The kanban list data rendered by the view                      */
@@ -1156,15 +1184,15 @@ struct KanbanListView: View {
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
 
     /// Maintains the original quarter-screen card sizing requirement
-    private var cardHeight: CGFloat {
+    private var cardHeight: CGFloat { /* Fixed card height derived from screen geometry */
 
-        let quarterHeight = screenSize.height * 0.25
+        let quarterHeight = screenSize.height * 0.25 /* Original quarter-screen card target */
         
         return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
     }
 
     /// Builds one list panel and its card navigation destinations
-    var body: some View {
+    var body: some View { /* List panel and card collection */
 
         VStack(spacing: 0) {
 
@@ -1277,12 +1305,12 @@ struct KanbanListView: View {
                 }
                 .onMove { sourceOffsets, destinationOffset in
 
-                    guard let sourceIndex = sourceOffsets.first,
+                    guard let sourceIndex = sourceOffsets.first, /* Original drag source row */
                           list.cards.indices.contains(sourceIndex) else {
                         return
                     }
 
-                    let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset
+                    let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset /* Destination after source removal */
 
                     onMoveCard(list.cards[sourceIndex].id, finalIndex)
                 }
@@ -1395,11 +1423,11 @@ private struct NewKanbanCardSheet: View {
     @State private var title       = ""                 /* User-entered card title                          */
     @State private var description = ""                 /* User-entered card description                    */
 
-    private var trimmedTitle: String {
+    private var trimmedTitle: String { /* Normalized new-card title */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    var body: some View {
+    var body: some View { /* New-card form and submission controls */
 
         NavigationStack {
 
@@ -1457,9 +1485,9 @@ private enum KanbanListTint: String, CaseIterable, Identifiable {
     case orange
     case red
 
-    var id: String { rawValue }
+    var id: String { rawValue } /* Stable tint identity */
 
-    var title: String {
+    var title: String { /* User-facing tint label */
         switch self {
             case .neutral: "Default"
             case .blue:    "Blue"
@@ -1469,7 +1497,7 @@ private enum KanbanListTint: String, CaseIterable, Identifiable {
         }
     }
 
-    var color: Color {
+    var color: Color { /* Subtle list background color */
         switch self {
             case .neutral: Color(.systemGray6)
             case .blue:    Color.blue.opacity(0.12)
@@ -1481,6 +1509,12 @@ private enum KanbanListTint: String, CaseIterable, Identifiable {
 }
 
 
+///
+/// Presents actions for copying, moving, organizing, and archiving one list
+///
+/// @section    Purpose
+///     Keep list-level operations together in a dedicated action sheet
+///
 private struct KanbanListActionsSheet: View {
 
     let list: KanbanList                   /* The Kanban list this sheet is associated with                                 */
@@ -1495,10 +1529,10 @@ private struct KanbanListActionsSheet: View {
     let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var confirmingArchive = false
+    @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
+    @State private var confirmingArchive = false /* Archive confirmation presentation state */
 
-    var body: some View {
+    var body: some View { /* List operation menu */
         
         NavigationStack {
 
@@ -1640,11 +1674,11 @@ struct KanbanCardView: View {
     @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
 
 
-    private var trimmedRenameDraft: String {
+    private var trimmedRenameDraft: String { /* Normalized rename input */
         renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var cardLabels: [KanbanLabel] {
+    private var cardLabels: [KanbanLabel] { /* Resolved labels shown on this card */
         card.labelIDs.compactMap { labelID in
             labelLibrary.labels.first(where: { $0.id == labelID })
         }
@@ -1709,7 +1743,7 @@ struct KanbanCardView: View {
     }
 
     /// Builds a fixed-height card summary within its parent list
-    var body: some View {
+    var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: 9) {
 
@@ -1847,7 +1881,7 @@ struct KanbanCardView: View {
 ///
 private struct CardInfoEditorSheet: View {
 
-    let onSave: (String, String, String) -> Void
+    let onSave: (String, String, String) -> Void /* Callback receiving the edited card text */
 
     @Environment(\.dismiss) private var dismiss     /* Dismiss action for the sheet         */
     @State private var title:       String          /* Draft text for the title field       */
@@ -1864,7 +1898,7 @@ private struct CardInfoEditorSheet: View {
     /// @pre        title contains the current text-field value
     /// @post       The stored title draft is unchanged
     ///
-    private var trimmedTitle: String {
+    private var trimmedTitle: String { /* Normalized card title draft */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -1902,7 +1936,7 @@ private struct CardInfoEditorSheet: View {
     /// @pre        Editor state has been initialized from the selected card
     /// @post       Save invokes onSave with the edited values; Cancel dismisses without applying them
     ///
-    var body: some View {
+    var body: some View { /* Card title, subtitle, and description form */
 
         NavigationStack {
 

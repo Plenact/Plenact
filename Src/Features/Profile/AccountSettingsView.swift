@@ -69,13 +69,13 @@ struct ProfileAvatarView: View {
     ///
     /// @return     (some View) circular profile identity
     ///
-    var body: some View {
+    var body: some View { /* Circular local-profile avatar */
 
         ZStack {
             Circle()
                 .fill(profile?.avatarColor.color ?? Color.secondary.opacity(0.16))
 
-            if let profile {
+                if let profile { /* Existing local profile information */
 
                 Text(profile.initials)
                     .font(.system(size: size * 0.36, weight: .semibold))
@@ -208,7 +208,7 @@ struct AccountSettingsView: View {
     ///
     /// @return     (some View) local profile creation or editing sheet
     ///
-    var body: some View {
+    var body: some View { /* Local profile form and shared-demo controls */
 
         NavigationStack {
 
@@ -260,6 +260,8 @@ struct AccountSettingsView: View {
                     }
                 }
 
+                PlenactDemoAccountSection()
+
                 Section {
 
                     Picker("Default Today list", selection: $defaultListID) {
@@ -298,7 +300,7 @@ struct AccountSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if let profile {
+                if let profile { /* Existing local profile details */
 
                     Section {
 

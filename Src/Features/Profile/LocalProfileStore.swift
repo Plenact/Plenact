@@ -35,7 +35,7 @@ enum LocalProfileStore {
     ///
     static func load(from defaults: UserDefaults = .standard) -> LocalProfile? {
 
-        guard let data = defaults.data(forKey: storageKey) else { return nil }
+        guard let data = defaults.data(forKey: storageKey) else { return nil } /* Stored profile bytes */
 
         return try? JSONDecoder().decode(LocalProfile.self, from: data)
     }
@@ -55,7 +55,7 @@ enum LocalProfileStore {
     ///
     static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard) {
 
-        guard let data = try? JSONEncoder().encode(profile) else { return }
+        guard let data = try? JSONEncoder().encode(profile) else { return } /* Encoded profile snapshot */
 
         defaults.set(data, forKey: storageKey)
     }

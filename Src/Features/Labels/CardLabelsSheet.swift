@@ -24,7 +24,7 @@ import SwiftUI
 ///
 struct CardLabelsSheet: View {
 
-    let onSave: (LabelLibrary, [String]) -> Void
+    let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
 
     @Environment(\.dismiss) private var dismiss                     /* Dismiss action for sheet   */
     @State private var library: LabelLibrary                        /* Draft label library        */
@@ -34,7 +34,7 @@ struct CardLabelsSheet: View {
     @State private var newCategoryDraft                = ""         /* Draft name for new cat.    */
     @State private var selectedColor: KanbanLabelColor = .yellow    /* Currently selected color   */
 
-    private let newCategoryID = "__new_category__"
+    private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */
 
     ///
     /// @fcn        CardLabelsSheet.trimmedLabelName
@@ -43,7 +43,7 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (String) normalized label-name draft
     ///
-    private var trimmedLabelName: String {
+    private var trimmedLabelName: String { /* Normalized new-label name */
         labelNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -54,7 +54,7 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (String) normalized category-name draft
     ///
-    private var trimmedCategoryName: String {
+    private var trimmedCategoryName: String { /* Normalized new-category name */
         newCategoryDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -66,7 +66,7 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (Bool) true when the current form can create a label
     ///
-    private var canCreateLabel: Bool {
+    private var canCreateLabel: Bool { /* Form validity for label creation */
         guard !trimmedLabelName.isEmpty else { return false }
         if categorySelection == newCategoryID {
             return !trimmedCategoryName.isEmpty
@@ -132,10 +132,10 @@ struct CardLabelsSheet: View {
     private func createLabel() {
         guard canCreateLabel else { return }
 
-        let categoryID: String
+        let categoryID: String /* Category assigned to the new label */
         if categorySelection == newCategoryID {
-            let normalizedName = trimmedCategoryName.lowercased()
-            if let existingCategory = library.categories.first(where: { $0.name.lowercased() == normalizedName }) {
+            let normalizedName = trimmedCategoryName.lowercased() /* Case-insensitive category lookup key */
+            if let existingCategory = library.categories.first(where: { $0.name.lowercased() == normalizedName }) { /* Reuse a matching category */
                 categoryID = existingCategory.id
             } else {
                 categoryID = UUID().uuidString
@@ -145,7 +145,7 @@ struct CardLabelsSheet: View {
             categoryID = categorySelection
         }
 
-        let label = KanbanLabel(
+        let label = KanbanLabel( /* New reusable label definition */
             id: UUID().uuidString,
             name: trimmedLabelName,
             categoryID: categoryID,
@@ -168,7 +168,7 @@ struct CardLabelsSheet: View {
     /// @pre        The catalog and selected label IDs have been initialized
     /// @post       Save returns the edited catalog and assignments; Cancel discards them
     ///
-    var body: some View {
+    var body: some View { /* Categorized label browser and editor */
         
         NavigationStack {
             
@@ -178,7 +178,7 @@ struct CardLabelsSheet: View {
                     
                     Section(category.name) {
                         
-                        let categoryLabels = library.labels.filter { $0.categoryID == category.id }
+                        let categoryLabels = library.labels.filter { $0.categoryID == category.id } /* Labels in this category */
 
                         if categoryLabels.isEmpty {
                             

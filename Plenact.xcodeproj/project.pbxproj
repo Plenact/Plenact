@@ -20,6 +20,10 @@
 		E10000000000000000000002 /* LocalProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000012 /* LocalProfileStore.swift */; };
 		E10000000000000000000003 /* LocalProfileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000013 /* LocalProfileStoreTests.swift */; };
 		E10000000000000000000004 /* AccountSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000014 /* AccountSettingsView.swift */; };
+		E10000000000000000000005 /* PlenactBoardDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000015 /* PlenactBoardDocument.swift */; };
+		E10000000000000000000006 /* PlenactBoardDocumentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000016 /* PlenactBoardDocumentTests.swift */; };
+		E10000000000000000000007 /* PlenactAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000018 /* PlenactAPIClient.swift */; };
+		E10000000000000000000008 /* PlenactDemoAccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000019 /* PlenactDemoAccountSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +51,10 @@
 		E10000000000000000000012 /* LocalProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProfileStore.swift; sourceTree = "<group>"; };
 		E10000000000000000000013 /* LocalProfileStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProfileStoreTests.swift; sourceTree = "<group>"; };
 		E10000000000000000000014 /* AccountSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsView.swift; sourceTree = "<group>"; };
+		E10000000000000000000015 /* PlenactBoardDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlenactBoardDocument.swift; sourceTree = "<group>"; };
+		E10000000000000000000016 /* PlenactBoardDocumentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlenactBoardDocumentTests.swift; sourceTree = "<group>"; };
+		E10000000000000000000018 /* PlenactAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlenactAPIClient.swift; sourceTree = "<group>"; };
+		E10000000000000000000019 /* PlenactDemoAccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlenactDemoAccountSection.swift; sourceTree = "<group>"; };
 		FC15405D865C4534ACD974D9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -91,6 +99,7 @@
 			children = (
 				D10000000000000000000001 /* Boards */,
 				E10000000000000000000010 /* Profile */,
+				E10000000000000000000017 /* Sync */,
 				B1A8C54E2D7F4A31A9600006 /* Labels */,
 				A21C9B4E7F714DC68A4E0003 /* Attachments */,
 			);
@@ -126,6 +135,16 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		E10000000000000000000017 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000015 /* PlenactBoardDocument.swift */,
+				E10000000000000000000018 /* PlenactAPIClient.swift */,
+				E10000000000000000000019 /* PlenactDemoAccountSection.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
 		C9B3B43E64FD4401B21E2988 = {
 			isa = PBXGroup;
 			children = (
@@ -149,6 +168,7 @@
 			children = (
 				C10000000000000000000002 /* ChecklistMigrationTests.swift */,
 				E10000000000000000000013 /* LocalProfileStoreTests.swift */,
+				E10000000000000000000016 /* PlenactBoardDocumentTests.swift */,
 			);
 			path = Test;
 			sourceTree = "<group>";
@@ -262,6 +282,9 @@
 				E10000000000000000000001 /* ProfileModels.swift in Sources */,
 				E10000000000000000000002 /* LocalProfileStore.swift in Sources */,
 				E10000000000000000000004 /* AccountSettingsView.swift in Sources */,
+				E10000000000000000000005 /* PlenactBoardDocument.swift in Sources */,
+				E10000000000000000000007 /* PlenactAPIClient.swift in Sources */,
+				E10000000000000000000008 /* PlenactDemoAccountSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,6 +294,7 @@
 			files = (
 				C10000000000000000000001 /* ChecklistMigrationTests.swift in Sources */,
 				E10000000000000000000003 /* LocalProfileStoreTests.swift in Sources */,
+				E10000000000000000000006 /* PlenactBoardDocumentTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +375,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Src/Info.plist;
+				PLENACT_API_BASE_URL = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -382,7 +408,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Src/Info.plist;
+				PLENACT_API_BASE_URL = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

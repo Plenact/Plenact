@@ -41,7 +41,7 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (String) serialized raw-value identifier
     ///
-    var id: String { rawValue }
+    var id: String { rawValue } /* Stable persisted color token */
 
     ///
     /// @fcn        KanbanLabelColor.title
@@ -50,7 +50,7 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (String) user-facing color name
     ///
-    var title: String {
+    var title: String { /* Display name for the color picker */
         rawValue.capitalized
     }
 
@@ -61,7 +61,7 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (Color) presentation color associated with this palette case
     ///
-    var color: Color {
+    var color: Color { /* SwiftUI color resolved from the persisted token */
         switch self {
             case .mint:   Color(red: 0.17, green: 0.72, blue: 0.55)
             case .yellow: Color(red: 0.91, green: 0.79, blue: 0.13)
@@ -89,8 +89,8 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
 /// @note       Labels refer to categories using the stable category ID
 ///
 struct KanbanLabelCategory: Identifiable, Hashable, Codable {
-    let id: String
-    var name: String
+    let id: String /* Stable category identity */
+    var name: String /* User-facing category name */
 }
 
 
@@ -105,10 +105,10 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable {
 /// @note       Cards store the label ID rather than copying these presentation values
 ///
 struct KanbanLabel: Identifiable, Hashable, Codable {
-    let id: String
-    var name: String
-    var categoryID: String
-    var color: KanbanLabelColor
+    let id: String /* Stable label identity */
+    var name: String /* User-facing label name */
+    var categoryID: String /* Stable owning-category identity */
+    var color: KanbanLabelColor /* Persisted palette selection */
 }
 
 
@@ -125,11 +125,11 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 ///
 struct LabelLibrary: Hashable, Codable {
 
-    var categories: [KanbanLabelCategory]
-    var labels: [KanbanLabel]
+    var categories: [KanbanLabelCategory] /* Reusable label categories */
+    var labels: [KanbanLabel] /* Reusable label definitions */
 
     /// Stable IDs used to assign representative starter labels to sample cards
-    static let starterLabelIDs = [
+    static let starterLabelIDs = [ /* Label IDs used by deterministic SampleData */
         "work-scheduled", "work-deliverable", "work-onsite",
         "home-dinner", "home-relatives", "home-church",
         "finance-budget", "finance-bills",
@@ -139,7 +139,7 @@ struct LabelLibrary: Hashable, Codable {
     ]
 
     /// Initial categories and reusable labels available on a fresh installation
-    static let starter = LabelLibrary(
+    static let starter = LabelLibrary( /* Initial categorized label catalog */
         categories: [
             KanbanLabelCategory(id: "work", name: "Work"),
             KanbanLabelCategory(id: "home", name: "Home"),
@@ -179,7 +179,7 @@ struct LabelLibrary: Hashable, Codable {
 ///
 enum LabelLibraryStore {
 
-    private static let storageKey = "Plenact.LabelLibrary.v1"
+    private static let storageKey = "Plenact.LabelLibrary.v1" /* Versioned local catalog key */
 
     ///
     /// @fcn        LabelLibraryStore.load
@@ -193,8 +193,8 @@ enum LabelLibraryStore {
     /// @post       Stored data is unchanged; callers receive a usable label library
     ///
     static func load() -> LabelLibrary {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else {
+          guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
+              let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else { /* Decoded catalog */
             return .starter
         }
 
@@ -215,7 +215,7 @@ enum LabelLibraryStore {
     ///             unchanged
     ///
     static func save(_ library: LabelLibrary) {
-        guard let data = try? JSONEncoder().encode(library) else { return }
+        guard let data = try? JSONEncoder().encode(library) else { return } /* Encoded catalog snapshot */
         UserDefaults.standard.set(data, forKey: storageKey)
     }
 }
@@ -231,7 +231,7 @@ enum LabelLibraryStore {
 ///
 struct KanbanLabelChip: View {
 
-    let label: KanbanLabel
+    let label: KanbanLabel /* Label displayed by the chip */
 
     ///
     /// @fcn        KanbanLabelChip.body
@@ -240,7 +240,7 @@ struct KanbanLabelChip: View {
     ///
     /// @return     (some View) compact visual representation of the supplied label
     ///
-    var body: some View {
+    var body: some View { /* Colored reusable-label chip */
         Text(label.name)
             .font(.caption2.weight(.semibold))
             .lineLimit(1)

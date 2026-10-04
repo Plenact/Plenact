@@ -383,6 +383,58 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     let id:        Int              /* Unique identifier for the kanban list */
     let title:     String           /* Title of the kanban list              */
     var cards:     [KanbanCard]     /* Cards contained within the list       */
+    var archivedCards: [KanbanCard]
+    var isArchived: Bool = false
+
+    var allCards: [KanbanCard] { cards + archivedCards }
+
+    init(id: Int, title: String, cards: [KanbanCard], archivedCards: [KanbanCard] = []) {
+        self.id = id
+        self.title = title
+        self.cards = cards
+        self.archivedCards = archivedCards
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, cards, archivedCards, isArchived
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        cards = try container.decode([KanbanCard].self, forKey: .cards)
+        archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
+        isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(cards, forKey: .cards)
+        if !archivedCards.isEmpty {
+            try container.encode(archivedCards, forKey: .archivedCards)
+        }
+        if isArchived {
+            try container.encode(true, forKey: .isArchived)
+        }
+    }
+
+    mutating func archiveCompletedCards() {
+        archivedCards.append(contentsOf: cards.filter { !$0.isSectionDivider && $0.isTitleChecked })
+        cards.removeAll { !$0.isSectionDivider && $0.isTitleChecked }
+    }
+
+    mutating func archiveCard(id cardID: Int) {
+        guard let index = cards.firstIndex(where: { $0.id == cardID && !$0.isSectionDivider }) else { return }
+        archivedCards.append(cards.remove(at: index))
+    }
+
+    mutating func restoreArchivedCard(id cardID: Int) {
+        guard let index = archivedCards.firstIndex(where: { $0.id == cardID }) else { return }
+        cards.append(archivedCards.remove(at: index))
+    }
 
 
     /// Supporting copy shown beneath the list title.
@@ -876,6 +928,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     var color: ProfileColor
     var lists: [KanbanList]
     var savedCardIDs: Set<Int>
+    var isArchived: Bool? = nil
+
+    var isActive: Bool { isArchived != true }
 
     init(
         id: UUID = UUID(), title: String, kind: PersonalCollectionKind,
@@ -892,7 +947,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     }
 
     var cardCount: Int {
-        lists.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
+        lists.filter { !$0.isArchived }.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
     }
 
     mutating func rename(to name: String) {
@@ -900,17 +955,45 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         guard kind == .list, let column = lists.first else { return }
         var cards = column.cards
         for index in cards.indices { cards[index].listTitle = title }
-        lists[0] = KanbanList(id: column.id, title: title, cards: cards)
+        var archivedCards = column.archivedCards
+        for index in archivedCards.indices { archivedCards[index].listTitle = title }
+        lists[0] = KanbanList(id: column.id, title: title, cards: cards, archivedCards: archivedCards)
+        lists[0].isArchived = column.isArchived
     }
 
     func matches(_ query: String) -> Bool {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return term.isEmpty || title.localizedStandardContains(term) || lists.contains { list in
+        return term.isEmpty || title.localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
             list.title.localizedStandardContains(term) || list.cards.contains {
                 !$0.isSectionDivider && ($0.word.localizedStandardContains(term)
                     || ($0.descriptionOverride?.localizedStandardContains(term) ?? false))
             }
         }
+    }
+
+    mutating func restore(existingTitles: [String]) {
+        let base = title == "Week Board" ? "Week Board (Restored)" : title
+        title = Self.uniqueTitle(base, existingTitles: existingTitles)
+        isArchived = false
+    }
+
+    static func archivedWeekBoard(lists: [KanbanList], savedCardIDs: Set<Int>) -> PersonalCollection {
+        var board = PersonalCollection(title: "Week Board", kind: .board, icon: .project)
+        board.lists = lists
+        board.savedCardIDs = savedCardIDs
+        board.isArchived = true
+        return board
+    }
+
+    static func uniqueTitle(_ base: String, existingTitles: [String]) -> String {
+        let titles = Set(existingTitles.map { $0.lowercased() })
+        var candidate = base
+        var number = 2
+        while titles.contains(candidate.lowercased()) {
+            candidate = "\(base) (\(number))"
+            number += 1
+        }
+        return candidate
     }
 }
 
@@ -925,6 +1008,24 @@ enum PersonalCollectionStore {
     static func save(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(collections) else { return }
         defaults.set(data, forKey: key)
+    }
+
+    static func saveChecked(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) throws {
+        defaults.set(try JSONEncoder().encode(collections), forKey: key)
+    }
+
+    static func archiveBoard(
+        id: UUID,
+        in collections: [PersonalCollection],
+        to defaults: UserDefaults = .standard
+    ) throws -> [PersonalCollection] {
+        guard let index = collections.firstIndex(where: { $0.id == id && $0.kind == .board && $0.isActive }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        var updated = collections
+        updated[index].isArchived = true
+        try saveChecked(updated, to: defaults)
+        return updated
     }
 }
 

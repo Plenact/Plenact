@@ -183,6 +183,7 @@ struct CardDetailView: View {
     @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
+    let onArchive: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
@@ -237,7 +238,8 @@ struct CardDetailView: View {
         currentUserName: String                = "Justin Reina",
         savedCardIDs: Binding<Set<Int>>        = .constant([]),
         onTitleToggle: ((KanbanCard) -> Void)? = nil,       /* Callback invoked when the card title checkbox is toggled     */
-        onMoveToList: ((Int) -> Void)?         = nil        /* Callback invoked when the card is moved                      */
+        onMoveToList: ((Int) -> Void)?         = nil,       /* Callback invoked when the card is moved                      */
+        onArchive: (() -> Void)? = nil
     ) {
 
         self.card           = card                                              /* The kanban card being displayed in detail                            */
@@ -248,6 +250,7 @@ struct CardDetailView: View {
         self._savedCardIDs  = savedCardIDs                                      /* Local saved-card identities                                        */
         self.onTitleToggle  = onTitleToggle                                     /* Callback invoked when the card title checkbox is toggled             */
         self.onMoveToList   = onMoveToList                                      /* Callback invoked when the card is moved                              */
+        self.onArchive = onArchive
 
         _titleChecked         = State(initialValue: card.isTitleChecked)        /* Initialize the title checked state based on the card's current value */
         _titleText            = State(initialValue: card.word)                  /* Initialize the editable title from the card                          */
@@ -1539,6 +1542,15 @@ struct CardDetailView: View {
                             activityFilter = .all
                         } label: {
                             Label("Show all activity", systemImage: "clock.arrow.circlepath")
+                        }
+                        if let onArchive, !card.isSectionDivider {
+                            Button {
+                                syncCardState()
+                                onArchive()
+                                dismiss()
+                            } label: {
+                                Label("Archive Card", systemImage: "archivebox")
+                            }
                         }
                     } label: {
                         Image(systemName: "ellipsis")

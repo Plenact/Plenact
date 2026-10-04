@@ -71,6 +71,12 @@ struct PlenactBoardDocument: Codable, Equatable {
         var cardIDs: Set<Int> = []   /* Unique Board card IDs  */
 
         for list in lists {
+            guard !list.isArchived else {
+                return "Archived lists are stored locally and cannot be published to the shared Board."
+            }
+            guard list.archivedCards.isEmpty else {
+                return "Archived cards are stored locally and cannot be published to the shared Board."
+            }
 
             guard list.id >= 0,
                   listIDs.insert(list.id).inserted,

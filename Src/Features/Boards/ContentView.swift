@@ -11,6 +11,28 @@
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
 
+extension Binding where Value == [KanbanList] {
+    var activeLists: Binding<[KanbanList]> {
+        Binding(
+            get: { wrappedValue.filter { !$0.isArchived } },
+            set: { wrappedValue = $0 + wrappedValue.filter(\.isArchived) }
+        )
+    }
+
+    var archivedLists: Binding<[KanbanList]> {
+        Binding(
+            get: { wrappedValue.filter(\.isArchived) },
+            set: { archived in
+                wrappedValue = wrappedValue.filter { !$0.isArchived } + archived.map { list in
+                    var archivedList = list
+                    archivedList.isArchived = true
+                    return archivedList
+                }
+            }
+        )
+    }
+}
+
 
 ///
 /// Stores optional presentation controls for cards on the Board
@@ -44,6 +66,7 @@ private struct BoardListCenterPreferenceKey: PreferenceKey {
 struct ContentView: View {
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
+    @Binding private var archivedLists: [KanbanList]
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
     @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
@@ -52,9 +75,11 @@ struct ContentView: View {
     let boardSubtitle: String
     let allowsAddingLists: Bool
     let onClose: (() -> Void)?
+    let onArchiveBoard: (() -> Void)?
     let onListsChanged: @MainActor ([KanbanList]) -> Void
     let retainedAttachmentLists: () -> [KanbanList]
     @State private var showsCalendar = false
+    @State private var showsArchivedLists = false
     @State private var navigationPath = NavigationPath()
     @State private var lastReportedVisibleListID: Int?
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
@@ -79,6 +104,7 @@ struct ContentView: View {
     ///
     init(
         lists: Binding<[KanbanList]>,
+        archivedLists: Binding<[KanbanList]> = .constant([]),
         boardTargetListID: Binding<Int?> = .constant(nil),
         boardTargetCardID: Binding<Int?> = .constant(nil),
         savedCardIDs: Binding<Set<Int>> = .constant([]),
@@ -87,12 +113,14 @@ struct ContentView: View {
         boardSubtitle: String = "Work Week Board",
         allowsAddingLists: Bool = true,
         onClose: (() -> Void)? = nil,
+        onArchiveBoard: (() -> Void)? = nil,
         onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
         retainedAttachmentLists: @escaping () -> [KanbanList] = {
             PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
         }
     ) {
         _lists = lists
+        _archivedLists = archivedLists
         _boardTargetListID = boardTargetListID
         _boardTargetCardID = boardTargetCardID
         _savedCardIDs = savedCardIDs
@@ -101,6 +129,7 @@ struct ContentView: View {
         self.boardSubtitle = boardSubtitle
         self.allowsAddingLists = allowsAddingLists
         self.onClose = onClose
+        self.onArchiveBoard = onArchiveBoard
         self.onListsChanged = onListsChanged
         self.retainedAttachmentLists = retainedAttachmentLists
     }
@@ -312,7 +341,7 @@ struct ContentView: View {
     /// @post       A uniquely identified empty list is appended to the board
     ///
     private func addList() {
-        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
+        let nextListID     = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
         let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Normalized current titles */
         var newTitle       = "New List" /* First candidate list name */
         var suffix         = 2 /* Duplicate-title suffix */
@@ -368,7 +397,7 @@ struct ContentView: View {
 
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Destination list index */
 
-        let nextCardID  = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
+        let nextCardID  = ((lists + archivedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
         var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
         /// Append the new card to the list's cards array
@@ -464,8 +493,8 @@ struct ContentView: View {
 
         let source       = lists[sourceIndex] /* Source list snapshot */
         let copiedTitle  = "\(source.title) Copy" /* New list display title */
-        let copiedListID = (lists.map(\.id).max() ?? -1) + 1 /* New list identity */
-        var nextCardID   = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Next unique card identity */
+        let copiedListID = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* New list identity */
+        var nextCardID   = ((lists + archivedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next unique card identity */
 
         let copiedCards = source.cards.map { card /* Source card being copied */ in
         
@@ -578,8 +607,8 @@ struct ContentView: View {
 
     ///
     /// @fcn        ContentView.archiveCompletedCards(in:)
-    /// @brief      Remove completed cards from a list
-    /// @details    Filters out cards whose title checkbox is selected
+    /// @brief      Move completed cards into the list's saved archive
+    /// @details    Retains complete card records and attachments for later restoration
     ///
     /// @param[in]  listID  Stable identifier of the list to update
     ///
@@ -592,16 +621,23 @@ struct ContentView: View {
 
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List being archived */
 
-        lists[listIndex].cards.removeAll { !$0.isSectionDivider && $0.isTitleChecked }
-
-        pruneUnreferencedAttachments()
+        lists[listIndex].archiveCompletedCards()
     }
 
+    private func restoreArchivedCard(in listID: Int, cardID: Int) {
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        lists[listIndex].restoreArchivedCard(id: cardID)
+    }
+
+    private func archiveCard(_ cardID: Int) {
+        guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }) else { return }
+        lists[listIndex].archiveCard(id: cardID)
+    }
 
     ///
     /// @fcn        ContentView.archiveList(with:)
     /// @brief      Remove a list from the active board
-    /// @details    Deletes the list entry matching the supplied stable identifier
+    /// @details    Retains the list and all its cards for restoration through Board options
     ///
     /// @param[in]  listID  Stable identifier of the list to remove
     ///
@@ -611,9 +647,19 @@ struct ContentView: View {
     /// @post       The list and its cards no longer appear on the active board
     ///
     private func archiveList(with listID: Int) {
+        guard let index = lists.firstIndex(where: { $0.id == listID }) else { return }
+        var archived = lists[index]
+        archived.isArchived = true
+        archivedLists.append(archived)
         lists.removeAll { $0.id == listID }
+    }
 
-        pruneUnreferencedAttachments()
+    private func restoreArchivedList(_ listID: Int) {
+        guard let index = archivedLists.firstIndex(where: { $0.id == listID }) else { return }
+        var restored = archivedLists[index]
+        restored.isArchived = false
+        lists.append(restored)
+        archivedLists.removeAll { $0.id == listID }
     }
 
 
@@ -697,8 +743,8 @@ struct ContentView: View {
     private func pruneUnreferencedAttachments() {
         
         let referencedFileNames = Set( /* Attachment files retained by current Board cards */
-            (lists + retainedAttachmentLists())
-                .flatMap(\.cards)
+            (lists + archivedLists + retainedAttachmentLists())
+                .flatMap(\.allCards)
                 .flatMap { $0.attachments ?? [] }
                 .compactMap(\.fileName)
         )
@@ -776,6 +822,8 @@ struct ContentView: View {
                             subtitle: boardSubtitle,
                             allowsAddingLists: allowsAddingLists || lists.isEmpty,
                             onClose: onClose,
+                            onViewArchivedLists: { showsArchivedLists = true },
+                            onArchiveBoard: onArchiveBoard,
                             onAddList:        addList
                         )
 
@@ -804,6 +852,16 @@ struct ContentView: View {
                                             onMoveList:         { offset in moveList(with: list.id, by: offset) },
                                             onSortList:         { ascending in sortList(with: list.id, ascending: ascending) },
                                             onArchiveCompleted: { archiveCompletedCards(in: list.id) },
+                                            archivedCards: Binding(
+                                                get: { lists.first(where: { $0.id == list.id })?.archivedCards ?? [] },
+                                                set: { archivedCards in
+                                                    guard let index = lists.firstIndex(where: { $0.id == list.id }) else { return }
+                                                    lists[index].archivedCards = archivedCards
+                                                }
+                                            ),
+                                            onRestoreArchivedCard: { cardID in
+                                                restoreArchivedCard(in: list.id, cardID: cardID)
+                                            },
                                             onArchiveList:      { archiveList(with: list.id) },
                                             onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
                                             onUpdateCard:       updateCard,
@@ -875,6 +933,9 @@ struct ContentView: View {
                     },
                     onMoveToList:    { destinationListID in
                         moveCard(card.id, toListID: destinationListID)
+                    },
+                    onArchive: {
+                        archiveCard(card.id)
                     }
                 )
             }
@@ -885,6 +946,10 @@ struct ContentView: View {
                     boardTargetListID = listID
                 }
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showsArchivedLists) {
+                ArchivedListsView(lists: $archivedLists, onRestore: restoreArchivedList)
+                    .databaseActivityOverlay()
             }
             .onChange(of: lists) { _, updatedLists in
                 onListsChanged(updatedLists)
@@ -918,10 +983,13 @@ struct BoardHeader: View {
     let subtitle: String
     let allowsAddingLists: Bool
     let onClose: (() -> Void)?
+    let onViewArchivedLists: () -> Void
+    let onArchiveBoard: (() -> Void)?
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
+    @State private var confirmsArchiveBoard = false
 
     /// Builds the title block and board action controls.
     var body: some View { /* Board header and global actions */
@@ -976,9 +1044,12 @@ struct BoardHeader: View {
             .accessibilityLabel("Add list")
             }
 
-            Button {
-                showingSettings = true
-                
+            Menu {
+                Button("Board Settings", systemImage: "gearshape") { showingSettings = true }
+                Button("View Archived Lists", systemImage: "archivebox", action: onViewArchivedLists)
+                if onArchiveBoard != nil {
+                    Button("Archive Board", systemImage: "archivebox") { confirmsArchiveBoard = true }
+                }
             } label: {
                 Image(systemName: "ellipsis.circle.fill")
                     .font(.title2)
@@ -989,6 +1060,12 @@ struct BoardHeader: View {
         .padding(.horizontal, 18)
         .padding(.top,        12)
         .padding(.bottom,     10)
+        .confirmationDialog("Archive this board?", isPresented: $confirmsArchiveBoard, titleVisibility: .visible) {
+            Button("Archive Board") { onArchiveBoard?() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All lists and cards will be kept on this device. Restore the board from Saved.")
+        }
         .sheet(isPresented: $showingSettings) {
             
             BoardSettingsView(
@@ -999,6 +1076,50 @@ struct BoardHeader: View {
                 onDeleteMember:   onDeleteMember,
                 onSetMemberColor: onSetMemberColor
             )
+        }
+
+    }
+}
+
+private struct ArchivedListsView: View {
+    @Binding var lists: [KanbanList]
+    let onRestore: (Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(lists) { list in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(list.title).font(.headline)
+                            Text("\(list.cards.filter { !$0.isSectionDivider }.count) cards · \(list.archivedCards.count) archived cards")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Restore") { onRestore(list.id) }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel("Restore \(list.title)")
+                    }
+                }
+            }
+            .overlay {
+                if lists.isEmpty {
+                    ContentUnavailableView(
+                        "No Archived Lists", systemImage: "archivebox",
+                        description: Text("Lists archived from this board will appear here.")
+                    )
+                    .allowsHitTesting(false)
+                }
+            }
+            .navigationTitle("Archived Lists")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
         }
     }
 }
@@ -1296,6 +1417,8 @@ struct KanbanListView: View {
     let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
     let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
     let onArchiveCompleted: () -> Void          /* The action invoked to archive all completed cards in the list  */
+    @Binding var archivedCards: [KanbanCard]
+    let onRestoreArchivedCard: (Int) -> Void
     let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
     let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
     let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
@@ -1498,6 +1621,8 @@ struct KanbanListView: View {
                     onMoveList:         onMoveList,
                     onSortList:         onSortList,
                     onArchiveCompleted: onArchiveCompleted,
+                    archivedCards: $archivedCards,
+                    onRestoreArchivedCard: onRestoreArchivedCard,
                     onArchiveList:      onArchiveList
                 )
                 .databaseActivityOverlay()
@@ -1675,6 +1800,8 @@ private struct KanbanListActionsSheet: View {
     let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
     let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
     let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
+    @Binding var archivedCards: [KanbanCard]
+    let onRestoreArchivedCard: (Int) -> Void
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
@@ -1757,6 +1884,16 @@ private struct KanbanListActionsSheet: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        ArchivedCardsView(
+                            listTitle: list.title,
+                            cards: $archivedCards,
+                            onRestore: onRestoreArchivedCard
+                        )
+                    } label: {
+                        Label("View Archived Cards", systemImage: "archivebox")
+                    }
+
                     Button {
                         onArchiveCompleted()
                         dismiss()
@@ -1799,6 +1936,56 @@ private struct KanbanListActionsSheet: View {
 
 
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
+
+private struct ArchivedCardsView: View {
+    let listTitle: String
+    @Binding var cards: [KanbanCard]
+    let onRestore: (Int) -> Void
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(cards) { card in
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(card.word).font(.headline)
+                            if !card.funParagraph.isEmpty {
+                                Text(card.funParagraph)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(3)
+                            }
+                        }
+                        Spacer()
+                        Button("Restore") {
+                            onRestore(card.id)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityLabel("Restore \(card.word)")
+                    }
+                }
+            } header: {
+                Text(listTitle)
+            } footer: {
+                if !cards.isEmpty {
+                    Text("Restored cards return to the end of this list and keep their completion status.")
+                }
+            }
+        }
+        .overlay {
+            if cards.isEmpty {
+                ContentUnavailableView(
+                    "No Archived Cards",
+                    systemImage: "archivebox",
+                    description: Text("Cards you archive from this list will appear here.")
+                )
+                .allowsHitTesting(false)
+            }
+        }
+        .navigationTitle("Archived Cards")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
 
 ///
 /// Displays a compact summary of a kanban card
@@ -2131,6 +2318,7 @@ private struct CardInfoEditorSheet: View {
 struct TodayListDetailView: View {
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
+    let reservedLists: [KanbanList]
     @Binding var labelLibrary: LabelLibrary /* Shared reusable label library */
     @Binding var savedCardIDs: Set<Int> /* Device-local saved cards */
 
@@ -2227,11 +2415,11 @@ struct TodayListDetailView: View {
                     onTitleToggle: updateCard,
                     onMoveToList: { destinationListID in
                         moveCard(card.id, toListID: destinationListID)
+                    },
+                    onArchive: {
+                        archiveCard(card.id)
                     }
                 )
-            }
-            .onChange(of: lists) { _, updatedLists in
-                KanbanBoardPersistence.saveListsInBackground(updatedLists)
             }
             .onChange(of: labelLibrary) { _, updatedLibrary in
                 LabelLibraryStore.save(updatedLibrary)
@@ -2244,6 +2432,11 @@ struct TodayListDetailView: View {
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { return }
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
+    }
+
+    private func archiveCard(_ cardID: Int) {
+        guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }) else { return }
+        lists[listIndex].archiveCard(id: cardID)
     }
 
     private func updateCard(_ updatedCard: KanbanCard) {
@@ -2272,7 +2465,7 @@ struct TodayListDetailView: View {
         let title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
 
-        let nextCardID = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
+        let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
         lists[listIndex].cards.append(
             KanbanCard(
                 id: nextCardID,

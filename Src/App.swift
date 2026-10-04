@@ -184,6 +184,7 @@ private struct TodayScrollFadeTracking: ViewModifier {
 private struct AppRootView: View {
 
     @State private var lists: [KanbanList] = []
+    @State private var collections = PersonalCollectionStore.load()
     @State private var hasLoadedBoard = false
     @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
     @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
@@ -217,7 +218,8 @@ private struct AppRootView: View {
         TabView(selection: $selectedDestination) {
 
             TodayHomeView(
-                lists:   $lists,
+                lists:   $lists.activeLists,
+                archivedLists: $lists.archivedLists,
                 savedCardIDs: $savedCardIDs,
                 profile: profile,
                 onSaveProfile: { updatedProfile in
@@ -243,11 +245,14 @@ private struct AppRootView: View {
             .toolbar(.hidden, for: .tabBar)
 
             ContentView(
-                lists: $lists,
+                lists: $lists.activeLists,
+                archivedLists: $lists.archivedLists,
                 boardTargetListID: $boardTargetListID,
                 boardTargetCardID: $boardTargetCardID,
                 savedCardIDs: $savedCardIDs,
-                onListViewed: rememberLastViewedList
+                onListViewed: rememberLastViewedList,
+                onArchiveBoard: archiveWeekBoard,
+                onListsChanged: { _ in }
             )
                 .tabItem {
                     Label("Board", systemImage: "rectangle.3.group")
@@ -255,14 +260,20 @@ private struct AppRootView: View {
                 .tag(AppDestination.board)
                 .toolbar(.hidden, for: .tabBar)
 
-            BoardListsView(lists: lists, onOpenBoardList: openBoardList)
+            BoardListsView(lists: lists, onOpenBoardList: openBoardList, collections: $collections)
                 .tabItem {
                     Label("Lists", systemImage: "list.bullet")
                 }
                 .tag(AppDestination.lists)
                 .toolbar(.hidden, for: .tabBar)
 
-            SavedCardsView(lists: lists, savedCardIDs: savedCardIDs, onOpenBoardList: openBoardList)
+            SavedCardsView(
+                lists: lists.filter { !$0.isArchived },
+                savedCardIDs: savedCardIDs,
+                collections: $collections,
+                onOpenBoardList: openBoardList,
+                onRestoreBoard: restoreBoard
+            )
                 .tabItem {
                     Label("Saved", systemImage: "bookmark")
                 }
@@ -275,10 +286,21 @@ private struct AppRootView: View {
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
         }
+        .onChange(of: lists) { _, _ in
+            guard hasLoadedBoard else { return }
+            KanbanBoardPersistence.saveListsInBackground(lists)
+        }
+        .onChange(of: collections) { _, updated in
+            do {
+                try PersonalCollectionStore.saveChecked(updated)
+            } catch {
+                DatabaseActivity.shared.report("Could not save your boards: \(error.localizedDescription)")
+            }
+        }
         .sheet(isPresented: $showsCenterNewCardSheet) {
             QuickNoteComposer(
-                lists: $lists,
-                initialListID: LastViewedListStore.resolve(in: lists, fallback: profile?.preferences.defaultListID)
+                lists: $lists.activeLists,
+                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: profile?.preferences.defaultListID)
             ) { listID, title, description in
                 addCard(to: listID, title: title, description: description)
             }
@@ -412,6 +434,35 @@ private struct AppRootView: View {
         selectedDestination = .board
     }
 
+    private func archiveWeekBoard() {
+        let archived = PersonalCollection.archivedWeekBoard(lists: lists, savedCardIDs: savedCardIDs)
+        let updated = collections + [archived]
+        do {
+            // Persist the recovery copy before clearing the active Week snapshot.
+            try PersonalCollectionStore.saveChecked(updated)
+            collections = updated
+            lists = []
+            savedCardIDs = []
+            boardTargetListID = nil
+            boardTargetCardID = nil
+            selectedDestination = .saved
+        } catch {
+            DatabaseActivity.shared.report("Could not archive the Week Board: \(error.localizedDescription) The board has not been removed.")
+        }
+    }
+
+    private func restoreBoard(_ id: UUID) {
+        guard let index = collections.firstIndex(where: { $0.id == id && $0.isArchived == true }) else { return }
+        var updated = collections
+        updated[index].restore(existingTitles: ["Week Board"] + collections.filter { $0.id != id }.map(\.title))
+        do {
+            try PersonalCollectionStore.saveChecked(updated)
+            collections = updated
+        } catch {
+            DatabaseActivity.shared.report("Could not restore the board: \(error.localizedDescription)")
+        }
+    }
+
     private func openBoardCard(listID: Int, cardID: Int) {
         rememberLastViewedList(listID)
         boardTargetCardID = cardID
@@ -431,7 +482,6 @@ private struct AppRootView: View {
         }
 
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
-        KanbanBoardPersistence.saveListsInBackground(lists)
     }
 
     private func addWeekList() {
@@ -446,7 +496,6 @@ private struct AppRootView: View {
         }
 
         lists.append(KanbanList(id: nextListID, title: title, cards: []))
-        KanbanBoardPersistence.saveListsInBackground(lists)
         boardTargetListID = nextListID
         selectedDestination = .board
     }
@@ -455,7 +504,7 @@ private struct AppRootView: View {
 
             guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Destination list index */
 
-            let nextCardID  = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
+            let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
             var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
             updatedList.cards.append(
@@ -470,7 +519,6 @@ private struct AppRootView: View {
 
             lists[listIndex] = updatedList
 
-            KanbanBoardPersistence.saveListsInBackground(lists)
         }
 }
 
@@ -486,6 +534,7 @@ private struct AppRootView: View {
 private struct TodayHomeView: View {
 
     @Binding var lists:     [KanbanList]                    /* Shared local Board lists                           */
+    @Binding var archivedLists: [KanbanList]
     @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details        */
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
@@ -661,6 +710,7 @@ private struct TodayHomeView: View {
     ///
     init(
         lists:           Binding<[KanbanList]>,
+        archivedLists: Binding<[KanbanList]>,
         savedCardIDs:    Binding<Set<Int>>,
         profile:         LocalProfile?,
         onSaveProfile:   @escaping (LocalProfile) -> Void,
@@ -673,6 +723,7 @@ private struct TodayHomeView: View {
     ) {
 
         self._lists          = lists
+        self._archivedLists = archivedLists
         self._savedCardIDs   = savedCardIDs
         self.profile         = profile
         self.onSaveProfile   = onSaveProfile
@@ -985,12 +1036,12 @@ private struct TodayHomeView: View {
                     onSave:   onSaveProfile,
                     onRemove: onRemoveProfile,
                     onLoadExample: {
-                        guard ExampleLoadUndoStore.save(lists: lists, todayListID: selectedTodayListID) else {
+                        guard ExampleLoadUndoStore.save(lists: lists + archivedLists, todayListID: selectedTodayListID) else {
                             return false
                         }
                         let exampleLists = SampleData.lists
+                        archivedLists = []
                         lists = exampleLists
-                        KanbanBoardPersistence.saveListsInBackground(exampleLists)
                         if let firstList = exampleLists.first {
                             selectTodayList(firstList)
                         }
@@ -998,10 +1049,10 @@ private struct TodayHomeView: View {
                     },
                     onUndoExampleLoad: {
                         guard let snapshot = ExampleLoadUndoStore.load() else { return false }
-                        lists = snapshot.lists
-                        KanbanBoardPersistence.saveListsInBackground(snapshot.lists)
+                        archivedLists = snapshot.lists.filter(\.isArchived)
+                        lists = snapshot.lists.filter { !$0.isArchived }
                         if let todayListID = snapshot.todayListID,
-                           let todayList = snapshot.lists.first(where: { $0.id == todayListID }) {
+                           let todayList = snapshot.lists.first(where: { $0.id == todayListID && !$0.isArchived }) {
                             selectTodayList(todayList)
                         } else {
                             selectedTodayListID = nil
@@ -1016,6 +1067,7 @@ private struct TodayHomeView: View {
                 if let selectedTodayList {
                     TodayListDetailView(
                         lists: $lists,
+                        reservedLists: archivedLists,
                         labelLibrary: $labelLibrary,
                         savedCardIDs: $savedCardIDs,
                         listID: selectedTodayList.id,
@@ -1622,19 +1674,19 @@ private struct BoardListsView: View {
     let lists: [KanbanList]
     let onOpenBoardList: (Int) -> Void
 
-    @State private var collections = PersonalCollectionStore.load()
+    @Binding var collections: [PersonalCollection]
     @State private var searchText = ""
     @State private var editingCollection: PersonalCollection?
     @State private var openedCollection: PersonalCollection?
     @State private var deletingCollection: PersonalCollection?
 
     private var filteredCollections: [PersonalCollection] {
-        collections.filter { $0.matches(searchText) }
+        collections.filter { $0.isActive && $0.matches(searchText) }
     }
 
     private var showsWeek: Bool {
         let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return term.isEmpty || "Week Board".localizedStandardContains(term) || lists.contains { list in
+        return term.isEmpty || "Week Board".localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
             list.title.localizedStandardContains(term) || list.cards.contains {
                 !$0.isSectionDivider && $0.word.localizedStandardContains(term)
             }
@@ -1724,12 +1776,12 @@ private struct BoardListsView: View {
                 if showsWeek {
                     Section {
                         NavigationLink {
-                            WeekListsDirectoryView(lists: lists, onOpenBoardList: onOpenBoardList)
+                            WeekListsDirectoryView(lists: lists.filter { !$0.isArchived }, onOpenBoardList: onOpenBoardList)
                         } label: {
                             row(
-                                title: "Week Board", subtitle: "\(lists.count) lists",
+                                title: "Week Board", subtitle: "\(lists.filter { !$0.isArchived }.count) lists",
                                 icon: "rectangle.3.group", color: .blue,
-                                count: lists.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
+                                count: lists.filter { !$0.isArchived }.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
                             )
                         }
                     }
@@ -1760,7 +1812,9 @@ private struct BoardListsView: View {
                     }
                     .onMove { source, destination in
                         guard searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                        collections.move(fromOffsets: source, toOffset: destination)
+                        var active = collections.filter(\.isActive)
+                        active.move(fromOffsets: source, toOffset: destination)
+                        collections = active + collections.filter { !$0.isActive }
                     }
 
                     if filteredCollections.isEmpty {
@@ -1790,7 +1844,10 @@ private struct BoardListsView: View {
                 PersonalCollectionBoardView(
                     collection: collectionBinding(for: collection),
                     retainedLists: lists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
-                        + (ExampleLoadUndoStore.load()?.lists ?? [])
+                        + (ExampleLoadUndoStore.load()?.lists ?? []),
+                    onArchive: {
+                        collections = try PersonalCollectionStore.archiveBoard(id: collection.id, in: collections)
+                    }
                 )
             }
             .alert("Delete collection?", isPresented: Binding(
@@ -1807,7 +1864,6 @@ private struct BoardListsView: View {
             } message: {
                 Text("This deletes the collection and its cards. Your Week board is not affected.")
             }
-            .onChange(of: collections) { _, updated in PersonalCollectionStore.save(updated) }
         }
     }
 }
@@ -1815,19 +1871,30 @@ private struct BoardListsView: View {
 private struct PersonalCollectionBoardView: View {
     @Binding var collection: PersonalCollection
     let retainedLists: [KanbanList]
+    let onArchive: () throws -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ContentView(
-            lists: $collection.lists,
+            lists: $collection.lists.activeLists,
+            archivedLists: $collection.lists.archivedLists,
             savedCardIDs: $collection.savedCardIDs,
             boardTitle: collection.title,
             boardSubtitle: collection.kind.rawValue,
             allowsAddingLists: collection.kind == .board,
             onClose: { dismiss() },
-            onListsChanged: { collection.lists = $0 },
+            onArchiveBoard: collection.kind == .board ? {
+                do {
+                    try onArchive()
+                    dismiss()
+                } catch {
+                    DatabaseActivity.shared.report("Could not archive the board: \(error.localizedDescription) The board has not been removed.")
+                }
+            } : nil,
+            onListsChanged: { _ in },
             retainedAttachmentLists: { retainedLists }
         )
+        .databaseActivityOverlay()
     }
 }
 
@@ -2221,7 +2288,9 @@ private struct SavedCardsView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
     let savedCardIDs: Set<Int> /* Local bookmark set */
+    @Binding var collections: [PersonalCollection]
     let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
+    let onRestoreBoard: (UUID) -> Void
 
     private var savedCards: [SavedCardResult] {
         lists.flatMap { list in
@@ -2242,7 +2311,7 @@ private struct SavedCardsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Saved")
                             .font(.largeTitle.weight(.bold))
-                        Text("Bookmarked on this device")
+                        Text("Bookmarks and archived boards on this device")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -2286,6 +2355,31 @@ private struct SavedCardsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
                     .modifier(TodayPanelSurface())
+                    if collections.contains(where: { $0.isArchived == true && $0.kind == .board }) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Archived Boards").font(.title2.weight(.semibold))
+                            ForEach(collections.filter { $0.isArchived == true && $0.kind == .board }) { board in
+                                HStack {
+                                    Image(systemName: "archivebox").foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(board.title).font(.headline)
+                                        Text("\(board.lists.count) lists · \(board.lists.flatMap(\.allCards).filter { !$0.isSectionDivider }.count) cards")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button("Restore") { onRestoreBoard(board.id) }
+                                        .buttonStyle(.bordered)
+                                        .accessibilityLabel("Restore \(board.title)")
+                                }
+                            }
+                            Text("Restored boards appear in Lists. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(16)
+                        .modifier(TodayPanelSurface())
+                    }
                 }
                 .padding(20)
                 .frame(maxWidth: 560, alignment: .leading)

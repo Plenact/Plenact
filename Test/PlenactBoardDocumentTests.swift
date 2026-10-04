@@ -5,6 +5,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 import XCTest
+import SwiftUI
 @testable import Plenact
 
 
@@ -15,6 +16,223 @@ import XCTest
 ///     Protect schema versioning and stable references before the document is sent to an API
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+
+    @MainActor
+    func testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace() async throws {
+        let suite = "Plenact.WeekArchiveTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var archived = SampleData.lists[1]
+        archived.isArchived = true
+        let snapshot = [SampleData.lists[0], archived]
+        KanbanBoardPersistence.enqueueSave(snapshot, suiteName: suite)
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, snapshot)
+        KanbanBoardPersistence.enqueueSave([], suiteName: suite)
+        let emptyWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertTrue(emptyWeek.isEmpty)
+    }
+
+    @MainActor
+    func testListArchiveBindingsPreserveCardsAndRestoreAtEnd() throws {
+        let original = SampleData.lists[0]
+        var snapshot = [original, SampleData.lists[1]]
+        let board = Binding(get: { snapshot }, set: { snapshot = $0 })
+        var archived = original
+        archived.isArchived = true
+        board.archivedLists.wrappedValue.append(archived)
+        board.activeLists.wrappedValue.removeAll { $0.id == original.id }
+
+        XCTAssertEqual(board.activeLists.wrappedValue.map(\.id), [1])
+        XCTAssertEqual(board.archivedLists.wrappedValue, [archived])
+        snapshot = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(snapshot))
+        XCTAssertEqual(board.archivedLists.wrappedValue, [archived])
+        var restored = try XCTUnwrap(board.archivedLists.wrappedValue.first)
+        restored.isArchived = false
+        board.activeLists.wrappedValue.append(restored)
+        board.archivedLists.wrappedValue.removeAll { $0.id == original.id }
+        XCTAssertEqual(snapshot, [SampleData.lists[1], original])
+    }
+
+    func testWholeWeekArchiveRestoresAsSeparateUniquelyNamedBoard() throws {
+        var archivedList = SampleData.lists[1]
+        archivedList.isArchived = true
+        var list = SampleData.lists[0]
+        list.archiveCard(id: list.cards[0].id)
+        let sourceLists = [list, archivedList]
+        let savedIDs: Set<Int> = [list.archivedCards[0].id]
+        var board = PersonalCollection.archivedWeekBoard(lists: sourceLists, savedCardIDs: savedIDs)
+        let boardID = board.id
+        XCTAssertEqual(board.isArchived, true)
+        board = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(board))
+        board.restore(existingTitles: ["Week Board", "Week Board (Restored)", "week board (restored) (2)"])
+        XCTAssertEqual(board.title, "Week Board (Restored) (3)")
+        XCTAssertTrue(board.isActive)
+        XCTAssertEqual(board.id, boardID)
+        XCTAssertEqual(board.lists, sourceLists)
+        XCTAssertEqual(board.savedCardIDs, savedIDs)
+        XCTAssertEqual(board.lists[0].archivedCards, list.archivedCards)
+        XCTAssertTrue(board.lists[1].isArchived)
+    }
+
+    func testArchivedPersonalBoardPersistsAndRestoresWithoutRenamingItsLists() throws {
+        let suite = "Plenact.BoardArchiveTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var board = PersonalCollection(title: "Project", kind: .board, icon: .project)
+        board.isArchived = true
+        board.lists[0].cards = [KanbanCard(id: 77, word: "Task", listTitle: board.lists[0].title)]
+        board.lists[1].isArchived = true
+        board.savedCardIDs = [77]
+        try PersonalCollectionStore.saveChecked([board], to: defaults)
+        var restored = try XCTUnwrap(PersonalCollectionStore.load(from: defaults).first)
+        XCTAssertFalse(restored.isActive)
+        restored.restore(existingTitles: ["project"])
+        XCTAssertEqual(restored.title, "Project (2)")
+        XCTAssertEqual(restored.lists, board.lists)
+        XCTAssertEqual(restored.savedCardIDs, board.savedCardIDs)
+        XCTAssertTrue(restored.isActive)
+        try PersonalCollectionStore.saveChecked([restored], to: defaults)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [restored])
+    }
+
+    func testPersonalBoardArchiveSavesBeforeReturningUpdatedState() throws {
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let board = PersonalCollection(title: "Project", kind: .board)
+        let other = PersonalCollection(title: "Shopping", kind: .list)
+        let original = [board, other]
+        let updated = try PersonalCollectionStore.archiveBoard(id: board.id, in: original, to: defaults)
+        XCTAssertTrue(original[0].isActive)
+        XCTAssertFalse(updated[0].isActive)
+        XCTAssertEqual(updated[1], other)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), updated)
+    }
+
+    func testPersonalBoardArchiveFailureKeepsMemoryAndSavedSnapshotActive() throws {
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let board = PersonalCollection(title: "Project", kind: .board)
+        try PersonalCollectionStore.saveChecked([board], to: defaults)
+        var draft = board
+        var invalidCard = KanbanCard(id: 1, word: "Unsaved", listTitle: draft.lists[0].title)
+        invalidCard.dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
+        draft.lists[0].cards = [invalidCard]
+        var collections = [draft]
+
+        XCTAssertThrowsError(
+            collections = try PersonalCollectionStore.archiveBoard(id: draft.id, in: collections, to: defaults)
+        )
+        XCTAssertEqual(collections, [draft])
+        XCTAssertTrue(collections[0].isActive)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [board])
+    }
+
+    func testPersonalBoardArchiveRejectsMissingBoardWithoutChangingSavedData() throws {
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let board = PersonalCollection(title: "Project", kind: .board)
+        try PersonalCollectionStore.saveChecked([board], to: defaults)
+        XCTAssertThrowsError(try PersonalCollectionStore.archiveBoard(id: UUID(), in: [board], to: defaults))
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [board])
+    }
+
+    func testLegacyPersonalBoardDefaultsToActiveAndArchivedListsStayOutOfSearch() throws {
+        let original = PersonalCollection(title: "Project", kind: .board)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
+        object.removeValue(forKey: "isArchived")
+        var decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertTrue(decoded.isActive)
+        decoded.lists[0].cards = [KanbanCard(id: 500, word: "Hidden activity", listTitle: decoded.lists[0].title)]
+        decoded.lists[0].isArchived = true
+        XCTAssertFalse(decoded.matches("Hidden activity"))
+        XCTAssertEqual(decoded.cardCount, 0)
+        let document = PlenactBoardDocument(lists: decoded.lists, labelLibrary: .starter)
+        XCTAssertEqual(document.validationMessage, "Archived lists are stored locally and cannot be published to the shared Board.")
+    }
+
+    func testLegacyListsLoadWithEmptyArchiveAndKeepExistingJSONShape() throws {
+        let data = Data("{\"id\":1,\"title\":\"Monday\",\"cards\":[]}".utf8)
+        let list = try JSONDecoder().decode(KanbanList.self, from: data)
+        XCTAssertTrue(list.archivedCards.isEmpty)
+        let encoded = try JSONEncoder().encode(list)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(Set(object.keys), ["id", "title", "cards"])
+    }
+
+    func testArchivingAndRestoringPreservesFullCardAndDivider() throws {
+        var completed = SampleData.lists[0].cards[0]
+        completed.isTitleChecked = true
+        completed.attachments = [KanbanAttachment(fileName: "synthetic-archive.jpg", mediaKind: .photo)]
+        let active = KanbanCard(id: 500, word: "Active", listTitle: "Monday")
+        let divider = KanbanCard(id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true)
+        var list = KanbanList(id: 1, title: "Monday", cards: [completed, divider, active])
+
+        list.archiveCompletedCards()
+        XCTAssertEqual(list.cards, [divider, active])
+        XCTAssertEqual(list.archivedCards, [completed])
+        XCTAssertEqual(Set(list.allCards.compactMap { $0.attachments?.first?.fileName }), ["synthetic-archive.jpg"])
+        list.archiveCompletedCards()
+        XCTAssertEqual(list.archivedCards, [completed])
+
+        list = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(list.archivedCards, [completed])
+        list.restoreArchivedCard(id: completed.id)
+        XCTAssertEqual(list.cards, [divider, active, completed])
+        XCTAssertTrue(list.archivedCards.isEmpty)
+        list.restoreArchivedCard(id: completed.id)
+        XCTAssertEqual(list.cards, [divider, active, completed])
+    }
+
+    func testArchivedCardsStayOutOfSearchAndReserveTheirIDs() {
+        let archived = KanbanCard(id: 900, word: "Archived task", listTitle: "Monday", isTitleChecked: true)
+        let list = KanbanList(
+            id: 1, title: "Monday",
+            cards: [KanbanCard(id: 1, word: "Active task", listTitle: "Monday")],
+            archivedCards: [archived]
+        )
+        XCTAssertTrue(TodaySearchIndex.results(query: "Archived task", scope: .all, lists: [list], library: .starter).isEmpty)
+        XCTAssertEqual(([list].flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1, 901)
+        let document = PlenactBoardDocument(lists: [list], labelLibrary: .starter)
+        XCTAssertEqual(document.validationMessage, "Archived cards are stored locally and cannot be published to the shared Board.")
+    }
+
+    func testIndividualArchiveAcceptsIncompleteCardsAndPreservesContent() throws {
+        var incomplete = SampleData.lists[0].cards[0]
+        incomplete.isTitleChecked = false
+        XCTAssertFalse(incomplete.isTitleChecked)
+        var complete = SampleData.lists[0].cards[1]
+        complete.isTitleChecked = true
+        let divider = KanbanCard(id: 800, word: "Divider", listTitle: "Monday", isDivider: true)
+        var list = KanbanList(id: 1, title: "Monday", cards: [incomplete, complete, divider])
+
+        list.archiveCard(id: incomplete.id)
+        list.archiveCard(id: complete.id)
+        list.archiveCard(id: incomplete.id)
+        list.archiveCard(id: divider.id)
+        XCTAssertEqual(list.cards, [divider])
+        XCTAssertEqual(list.archivedCards, [incomplete, complete])
+        list = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        list.restoreArchivedCard(id: incomplete.id)
+        XCTAssertEqual(list.cards, [divider, incomplete])
+        XCTAssertFalse(list.cards[1].isTitleChecked)
+        XCTAssertEqual(list.archivedCards, [complete])
+    }
+
+    func testPersonalListRenamePreservesArchivedCards() throws {
+        var collection = PersonalCollection(title: "Original", kind: .list)
+        let archived = KanbanCard(id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true)
+        collection.lists[0].archivedCards = [archived]
+        collection.rename(to: "Renamed")
+        var expected = archived
+        expected.listTitle = "Renamed"
+        XCTAssertEqual(collection.lists[0].archivedCards, [expected])
+        let restored = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection))
+        XCTAssertEqual(restored, collection)
+    }
 
     @MainActor
     func testAPIActivityEndsAfterSuccessFailureAndCancellation() async throws {

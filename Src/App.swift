@@ -1596,8 +1596,296 @@ private struct CalendarCardResult: Identifiable {
 }
 
 
-/// Shows a month grid from existing card start/due dates and routes into Board lists.
 private struct BoardListsView: View {
+
+    let lists: [KanbanList]
+    let onOpenBoardList: (Int) -> Void
+
+    @State private var collections = PersonalCollectionStore.load()
+    @State private var searchText = ""
+    @State private var editingCollection: PersonalCollection?
+    @State private var openedCollection: PersonalCollection?
+    @State private var deletingCollection: PersonalCollection?
+
+    private var filteredCollections: [PersonalCollection] {
+        collections.filter { $0.matches(searchText) }
+    }
+
+    private var showsWeek: Bool {
+        let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return term.isEmpty || "Week Board".localizedStandardContains(term) || lists.contains { list in
+            list.title.localizedStandardContains(term) || list.cards.contains {
+                !$0.isSectionDivider && $0.word.localizedStandardContains(term)
+            }
+        }
+    }
+
+    private func saveCollection(_ collection: PersonalCollection) {
+        if let index = collections.firstIndex(where: { $0.id == collection.id }) {
+            collections[index] = collection
+        } else {
+            collections.append(collection)
+        }
+    }
+
+    private func collectionBinding(for collection: PersonalCollection) -> Binding<PersonalCollection> {
+        Binding(
+            get: { collections.first(where: { $0.id == collection.id }) ?? collection },
+            set: { updated in
+                guard let index = collections.firstIndex(where: { $0.id == updated.id }) else { return }
+                collections[index] = updated
+            }
+        )
+    }
+
+    private func row(title: String, subtitle: String, icon: String, color: Color, count: Int) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+                .frame(width: 40, height: 40)
+                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Text("\(count)")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+    }
+
+    private var createMenu: some View {
+        Menu {
+            Button("New List", systemImage: "list.bullet") {
+                editingCollection = PersonalCollection(title: "", kind: .list)
+            }
+            Button("New Board", systemImage: "rectangle.3.group") {
+                editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
+            }
+            Menu("Starter Lists") {
+                ForEach(["On the table", "In the queue", "Upcoming", "Shopping", "Reminders"], id: \.self) { title in
+                    Button(title) {
+                        editingCollection = PersonalCollection(
+                            title: title, kind: .list,
+                            icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks)
+                        )
+                    }
+                }
+            }
+            Menu("Starter Boards") {
+                ForEach(["General Notes", "Girlfriend Important Details", "New Project Notes"], id: \.self) { title in
+                    Button(title) {
+                        editingCollection = PersonalCollection(
+                            title: title, kind: .board,
+                            icon: title == "Girlfriend Important Details" ? .heart : .notes
+                        )
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "plus")
+        }
+        .accessibilityLabel("Create list or board")
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if showsWeek {
+                    Section {
+                        NavigationLink {
+                            WeekListsDirectoryView(lists: lists, onOpenBoardList: onOpenBoardList)
+                        } label: {
+                            row(
+                                title: "Week Board", subtitle: "\(lists.count) lists",
+                                icon: "rectangle.3.group", color: .blue,
+                                count: lists.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
+                            )
+                        }
+                    }
+                }
+
+                Section("Collections") {
+                    ForEach(filteredCollections) { collection in
+                        Button {
+                            openedCollection = collection
+                        } label: {
+                            row(
+                                title: collection.title,
+                                subtitle: collection.kind == .board ? "Board · \(collection.lists.count) lists" : "List",
+                                icon: collection.icon.rawValue, color: collection.color.color,
+                                count: collection.cardCount
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Edit", systemImage: "pencil") { editingCollection = collection }
+                            Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Delete", role: .destructive) { deletingCollection = collection }
+                            Button("Edit") { editingCollection = collection }
+                                .tint(.blue)
+                        }
+                    }
+                    .onMove { source, destination in
+                        guard searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                        collections.move(fromOffsets: source, toOffset: destination)
+                    }
+
+                    if filteredCollections.isEmpty {
+                        Text(searchText.isEmpty ? "No personal collections yet" : "No matching collections")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background { TodayPaperBackground() }
+            .navigationTitle("Lists")
+            .searchable(text: $searchText, prompt: "Find a collection or card")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    EditButton().disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                ToolbarItem(placement: .topBarTrailing) { createMenu }
+            }
+            .sheet(item: $editingCollection) { collection in
+                PersonalCollectionSettingsView(
+                    collection: collection,
+                    isNew: !collections.contains(where: { $0.id == collection.id }),
+                    onSave: saveCollection
+                )
+            }
+            .fullScreenCover(item: $openedCollection) { collection in
+                PersonalCollectionBoardView(
+                    collection: collectionBinding(for: collection),
+                    retainedLists: lists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
+                        + (ExampleLoadUndoStore.load()?.lists ?? [])
+                )
+            }
+            .alert("Delete collection?", isPresented: Binding(
+                get: { deletingCollection != nil },
+                set: { if !$0 { deletingCollection = nil } }
+            )) {
+                Button("Delete", role: .destructive) {
+                    if let deletingCollection {
+                        collections.removeAll { $0.id == deletingCollection.id }
+                    }
+                    deletingCollection = nil
+                }
+                Button("Cancel", role: .cancel) { deletingCollection = nil }
+            } message: {
+                Text("This deletes the collection and its cards. Your Week board is not affected.")
+            }
+            .onChange(of: collections) { _, updated in PersonalCollectionStore.save(updated) }
+        }
+    }
+}
+
+private struct PersonalCollectionBoardView: View {
+    @Binding var collection: PersonalCollection
+    let retainedLists: [KanbanList]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ContentView(
+            lists: $collection.lists,
+            savedCardIDs: $collection.savedCardIDs,
+            boardTitle: collection.title,
+            boardSubtitle: collection.kind.rawValue,
+            allowsAddingLists: collection.kind == .board,
+            onClose: { dismiss() },
+            onListsChanged: { collection.lists = $0 },
+            retainedAttachmentLists: { retainedLists }
+        )
+    }
+}
+
+private struct PersonalCollectionSettingsView: View {
+    let isNew: Bool
+    let onSave: (PersonalCollection) -> Void
+    @State private var draft: PersonalCollection
+    @Environment(\.dismiss) private var dismiss
+
+    init(collection: PersonalCollection, isNew: Bool, onSave: @escaping (PersonalCollection) -> Void) {
+        _draft = State(initialValue: collection)
+        self.isNew = isNew
+        self.onSave = onSave
+    }
+
+    private var trimmedTitle: String { draft.title.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private func save() {
+        draft.rename(to: trimmedTitle)
+        onSave(draft)
+        dismiss()
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Name", text: $draft.title)
+                    LabeledContent("Type", value: draft.kind.rawValue)
+                    Picker("Icon", selection: $draft.icon) {
+                        ForEach(PersonalCollectionIcon.allCases, id: \.self) { icon in
+                            Label(icon.title, systemImage: icon.rawValue).tag(icon)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("Color", selection: $draft.color) {
+                        ForEach([
+                            ("Teal", ProfileColor.teal), ("Blue", .blue), ("Green", .green),
+                            ("Orange", .orange), ("Coral", .coral), ("Graphite", .graphite)
+                        ], id: \.0) { name, color in
+                            HStack {
+                                Circle().fill(color.color).frame(width: 16, height: 16)
+                                Text(name)
+                            }
+                            .tag(color)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+            .navigationTitle(isNew ? "New \(draft.kind.rawValue)" : "Edit Collection")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save", action: save).disabled(trimmedTitle.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+extension PersonalCollectionIcon {
+    var title: String {
+        switch self {
+            case .notes: "Notes"
+            case .tasks: "Tasks"
+            case .shopping: "Shopping"
+            case .reminders: "Reminders"
+            case .project: "Project"
+            case .home: "Home"
+            case .heart: "Heart"
+            case .upcoming: "Upcoming"
+        }
+    }
+}
+
+private struct WeekListsDirectoryView: View {
 
     let lists: [KanbanList]
     let onOpenBoardList: (Int) -> Void
@@ -1621,7 +1909,7 @@ private struct BoardListsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Lists")
+                        Text("Week Board")
                             .font(.largeTitle.weight(.bold))
                         Text("All lists in your Week board")
                             .font(.subheadline)

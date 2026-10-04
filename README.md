@@ -14,6 +14,8 @@ Implemented today:
 - A Monday-through-Sunday starter Board with realistic daily-planning examples for new installations
 - Seeded checklist demonstrations that link to existing cards and open reduced Action Details
 - Direct navigation from Today to any existing board list
+- A Lists library with a separate Week Board directory and locally saved personal lists and boards
+- Personal collection creation, optional starter templates, renaming, icons, colors, reordering, and confirmed deletion
 - Local persistence for board data and the label library
 - Local photo and video files in the app's private Documents directory, plus web-link attachments
 
@@ -93,3 +95,5 @@ The shared `Plenact` scheme includes an active `PlenactTests` unit-test target. 
 ## Data and Privacy Boundary
 
 Board and label data are stored locally on the installation. Attachment media is stored in the app's private container. Local storage should not be described as synchronization, cloud backup, secure sharing, or multi-user access. Persisted Codable models and attachment filenames are compatibility contracts and require deliberate migration when changed
+
+Personal collections use a separate local snapshot and do not replace the Week board. A List starts with one card column; a Board starts with Ideas, In progress, and Done columns. Both use the existing card editor and retain bookmarks within their own collection. Labels remain shared across the app. Today, the lower-bar New action, global Search, and Saved continue to use Week; personal collection cards are accessed and created within their collection. Load Example and its undo operate only on Week.

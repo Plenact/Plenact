@@ -7,6 +7,7 @@
 //
 // @section    Opens
 //     Consider more board\ specific naming to file
+//     Modularize into shorter, multiple files! 
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -851,6 +852,82 @@ struct KanbanComment: Identifiable, Hashable, Codable {
 ///
 /// @note       The storage key is versioned so future persistence format changes can be migrated deliberately
 ///
+enum PersonalCollectionKind: String, CaseIterable, Codable {
+    case list = "List"
+    case board = "Board"
+}
+
+enum PersonalCollectionIcon: String, CaseIterable, Codable {
+    case notes = "note.text"
+    case tasks = "checklist"
+    case shopping = "cart"
+    case reminders = "bell"
+    case project = "square.stack.3d.up"
+    case home = "house"
+    case heart = "heart"
+    case upcoming = "calendar"
+}
+
+struct PersonalCollection: Identifiable, Hashable, Codable {
+    let id: UUID
+    var title: String
+    let kind: PersonalCollectionKind
+    var icon: PersonalCollectionIcon
+    var color: ProfileColor
+    var lists: [KanbanList]
+    var savedCardIDs: Set<Int>
+
+    init(
+        id: UUID = UUID(), title: String, kind: PersonalCollectionKind,
+        icon: PersonalCollectionIcon = .notes, color: ProfileColor = .teal
+    ) {
+        self.id = id
+        self.title = title
+        self.kind = kind
+        self.icon = icon
+        self.color = color
+        let columns = kind == .list ? [title] : ["Ideas", "In progress", "Done"]
+        lists = columns.enumerated().map { KanbanList(id: $0.offset, title: $0.element, cards: []) }
+        savedCardIDs = []
+    }
+
+    var cardCount: Int {
+        lists.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
+    }
+
+    mutating func rename(to name: String) {
+        title = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard kind == .list, let column = lists.first else { return }
+        var cards = column.cards
+        for index in cards.indices { cards[index].listTitle = title }
+        lists[0] = KanbanList(id: column.id, title: title, cards: cards)
+    }
+
+    func matches(_ query: String) -> Bool {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return term.isEmpty || title.localizedStandardContains(term) || lists.contains { list in
+            list.title.localizedStandardContains(term) || list.cards.contains {
+                !$0.isSectionDivider && ($0.word.localizedStandardContains(term)
+                    || ($0.descriptionOverride?.localizedStandardContains(term) ?? false))
+            }
+        }
+    }
+}
+
+enum PersonalCollectionStore {
+    private static let key = "Plenact.PersonalCollections.v1"
+
+    static func load(from defaults: UserDefaults = .standard) -> [PersonalCollection] {
+        guard let data = defaults.data(forKey: key) else { return [] }
+        return (try? JSONDecoder().decode([PersonalCollection].self, from: data)) ?? []
+    }
+
+    static func save(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) {
+        guard let data = try? JSONEncoder().encode(collections) else { return }
+        defaults.set(data, forKey: key)
+    }
+}
+
 struct ExampleLoadUndoSnapshot: Codable, Equatable {
 
     let lists: [KanbanList]

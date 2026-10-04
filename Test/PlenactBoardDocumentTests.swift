@@ -108,6 +108,49 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayListSelection.initialListID(savedListID: 99, profileDefaultListID: nil, lists: lists), 7)
     }
 
+    func testPersonalCollectionPersistencePreservesOrderAndLeavesWeekUntouched() throws {
+        let suite = "Plenact.PersonalCollectionTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let weekSnapshot = try JSONEncoder().encode(SampleData.lists)
+        defaults.set(weekSnapshot, forKey: "Plenact.Board.v1")
+
+        var shopping = PersonalCollection(title: "Shopping", kind: .list, icon: .shopping, color: .coral)
+        shopping.lists[0].cards = [KanbanCard(id: 0, word: "Eggs", listTitle: "Shopping", checklists: [])]
+        shopping.savedCardIDs = [0]
+        let project = PersonalCollection(title: "New Project Notes", kind: .board, icon: .project)
+        PersonalCollectionStore.save([project, shopping], to: defaults)
+
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [project, shopping])
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), weekSnapshot)
+        XCTAssertEqual(shopping.lists.count, 1)
+        XCTAssertEqual(project.lists.map(\.title), ["Ideas", "In progress", "Done"])
+        XCTAssertEqual(shopping.cardCount, 1)
+    }
+
+    func testPersonalCollectionRenameAndSearchPreserveCardIdentity() {
+        var collection = PersonalCollection(title: "Shopping", kind: .list)
+        collection.lists[0].cards = [
+            KanbanCard(id: 9, word: "Eggs", listTitle: "Shopping", checklists: [], descriptionOverride: "Breakfast"),
+            KanbanCard(id: 10, word: "Divider", listTitle: "Shopping", isDivider: true)
+        ]
+        collection.rename(to: "  Groceries  ")
+
+        XCTAssertEqual(collection.title, "Groceries")
+        XCTAssertEqual(collection.lists[0].title, "Groceries")
+        XCTAssertEqual(collection.lists[0].cards.map(\.id), [9, 10])
+        XCTAssertTrue(collection.lists[0].cards.allSatisfy { $0.listTitle == "Groceries" })
+        XCTAssertEqual(collection.cardCount, 1)
+        XCTAssertTrue(collection.matches("eggs"))
+        XCTAssertTrue(collection.matches("Breakfast"))
+        XCTAssertTrue(collection.matches(" "))
+        XCTAssertFalse(collection.matches("Divider"))
+
+        var board = PersonalCollection(title: "Project", kind: .board)
+        board.rename(to: "Research")
+        XCTAssertEqual(board.lists.map(\.title), ["Ideas", "In progress", "Done"])
+    }
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testStarterBoardDocumentRoundTrips
     /// @brief      Encode and decode the complete starter Board document

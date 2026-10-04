@@ -48,6 +48,12 @@ struct ContentView: View {
     @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
     let onListViewed: (Int) -> Void
+    let boardTitle: String
+    let boardSubtitle: String
+    let allowsAddingLists: Bool
+    let onClose: (() -> Void)?
+    let onListsChanged: ([KanbanList]) -> Void
+    let retainedAttachmentLists: () -> [KanbanList]
     @State private var showsCalendar = false
     @State private var navigationPath = NavigationPath()
     @State private var lastReportedVisibleListID: Int?
@@ -76,13 +82,27 @@ struct ContentView: View {
         boardTargetListID: Binding<Int?> = .constant(nil),
         boardTargetCardID: Binding<Int?> = .constant(nil),
         savedCardIDs: Binding<Set<Int>> = .constant([]),
-        onListViewed: @escaping (Int) -> Void = { _ in }
+        onListViewed: @escaping (Int) -> Void = { _ in },
+        boardTitle: String = "Plenact",
+        boardSubtitle: String = "Work Week Board",
+        allowsAddingLists: Bool = true,
+        onClose: (() -> Void)? = nil,
+        onListsChanged: @escaping ([KanbanList]) -> Void = KanbanBoardPersistence.saveLists,
+        retainedAttachmentLists: @escaping () -> [KanbanList] = {
+            PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
+        }
     ) {
         _lists = lists
         _boardTargetListID = boardTargetListID
         _boardTargetCardID = boardTargetCardID
         _savedCardIDs = savedCardIDs
         self.onListViewed = onListViewed
+        self.boardTitle = boardTitle
+        self.boardSubtitle = boardSubtitle
+        self.allowsAddingLists = allowsAddingLists
+        self.onClose = onClose
+        self.onListsChanged = onListsChanged
+        self.retainedAttachmentLists = retainedAttachmentLists
     }
 
     private func openPendingBoardTarget(using listProxy: ScrollViewProxy) {
@@ -677,7 +697,7 @@ struct ContentView: View {
     private func pruneUnreferencedAttachments() {
         
         let referencedFileNames = Set( /* Attachment files retained by current Board cards */
-            lists
+            (lists + retainedAttachmentLists())
                 .flatMap(\.cards)
                 .flatMap { $0.attachments ?? [] }
                 .compactMap(\.fileName)
@@ -752,6 +772,10 @@ struct ContentView: View {
                             onDeleteMember:   removeMember,
                             onSetMemberColor: setMemberColor,
                             onOpenCalendar:   { showsCalendar = true },
+                            title: boardTitle,
+                            subtitle: boardSubtitle,
+                            allowsAddingLists: allowsAddingLists || lists.isEmpty,
+                            onClose: onClose,
                             onAddList:        addList
                         )
 
@@ -863,7 +887,7 @@ struct ContentView: View {
                 .presentationDetents([.large])
             }
             .onChange(of: lists) { _, updatedLists in
-                KanbanBoardPersistence.saveLists(updatedLists)
+                onListsChanged(updatedLists)
             }
             .onChange(of: labelLibrary) { _, updatedLibrary in
                 LabelLibraryStore.save(updatedLibrary)
@@ -890,6 +914,10 @@ struct BoardHeader: View {
     let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments           */
     let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
     let onOpenCalendar: () -> Void
+    let title: String
+    let subtitle: String
+    let allowsAddingLists: Bool
+    let onClose: (() -> Void)?
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
@@ -900,13 +928,24 @@ struct BoardHeader: View {
 
         HStack {
 
+            if let onClose {
+                Button(action: onClose) {
+                    Image(systemName: "chevron.left")
+                        .frame(width: 32, height: 44)
+                }
+                .foregroundStyle(.white)
+                .accessibilityLabel("Back to Lists")
+            }
+
             VStack(alignment: .leading, spacing: 2) {
 
-                Text("Plenact")
-                    .font(.largeTitle.weight(.bold))
+                Text(title)
+                    .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
                     .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
 
-                Text("Work Week Board")
+                Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.75))
             }
@@ -923,6 +962,7 @@ struct BoardHeader: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Open Calendar")
 
+            if allowsAddingLists {
             Menu {
                 
                 Button("Add blank list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
@@ -934,6 +974,7 @@ struct BoardHeader: View {
                     .foregroundStyle(.white)
             }
             .accessibilityLabel("Add list")
+            }
 
             Button {
                 showingSettings = true

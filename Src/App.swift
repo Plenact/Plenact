@@ -155,7 +155,8 @@ private struct AppRootView: View {
         TabView(selection: $selectedDestination) {
 
             TodayHomeView(
-                lists:   lists,
+                lists:   $lists,
+                savedCardIDs: $savedCardIDs,
                 profile: profile,
                 onSaveProfile: { updatedProfile in
                     profile = updatedProfile
@@ -355,7 +356,8 @@ private struct AppRootView: View {
 ///
 private struct TodayHomeView: View {
 
-    let lists:              [KanbanList]                    /* Current board lists available to Today             */
+    @Binding var lists:     [KanbanList]                    /* Shared local Board lists                            */
+    @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details          */
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
     let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
@@ -367,6 +369,7 @@ private struct TodayHomeView: View {
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
+    @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
     @State private var showsSearch          = false         /* Local Board search presentation          */
@@ -524,7 +527,8 @@ private struct TodayHomeView: View {
     /// @post       The saved selection is restored when available; board data is unchanged
     ///
     init(
-        lists:           [KanbanList],
+        lists:           Binding<[KanbanList]>,
+        savedCardIDs:    Binding<Set<Int>>,
         profile:         LocalProfile?,
         onSaveProfile:   @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
@@ -534,7 +538,8 @@ private struct TodayHomeView: View {
         quickCreateRequest: Int
     ) {
 
-        self.lists           = lists
+        self._lists          = lists
+        self._savedCardIDs   = savedCardIDs
         self.profile         = profile
         self.onSaveProfile   = onSaveProfile
         self.onRemoveProfile = onRemoveProfile
@@ -771,9 +776,8 @@ private struct TodayHomeView: View {
                             guard let selectedTodayList else { return }
                             onToggleCardCompletion(selectedTodayList.id, cardID)
                         },
-                        onOpenWeek: {
-                            guard let selectedTodayList else { return }
-                            onOpenBoardList(selectedTodayList.id)
+                        onOpenTodayList: {
+                            showsTodayList = true
                         }
                     )
 
@@ -819,6 +823,24 @@ private struct TodayHomeView: View {
                     onRemove: onRemoveProfile
                 )
             }
+            .fullScreenCover(isPresented: $showsTodayList) {
+                if let selectedTodayList {
+                    TodayListDetailView(
+                        lists: $lists,
+                        labelLibrary: $labelLibrary,
+                        savedCardIDs: $savedCardIDs,
+                        listID: selectedTodayList.id,
+                        currentUserName: profile?.displayName ?? "Justin Reina",
+                        onClose: {
+                            showsTodayList = false
+                        },
+                        onOpenWeek: {
+                            showsTodayList = false
+                            onOpenBoardList(selectedTodayList.id)
+                        }
+                    )
+                }
+            }
             .sheet(isPresented: $showsQuickNoteEditor) {
 
                 if let selectedTodayList {
@@ -845,6 +867,9 @@ private struct TodayHomeView: View {
             }
             .onChange(of: quickCreateRequest) { _, _ in
                 openQuickNoteEditor()
+            }
+            .onChange(of: labelLibrary) { _, updatedLibrary in
+                LabelLibraryStore.save(updatedLibrary)
             }
             .sheet(item: $listPickerMode) { mode in
 
@@ -1568,7 +1593,7 @@ private struct TodayFocusSection: View {
     let openCards: [KanbanCard] /* First three incomplete cards */
     let onChooseList: () -> Void /* Select another list for Today */
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
-    let onOpenWeek: () -> Void /* Open the selected list in Week */
+    let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1623,7 +1648,7 @@ private struct TodayFocusSection: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Mark \(card.word) complete")
 
-                                Button(action: onOpenWeek) {
+                                Button(action: onOpenTodayList) {
                                     HStack {
                                         Text(card.word)
                                             .foregroundStyle(.primary)
@@ -1637,7 +1662,7 @@ private struct TodayFocusSection: View {
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("Open \(card.word) in Week")
+                                .accessibilityLabel("Open \(card.word) in today's list")
                             }
 
                             if card.id != openCards.last?.id {
@@ -1647,8 +1672,8 @@ private struct TodayFocusSection: View {
                     }
                 }
 
-                Button(action: onOpenWeek) {
-                    Label("Open in Week", systemImage: "arrow.right")
+                Button(action: onOpenTodayList) {
+                    Label("Open today's list", systemImage: "arrow.right")
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 36)
                 }

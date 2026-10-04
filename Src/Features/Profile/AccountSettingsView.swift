@@ -207,7 +207,7 @@ struct AccountSettingsView: View {
     ///
     /// @fcn        AccountSettingsView.body
     /// @brief      Build the local Account & Settings form
-    /// @details    Separates profile, planning, accessibility, privacy, and removal controls
+    /// @details    Separates account details from planning, accessibility, and privacy settings
     ///
     /// @return     (some View) local profile creation or editing sheet
     ///
@@ -215,110 +215,106 @@ struct AccountSettingsView: View {
 
         NavigationStack {
 
-            Form {
+            TabView {
+                Form {
+                    Section("Profile") {
+                        HStack(spacing: 14) {
+                            ProfileAvatarView(
+                                profile: LocalProfile(
+                                    id:          profileID,
+                                    createdAt:   createdAt,
+                                    displayName: trimmedDisplayName,
+                                    avatarColor: avatarColor
+                                ),
+                                size: 52
+                            )
 
-                Section("Profile") {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(trimmedDisplayName.isEmpty ? "Local profile" : trimmedDisplayName)
+                                    .font(.headline)
 
-                    HStack(spacing: 14) {
+                                Text("Stored on this device")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
 
-                        ProfileAvatarView(
-                            profile: LocalProfile(
-                                id:          profileID,
-                                createdAt:   createdAt,
-                                displayName: trimmedDisplayName,
-                                avatarColor: avatarColor
-                            ),
-                            size: 52
-                        )
+                        TextField("Display name", text: $displayName)
+                            .textContentType(.name)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        TextField("Email (optional)", text: $email)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
 
-                            Text(trimmedDisplayName.isEmpty ? "Local profile" : trimmedDisplayName)
-                                .font(.headline)
+                        TextField("Planning context (optional)", text: $context)
 
-                            Text("Stored on this device")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        Picker("Avatar color", selection: $avatarColor) {
+                            ForEach(ProfileAvatarColor.allCases) { color in
+                                Label(color.title, systemImage: "circle.fill")
+                                    .foregroundStyle(color.color)
+                                    .tag(color)
+                            }
                         }
                     }
 
-                    TextField("Display name", text: $displayName)
-                        .textContentType(.name)
+                    PlenactDemoAccountSection()
 
-                    TextField("Email (optional)", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
+                    if let profile {
+                        Section {
+                            LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
 
-                    TextField("Planning context (optional)", text: $context)
-
-                    Picker("Avatar color", selection: $avatarColor) {
-
-                        ForEach(ProfileAvatarColor.allCases) { color in
-
-                            Label(color.title, systemImage: "circle.fill")
-                                .foregroundStyle(color.color)
-                                .tag(color)
+                            Button("Remove local profile", role: .destructive) {
+                                confirmsRemoval = true
+                            }
+                        } header: {
+                            Text("Local Profile")
+                        } footer: {
+                            Text("Removing this profile keeps all Board cards, labels, and attachments.")
                         }
                     }
                 }
+                .tabItem {
+                    Label("Account", systemImage: "person.crop.circle")
+                }
 
-                PlenactDemoAccountSection()
+                Form {
+                    Section {
+                        Picker("Default Today list", selection: $defaultListID) {
+                            Text("Choose each day").tag(nil as Int?)
 
-                Section {
-
-                    Picker("Default Today list", selection: $defaultListID) {
-
-                        Text("Choose each day").tag(nil as Int?)
-
-                        ForEach(lists) { list in
-                            Text(list.title).tag(Optional(list.id))
+                            ForEach(lists) { list in
+                                Text(list.title).tag(Optional(list.id))
+                            }
                         }
+                    } header: {
+                        Text("Planning")
+                    } footer: {
+                        Text("The default is used only when no list has been chosen for that date.")
                     }
-                } header: {
-                    Text("Planning")
-
-                } footer: {
-                    Text("The default is used only when no list has been chosen for that date.")
-                }
-
-                Section {
-                    Toggle("Reduce supporting content", isOn: $usesReducedContent)
-                    Toggle("Use larger primary controls", isOn: $usesLargeControls)
-                    Toggle("Show navigation labels", isOn: $showsNavigationLabels)
-
-                } header: {
-                    Text("Accessibility")
-
-                } footer: {
-                    Text("Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
-                }
-
-                Section("Privacy & Data") {
-                    LabeledContent("Profile storage", value: "This device")
-                    LabeledContent("Online account", value: "None")
-                    LabeledContent("Network access", value: "Not used")
-
-                    Text("Profile settings are separate from your Board, labels, and attachments.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let profile { /* Existing local profile details */
 
                     Section {
-
-                        LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
-
-                        Button("Remove local profile", role: .destructive) {
-                            confirmsRemoval = true
-                        }
-
+                        Toggle("Reduce supporting content", isOn: $usesReducedContent)
+                        Toggle("Use larger primary controls", isOn: $usesLargeControls)
+                        Toggle("Show navigation labels", isOn: $showsNavigationLabels)
                     } header: {
-                        Text("Local Profile")
+                        Text("Accessibility")
                     } footer: {
-                        Text("Removing this profile keeps all Board cards, labels, and attachments.")
+                        Text("Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
                     }
+
+                    Section("Privacy & Data") {
+                        LabeledContent("Profile storage", value: "This device")
+                        LabeledContent("Online account", value: "None")
+                        LabeledContent("Network access", value: "Not used")
+
+                        Text("Profile settings are separate from your Board, labels, and attachments.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
                 }
             }
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")

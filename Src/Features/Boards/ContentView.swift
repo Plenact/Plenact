@@ -721,7 +721,7 @@ struct ContentView: View {
 
                             ScrollView(.horizontal, showsIndicators: false) {
 
-                                HStack(spacing: 12) {
+                                HStack(alignment: .top, spacing: 12) {
 
                                     ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 
@@ -747,12 +747,12 @@ struct ContentView: View {
                                             }
                                         )
                                         .frame(
-                                            width:  safeFrameDimension(screen.size.width, subtracting:  28),
-                                            height: safeFrameDimension(screen.size.height, subtracting: 86)
+                                            width: safeFrameDimension(screen.size.width, subtracting: 28)
                                         )
                                         .id(list.id)
                                     }
                                 }
+                                .frame(maxHeight: .infinity, alignment: .top)
                                 .scrollTargetLayout()
                                 .padding(.horizontal, 14)
                             }
@@ -1199,6 +1199,15 @@ struct KanbanListView: View {
         return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
     }
 
+    private var cardCollectionHeight: CGFloat {
+        let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in
+            height + (card.isSectionDivider ? 44 : max(cardHeight, 48))
+        }
+        let contentHeight = max(88, rowHeight + 64)
+        let availableHeight = max(88, screenSize.height - 158)
+        return min(contentHeight, availableHeight)
+    }
+
     /// Builds one list panel and its card navigation destinations
     var body: some View { /* List panel and card collection */
 
@@ -1339,7 +1348,9 @@ struct KanbanListView: View {
             .listStyle(.plain)
             .environment(\.editMode, $editMode)
             .scrollContentBackground(.hidden)
+            .contentMargins(.vertical, 0, for: .scrollContent)
             .background(.clear)
+            .frame(height: cardCollectionHeight)
             .padding(.horizontal, 4)
             .padding(.bottom, 4)
         }

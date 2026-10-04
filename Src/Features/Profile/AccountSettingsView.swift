@@ -159,6 +159,7 @@ struct AccountSettingsView: View {
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false
+    @State private var profileSheetDetent: PresentationDetent = .large
 
     ///
     /// @fcn        AccountSettingsView.trimmedDisplayName
@@ -264,8 +265,14 @@ struct AccountSettingsView: View {
                                 foregroundColor: $avatarForegroundColor,
                                 displayName: trimmedDisplayName
                             )
-                            .onAppear { isChoosingAvatarIcon = true }
-                            .onDisappear { isChoosingAvatarIcon = false }
+                            .onAppear {
+                                isChoosingAvatarIcon = true
+                                profileSheetDetent = .height(620)
+                            }
+                            .onDisappear {
+                                isChoosingAvatarIcon = false
+                                profileSheetDetent = .large
+                            }
                         } label: {
                             HStack(spacing: 14) {
                                 ProfileAvatarView(
@@ -397,7 +404,7 @@ struct AccountSettingsView: View {
                 Text("Your Board, labels, and attachments will remain on this device.")
             }
         }
-        .presentationDetents([.large])
+        .presentationDetents([.height(620), .large], selection: $profileSheetDetent)
         .presentationDragIndicator(.visible)
     }
 }
@@ -464,7 +471,7 @@ private struct ProfileAvatarIconPicker: View {
     }
 
     private var colorControls: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 10) {
             NavigationLink {
                 ProfileColorMapPicker(
                     title: "Avatar color",
@@ -571,12 +578,13 @@ private struct ProfileAvatarIconPicker: View {
         }
         .navigationTitle("Choose Icon")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             if !isEditingColorMap {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Save", action: saveSelection)
                 }
             }
@@ -789,12 +797,13 @@ private struct ProfileColorMapPicker: View {
         .padding()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             if !isEditingRGB {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Save", action: saveSelection)
                 }
             }
@@ -852,6 +861,7 @@ private struct ProfileRGBColorEditor: View {
         .padding()
         .navigationTitle("RGB Values")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }

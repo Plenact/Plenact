@@ -62,13 +62,25 @@ final class LocalProfileStoreTests: XCTestCase {
             preferences: LocalProfilePreferences(
                 defaultListID:      3,
                 usesReducedContent: true,
-                usesLargeControls:  true
+                usesLargeControls:  true,
+                showsNavigationLabels: false
             )
         )
 
         LocalProfileStore.save(profile, to: defaults)
 
         XCTAssertEqual(LocalProfileStore.load(from: defaults), profile)
+    }
+
+    /// Verify profiles saved before navigation-label preference was added keep labels visible
+    func testOlderPreferencesDefaultToShowingNavigationLabels() throws {
+
+        let legacyPreferencesJSON = Data(
+            #"{"defaultListID":3,"usesReducedContent":false,"usesLargeControls":false}"#.utf8
+        ) /* Preferences snapshot without navigation-caption field */
+        let preferences = try JSONDecoder().decode(LocalProfilePreferences.self, from: legacyPreferencesJSON)
+
+        XCTAssertTrue(preferences.showsNavigationLabels)
     }
 
     ///

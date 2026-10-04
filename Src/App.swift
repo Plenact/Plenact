@@ -147,6 +147,9 @@ private struct AppRootView: View {
     @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
     @State private var savedCardIDs = SavedCardPersistence.load()              /* Device-local saved cards                              */
     @State private var quickCreateRequest = 0                                  /* Center-bar quick-create request                       */
+    @State private var showsCenterNewCardSheet = false                       /* Destination picker for New outside Today              */
+    @State private var isWeekListRequestArmed = false
+    @State private var weekListShakeTrigger = 0
 
     /// @brief      Build the primary Today and Board tab navigation
     /// @details    Shares board lists between the Today front door and the existing kanban screen
@@ -210,6 +213,11 @@ private struct AppRootView: View {
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
         }
+        .sheet(isPresented: $showsCenterNewCardSheet) {
+            CenterNewCardSheet(lists: lists) { listID, title, description in
+                addCard(to: listID, title: title, description: description)
+            }
+        }
     }
 
     private var bottomNavigationBar: some View {
@@ -230,12 +238,18 @@ private struct AppRootView: View {
             .padding(.top, 4)
             .padding(.bottom, 4)
             .frame(maxWidth: .infinity)
-            .offset(y: 25)                                                  // JMR
+            .offset(y: 25)
 
             VStack(spacing: 6) {
                 Button {
-                    selectedDestination = .today
-                    quickCreateRequest += 1
+                    if isWeekListRequestArmed {
+                        isWeekListRequestArmed = false
+                        addWeekList()
+                    } else if selectedDestination == .today {
+                        quickCreateRequest += 1
+                    } else {
+                        showsCenterNewCardSheet = true
+                    }
                 } label: {
                     Image(systemName: "rectangle.stack.badge.plus")
                         .font(.system(size: 24, weight: .medium))
@@ -247,11 +261,26 @@ private struct AppRootView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.55, maximumDistance: 24)
+                        .onEnded { _ in
+                            isWeekListRequestArmed = true
+                            weekListShakeTrigger += 1
+                        }
+                )
+                .phaseAnimator([0.0, -8.0, 8.0, -8.0, 8.0, 0.0], trigger: weekListShakeTrigger) { content, angle in
+                    content.rotationEffect(.degrees(angle))
+                } animation: { _ in
+                    .easeInOut(duration: 0.07)
+                }
                 .accessibilityLabel("Create a new card")
+                .accessibilityHint("Tap to create a card. Touch and hold until New shakes, then release to add a Week list.")
 
-                Text("New")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.92))
+                    if profile?.preferences.showsNavigationLabels ?? true {
+                        Text("New")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.92))
+                    }
             }
             .offset(y: 14)
             .zIndex(2)
@@ -272,7 +301,7 @@ private struct AppRootView: View {
                         .frame(height: 1)
                 }
             }
-            .frame(height: 85)                                              // JMR
+            .frame(height: 85)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea(edges: .bottom)
             .allowsHitTesting(false)
@@ -293,16 +322,19 @@ private struct AppRootView: View {
             VStack(spacing: 4) {
 
                 Image(systemName: systemImage)
-                    .font(.system(size: 23, weight: .semibold))             // JMR
+                    .font(.system(size: 23, weight: .semibold))
 
-                Text(title)
-                    .font(.caption)
+                if profile?.preferences.showsNavigationLabels ?? true {
+                    Text(title)
+                        .font(.caption)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 54)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(isSelected ? Color.accentColor : Color.white.opacity(0.82))
+        .accessibilityLabel(title)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -320,6 +352,23 @@ private struct AppRootView: View {
 
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
         KanbanBoardPersistence.saveLists(lists)
+    }
+
+    private func addWeekList() {
+        let nextListID = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
+        let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Existing normalized titles */
+        var title = "New List" /* First candidate list title */
+        var suffix = 2 /* Duplicate-title suffix */
+
+        while existingTitles.contains(title.lowercased()) {
+            title = "New List \(suffix)"
+            suffix += 1
+        }
+
+        lists.append(KanbanList(id: nextListID, title: title, cards: []))
+        KanbanBoardPersistence.saveLists(lists)
+        boardTargetListID = nextListID
+        selectedDestination = .board
     }
 
         private func addCard(to listID: Int, title: String, description: String) {
@@ -671,15 +720,31 @@ private struct TodayHomeView: View {
             }
 
             Divider()
-
-            Button("Browse all lists", systemImage: "rectangle.3.group") {
-                listPickerMode = .browseAll
-            }
-            .buttonStyle(.bordered)
-            .frame(minHeight: primaryControlHeight)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(TodayPanelSurface())
+    }
+
+    private var browseListsAction: some View {
+
+        Button {
+            listPickerMode = .browseAll
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "rectangle.3.group")
+                Text("Browse all lists")
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.tint)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 4)
     }
 
     /// Add the inline capture to the current Today list, prompting for a list when none is selected.
@@ -782,6 +847,7 @@ private struct TodayHomeView: View {
                     )
 
                     yourLabelsSection
+                    browseListsAction
                 }
                         .padding(20)
                         .frame(maxWidth: 560, alignment: .leading)
@@ -1039,6 +1105,96 @@ private struct QuickNoteComposer: View {
                         dismiss()
                     }
                     .disabled(trimmedTitle.isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+}
+
+
+/// Lets the center New action choose a destination without changing the active tab.
+private struct CenterNewCardSheet: View {
+
+    let lists: [KanbanList] /* Existing lists available for card creation */
+    let onCreate: (Int, String, String) -> Void /* Add the new card to the chosen list */
+
+    @Environment(\.dismiss) private var dismiss /* Close the destination picker */
+    @State private var selectedListID: Int? /* List selected for this new card */
+    @State private var title = "" /* New card title */
+    @State private var details = "" /* Optional new card details */
+
+    private var selectedList: KanbanList? {
+        lists.first { $0.id == selectedListID }
+    }
+
+    private var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let selectedList {
+                    Form {
+                        Section("Card") {
+                            TextField("Title", text: $title)
+                            TextField("Details (optional)", text: $details, axis: .vertical)
+                                .lineLimit(3...6)
+                        }
+
+                        Section("Add to") {
+                            Button {
+                                selectedListID = nil
+                            } label: {
+                                Label(selectedList.title, systemImage: "list.bullet")
+                            }
+                        }
+                    }
+                } else {
+                    List(lists) { list in
+                        Button {
+                            selectedListID = list.id
+                        } label: {
+                            HStack {
+                                Text(list.title)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .listStyle(.insetGrouped)
+                }
+            }
+            .navigationTitle(selectedList?.title ?? "Add card to list")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(selectedList == nil ? "Cancel" : "Lists") {
+                        if selectedList == nil {
+                            dismiss()
+                        } else {
+                            selectedListID = nil
+                        }
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if let selectedList {
+                        Button("Add") {
+                            onCreate(
+                                selectedList.id,
+                                trimmedTitle,
+                                details.trimmingCharacters(in: .whitespacesAndNewlines)
+                            )
+                            dismiss()
+                        }
+                        .disabled(trimmedTitle.isEmpty)
+                    }
                 }
             }
         }

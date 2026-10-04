@@ -49,23 +49,48 @@ struct LocalProfilePreferences: Hashable, Codable {
     var defaultListID:       Int?   /* Preferred Today list   */
     var usesReducedContent:  Bool   /* Hide supporting copy   */
     var usesLargeControls:   Bool   /* Use taller key actions */
+    var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
+
+    private enum CodingKeys: String, CodingKey {
+        case defaultListID
+        case usesReducedContent
+        case usesLargeControls
+        case showsNavigationLabels
+    }
 
     ///
-    /// @fcn        LocalProfilePreferences.init(defaultListID:usesReducedContent:usesLargeControls:)
+    /// @fcn        LocalProfilePreferences.init(defaultListID:usesReducedContent:usesLargeControls:showsNavigationLabels:)
     /// @brief      Initialize local planning and presentation preferences
     /// @details    Defaults preserve the current Today experience until the user chooses otherwise
     ///
     /// @param[in]  defaultListID       Optional preferred Board list for Today
     /// @param[in]  usesReducedContent  Whether supporting Today copy is hidden
     /// @param[in]  usesLargeControls   Whether primary Today controls use additional height
+    /// @param[in]  showsNavigationLabels Whether primary navigation icons include text labels
     ///
     /// @return     (LocalProfilePreferences) configured personalization values
     ///
-    init(defaultListID: Int? = nil, usesReducedContent: Bool = false, usesLargeControls: Bool = false) {
+    init(
+        defaultListID: Int? = nil,
+        usesReducedContent: Bool = false,
+        usesLargeControls: Bool = false,
+        showsNavigationLabels: Bool = true
+    ) {
 
         self.defaultListID      = defaultListID
         self.usesReducedContent = usesReducedContent
         self.usesLargeControls  = usesLargeControls
+        self.showsNavigationLabels = showsNavigationLabels
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self) /* Saved preference fields */
+        self.init(
+            defaultListID: try container.decodeIfPresent(Int.self, forKey: .defaultListID),
+            usesReducedContent: try container.decodeIfPresent(Bool.self, forKey: .usesReducedContent) ?? false,
+            usesLargeControls: try container.decodeIfPresent(Bool.self, forKey: .usesLargeControls) ?? false,
+            showsNavigationLabels: try container.decodeIfPresent(Bool.self, forKey: .showsNavigationLabels) ?? true
+        )
     }
 }
 

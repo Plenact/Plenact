@@ -37,6 +37,7 @@ struct ContentView: View {
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
+    @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -44,21 +45,27 @@ struct ContentView: View {
 
 
     ///
-    /// @fcn        ContentView.init(lists:boardTargetListID:)
+    /// @fcn        ContentView.init(lists:boardTargetListID:savedCardIDs:)
     /// @brief      Initialize the Board view with shared list state and an optional navigation target
     /// @details    The app root owns the persisted board snapshot; previews may omit the target binding
     ///
     /// @param[in]  lists                Binding to the board's shared list collection
     /// @param[in]  boardTargetListID    Optional list ID to reveal after navigation from Today
+    /// @param[in]  savedCardIDs         Local card identities shown in the Saved destination
     ///
     /// @return     (ContentView) configured kanban board screen
     ///
     /// @pre        lists contains the board state to display
     /// @post       Board edits update the shared collection and requested navigation remains observable
     ///
-    init(lists: Binding<[KanbanList]>, boardTargetListID: Binding<Int?> = .constant(nil)) {
+    init(
+        lists: Binding<[KanbanList]>,
+        boardTargetListID: Binding<Int?> = .constant(nil),
+        savedCardIDs: Binding<Set<Int>> = .constant([])
+    ) {
         _lists = lists
         _boardTargetListID = boardTargetListID
+        _savedCardIDs = savedCardIDs
     }
 
 
@@ -784,6 +791,7 @@ struct ContentView: View {
                     },
                     memberColors:    memberColors,
                     currentUserName: currentUserName,
+                    savedCardIDs:    $savedCardIDs,
                     onTitleToggle:   { updatedCard in
                         updateCard(updatedCard)
                     },

@@ -180,6 +180,7 @@ struct CardDetailView: View {
     let availableLists: [KanbanList]                         /* Other lists that can receive this card                       */
     let memberColors: [String: Color]                        /* Shared icon colors keyed by normalized member name           */
     let currentUserName: String                              /* Current actor name shown in card activity                    */
+    @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
 
@@ -234,6 +235,7 @@ struct CardDetailView: View {
         availableLists: [KanbanList]           = [],        /* Other lists available as move destinations                   */
         memberColors: [String: Color]          = [:],       /* Shared member icon colors                                    */
         currentUserName: String                = "Justin Reina",
+        savedCardIDs: Binding<Set<Int>>        = .constant([]),
         onTitleToggle: ((KanbanCard) -> Void)? = nil,       /* Callback invoked when the card title checkbox is toggled     */
         onMoveToList: ((Int) -> Void)?         = nil        /* Callback invoked when the card is moved                      */
     ) {
@@ -243,6 +245,7 @@ struct CardDetailView: View {
         self.availableLists = availableLists                                    /* Other lists available as move destinations                           */
         self.memberColors   = memberColors                                      /* Shared member icon colors                                            */
         self.currentUserName = currentUserName                                  /* Current actor name shown in card activity                            */
+        self._savedCardIDs  = savedCardIDs                                      /* Local saved-card identities                                        */
         self.onTitleToggle  = onTitleToggle                                     /* Callback invoked when the card title checkbox is toggled             */
         self.onMoveToList   = onMoveToList                                      /* Callback invoked when the card is moved                              */
 
@@ -495,6 +498,17 @@ struct CardDetailView: View {
         titleChecked    = nextChecked
 
         syncCardState(titleChecked: nextChecked)
+    }
+
+
+    /// Add or remove the current card from the device-local Saved collection.
+    private func toggleSavedCard() {
+
+        if savedCardIDs.contains(card.id) {
+            savedCardIDs.remove(card.id)
+        } else {
+            savedCardIDs.insert(card.id)
+        }
     }
     
 
@@ -1465,6 +1479,16 @@ struct CardDetailView: View {
                 Spacer()
 
                 if !card.isSectionDivider {
+
+                    Button(action: toggleSavedCard) {
+                        Image(systemName: savedCardIDs.contains(card.id) ? "bookmark.fill" : "bookmark")
+                            .font(.title2)
+                            .foregroundStyle(savedCardIDs.contains(card.id) ? .orange : .primary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(savedCardIDs.contains(card.id) ? "Remove from Saved" : "Save card")
 
                     Menu {
                         Button {

@@ -894,6 +894,25 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
 }
 
 
+enum BoardListReordering {
+    @discardableResult
+    static func move(_ listID: Int, to destination: Int, in lists: inout [KanbanList]) -> Bool {
+        guard let source = lists.firstIndex(where: { $0.id == listID }),
+              lists.indices.contains(destination), source != destination else { return false }
+        let list = lists.remove(at: source)
+        lists.insert(list, at: destination)
+        return true
+    }
+
+    static func edgeDirection(at x: CGFloat, viewportWidth: CGFloat) -> Int {
+        guard x.isFinite, viewportWidth.isFinite, viewportWidth > 0 else { return 0 }
+        let edgeWidth = min(64, viewportWidth * 0.18)
+        if x < edgeWidth { return -1 }
+        if x > viewportWidth - edgeWidth { return 1 }
+        return 0
+    }
+}
+
 ///
 /// Persists the active board as a Codable snapshot in local user defaults
 ///

@@ -17,6 +17,41 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testListReorderingMovesRestoredMondayToFirstWithoutChangingContent() throws {
+        var lists = SampleData.lists
+        let monday = lists.removeFirst()
+        lists.append(monday)
+        XCTAssertTrue(BoardListReordering.move(monday.id, to: 0, in: &lists))
+        XCTAssertEqual(lists, SampleData.lists)
+        XCTAssertTrue(BoardListReordering.move(monday.id, to: lists.count - 1, in: &lists))
+        XCTAssertEqual(lists.last, monday)
+        let restored = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists))
+        XCTAssertEqual(restored, lists)
+    }
+
+    func testListReorderingRejectsMissingAndOutOfBoundsMoves() {
+        var lists = SampleData.lists
+        let original = lists
+        XCTAssertFalse(BoardListReordering.move(999, to: 0, in: &lists))
+        XCTAssertFalse(BoardListReordering.move(lists[0].id, to: -1, in: &lists))
+        XCTAssertFalse(BoardListReordering.move(lists[0].id, to: lists.count, in: &lists))
+        XCTAssertFalse(BoardListReordering.move(lists[0].id, to: 0, in: &lists))
+        XCTAssertEqual(lists, original)
+    }
+
+    func testListDragEdgeThresholdsAndInvalidGeometry() {
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 63, viewportWidth: 400), -1)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 64, viewportWidth: 400), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 336, viewportWidth: 400), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 337, viewportWidth: 400), 1)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 200, viewportWidth: 400), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: .nan, viewportWidth: 400), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 20, viewportWidth: 0), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 20, viewportWidth: .infinity), 0)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 17, viewportWidth: 100), -1)
+        XCTAssertEqual(BoardListReordering.edgeDirection(at: 83, viewportWidth: 100), 1)
+    }
+
     @MainActor
     func testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace() async throws {
         let suite = "Plenact.WeekArchiveTests.\(UUID().uuidString)"

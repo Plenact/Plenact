@@ -16,6 +16,8 @@ List/board archive coverage verifies active/archive binding partitions, list res
 
 Personal-board archive failure tests verify save-before-update ordering, unchanged active state and stored data on encoding failure, and rejection of missing boards.
 
+List-reordering tests verify movement in both directions, persistence of order and complete list contents, invalid/missing targets, and exact viewport-edge thresholds used for hold-and-drag edge scrolling.
+
 ## Running Tests
 
 Use the shared `Plenact` scheme with an installed iPhone simulator:

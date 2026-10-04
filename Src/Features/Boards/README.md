@@ -43,6 +43,12 @@ Card rows also offer **Archive Card** above **Delete Card** in their `...` menu,
 
 Older saved lists default to an empty archive, and empty archives are omitted from JSON to preserve the existing remote payload shape. Nonempty local archives are rejected by shared-Board validation because the remote schema does not support them. Copying a list copies only its active cards. Cards removed by the previous archive implementation cannot be recovered.
 
+## Reordering Lists
+
+Touch and hold a list's title/header text for about half a second, then drag horizontally to reorder it. The held list lifts visually and gives selection feedback. Holding within the left or right edge of the board viewport moves it one position in that direction every 550 ms and scrolls it into view, allowing a restored list to travel across the entire board. Release to finish; the existing Board persistence path saves the updated order.
+
+Only the title area starts a list drag; card-reordering controls and list action buttons retain their existing behavior. Ordinary swipes before the hold threshold still scroll the board. Reduce Motion disables the lift scaling and reorder animations. **List Actions → Move list → Move earlier / Move later** remains available, with equivalent VoiceOver actions on the title. The same behavior applies to Week and personal boards.
+
 ## Archived Lists and Boards
 
 The board's **Board options** (`...`) menu provides **Board Settings**, **View Archived Lists**, and **Archive Board** (for the Week Board and personal boards). List archiving sets a backward-compatible `isArchived` marker on the original list rather than deleting it. **View Archived Lists** restores lists to the end of their original board, preserving list/card IDs, archived cards, completion, and attachments. Archived lists are hidden from Today, active searches, card counts, and navigation choices. New IDs and attachment cleanup still account for archived content. Existing snapshots without the marker remain active; archived lists cannot be published through the current remote schema.

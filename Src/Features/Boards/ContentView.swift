@@ -82,6 +82,11 @@ struct ContentView: View {
     @State private var showsArchivedLists = false
     @State private var navigationPath = NavigationPath()
     @State private var lastReportedVisibleListID: Int?
+    @State private var draggedListID: Int?
+    @State private var listCenters: [Int: CGFloat] = [:]
+    @State private var listDragLocation: CGFloat?
+    @State private var listDragGrabOffset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reducesMotion
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -546,9 +551,42 @@ struct ContentView: View {
 
         guard lists.indices.contains(destinationIndex) else { return }
 
-        let movedList = lists.remove(at: sourceIndex) /* List moved out before reinsertion */
+        BoardListReordering.move(listID, to: destinationIndex, in: &lists)
+    }
 
-        lists.insert(movedList, at: destinationIndex)
+    private func updateListDrag(_ listID: Int, value: DragGesture.Value?) {
+        if draggedListID == nil {
+            draggedListID = listID
+        }
+        guard draggedListID == listID, let value else { return }
+        if listDragLocation == nil {
+            listDragGrabOffset = value.startLocation.x - (listCenters[listID] ?? value.startLocation.x)
+        }
+        listDragLocation = value.location.x
+
+        guard let source = lists.firstIndex(where: { $0.id == listID }),
+              let center = listCenters[listID] else { return }
+        let direction = value.location.x > center ? 1 : -1
+        let destination = source + direction
+        guard lists.indices.contains(destination),
+              let targetCenter = listCenters[lists[destination].id],
+              direction > 0 ? value.location.x > targetCenter : value.location.x < targetCenter else { return }
+        withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
+            _ = BoardListReordering.move(listID, to: destination, in: &lists)
+        }
+    }
+
+    private func endListDrag(_ listID: Int) {
+        guard draggedListID == listID else { return }
+        draggedListID = nil
+        listDragLocation = nil
+        listDragGrabOffset = 0
+    }
+
+    private func listDragOffset(for listID: Int) -> CGFloat {
+        guard draggedListID == listID, let location = listDragLocation,
+              let center = listCenters[listID] else { return 0 }
+        return location - center - listDragGrabOffset
     }
 
 
@@ -836,6 +874,7 @@ struct ContentView: View {
 
                                     ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 
+                                        ZStack {
                                         KanbanListView(
                                             list:               list,
                                             screenSize:         screen.size,
@@ -867,11 +906,18 @@ struct ContentView: View {
                                             onArchiveCard:      archiveCard,
                                             onUpdateCard:       updateCard,
                                             onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
-                                            }
+                                            },
+                                            onListDragChanged: { value in updateListDrag(list.id, value: value) },
+                                            onListDragEnded: { endListDrag(list.id) }
                                         )
                                         .frame(
                                             width: safeFrameDimension(screen.size.width, subtracting: 28)
                                         )
+                                        .scaleEffect(draggedListID == list.id && !reducesMotion ? 1.025 : 1)
+                                        .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
+                                        .offset(x: listDragOffset(for: list.id))
+                                        }
+                                        .frame(width: safeFrameDimension(screen.size.width, subtracting: 28))
                                         .background {
                                             GeometryReader { geometry in
                                                 Color.clear.preference(
@@ -881,6 +927,7 @@ struct ContentView: View {
                                             }
                                         }
                                         .id(list.id)
+                                        .zIndex(draggedListID == list.id ? 1 : 0)
                                     }
                                 }
                                 .frame(maxHeight: .infinity, alignment: .top)
@@ -888,8 +935,11 @@ struct ContentView: View {
                                 .padding(.horizontal, 14)
                             }
                             .scrollTargetBehavior(.viewAligned)
+                            .scrollDisabled(draggedListID != nil)
                             .coordinateSpace(name: "WeekListsViewport")
                             .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
+                                listCenters = centers
+                                guard draggedListID == nil else { return }
                                 guard let nearestListID = centers.min(by: {
                                     abs($0.value - listArea.size.width / 2) < abs($1.value - listArea.size.width / 2)
                                 })?.key,
@@ -911,6 +961,34 @@ struct ContentView: View {
                             }
                             .onAppear {
                                 openPendingBoardTarget(using: listProxy)
+                            }
+                            .task(id: draggedListID) {
+                                guard let listID = draggedListID else { return }
+                                do {
+                                    while !Task.isCancelled {
+                                        try await Task.sleep(for: .milliseconds(550))
+                                        guard draggedListID == listID, let location = listDragLocation,
+                                              let source = lists.firstIndex(where: { $0.id == listID }) else { continue }
+                                        let direction = BoardListReordering.edgeDirection(at: location, viewportWidth: listArea.size.width)
+                                        let destination = source + direction
+                                        guard direction != 0, lists.indices.contains(destination) else { continue }
+                                        withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
+                                            _ = BoardListReordering.move(listID, to: destination, in: &lists)
+                                        }
+                                        await Task.yield()
+                                        guard !Task.isCancelled, draggedListID == listID else { return }
+                                        withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
+                                            listProxy.scrollTo(listID, anchor: .center)
+                                        }
+                                    }
+                                } catch is CancellationError {
+                                    // Releasing the header cancels edge scrolling.
+                                } catch {
+                                    DatabaseActivity.shared.report("Could not move the list: \(error.localizedDescription)")
+                                }
+                            }
+                            .onDisappear {
+                                if let listID = draggedListID { endListDrag(listID) }
                             }
                         }
                         }
@@ -1425,12 +1503,29 @@ struct KanbanListView: View {
     let onArchiveCard: (Int) -> Void
     let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
     let onMoveCard: (Int, Int) -> Void          /* Move a card to a destination index in this list                */
+    let onListDragChanged: (DragGesture.Value?) -> Void
+    let onListDragEnded: () -> Void
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
     @State private var headerHeight: CGFloat = 72
+    @GestureState private var isHoldingList = false
+
+    private var listReorderGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("WeekListsViewport")))
+            .updating($isHoldingList) { value, state, _ in
+                if case .second(true, _) = value { state = true }
+            }
+            .onChanged { value in
+                if case .second(true, let drag) = value {
+                    onListDragChanged(drag)
+                }
+            }
+            .onEnded { _ in onListDragEnded() }
+    }
 
     /// Maintains the original quarter-screen card sizing requirement
     private var cardHeight: CGFloat { /* Fixed card height derived from screen geometry */
@@ -1468,8 +1563,21 @@ struct KanbanListView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .gesture(listReorderGesture)
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Touch and hold to drag this list. Keep holding near either screen edge to move across the board.")
+                .accessibilityAction(named: "Move earlier") {
+                    if canMoveEarlier { onMoveList(-1) }
+                }
+                .accessibilityAction(named: "Move later") {
+                    if canMoveLater { onMoveList(1) }
+                }
+                .onChange(of: isHoldingList) { _, holding in
+                    if !holding { onListDragEnded() }
+                }
+                .sensoryFeedback(.selection, trigger: isHoldingList)
 
                 Button {
 

@@ -7,6 +7,9 @@
 //
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
+import PhotosUI
+import UIKit
+import ImageIO
 
 
 // -------------------------------------- MARK: - Avatar Palette ------------------------------- //
@@ -90,6 +93,7 @@ struct ProfileAvatarView: View {
 
     let profile: LocalProfile?   /* Current local profile */
     let size:    CGFloat         /* Stable avatar size    */
+    var photoData: Data? = nil
 
     ///
     /// @fcn        ProfileAvatarView.body
@@ -121,6 +125,16 @@ struct ProfileAvatarView: View {
             }
         }
         .frame(width: size, height: size)
+        .overlay {
+            if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName),
+               let image = UIImage(data: data) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -160,6 +174,8 @@ struct AccountSettingsView: View {
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false
     @State private var profileSheetDetent: PresentationDetent = .large
+    @State private var avatarPhotoData:    Data?
+    @State private var photoSaveError:     String?
 
     ///
     /// @fcn        AccountSettingsView.trimmedDisplayName
@@ -206,6 +222,7 @@ struct AccountSettingsView: View {
         _avatarColor        = State(initialValue: profile?.avatarColor ?? .teal)
         _avatarIcon         = State(initialValue: profile?.avatarIcon  ?? .initials)
         _avatarForegroundColor = State(initialValue: profile?.avatarForegroundColor ?? .white)
+        _avatarPhotoData = State(initialValue: ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName))
 
         _defaultListID      = State(initialValue: lists.contains(where: { $0.id == preferences.defaultListID }) ? preferences.defaultListID : nil)
      
@@ -223,6 +240,18 @@ struct AccountSettingsView: View {
     ///
     private func saveProfile() {
 
+        let photoFileName: String?
+        do {
+            if let avatarPhotoData {
+                photoFileName = try ProfileAvatarPhotoStore.save(avatarPhotoData)
+            } else {
+                photoFileName = nil
+            }
+        } catch {
+            photoSaveError = error.localizedDescription
+            return
+        }
+
         let updatedProfile = LocalProfile(   /* Completed profile */
             id:          profileID,
             createdAt:   createdAt,
@@ -232,6 +261,7 @@ struct AccountSettingsView: View {
             avatarColor: avatarColor,
             avatarIcon:  avatarIcon,
             avatarForegroundColor: avatarForegroundColor,
+            avatarPhotoFileName: photoFileName,
             preferences: LocalProfilePreferences(
                 defaultListID:      defaultListID,
                 usesReducedContent: usesReducedContent,
@@ -241,6 +271,7 @@ struct AccountSettingsView: View {
         )
 
         onSave(updatedProfile)
+        ProfileAvatarPhotoStore.remove(profile?.avatarPhotoFileName)
         dismiss()
     }
 
@@ -263,6 +294,7 @@ struct AccountSettingsView: View {
                                 selection: $avatarIcon,
                                 avatarColor: $avatarColor,
                                 foregroundColor: $avatarForegroundColor,
+                                photoData: $avatarPhotoData,
                                 displayName: trimmedDisplayName
                             )
                             .onAppear {
@@ -284,7 +316,8 @@ struct AccountSettingsView: View {
                                         avatarIcon:  avatarIcon,
                                         avatarForegroundColor: avatarForegroundColor
                                     ),
-                                    size: 52
+                                    size: 52,
+                                    photoData: avatarPhotoData
                                 )
 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -396,6 +429,7 @@ struct AccountSettingsView: View {
             ) {
                 Button("Remove profile", role: .destructive) {
                     onRemove()
+                    ProfileAvatarPhotoStore.remove(profile?.avatarPhotoFileName)
                     dismiss()
                 }
 
@@ -406,6 +440,14 @@ struct AccountSettingsView: View {
         }
         .presentationDetents([.height(620), .large], selection: $profileSheetDetent)
         .presentationDragIndicator(.visible)
+        .alert("Could not save avatar", isPresented: Binding(
+            get: { photoSaveError != nil },
+            set: { if !$0 { photoSaveError = nil } }
+        )) {
+            Button("OK", role: .cancel) { photoSaveError = nil }
+        } message: {
+            Text(photoSaveError ?? "")
+        }
     }
 }
 
@@ -415,6 +457,7 @@ private struct ProfileAvatarIconPicker: View {
     @Binding var selection: ProfileAvatarIcon
     @Binding var avatarColor: ProfileAvatarColor
     @Binding var foregroundColor: ProfileAvatarForegroundColor
+    @Binding var photoData: Data?
     let displayName: String
 
     @Environment(\.dismiss) private var dismiss
@@ -422,6 +465,11 @@ private struct ProfileAvatarIconPicker: View {
     @State private var draftAvatarColor: ProfileAvatarColor
     @State private var draftForegroundColor: ProfileAvatarForegroundColor
     @State private var isEditingColorMap = false
+    @State private var draftPhotoData: Data?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var cropImage: AvatarCropImage?
+    @State private var isLoadingPhoto = false
+    @State private var photoError: String?
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)]
 
@@ -429,15 +477,18 @@ private struct ProfileAvatarIconPicker: View {
         selection: Binding<ProfileAvatarIcon>,
         avatarColor: Binding<ProfileAvatarColor>,
         foregroundColor: Binding<ProfileAvatarForegroundColor>,
+        photoData: Binding<Data?>,
         displayName: String
     ) {
         _selection = selection
         _avatarColor = avatarColor
         _foregroundColor = foregroundColor
+        _photoData = photoData
         self.displayName = displayName
         _draftIcon = State(initialValue: selection.wrappedValue)
         _draftAvatarColor = State(initialValue: avatarColor.wrappedValue)
         _draftForegroundColor = State(initialValue: foregroundColor.wrappedValue)
+        _draftPhotoData = State(initialValue: photoData.wrappedValue)
     }
 
     private var initials: String {
@@ -448,12 +499,20 @@ private struct ProfileAvatarIconPicker: View {
         selection = draftIcon
         avatarColor = draftAvatarColor
         foregroundColor = draftForegroundColor
+        photoData = draftPhotoData
         dismiss()
     }
 
     private var previewHeader: some View {
         HStack(spacing: 14) {
-            avatarPreview(icon: draftIcon, background: draftAvatarColor, foreground: draftForegroundColor, size: 60)
+            ProfileAvatarView(
+                profile: LocalProfile(
+                    displayName: displayName, avatarColor: draftAvatarColor,
+                    avatarIcon: draftIcon, avatarForegroundColor: draftForegroundColor
+                ),
+                size: 60,
+                photoData: draftPhotoData
+            )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(displayName.isEmpty ? "Local profile" : displayName)
@@ -524,6 +583,7 @@ private struct ProfileAvatarIconPicker: View {
                 ForEach(ProfileAvatarIcon.allCases) { icon in
                     Button {
                         draftIcon = icon
+                        draftPhotoData = nil
                     } label: {
                         VStack(spacing: 6) {
                             avatarPreview(icon: icon, background: draftAvatarColor, foreground: draftForegroundColor, size: 42)
@@ -566,7 +626,19 @@ private struct ProfileAvatarIconPicker: View {
             previewHeader
 
             ScrollView {
-                colorControls
+                VStack(spacing: 10) {
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        Label(draftPhotoData == nil ? "Choose Photo" : "Replace Photo", systemImage: "photo")
+                    }
+                    .disabled(isLoadingPhoto)
+                    if isLoadingPhoto { ProgressView() }
+                    if draftPhotoData != nil {
+                        Button("Remove Photo", role: .destructive) { draftPhotoData = nil }
+                    } else {
+                        colorControls
+                    }
+                }
+                .padding(.top, 12)
             }
             .frame(maxHeight: .infinity)
 
@@ -579,6 +651,34 @@ private struct ProfileAvatarIconPicker: View {
         .navigationTitle("Choose Icon")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .task(id: selectedPhoto) {
+            guard let selectedPhoto else { return }
+            isLoadingPhoto = true
+            defer { isLoadingPhoto = false }
+            do {
+                guard let data = try await selectedPhoto.loadTransferable(type: Data.self),
+                      let image = AvatarPhotoCrop.image(from: data) else {
+                    throw CocoaError(.fileReadCorruptFile)
+                }
+                guard !Task.isCancelled else { return }
+                cropImage = AvatarCropImage(image: image)
+            } catch {
+                if !Task.isCancelled { photoError = error.localizedDescription }
+            }
+        }
+        .sheet(item: $cropImage, onDismiss: { selectedPhoto = nil }) { crop in
+            AvatarPhotoCropView(image: crop.image) { data in
+                draftPhotoData = data
+            }
+        }
+        .alert("Could not load photo", isPresented: Binding(
+            get: { photoError != nil },
+            set: { if !$0 { photoError = nil; selectedPhoto = nil } }
+        )) {
+            Button("OK", role: .cancel) { photoError = nil; selectedPhoto = nil }
+        } message: {
+            Text(photoError ?? "")
+        }
         .toolbar {
             if !isEditingColorMap {
                 ToolbarItem(placement: .topBarLeading) {
@@ -638,6 +738,175 @@ private struct ProfileAvatarIconPicker: View {
     }
 }
 
+
+private struct AvatarCropImage: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+enum AvatarPhotoCrop {
+
+    static func image(from data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 2048
+              ] as CFDictionary) else { return nil }
+        return UIImage(cgImage: thumbnail)
+    }
+
+    static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize {
+        let scale = max(side / imageSize.width, side / imageSize.height) * zoom
+        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)
+        let verticalLimit = max(0, (imageSize.height * scale - side) / 2)
+        return CGSize(
+            width: min(max(offset.width, -horizontalLimit), horizontalLimit),
+            height: min(max(offset.height, -verticalLimit), verticalLimit)
+        )
+    }
+
+    static func jpeg(image: UIImage, side: CGFloat, zoom: CGFloat, offset: CGSize) -> Data? {
+        guard side > 0, image.size.width > 0, image.size.height > 0 else { return nil }
+        let scale = max(side / image.size.width, side / image.size.height) * zoom
+        let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)
+        let outputScale = 512 / side
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 512, height: 512), format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(
+                x: ((side - image.size.width * scale) / 2 + offset.width) * outputScale,
+                y: ((side - image.size.height * scale) / 2 + offset.height) * outputScale,
+                width: image.size.width * scale * outputScale,
+                height: image.size.height * scale * outputScale
+            ))
+        }.jpegData(compressionQuality: 0.9)
+    }
+}
+
+private struct AvatarPhotoCropView: View {
+
+    let image: UIImage
+    let onUsePhoto: (Data) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var zoom: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @State private var cropSide: CGFloat = 1
+    @GestureState private var drag: CGSize = .zero
+    @GestureState private var magnification: CGFloat = 1
+    @State private var cropFailed = false
+
+    private func stage(side: CGFloat) -> some View {
+        let currentZoom = min(max(zoom * magnification, 1), 6)
+        let currentOffset = AvatarPhotoCrop.constrainedOffset(
+            CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
+            imageSize: image.size, side: side, zoom: currentZoom
+        )
+        let scale = max(side / image.size.width, side / image.size.height) * currentZoom
+
+        return ZStack {
+            Image(uiImage: image)
+                .resizable()
+                .frame(width: image.size.width * scale, height: image.size.height * scale)
+                .offset(currentOffset)
+
+            Path { path in
+                path.addRect(CGRect(x: 0, y: 0, width: side, height: side))
+                path.addEllipse(in: CGRect(x: 0, y: 0, width: side, height: side))
+            }
+            .fill(.black.opacity(0.55), style: FillStyle(eoFill: true))
+            .allowsHitTesting(false)
+
+            Circle()
+                .strokeBorder(.white, lineWidth: 2)
+                .allowsHitTesting(false)
+        }
+        .frame(width: side, height: side)
+        .clipped()
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture()
+                .updating($drag) { value, state, _ in state = value.translation }
+                .onEnded { value in
+                    offset = AvatarPhotoCrop.constrainedOffset(
+                        CGSize(width: offset.width + value.translation.width, height: offset.height + value.translation.height),
+                        imageSize: image.size, side: side, zoom: zoom
+                    )
+                }
+        )
+        .simultaneousGesture(
+            MagnificationGesture()
+                .updating($magnification) { value, state, _ in state = value }
+                .onEnded { value in
+                    zoom = min(max(zoom * value, 1), 6)
+                    offset = AvatarPhotoCrop.constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)
+                }
+        )
+        .accessibilityLabel("Avatar photo crop")
+        .onAppear { cropSide = side }
+        .onChange(of: side) { oldSide, newSide in
+            offset = CGSize(width: offset.width * newSide / oldSide, height: offset.height * newSide / oldSide)
+            cropSide = newSide
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                let side = max(1, min(geometry.size.width - 32, geometry.size.height - 160, 360))
+                VStack(spacing: 16) {
+                    stage(side: side)
+
+                    HStack {
+                        Image(systemName: "minus.magnifyingglass")
+                        Slider(value: $zoom, in: 1...6)
+                            .accessibilityLabel("Photo zoom")
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    .frame(maxWidth: 360)
+
+                    HStack(spacing: 20) {
+                        Button { offset.width -= side / 10 } label: { Image(systemName: "arrow.left") }
+                            .accessibilityLabel("Move photo left")
+                        Button { offset.height -= side / 10 } label: { Image(systemName: "arrow.up") }
+                            .accessibilityLabel("Move photo up")
+                        Button { offset.height += side / 10 } label: { Image(systemName: "arrow.down") }
+                            .accessibilityLabel("Move photo down")
+                        Button { offset.width += side / 10 } label: { Image(systemName: "arrow.right") }
+                            .accessibilityLabel("Move photo right")
+                        Button("Reset") { zoom = 1; offset = .zero }
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .navigationTitle("Crop Photo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Use Photo") {
+                        if let data = AvatarPhotoCrop.jpeg(image: image, side: cropSide, zoom: zoom, offset: offset) {
+                            onUsePhoto(data)
+                            dismiss()
+                        } else {
+                            cropFailed = true
+                        }
+                    }
+                }
+            }
+            .alert("Could not crop photo", isPresented: $cropFailed) {
+                Button("OK", role: .cancel) {}
+            }
+        }
+        .presentationDetents([.large])
+    }
+}
 
 private struct ProfileColorPreset: Identifiable {
 

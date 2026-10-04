@@ -5,6 +5,8 @@
 //
 // -------------------------------------------------------------------------------------------------
 import XCTest
+import UIKit
+import CoreImage
 @testable import Plenact
 
 
@@ -61,6 +63,7 @@ final class LocalProfileStoreTests: XCTestCase {
             avatarColor: ProfileColor(hue: 0.37, saturation: 0.72, brightness: 0.88),
             avatarIcon:  .sparkles,
             avatarForegroundColor: ProfileColor(hue: 0.94, saturation: 0.58, brightness: 0.91),
+            avatarPhotoFileName: "profile-photo.jpg",
             preferences: LocalProfilePreferences(
                 defaultListID:      3,
                 usesReducedContent: true,
@@ -94,6 +97,7 @@ final class LocalProfileStoreTests: XCTestCase {
 
         XCTAssertEqual(profile.avatarIcon, .initials)
         XCTAssertEqual(profile.avatarForegroundColor, .white)
+        XCTAssertNil(profile.avatarPhotoFileName)
     }
 
     func testLegacyAvatarColorTokensStillDecode() throws {
@@ -135,5 +139,64 @@ final class LocalProfileStoreTests: XCTestCase {
     func testInitialsUseTwoNameComponents() {
         XCTAssertEqual(LocalProfile(displayName: "Jamie Lee Rivera").initials, "JL")
         XCTAssertEqual(LocalProfile(displayName: "").initials, "P")
+    }
+
+    func testAvatarPhotoFileRoundTripAndRemoval() throws {
+        let data = Data([1, 2, 3, 4])
+        let fileName = try ProfileAvatarPhotoStore.save(data)
+        defer { ProfileAvatarPhotoStore.remove(fileName) }
+
+        XCTAssertEqual(ProfileAvatarPhotoStore.load(fileName), data)
+        XCTAssertNil(ProfileAvatarPhotoStore.load("../outside.jpg"))
+        ProfileAvatarPhotoStore.remove(fileName)
+        XCTAssertNil(ProfileAvatarPhotoStore.load(fileName))
+    }
+
+    func testAvatarCropConstrainsPanToImageEdges() {
+        XCTAssertEqual(
+            AvatarPhotoCrop.constrainedOffset(
+                CGSize(width: 500, height: -500),
+                imageSize: CGSize(width: 200, height: 100), side: 100, zoom: 1
+            ),
+            CGSize(width: 50, height: 0)
+        )
+        XCTAssertEqual(
+            AvatarPhotoCrop.constrainedOffset(
+                CGSize(width: -500, height: 500),
+                imageSize: CGSize(width: 100, height: 200), side: 100, zoom: 2
+            ),
+            CGSize(width: -50, height: 150)
+        )
+    }
+
+    func testAvatarCropExportsSelectedRegionAsBoundedJPEG() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100), format: format).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
+            UIColor.blue.setFill()
+            context.fill(CGRect(x: 100, y: 0, width: 100, height: 100))
+        }
+        let data = try XCTUnwrap(AvatarPhotoCrop.jpeg(
+            image: image, side: 100, zoom: 1, offset: CGSize(width: 50, height: 0)
+        ))
+        let croppedImage = try XCTUnwrap(UIImage(data: data))
+        XCTAssertEqual(croppedImage.size, CGSize(width: 512, height: 512))
+        let colorImage = try XCTUnwrap(CIImage(data: data))
+        let average = try XCTUnwrap(colorImage.applyingFilter("CIAreaAverage", parameters: [
+            kCIInputExtentKey: CIVector(cgRect: colorImage.extent)
+        ]).cropped(to: CGRect(x: 0, y: 0, width: 1, height: 1)) as CIImage?)
+        var pixel = [UInt8](repeating: 0, count: 4)
+        pixel.withUnsafeMutableBytes { buffer in
+            CIContext().render(
+                average, toBitmap: buffer.baseAddress!, rowBytes: 4,
+                bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
+                format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()
+            )
+        }
+        XCTAssertGreaterThan(pixel[0], 240)
+        XCTAssertLessThan(pixel[2], 15)
+        XCTAssertNil(AvatarPhotoCrop.image(from: Data([1, 2, 3])))
     }
 }

@@ -75,3 +75,33 @@ enum LocalProfileStore {
         defaults.removeObject(forKey: storageKey)
     }
 }
+
+enum ProfileAvatarPhotoStore {
+
+    private static func directory() throws -> URL {
+        let documents = try FileManager.default.url(
+            for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
+        )
+        let directory = documents.appendingPathComponent("ProfileAvatars", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    static func save(_ data: Data) throws -> String {
+        let fileName = "\(UUID().uuidString).jpg"
+        try data.write(to: directory().appendingPathComponent(fileName), options: .atomic)
+        return fileName
+    }
+
+    static func load(_ fileName: String?) -> Data? {
+        guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+              let directory = try? directory() else { return nil }
+        return try? Data(contentsOf: directory.appendingPathComponent(fileName))
+    }
+
+    static func remove(_ fileName: String?) {
+        guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+              let directory = try? directory() else { return }
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
+    }
+}

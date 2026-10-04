@@ -248,6 +248,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     var avatarColor: ProfileColor              /* Avatar background color */
     var avatarIcon:  ProfileAvatarIcon         /* Avatar icon token       */
     var avatarForegroundColor: ProfileColor   /* Icon and initials color */
+    var avatarPhotoFileName: String?
     var preferences: LocalProfilePreferences   /* Local personalization   */
 
     private enum CodingKeys: String, CodingKey {
@@ -259,6 +260,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         case avatarColor
         case avatarIcon
         case avatarForegroundColor
+        case avatarPhotoFileName
         case preferences
     }
 
@@ -273,6 +275,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
             avatarColor: try container.decode(ProfileColor.self, forKey: .avatarColor),
             avatarIcon: try container.decodeIfPresent(ProfileAvatarIcon.self, forKey: .avatarIcon) ?? .initials,
             avatarForegroundColor: try container.decodeIfPresent(ProfileColor.self, forKey: .avatarForegroundColor) ?? .white,
+            avatarPhotoFileName: try container.decodeIfPresent(String.self, forKey: .avatarPhotoFileName),
             preferences: try container.decode(LocalProfilePreferences.self, forKey: .preferences)
         )
     }
@@ -319,6 +322,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         avatarColor: ProfileColor            = .teal,
         avatarIcon:  ProfileAvatarIcon       = .initials,
         avatarForegroundColor: ProfileColor  = .white,
+        avatarPhotoFileName: String? = nil,
         preferences: LocalProfilePreferences = LocalProfilePreferences()
     ) {
 
@@ -330,6 +334,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         self.avatarColor = avatarColor
         self.avatarIcon  = avatarIcon
         self.avatarForegroundColor = avatarForegroundColor
+        self.avatarPhotoFileName = avatarPhotoFileName
         self.preferences = preferences
     }
 }

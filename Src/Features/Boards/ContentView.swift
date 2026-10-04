@@ -1507,6 +1507,7 @@ struct KanbanListView: View {
     let onListDragEnded: () -> Void
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
+    @State private var opensNewCardAfterDismissal = false
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
@@ -1718,7 +1719,11 @@ struct KanbanListView: View {
         .background(listTint.color)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
-        .sheet(item: $activeSheet) { presentedSheet in
+        .sheet(item: $activeSheet, onDismiss: {
+            guard opensNewCardAfterDismissal else { return }
+            opensNewCardAfterDismissal = false
+            activeSheet = .newCard
+        }) { presentedSheet in
             switch presentedSheet {
             case .listActions:
                 KanbanListActionsSheet(
@@ -1727,7 +1732,10 @@ struct KanbanListView: View {
                     canMoveLater:       canMoveLater,
                     isWatching:         $isWatching,
                     listTint:           $listTint,
-                    onAddCard:          { activeSheet = .newCard },
+                    onAddCard: {
+                        opensNewCardAfterDismissal = true
+                        activeSheet = nil
+                    },
                     onCopyList:         onCopyList,
                     onMoveList:         onMoveList,
                     onSortList:         onSortList,
@@ -1928,7 +1936,6 @@ private struct KanbanListActionsSheet: View {
 
                     Button {
                         onAddCard()
-                        dismiss()
                     } label: {
                         Label("Add card", systemImage: "plus")
                     }

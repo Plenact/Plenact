@@ -43,6 +43,10 @@ Card rows also offer **Archive Card** above **Delete Card** in their `...` menu,
 
 Older saved lists default to an empty archive, and empty archives are omitted from JSON to preserve the existing remote payload shape. Nonempty local archives are rejected by shared-Board validation because the remote schema does not support them. Copying a list copies only its active cards. Cards removed by the previous archive implementation cannot be recovered.
 
+## Adding Cards
+
+**List Actions → Add card** closes the actions sheet before presenting the new-card form for that same list. The form's Add action creates the card; Cancel leaves the list unchanged. The direct **+ Add card** row uses the same form.
+
 ## Reordering Lists
 
 Touch and hold a list's title/header text for about half a second, then drag horizontally to reorder it. The held list lifts visually and gives selection feedback. Holding within the left or right edge of the board viewport moves it one position in that direction every 550 ms and scrolls it into view, allowing a restored list to travel across the entire board. Release to finish; the existing Board persistence path saves the updated order.

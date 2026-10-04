@@ -24,7 +24,7 @@ import UIKit
 /// @section    Purpose
 ///     Distinguish local photo/video media from remotely accessible links
 ///
-enum KanbanAttachmentKind: String, Codable {
+enum KanbanAttachmentKind: String, Codable, Sendable {
     case photo
     case video
     case link
@@ -38,7 +38,7 @@ enum KanbanAttachmentKind: String, Codable {
 ///     Persist stable attachment identity and lightweight file or URL metadata without embedding
 ///     image bytes in the board
 ///
-struct KanbanAttachment: Identifiable, Hashable, Codable {
+struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 
     let id:        UUID                     /* Stable attachment identity     */
     let fileName:  String?                  /* Device-local media filename    */

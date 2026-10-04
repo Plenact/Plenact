@@ -27,6 +27,8 @@ Labels and attachments remain sibling features because they have their own model
 
 `KanbanBoardPersistence` stores lists and cards as local JSON under the versioned `Plenact.Board.v1` key. Persisted Codable fields, stable card/list/checklist IDs, and attachment filenames are compatibility contracts
 
+The app loads its initial Board with `loadListsInBackground` and submits edits with `saveListsInBackground`. JSON encoding/decoding and UserDefaults access run on a serial background queue, preserving save order without blocking UI animation. Board value models conform to `Sendable` for safe snapshot transfer. A shared busy banner is shown on the app shell, focused Today list, Board/card editing sheets, and Account & Settings. Local persistence errors remain visible until dismissed; stored data is not deleted on a decoding failure. The synchronous helpers remain available for non-UI use.
+
 Revision 0 string checklist items migrate to stable `KanbanChecklistItem` records during decoding. Checklist actions can contain standard text, a stable link to another Board card, or reduced Action Detail content. See [`../../../Doc/Checklist-Actions-Architecture.md`](../../../Doc/Checklist-Actions-Architecture.md) and [`../../../Test/`](../../../Test/README.md)
 
 Do not clear saved data to resolve decoding failures. Add compatibility tests before changing stored models or IDs

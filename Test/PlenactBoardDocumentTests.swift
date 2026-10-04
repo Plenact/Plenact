@@ -16,6 +16,151 @@ import XCTest
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    @MainActor
+    func testAPIActivityEndsAfterSuccessFailureAndCancellation() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ActivityTestURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+
+        for outcome in ["success", "timeout", "cancelled"] {
+            let initialCount = DatabaseActivity.shared.operations.count
+            let url = try XCTUnwrap(URL(string: "https://\(outcome).example.test/"))
+            let client = try PlenactAPIClient(baseURL: url, session: session)
+            do {
+                let users = try await client.directory(token: "synthetic-test-token")
+                XCTAssertEqual(outcome, "success")
+                XCTAssertTrue(users.isEmpty)
+            } catch {
+                let error = try XCTUnwrap(error as? URLError)
+                XCTAssertEqual(error.code, outcome == "timeout" ? .timedOut : .cancelled)
+            }
+            XCTAssertEqual(DatabaseActivity.shared.operations.count, initialCount)
+        }
+    }
+
+    @MainActor
+    func testDatabaseActivityKeepsSpinnerUntilAllOperationsFinish() {
+        let activity = DatabaseActivity()
+        let save = activity.begin("Saving Board...")
+        let refresh = activity.begin("Synchronizing shared database...")
+        XCTAssertTrue(activity.isWorking)
+        XCTAssertEqual(activity.message, "Saving Board...")
+
+        activity.end(save)
+        XCTAssertTrue(activity.isWorking)
+        XCTAssertEqual(activity.message, "Synchronizing shared database...")
+        activity.end(save)
+        XCTAssertTrue(activity.isWorking)
+
+        activity.end(refresh)
+        XCTAssertFalse(activity.isWorking)
+        XCTAssertNil(activity.message)
+    }
+
+    private final class ActivityTestURLProtocol: URLProtocol {
+        override class func canInit(with request: URLRequest) -> Bool { true }
+        override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+        override func startLoading() {
+            Task { @MainActor in
+                XCTAssertTrue(DatabaseActivity.shared.isWorking)
+                XCTAssertTrue(DatabaseActivity.shared.operations.contains {
+                    $0.message == "Synchronizing shared database..."
+                })
+                await Task.yield()
+                XCTAssertTrue(DatabaseActivity.shared.isWorking)
+                guard let url = request.url else {
+                    XCTFail("Missing synthetic request URL")
+                    client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+                    return
+                }
+                if url.host == "success.example.test" {
+                    let response = HTTPURLResponse(
+                        url: url, statusCode: 200, httpVersion: nil,
+                        headerFields: ["Content-Type": "application/json"]
+                    )!
+                    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                    client?.urlProtocol(self, didLoad: Data("{\"users\":[]}".utf8))
+                    client?.urlProtocolDidFinishLoading(self)
+                } else {
+                    client?.urlProtocol(
+                        self, didFailWithError: URLError(url.host == "timeout.example.test" ? .timedOut : .cancelled)
+                    )
+                }
+            }
+        }
+
+        override func stopLoading() {}
+    }
+
+    @MainActor
+    func testDatabaseActivityErrorsRemainUntilDismissed() {
+        let activity = DatabaseActivity()
+        let operation = activity.begin("Saving Board...")
+        activity.report("Could not save the Board.")
+        activity.end(operation)
+        XCTAssertFalse(activity.isWorking)
+        XCTAssertEqual(activity.errorMessage, "Could not save the Board.")
+        activity.dismissError()
+        XCTAssertNil(activity.errorMessage)
+    }
+
+    @MainActor
+    func testBackgroundBoardSavesPreserveLatestSnapshot() async throws {
+        let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = [KanbanList(id: 1, title: "First", cards: [])]
+        let last = [KanbanList(id: 1, title: "Latest", cards: [])]
+
+        KanbanBoardPersistence.enqueueSave(first, suiteName: suite)
+        KanbanBoardPersistence.enqueueSave(last, suiteName: suite)
+        XCTAssertTrue(DatabaseActivity.shared.isWorking)
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, last)
+        let data = try XCTUnwrap(defaults.data(forKey: "Plenact.Board.v1"))
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: data), last)
+    }
+
+    @MainActor
+    func testBackgroundBoardSaveFailurePreservesPreviousSnapshot() async throws {
+        let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            DatabaseActivity.shared.dismissError()
+        }
+        let original = [KanbanList(id: 1, title: "Saved", cards: [])]
+        KanbanBoardPersistence.enqueueSave(original, suiteName: suite)
+        _ = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+
+        var invalidCard = KanbanCard(id: 1, word: "Unsaved", listTitle: "Saved")
+        invalidCard.dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
+        KanbanBoardPersistence.enqueueSave(
+            [KanbanList(id: 1, title: "Saved", cards: [invalidCard])], suiteName: suite
+        )
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, original)
+        XCTAssertTrue(DatabaseActivity.shared.errorMessage?.hasPrefix("Could not save the Board:") == true)
+    }
+
+    @MainActor
+    func testBackgroundBoardLoadReportsCorruptionWithoutRemovingData() async throws {
+        let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            DatabaseActivity.shared.dismissError()
+        }
+        let invalidData = Data("not JSON".utf8)
+        defaults.set(invalidData, forKey: "Plenact.Board.v1")
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, SampleData.lists)
+        XCTAssertNotNil(DatabaseActivity.shared.errorMessage)
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), invalidData)
+    }
+
     func testRecentSearchesAreOrderedDeduplicatedAndClearable() throws {
         let suite = "Plenact.SearchTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

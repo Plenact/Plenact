@@ -21,7 +21,7 @@ import Foundation
 /// @section    Purpose
 ///     Keep directory-backed identity distinct from free-text assignees during migration and sync
 ///
-enum CardAssigneeKind: String, Codable {
+enum CardAssigneeKind: String, Codable, Sendable {
 
     case registeredUser   /* Stable server user reference */
     case manual           /* User-entered display name     */
@@ -34,7 +34,7 @@ enum CardAssigneeKind: String, Codable {
 /// @section    Purpose
 ///     Preserve a stable registered-user reference or a manual display name without conflating them
 ///
-struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
+struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
     let id:          UUID               /* Stable assignment row ID */
     let kind:        CardAssigneeKind   /* Registered or manual     */
@@ -110,7 +110,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 ///
 /// @note   Derived values are deterministic so the board and previews remain reproducible
 ///
-struct KanbanCard: Identifiable, Hashable, Codable {
+struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     let id:                   Int                 /* Stable numeric identifier for the card             */
     var word:                 String              /* Display word shown as the card's title             */
@@ -378,7 +378,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 /// @section    Purpose
 ///     Group an ordered collection of cards with the list title and supporting board copy
 ///
-struct KanbanList: Identifiable, Hashable, Codable {
+struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
     let id:        Int              /* Unique identifier for the kanban list */
     let title:     String           /* Title of the kanban list              */
@@ -405,7 +405,7 @@ struct KanbanList: Identifiable, Hashable, Codable {
 ///
 /// @note   Action Details are reached only through their owning checklist item
 ///
-struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable {
+struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable {
 
     let id:          UUID                /* Stable Action Detail ID */
     var description: String              /* Supporting action text */
@@ -444,7 +444,7 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable {
 ///     Distinguish plain text, navigation to an existing card, and reduced owned detail while
 ///     keeping one stable checklist-item identity
 ///
-enum KanbanChecklistActionContent: Hashable, Codable {
+enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
     case standard                                      /* Plain text action       */
     case linkedCard(cardID: Int)                       /* Existing card reference */
@@ -540,7 +540,7 @@ enum KanbanChecklistActionContent: Hashable, Codable {
 ///
 /// @note   Revision 0 checklist strings migrate to standard items during decoding
 ///
-struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
+struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
     let id:        UUID                           /* Stable checklist action ID */
     var title:     String                         /* User-facing action text    */
@@ -645,7 +645,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
 /// @section    Purpose
 ///     Provide a small value type for rendering both seeded and newly created checklist groups
 ///
-struct KanbanChecklist: Identifiable, Hashable, Codable {
+struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
 
     let id:    UUID                    /* Stable checklist ID      */
     let title: String                  /* Checklist display title */
@@ -820,7 +820,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
 // -------------------------------------- MARK: - Card Comment ------------------------------- //
 
 /// A comment posted to a kanban card's activity feed
-struct KanbanComment: Identifiable, Hashable, Codable {
+struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
     let id:        UUID         /* Unique identifier for the comment                 */
     let author:    String       /* Author of the comment                             */
     let body:      String       /* Body text of the comment                          */
@@ -965,6 +965,66 @@ enum ExampleLoadUndoStore {
 enum KanbanBoardPersistence {
 
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
+    private static let queue = DispatchQueue(label: "Plenact.Board.persistence", qos: .userInitiated)
+
+    @MainActor
+    static func loadListsInBackground(suiteName: String? = nil) async -> [KanbanList] {
+        let activity = DatabaseActivity.shared
+        let operation = activity.begin("Loading Board...")
+        defer { activity.end(operation) }
+
+        let result: Result<[KanbanList], Error> = await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: Result {
+                    let defaults = try persistenceDefaults(suiteName: suiteName)
+                    guard let data = defaults.data(forKey: storageKey) else { return SampleData.lists }
+                    return try JSONDecoder().decode([KanbanList].self, from: data)
+                })
+            }
+        }
+        switch result {
+        case .success(let lists):
+            return lists
+        case .failure(let error):
+            activity.report("Could not load the saved Board: \(error.localizedDescription) The starter Board is displayed; saved data has not been removed.")
+            return SampleData.lists
+        }
+    }
+
+    @MainActor
+    static func saveListsInBackground(_ lists: [KanbanList]) {
+        enqueueSave(lists)
+    }
+
+    @MainActor
+    static func enqueueSave(_ lists: [KanbanList], suiteName: String? = nil) {
+        let activity = DatabaseActivity.shared
+        let operation = activity.begin("Saving Board...")
+
+        // A serial queue preserves snapshot order even when edits arrive faster than encoding.
+        queue.async {
+            let result = Result {
+                let defaults = try persistenceDefaults(suiteName: suiteName)
+                let data = try JSONEncoder().encode(lists)
+                defaults.set(data, forKey: storageKey)
+            }
+            Task { @MainActor in
+                if case .failure(let error) = result {
+                    activity.report("Could not save the Board: \(error.localizedDescription) Your latest changes are not saved. Please try editing again.")
+                }
+                activity.end(operation)
+            }
+        }
+
+    }
+
+    private static func persistenceDefaults(suiteName: String?) throws -> UserDefaults {
+        guard let suiteName else { return .standard }
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        return defaults
+    }
 
     ///
     /// @fcn        KanbanBoardPersistence.loadLists
@@ -1238,4 +1298,3 @@ enum SampleData {
         return initializedLists
     }()
 }
-

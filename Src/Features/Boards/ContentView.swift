@@ -52,7 +52,7 @@ struct ContentView: View {
     let boardSubtitle: String
     let allowsAddingLists: Bool
     let onClose: (() -> Void)?
-    let onListsChanged: ([KanbanList]) -> Void
+    let onListsChanged: @MainActor ([KanbanList]) -> Void
     let retainedAttachmentLists: () -> [KanbanList]
     @State private var showsCalendar = false
     @State private var navigationPath = NavigationPath()
@@ -87,7 +87,7 @@ struct ContentView: View {
         boardSubtitle: String = "Work Week Board",
         allowsAddingLists: Bool = true,
         onClose: (() -> Void)? = nil,
-        onListsChanged: @escaping ([KanbanList]) -> Void = KanbanBoardPersistence.saveLists,
+        onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
         retainedAttachmentLists: @escaping () -> [KanbanList] = {
             PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
         }
@@ -1500,8 +1500,10 @@ struct KanbanListView: View {
                     onArchiveCompleted: onArchiveCompleted,
                     onArchiveList:      onArchiveList
                 )
+                .databaseActivityOverlay()
             case .newCard:
                 NewKanbanCardSheet(listTitle: list.title, onCreate: onAddCard)
+                    .databaseActivityOverlay()
             }
         }
     }
@@ -2013,6 +2015,7 @@ struct KanbanCardView: View {
             CardInfoEditorSheet(card: card) { title, subtitle, description in
                 onUpdateCard(cardUpdated(title: title, subtitle: subtitle, description: description))
             }
+            .databaseActivityOverlay()
         }
     }
 }
@@ -2228,12 +2231,13 @@ struct TodayListDetailView: View {
                 )
             }
             .onChange(of: lists) { _, updatedLists in
-                KanbanBoardPersistence.saveLists(updatedLists)
+                KanbanBoardPersistence.saveListsInBackground(updatedLists)
             }
             .onChange(of: labelLibrary) { _, updatedLibrary in
                 LabelLibraryStore.save(updatedLibrary)
             }
         }
+        .databaseActivityOverlay()
     }
 
     private func toggleCard(_ cardID: Int) {

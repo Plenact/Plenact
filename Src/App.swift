@@ -183,7 +183,8 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 private struct AppRootView: View {
 
-    @State private var lists = KanbanBoardPersistence.loadLists()             /* Shared board state loaded from local persistence        */
+    @State private var lists: [KanbanList] = []
+    @State private var hasLoadedBoard = false
     @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
     @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
     @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
@@ -197,7 +198,22 @@ private struct AppRootView: View {
     /// @brief      Build the primary Today and Board tab navigation
     /// @details    Shares board lists between the Today front door and the existing kanban screen
     var body: some View { /* Primary Today and Board navigation shell */
+        Group {
+            if hasLoadedBoard {
+                navigationContent
+            } else {
+                Color(.systemBackground).ignoresSafeArea()
+            }
+        }
+        .databaseActivityOverlay()
+        .task {
+            guard !hasLoadedBoard else { return }
+            lists = await KanbanBoardPersistence.loadListsInBackground()
+            hasLoadedBoard = true
+        }
+    }
 
+    private var navigationContent: some View {
         TabView(selection: $selectedDestination) {
 
             TodayHomeView(
@@ -266,6 +282,7 @@ private struct AppRootView: View {
             ) { listID, title, description in
                 addCard(to: listID, title: title, description: description)
             }
+            .databaseActivityOverlay()
         }
     }
 
@@ -414,7 +431,7 @@ private struct AppRootView: View {
         }
 
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
-        KanbanBoardPersistence.saveLists(lists)
+        KanbanBoardPersistence.saveListsInBackground(lists)
     }
 
     private func addWeekList() {
@@ -429,7 +446,7 @@ private struct AppRootView: View {
         }
 
         lists.append(KanbanList(id: nextListID, title: title, cards: []))
-        KanbanBoardPersistence.saveLists(lists)
+        KanbanBoardPersistence.saveListsInBackground(lists)
         boardTargetListID = nextListID
         selectedDestination = .board
     }
@@ -453,7 +470,7 @@ private struct AppRootView: View {
 
             lists[listIndex] = updatedList
 
-            KanbanBoardPersistence.saveLists(lists)
+            KanbanBoardPersistence.saveListsInBackground(lists)
         }
 }
 
@@ -973,7 +990,7 @@ private struct TodayHomeView: View {
                         }
                         let exampleLists = SampleData.lists
                         lists = exampleLists
-                        KanbanBoardPersistence.saveLists(exampleLists)
+                        KanbanBoardPersistence.saveListsInBackground(exampleLists)
                         if let firstList = exampleLists.first {
                             selectTodayList(firstList)
                         }
@@ -982,7 +999,7 @@ private struct TodayHomeView: View {
                     onUndoExampleLoad: {
                         guard let snapshot = ExampleLoadUndoStore.load() else { return false }
                         lists = snapshot.lists
-                        KanbanBoardPersistence.saveLists(snapshot.lists)
+                        KanbanBoardPersistence.saveListsInBackground(snapshot.lists)
                         if let todayListID = snapshot.todayListID,
                            let todayList = snapshot.lists.first(where: { $0.id == todayListID }) {
                             selectTodayList(todayList)
@@ -1023,6 +1040,7 @@ private struct TodayHomeView: View {
                     ) { listID, title, description in
                         onAddCard(listID, title, description)
                     }
+                    .databaseActivityOverlay()
                 }
             }
             .sheet(isPresented: $showsSearch) {

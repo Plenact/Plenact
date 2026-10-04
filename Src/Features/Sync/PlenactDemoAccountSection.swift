@@ -27,7 +27,8 @@ struct PlenactDemoAccountSection: View {
     @State private var remoteDraft:          PlenactBoardDocument? /* Editable remote-only Board copy */
 
     @State private var currentRevision:      Int64? /* Last fetched server revision */
-    @State private var isWorking           = false /* Network operation state */
+    @State private var activeOperationCount = 0
+    private var isWorking: Bool { activeOperationCount > 0 }
     @State private var needsConflictReload = false /* Stale-draft reload requirement */
     @State private var alertMessage        = "" /* Current alert text */
     @State private var showsAlert          = false /* Shared-demo alert presentation state */
@@ -58,6 +59,7 @@ struct PlenactDemoAccountSection: View {
                 Button("Refresh shared directory and Board") {
                     Task { await refreshRemoteState() }
                 }
+                .disabled(isWorking)
                 .disabled(isWorking || hasUnsavedRemoteEdits)
 
                 if let currentRevision, currentRevision > 0 {                       /* Initialized shared Board revision */
@@ -207,9 +209,9 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func signIn() async {
 
-        isWorking = true
+        activeOperationCount += 1
 
-        defer { isWorking = false }
+        defer { activeOperationCount -= 1 }
 
         do {
             let client    = try PlenactAPIClient() /* Configured HTTPS API client */
@@ -235,9 +237,9 @@ struct PlenactDemoAccountSection: View {
 
         guard let remoteSession else { return }                 /* Require an authenticated session */
 
-        isWorking = true
+        activeOperationCount += 1
 
-        defer { isWorking = false }
+        defer { activeOperationCount -= 1 }
 
         do {
             let client      = try PlenactAPIClient()            /* Configured HTTPS API client */
@@ -279,9 +281,9 @@ struct PlenactDemoAccountSection: View {
 
         guard let remoteSession, canInitializeSampleBoard else { return } /* Require the editor seed state */
 
-        isWorking = true
+        activeOperationCount += 1
 
-        defer { isWorking = false }
+        defer { activeOperationCount -= 1 }
 
         do {
             let client   = try PlenactAPIClient() /* Configured HTTPS API client */
@@ -313,9 +315,9 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func signOut(_ session: PlenactRemoteSession) async {
         
-        isWorking = true
+        activeOperationCount += 1
 
-        defer { isWorking = false }
+        defer { activeOperationCount -= 1 }
 
         if let client = try? PlenactAPIClient() { /* Revoke the session when the endpoint is configured */
             await client.logout(session)
@@ -453,8 +455,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func changeOwnAssignment(cardID: Int, action: String, targetUserID: String? = nil) async {
         guard let remoteSession, let currentRevision else { return } /* Require current session and revision */
-        isWorking = true
-        defer { isWorking = false }
+        activeOperationCount += 1
+        defer { activeOperationCount -= 1 }
 
         do {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */
@@ -530,8 +532,8 @@ struct PlenactDemoAccountSection: View {
     private func saveSharedBoard() async {
           guard let remoteSession, let remoteSnapshot, let remoteDraft, /* Current editor session and snapshot */
               remoteDraft.validationMessage == nil else { return } /* Only save a valid document */
-        isWorking = true
-        defer { isWorking = false }
+        activeOperationCount += 1
+        defer { activeOperationCount -= 1 }
 
         do {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */
@@ -557,8 +559,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func createMember() async {
         guard let remoteSession, remoteSession.user.accountRole == "board_editor" else { return } /* Require Board-editor access */
-        isWorking = true
-        defer { isWorking = false }
+        activeOperationCount += 1
+        defer { activeOperationCount -= 1 }
 
         do {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */

@@ -1596,6 +1596,7 @@ struct CardDetailView: View {
                         }
                     }
                     .presentationDetents([.medium, .large])
+                    .databaseActivityOverlay()
 
                 case .members:
                     CardMembersSheet(members: members, memberColors: memberColors) { updatedMembers in
@@ -1603,6 +1604,7 @@ struct CardDetailView: View {
                         syncCardState(members: updatedMembers)
                     }
                     .presentationDetents([.medium, .large])
+                    .databaseActivityOverlay()
 
                 case .labels:
                     CardLabelsSheet(library: labelLibrary, selectedLabelIDs: selectedLabelIDs) { updatedLibrary, updatedLabelIDs in
@@ -1612,6 +1614,7 @@ struct CardDetailView: View {
                         syncCardState(labelIDs: updatedLabelIDs)
                     }
                     .presentationDetents([.large])
+                    .databaseActivityOverlay()
 
                 case .attachmentSources:
                     CardAttachmentSourceSheet(
@@ -1620,12 +1623,15 @@ struct CardDetailView: View {
                         onPasteClipboard: addClipboardLink,
                         onComingSoon: showAttachmentSourceComingSoon
                     )
+                    .databaseActivityOverlay()
 
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)
+                        .databaseActivityOverlay()
 
                 case .attachmentPreview(let attachment): /* Media selected for preview */
                     CardAttachmentPreview(attachment: attachment)
+                        .databaseActivityOverlay()
 
                 case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs */
                     if let checklist = checklists.first(where: { $0.id == checklistID }), /* Owning checklist */
@@ -1643,6 +1649,7 @@ struct CardDetailView: View {
                                 detail:      updatedDetail
                             )
                         }
+                        .databaseActivityOverlay()
 
                     } else {
                         ContentUnavailableView(
@@ -2768,4 +2775,3 @@ struct ActivitySwipeRow<Content: View>: View {
         CardDetailView(card: SampleData.lists[0].cards[0])
     }
 }
-

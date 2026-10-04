@@ -441,6 +441,7 @@ struct AccountSettingsView: View {
                 }
             }
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
+            .databaseActivityOverlay()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !isChoosingAvatarIcon {

@@ -665,6 +665,25 @@ struct PlenactAPIClient {
         token: String?,
         bodyData: Data?
     ) async throws -> Response {
+        let operation = await DatabaseActivity.shared.begin("Synchronizing shared database...")
+        do {
+            let response: Response = try await executeRequest(
+                path: path, method: method, token: token, bodyData: bodyData
+            )
+            await DatabaseActivity.shared.end(operation)
+            return response
+        } catch {
+            await DatabaseActivity.shared.end(operation)
+            throw error
+        }
+    }
+
+    private func executeRequest<Response: Decodable>(
+        path: String,
+        method: String,
+        token: String?,
+        bodyData: Data?
+    ) async throws -> Response {
 
         var request = URLRequest(url: baseURL.appendingPathComponent(path)) /* Mutable outgoing request */
 

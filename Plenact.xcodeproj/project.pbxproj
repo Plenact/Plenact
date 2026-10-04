@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F20000000000000000000001 /* DatabaseActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* DatabaseActivity.swift */; };
 		290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D254D2B426422D8D5F0495 /* Models.swift */; };
 		354B6C37BBEC4A4F98B58F97 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC15405D865C4534ACD974D9 /* Assets.xcassets */; };
 		C10000000000000000000001 /* ChecklistMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* ChecklistMigrationTests.swift */; };
@@ -37,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F20000000000000000000002 /* DatabaseActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseActivity.swift; sourceTree = "<group>"; };
 		1DFF35304A1B4FA18AB05E4F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		30C25D35D8C349EDB8B7AFEF /* Plenact.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plenact.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88D254D2B426422D8D5F0495 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 				E10000000000000000000015 /* PlenactBoardDocument.swift */,
 				E10000000000000000000018 /* PlenactAPIClient.swift */,
 				E10000000000000000000019 /* PlenactDemoAccountSection.swift */,
+				F20000000000000000000002 /* DatabaseActivity.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -285,6 +288,7 @@
 				E10000000000000000000005 /* PlenactBoardDocument.swift in Sources */,
 				E10000000000000000000007 /* PlenactAPIClient.swift in Sources */,
 				E10000000000000000000008 /* PlenactDemoAccountSection.swift in Sources */,
+				F20000000000000000000001 /* DatabaseActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

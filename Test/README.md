@@ -8,6 +8,8 @@ This directory contains the active unit-test target for Plenact
 
 `LocalProfileStoreTests.swift` verifies isolated local profile persistence, removal, personalization, and avatar initials without reading production preferences
 
+`PlenactBoardDocumentTests.swift` also verifies overlapping database activity, persistent error feedback, ordered background Board saves, preservation of unreadable saved data, and API activity cleanup after success, timeout, and cancellation. Persistence tests use isolated UserDefaults suites; API tests intercept synthetic requests without contacting a server.
+
 ## Running Tests
 
 Use the shared `Plenact` scheme with an installed iPhone simulator:

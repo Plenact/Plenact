@@ -58,7 +58,9 @@ final class LocalProfileStoreTests: XCTestCase {
             displayName: "Jamie Rivera",
             email:       "jamie@example.com",
             context:     "Personal planning",
-            avatarColor: .green,
+            avatarColor: ProfileColor(hue: 0.37, saturation: 0.72, brightness: 0.88),
+            avatarIcon:  .sparkles,
+            avatarForegroundColor: ProfileColor(hue: 0.94, saturation: 0.58, brightness: 0.91),
             preferences: LocalProfilePreferences(
                 defaultListID:      3,
                 usesReducedContent: true,
@@ -81,6 +83,29 @@ final class LocalProfileStoreTests: XCTestCase {
         let preferences = try JSONDecoder().decode(LocalProfilePreferences.self, from: legacyPreferencesJSON)
 
         XCTAssertTrue(preferences.showsNavigationLabels)
+    }
+
+    func testOlderProfilesDefaultToInitialsAvatar() throws {
+
+        let legacyProfileJSON = Data(
+            #"{"id":"EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE","createdAt":0,"displayName":"Jamie Rivera","email":"","context":"","avatarColor":"teal","preferences":{}}"#.utf8
+        )
+        let profile = try JSONDecoder().decode(LocalProfile.self, from: legacyProfileJSON)
+
+        XCTAssertEqual(profile.avatarIcon, .initials)
+        XCTAssertEqual(profile.avatarForegroundColor, .white)
+    }
+
+    func testLegacyAvatarColorTokensStillDecode() throws {
+
+        let legacyProfileJSON = Data(
+            #"{"id":"EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE","createdAt":0,"displayName":"Jamie Rivera","email":"","context":"","avatarColor":"teal","avatarIcon":"leaf","avatarForegroundColor":"coral","preferences":{}}"#.utf8
+        )
+        let profile = try JSONDecoder().decode(LocalProfile.self, from: legacyProfileJSON)
+
+        XCTAssertEqual(profile.avatarColor, .teal)
+        XCTAssertEqual(profile.avatarIcon, .leaf)
+        XCTAssertEqual(profile.avatarForegroundColor, .coral)
     }
 
     ///

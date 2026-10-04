@@ -11,28 +11,162 @@ import Foundation
 
 // -------------------------------------- MARK: - Avatar Color --------------------------------- //
 
-///
-/// Identifies a persistent palette choice for the local profile avatar
-///
-/// @section    Purpose
-///     Store a stable color token without coupling the profile model to SwiftUI
-///
-enum ProfileAvatarColor: String, CaseIterable, Codable, Identifiable {
+/// Stores an arbitrary sRGB color while decoding palette tokens from older profiles
+struct ProfileColor: Hashable, Codable {
 
-    case teal       /* Calm teal avatar   */
-    case blue       /* Familiar blue      */
-    case green      /* Focus green        */
-    case orange     /* Warm orange        */
-    case graphite   /* Neutral graphite   */
+    var red: Double
+    var green: Double
+    var blue: Double
+    var legacyToken: String?
 
-    ///
-    /// @fcn        ProfileAvatarColor.id
-    /// @brief      Return the stable palette identity
-    /// @details    Uses the Codable raw value for picker and persistence consistency
-    ///
-    /// @return     (String) stable avatar-color identifier
-    ///
-    var id: String { rawValue }   /* Picker identity */
+    private enum CodingKeys: String, CodingKey {
+        case red
+        case green
+        case blue
+    }
+
+    init(red: Double, green: Double, blue: Double) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+        legacyToken = nil
+    }
+
+    init(hue: Double, saturation: Double, brightness: Double) {
+        let hue = (hue - floor(hue)) * 6
+        let saturation = min(max(saturation, 0), 1)
+        let brightness = min(max(brightness, 0), 1)
+        let chroma = brightness * saturation
+        let intermediate = chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))
+        let components: (Double, Double, Double)
+
+        switch Int(floor(hue)) {
+            case 0: components = (chroma, intermediate, 0)
+            case 1: components = (intermediate, chroma, 0)
+            case 2: components = (0, chroma, intermediate)
+            case 3: components = (0, intermediate, chroma)
+            case 4: components = (intermediate, 0, chroma)
+            default: components = (chroma, 0, intermediate)
+        }
+
+        let offset = brightness - chroma
+        self.init(
+            red: components.0 + offset,
+            green: components.1 + offset,
+            blue: components.2 + offset
+        )
+    }
+
+    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")
+    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")
+    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")
+    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")
+    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")
+    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white")
+    static let charcoal = Self(red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")
+    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")
+    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")
+    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")
+
+    private init(red: Double, green: Double, blue: Double, legacyToken: String) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+        self.legacyToken = legacyToken
+    }
+
+    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) {
+        let maximum = max(red, green, blue)
+        let minimum = min(red, green, blue)
+        let delta = maximum - minimum
+        let hue: Double
+
+        if delta == 0 {
+            hue = 0
+        } else if maximum == red {
+            hue = ((green - blue) / delta + (green < blue ? 6 : 0)) / 6
+        } else if maximum == green {
+            hue = ((blue - red) / delta + 2) / 6
+        } else {
+            hue = ((red - green) / delta + 4) / 6
+        }
+
+        return (hue, maximum == 0 ? 0 : delta / maximum, maximum)
+    }
+
+    init(from decoder: Decoder) throws {
+        if let container = try? decoder.singleValueContainer(),
+           let token = try? container.decode(String.self) {
+            guard let color = Self.legacyColor(token) else {
+                throw DecodingError.dataCorrupted(.init(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Unknown legacy profile color: \(token)"
+                ))
+            }
+            self = color
+            return
+        }
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            red: try container.decode(Double.self, forKey: .red),
+            green: try container.decode(Double.self, forKey: .green),
+            blue: try container.decode(Double.self, forKey: .blue)
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        if let legacyToken {
+            var container = encoder.singleValueContainer()
+            try container.encode(legacyToken)
+        } else {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(red, forKey: .red)
+            try container.encode(green, forKey: .green)
+            try container.encode(blue, forKey: .blue)
+        }
+    }
+
+    private static func legacyColor(_ token: String) -> Self? {
+        switch token {
+            case "teal": teal
+            case "blue": blue
+            case "green": green
+            case "orange": orange
+            case "graphite": graphite
+            case "white": white
+            case "charcoal": charcoal
+            case "lemon": lemon
+            case "sky": sky
+            case "coral": coral
+            default: nil
+        }
+    }
+}
+
+typealias ProfileAvatarColor = ProfileColor
+typealias ProfileAvatarForegroundColor = ProfileColor
+
+
+// -------------------------------------- MARK: - Avatar Icon ---------------------------------- //
+
+/// Identifies a stable built-in icon choice for the local profile avatar
+enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable {
+
+    case initials
+    case person
+    case personCircle
+    case smilingFace
+    case leaf
+    case sun
+    case moon
+    case sparkles
+    case bolt
+    case heart
+    case star
+    case cloud
+
+    var id: String { rawValue }
 }
 
 
@@ -111,8 +245,37 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     var displayName: String                    /* User-facing name        */
     var email:       String                    /* Optional local email    */
     var context:     String                    /* Optional planning role  */
-    var avatarColor: ProfileAvatarColor        /* Avatar palette token    */
+    var avatarColor: ProfileColor              /* Avatar background color */
+    var avatarIcon:  ProfileAvatarIcon         /* Avatar icon token       */
+    var avatarForegroundColor: ProfileColor   /* Icon and initials color */
     var preferences: LocalProfilePreferences   /* Local personalization   */
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt
+        case displayName
+        case email
+        case context
+        case avatarColor
+        case avatarIcon
+        case avatarForegroundColor
+        case preferences
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(UUID.self, forKey: .id),
+            createdAt: try container.decode(Date.self, forKey: .createdAt),
+            displayName: try container.decode(String.self, forKey: .displayName),
+            email: try container.decode(String.self, forKey: .email),
+            context: try container.decode(String.self, forKey: .context),
+            avatarColor: try container.decode(ProfileColor.self, forKey: .avatarColor),
+            avatarIcon: try container.decodeIfPresent(ProfileAvatarIcon.self, forKey: .avatarIcon) ?? .initials,
+            avatarForegroundColor: try container.decodeIfPresent(ProfileColor.self, forKey: .avatarForegroundColor) ?? .white,
+            preferences: try container.decode(LocalProfilePreferences.self, forKey: .preferences)
+        )
+    }
 
     ///
     /// @fcn        LocalProfile.initials
@@ -131,7 +294,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     }
 
     ///
-    /// @fcn        LocalProfile.init(id:createdAt:displayName:email:context:avatarColor:preferences:)
+    /// @fcn        LocalProfile.init(id:createdAt:displayName:email:context:avatarColor:avatarIcon:avatarForegroundColor:preferences:)
     /// @brief      Initialize a local Plenact profile
     /// @details    Stores user-entered identity and settings without authentication secrets
     ///
@@ -141,6 +304,8 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     /// @param[in]  email        Optional locally stored email text
     /// @param[in]  context      Optional role or planning context
     /// @param[in]  avatarColor  Selected avatar palette token
+    /// @param[in]  avatarIcon   Selected avatar icon token
+    /// @param[in]  avatarForegroundColor Selected initials and icon foreground token
     /// @param[in]  preferences  Local planning and presentation settings
     ///
     /// @return     (LocalProfile) configured local identity
@@ -151,7 +316,9 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         displayName: String                  = "",
         email:       String                  = "",
         context:     String                  = "",
-        avatarColor: ProfileAvatarColor      = .teal,
+        avatarColor: ProfileColor            = .teal,
+        avatarIcon:  ProfileAvatarIcon       = .initials,
+        avatarForegroundColor: ProfileColor  = .white,
         preferences: LocalProfilePreferences = LocalProfilePreferences()
     ) {
 
@@ -161,6 +328,8 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         self.email       = email
         self.context     = context
         self.avatarColor = avatarColor
+        self.avatarIcon  = avatarIcon
+        self.avatarForegroundColor = avatarForegroundColor
         self.preferences = preferences
     }
 }

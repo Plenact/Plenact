@@ -40,11 +40,11 @@ enum KanbanAttachmentKind: String, Codable {
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable {
 
-    let id:        UUID                     /* Stable attachment identity */
-    let fileName:  String?                  /* Device-local media filename */
-    let url:       URL?                     /* Remote web-link destination */
+    let id:        UUID                     /* Stable attachment identity     */
+    let fileName:  String?                  /* Device-local media filename    */
+    let url:       URL?                     /* Remote web-link destination    */
     let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
-    let addedAt:   Date                     /* Attachment creation time */
+    let addedAt:   Date                     /* Attachment creation time       */
 
     var kind: KanbanAttachmentKind { /* Resolved kind for legacy and current records */
         mediaKind ?? (url == nil ? .photo : .link)
@@ -61,11 +61,11 @@ struct KanbanAttachment: Identifiable, Hashable, Codable {
     /// @return     (KanbanAttachment) configured attachment metadata
     ///
     init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now) {
-        self.id = id
-        self.fileName = fileName
-        self.url = url
+        self.id        = id
+        self.fileName  = fileName
+        self.url       = url
         self.mediaKind = mediaKind
-        self.addedAt = addedAt
+        self.addedAt   = addedAt
     }
 }
 
@@ -335,12 +335,15 @@ struct CardAttachmentSourceSheet: View {
         NavigationStack {
             
             List {
+
                 ForEach(CardAttachmentSource.allCases) { source in
+
                     if source == .photoOrVideo {
                         PhotosPicker(selection: $photoSelection, maxSelectionCount: 12, matching: .any(of: [.images, .videos])) {
                             Label(source.title, systemImage: source.symbolName)
                                 .foregroundStyle(.primary)
                         }
+
                     } else {
                         Button {
                             select(source)
@@ -384,10 +387,14 @@ struct CardLinkAttachmentSheet: View {
         CardAttachmentStore.webURL(from: urlDraft)
     }
 
-    var body: some View { /* Manual web-link form */
+    var body: some View {               /* Manual web-link form */
+
         NavigationStack {
+
             Form {
+
                 Section("Link") {
+
                     TextField("https://example.com", text: $urlDraft)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -420,8 +427,11 @@ struct CardLinkAttachmentSheet: View {
     /// @return     (Void) invokes the save callback and dismisses the sheet
     ///
     private func saveLink() {
+
         guard let validatedURL else { return } /* Require a valid web address */
+
         onSave(validatedURL)
+
         dismiss()
     }
 }

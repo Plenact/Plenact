@@ -49,10 +49,10 @@ struct Plenact: App {
 /// @note   Add cases only when the corresponding application view is implemented
 ///
 private enum AppDestination: Hashable {
-    case today       /* Today's planning entry point */
-    case board       /* Complete kanban workspace   */
+    case today       /* Today's planning entry point   */
+    case board       /* Complete kanban workspace      */
     case lists       /* All lists in the current Board */
-    case saved       /* Device-local saved cards     */
+    case saved       /* Device-local saved cards       */
 }
 
 
@@ -190,7 +190,7 @@ private struct AppRootView: View {
     @State private var boardTargetCardID: Int?
     @State private var savedCardIDs = SavedCardPersistence.load()              /* Device-local saved cards                              */
     @State private var quickCreateRequest = 0                                  /* Center-bar quick-create request                       */
-    @State private var showsCenterNewCardSheet = false                       /* Destination picker for New outside Today              */
+    @State private var showsCenterNewCardSheet = false                         /* Destination picker for New outside Today              */
     @State private var isWeekListRequestArmed = false
     @State private var weekListShakeTrigger = 0
 
@@ -468,13 +468,13 @@ private struct AppRootView: View {
 ///
 private struct TodayHomeView: View {
 
-    @Binding var lists:     [KanbanList]                    /* Shared local Board lists                            */
-    @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details          */
+    @Binding var lists:     [KanbanList]                    /* Shared local Board lists                           */
+    @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details        */
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
     let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
     let onAddCard:          (Int, String, String) -> Void   /* Add a card to an existing Board list               */
-    let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                        */
+    let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
     let onOpenBoardCard:    (Int, Int)             -> Void
     let quickCreateRequest: Int                             /* Center-bar requests for the Today composer         */
@@ -486,11 +486,11 @@ private struct TodayHomeView: View {
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
     @State private var showsSearch          = false         /* Local Board search presentation          */
-    @State private var presentComposerAfterListChoice = false /* Deferred center-plus request            */
-    @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions    */
-    @State private var selectedLabelCategoryID: String? = nil /* Category selected in Your Labels          */
-    @State private var selectedLabel: KanbanLabel? = nil   /* Label opened into its applied cards        */
-    @State private var isContentScrolled = false            /* Whether Today content is passing beneath the header */
+    @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
+    @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
+    @State private var selectedLabelCategoryID: String? = nil /* Category selected in Your Labels       */
+    @State private var selectedLabel: KanbanLabel? = nil    /* If label opened to its applied cards     */
+    @State private var isContentScrolled = false            /* If content is passing beneath the header */
 
 
     ///
@@ -515,8 +515,11 @@ private struct TodayHomeView: View {
     }
 
     private var usedLabelCategories: [TodayLabelCategoryUsage] {
+
         labelLibrary.categories.compactMap { category in
+
             let labels: [TodayLabelUsage] = labelLibrary.labels
+            
                 .filter { $0.categoryID == category.id }
                 .compactMap { label in
                     let cards = cards(using: label.id)

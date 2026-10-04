@@ -6,6 +6,8 @@
 
 The Board is the source of truth. A list contains ordered cards; cards hold task content, completion, dates, checklist data, labels, and attachments. Today and Scheduled should be views of those same lists and cards, not separate task stores.
 
+This fits the broader [Life Planning & Management model](Life-Planning-Model.md): **Lists organize; Cards describe activities; checklist items express actions.** A weekly review is a separate proposed workflow for reconsidering existing plans, not another Board, task store, or scheduled-event system. Any future review should preserve source collection context and leave changes under the person's control.
+
 The reference workflow uses a list for each day of the week, a separate open-work list, card order to express sequence, and divider cards to separate parts of the day. Some card titles include human-entered times. Plenact's current `KanbanList` has only an integer ID, title, and cards; it does not store a weekday/date assignment. Cards have date-only start/due dates but no structured time-of-day event fields. The supplied Trello JSON is a design reference and is not currently imported into app persistence.
 
 ## BoardView

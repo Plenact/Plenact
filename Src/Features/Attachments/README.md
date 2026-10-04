@@ -1,5 +1,3 @@
-# Card Attachments
-
 Plenact cards can hold local photos, local videos, and web links. Attachment controls are presented from card details.
 
 ## User Experience

@@ -1,12 +1,20 @@
 // -------------------------------------------------------------------------------------------------
 // @file       CardDetailView.swift
 // @brief      Detailed kanban card presentation and supporting components
-// @details    Defines the card detail screen, sections, actions, metadata rows, and activity feed
+// @details    Presents editable card text, completion, dates, labels, assignments, attachments,
+//             checklist actions, and activity. Includes reduced Action Detail and member draft
+//             editors, reusable section/row components, and custom swipe-to-delete interactions
 //
-// @notes      Supporting views are intentionally small and reusable within the detail screen
+// @last rev   10/04/26
+//
+// @notes      CardDetailView holds local working state and emits complete snapshots through the
+//             optional onTitleToggle callback, which handles more than completion alone.
+//             The caller owns Board persistence, movement, archival, and attachment-file pruning.
+//             Member and Action Detail sheets use explicit Save/Cancel drafts; main card edits
+//             synchronize as they occur. Generated activity is display copy, not a stored audit log
 //
 // @section    Opens
-//     Modularize into separate files
+//     Consider extracting member/action editors and reusable checklist/activity rows into focused files
 //
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -54,8 +62,24 @@ struct CardDetailView: View {
         case start      /* Start date field for the card */
         case due        /* Due date field for the card   */
 
+        ///
+        /// @fcn        CardDetailView.DateField.id
+        /// @brief      Identify the date field being edited
+        /// @details    Uses the raw enum value for stable date-sheet identity
+        ///
+        /// @return     (String) start or due field identity
+        /// @post       Date state remains unchanged
+        ///
         var id: String { rawValue } /* Stable date-field identity */
 
+        ///
+        /// @fcn        CardDetailView.DateField.title
+        /// @brief      Resolve the date field's display label
+        /// @details    Supplies the heading used by date rows and picker sheets
+        ///
+        /// @return     (String) Start date or Due date label
+        /// @post       No date or presentation state changes
+        ///
         var title: String { /* User-facing date-field label */
             switch self {
                 case .start: return "Start date"
@@ -85,6 +109,15 @@ struct CardDetailView: View {
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
 
+        ///
+        /// @fcn        CardDetailView.ActiveSheet.id
+        /// @brief      Identify a card-detail modal and its associated destination
+        /// @details    Combines the presentation kind with date, attachment, or checklist/item
+        ///             identity where needed so distinct destinations remain distinguishable
+        ///
+        /// @return     (String) stable sheet-destination identity
+        /// @post       No sheet is presented or dismissed by this lookup
+        ///
         var id: String {                            /* Stable identity for the active sheet                */
 
             switch self {
@@ -111,10 +144,18 @@ struct CardDetailView: View {
         case createdCard        /* Card was created on the board         */
         case initialComment     /* Initial comment was added to the card */
 
+        ///
+        /// @fcn        CardDetailView.GeneratedActivity.id
+        /// @brief      Identify a generated activity entry for dismissal
+        /// @details    Uses the raw case value stored in the card's dismissed-activity set
+        ///
+        /// @return     (String) generated-entry identity
+        /// @post       No activity dismissal is recorded
+        ///
         var id: String { rawValue } /* Stable generated-activity identity */
 
         ///
-        /// @fcn        GeneratedActivity.text(for:actorName:)
+        /// @fcn        CardDetailView.GeneratedActivity.text(for:actorName:)
         /// @brief      Generate the display text for an activity entry
         /// @details    Resolves this activity type into user-visible copy using the selected
         ///             card's title and list
@@ -152,8 +193,24 @@ struct CardDetailView: View {
         case comments           /* User-added comments for the card        */  
         case cardActivity       /* Generated activity entries for the card */
 
+        ///
+        /// @fcn        CardDetailView.ActivityFilter.id
+        /// @brief      Identify an activity display filter
+        /// @details    Uses the enum raw value for picker identity
+        ///
+        /// @return     (String) stable filter identity
+        /// @post       The selected filter remains unchanged
+        ///
         var id: String { rawValue } /* Stable activity-filter identity */
 
+        ///
+        /// @fcn        CardDetailView.ActivityFilter.title
+        /// @brief      Name the selected activity scope
+        /// @details    Supplies readable labels for all entries, comments, or generated card activity
+        ///
+        /// @return     (String) filter display title
+        /// @post       No activity records are filtered or modified by this lookup
+        ///
         var title: String { /* User-facing activity-filter label */
             switch self {
             case .all:          "All Activity"
@@ -215,7 +272,7 @@ struct CardDetailView: View {
     ///
     /// @return     ([Int: KanbanCard]) available cards keyed by stable card ID
     ///
-    /// @pre        availableLists contains current Board lists other than the selected card's list
+    /// @pre        Cards across availableLists have unique IDs; duplicate keys are not accepted
     /// @post       No Board or card state is modified
     ///
     private var linkedCardsByID: [Int: KanbanCard] {   /* Linked cards by ID */
@@ -223,12 +280,24 @@ struct CardDetailView: View {
     }
 
     ///
+    /// @fcn        CardDetailView.init
     /// @brief      Initialize the card detail state
-    /// @details    Seeds the card with the Focus, Plan, and Routine checklist groups shown in the detail view
+    /// @details    Seeds all working fields from the supplied card, including stored checklists,
+    ///             assignments, attachments, and dismissed activity IDs
     ///
-    /// @param[in]  card        The kanban card being displayed in detail
+    /// @param[in]  card           Complete card snapshot being edited
+    /// @param[in]  labelLibrary   Shared reusable label catalog binding
+    /// @param[in]  availableLists Other active lists used for movement and linked-card lookup
+    /// @param[in]  memberColors   Icon colors keyed by normalized display name
+    /// @param[in]  currentUserName Actor name used by generated activity and Action Detail comments
+    /// @param[in]  savedCardIDs   Binding to this Board's device-local bookmarks
+    /// @param[in]  onTitleToggle  Optional callback receiving every complete edited card snapshot
+    /// @param[in]  onMoveToList   Optional callback receiving a destination list ID
+    /// @param[in]  onArchive      Optional callback archiving the latest synchronized card
     ///
     /// @return     (CardDetailView) configured card detail presentation
+    /// @post       Initialization does not submit edits or mutate caller-owned bindings
+    /// @note       Without onTitleToggle, main-card edits remain local to this detail instance
     ///
     init(
         card: KanbanCard,
@@ -267,11 +336,15 @@ struct CardDetailView: View {
         _checklists = State(initialValue: card.checklists)                      /* Initialize checklist state from the card's stored values             */
     }
 
-    /// Resolve the display color assigned to a member name
+    ///
+    /// @fcn        CardDetailView.memberIconColor(for:)
+    /// @brief      Resolve the display color assigned to a member name
+    /// @details    Trims surrounding whitespace and lowercases the name before dictionary lookup
     ///
     /// @param[in]  memberName Display name whose normalized color key is queried
     ///
     /// @return     (Color) assigned member color or the system accent color
+    /// @post       Member assignments and shared colors remain unchanged
     ///
     private func memberIconColor(for memberName: String) -> Color {
 
@@ -310,6 +383,14 @@ struct CardDetailView: View {
         }
     }
 
+    ///
+    /// @fcn        CardDetailView.selectedLabels
+    /// @brief      Resolve assigned label IDs into display definitions
+    /// @details    Preserves selection order and omits identities missing from the shared catalog
+    ///
+    /// @return     ([KanbanLabel]) resolved label definitions
+    /// @post       Missing definitions do not remove IDs from the card's selection
+    ///
     private var selectedLabels: [KanbanLabel] { /* Resolved selected label definitions */
         selectedLabelIDs.compactMap { labelID in
             labelLibrary.labels.first(where: { $0.id == labelID })
@@ -369,11 +450,16 @@ struct CardDetailView: View {
         }
     }
 
-    /// Add a validated web URL to the current card's attachment list
+    ///
+    /// @fcn        CardDetailView.addWebLink(_:)
+    /// @brief      Add a validated web URL to the card's attachment list
+    /// @details    Appends link metadata, closes the active sheet, and emits the complete card snapshot
     ///
     /// @param[in]  url Web address selected for attachment
     ///
     /// @return     (Void) updates local detail state and synchronizes the card
+    /// @pre        The caller has validated the URL as an acceptable web link
+    /// @post       No remote content is downloaded or local media file created by this helper
     ///
     private func addWebLink(_ url: URL) {
         attachments.append(KanbanAttachment(url: url, mediaKind: .link))
@@ -381,9 +467,13 @@ struct CardDetailView: View {
         syncCardState(attachments: attachments)
     }
 
-    /// Read and add a web address from the system clipboard
+    ///
+    /// @fcn        CardDetailView.addClipboardLink()
+    /// @brief      Read and add a web address from the system clipboard
+    /// @details    Prefers a clipboard URL over string content and validates with the attachment-store helper
     ///
     /// @return     (Void) adds a valid link or presents an invalid-link notice
+    /// @post       Invalid input closes the source sheet and shows a notice without adding an attachment
     ///
     private func addClipboardLink() {
         
@@ -401,11 +491,15 @@ struct CardDetailView: View {
         addWebLink(url)
     }
 
-    /// Present a notice for an attachment source not yet supported
+    ///
+    /// @fcn        CardDetailView.showAttachmentSourceComingSoon(_:)
+    /// @brief      Explain an attachment source that is not yet supported
+    /// @details    Names the selected source in a notice and closes the source-selection sheet
     ///
     /// @param[in]  source Display name of the unavailable attachment source
     ///
     /// @return     (Void) updates the notice and dismisses the source sheet
+    /// @post       Card attachments and files remain unchanged
     ///
     private func showAttachmentSourceComingSoon(_ source: String) {
         
@@ -416,16 +510,16 @@ struct CardDetailView: View {
 
     ///
     /// @fcn        CardDetailView.removeAttachment(_:)
-    /// @brief      Remove one photo from the current card
+    /// @brief      Remove an attachment record from the current card
     /// @details    Deletes the attachment record from local detail state and synchronizes the updated card;
-    ///             the board owner removes the stored image file if no card references it
+    ///             attachment-file pruning depends on the parent Board's update callback
     ///
-    /// @param[in]  attachment  Photo attachment selected for removal
+    /// @param[in]  attachment  Photo, video, or link attachment selected for removal
     ///
     /// @return     (Void) updates the card's attachment collection and persistence state
     ///
     /// @pre        attachment identifies an item in the current card's attachment collection
-    /// @post       The selected photo is no longer assigned to this card
+    /// @post       Matching attachment IDs are absent locally; this helper does not delete stored files directly
     ///
     private func removeAttachment(_ attachment: KanbanAttachment) {
         attachments.removeAll { $0.id == attachment.id }
@@ -434,17 +528,27 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.syncCardState
     /// @brief      Push the current card state back to the parent board
-    /// @details    Builds the latest card snapshot from the title checkbox and date values,
-    ///             then emits it to the callback so the list view remains synchronized
+    /// @details    Combines explicit overrides with working text, checklists, comments, assignments,
+    ///             labels, attachments, dates, and activity dismissal state. Preserves card identity
+    ///             and original list/divider metadata while emitting through onTitleToggle
     ///
+    /// @param[in]  title          Optional title override; nil uses current titleText
+    /// @param[in]  subtitle       Optional subtitle override; nil resolves current/default subtitle state
+    /// @param[in]  members        Optional assignment override; nil uses local members
+    /// @param[in]  labelIDs       Optional label-ID override; nil uses local selection
+    /// @param[in]  attachments    Optional attachment override; nil uses local records
     /// @param[in]  titleChecked   Optional updated checked state for the card title
     /// @param[in]  startDate      Optional updated start date for the card
     /// @param[in]  dueDate        Optional updated due date for the card
     /// @param[in]  clearStartDate Whether to remove the card's start date
     /// @param[in]  clearDueDate   Whether to remove the card's due date
     ///
-    /// @post       The parent view receives the current card state for persistence
+    /// @return     (Void) invokes the optional snapshot callback
+    /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent update
+    /// @note       Date removal requires the corresponding clear flag; nil dates retain working values.
+    ///             The unchanged generated subtitle remains nil when no original override existed
     ///
     private func syncCardState(
         title:          String?             = nil,          /* Updated card title               */
@@ -491,9 +595,13 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.toggleCardTitle()
     /// @brief      Toggle the checked state of the card's title
     /// @details    Flips the boolean value representing whether the card's main title checkbox is
     ///             selected and synchronizes this change with the parent board
+    ///
+    /// @return     (Void) flips local completion and emits the new snapshot
+    /// @post       Other working card fields are preserved
     ///
     private func toggleCardTitle() {
 
@@ -504,7 +612,14 @@ struct CardDetailView: View {
     }
 
 
-    /// Add or remove the current card from the device-local Saved collection.
+    ///
+    /// @fcn        CardDetailView.toggleSavedCard()
+    /// @brief      Toggle the card's device-local bookmark membership
+    /// @details    Inserts or removes the stable card ID in the caller-supplied bookmark binding
+    ///
+    /// @return     (Void) updates savedCardIDs
+    /// @post       Card content is unchanged; bookmark persistence belongs to the binding owner
+    ///
     private func toggleSavedCard() {
 
         if savedCardIDs.contains(card.id) {
@@ -516,8 +631,14 @@ struct CardDetailView: View {
     
 
     ///
+    /// @fcn        CardDetailView.postComment()
     /// @brief      Post a comment to the current card
     /// @details    Ignores empty drafts, appends a timestamped comment, and syncs it to the board
+    ///
+    /// @return     (Void) appends a trimmed comment and clears a nonblank draft
+    /// @post       Blank input leaves state unchanged; the optional callback receives the updated card
+    /// @note       This main-card composer currently uses the fixed Justin Reina author name,
+    ///             rather than currentUserName used by generated activity and Action Detail comments
     ///
     private func postComment() {
 
@@ -543,7 +664,8 @@ struct CardDetailView: View {
     /// @return     (Void) the comment collection and parent card state are updated in place
     ///
     /// @pre        commentID identifies a comment in the current card
-    /// @post       Comment is absent from Activity feed & remains deleted after reopening card
+    /// @post       Matching comments are absent locally; persistence after reopening requires the
+    ///             parent callback to store the submitted snapshot
     ///
     private func deleteComment(with commentID: UUID) {
         comments.removeAll { $0.id == commentID }
@@ -562,7 +684,7 @@ struct CardDetailView: View {
     /// @return     (Void) the entry is removed from the rendered Activity feed
     ///
     /// @pre        activity is a generated entry belonging to the current card
-    /// @post       The entry stays dismissed when the card is reopened
+    /// @post       The entry is hidden locally; persistence after reopening depends on the parent callback
     ///
     private func dismissGeneratedActivity(_ activity: GeneratedActivity) {
         dismissedActivityIDs.insert(activity.id)
@@ -571,10 +693,13 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.resetDate(for:)
     /// @brief      Reset the selected card date to its unset value
     /// @details    Clears only the requested date, synchronizes the card, and closes the calendar sheet
     ///
     /// @param[in]  field  The date field to reset
+    /// @return     (Void) clears local date state and submits its explicit clear flag
+    /// @post       The other date is preserved and the active sheet is closed
     ///
     private func resetDate(for field: DateField) {
 
@@ -592,12 +717,15 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.dateBinding(for:)
     /// @brief      Create a binding for the selected card date
     /// @details    Updates the local date and parent card state, then dismisses the calendar sheet
     ///
     /// @param[in]  field  The card date field being edited
     ///
     /// @return     (Binding<Date>) binding that updates and dismisses on selection
+    /// @post       Constructing the binding does not write; an unset getter returns the current time.
+    ///             Setter writes local date state, submits it, and closes the active sheet
     ///
     private func dateBinding(for field: DateField) -> Binding<Date> {
 
@@ -632,7 +760,17 @@ struct CardDetailView: View {
     }
 
 
-    /// Builds the shared destination-list menu used by the card actions and list label.
+    ///
+    /// @fcn        CardDetailView.moveCardMenu(label:)
+    /// @brief      Build the shared active-list destination menu
+    /// @details    Lists supplied destinations and disables the menu when none exist.
+    ///             Selection invokes the optional move callback before dismissing detail
+    ///
+    /// @param[in]  label  View builder providing the menu's visible control
+    /// @return     (some View) destination-list menu
+    /// @pre        availableLists contains appropriate destinations other than the current list
+    /// @post       Construction does not move a card; selection dismisses even with no move callback
+    ///
     @ViewBuilder
     private func moveCardMenu<Label: View>(@ViewBuilder label: () -> Label) -> some View {
         Menu {
@@ -704,11 +842,13 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.addChecklist(using:)
     /// @brief      Append a new empty checklist to the selected card's detail state
     /// @details    Adds a default checklist with its first item, syncs it to the card, scrolls it
     ///             into view, and focuses the item
     ///
     /// @param[in]  scrollProxy  Proxy used to scroll the new checklist into view
+    /// @return     (Void) appends and synchronizes a checklist, then schedules scrolling
     ///
     /// @post       The new checklist's first item is visible and ready for editing
     ///
@@ -731,10 +871,12 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.deleteChecklist(with:)
     /// @brief      Remove a checklist from the selected card's detail state
     /// @details    Filters the checklist collection by its stable identifier
     ///
     /// @param[in]  checklistID  Identifier of the checklist to remove
+    /// @return     (Void) removes matching checklists and emits the current card snapshot
     ///
     /// @post       The selected checklist is no longer rendered in the Checklists section
     ///
@@ -782,8 +924,8 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.toggleAllItems(in:)
     /// @brief      Check every item or clear all checks in one checklist
-    /// @details    Clears completion when all non-empty items are already checked; otherwise
-    ///             checks every item
+    /// @details    Clears completion for a nonempty checklist whose every item is checked;
+    ///             otherwise checks every item, including blank-title actions
     ///
     /// @param[in]  checklistID  Stable identifier of the checklist to update
     ///
@@ -857,10 +999,12 @@ struct CardDetailView: View {
 
     
     ///
+    /// @fcn        CardDetailView.addItem(to:)
     /// @brief      Append a new item to a checklist
-    /// @details    Replaces matching value-type checklist with copy containing one addtnl item
+    /// @details    Appends a standard Item N action while preserving existing typed action records
     ///
     /// @param[in]  checklistID  Identifier of the checklist receiving the new item
+    /// @return     (Void) updates the matching checklist and submits the card snapshot
     ///
     /// @post       The new item appears above the checklist's Add item... control
     ///
@@ -884,11 +1028,14 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.toggleItem(in:at:)
     /// @brief      Toggle one checklist item's completion state
     /// @details    Replaces the matching value-type checklist with updated completed item indices
     ///
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being toggled
+    /// @return     (Void) replaces completion state and emits the updated card snapshot
+    /// @pre        The caller supplies a valid current itemIndex; only checklist existence is guarded here
     ///
     /// @post       The selected item changes between complete and incomplete
     ///
@@ -921,12 +1068,15 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.updateItem(in:at:with:)
     /// @brief      Update one checklist item's text
     /// @details    Replaces the matching value-type checklist with an updated item label
     ///
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being edited
     /// @param[in]  text         New display text for the item
+    /// @return     (Void) updates the item title and submits the card snapshot
+    /// @note       Missing checklists or out-of-range indices leave state unchanged; text is not trimmed
     ///
     /// @post       The edited text is displayed in the checklist row
     ///
@@ -960,11 +1110,14 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.deleteItem(in:at:)
     /// @brief      Delete one checklist item
     /// @details    Removes the item and shifts completed item indices that follow it
     ///
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being deleted
+    /// @return     (Void) removes the record and submits the card snapshot
+    /// @note       Missing checklists or out-of-range indices leave state unchanged
     ///
     /// @post       The selected item is removed from the checklist
     ///
@@ -1103,10 +1256,17 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.body
     /// @brief      Build the card detail presentation
-    /// @details    Composes the card sections and places a compact close action in the top safe area
+    /// @details    Composes inline text editing, completion, dates, attachments, labels, members,
+    ///             typed checklist actions, activity filtering, and comments. Coordinates all editors,
+    ///             media import/preview, bookmark toggling, movement, and optional card archival
     ///
     /// @return     (some View) rendered card detail screen
+    /// @post       Main edits emit complete snapshots as they occur; archive emits the latest snapshot
+    ///             before invoking onArchive and dismissing. Attachment failures show a notice
+    /// @note       Dividers display a minimal surface without task actions. Label/catalog persistence
+    ///             and Board updates belong to the caller; closing does not revert prior submitted edits
     ///
     var body: some View { /* Full card-detail presentation */
 
@@ -1711,6 +1871,7 @@ private struct ChecklistActionDetailView: View {
     /// @param[in]  onSave           Callback receiving the completed detail snapshot
     ///
     /// @return     (ChecklistActionDetailView) configured reduced detail editor
+    /// @post       The source detail and parent card remain unchanged until explicit Save
     ///
     init(
         title: String,
@@ -1738,6 +1899,7 @@ private struct ChecklistActionDetailView: View {
     /// @param[in]  itemID       Stable nested action identity
     ///
     /// @return     (Void) updates local Action Detail draft state
+    /// @post       Missing checklist/item IDs do nothing; no parent snapshot is emitted until Save
     ///
     private func toggleItem(checklistID: UUID, itemID: UUID) {
 
@@ -1763,6 +1925,7 @@ private struct ChecklistActionDetailView: View {
     /// @details    Trims surrounding whitespace and attributes the comment to the current actor
     ///
     /// @return     (Void) updates local comments and clears a valid draft
+    /// @post       Blank input leaves the draft unchanged; comments remain local until Save
     ///
     private func postComment() {
 
@@ -1780,6 +1943,8 @@ private struct ChecklistActionDetailView: View {
     /// @details    Presents description, nested completion, comments, and explicit Save/Cancel actions
     ///
     /// @return     (some View) reduced detail editing sheet
+    /// @post       Save emits a detail snapshot retaining its ID, then dismisses.
+    ///             Cancel discards draft description, completion, and comment edits
     ///
     var body: some View { /* Reduced Action Detail editor form */
 
@@ -1885,13 +2050,28 @@ private struct CardMembersSheet: View {
     @State private var members: [CardAssignee]      /* Local typed assignments being edited                        */
     @State private var memberDraft = ""             /* Current text input for adding a new member                  */
 
-    // Returns the member draft with leading and trailing whitespace removed
+    ///
+    /// @fcn        CardMembersSheet.trimmedMemberDraft
+    /// @brief      Normalize a proposed manual assignment name
+    /// @details    Trims outer whitespace/newlines without editing the input field
+    ///
+    /// @return     (String) normalized member draft, potentially empty
+    /// @post       Draft text and existing assignments remain unchanged
+    ///
     private var trimmedMemberDraft: String { /* Normalized manual-assignee input */
 
         memberDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    // Determines whether the current member draft can be added to the list of members
+    ///
+    /// @fcn        CardMembersSheet.canAddMember
+    /// @brief      Validate whether the manual-assignment draft can be added
+    /// @details    Requires a nonblank normalized draft that does not match any current display name
+    ///             by localized case-insensitive comparison, regardless of assignment kind
+    ///
+    /// @return     (Bool) whether Add or implicit draft inclusion on Save is permitted
+    /// @post       No assignment is added by validation
+    ///
     private var canAddMember: Bool { /* Draft is non-empty and not already assigned */
 
         !trimmedMemberDraft.isEmpty && !members.contains {
@@ -1899,7 +2079,15 @@ private struct CardMembersSheet: View {
         }
     }
 
-    // Returns a list of members with duplicates removed and whitespace trimmed
+    ///
+    /// @fcn        CardMembersSheet.normalizedMembers
+    /// @brief      Prepare the assignment snapshot for explicit Save
+    /// @details    Includes a valid pending manual draft, trims names, omits blanks, and deduplicates
+    ///             manual names separately from registered-user IDs (falling back to assignment UUID)
+    ///
+    /// @return     ([CardAssignee]) normalized assignments preserving first-occurrence order and identity
+    /// @post       Local drafts remain unchanged; a valid unsubmitted name can be included in the result
+    ///
     private var normalizedMembers: [CardAssignee] { /* Deduplicated assignments prepared for saving */
 
         var seenAssignments: Set<String> = [] /* Identity keys already emitted */
@@ -1926,10 +2114,17 @@ private struct CardMembersSheet: View {
         }
     }
 
-    /// Initializes the card members sheet with a list of members and a save callback
-    /// - Parameters:
-    ///   - members: The initial list of members assigned to the card
-    ///   - onSave: A closure to be called when the list of members is saved
+    ///
+    /// @fcn        CardMembersSheet.init(members:memberColors:onSave:)
+    /// @brief      Seed an isolated card-assignment editing draft
+    /// @details    Copies typed assignments into local State and retains display colors and submission action
+    ///
+    /// @param[in]  members       Initial manual/registered assignments
+    /// @param[in]  memberColors  Shared icon colors keyed by lowercased display name
+    /// @param[in]  onSave        Callback receiving normalized assignments
+    /// @return     (CardMembersSheet) configured assignment editor
+    /// @post       No assignment normalization or parent update occurs during initialization
+    ///
     init(members: [CardAssignee], memberColors: [String: Color], onSave: @escaping ([CardAssignee]) -> Void) {
         self.onSave = onSave
         self.memberColors = memberColors
@@ -1957,6 +2152,16 @@ private struct CardMembersSheet: View {
         memberDraft = ""
     }
 
+    ///
+    /// @fcn        CardMembersSheet.body
+    /// @brief      Present manual assignment editing and typed-member removal
+    /// @details    Registered display names are read-only; manual names are editable.
+    ///             Supports swipe removal, validated manual addition, and normalized Save/Cancel
+    ///
+    /// @return     (some View) member draft navigation list
+    /// @post       Save submits normalizedMembers, including a valid pending draft, then dismisses.
+    ///             Cancel discards local changes without invoking onSave
+    ///
     var body: some View { /* Member assignment editor */
 
         NavigationStack {
@@ -2058,6 +2263,7 @@ struct DetailSection<Content: View>: View {
     @ViewBuilder let content: () -> Content /* Content rendered beneath the section heading */
 
     ///
+    /// @fcn        DetailSection.init(title:trailing:trailingAction:content:)
     /// @brief      Initialize a detail section
     /// @details    Stores the section title, optional trailing symbol/action, and view-builder content
     ///
@@ -2067,6 +2273,7 @@ struct DetailSection<Content: View>: View {
     /// @param[in]  content         Content rendered below the section heading
     ///
     /// @return     (DetailSection) configured detail section
+    /// @post       Content and trailing action are retained without being invoked
     ///
     init(title: String, trailing: String? = nil, trailingAction: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
 
@@ -2078,10 +2285,13 @@ struct DetailSection<Content: View>: View {
 
 
     ///
+    /// @fcn        DetailSection.body
     /// @brief      Build the detail section presentation
     /// @details    Renders the heading, optional trailing symbol/action, supplied content, and divider
     ///
     /// @return     (some View) rendered detail section
+    /// @post       Tapping an actionable trailing symbol invokes trailingAction;
+    ///             a symbol without an action remains decorative
     ///
     var body: some View { /* Detail subsection heading and content */
 
@@ -2142,10 +2352,12 @@ struct ActionTile: View {
     let action: () -> Void  /* The action to perform when the tile is tapped */
 
     ///
+    /// @fcn        ActionTile.body
     /// @brief      Build the compact action tile
     /// @details    Renders the action label and symbol as a plain, consistently sized button
     ///
     /// @return     (some View) rendered action tile
+    /// @post       Tapping delegates to action; rendering itself performs no mutation
     ///
     var body: some View { /* Compact labeled action button */
 
@@ -2179,10 +2391,12 @@ struct DetailRow: View {
     let value: String   /* The value associated with the detail row */
 
     ///
+    /// @fcn        DetailRow.body
     /// @brief      Build one metadata row
     /// @details    Aligns the supplied icon, title, and trailing value within the detail section
     ///
     /// @return     (some View) rendered metadata row
+    /// @post       The row has no mutation or navigation behavior
     ///
     var body: some View { /* Icon, title, and trailing metadata value */
 
@@ -2280,6 +2494,9 @@ struct ChecklistBlock: View {
     /// @param[in]  entry  Original item position and stable checklist action
     ///
     /// @return     (some View) standard editor, linked-card navigation, or Action Detail button
+    /// @pre        entry.offset refers to the original checklist index, not the filtered display index
+    /// @post       Row callbacks delegate completion/deletion by original index;
+    ///             only standard actions receive text editing and first-item focus requests
     ///
     @ViewBuilder
     private func actionRow(for entry: (offset: Int, element: KanbanChecklistItem)) -> some View {
@@ -2324,10 +2541,15 @@ struct ChecklistBlock: View {
     }
 
     ///
+    /// @fcn        ChecklistBlock.body
     /// @brief      Build the checklist group
-    /// @details    Renders the group title, completed-item count, and checklist rows
+    /// @details    Renders completion counts and typed rows with collapse/hide-completed controls.
+    ///             Offers check-all, bounded movement, rename via menu or 0.5-second title hold,
+    ///             deletion, and item creation
     ///
     /// @return     (some View) rendered checklist group
+    /// @post       Content mutations delegate to parent callbacks; collapse/filter/rename presentation
+    ///             remain local. Blank rename input and boundary movement controls are disabled
     ///
     var body: some View { /* Checklist heading, rows, and action menu */
 
@@ -2479,7 +2701,19 @@ struct ChecklistItemRow: View {
     /// @details    Optional navigation inputs determine the title control while completion and deletion
     ///             remain available for every action type
     ///
+    /// @param[in]  item           Display title or editable standard-action text
+    /// @param[in]  isCompleted    Current completion state
+    /// @param[in]  linkedCardID   Optional stable linked-card reference
+    /// @param[in]  linkedCard     Resolved linked card, or nil for an unavailable destination
+    /// @param[in]  onOpenDetail   Optional reduced Action Detail presentation callback
+    /// @param[in]  onToggle       Completion action
+    /// @param[in]  onUpdate       Standard-action text update callback
+    /// @param[in]  onDelete       Record deletion callback
+    /// @param[in]  shouldFocus    Whether a standard editor requests focus on appearance
+    /// @param[in]  onFocusHandled Callback acknowledging the scheduled focus request
+    ///
     /// @return     (ChecklistItemRow) configured action row
+    /// @post       Initialization installs inputs without invoking any callbacks
     ///
     init(
         item: String,
@@ -2507,6 +2741,17 @@ struct ChecklistItemRow: View {
     }
 
 
+    ///
+    /// @fcn        ChecklistItemRow.body
+    /// @brief      Present a typed checklist action with completion and horizontal deletion
+    /// @details    Prioritizes linked-card navigation, then Action Detail, otherwise text editing.
+    ///             Missing links show unavailable copy. Standard editors asynchronously handle initial focus
+    ///
+    /// @return     (some View) clipped row over a 72-point destructive button
+    /// @post       Horizontal drags beyond 36 points reveal deletion; beyond 120 points invoke onDelete.
+    ///             Vertical-dominant drags are ignored; text/completion changes delegate to callbacks
+    /// @note       The parent must install a KanbanCard navigation destination for resolved links
+    ///
     var body: some View { /* Checklist action row and swipe-to-delete control */
 
         ZStack(alignment: .trailing) {
@@ -2627,10 +2872,13 @@ struct ActivityRow: View {
 
 
     ///
+    /// @fcn        ActivityRow.body
     /// @brief      Build the activity event row
-    /// @details    Places the activity text and timestamp beside the actor symbol
+    /// @details    Places generated activity copy beside the actor symbol inside a shared swipe-delete row
     ///
     /// @return     (some View) rendered activity row
+    /// @post       Deletion delegates to onDelete rather than removing a stored event directly
+    /// @note       Today at 7:00 AM is fixed display copy, not a timestamp from persisted activity
     ///
     var body: some View { /* Generated activity text and timestamp */
 
@@ -2663,6 +2911,15 @@ struct CommentActivityRow: View {
     let memberColor: Color          /* The assigned icon color for the comment author  */
     let onDelete: () -> Void        /* The action invoked when the comment is deleted */
 
+    ///
+    /// @fcn        CommentActivityRow.body
+    /// @brief      Present a stored comment with author styling and creation time
+    /// @details    Combines author/body text and formats the persisted timestamp using abbreviated
+    ///             date and shortened time inside the shared swipe-delete container
+    ///
+    /// @return     (some View) deletable comment activity row
+    /// @post       Rendering does not modify the comment; deletion delegates to onDelete
+    ///
     var body: some View { /* Posted comment and authoring time */
         ActivitySwipeRow(onDelete: onDelete) {
 
@@ -2701,13 +2958,17 @@ struct ActivitySwipeRow<Content: View>: View {
         @ViewBuilder let content: () -> Content             /* The content view rendered inside the swipe row */
         @State private var horizontalOffset: CGFloat = 0    /* The current horizontal offset of the swipe row */
 
-        /// Initialize the swipe row with its action label and content
         ///
-        /// @param[in]  onDelete Delete action invoked after confirmation by the swipe gesture
+        /// @fcn        ActivitySwipeRow.init(onDelete:deletionAccessibilityLabel:content:)
+        /// @brief      Configure a reusable trailing destructive action
+        /// @details    Retains the deletion callback, accessibility label, and content builder
+        ///
+        /// @param[in]  onDelete Delete action invoked by the exposed button or a full left swipe
         /// @param[in]  deletionAccessibilityLabel Accessible description for the delete action
         /// @param[in]  content Row content shown above the destructive background
         ///
         /// @return     (ActivitySwipeRow) configured activity row
+        /// @post       Content construction and deletion are deferred until rendering/interaction
         ///
         init(
             onDelete: @escaping () -> Void,
@@ -2719,6 +2980,16 @@ struct ActivitySwipeRow<Content: View>: View {
             self.content = content
         }
 
+        ///
+        /// @fcn        ActivitySwipeRow.body
+        /// @brief      Wrap content in a custom horizontal swipe-to-delete surface
+        /// @details    Clamps leftward translation to a 72-point button width and ignores vertical-dominant
+        ///             gestures. Release beyond 36 points reveals the button; beyond 120 points deletes directly
+        ///
+        /// @return     (some View) clipped content over an accessible destructive button
+        /// @post       Deletion invokes onDelete without a separate confirmation dialog;
+        ///             smaller horizontal releases animate closed or open according to the threshold
+        ///
         var body: some View { /* Swipe-to-delete activity container */
 
             ZStack(alignment: .trailing) {

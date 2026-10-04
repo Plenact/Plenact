@@ -1,0 +1,98 @@
+# Plenact Life Planning & Management Model
+
+**Status:** Product-model reference and approved direction for exploration. The model describes how Plenact's existing planning concepts fit together; a weekly-review workflow is proposed, not implemented. This document is not a commitment to a new screen, data store, or release milestone.
+
+## Purpose
+
+Plenact should help a person move between capturing what matters, giving it a useful place, understanding the activity, choosing manageable actions, focusing on the present, and reviewing plans over time.
+
+The product should make this possible without requiring every idea to be a dated task, every activity to have checklist steps, or every list to follow a prescribed set of “life areas.”
+
+## Information hierarchy
+
+Plenact's organizing model is:
+
+> **Lists organize. Cards describe activities. Checklist items express actions.**
+
+| Concept | Role in the model | Current boundary |
+| --- | --- | --- |
+| **List** | Organizes related cards in a meaningful context, such as a day, project, or personal subject. | A Week list belongs to the Week Board. Personal collections are stored separately. |
+| **Card** | Describes an activity, plan, intention, or useful context. | A card can have optional dates and supporting details. A date is not a calendar event or a requirement. |
+| **Checklist item** | Expresses a concrete action that can move a card forward. | Checklist items belong to their card; they are not a separate task database. |
+| **Today** | Helps focus on a selected existing Week list for a particular date. | It projects canonical Board records and does not own duplicate cards. |
+| **Week / Board** | Shows and organizes the larger ordered planning workspace. | Existing card and list order remains user-controlled. |
+| **Saved** | Provides access to locally bookmarked cards and archived Boards. | Archive retains discoverable, restorable content; it is not deletion or a backup. |
+| **Review** | Offers a deliberate opportunity to reconsider plans and choose what to do next. | A weekly-review workflow is a proposed direction, not an implemented feature. |
+
+These are complementary ways to organize and view work, not a set of required lifecycle states. A card can remain an idea, have no date, or have no checklist. People may use personal collections as their context without adopting a fixed set of “life areas.”
+
+## Planning loop
+
+The model can be understood as a flexible loop:
+
+1. **Capture** an activity or idea when it comes to mind.
+2. **Organize** it in a list or board that gives it context.
+3. **Describe** it with a card and add useful details when needed.
+4. **Choose actions** by adding checklist items if that makes the work more manageable.
+5. **Focus** through Today or the Week Board without copying the underlying records.
+6. **Review** plans periodically and decide whether to keep, change, complete, or set aside work.
+
+This is a way to explain the product, not a required sequence. A person may start with a list, add details later, skip checklist actions, or leave an item undated.
+
+## Weekly review direction
+
+A weekly review is a high-value workflow to explore because it could connect day-to-day planning with longer-term organization while reusing the existing Lists, Cards, actions, and archive behavior.
+
+The initial direction is a calm, user-invoked review of the Week Board. For each item the person chooses to consider, the app could make it easy to:
+
+- Leave it where it is.
+- Move it to another list.
+- Add or revise a checklist action.
+- Add or change an optional date.
+- Mark it complete.
+- Archive it when it should be set aside but retained.
+
+Any future design should preserve user control:
+
+- Do not move, archive, complete, or reschedule content automatically.
+- Do not treat missed dates as failure or use scores, streaks, or guilt-based prompts.
+- Make it clear what a proposed action will change and where the content will remain.
+- Allow the person to stop and return without implying that unfinished review work is lost.
+- Keep archived content discoverable and restorable; do not describe an archive as a backup.
+
+These interaction details remain proposals. Review scope, cadence, entry point, progress/resume behavior, and whether personal collections participate should be decided before implementing a review UI.
+
+## Views are projections, not competing stores
+
+Today and future planning views should use the canonical records they present. They must not introduce a parallel Today task list or copy cards into a review-only store. Moving or editing an item through a view should update the same record, preserve its stable identity, and respect its owning Week Board or personal collection.
+
+Personal collections remain distinct from Week data. A review should not silently merge their contents, and card IDs from different Boards must not be treated as globally unique. Cross-collection search, linked-card navigation, or review would need to preserve the source collection context.
+
+Optional card dates remain dates on planning content. A date does not establish a time of day, recurrence, reminder, external calendar event, or synchronization.
+
+## Product principles
+
+- **Clarity over ceremony:** use familiar Lists, Cards, and actions instead of adding hierarchy for its own sake.
+- **Choice over prescription:** allow different planning styles and undated work.
+- **Continuity over duplication:** Today, Week, Search, and any future review surface should point to existing records.
+- **Retention over disappearance:** archive means retained, discoverable, restorable content.
+- **Manageable next steps:** checklist actions can help break down an activity but are optional.
+- **Predictability and accessibility:** keep navigation understandable, state changes explicit, and important actions available without relying only on gestures.
+- **Honest boundaries:** local storage is not synchronization, private cloud storage, or a guaranteed backup. Do not make medical, treatment, clinical-validation, or regulatory claims.
+
+## What this model does not imply
+
+This product direction does not establish or promise:
+
+- A new task, goal, event, note, or review data store.
+- Automatic scheduling, prioritization, reminders, recurrence, or task movement.
+- Calendar integration, accounts, team collaboration, cloud synchronization, or backup.
+- That all users need the same life categories or weekly routine.
+- Medical, treatment, clinical-efficacy, recovery-outcome, or regulatory benefits.
+
+## Related references
+
+- [Today View Architecture](Today-View-Architecture.md) — current ownership and projection boundaries.
+- [Today View UI](Today-View-UI.md) — implemented Today experience and possible follow-ups.
+- [Board and Scheduled Views](Board-and-Scheduled-Views.md) — Board source of truth and proposed time-oriented projection.
+- [Checklist Actions Architecture](Checklist-Actions-Architecture.md) — action identity and detail boundaries.

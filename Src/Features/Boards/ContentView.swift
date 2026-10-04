@@ -1,17 +1,36 @@
 // -------------------------------------------------------------------------------------------------
 // @file       ContentView.swift
 // @brief      Kanban board screen and reusable board views
-// @details    Defines the board container, lists, cards, and navigation into card details
+// @details    Composes horizontally paged Week/personal boards and the focused Today list.
+//             Provides shared card rows, creation/editing forms, board/member settings, and
+//             list/card archive browsers. Coordinates list/card movement, hold-and-drag list
+//             reordering, detail navigation, label persistence, and attachment retention
 //
-// @notes      Views remain composable and keep presentation logic close to the rendered component
+// @last rev   10/04/26
+//
+// @notes      Board data flows through caller-owned bindings; onListsChanged controls active-list
+//             persistence. App-root callers retain and save complete active/archive snapshots.
+//             Display settings, list tint/watch state, and member colors are transient view state.
+//             Archive operations retain card records and files; deletion may trigger file pruning
 //
 // @section    Opens
-//     Consider more board\ specific naming to file
+//     Consider extracting board settings, archive browsers, and card/list forms into focused files
 //
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
 
 extension Binding where Value == [KanbanList] {
+
+    ///
+    /// @fcn        Binding.activeLists
+    /// @brief      Expose the active partition of a complete Board list binding
+    /// @details    Getter filters archived lists; setter replaces the active portion while retaining
+    ///             current archived entries after it. Supplied active entries are not normalized
+    ///
+    /// @return     (Binding<[KanbanList]>) projected active-list binding
+    /// @pre        Setter values represent active lists with isArchived false
+    /// @post       Constructing the projection does not mutate the underlying snapshot
+    ///
     var activeLists: Binding<[KanbanList]> {
         Binding(
             get: { wrappedValue.filter { !$0.isArchived } },
@@ -19,6 +38,15 @@ extension Binding where Value == [KanbanList] {
         )
     }
 
+    ///
+    /// @fcn        Binding.archivedLists
+    /// @brief      Expose the archived partition of a complete Board list binding
+    /// @details    Getter filters archived entries; setter retains active entries first and
+    ///             replaces the archive portion, forcing every supplied entry's archive flag true
+    ///
+    /// @return     (Binding<[KanbanList]>) projected archived-list binding
+    /// @post       Setter writes preserve the active portion; constructing the projection does not write
+    ///
     var archivedLists: Binding<[KanbanList]> {
         Binding(
             get: { wrappedValue.filter(\.isArchived) },
@@ -46,9 +74,20 @@ struct BoardDisplaySettings {
     var showDueDateBadges     = true    /* Display due date badges on cards    */
 }
 
+
 private struct BoardListCenterPreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGFloat] = [:]
 
+    ///
+    /// @fcn        BoardListCenterPreferenceKey.reduce(value:nextValue:)
+    /// @brief      Merge list-center geometry from child panels
+    /// @details    Keeps the latest horizontal center when multiple reports share a list identity
+    ///
+    /// @param[in,out] value      Accumulated list-ID-to-center map
+    /// @param[in]     nextValue  Provider of the next child geometry map
+    /// @return        (Void) merges the next report into value
+    /// @post          Unreported accumulated identities remain in the map
+    ///
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
@@ -94,18 +133,32 @@ struct ContentView: View {
 
 
     ///
-    /// @fcn        ContentView.init(lists:boardTargetListID:savedCardIDs:)
-    /// @brief      Initialize the Board view with shared list state and an optional navigation target
-    /// @details    The app root owns the persisted board snapshot; previews may omit the target binding
+    /// @fcn        ContentView.init
+    /// @brief      Configure the shared Board surface, routing, and mutation callbacks
+    /// @details    Accepts caller-owned active/archive partitions and optional list/card targets.
+    ///             Defaults support standalone Week previews; app-root and personal-board callers
+    ///             override persistence and retained attachment references for their complete snapshots
     ///
-    /// @param[in]  lists                Binding to the board's shared list collection
-    /// @param[in]  boardTargetListID    Optional list ID to reveal after navigation from Today
-    /// @param[in]  savedCardIDs         Local card identities shown in the Saved destination
+    /// @param[in]  lists                    Binding to active Board lists
+    /// @param[in]  archivedLists            Binding to archived Board lists
+    /// @param[in]  boardTargetListID        Pending active list ID to reveal
+    /// @param[in]  boardTargetCardID        Pending card ID to open within the target list
+    /// @param[in]  savedCardIDs             Binding to this Board's bookmarked card identities
+    /// @param[in]  onListViewed             Callback reporting the nearest visible list
+    /// @param[in]  boardTitle               Header title
+    /// @param[in]  boardSubtitle            Header supporting text
+    /// @param[in]  allowsAddingLists        Whether the header normally offers list creation
+    /// @param[in]  onClose                  Optional action returning to the collection directory
+    /// @param[in]  onArchiveBoard           Optional parent-owned full-board archive action
+    /// @param[in]  onListsChanged           Main-actor callback receiving active-list changes
+    /// @param[in]  retainedAttachmentLists  Provider of other snapshots whose photo files must survive pruning
     ///
     /// @return     (ContentView) configured kanban board screen
     ///
     /// @pre        lists contains the board state to display
-    /// @post       Board edits update the shared collection and requested navigation remains observable
+    /// @post       Bindings and callbacks are installed without editing Board content
+    /// @note       The archive binding defaults to constant empty state; persistent archives require
+    ///             a writable binding. An empty board exposes Add list even when normally disabled
     ///
     init(
         lists: Binding<[KanbanList]>,
@@ -139,6 +192,17 @@ struct ContentView: View {
         self.retainedAttachmentLists = retainedAttachmentLists
     }
 
+
+    ///
+    /// @fcn        ContentView.openPendingBoardTarget(using:)
+    /// @brief      Consume a pending list/card navigation request
+    /// @details    Scrolls an existing active list into view and, for an existing target card,
+    ///             replaces the detail path with that card. Missing lists invalidate both targets
+    ///
+    /// @param[in]  listProxy  Proxy for the horizontal list viewport
+    /// @return     (Void) updates scroll position and optional card navigation
+    /// @post       Both pending targets are cleared; a missing card leaves the existing path unchanged
+    ///
     private func openPendingBoardTarget(using listProxy: ScrollViewProxy) {
         guard let targetListID = boardTargetListID,
               lists.contains(where: { $0.id == targetListID }) else {
@@ -196,8 +260,9 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.renameMember(from:to:)
     /// @brief      Rename a member across the board
-    /// @details    Replaces matching card assignments and comment authors, updates the current-user name
-    ///             when applicable, and migrates the member's icon color to the new normalized key
+    /// @details    Renames matching manual assignments and comment authors on active cards,
+    ///             trims assignment names, and deduplicates manual names or registered-user identities.
+    ///             Updates the current author and migrates its icon color when applicable
     ///
     /// @param[in]  currentName  Existing member name to replace
     /// @param[in]  proposedName Proposed new name; surrounding whitespace is trimmed
@@ -205,7 +270,8 @@ struct ContentView: View {
     /// @return     (Void) updates card assignments, authored comments, current-user display, and color mapping
     ///
     /// @pre        currentName identifies the member being renamed
-    /// @post       Matching names are replaced; duplicate assignments within each card are removed
+    /// @post       Registered-user identities/display names are not renamed, beyond whitespace trimming;
+    ///             archived content is untouched. Blank proposals leave all state unchanged
     ///
     /// @note       An empty proposed name is ignored; if the new name already has a color, that
     ///             color is retained
@@ -279,7 +345,7 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.removeMember(_:)
     /// @brief      Remove a member from board assignments
-    /// @details    Removes matching names from every card and clears their board icon color while
+    /// @details    Removes matching names from active cards and clears their board icon color while
     ///             preserving historical comments
     ///
     /// @param[in]  memberName  Member name to remove; comparison ignores surrounding whitespace and case
@@ -287,7 +353,8 @@ struct ContentView: View {
     /// @return     (Void) updates the board and member color state
     ///
     /// @pre        memberName identifies a member currently assigned to at least one card
-    /// @post       The member no longer appears in card assignments; existing comments remain unchanged
+    /// @post       Matching active-card assignments are removed; comments and archives remain unchanged.
+    ///             Removing the current author name resets its display value to You
     ///
     private func removeMember(_ memberName: String) {
 
@@ -337,8 +404,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.addList
     /// @brief      Append a new empty list to the board
-    /// @details    Assigns the next available list identifier and generates a title that does not
-    ///             duplicate an existing list name
+    /// @details    Reserves identifiers across active and archived lists, then generates a New List
+    ///             title that does not case-insensitively duplicate an active list name
     ///
     /// @return     (Void) updates the board's in-memory list collection
     ///
@@ -387,7 +454,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.addCard(to:title:description:)
     /// @brief      Add a completed card form to the end of the selected list
-    /// @details    Allocates a board-wide unique card identifier and stores the supplied title and description
+    /// @details    Allocates an identifier across active and archived cards/lists, stores the supplied
+    ///             title/description, and recognizes divider-marker titles
     ///
     /// @param[in]  listID  Stable identifier of the list receiving the card
     /// @param[in]  title   User-entered card title
@@ -395,8 +463,8 @@ struct ContentView: View {
     ///
     /// @return     (Void) updates the matching list in the board state
     ///
-    /// @pre        listID identifies a list in the current board
-    /// @post       The new card appears as the last card in the selected list
+    /// @pre        The caller validates and trims the title and description
+    /// @post       The new card appears last; a missing destination leaves Board state unchanged
     ///
     private func addCard(to listID: Int, title: String, description: String) {
 
@@ -423,7 +491,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.deleteCard(in:cardID:)
     /// @brief      Remove one card from a board list
-    /// @details    Finds the list by its stable identifier and removes the card matching its identifier
+    /// @details    Finds the active list by ID, removes matching active cards, and prunes files
+    ///             against current, archived, and externally retained snapshots
     ///
     /// @param[in]  listID  Stable identifier of the list containing the card
     /// @param[in]  cardID  Stable identifier of the card to delete
@@ -455,7 +524,8 @@ struct ContentView: View {
     /// @return     (Void) updates the card order in the selected list
     ///
     /// @pre        listID identifies a list containing cardID
-    /// @post       The card occupies the requested destination index within the list
+    /// @post       The card occupies the clamped valid destination; missing IDs or unchanged
+    ///             positions do nothing. Card content remains unchanged
     ///
     private func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int) {
 
@@ -483,7 +553,9 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.copyList(with:)
     /// @brief      Insert a copy of the selected list beside its source
-    /// @details    Creates new list and card identifiers while copying card content and current card state
+    /// @details    Reserves new IDs across active/archive content and copies active cards with their
+    ///             full state and shared attachment references. Archived cards and list metadata
+    ///             are not copied; the new list uses model defaults and a Copy title suffix
     ///
     /// @param[in]  listID  Stable identifier of the list to copy
     ///
@@ -554,6 +626,18 @@ struct ContentView: View {
         BoardListReordering.move(listID, to: destinationIndex, in: &lists)
     }
 
+
+    ///
+    /// @fcn        ContentView.updateListDrag(_:value:)
+    /// @brief      Track a held list and reorder it when the pointer crosses a neighbor
+    /// @details    Claims the first list, captures its grab offset on the first drag value,
+    ///             and moves at most one neighboring position per update using viewport centers
+    ///
+    /// @param[in]  listID  List whose title-area gesture is reporting
+    /// @param[in]  value   Optional drag geometry; nil can claim the hold without moving
+    /// @return     (Void) updates drag state and potentially active-list order
+    /// @post       Reports for another held list are ignored; reorder animation honors Reduce Motion
+    ///
     private func updateListDrag(_ listID: Int, value: DragGesture.Value?) {
         if draggedListID == nil {
             draggedListID = listID
@@ -576,6 +660,16 @@ struct ContentView: View {
         }
     }
 
+
+    ///
+    /// @fcn        ContentView.endListDrag(_:)
+    /// @brief      Release drag state for the currently held list
+    /// @details    Clears the held identity, pointer location, and grab offset only for the matching list
+    ///
+    /// @param[in]  listID  Identity ending its hold/drag interaction
+    /// @return     (Void) resets transient drag tracking
+    /// @post       List order stays as last updated; clearing the identity cancels edge-scrolling work
+    ///
     private func endListDrag(_ listID: Int) {
         guard draggedListID == listID else { return }
         draggedListID = nil
@@ -583,6 +677,16 @@ struct ContentView: View {
         listDragGrabOffset = 0
     }
 
+
+    ///
+    /// @fcn        ContentView.listDragOffset(for:)
+    /// @brief      Calculate the visual translation of the held list
+    /// @details    Subtracts the current layout center and captured grab offset from pointer position
+    ///
+    /// @param[in]  listID  List whose horizontal translation is requested
+    /// @return     (CGFloat) translation in points, or zero without matching drag/geometry state
+    /// @post       Layout and drag state remain unchanged
+    ///
     private func listDragOffset(for listID: Int) -> CGFloat {
         guard draggedListID == listID, let location = listDragLocation,
               let center = listCenters[listID] else { return 0 }
@@ -593,7 +697,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.sortList(with:ascending:)
     /// @brief      Sort a list's cards by their titles
-    /// @details    Uses localized standard comparison to order card titles in the requested direction
+    /// @details    Uses localized standard title comparison within divider-separated sections;
+    ///             divider positions and section membership are preserved
     ///
     /// @param[in]  listID     Stable identifier of the list to sort
     /// @param[in]  ascending  Whether to sort from A to Z; false sorts from Z to A
@@ -601,7 +706,7 @@ struct ContentView: View {
     /// @return     (Void) replaces the card order in the matching board list
     ///
     /// @pre        listID identifies a list in the current board
-    /// @post       Cards in the list are ordered by title in the requested direction
+    /// @post       Each non-divider section is sorted in the requested direction; archive content is unchanged
     ///
     private func sortList(with listID: Int, ascending: Bool) {
 
@@ -653,7 +758,7 @@ struct ContentView: View {
     /// @return     (Void) updates the matching list in the board state
     ///
     /// @pre        listID identifies a list in the current board
-    /// @post       Cards marked complete no longer appear in the active list
+    /// @post       Completed non-divider cards leave the active list; section dividers stay in place
     ///
     private func archiveCompletedCards(in listID: Int) {
 
@@ -662,11 +767,32 @@ struct ContentView: View {
         lists[listIndex].archiveCompletedCards()
     }
 
+
+    ///
+    /// @fcn        ContentView.restoreArchivedCard(in:cardID:)
+    /// @brief      Return a saved card to the end of its active list
+    /// @details    Delegates to the model archive helper, preserving identity, completion, and content
+    ///
+    /// @param[in]  listID  Active list containing the card archive
+    /// @param[in]  cardID  Archived card identity to restore
+    /// @return     (Void) transfers the archived record into active cards when found
+    /// @post       Missing identities do nothing; no attachment files are pruned
+    ///
     private func restoreArchivedCard(in listID: Int, cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
         lists[listIndex].restoreArchivedCard(id: cardID)
     }
 
+
+    ///
+    /// @fcn        ContentView.archiveCard(_:)
+    /// @brief      Move one active task card into its containing list's archive
+    /// @details    Finds the first containing active list and delegates record retention to the model helper
+    ///
+    /// @param[in]  cardID  Board-unique active card identity
+    /// @return     (Void) archives a matching non-divider card
+    /// @post       Missing IDs and divider cards do nothing; card state and attachment references survive
+    ///
     private func archiveCard(_ cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }) else { return }
         lists[listIndex].archiveCard(id: cardID)
@@ -692,6 +818,17 @@ struct ContentView: View {
         lists.removeAll { $0.id == listID }
     }
 
+
+    ///
+    /// @fcn        ContentView.restoreArchivedList(_:)
+    /// @brief      Append an archived list to the active Board
+    /// @details    Clears the list archive flag, appends its complete record, and removes its archived entry
+    ///
+    /// @param[in]  listID  Archived list identity to restore
+    /// @return     (Void) transfers a matching list between partitions
+    /// @pre        Active/archive bindings are writable partitions of the same Board
+    /// @post       Nested card archives and all identities survive; an absent ID leaves state unchanged
+    ///
     private func restoreArchivedList(_ listID: Int) {
         guard let index = archivedLists.firstIndex(where: { $0.id == listID }) else { return }
         var restored = archivedLists[index]
@@ -768,8 +905,8 @@ struct ContentView: View {
     ///
     /// @fcn        ContentView.pruneUnreferencedAttachments
     /// @brief      Remove stored photo files that are no longer assigned to any card
-    /// @details    Collects attachment filenames referenced by the current board and asks the attachment store
-    ///             to remove files outside that set
+    /// @details    Collects filenames from active/archived lists and cards plus the caller's retained
+    ///             snapshots, then asks the attachment store to remove files outside that combined set
     ///
     /// @return     (Void) cleans unreferenced image files from the app's attachment directory
     ///
@@ -831,7 +968,19 @@ struct ContentView: View {
     }
     
 
-    /// Builds the board scene and its horizontally scrollable list collection.
+    ///
+    /// @fcn        ContentView.body
+    /// @brief      Compose the Board scene, horizontal list viewport, and detail navigation
+    /// @details    Wires list/card actions, geometry-based visible-list reporting, pending targets,
+    ///             archive/calendar sheets, and title-hold reordering. A held list disables normal
+    ///             scrolling and moves/scrolls at viewport edges every 550 milliseconds
+    ///
+    /// @return     (some View) Board navigation stack and shared list panels
+    /// @pre        Caller supplies consistent active/archive bindings and Board-unique IDs
+    /// @post       Active-list changes invoke onListsChanged; label changes save locally.
+    ///             Drag release/disappearance cancels edge work; unexpected movement errors reach the banner
+    /// @note       Reduce Motion suppresses drag lift scaling and reorder/edge-scroll animations
+    ///
     var body: some View { /* Board scene and list collection */
 
         NavigationStack(path: $navigationPath) {
@@ -1070,7 +1219,17 @@ struct BoardHeader: View {
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
     @State private var confirmsArchiveBoard = false
 
-    /// Builds the title block and board action controls.
+
+    ///
+    /// @fcn        BoardHeader.body
+    /// @brief      Present Board identity and global actions
+    /// @details    Composes optional back/list-creation controls, calendar access, settings,
+    ///             archived-list browsing, and an optional confirmed full-board archive action
+    ///
+    /// @return     (some View) Board title/action row and settings presentation
+    /// @post       User actions invoke supplied callbacks; archive is requested only after confirmation.
+    ///             Display settings change through the shared binding, not a separate persisted draft
+    ///
     var body: some View { /* Board header and global actions */
 
         HStack {
@@ -1160,11 +1319,23 @@ struct BoardHeader: View {
     }
 }
 
+
 private struct ArchivedListsView: View {
+
     @Binding var lists: [KanbanList]
     let onRestore: (Int) -> Void
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        ArchivedListsView.body
+    /// @brief      Browse lists archived from the current Board
+    /// @details    Shows each list's active non-divider count and archived-card count,
+    ///             with Restore controls and an empty-state explanation
+    ///
+    /// @return     (some View) archived-list navigation sheet with Close action
+    /// @post       Restore delegates the list identity to onRestore; Close dismisses without changes
+    ///
     var body: some View {
         NavigationStack {
             List {
@@ -1229,6 +1400,14 @@ private struct BoardSettingsView: View {
     @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection           */
 
 
+    ///
+    /// @fcn        BoardSettingsView.trimmedMemberNameDraft
+    /// @brief      Normalize the proposed member name for validation
+    /// @details    Removes surrounding whitespace/newlines without changing the editable draft
+    ///
+    /// @return     (String) trimmed name, which may be empty
+    /// @post       Member assignments and draft text remain unchanged
+    ///
     private var trimmedMemberNameDraft: String { /* Normalized member rename input */
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -1236,12 +1415,14 @@ private struct BoardSettingsView: View {
     ///
     /// @fcn        BoardSettingsView.body
     /// @brief      Build the board settings form
-    /// @details    Presents toggles for checklist progress, comment counts, and due-date badges
+    /// @details    Presents immediate badge-visibility toggles and member color/rename/removal controls.
+    ///             Rename validates a nonblank name; removal requires confirmation and preserves comments
     ///
     /// @return     (some View) settings sheet content with a Done action
     ///
     /// @pre        settings is bound to the board's display preferences
-    /// @post       Changes update the bound settings and are reflected by the board cards
+    /// @post       Toggle changes update the binding; member actions invoke parent callbacks.
+    ///             Done dismisses without reverting already applied settings
     ///
     var body: some View { /* Board settings and member management form */
 
@@ -1395,6 +1576,14 @@ private struct MemberColorTarget: Identifiable {
     let member: String                          /* The name of the member whose color is being edited */    
     let color: Color                            /* The current color of the member's icon             */
 
+    ///
+    /// @fcn        MemberColorTarget.id
+    /// @brief      Identify the member's color-edit presentation
+    /// @details    Uses a lowercased member name for case-insensitive sheet identity
+    ///
+    /// @return     (String) normalized presentation identity
+    /// @post       The member name and seed color remain unchanged
+    ///
     var id: String { member.lowercased() }      /* Use the lowercased member name as the unique identifier for the sheet */
 }
 
@@ -1417,13 +1606,18 @@ private struct MemberColorEditorSheet: View {
     @Environment(\.dismiss) private var dismiss /* Dismiss action for the color editor */
     @State private var selectedColor: Color /* Draft member icon color */
 
-    /// Initialize the editor with the selected member's current color
+
+    ///
+    /// @fcn        MemberColorEditorSheet.init(memberName:initialColor:onSave:)
+    /// @brief      Seed a member-icon color editing draft
+    /// @details    Holds the initial color in local State and installs the submission callback
     ///
     /// @param[in]  memberName Member whose icon color is being edited
     /// @param[in]  initialColor Current color shown when the editor opens
     /// @param[in]  onSave Callback receiving the selected color
     ///
     /// @return     (MemberColorEditorSheet) configured editor
+    /// @post       No shared member color is changed until Save invokes onSave
     ///
     init(memberName: String, initialColor: Color, onSave: @escaping (Color) -> Void) {
         self.memberName = memberName
@@ -1431,6 +1625,15 @@ private struct MemberColorEditorSheet: View {
         _selectedColor  = State(initialValue: initialColor)
     }
 
+
+    ///
+    /// @fcn        MemberColorEditorSheet.body
+    /// @brief      Present a non-opacity color picker for one member icon
+    /// @details    Save submits the draft color and dismisses; Cancel only dismisses
+    ///
+    /// @return     (some View) medium-sheet member color form
+    /// @post       Applying/persisting the chosen color belongs to the onSave caller
+    ///
     var body: some View { /* Member icon color editor */
 
         NavigationStack {
@@ -1480,6 +1683,14 @@ struct KanbanListView: View {
         case listActions
         case newCard
 
+        ///
+        /// @fcn        KanbanListView.ActiveSheet.id
+        /// @brief      Identify the list's active modal presentation
+        /// @details    Uses the enum raw value to distinguish actions from new-card entry
+        ///
+        /// @return     (String) stable sheet identity
+        /// @post       Presentation state remains unchanged
+        ///
         var id: String { rawValue } /* Stable sheet identity */
     }
 
@@ -1514,6 +1725,16 @@ struct KanbanListView: View {
     @State private var headerHeight: CGFloat = 72
     @GestureState private var isHoldingList = false
 
+
+    ///
+    /// @fcn        KanbanListView.listReorderGesture
+    /// @brief      Sequence a title-area hold into horizontal Board-list dragging
+    /// @details    Requires a 0.45-second hold within twelve points, then reports zero-threshold
+    ///             drag geometry in the WeekListsViewport coordinate space
+    ///
+    /// @return     (some Gesture) hold/drag sequence with transient holding-state updates
+    /// @post       Successful holds report optional drag values; ending calls onListDragEnded
+    ///
     private var listReorderGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
             .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("WeekListsViewport")))
@@ -1528,7 +1749,15 @@ struct KanbanListView: View {
             .onEnded { _ in onListDragEnded() }
     }
 
-    /// Maintains the original quarter-screen card sizing requirement
+
+    ///
+    /// @fcn        KanbanListView.cardHeight
+    /// @brief      Calculate the quarter-screen target height for card rows
+    /// @details    Returns a one-point minimum for nonfinite or undersized screen-height calculations
+    ///
+    /// @return     (CGFloat) finite target height of at least one point
+    /// @post       Screen geometry and list content remain unchanged
+    ///
     private var cardHeight: CGFloat { /* Fixed card height derived from screen geometry */
 
         let quarterHeight = screenSize.height * 0.25 /* Original quarter-screen card target */
@@ -1536,6 +1765,16 @@ struct KanbanListView: View {
         return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
     }
 
+
+    ///
+    /// @fcn        KanbanListView.cardCollectionContentHeight
+    /// @brief      Estimate the vertical space required by this list's rows
+    /// @details    Budgets 44 points for dividers, at least 48 points for cards, and 64 points
+    ///             for collection controls/spacing, with an 88-point minimum
+    ///
+    /// @return     (CGFloat) estimated collection height in points
+    /// @post       No card order or layout state is modified
+    ///
     private var cardCollectionContentHeight: CGFloat {
         let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in
             height + (card.isSectionDivider ? 44 : max(cardHeight, 48))
@@ -1543,12 +1782,34 @@ struct KanbanListView: View {
         return max(88, rowHeight + 64)
     }
 
+
+    ///
+    /// @fcn        KanbanListView.cardCollectionHeight
+    /// @brief      Fit the card collection within remaining panel space
+    /// @details    Subtracts the measured header and 24-point bottom allowance from available height,
+    ///             clamps remaining space to at least one point, and caps it by estimated content height
+    ///
+    /// @return     (CGFloat) visible card-collection height
+    /// @post       Header measurement and card content remain unchanged
+    ///
     private var cardCollectionHeight: CGFloat {
         let availableHeight = max(1, availableListHeight - headerHeight - 24)
         return min(cardCollectionContentHeight, availableHeight)
     }
 
-    /// Builds one list panel and its card navigation destinations
+
+    ///
+    /// @fcn        KanbanListView.body
+    /// @brief      Compose a list panel with card rows, ordering, and action sheets
+    /// @details    Measures the title header, supports hold-to-drag and accessible list movement,
+    ///             and wires card completion/edit/archive/delete plus native row reordering.
+    ///             List Actions Add card dismisses that sheet before presenting the creation form
+    ///
+    /// @return     (some View) tinted, height-limited list panel with modal actions
+    /// @pre        The parent installs KanbanCard destinations and supplies consistent list callbacks
+    /// @post       Content edits delegate to the parent; tint/watch and edit mode remain local.
+    ///             Ending the hold resets drag through the parent callback
+    ///
     var body: some View { /* List panel and card collection */
 
         VStack(spacing: 0) {
@@ -1815,10 +2076,29 @@ private struct NewKanbanCardSheet: View {
     @State private var title       = ""                 /* User-entered card title                          */
     @State private var description = ""                 /* User-entered card description                    */
 
+
+    ///
+    /// @fcn        NewKanbanCardSheet.trimmedTitle
+    /// @brief      Normalize the new-card title for validation and creation
+    /// @details    Removes surrounding whitespace/newlines without changing internal text or the draft
+    ///
+    /// @return     (String) trimmed title, potentially empty
+    /// @post       No card is created and draft text remains unchanged
+    ///
     private var trimmedTitle: String { /* Normalized new-card title */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+
+    ///
+    /// @fcn        NewKanbanCardSheet.body
+    /// @brief      Collect a nonblank card title and optional description
+    /// @details    Accepts divider-marker titles; Add submits both trimmed fields and dismisses,
+    ///             while Cancel dismisses without invoking the creation callback
+    ///
+    /// @return     (some View) new-card navigation form with medium/large sheet detents
+    /// @post       Blank titles disable Add; card allocation and persistence belong to onCreate
+    ///
     var body: some View { /* New-card form and submission controls */
 
         NavigationStack {
@@ -1877,8 +2157,24 @@ private enum KanbanListTint: String, CaseIterable, Identifiable {
     case orange
     case red
 
+    ///
+    /// @fcn        KanbanListTint.id
+    /// @brief      Identify a selectable list tint
+    /// @details    Uses the raw enum value for consistent menu identity
+    ///
+    /// @return     (String) tint identity
+    /// @post       The selected tint is unchanged
+    ///
     var id: String { rawValue } /* Stable tint identity */
 
+    ///
+    /// @fcn        KanbanListTint.title
+    /// @brief      Resolve the user-facing list tint label
+    /// @details    Names each color choice, with neutral displayed as Default
+    ///
+    /// @return     (String) tint menu label
+    /// @post       No view or model state is modified
+    ///
     var title: String { /* User-facing tint label */
         switch self {
             case .neutral: "Default"
@@ -1889,6 +2185,14 @@ private enum KanbanListTint: String, CaseIterable, Identifiable {
         }
     }
 
+    ///
+    /// @fcn        KanbanListTint.color
+    /// @brief      Resolve the subtle list-panel background color
+    /// @details    Uses system gray for neutral and twelve-percent opacity for named accent colors
+    ///
+    /// @return     (Color) panel background color
+    /// @post       The tint selection and list data remain unchanged
+    ///
     var color: Color { /* Subtle list background color */
         switch self {
             case .neutral: Color(.systemGray6)
@@ -1926,6 +2230,18 @@ private struct KanbanListActionsSheet: View {
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
     @State private var confirmingArchive = false /* Archive confirmation presentation state */
 
+
+    ///
+    /// @fcn        KanbanListActionsSheet.body
+    /// @brief      Present creation, organization, appearance, and archive actions for one list
+    /// @details    Offers copy, bounded earlier/later movement, section-aware sorting, tint/watch
+    ///             controls, archived-card browsing, completed-card archival, and confirmed list archival
+    ///
+    /// @return     (some View) list-actions navigation sheet
+    /// @post       Mutation callbacks belong to the parent. Add card delegates sheet handoff without
+    ///             calling dismiss here; copy/move/sort/archive actions dismiss after invoking callbacks
+    /// @note       Tint/watch controls update their bindings immediately and do not persist Board metadata
+    ///
     var body: some View { /* List operation menu */
         
         NavigationStack {
@@ -2056,10 +2372,21 @@ private struct KanbanListActionsSheet: View {
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
 
 private struct ArchivedCardsView: View {
+
     let listTitle: String
     @Binding var cards: [KanbanCard]
     let onRestore: (Int) -> Void
 
+
+    ///
+    /// @fcn        ArchivedCardsView.body
+    /// @brief      Browse saved card records for one list
+    /// @details    Displays titles and up to three lines of supporting copy, with Restore controls,
+    ///             an empty-state explanation, and a reminder that completion state is preserved
+    ///
+    /// @return     (some View) archived-card navigation list
+    /// @post       Restore invokes onRestore with the card identity; record movement belongs to the parent
+    ///
     var body: some View {
         List {
             Section {
@@ -2105,6 +2432,7 @@ private struct ArchivedCardsView: View {
     }
 }
 
+
 ///
 /// Displays a compact summary of a kanban card
 ///
@@ -2128,10 +2456,26 @@ struct KanbanCardView: View {
     @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
 
 
+    ///
+    /// @fcn        KanbanCardView.trimmedRenameDraft
+    /// @brief      Normalize the proposed card name
+    /// @details    Trims outer whitespace/newlines for validation and submission without editing the draft
+    ///
+    /// @return     (String) normalized rename text
+    /// @post       Card content and draft state remain unchanged
+    ///
     private var trimmedRenameDraft: String { /* Normalized rename input */
         renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    ///
+    /// @fcn        KanbanCardView.cardLabels
+    /// @brief      Resolve assigned label identities into display definitions
+    /// @details    Preserves card label-ID order and omits IDs absent from the supplied library
+    ///
+    /// @return     ([KanbanLabel]) resolved labels for card badges
+    /// @post       Unresolved IDs are not removed from the card
+    ///
     private var cardLabels: [KanbanLabel] { /* Resolved labels shown on this card */
         card.labelIDs.compactMap { labelID in
             labelLibrary.labels.first(where: { $0.id == labelID })
@@ -2196,7 +2540,19 @@ struct KanbanCardView: View {
         ))
     }
 
-    /// Builds a fixed-height card summary within its parent list
+
+    ///
+    /// @fcn        KanbanCardView.body
+    /// @brief      Render a fixed-height card summary and card action menu
+    /// @details    Shows completion, supporting text, up to three label chips plus overflow,
+    ///             and preference-controlled metadata badges. Provides archive, confirmed delete,
+    ///             validated rename, and full display-text editing
+    ///
+    /// @return     (some View) card summary with alerts and information-editor presentation
+    /// @post       All card mutations delegate to parent callbacks; local state controls presentations only
+    /// @note       The due-date badge uses the existing Today label whenever hasDueDate is true;
+    ///             this row does not compare the due date with the current calendar day
+    ///
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: 9) {
@@ -2347,6 +2703,7 @@ private struct CardInfoEditorSheet: View {
     @State private var subtitle:    String          /* Draft text for the subtitle field    */
     @State private var description: String          /* Draft text for the description field */
 
+
     ///
     /// @fcn        CardInfoEditorSheet.trimmedTitle
     /// @brief      Return the title draft without surrounding whitespace
@@ -2388,7 +2745,8 @@ private struct CardInfoEditorSheet: View {
     ///
     /// @fcn        CardInfoEditorSheet.body
     /// @brief      Build the card information editing form
-    /// @details    Presents title, subtitle, and description fields with Cancel and validated Save actions
+    /// @details    Presents title, subtitle, and description fields with Cancel and validated Save.
+    ///             Only the title is trimmed; subtitle/description are submitted exactly as entered
     ///
     /// @return     (some View) modal form for updating card display information
     ///
@@ -2452,10 +2810,31 @@ struct TodayListDetailView: View {
 
     @State private var newCardTitle = "" /* Inline card-creation draft */
 
+
+    ///
+    /// @fcn        TodayListDetailView.focusedList
+    /// @brief      Resolve the focused Today list in the shared active snapshot
+    /// @details    Finds the first list matching listID without selecting a fallback
+    ///
+    /// @return     (KanbanList?) current list value, or nil after removal/archive
+    /// @post       Selection and shared Board data remain unchanged
+    ///
     private var focusedList: KanbanList? {
         lists.first { $0.id == listID }
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.body
+    /// @brief      Present today's selected list vertically with shared Week card actions
+    /// @details    Reuses compact card rows and detail navigation, displays dividers without
+    ///             detail links, and offers inline card capture. Missing lists show an unavailable state
+    ///
+    /// @return     (some View) focused-list navigation stack with activity feedback
+    /// @pre        lists is the writable active Week partition; reservedLists retains archived ID reservations
+    /// @post       Card edits mutate the shared binding for caller-owned persistence; label changes
+    ///             save locally. Toolbar actions delegate Today/Week routing to supplied callbacks
+    ///
     var body: some View {
 
         NavigationStack {
@@ -2552,28 +2931,81 @@ struct TodayListDetailView: View {
         .databaseActivityOverlay()
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.toggleCard(_:)
+    /// @brief      Toggle one focused-list card's title completion
+    /// @details    Resolves the focused list and active card by ID before flipping its completion flag
+    ///
+    /// @param[in]  cardID  Card identity within the focused list
+    /// @return     (Void) updates shared completion state
+    /// @post       Missing list/card identities leave state unchanged; caller observation owns persistence
+    ///
     private func toggleCard(_ cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { return }
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.archiveCard(_:)
+    /// @brief      Archive a task card in the shared Week snapshot
+    /// @details    Finds the first active list containing the identity and delegates to the model helper;
+    ///             it is not restricted to the focused list after a card moves
+    ///
+    /// @param[in]  cardID  Board-unique active card identity
+    /// @return     (Void) transfers a matching non-divider card to its list's archive
+    /// @post       Missing IDs/dividers do nothing; full content and attachments are retained
+    ///
     private func archiveCard(_ cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }) else { return }
         lists[listIndex].archiveCard(id: cardID)
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.updateCard(_:)
+    /// @brief      Replace a shared active card with its edited snapshot
+    /// @details    Searches all supplied active lists by identity so edits can resolve after list movement
+    ///
+    /// @param[in]  updatedCard  Complete edited card value with an existing Board identity
+    /// @return     (Void) replaces the first matching active record
+    /// @post       Unknown IDs do nothing; this helper does not prune attachment files
+    ///
     private func updateCard(_ updatedCard: KanbanCard) {
         guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == updatedCard.id }) }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == updatedCard.id }) else { return }
         lists[listIndex].cards[cardIndex] = updatedCard
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.deleteCard(_:)
+    /// @brief      Remove a card from the focused list
+    /// @details    Removes matching active records only; archived cards and bookmark IDs remain untouched
+    ///
+    /// @param[in]  cardID  Identity to remove from the focused list
+    /// @return     (Void) updates shared active-card state
+    /// @post       A missing focused list does nothing; this path does not prune attachment files
+    ///
     private func deleteCard(_ cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
         lists[listIndex].cards.removeAll { $0.id == cardID }
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.moveCard(_:toListID:)
+    /// @brief      Move a focused-list card to another active Week list
+    /// @details    Removes the source record, updates its containing-list title, and appends
+    ///             it to the destination while preserving all remaining card state
+    ///
+    /// @param[in]  cardID             Card identity in the focused source list
+    /// @param[in]  destinationListID  Different active list identity receiving the card
+    /// @return     (Void) updates source and destination in the shared binding
+    /// @post       Missing identities or a same-list destination leave state unchanged
+    ///
     private func moveCard(_ cardID: Int, toListID destinationListID: Int) {
         guard let sourceListIndex = lists.firstIndex(where: { $0.id == listID }),
               let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }),
@@ -2584,7 +3016,18 @@ struct TodayListDetailView: View {
         movedCard.listTitle = lists[destinationListIndex].title
         lists[destinationListIndex].cards.append(movedCard)
     }
+    
 
+    ///
+    /// @fcn        TodayListDetailView.addCard()
+    /// @brief      Submit the inline title to the focused list
+    /// @details    Trims whitespace, reserves IDs across active and archived cards/lists,
+    ///             and recognizes divider-marker titles before appending a new record
+    ///
+    /// @return     (Void) appends the card and clears newCardTitle after successful insertion
+    /// @post       Blank input or an unavailable list leaves the draft and Board unchanged;
+    ///             persistence follows the caller's shared-state observation
+    ///
     private func addCard() {
         let title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }

@@ -8,6 +8,8 @@ Plenact helps a person plan a day, capture tasks and ideas, and organize work ov
 
 The originating workflow is a weekly kanban board: one list per day, ordered cards for that day's routine and work, divider cards between parts of the day, and a separate open-work list. Today makes this existing list-based method easier to enter; it does not replace it with a separate focus-task system. Plenact is not a treatment product, and this design makes no clinical or regulatory claims.
 
+The product model is **Lists organize; Cards describe activities; checklist items express actions**. Today and future views should project canonical records, not create competing task stores. A weekly review is a proposed way to help people reconsider plans while retaining control of changes; it is not currently implemented. See [Plenact Life Planning & Management Model](Life-Planning-Model.md) for the product-level reference.
+
 ## Current Foundation
 
 - `App.swift` installs a tab root with Today and Board destinations. Today can select a board list for the current date or browse all lists; opening a list switches to Board and targets its stable ID.
@@ -36,7 +38,7 @@ Today and Board are implemented as complementary ways into the existing planning
 
 ### Responsibilities
 
-**Presentation:** SwiftUI views render state and send explicit user actions. Today presents the selected day list and direct links into all board lists. Board remains the place to browse and organize lists and cards. Scheduled presents an ordered agenda projection without creating duplicate tasks.
+**Presentation:** SwiftUI views render state and send explicit user actions. Today presents the selected day list and direct links into all board lists. Board remains the place to browse and organize lists and cards. Scheduled is a proposed ordered agenda projection. A future review flow should also act on the existing source records rather than maintain separate review copies.
 
 **Application state:** Introduce a small observable planner store when extracting state from `ContentView` becomes necessary. It should coordinate board mutations, Today preferences, and persistence. Keep it focused on app state; do not add a networking or generic repository framework before there is a concrete need.
 
@@ -60,6 +62,7 @@ Notes and ideas should have their own model and persistence rules when that feat
 2. Add an active test target and cover board Codable round trips, Today list selection, list-specific navigation, and behavior when a selected list is removed.
 3. Implement Scheduled only after its ordered-list projection and interaction design are validated.
 4. Keep true calendar events, standalone notes, ideas, and team features out of scope until their data models and workflows are separately designed.
+5. Treat a weekly review as a separate product-design proposal; agree on its scope and user-controlled behavior before adding a review surface.
 
 ## Quality and Privacy Principles
 

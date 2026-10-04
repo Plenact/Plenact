@@ -2,6 +2,10 @@ This directory holds Plenact's product, UX, architecture, demonstration, and cod
 
 ## Start Here
 
+- [`Production-Preparation-Handoff.md`](Production-Preparation-Handoff.md) - verified product, architecture, data-safety, and release-preparation handoff for the next production agent
+
+- [`Life-Planning-Model.md`](Life-Planning-Model.md) - product-model reference for Lists, Cards, checklist actions, planning views, and the proposed weekly review
+
 - [`Today-View-Architecture.md`](Today-View-Architecture.md) - current app boundaries and incremental architecture direction
 
 - [`Today-View-UI.md`](Today-View-UI.md) - Today screen behavior and interaction proposal

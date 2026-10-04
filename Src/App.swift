@@ -1,14 +1,23 @@
 // -------------------------------------------------------------------------------------------------
 // @file       App.swift
-// @brief      Application entry point for the Plenact Today and Board experience
-// @details    Creates the root navigation, shared Board state, and local profile session
+// @brief      Application entry point and Today-first navigation shell
+// @details    Owns the shared Week snapshot, personal collections, local profile, and bookmarks.
+//             Composes Today, Week, Lists, and Saved; implements date-scoped list selection,
+//             quick card capture, local search, label browsing, and card-date calendar views.
+//             Coordinates board archive/restore operations and local persistence callbacks
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   9/26/26
+// @last rev   10/04/26
+//
+// @notes      Archived lists remain in the complete Week snapshot but are excluded from active
+//             view bindings. Restored Week archives become separate personal boards.
+//             Remote authentication and transport remain in the Sync feature; this shell does
+//             not publish local Board, profile, bookmark, or archive data to the shared API
 //
 // @section    Opens
-//.    Consider modularizing into multiple files for length
+//     Consider extracting navigation, Today search, collection, and calendar surfaces into
+//     focused files while preserving their shared state and persistence ownership
 //
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -26,10 +35,13 @@ import SwiftUI
 struct Plenact: App {
 
     ///
+    /// @fcn        Plenact.body
     /// @brief      Build the application's initial scene
     /// @details    Provides the root window and installs AppRootView as the Today-first surface
     ///
     /// @return     (some Scene) configured application scene
+    ///
+    /// @post       Each window installs its own AppRootView navigation shell
     ///
     var body: some Scene { /* Root window scene */
 
@@ -68,12 +80,24 @@ private enum TodayListPickerMode: String, Identifiable {
     case chooseToday   /* Set the selected list as today's plan   */
     case browseAll     /* Open a selected list on the Board       */
 
+    ///
+    /// @fcn        TodayListPickerMode.id
     /// @brief      Return the stable identity for picker presentation
     /// @details    Uses the enum raw value so SwiftUI can identify the active sheet
+    ///
+    /// @return     (String) picker-mode raw value
+    /// @post       No presentation or stored state is changed
+    ///
     var id: String { rawValue } /* Stable tab-selection identity */
 
+    ///
+    /// @fcn        TodayListPickerMode.title
     /// @brief      Return the user-facing title for the picker mode
     /// @details    Keeps the sheet heading aligned with the action being performed
+    ///
+    /// @return     (String) heading for choosing today's list or browsing Board lists
+    /// @post       No selection is changed
+    ///
     var title: String { /* User-facing list-picker title */
         switch self {
             case .chooseToday: "Choose today's list"
@@ -84,6 +108,19 @@ private enum TodayListPickerMode: String, Identifiable {
 
 enum TodayListSelection {
 
+    ///
+    /// @fcn        TodayListSelection.initialListID(savedListID:profileDefaultListID:lists:)
+    /// @brief      Resolve the initial Today list from available choices
+    /// @details    Prefers a valid date-specific selection, then a valid profile default,
+    ///             then a case-insensitive Monday title, and finally the first supplied list
+    ///
+    /// @param[in]  savedListID           Previously chosen date-specific list ID
+    /// @param[in]  profileDefaultListID  Profile preference used when the saved choice is absent
+    /// @param[in]  lists                 Available lists in display order
+    ///
+    /// @return     (Int?) resolved ID, or nil when no lists are available
+    /// @post       No preferences or Board content are read from storage or modified
+    ///
     static func initialListID(
         savedListID: Int?,
         profileDefaultListID: Int?,
@@ -106,10 +143,30 @@ private enum SavedCardPersistence {
 
     private static let storageKey = "Plenact.SavedCardIDs.v1" /* Versioned local bookmark key */
 
+
+    ///
+    /// @fcn        SavedCardPersistence.load()
+    /// @brief      Restore device-local card bookmarks
+    /// @details    Reads integer IDs from the versioned standard-preferences key and removes
+    ///             duplicate values through Set construction; missing or incompatible data yields no bookmarks
+    ///
+    /// @return     (Set<Int>) stored card identities
+    /// @post       Stored preferences and Board content are unchanged
+    ///
     static func load() -> Set<Int> {
         Set(UserDefaults.standard.array(forKey: storageKey) as? [Int] ?? [])
     }
 
+
+    ///
+    /// @fcn        SavedCardPersistence.save(_:)
+    /// @brief      Store the current device-local bookmark set
+    /// @details    Writes IDs as a sorted integer array for deterministic preference representation
+    ///
+    /// @param[in]  cardIDs  Complete set of bookmarked card IDs
+    /// @return     (Void) replaces the stored bookmark array
+    /// @post       The shared Board document is not modified
+    ///
     static func save(_ cardIDs: Set<Int>) {
         UserDefaults.standard.set(cardIDs.sorted(), forKey: storageKey)
     }
@@ -120,14 +177,47 @@ enum LastViewedListStore {
 
     private static let key = "Plenact.LastViewedList.v1"
 
+
+    ///
+    /// @fcn        LastViewedListStore.load(from:)
+    /// @brief      Read the most recently viewed Week list identity
+    /// @details    Uses an injectable preferences store to support isolated persistence tests
+    ///
+    /// @param[in]  defaults  Preferences containing the last-viewed key
+    /// @return     (Int?) stored integer ID, or nil for a missing or incompatible value
+    /// @post       No preferences are changed or list existence validated
+    ///
     static func load(from defaults: UserDefaults = .standard) -> Int? {
         defaults.object(forKey: key) as? Int
     }
 
+
+    ///
+    /// @fcn        LastViewedListStore.save(_:to:)
+    /// @brief      Remember the most recently viewed Week list
+    /// @details    Stores the supplied identity without changing the list or validating its existence
+    ///
+    /// @param[in]  listID    List identity to remember
+    /// @param[in]  defaults  Preferences receiving the last-viewed key
+    /// @return     (Void) replaces the stored list ID
+    ///
     static func save(_ listID: Int, to defaults: UserDefaults = .standard) {
         defaults.set(listID, forKey: key)
     }
 
+
+    ///
+    /// @fcn        LastViewedListStore.resolve(in:fallback:from:)
+    /// @brief      Choose an existing list for a new-card destination
+    /// @details    Uses the stored last-viewed list when present in the supplied collection,
+    ///             otherwise a valid fallback, then the first list
+    ///
+    /// @param[in]  lists     Available destination lists
+    /// @param[in]  fallback  Optional preferred ID when the saved ID is unavailable
+    /// @param[in]  defaults  Preferences supplying the last-viewed ID
+    /// @return     (Int?) existing destination ID, or nil for an empty collection
+    /// @post       Preferences and list order are unchanged
+    ///
     static func resolve(in lists: [KanbanList], fallback: Int? = nil, from defaults: UserDefaults = .standard) -> Int? {
         if let lastViewed = load(from: defaults), lists.contains(where: { $0.id == lastViewed }) {
             return lastViewed
@@ -144,6 +234,16 @@ private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 
     static var defaultValue: CGFloat = 0
 
+
+    ///
+    /// @fcn        TodayScrollOffsetPreferenceKey.reduce(value:nextValue:)
+    /// @brief      Accept the latest reported Today content offset
+    /// @details    Replaces the accumulated preference rather than adding nested offsets
+    ///
+    /// @param[in,out] value      Accumulated vertical offset
+    /// @param[in]     nextValue  Provider for the next child preference
+    /// @return        (Void) updates value with the next offset
+    ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
@@ -153,8 +253,19 @@ private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 /// Reports actual content movement using native scroll geometry when available.
 private struct TodayScrollFadeTracking: ViewModifier {
 
-    @Binding var isScrolled: Bool /* Header fade visibility state */
+    @Binding var isScrolled: Bool           /* Header fade visibility state */
 
+
+    ///
+    /// @fcn        TodayScrollFadeTracking.body(content:)
+    /// @brief      Track whether Today content has moved beneath its header
+    /// @details    Uses inset-adjusted native scroll geometry on iOS 18 and later;
+    ///             earlier systems use the named coordinate-space offset preference
+    ///
+    /// @param[in]  content  Scroll content receiving tracking behavior
+    /// @return     (some View) content with scroll-observation modifiers
+    /// @post       Scroll callbacks set isScrolled beyond the two-point threshold
+    ///
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
             content.onScrollGeometryChange(for: Bool.self) { geometry in
@@ -196,8 +307,16 @@ private struct AppRootView: View {
     @State private var isWeekListRequestArmed = false
     @State private var weekListShakeTrigger = 0
 
-    /// @brief      Build the primary Today and Board tab navigation
-    /// @details    Shares board lists between the Today front door and the existing kanban screen
+
+    ///
+    /// @fcn        AppRootView.body
+    /// @brief      Load the Week snapshot before exposing the navigation shell
+    /// @details    Presents a background surface until asynchronous local loading completes,
+    ///             then installs navigation content; database activity feedback covers both states
+    ///
+    /// @return     (some View) loading surface or configured app navigation
+    /// @post       The task assigns the loaded snapshot and marks initial loading complete
+    ///
     var body: some View { /* Primary Today and Board navigation shell */
         Group {
             if hasLoadedBoard {
@@ -214,6 +333,17 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.navigationContent
+    /// @brief      Compose the four primary destinations and persistence observers
+    /// @details    Supplies active/archive list partitions, shared collections, profile callbacks,
+    ///             bookmarks, and navigation targets; saves complete snapshots when state changes
+    ///
+    /// @return     (some View) tab shell, custom navigation bar, and new-card sheet
+    /// @pre        Initial Week loading has completed
+    /// @post       User edits flow through shared bindings; collection-save errors reach the activity banner
+    ///
     private var navigationContent: some View {
         TabView(selection: $selectedDestination) {
 
@@ -308,6 +438,16 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.bottomNavigationBar
+    /// @brief      Build the custom destination bar and central New control
+    /// @details    Honors navigation-label preferences; New requests a Today composer or a
+    ///             destination picker, while a long press arms Week-list creation and shake feedback
+    ///
+    /// @return     (some View) paper-backed navigation controls
+    /// @post       Button and gesture callbacks update navigation and creation-request state
+    ///
     private var bottomNavigationBar: some View {
 
         ZStack(alignment: .top) {
@@ -397,6 +537,19 @@ private struct AppRootView: View {
         .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: -4)
     }
 
+
+    ///
+    /// @fcn        AppRootView.tabButton(_:title:systemImage:)
+    /// @brief      Render one primary destination button
+    /// @details    Applies selected styling and accessibility traits, and conditionally
+    ///             displays the caption according to local profile preferences
+    ///
+    /// @param[in]  destination  Destination selected when tapped
+    /// @param[in]  title        Visible caption and accessibility label
+    /// @param[in]  systemImage  SF Symbol naming the destination
+    /// @return     (some View) configured destination button
+    /// @post       Tapping sets selectedDestination without changing Board content
+    ///
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
         let isSelected = selectedDestination == destination /* Current tab selection */
@@ -427,6 +580,17 @@ private struct AppRootView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+
+    ///
+    /// @fcn        AppRootView.openBoardList(_:)
+    /// @brief      Route to a specific list in Week
+    /// @details    Remembers an existing list, clears any pending card target, and selects Week;
+    ///             ContentView consumes and validates the pending list request
+    ///
+    /// @param[in]  listID  Requested Week list identity
+    /// @return     (Void) updates navigation targets and selected destination
+    /// @post       Board content remains unchanged
+    ///
     private func openBoardList(_ listID: Int) {
         rememberLastViewedList(listID)
         boardTargetCardID = nil
@@ -434,6 +598,17 @@ private struct AppRootView: View {
         selectedDestination = .board
     }
 
+
+    ///
+    /// @fcn        AppRootView.archiveWeekBoard()
+    /// @brief      Preserve the complete Week Board as an archived personal board
+    /// @details    Saves the recovery collection before clearing Week lists and bookmarks,
+    ///             including archived lists/cards; errors are presented through DatabaseActivity
+    ///
+    /// @return     (Void) archives Week and navigates to Saved after saving the recovery collection
+    /// @post       Success clears pending targets; failure leaves the active Week snapshot intact
+    /// @note       Restoring this archive creates a separate board rather than replacing Week
+    ///
     private func archiveWeekBoard() {
         let archived = PersonalCollection.archivedWeekBoard(lists: lists, savedCardIDs: savedCardIDs)
         let updated = collections + [archived]
@@ -451,6 +626,17 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.restoreBoard(_:)
+    /// @brief      Reactivate an archived board under a unique title
+    /// @details    Computes the restored collection snapshot and saves it before updating the UI;
+    ///             archived Week copies remain separate from the current Week workspace
+    ///
+    /// @param[in]  id  Archived collection identity
+    /// @return     (Void) updates collections after successful persistence
+    /// @post       Missing/nonarchived IDs do nothing; save failures leave state unchanged and show an error
+    ///
     private func restoreBoard(_ id: UUID) {
         guard let index = collections.firstIndex(where: { $0.id == id && $0.isArchived == true }) else { return }
         var updated = collections
@@ -463,6 +649,17 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.openBoardCard(listID:cardID:)
+    /// @brief      Request a list and card detail destination in Week
+    /// @details    Remembers the list and supplies stable targets for ContentView to validate and open
+    ///
+    /// @param[in]  listID  Containing Week list identity
+    /// @param[in]  cardID  Card identity to open within the list
+    /// @return     (Void) selects Week and updates both navigation targets
+    /// @post       No card or list content is modified
+    ///
     private func openBoardCard(listID: Int, cardID: Int) {
         rememberLastViewedList(listID)
         boardTargetCardID = cardID
@@ -470,11 +667,32 @@ private struct AppRootView: View {
         selectedDestination = .board
     }
 
+
+    ///
+    /// @fcn        AppRootView.rememberLastViewedList(_:)
+    /// @brief      Persist an existing Week list as the last-viewed destination
+    /// @details    Avoids redundant preference writes and ignores IDs absent from the complete snapshot
+    ///
+    /// @param[in]  listID  List identity reported by navigation or the Board viewport
+    /// @return     (Void) updates the last-viewed preference when necessary
+    /// @post       Board content and current navigation remain unchanged
+    ///
     private func rememberLastViewedList(_ listID: Int) {
         guard lists.contains(where: { $0.id == listID }), LastViewedListStore.load() != listID else { return }
         LastViewedListStore.save(listID)
     }
 
+
+    ///
+    /// @fcn        AppRootView.toggleCardCompletion(in:cardID:)
+    /// @brief      Toggle completion of a card in the shared Week snapshot
+    /// @details    Locates list and active-card indices by ID; root state observation handles persistence
+    ///
+    /// @param[in]  listID  Containing list identity
+    /// @param[in]  cardID  Active card identity
+    /// @return     (Void) flips the title-completion flag
+    /// @post       Missing list/card identities leave state unchanged
+    ///
     private func toggleCardCompletion(in listID: Int, cardID: Int) {
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else {
@@ -484,6 +702,16 @@ private struct AppRootView: View {
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
     }
 
+
+    ///
+    /// @fcn        AppRootView.addWeekList()
+    /// @brief      Append a uniquely identified blank Week list and reveal it
+    /// @details    Reserves IDs across active and archived lists and chooses an unused
+    ///             case-insensitive New List title, adding a numeric suffix when necessary
+    ///
+    /// @return     (Void) appends the list and selects Week with a pending list target
+    /// @post       Existing list/card contents remain unchanged; root observation saves the new snapshot
+    ///
     private func addWeekList() {
         let nextListID = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
         let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Existing normalized titles */
@@ -500,6 +728,20 @@ private struct AppRootView: View {
         selectedDestination = .board
     }
 
+
+        ///
+        /// @fcn        AppRootView.addCard(to:title:description:)
+        /// @brief      Append a new card to the requested Week list
+        /// @details    Allocates an ID across active and archived cards/lists, recognizes divider titles,
+        ///             and stores an empty description as no override; persistence follows root observation
+        ///
+        /// @param[in]  listID       Existing destination list identity
+        /// @param[in]  title        Card title supplied by the composer or quick capture
+        /// @param[in]  description  Optional supporting text; empty text becomes nil
+        /// @return     (Void) appends the new card when the list exists
+        /// @pre        The caller has validated and trimmed the title
+        /// @post       An absent list leaves the snapshot unchanged
+        ///
         private func addCard(to listID: Int, title: String, description: String) {
 
             guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* Destination list index */
@@ -560,8 +802,13 @@ private struct TodayHomeView: View {
 
 
     ///
+    /// @fcn        TodayHomeView.selectedTodayList
     /// @brief      Resolve today's saved list selection against the current board
-    /// @details    Returns no list when the saved identifier is missing or no longer exists
+    /// @details    Uses the in-memory date selection, or the profile default when no selection is set;
+    ///             an unavailable effective ID returns no list rather than choosing another destination
+    ///
+    /// @return     (KanbanList?) selected list from the supplied active snapshot
+    /// @post       No preference is read or changed during resolution
     ///
     private var selectedTodayList: KanbanList? {                                                /* Board list selected for the current date */
 
@@ -572,14 +819,42 @@ private struct TodayHomeView: View {
         return lists.first { $0.id == resolvedListID }
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.selectedTodayCards
+    /// @brief      Collect actionable cards from today's selected list
+    /// @details    Excludes section dividers and returns an empty collection when no list resolves
+    ///
+    /// @return     ([KanbanCard]) active cards in list order
+    /// @post       Archived-card collections and list content remain unchanged
+    ///
     private var selectedTodayCards: [KanbanCard] {
         selectedTodayList?.cards.filter { !$0.isSectionDivider } ?? []
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.openTodayCards
+    /// @brief      Select the first three incomplete Today cards
+    /// @details    Filters title-completion state while preserving the selected list's ordering
+    ///
+    /// @return     ([KanbanCard]) up to three cards for the focus preview
+    /// @post       Card completion flags are unchanged
+    ///
     private var openTodayCards: [KanbanCard] {
         Array(selectedTodayCards.filter { !$0.isTitleChecked }.prefix(3))
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.usedLabelCategories
+    /// @brief      Group currently applied labels by their library category
+    /// @details    Finds matching active cards for each label and omits labels and categories
+    ///             with no usage, preserving the label library's ordering
+    ///
+    /// @return     ([TodayLabelCategoryUsage]) populated categories and their matching cards
+    /// @post       Neither label definitions nor card assignments are changed
+    ///
     private var usedLabelCategories: [TodayLabelCategoryUsage] {
 
         labelLibrary.categories.compactMap { category in
@@ -598,16 +873,43 @@ private struct TodayHomeView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.selectedUsedLabelCategory
+    /// @brief      Resolve the visible applied-label category
+    /// @details    Uses the selected category when still populated, otherwise the first used category
+    ///
+    /// @return     (TodayLabelCategoryUsage?) resolved category, or nil when no labels are used
+    /// @post       The stored category selection is not modified
+    ///
     private var selectedUsedLabelCategory: TodayLabelCategoryUsage? {
         usedLabelCategories.first { $0.id == selectedLabelCategoryID } ?? usedLabelCategories.first
     }
 
-    /// Return the preferred height for primary Today controls
+
+    ///
+    /// @fcn        TodayHomeView.primaryControlHeight
+    /// @brief      Resolve the profile's preferred primary-control height
+    /// @details    Uses 52 points for larger controls and 44 points otherwise, including no-profile state
+    ///
+    /// @return     (CGFloat) preferred height in points
+    /// @post       Profile preferences remain unchanged
+    ///
     private var primaryControlHeight: CGFloat {                                                 /* Personalized control height */
 
         profile?.preferences.usesLargeControls == true ? 52 : 44
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.todayHeader
+    /// @brief      Build the Today title, current date, search, and profile controls
+    /// @details    Presents accessible entry buttons for Board search and local Account & Settings
+    ///             within the shared maximum content width
+    ///
+    /// @return     (some View) Today header content
+    /// @post       Tapping controls updates sheet-presentation state without modifying Board data
+    ///
     private var todayHeader: some View {
 
         HStack(alignment: .top, spacing: 16) {
@@ -644,6 +946,16 @@ private struct TodayHomeView: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.todayHeaderPanel
+    /// @brief      Place the Today header on a clipped paper-backed panel
+    /// @details    Extends decoration through the top safe area and shows a bottom fade
+    ///             when observed scroll content moves beneath the header
+    ///
+    /// @return     (some View) padded header with noninteractive background and fade
+    /// @post       Rendering does not change scroll or navigation state
+    ///
     private var todayHeaderPanel: some View {
 
         todayHeader
@@ -692,21 +1004,28 @@ private struct TodayHomeView: View {
 
 
     ///
-    /// @fcn        TodayHomeView.init(lists:profile:onSaveProfile:onRemoveProfile:onOpenBoardList:)
+    /// @fcn        TodayHomeView.init
     /// @brief      Initialize Today with Board lists, local profile state, and callbacks
     /// @details    Restores the date-specific list selection and connects profile persistence and
     ///             Board navigation actions
     ///
-    /// @param[in]  lists             Current board lists to offer and resolve
-    /// @param[in]  profile           Optional local identity and personalization
-    /// @param[in]  onSaveProfile     Callback that saves a complete local profile
-    /// @param[in]  onRemoveProfile   Callback that removes only local profile data
-    /// @param[in]  onOpenBoardList   Callback that opens Board at a selected list ID
+    /// @param[in]  lists                   Binding to active Week lists
+    /// @param[in]  archivedLists           Binding to archived Week lists retained for example-load undo
+    /// @param[in]  savedCardIDs            Binding to device-local Week bookmarks
+    /// @param[in]  profile                 Optional local identity and personalization
+    /// @param[in]  onSaveProfile           Callback that saves a complete local profile
+    /// @param[in]  onRemoveProfile         Callback that removes only local profile data
+    /// @param[in]  onAddCard               Callback receiving destination ID, title, and description
+    /// @param[in]  onToggleCardCompletion  Callback receiving list/card identities to toggle
+    /// @param[in]  onOpenBoardList         Callback opening a Week list by ID
+    /// @param[in]  onOpenBoardCard         Callback opening a Week card by list/card IDs
+    /// @param[in]  quickCreateRequest      Observable request counter for the central New control
     ///
     /// @return     (TodayHomeView) configured Today screen
     ///
     /// @pre        lists reflects the current in-memory board state
-    /// @post       The saved selection is restored when available; board data is unchanged
+    /// @post       The initial selection is resolved; when neither saved nor profile choice exists,
+    ///             a resolved starter selection is stored for today. Board content is unchanged
     ///
     init(
         lists:           Binding<[KanbanList]>,
@@ -749,6 +1068,7 @@ private struct TodayHomeView: View {
         }
     }
 
+
     ///
     /// @fcn        TodayHomeView.todayListStorageKey(for:)
     /// @brief      Create the local preference key for a calendar date
@@ -768,6 +1088,7 @@ private struct TodayHomeView: View {
         return "Plenact.Today.List.\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
     }
 
+
     ///
     /// @fcn        TodayHomeView.cardCount(in:)
     /// @brief      Count actionable cards in a board list
@@ -785,6 +1106,17 @@ private struct TodayHomeView: View {
         list.cards.filter { !$0.isSectionDivider }.count
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.cards(using:)
+    /// @brief      Find active cards assigned a specific label
+    /// @details    Traverses supplied lists in order, excludes dividers, and includes list provenance
+    ///             so matching cards can route back to their existing Board locations
+    ///
+    /// @param[in]  labelID  Stable label identity to match
+    /// @return     ([TodayLabelCard]) matching card/list pairs
+    /// @post       No card assignments or label definitions are changed
+    ///
     private func cards(using labelID: String) -> [TodayLabelCard] {
         lists.flatMap { list in
             list.cards.compactMap { card in
@@ -794,6 +1126,16 @@ private struct TodayHomeView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.yourLabelsSection
+    /// @brief      Present applied labels and counts for the selected category
+    /// @details    Offers a category menu, populated label rows, and an empty-state explanation;
+    ///             selecting a label opens its matching-card sheet
+    ///
+    /// @return     (some View) Today label-browsing section
+    /// @post       Interactions update category or label presentation state, not card assignments
+    ///
     private var yourLabelsSection: some View {
 
         VStack(alignment: .leading, spacing: 10) {
@@ -873,6 +1215,15 @@ private struct TodayHomeView: View {
         .modifier(TodayPanelSurface())
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.browseListsAction
+    /// @brief      Provide the Browse all lists entry point
+    /// @details    Opens the shared list picker in navigation mode rather than Today-selection mode
+    ///
+    /// @return     (some View) accessible list-browsing button
+    /// @post       Tapping sets listPickerMode to browseAll
+    ///
     private var browseListsAction: some View {
 
         Button {
@@ -895,7 +1246,16 @@ private struct TodayHomeView: View {
         .padding(.horizontal, 4)
     }
 
-    /// Add the inline capture to the current Today list, prompting for a list when none is selected.
+
+    ///
+    /// @fcn        TodayHomeView.addQuickCard()
+    /// @brief      Submit a nonempty inline title to today's selected list
+    /// @details    Trims surrounding whitespace and adds a card with no description.
+    ///             With no selected list, opens the picker and keeps the draft for later submission
+    ///
+    /// @return     (Void) invokes onAddCard and clears the title when a destination resolves
+    /// @post       Blank input does nothing; missing selection does not create or discard a card
+    ///
     private func addQuickCard() {
 
         let title = quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Clean card title */
@@ -910,7 +1270,16 @@ private struct TodayHomeView: View {
         quickCaptureTitle = ""
     }
 
-    /// Open the detailed composer only after a destination list is selected.
+
+    ///
+    /// @fcn        TodayHomeView.openQuickNoteEditor()
+    /// @brief      Request the full composer after ensuring a Today destination exists
+    /// @details    Opens immediately for a resolved selection; otherwise records a deferred
+    ///             composer request and presents the Today list picker
+    ///
+    /// @return     (Void) updates composer or list-picker presentation state
+    /// @post       No card is created until the composer submits its content
+    ///
     private func openQuickNoteEditor() {
 
         guard selectedTodayList != nil else {
@@ -922,10 +1291,12 @@ private struct TodayHomeView: View {
         showsQuickNoteEditor = true
     }
 
+
     ///
     /// @fcn        TodayHomeView.selectTodayList(_:)
     /// @brief      Save a board list as today's plan
-    /// @details    Updates view state and stores the selected list ID under the current date key
+    /// @details    Updates view state and the current date preference, dismisses the list picker,
+    ///             and yields before opening any deferred full-composer request
     ///
     /// @param[in]  list  Existing board list selected for today
     ///
@@ -951,15 +1322,18 @@ private struct TodayHomeView: View {
         }
     }
 
+
     ///
     /// @fcn        TodayHomeView.body
     /// @brief      Build the Today front-door screen
-    /// @details    Shows the selected day list, list selection, and access to all board lists
+    /// @details    Composes quick capture, Today focus, applied labels, and list browsing.
+    ///             Coordinates profile, example-load/undo, focused-list, search, label, and composer sheets
     ///
     /// @return     (some View) scrollable Today content and its list picker sheet
     ///
     /// @pre        lists contains the current board state and callbacks are configured
-    /// @post       User actions either update the local date-scoped selection or navigate to Board
+    /// @post       Callbacks route Board edits/navigation; label changes persist locally,
+    ///             and example-load/undo callbacks replace both active and archived Week partitions
     ///
     var body: some View { /* Today screen and list-selection sheets */
 
@@ -1178,6 +1552,16 @@ private struct TodayHomeView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.quickCaptureSection
+    /// @brief      Build inline card capture and full-editor access
+    /// @details    Disables submission for whitespace-only titles and identifies the selected
+    ///             Today destination, or prompts the user to choose one
+    ///
+    /// @return     (some View) title field, composer button, and quick-add controls
+    /// @post       Submission and selection actions delegate to the Today capture helpers
+    ///
     private var quickCaptureSection: some View {
 
         VStack(alignment: .leading, spacing: 8) {
@@ -1254,16 +1638,47 @@ private struct QuickNoteComposer: View {
     @State private var description = ""         /* Optional card detail                 */
     @State private var selectedListID: Int?
 
+
+    ///
+    /// @fcn        QuickNoteComposer.init(lists:initialListID:onSave:)
+    /// @brief      Configure the card composer with destinations and a submission callback
+    /// @details    Seeds the optional destination without mutating lists; the form validates
+    ///             that the selected identity still exists before permitting Add
+    ///
+    /// @param[in]  lists          Binding to available destination lists
+    /// @param[in]  initialListID  Optional initially selected destination identity
+    /// @param[in]  onSave         Callback receiving list ID, trimmed title, and trimmed description
+    /// @return     (QuickNoteComposer) initialized composer with empty text drafts
+    ///
     init(lists: Binding<[KanbanList]>, initialListID: Int?, onSave: @escaping (Int, String, String) -> Void) {
         _lists = lists
         _selectedListID = State(initialValue: initialListID)
         self.onSave = onSave
     }
 
+
+    ///
+    /// @fcn        QuickNoteComposer.trimmedTitle
+    /// @brief      Normalize the card title for validation and submission
+    /// @details    Removes leading and trailing whitespace/newlines without altering internal text
+    ///
+    /// @return     (String) normalized title
+    /// @post       The editable title draft remains unchanged
+    ///
     private var trimmedTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+
+    ///
+    /// @fcn        QuickNoteComposer.body
+    /// @brief      Present card text entry and destination selection
+    /// @details    Disables Add until a nonempty trimmed title and an existing list resolve;
+    ///             Add submits trimmed text to the callback and then dismisses the composer
+    ///
+    /// @return     (some View) large-sheet navigation form with Cancel and Add actions
+    /// @post       Cancel discards the draft; creating/persisting a submitted card belongs to onSave
+    ///
     var body: some View {
 
         NavigationStack {
@@ -1324,8 +1739,17 @@ struct TodaySearchResult: Identifiable {
     let listTitle: String /* Containing list title */
     let detail: String /* Supporting detail shown under the title */
 
+    ///
+    /// @fcn        TodaySearchResult.id
+    /// @brief      Identify a result within its containing list
+    /// @details    Combines the list ID with a card ID or a list-result marker
+    ///
+    /// @return     (String) composite result identity
+    /// @post       Result contents remain unchanged
+    ///
     var id: String { "\(listID):\(cardID.map(String.init) ?? "list")" }
 }
+
 
 enum TodaySearchScope: String, CaseIterable, Identifiable {
     case all = "All"
@@ -1333,16 +1757,48 @@ enum TodaySearchScope: String, CaseIterable, Identifiable {
     case labels = "Labels"
     case users = "Users"
 
+    ///
+    /// @fcn        TodaySearchScope.id
+    /// @brief      Identify a selectable local-search scope
+    /// @details    Uses the display raw value for segmented-picker identity
+    ///
+    /// @return     (String) scope raw value
+    /// @post       The selected scope is unchanged
+    ///
     var id: String { rawValue }
 }
+
 
 enum RecentSearchStore {
     private static let key = "Plenact.RecentSearches.v1"
 
+
+    ///
+    /// @fcn        RecentSearchStore.load(from:)
+    /// @brief      Read device-local recent search terms
+    /// @details    Returns the stored string array without normalization, or an empty array
+    ///             when the preferences key is absent or incompatible
+    ///
+    /// @param[in]  defaults  Preferences store containing recent searches
+    /// @return     ([String]) stored terms in most-recent-first order
+    /// @post       No preferences are modified
+    ///
     static func load(from defaults: UserDefaults = .standard) -> [String] {
         defaults.stringArray(forKey: key) ?? []
     }
 
+
+    ///
+    /// @fcn        RecentSearchStore.remember(_:in:)
+    /// @brief      Move a nonempty search term to the front of local history
+    /// @details    Trims surrounding whitespace, removes case-insensitive duplicates,
+    ///             and persists at most ten terms; blank input returns existing history unchanged
+    ///
+    /// @param[in]  query     User-entered search term
+    /// @param[in]  defaults  Preferences store receiving updated history
+    /// @return     ([String]) resulting most-recent-first history
+    /// @post       Only nonempty normalized input writes the history key
+    ///
     @discardableResult
     static func remember(_ query: String, in defaults: UserDefaults = .standard) -> [String] {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1355,12 +1811,39 @@ enum RecentSearchStore {
         return searches
     }
 
+
+    ///
+    /// @fcn        RecentSearchStore.clear(in:)
+    /// @brief      Remove device-local search history
+    /// @details    Deletes only the versioned recent-searches preference key
+    ///
+    /// @param[in]  defaults  Preferences store to clear
+    /// @return     (Void) removes the history key
+    /// @post       Board content, bookmarks, and other preferences are untouched
+    ///
     static func clear(in defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
     }
 }
 
+
 enum TodaySearchIndex {
+
+    ///
+    /// @fcn        TodaySearchIndex.results(query:scope:lists:library:)
+    /// @brief      Search a supplied local Board snapshot without modifying it
+    /// @details    Trims the query and uses localized-standard substring matching.
+    ///             Boards scope matches list titles/subtitles; other scopes match non-divider
+    ///             cards by label/category, member names, or combined card/checklist/comment content
+    ///
+    /// @param[in]  query    Search text; blank input yields no results
+    /// @param[in]  scope    Fields and result kind to search
+    /// @param[in]  lists    Snapshot to traverse in list/card order
+    /// @param[in]  library  Definitions resolving assigned label and category names
+    /// @return     ([TodaySearchResult]) matching list or card results with navigation provenance
+    /// @post       No archive filtering, storage writes, ranking, or network requests are performed
+    /// @note       Callers supply the intended list partition; archivedCards are not searched
+    ///
     static func results(query: String, scope: TodaySearchScope, lists: [KanbanList], library: LabelLibrary) -> [TodaySearchResult] {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty else { return [] }
@@ -1426,14 +1909,42 @@ private struct TodaySearchView: View {
     @State private var recentSearches = RecentSearchStore.load()
     @State private var labelLibrary = LabelLibraryStore.load()
 
+
+    ///
+    /// @fcn        TodaySearchView.results
+    /// @brief      Resolve matches for the current query and selected scope
+    /// @details    Delegates to the local search index using the supplied Board and label snapshots
+    ///
+    /// @return     ([TodaySearchResult]) current display-order matches
+    /// @post       Search history and Board state are unchanged
+    ///
     private var results: [TodaySearchResult] {
         TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
     }
 
+
+    ///
+    /// @fcn        TodaySearchView.rememberSearch()
+    /// @brief      Persist the current nonblank query and refresh displayed history
+    /// @details    Uses the shared recent-search store's trimming, deduplication, and ten-term limit
+    ///
+    /// @return     (Void) replaces recentSearches with the store result
+    /// @post       Blank queries leave stored history intact
+    ///
     private func rememberSearch() {
         recentSearches = RecentSearchStore.remember(query)
     }
 
+
+    ///
+    /// @fcn        TodaySearchView.recentSearchList
+    /// @brief      Display reusable recent terms with a clear-history action
+    /// @details    Choosing a term sets the query, refreshes its history position, and releases
+    ///             field focus; Clear removes both persisted and displayed history
+    ///
+    /// @return     (some View) plain recent-search list
+    /// @post       Interactions affect search state only, not Board content
+    ///
     private var recentSearchList: some View {
         List {
             Section {
@@ -1465,6 +1976,17 @@ private struct TodaySearchView: View {
         .listStyle(.plain)
     }
 
+
+    ///
+    /// @fcn        TodaySearchView.body
+    /// @brief      Present local Board search, scope controls, and matching destinations
+    /// @details    Switches between history, empty states, and indexed matches.
+    ///             Result selection remembers the query, routes to its list/card, then dismisses
+    ///
+    /// @return     (some View) large-sheet search navigation surface
+    /// @post       Submission, result selection, and disappearance remember nonblank queries;
+    ///             search alone does not modify Board content
+    ///
     var body: some View {
 
         NavigationStack {
@@ -1567,6 +2089,17 @@ private struct TodaySearchView: View {
         .onDisappear { rememberSearch() }
     }
 
+
+    ///
+    /// @fcn        TodaySearchView.searchEmptyState(title:detail:)
+    /// @brief      Render a centered search explanation
+    /// @details    Uses a search symbol, heading, and multiline supporting text for empty states
+    ///
+    /// @param[in]  title   Empty-state heading
+    /// @param[in]  detail  Supporting explanation, which may be empty
+    /// @return     (some View) noninteractive empty-state content
+    /// @post       Query, focus, and history remain unchanged
+    ///
     private func searchEmptyState(title: String, detail: String) -> some View {
         VStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
@@ -1591,6 +2124,14 @@ private struct TodayLabelCard: Identifiable {
     let listID: Int /* List opened when selected */
     let listTitle: String /* Containing list name */
 
+    ///
+    /// @fcn        TodayLabelCard.id
+    /// @brief      Identify a label match by its list and card
+    /// @details    Combines both numeric identities for stable matching-card rows
+    ///
+    /// @return     (String) composite list/card identity
+    /// @post       The matched card is unchanged
+    ///
     var id: String { "\(listID):\(card.id)" }
 }
 
@@ -1600,6 +2141,14 @@ private struct TodayLabelUsage: Identifiable {
     let label: KanbanLabel /* Reusable label definition */
     let cards: [TodayLabelCard] /* Cards currently carrying this label */
 
+    ///
+    /// @fcn        TodayLabelUsage.id
+    /// @brief      Identify an applied-label usage row
+    /// @details    Reuses the underlying reusable-label identity
+    ///
+    /// @return     (String) label identity
+    /// @post       Label definitions and matches remain unchanged
+    ///
     var id: String { label.id }
 }
 
@@ -1609,7 +2158,24 @@ private struct TodayLabelCategoryUsage: Identifiable {
     let category: KanbanLabelCategory /* Label category */
     let labels: [TodayLabelUsage] /* Labels in use in this category */
 
+    ///
+    /// @fcn        TodayLabelCategoryUsage.id
+    /// @brief      Identify a populated label category
+    /// @details    Reuses the underlying library-category identity
+    ///
+    /// @return     (String) category identity
+    /// @post       Category contents remain unchanged
+    ///
     var id: String { category.id }
+
+    ///
+    /// @fcn        TodayLabelCategoryUsage.cardCount
+    /// @brief      Count distinct matched cards across this category's labels
+    /// @details    Deduplicates composite list/card IDs so a card with several labels counts once
+    ///
+    /// @return     (Int) distinct card count
+    /// @post       Usage collections remain unchanged
+    ///
     var cardCount: Int { Set(labels.flatMap { $0.cards.map(\.id) }).count }
 }
 
@@ -1623,6 +2189,16 @@ private struct TodayLabelCardsView: View {
 
     @Environment(\.dismiss) private var dismiss /* Close the label card list */
 
+
+    ///
+    /// @fcn        TodayLabelCardsView.body
+    /// @brief      Display cards carrying the selected label
+    /// @details    Shows card titles and containing-list names; selection opens the containing
+    ///             Week list rather than card detail and dismisses this sheet
+    ///
+    /// @return     (some View) labeled card-results navigation list
+    /// @post       Done only dismisses; result selection delegates navigation without changing labels
+    ///
     var body: some View {
         NavigationStack {
             List(cards) { result in
@@ -1665,6 +2241,15 @@ private struct CalendarCardResult: Identifiable {
     let listTitle: String /* Containing Board list */
     let dateLabel: String /* Start/due marker for this date */
 
+    ///
+    /// @fcn        CalendarCardResult.id
+    /// @brief      Identify a dated-card result
+    /// @details    Reuses the underlying card ID within the supplied Board snapshot
+    ///
+    /// @return     (Int) card identity
+    /// @pre        Card IDs are unique within the displayed Board
+    /// @post       Card dates and result content remain unchanged
+    ///
     var id: Int { cardID }
 }
 
@@ -1680,10 +2265,27 @@ private struct BoardListsView: View {
     @State private var openedCollection: PersonalCollection?
     @State private var deletingCollection: PersonalCollection?
 
+    ///
+    /// @fcn        BoardListsView.filteredCollections
+    /// @brief      Select active personal collections matching the directory query
+    /// @details    Delegates collection matching to the model and preserves collection order
+    ///
+    /// @return     ([PersonalCollection]) visible active collections
+    /// @post       Archived collections remain stored but are not returned
+    ///
     private var filteredCollections: [PersonalCollection] {
         collections.filter { $0.isActive && $0.matches(searchText) }
     }
 
+    ///
+    /// @fcn        BoardListsView.showsWeek
+    /// @brief      Determine whether the Week directory row matches the query
+    /// @details    Accepts blank input, the Week Board name, or an active Week list/card title;
+    ///             section dividers and archived lists do not provide card-title matches
+    ///
+    /// @return     (Bool) whether to show the Week row
+    /// @post       Search and Board contents remain unchanged
+    ///
     private var showsWeek: Bool {
         let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return term.isEmpty || "Week Board".localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
@@ -1693,6 +2295,16 @@ private struct BoardListsView: View {
         }
     }
 
+
+    ///
+    /// @fcn        BoardListsView.saveCollection(_:)
+    /// @brief      Insert or replace a personal collection by identity
+    /// @details    Updates the shared binding; app-root observation owns persistence and error reporting
+    ///
+    /// @param[in]  collection  Complete collection submitted by its settings form
+    /// @return     (Void) replaces the matching entry or appends a new one
+    /// @post       Other collections and the Week snapshot remain unchanged
+    ///
     private func saveCollection(_ collection: PersonalCollection) {
         if let index = collections.firstIndex(where: { $0.id == collection.id }) {
             collections[index] = collection
@@ -1701,6 +2313,17 @@ private struct BoardListsView: View {
         }
     }
 
+
+    ///
+    /// @fcn        BoardListsView.collectionBinding(for:)
+    /// @brief      Resolve a presented collection back to shared directory state
+    /// @details    Getter finds the current entry or returns the supplied snapshot;
+    ///             setter replaces an existing entry only and does not recreate removed collections
+    ///
+    /// @param[in]  collection  Presented snapshot providing identity and getter fallback
+    /// @return     (Binding<PersonalCollection>) live getter/setter for the shared collection array
+    /// @post       Constructing the binding does not modify or persist any collection
+    ///
     private func collectionBinding(for collection: PersonalCollection) -> Binding<PersonalCollection> {
         Binding(
             get: { collections.first(where: { $0.id == collection.id }) ?? collection },
@@ -1711,6 +2334,21 @@ private struct BoardListsView: View {
         )
     }
 
+
+    ///
+    /// @fcn        BoardListsView.row(title:subtitle:icon:color:count:)
+    /// @brief      Render a consistent collection-directory row
+    /// @details    Combines a tinted symbol, two text lines, and a trailing monospaced count;
+    ///             the caller supplies navigation or editing interaction
+    ///
+    /// @param[in]  title     Primary collection name
+    /// @param[in]  subtitle  Supporting type or list-count text
+    /// @param[in]  icon      SF Symbol name
+    /// @param[in]  color     Icon tint and background accent
+    /// @param[in]  count     Card count displayed at the trailing edge
+    /// @return     (some View) full-row hit-test content
+    /// @post       Rendering does not change collection state
+    ///
     private func row(title: String, subtitle: String, icon: String, color: Color, count: Int) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -1736,6 +2374,16 @@ private struct BoardListsView: View {
         .contentShape(Rectangle())
     }
 
+
+    ///
+    /// @fcn        BoardListsView.createMenu
+    /// @brief      Offer blank and starter personal collections
+    /// @details    New List, New Board, and named starters seed an editable collection draft
+    ///             with the appropriate kind/icon; nothing is inserted until the form saves
+    ///
+    /// @return     (some View) accessible toolbar creation menu
+    /// @post       Choosing an entry sets editingCollection without changing stored collections
+    ///
     private var createMenu: some View {
         Menu {
             Button("New List", systemImage: "list.bullet") {
@@ -1770,6 +2418,17 @@ private struct BoardListsView: View {
         .accessibilityLabel("Create list or board")
     }
 
+
+    ///
+    /// @fcn        BoardListsView.body
+    /// @brief      Present Week access and the personal-collection directory
+    /// @details    Supports search, create/edit, confirmed deletion, and unfiltered active-collection
+    ///             reordering. Presented boards retain attachment references from other boards and undo state
+    ///
+    /// @return     (some View) searchable directory with settings and board presentations
+    /// @post       Directory edits update the shared collections binding; archival uses save-first
+    ///             persistence and does not alter Week. Archived collections remain outside active rows
+    ///
     var body: some View {
         NavigationStack {
             List {
@@ -1868,12 +2527,24 @@ private struct BoardListsView: View {
     }
 }
 
+
 private struct PersonalCollectionBoardView: View {
+
     @Binding var collection: PersonalCollection
     let retainedLists: [KanbanList]
     let onArchive: () throws -> Void
     @Environment(\.dismiss) private var dismiss
 
+    ///
+    /// @fcn        PersonalCollectionBoardView.body
+    /// @brief      Adapt a personal collection to the shared Board surface
+    /// @details    Supplies active/archive list bindings, collection bookmarks, and retained attachment
+    ///             references. Full boards allow list creation and archive; single-list collections do not
+    ///
+    /// @return     (some View) collection-backed Board with database activity feedback
+    /// @post       Successful archive dismisses after onArchive returns; failure reports an error
+    ///             and keeps the Board open
+    ///
     var body: some View {
         ContentView(
             lists: $collection.lists.activeLists,
@@ -1898,26 +2569,69 @@ private struct PersonalCollectionBoardView: View {
     }
 }
 
+
 private struct PersonalCollectionSettingsView: View {
+
     let isNew: Bool
     let onSave: (PersonalCollection) -> Void
     @State private var draft: PersonalCollection
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        PersonalCollectionSettingsView.init(collection:isNew:onSave:)
+    /// @brief      Seed an isolated personal-collection settings draft
+    /// @details    Copies the supplied value into local State so Cancel does not submit partial edits
+    ///
+    /// @param[in]  collection  Existing collection or newly created starter draft
+    /// @param[in]  isNew       Whether to display a creation heading
+    /// @param[in]  onSave      Callback receiving the complete renamed draft
+    /// @return     (PersonalCollectionSettingsView) initialized settings form
+    /// @post       The source collection remains unchanged until onSave is invoked
+    ///
     init(collection: PersonalCollection, isNew: Bool, onSave: @escaping (PersonalCollection) -> Void) {
         _draft = State(initialValue: collection)
         self.isNew = isNew
         self.onSave = onSave
     }
 
+
+    ///
+    /// @fcn        PersonalCollectionSettingsView.trimmedTitle
+    /// @brief      Normalize the collection name for validation and save
+    /// @details    Trims outer whitespace/newlines without mutating the draft text
+    ///
+    /// @return     (String) normalized collection title
+    /// @post       The draft remains unchanged
+    ///
     private var trimmedTitle: String { draft.title.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    ///
+    /// @fcn        PersonalCollectionSettingsView.save()
+    /// @brief      Submit the normalized collection draft and close settings
+    /// @details    Uses the model's rename helper to keep single-list collection naming consistent,
+    ///             then calls the parent submission callback before dismissal
+    ///
+    /// @return     (Void) updates the draft, submits it, and dismisses the form
+    /// @pre        The form has verified trimmedTitle is nonempty
+    /// @post       Persistence and save-error reporting remain the parent's responsibility
+    ///
     private func save() {
         draft.rename(to: trimmedTitle)
         onSave(draft)
         dismiss()
     }
 
+
+    ///
+    /// @fcn        PersonalCollectionSettingsView.body
+    /// @brief      Present collection name, icon, and color editing
+    /// @details    Displays a fixed collection type and distinguishes create/edit headings;
+    ///             whitespace-only names disable Save, while Cancel dismisses without submission
+    ///
+    /// @return     (some View) navigation form with draft-bound settings and toolbar actions
+    /// @post       Changes remain local until Save invokes the parent callback
+    ///
     var body: some View {
         NavigationStack {
             Form {
@@ -1958,7 +2672,17 @@ private struct PersonalCollectionSettingsView: View {
     }
 }
 
+
 extension PersonalCollectionIcon {
+
+    ///
+    /// @fcn        PersonalCollectionIcon.title
+    /// @brief      Translate a collection icon into its display name
+    /// @details    Maps each icon case to a readable name for the settings picker
+    ///
+    /// @return     (String) icon display title
+    /// @post       No collection state is changed
+    ///
     var title: String {
         switch self {
             case .notes: "Notes"
@@ -1973,6 +2697,7 @@ extension PersonalCollectionIcon {
     }
 }
 
+
 private struct WeekListsDirectoryView: View {
 
     let lists: [KanbanList]
@@ -1980,6 +2705,16 @@ private struct WeekListsDirectoryView: View {
 
     @State private var searchText = ""
 
+    ///
+    /// @fcn        WeekListsDirectoryView.filteredLists
+    /// @brief      Filter the supplied Week list directory
+    /// @details    Trims the query and matches list titles/subtitles or non-divider card titles
+    ///             using localized-standard containment; blank input returns all supplied lists
+    ///
+    /// @return     ([KanbanList]) matching lists in original order
+    /// @pre        The caller supplies the intended active-list partition
+    /// @post       No list content or search text is changed
+    ///
     private var filteredLists: [KanbanList] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return lists }
@@ -1990,6 +2725,16 @@ private struct WeekListsDirectoryView: View {
         }
     }
 
+
+    ///
+    /// @fcn        WeekListsDirectoryView.body
+    /// @brief      Present a searchable directory of Week lists
+    /// @details    Displays list subtitles and non-divider card counts, with distinct empty
+    ///             and no-match explanations; rows delegate navigation to the existing Week Board
+    ///
+    /// @return     (some View) paper-backed list directory
+    /// @post       Selecting a row calls onOpenBoardList without modifying the list
+    ///
     var body: some View {
         ZStack {
             TodayPaperBackground()
@@ -2086,12 +2831,29 @@ struct TodayCalendarView: View {
 
     private let weekdayColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
 
+    ///
+    /// @fcn        TodayCalendarView.weekdaySymbols
+    /// @brief      Order localized weekday headings for the user's calendar
+    /// @details    Rotates very-short standalone symbols so the configured first weekday leads
+    ///
+    /// @return     ([String]) weekday headings in calendar-column order
+    /// @post       Calendar preferences are unchanged
+    ///
     private var weekdaySymbols: [String] {
         let calendar = Calendar.current /* User's local calendar */
         let symbols = calendar.veryShortStandaloneWeekdaySymbols /* Locale weekday labels */
         return (0..<symbols.count).map { symbols[(calendar.firstWeekday - 1 + $0) % symbols.count] }
     }
 
+    ///
+    /// @fcn        TodayCalendarView.monthDays
+    /// @brief      Build complete calendar-grid rows for the displayed month
+    /// @details    Uses the current calendar's month boundaries and first weekday,
+    ///             adding nil placeholders before and after dates to complete seven-column rows
+    ///
+    /// @return     ([Date?]) grid cells, or an empty array when month metadata cannot be resolved
+    /// @post       Displayed month and selection remain unchanged
+    ///
     private var monthDays: [Date?] {
         let calendar = Calendar.current /* User's local calendar */
         guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start,
@@ -2106,10 +2868,28 @@ struct TodayCalendarView: View {
         return days
     }
 
+    ///
+    /// @fcn        TodayCalendarView.selectedDayCards
+    /// @brief      Resolve cards starting or due on the selected local day
+    /// @details    Delegates date comparison and result construction to cards(on:)
+    ///
+    /// @return     ([CalendarCardResult]) selected-day results in list/card order
+    /// @post       Dates and selection remain unchanged
+    ///
     private var selectedDayCards: [CalendarCardResult] {
         cards(on: selectedDate)
     }
 
+
+    ///
+    /// @fcn        TodayCalendarView.body
+    /// @brief      Present monthly card-date browsing and selected-day results
+    /// @details    Combines month navigation, localized weekday columns, selectable date cells,
+    ///             and starting/due cards; result rows route to their containing Board lists
+    ///
+    /// @return     (some View) paper-backed calendar surface
+    /// @post       Date/month controls update local display state; navigation does not edit card dates
+    ///
     var body: some View {
 
         ZStack {
@@ -2219,7 +2999,19 @@ struct TodayCalendarView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayCalendarView.calendarDayButton(_:)
+    /// @brief      Render an accessible calendar date cell
+    /// @details    Distinguishes today and the selected day, marks dates containing cards,
+    ///             and announces the full date with its dated-card count
+    ///
+    /// @param[in]  date  Calendar-grid date to represent
+    /// @return     (some View) day-selection button
+    /// @post       Tapping selects the date's local start of day without changing card dates
+    ///
     private func calendarDayButton(_ date: Date) -> some View {
+
         let calendar = Calendar.current /* User's local calendar */
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate) /* Selected day state */
         let isToday = calendar.isDateInToday(date) /* Current day state */
@@ -2249,6 +3041,18 @@ struct TodayCalendarView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+
+    ///
+    /// @fcn        TodayCalendarView.cards(on:)
+    /// @brief      Find active cards starting or due on a local calendar day
+    /// @details    Excludes dividers, compares dates with the user's current calendar,
+    ///             and emits one result per matching card, including a combined start/due marker
+    ///
+    /// @param[in]  date  Day whose starting and due cards are requested
+    /// @return     ([CalendarCardResult]) dated-card results in supplied list/card order
+    /// @pre        The caller supplies the intended list partition with Board-unique card IDs
+    /// @post       No date, completion, or archived-card data is modified
+    ///
     private func cards(on date: Date) -> [CalendarCardResult] {
         let calendar = Calendar.current /* User's local calendar */
 
@@ -2265,6 +3069,17 @@ struct TodayCalendarView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayCalendarView.moveMonth(by:)
+    /// @brief      Shift the displayed calendar month and reset day selection
+    /// @details    Adds the signed month offset using the current calendar; if date arithmetic
+    ///             fails, leaves both displayedMonth and selectedDate unchanged
+    ///
+    /// @param[in]  amount  Signed number of months to move
+    /// @return     (Void) selects the local start of day for the shifted month date
+    /// @post       Card dates and Board contents remain unchanged
+    ///
     private func moveMonth(by amount: Int) {
         guard let nextMonth = Calendar.current.date(byAdding: .month, value: amount, to: displayedMonth) else { return }
         displayedMonth = nextMonth
@@ -2279,6 +3094,15 @@ private struct SavedCardResult: Identifiable {
     let listID: Int /* List opened when selected */
     let listTitle: String /* Containing list title */
 
+    ///
+    /// @fcn        SavedCardResult.id
+    /// @brief      Identify a bookmarked-card row
+    /// @details    Reuses the card's stable identity in the Week snapshot
+    ///
+    /// @return     (Int) card identity
+    /// @pre        Card IDs are unique within the displayed Week Board
+    /// @post       Bookmark membership and card content remain unchanged
+    ///
     var id: Int { card.id }
 }
 
@@ -2292,6 +3116,16 @@ private struct SavedCardsView: View {
     let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
     let onRestoreBoard: (UUID) -> Void
 
+    ///
+    /// @fcn        SavedCardsView.savedCards
+    /// @brief      Resolve bookmarks against available active cards
+    /// @details    Traverses supplied lists in order, includes bookmarked non-divider cards,
+    ///             and retains containing-list provenance; stale bookmark IDs produce no rows
+    ///
+    /// @return     ([SavedCardResult]) currently available bookmarked cards
+    /// @pre        The caller supplies active Week lists
+    /// @post       Stale bookmark IDs are not removed from the stored set
+    ///
     private var savedCards: [SavedCardResult] {
         lists.flatMap { list in
             list.cards.compactMap { card in
@@ -2301,6 +3135,17 @@ private struct SavedCardsView: View {
         }
     }
 
+
+    ///
+    /// @fcn        SavedCardsView.body
+    /// @brief      Present device-local bookmarks and archived full boards
+    /// @details    Shows available bookmarked cards with list navigation and, when present,
+    ///             archived board snapshots with Restore actions and nested-content counts
+    ///
+    /// @return     (some View) paper-backed Saved surface
+    /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
+    ///             opens its containing Week list without removing the bookmark
+    ///
     var body: some View {
 
         ZStack {
@@ -2401,6 +3246,17 @@ private struct TodayFocusSection: View {
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
+
+    ///
+    /// @fcn        TodayFocusSection.body
+    /// @brief      Summarize the chosen Today list and preview unfinished cards
+    /// @details    Displays title-completion progress, distinct empty/all-complete states,
+    ///             quick completion controls, and actions to choose or open today's list
+    ///
+    /// @return     (some View) raised Today focus panel
+    /// @pre        cards and openCards describe the supplied list and exclude section dividers
+    /// @post       Completion, list choice, and navigation are delegated to supplied callbacks
+    ///
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -2498,8 +3354,18 @@ private struct TodayFocusSection: View {
     }
 }
 
+
 private struct TodayPaperBackground: View {
 
+    ///
+    /// @fcn        TodayPaperBackground.body
+    /// @brief      Fill the available surface with the shared Today paper texture
+    /// @details    Scales and clips the image to geometry, extends through safe areas,
+    ///             and excludes decoration from accessibility and hit testing
+    ///
+    /// @return     (some View) noninteractive full-surface background
+    /// @post       Rendering does not affect app or navigation state
+    ///
     var body: some View {
         GeometryReader { geometry in
             Image("TodayPaper")
@@ -2518,6 +3384,16 @@ private struct TodayPaperBackground: View {
 /// Gives Today sections a readable raised surface over the full-screen paper texture.
 private struct TodayPanelSurface: ViewModifier {
 
+    ///
+    /// @fcn        TodayPanelSurface.body(content:)
+    /// @brief      Give Today content a padded raised material surface
+    /// @details    Adds a rounded material background, light outline, and shadow;
+    ///             decorative layers do not intercept the content's interactions
+    ///
+    /// @param[in]  content  Section content to decorate
+    /// @return     (some View) padded content with the shared panel treatment
+    /// @post       Content behavior and model state remain unchanged
+    ///
     func body(content: Content) -> some View {
         content
             .padding(16)

@@ -1,6 +1,6 @@
 # Today View UI Proposal
 
-**Status:** Today and Board tabs are implemented. This document records the current first version and possible follow-up refinements. The attached weekly board is the reference for how Today serves the existing day-by-day planning method.
+**Status:** Today and Board tabs are implemented. This document records the current first version and possible follow-up refinements. The attached weekly board is the reference for how Today serves the existing day-by-day planning method. The broader [Life Planning & Management model](Life-Planning-Model.md) is a product direction; weekly review is not an implemented Today feature.
 
 ## Design Goal
 
@@ -37,6 +37,8 @@ Once schedule events and notes are real app features, Today can optionally inclu
 - **Navigation:** Today and Board are implemented. Add Scheduled after its behavior is validated; add Projects, Notes, and Team only as those destinations become functional.
 
 Each section should be independently hideable or configurable where that helps the person control screen density. Keep optional sections out of the initial layout until there is real content to show.
+
+A future weekly review may offer a deliberate way to revisit plans, but it should not be conflated with Today or Scheduled. If explored, it should operate on existing Board records, require the person's choice for changes, and remain optional rather than adding automatic rescheduling or pressure.
 
 ## Interaction Rules
 

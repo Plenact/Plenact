@@ -42,6 +42,8 @@ Plenact is intended to grow across several related planning jobs:
 - Brainstorming and coordinating work with others
 - Connecting plans to the actions needed to move them forward
 
+The emerging product model is **Lists organize; Cards describe activities; checklist items express actions**. Today and Week should present the same underlying planning records, while a possible weekly review would help people reconsider those plans without automatically changing them. This model and its implementation boundaries are documented in [Plenact Life Planning & Management Model](Doc/Life-Planning-Model.md); weekly review is not currently implemented.
+
 Potential audiences include individuals, teams, therapy and recovery centers, and people recovering from traumatic brain injuries or with similar accessibility needs. These are product-design audiences, not claims that Plenact provides treatment or has clinical validation
 
 The earlier question of a parent surface for Planner, Labels, Notes, and Attachments is now taking shape through Today as the front door and Board as the current source of truth. Schedule, Projects, Notes, and Team remain possible future destinations rather than implemented navigation

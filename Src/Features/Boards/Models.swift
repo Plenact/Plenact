@@ -851,6 +851,40 @@ struct KanbanComment: Identifiable, Hashable, Codable {
 ///
 /// @note       The storage key is versioned so future persistence format changes can be migrated deliberately
 ///
+struct ExampleLoadUndoSnapshot: Codable, Equatable {
+
+    let lists: [KanbanList]
+    let todayListID: Int?
+}
+
+
+enum ExampleLoadUndoStore {
+
+    private static let storageKey = "Plenact.ExampleLoadUndo.v1"
+
+    @discardableResult
+    static func save(
+        lists: [KanbanList],
+        todayListID: Int?,
+        to defaults: UserDefaults = .standard
+    ) -> Bool {
+        let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: todayListID)
+        guard let data = try? JSONEncoder().encode(snapshot) else { return false }
+        defaults.set(data, forKey: storageKey)
+        return true
+    }
+
+    static func load(from defaults: UserDefaults = .standard) -> ExampleLoadUndoSnapshot? {
+        guard let data = defaults.data(forKey: storageKey) else { return nil }
+        return try? JSONDecoder().decode(ExampleLoadUndoSnapshot.self, from: data)
+    }
+
+    static func clear(from defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: storageKey)
+    }
+}
+
+
 enum KanbanBoardPersistence {
 
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */

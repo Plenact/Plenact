@@ -69,6 +69,21 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(TodaySearchIndex.results(query: "Divider", scope: .all, lists: lists, library: .starter).isEmpty)
     }
 
+    func testExampleLoadUndoSnapshotPersistsAndClears() throws {
+        let suite = "Plenact.ExampleLoadUndoTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let lists = Array(SampleData.lists.prefix(2))
+        let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: lists[1].id)
+
+        XCTAssertTrue(ExampleLoadUndoStore.save(lists: lists, todayListID: lists[1].id, to: defaults))
+        XCTAssertEqual(ExampleLoadUndoStore.load(from: defaults), snapshot)
+
+        ExampleLoadUndoStore.clear(from: defaults)
+        XCTAssertNil(ExampleLoadUndoStore.load(from: defaults))
+    }
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testStarterBoardDocumentRoundTrips
     /// @brief      Encode and decode the complete starter Board document

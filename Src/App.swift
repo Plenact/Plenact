@@ -899,7 +899,33 @@ private struct TodayHomeView: View {
                     profile:  profile,
                     lists:    lists,
                     onSave:   onSaveProfile,
-                    onRemove: onRemoveProfile
+                    onRemove: onRemoveProfile,
+                    onLoadExample: {
+                        guard ExampleLoadUndoStore.save(lists: lists, todayListID: selectedTodayListID) else {
+                            return false
+                        }
+                        let exampleLists = SampleData.lists
+                        lists = exampleLists
+                        KanbanBoardPersistence.saveLists(exampleLists)
+                        if let firstList = exampleLists.first {
+                            selectTodayList(firstList)
+                        }
+                        return true
+                    },
+                    onUndoExampleLoad: {
+                        guard let snapshot = ExampleLoadUndoStore.load() else { return false }
+                        lists = snapshot.lists
+                        KanbanBoardPersistence.saveLists(snapshot.lists)
+                        if let todayListID = snapshot.todayListID,
+                           let todayList = snapshot.lists.first(where: { $0.id == todayListID }) {
+                            selectTodayList(todayList)
+                        } else {
+                            selectedTodayListID = nil
+                            UserDefaults.standard.removeObject(forKey: Self.todayListStorageKey(for: .now))
+                        }
+                        ExampleLoadUndoStore.clear()
+                        return true
+                    }
                 )
             }
             .fullScreenCover(isPresented: $showsTodayList) {

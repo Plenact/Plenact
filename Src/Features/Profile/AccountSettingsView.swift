@@ -156,6 +156,8 @@ struct AccountSettingsView: View {
     let lists:    [KanbanList]                   /* Default-list choices   */
     let onSave:   (LocalProfile) -> Void         /* Profile save callback  */
     let onRemove: () -> Void                     /* Profile removal        */
+    let onLoadExample: () -> Bool
+    let onUndoExampleLoad: () -> Bool
 
     @Environment(\.dismiss) private var dismiss  /* Sheet dismissal       */
 
@@ -172,8 +174,11 @@ struct AccountSettingsView: View {
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
+    @State private var confirmsLoadExample  = false
+    @State private var confirmsUndoExample = false
+    @State private var hasUndoableExample = false
+    @State private var exampleOperationError: String?
     @State private var isChoosingAvatarIcon = false
-    @State private var showsSharedDemo = false
     @State private var profileSheetDetent: PresentationDetent = .large
     @State private var avatarPhotoData:    Data?
     @State private var photoSaveError:     String?
@@ -205,7 +210,9 @@ struct AccountSettingsView: View {
         profile:  LocalProfile?,
         lists:    [KanbanList],
         onSave:   @escaping (LocalProfile) -> Void,
-        onRemove: @escaping ()             -> Void
+        onRemove: @escaping ()             -> Void,
+        onLoadExample: @escaping ()         -> Bool,
+        onUndoExampleLoad: @escaping ()     -> Bool
     ) {
 
         let preferences = profile?.preferences ?? LocalProfilePreferences()   /* Initial settings */
@@ -214,6 +221,8 @@ struct AccountSettingsView: View {
         self.lists    = lists
         self.onSave   = onSave
         self.onRemove = onRemove
+        self.onLoadExample = onLoadExample
+        self.onUndoExampleLoad = onUndoExampleLoad
 
         _profileID          = State(initialValue: profile?.id          ?? UUID())
         _createdAt          = State(initialValue: profile?.createdAt   ?? .now)
@@ -224,6 +233,7 @@ struct AccountSettingsView: View {
         _avatarIcon         = State(initialValue: profile?.avatarIcon  ?? .initials)
         _avatarForegroundColor = State(initialValue: profile?.avatarForegroundColor ?? .white)
         _avatarPhotoData = State(initialValue: ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName))
+        _hasUndoableExample = State(initialValue: ExampleLoadUndoStore.load() != nil)
 
         _defaultListID      = State(initialValue: lists.contains(where: { $0.id == preferences.defaultListID }) ? preferences.defaultListID : nil)
      
@@ -350,10 +360,27 @@ struct AccountSettingsView: View {
 
                     Section {
                         Button {
-                            showsSharedDemo = true
+                            confirmsLoadExample = true
                         } label: {
-                            Label("Shared Demo", systemImage: "person.2")
+                            Label("Load Example", systemImage: "square.and.arrow.down")
                         }
+                        if hasUndoableExample {
+                            Button("Undo Last Load", systemImage: "arrow.uturn.backward", role: .destructive) {
+                                confirmsUndoExample = true
+                            }
+                        }
+                    } footer: {
+                        Text(hasUndoableExample
+                             ? "Your previous board is saved on this device and can be restored with Undo Last Load."
+                             : "Load Plenact's example board on this device. This replaces your current lists and cards.")
+                    }
+                    .alert("Could not update board", isPresented: Binding(
+                        get: { exampleOperationError != nil },
+                        set: { if !$0 { exampleOperationError = nil } }
+                    )) {
+                        Button("OK", role: .cancel) { exampleOperationError = nil }
+                    } message: {
+                        Text(exampleOperationError ?? "")
                     }
 
                     if let profile {
@@ -444,25 +471,41 @@ struct AccountSettingsView: View {
             } message: {
                 Text("Your Board, labels, and attachments will remain on this device.")
             }
+            .confirmationDialog(
+                "Replace this board with the example?",
+                isPresented: $confirmsLoadExample,
+                titleVisibility: .visible
+            ) {
+                Button("Load Example", role: .destructive) {
+                    if onLoadExample() {
+                        hasUndoableExample = true
+                    } else {
+                        exampleOperationError = "A backup could not be saved, so the example was not loaded."
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Your current lists and cards on this device will be replaced. No data will be uploaded.")
+            }
+            .confirmationDialog(
+                "Restore the board from before the example was loaded?",
+                isPresented: $confirmsUndoExample,
+                titleVisibility: .visible
+            ) {
+                Button("Undo Load Example", role: .destructive) {
+                    if onUndoExampleLoad() {
+                        hasUndoableExample = false
+                    } else {
+                        exampleOperationError = "The saved board snapshot could not be restored."
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This replaces the current board with the saved lists and cards from before Load Example.")
+            }
         }
         .presentationDetents([.height(620), .large], selection: $profileSheetDetent)
         .presentationDragIndicator(.visible)
-        .sheet(isPresented: $showsSharedDemo) {
-            NavigationStack {
-                Form {
-                    PlenactDemoAccountSection()
-                }
-                .navigationTitle("Shared Demo")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { showsSharedDemo = false }
-                    }
-                }
-            }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
         .alert("Could not save avatar", isPresented: Binding(
             get: { photoSaveError != nil },
             set: { if !$0 { photoSaveError = nil } }

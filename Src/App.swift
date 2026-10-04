@@ -911,8 +911,8 @@ private struct TodayHomeView: View {
 
                 if let selectedTodayList {
 
-                    QuickNoteComposer(listTitle: selectedTodayList.title) { title, description in
-                        onAddCard(selectedTodayList.id, title, description)
+                    QuickNoteComposer(lists: $lists, initialListID: selectedTodayList.id) { listID, title, description in
+                        onAddCard(listID, title, description)
                     }
                 }
             }
@@ -1059,16 +1059,23 @@ private struct TodayHomeView: View {
 }
 
 
-/// Creates a card with optional supporting detail for the selected Today list.
+/// Creates a card with optional supporting detail in a chosen board list.
 private struct QuickNoteComposer: View {
 
-    let listTitle: String                       /* Dest list displayed in the editor    */
-    let onSave: (String, String) -> Void        /* Create the card in the selected list */
+    @Binding var lists: [KanbanList]
+    let onSave: (Int, String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor           */
 
     @State private var title = ""               /* New card title                       */
     @State private var description = ""         /* Optional card detail                 */
+    @State private var selectedListID: Int
+
+    init(lists: Binding<[KanbanList]>, initialListID: Int, onSave: @escaping (Int, String, String) -> Void) {
+        _lists = lists
+        _selectedListID = State(initialValue: initialListID)
+        self.onSave = onSave
+    }
 
     private var trimmedTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1085,7 +1092,12 @@ private struct QuickNoteComposer: View {
                 }
 
                 Section("Add to") {
-                    Label(listTitle, systemImage: "list.bullet")
+                    Picker("List", selection: $selectedListID) {
+                        ForEach(lists) { list in
+                            Text(list.title).tag(list.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
             }
             .navigationTitle("New card")
@@ -1101,10 +1113,11 @@ private struct QuickNoteComposer: View {
                 ToolbarItem(placement: .confirmationAction) {
 
                     Button("Add") {
-                        onSave(trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        guard lists.contains(where: { $0.id == selectedListID }) else { return }
+                        onSave(selectedListID, trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
-                    .disabled(trimmedTitle.isEmpty)
+                    .disabled(trimmedTitle.isEmpty || !lists.contains(where: { $0.id == selectedListID }))
                 }
             }
         }

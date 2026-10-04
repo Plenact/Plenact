@@ -82,6 +82,24 @@ private enum TodayListPickerMode: String, Identifiable {
     }
 }
 
+enum TodayListSelection {
+
+    static func initialListID(
+        savedListID: Int?,
+        profileDefaultListID: Int?,
+        lists: [KanbanList]
+    ) -> Int? {
+        if let savedListID, lists.contains(where: { $0.id == savedListID }) {
+            return savedListID
+        }
+        if let profileDefaultListID, lists.contains(where: { $0.id == profileDefaultListID }) {
+            return profileDefaultListID
+        }
+        return lists.first(where: { $0.title.caseInsensitiveCompare("Monday") == .orderedSame })?.id
+            ?? lists.first?.id
+    }
+}
+
 
 /// Persists device-local bookmarks without changing the shared Board document.
 private enum SavedCardPersistence {
@@ -94,6 +112,30 @@ private enum SavedCardPersistence {
 
     static func save(_ cardIDs: Set<Int>) {
         UserDefaults.standard.set(cardIDs.sorted(), forKey: storageKey)
+    }
+}
+
+
+enum LastViewedListStore {
+
+    private static let key = "Plenact.LastViewedList.v1"
+
+    static func load(from defaults: UserDefaults = .standard) -> Int? {
+        defaults.object(forKey: key) as? Int
+    }
+
+    static func save(_ listID: Int, to defaults: UserDefaults = .standard) {
+        defaults.set(listID, forKey: key)
+    }
+
+    static func resolve(in lists: [KanbanList], fallback: Int? = nil, from defaults: UserDefaults = .standard) -> Int? {
+        if let lastViewed = load(from: defaults), lists.contains(where: { $0.id == lastViewed }) {
+            return lastViewed
+        }
+        if let fallback, lists.contains(where: { $0.id == fallback }) {
+            return fallback
+        }
+        return lists.first?.id
     }
 }
 
@@ -188,7 +230,8 @@ private struct AppRootView: View {
                 lists: $lists,
                 boardTargetListID: $boardTargetListID,
                 boardTargetCardID: $boardTargetCardID,
-                savedCardIDs: $savedCardIDs
+                savedCardIDs: $savedCardIDs,
+                onListViewed: rememberLastViewedList
             )
                 .tabItem {
                     Label("Board", systemImage: "rectangle.3.group")
@@ -217,7 +260,10 @@ private struct AppRootView: View {
             SavedCardPersistence.save(updatedIDs)
         }
         .sheet(isPresented: $showsCenterNewCardSheet) {
-            CenterNewCardSheet(lists: lists) { listID, title, description in
+            QuickNoteComposer(
+                lists: $lists,
+                initialListID: LastViewedListStore.resolve(in: lists, fallback: profile?.preferences.defaultListID)
+            ) { listID, title, description in
                 addCard(to: listID, title: title, description: description)
             }
         }
@@ -343,15 +389,22 @@ private struct AppRootView: View {
     }
 
     private func openBoardList(_ listID: Int) {
+        rememberLastViewedList(listID)
         boardTargetCardID = nil
         boardTargetListID   = listID
         selectedDestination = .board
     }
 
     private func openBoardCard(listID: Int, cardID: Int) {
+        rememberLastViewedList(listID)
         boardTargetCardID = cardID
         boardTargetListID = listID
         selectedDestination = .board
+    }
+
+    private func rememberLastViewedList(_ listID: Int) {
+        guard lists.contains(where: { $0.id == listID }), LastViewedListStore.load() != listID else { return }
+        LastViewedListStore.save(listID)
     }
 
     private func toggleCardCompletion(in listID: Int, cardID: Int) {
@@ -610,8 +663,19 @@ private struct TodayHomeView: View {
         self.onOpenBoardCard = onOpenBoardCard
         self.quickCreateRequest = quickCreateRequest
 
-        let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int /* Persisted date-specific selection */
-        _selectedTodayListID = State(initialValue: savedListID)
+        let storageKey = Self.todayListStorageKey(for: .now)
+        let savedListID = UserDefaults.standard.object(forKey: storageKey) as? Int /* Persisted date-specific selection */
+        let profileDefaultListID = profile?.preferences.defaultListID
+        let initialListID = TodayListSelection.initialListID(
+            savedListID: savedListID,
+            profileDefaultListID: profileDefaultListID,
+            lists: lists.wrappedValue
+        )
+        _selectedTodayListID = State(initialValue: initialListID)
+
+        if savedListID == nil, profileDefaultListID == nil, let initialListID {
+            UserDefaults.standard.set(initialListID, forKey: storageKey)
+        }
     }
 
     ///
@@ -950,7 +1014,10 @@ private struct TodayHomeView: View {
 
                 if let selectedTodayList {
 
-                    QuickNoteComposer(lists: $lists, initialListID: selectedTodayList.id) { listID, title, description in
+                    QuickNoteComposer(
+                        lists: $lists,
+                        initialListID: LastViewedListStore.resolve(in: lists, fallback: selectedTodayList.id)
+                    ) { listID, title, description in
                         onAddCard(listID, title, description)
                     }
                 }
@@ -1112,9 +1179,9 @@ private struct QuickNoteComposer: View {
 
     @State private var title = ""               /* New card title                       */
     @State private var description = ""         /* Optional card detail                 */
-    @State private var selectedListID: Int
+    @State private var selectedListID: Int?
 
-    init(lists: Binding<[KanbanList]>, initialListID: Int, onSave: @escaping (Int, String, String) -> Void) {
+    init(lists: Binding<[KanbanList]>, initialListID: Int?, onSave: @escaping (Int, String, String) -> Void) {
         _lists = lists
         _selectedListID = State(initialValue: initialListID)
         self.onSave = onSave
@@ -1135,12 +1202,18 @@ private struct QuickNoteComposer: View {
                 }
 
                 Section("Add to") {
-                    Picker("List", selection: $selectedListID) {
-                        ForEach(lists) { list in
-                            Text(list.title).tag(list.id)
+                    if lists.isEmpty {
+                        Text("Create a list in Week before adding a card.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("List", selection: $selectedListID) {
+                            Text("Choose a list").tag(nil as Int?)
+                            ForEach(lists) { list in
+                                Text(list.title).tag(Optional(list.id))
+                            }
                         }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
             }
             .navigationTitle("New card")
@@ -1156,101 +1229,12 @@ private struct QuickNoteComposer: View {
                 ToolbarItem(placement: .confirmationAction) {
 
                     Button("Add") {
-                        guard lists.contains(where: { $0.id == selectedListID }) else { return }
+                        guard let selectedListID,
+                              lists.contains(where: { $0.id == selectedListID }) else { return }
                         onSave(selectedListID, trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
-                    .disabled(trimmedTitle.isEmpty || !lists.contains(where: { $0.id == selectedListID }))
-                }
-            }
-        }
-        .presentationDetents([.large])
-    }
-}
-
-
-/// Lets the center New action choose a destination without changing the active tab.
-private struct CenterNewCardSheet: View {
-
-    let lists: [KanbanList] /* Existing lists available for card creation */
-    let onCreate: (Int, String, String) -> Void /* Add the new card to the chosen list */
-
-    @Environment(\.dismiss) private var dismiss /* Close the destination picker */
-    @State private var selectedListID: Int? /* List selected for this new card */
-    @State private var title = "" /* New card title */
-    @State private var details = "" /* Optional new card details */
-
-    private var selectedList: KanbanList? {
-        lists.first { $0.id == selectedListID }
-    }
-
-    private var trimmedTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Group {
-                if let selectedList {
-                    Form {
-                        Section("Card") {
-                            TextField("Title", text: $title)
-                            TextField("Details (optional)", text: $details, axis: .vertical)
-                                .lineLimit(3...6)
-                        }
-
-                        Section("Add to") {
-                            Button {
-                                selectedListID = nil
-                            } label: {
-                                Label(selectedList.title, systemImage: "list.bullet")
-                            }
-                        }
-                    }
-                } else {
-                    List(lists) { list in
-                        Button {
-                            selectedListID = list.id
-                        } label: {
-                            HStack {
-                                Text(list.title)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .listStyle(.insetGrouped)
-                }
-            }
-            .navigationTitle(selectedList?.title ?? "Add card to list")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(selectedList == nil ? "Cancel" : "Lists") {
-                        if selectedList == nil {
-                            dismiss()
-                        } else {
-                            selectedListID = nil
-                        }
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if let selectedList {
-                        Button("Add") {
-                            onCreate(
-                                selectedList.id,
-                                trimmedTitle,
-                                details.trimmingCharacters(in: .whitespacesAndNewlines)
-                            )
-                            dismiss()
-                        }
-                        .disabled(trimmedTitle.isEmpty)
-                    }
+                    .disabled(trimmedTitle.isEmpty || selectedListID == nil || !lists.contains(where: { $0.id == selectedListID }))
                 }
             }
         }

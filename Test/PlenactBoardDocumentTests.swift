@@ -84,6 +84,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(ExampleLoadUndoStore.load(from: defaults))
     }
 
+    func testLastViewedListResolvesSavedSelectionAndFallbacks() throws {
+        let suite = "Plenact.LastViewedListTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let lists = [KanbanList(id: 4, title: "Week", cards: []), KanbanList(id: 9, title: "Shopping", cards: [])]
+        LastViewedListStore.save(9, to: defaults)
+        XCTAssertEqual(LastViewedListStore.resolve(in: lists, fallback: 4, from: defaults), 9)
+        XCTAssertEqual(LastViewedListStore.resolve(in: [lists[0]], fallback: nil, from: defaults), 4)
+        XCTAssertEqual(LastViewedListStore.resolve(in: [], fallback: nil, from: defaults), nil)
+    }
+
+    func testTodayDefaultsToMondayAfterSavedAndProfileChoices() {
+        let lists = [
+            KanbanList(id: 3, title: "Tuesday", cards: []),
+            KanbanList(id: 7, title: "Monday", cards: [])
+        ]
+
+        XCTAssertEqual(TodayListSelection.initialListID(savedListID: nil, profileDefaultListID: nil, lists: lists), 7)
+        XCTAssertEqual(TodayListSelection.initialListID(savedListID: nil, profileDefaultListID: 3, lists: lists), 3)
+        XCTAssertEqual(TodayListSelection.initialListID(savedListID: 7, profileDefaultListID: 3, lists: lists), 7)
+        XCTAssertEqual(TodayListSelection.initialListID(savedListID: 99, profileDefaultListID: nil, lists: lists), 7)
+    }
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testStarterBoardDocumentRoundTrips
     /// @brief      Encode and decode the complete starter Board document

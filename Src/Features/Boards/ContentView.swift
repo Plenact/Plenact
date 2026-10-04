@@ -24,6 +24,14 @@ struct BoardDisplaySettings {
     var showDueDateBadges     = true    /* Display due date badges on cards    */
 }
 
+private struct BoardListCenterPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
 
 // -------------------------------------- MARK: - Board View ------------------------------------ //
 
@@ -39,8 +47,10 @@ struct ContentView: View {
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
     @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
+    let onListViewed: (Int) -> Void
     @State private var showsCalendar = false
     @State private var navigationPath = NavigationPath()
+    @State private var lastReportedVisibleListID: Int?
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -65,12 +75,14 @@ struct ContentView: View {
         lists: Binding<[KanbanList]>,
         boardTargetListID: Binding<Int?> = .constant(nil),
         boardTargetCardID: Binding<Int?> = .constant(nil),
-        savedCardIDs: Binding<Set<Int>> = .constant([])
+        savedCardIDs: Binding<Set<Int>> = .constant([]),
+        onListViewed: @escaping (Int) -> Void = { _ in }
     ) {
         _lists = lists
         _boardTargetListID = boardTargetListID
         _boardTargetCardID = boardTargetCardID
         _savedCardIDs = savedCardIDs
+        self.onListViewed = onListViewed
     }
 
     private func openPendingBoardTarget(using listProxy: ScrollViewProxy) {
@@ -777,6 +789,14 @@ struct ContentView: View {
                                         .frame(
                                             width: safeFrameDimension(screen.size.width, subtracting: 28)
                                         )
+                                        .background {
+                                            GeometryReader { geometry in
+                                                Color.clear.preference(
+                                                    key: BoardListCenterPreferenceKey.self,
+                                                    value: [list.id: geometry.frame(in: .named("WeekListsViewport")).midX]
+                                                )
+                                            }
+                                        }
                                         .id(list.id)
                                     }
                                 }
@@ -785,6 +805,15 @@ struct ContentView: View {
                                 .padding(.horizontal, 14)
                             }
                             .scrollTargetBehavior(.viewAligned)
+                            .coordinateSpace(name: "WeekListsViewport")
+                            .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
+                                guard let nearestListID = centers.min(by: {
+                                    abs($0.value - listArea.size.width / 2) < abs($1.value - listArea.size.width / 2)
+                                })?.key,
+                                nearestListID != lastReportedVisibleListID else { return }
+                                lastReportedVisibleListID = nearestListID
+                                onListViewed(nearestListID)
+                            }
                             .onChange(of: boardTargetListID) { _, targetListID in
                                 guard targetListID != nil else { return }
                                 withAnimation(.easeInOut(duration: 0.25)) {

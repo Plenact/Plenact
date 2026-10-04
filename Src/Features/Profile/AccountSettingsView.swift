@@ -122,6 +122,7 @@ struct AccountSettingsView: View {
     @State private var defaultListID:       Int?                     /* Draft default list     */
     @State private var usesReducedContent:  Bool                     /* Draft content density  */
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
+    @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
 
     ///
@@ -172,6 +173,7 @@ struct AccountSettingsView: View {
      
         _usesReducedContent = State(initialValue: preferences.usesReducedContent)
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
+        _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
     }
 
     ///
@@ -193,7 +195,8 @@ struct AccountSettingsView: View {
             preferences: LocalProfilePreferences(
                 defaultListID:      defaultListID,
                 usesReducedContent: usesReducedContent,
-                usesLargeControls:  usesLargeControls
+                usesLargeControls:  usesLargeControls,
+                showsNavigationLabels: showsNavigationLabels
             )
         )
 
@@ -282,12 +285,13 @@ struct AccountSettingsView: View {
                 Section {
                     Toggle("Reduce supporting content", isOn: $usesReducedContent)
                     Toggle("Use larger primary controls", isOn: $usesLargeControls)
+                    Toggle("Show navigation labels", isOn: $showsNavigationLabels)
 
                 } header: {
                     Text("Accessibility")
 
                 } footer: {
-                    Text("Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
+                    Text("Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
                 }
 
                 Section("Privacy & Data") {

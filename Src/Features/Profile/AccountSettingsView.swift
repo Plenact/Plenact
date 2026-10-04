@@ -173,6 +173,7 @@ struct AccountSettingsView: View {
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false
+    @State private var showsSharedDemo = false
     @State private var profileSheetDetent: PresentationDetent = .large
     @State private var avatarPhotoData:    Data?
     @State private var photoSaveError:     String?
@@ -347,7 +348,13 @@ struct AccountSettingsView: View {
 
                     }
 
-                    PlenactDemoAccountSection()
+                    Section {
+                        Button {
+                            showsSharedDemo = true
+                        } label: {
+                            Label("Shared Demo", systemImage: "person.2")
+                        }
+                    }
 
                     if let profile {
                         Section {
@@ -440,6 +447,22 @@ struct AccountSettingsView: View {
         }
         .presentationDetents([.height(620), .large], selection: $profileSheetDetent)
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showsSharedDemo) {
+            NavigationStack {
+                Form {
+                    PlenactDemoAccountSection()
+                }
+                .navigationTitle("Shared Demo")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showsSharedDemo = false }
+                    }
+                }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
         .alert("Could not save avatar", isPresented: Binding(
             get: { photoSaveError != nil },
             set: { if !$0 { photoSaveError = nil } }

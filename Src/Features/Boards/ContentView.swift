@@ -717,6 +717,7 @@ struct ContentView: View {
                             onAddList:        addList
                         )
 
+                        GeometryReader { listArea in
                         ScrollViewReader { listProxy in
 
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -728,6 +729,7 @@ struct ContentView: View {
                                         KanbanListView(
                                             list:               list,
                                             screenSize:         screen.size,
+                                            availableListHeight: listArea.size.height,
                                             displaySettings:    displaySettings,
                                             labelLibrary:       labelLibrary,
                                             toggleCardTitle:    { cardID in toggleCardTitle(in: listIndex, cardID: cardID)
@@ -778,6 +780,8 @@ struct ContentView: View {
                                 boardTargetListID = nil
                             }
                         }
+                        }
+                        .padding(.bottom, 32)
                     }
                 }
             }
@@ -1171,6 +1175,7 @@ struct KanbanListView: View {
 
     let list: KanbanList                        /* The kanban list data rendered by the view                      */
     let screenSize: CGSize                      /* The size of the device screen used for layout calculations     */    
+    let availableListHeight: CGFloat
     let displaySettings: BoardDisplaySettings   /* The board's display settings affecting card and list rendering */
     let labelLibrary: LabelLibrary              /* Shared categorized labels available to the cards               */
     let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
@@ -1190,6 +1195,7 @@ struct KanbanListView: View {
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
+    @State private var headerHeight: CGFloat = 72
 
     /// Maintains the original quarter-screen card sizing requirement
     private var cardHeight: CGFloat { /* Fixed card height derived from screen geometry */
@@ -1199,13 +1205,16 @@ struct KanbanListView: View {
         return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
     }
 
-    private var cardCollectionHeight: CGFloat {
+    private var cardCollectionContentHeight: CGFloat {
         let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in
             height + (card.isSectionDivider ? 44 : max(cardHeight, 48))
         }
-        let contentHeight = max(88, rowHeight + 64)
-        let availableHeight = max(88, screenSize.height - 158)
-        return min(contentHeight, availableHeight)
+        return max(88, rowHeight + 64)
+    }
+
+    private var cardCollectionHeight: CGFloat {
+        let availableHeight = max(1, availableListHeight - headerHeight - 24)
+        return min(cardCollectionContentHeight, availableHeight)
     }
 
     /// Builds one list panel and its card navigation destinations
@@ -1268,6 +1277,13 @@ struct KanbanListView: View {
             .padding(.horizontal, 14)
             .padding(.top, 14)
             .padding(.bottom, 10)
+            .background {
+                GeometryReader { header in
+                    Color.clear
+                        .onAppear { headerHeight = header.size.height }
+                        .onChange(of: header.size.height) { _, height in headerHeight = height }
+                }
+            }
 
             List {
 
@@ -1349,10 +1365,11 @@ struct KanbanListView: View {
             .environment(\.editMode, $editMode)
             .scrollContentBackground(.hidden)
             .contentMargins(.vertical, 0, for: .scrollContent)
+            .contentMargins(.bottom, cardCollectionContentHeight > cardCollectionHeight ? 80 : 0, for: .scrollContent)
             .background(.clear)
             .frame(height: cardCollectionHeight)
             .padding(.horizontal, 4)
-            .padding(.bottom, 4)
+            .padding(.bottom, 24)
         }
         .background(listTint.color)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

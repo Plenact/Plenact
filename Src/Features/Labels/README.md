@@ -1,5 +1,3 @@
-# Plenact Labels
-
 Labels are reusable, categorized tags that can be attached to cards. The label catalog is shared across cards on this installation; removing a label from one card does not remove it from the library.
 
 This is an implemented local feature. Labels are not synchronized between users or devices.

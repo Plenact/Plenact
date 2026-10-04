@@ -1,5 +1,3 @@
-# Features
-
 This directory contains cohesive features that support the Board and card-detail experience without introducing separate application layers.
 
 ## Available Features

@@ -412,6 +412,7 @@ private struct AppRootView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             bottomNavigationBar
+                .ignoresSafeArea(.keyboard, edges: .bottom)
         }
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
@@ -442,8 +443,9 @@ private struct AppRootView: View {
     ///
     /// @fcn        AppRootView.bottomNavigationBar
     /// @brief      Build the custom destination bar and central New control
-    /// @details    Honors navigation-label preferences; New requests a Today composer or a
-    ///             destination picker, while a long press arms Week-list creation and shake feedback
+    /// @details    Honors navigation-label preferences and remains anchored at the screen bottom
+    ///             while the keyboard overlays it; New requests a Today composer or a destination
+    ///             picker, while a long press arms Week-list creation and shake feedback
     ///
     /// @return     (some View) paper-backed navigation controls
     /// @post       Button and gesture callbacks update navigation and creation-request state

@@ -47,6 +47,7 @@ A future weekly review may offer a deliberate way to revisit plans, but it shoul
 - Tapping a task navigates to its existing card details where possible; completion updates the same persisted card, not a Today-only copy.
 - Add task, if included in the first increment, creates a card in an explicitly selected existing list.
 - If the selected list was removed or cannot be resolved, ask the person to choose another list; do not silently pick the first list.
+- When Quick capture is focused, the custom lower navigation toolbar stays anchored at the screen bottom and the keyboard covers it; the toolbar must not rise above the keyboard.
 - Avoid reminders, calendar permissions, or background scheduling in this first screen proposal.
 
 ## Accessibility and Cognitive Load

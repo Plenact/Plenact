@@ -1,0 +1,5 @@
+{
+  "app_token": "Jl00aD9pwAa4hSwEmguxW9PKBJ6snmKXvbmZH6hkautYxs9Oy4eure6g90LdxoVl",
+  "reader_token": "oVRk85Wa7InGsEjNwwb9kbgXox2zYB240PVRSLiTQlyw1XqdlwbuYgztJdFWahY7",
+  "installation_id": "71d31571-8a55-4a91-89c4-48cf052bf045"
+}

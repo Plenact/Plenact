@@ -4,6 +4,68 @@ Plenact is an iPhone planning and organization app being built around a calm, li
 
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
 
+## Development Work
+
+
+
+### Carryover
+
+- Today View
+
+- Trello Boards
+
+- Website Go!!!
+
+	
+Opens
+- style.swift updates
+	Import leading statements in style.swift
+	struct headers
+
+Opens
+- RESET PROCEDURE
+- Setup Documents
+- iCloud full!
+- Settings Notifications
+
+- New File Menu App Review
+	- add to New Installs Reset Procedure iff
+	
+bf1aa4c3a83b485b26bb6ca38ef94d5ec19341c4
+Opens now:
+
+- Quick capture keyboard raise bug!
+
+- Beautiful! And what may a good initialization prompt for our new Plenact Production Agent be?
+
+
+- "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
+
+//................................................................................//
+
+- List Zoom like Trello!!!
+
+- Panoramic like Trello!
+
+- List submenus!!!
+	Card List Actions
+	List Actions
+	Board Actions
+	App Menus
+	Account Tab 
+	Settings tab
+
+- Calendar page test, expose, expand and prepare
+
+- Able to load from a selection of App demos (e.g. Personal, Work, Recovery, Studies or Therapy)
+
+	- finalize load demos idea
+
+- Real phone init freeze quietly will database init loads
+
+- Quick capture keyboard loads and unexpectedly raises lower toolbar!
+// -------------------------------------------------------------------------------------------//
+
 ## Current Product
 
 Implemented today:

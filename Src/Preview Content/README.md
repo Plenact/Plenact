@@ -1,5 +1,3 @@
-# Preview Content
-
 This directory is reserved for assets and sample support used by SwiftUI previews during development.
 
 ## Contents

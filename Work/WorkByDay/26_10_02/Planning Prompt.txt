@@ -1,0 +1,43 @@
+
+
+Well what if we make the Planner tab serve data just like Plenact is planning to use? Where then on this tab, we can show an organization of Plenact-like data!!
+
+
+Planner
+	Week Plan
+	Life Plan
+	Notes
+	
+Week Plan
+	Day[7]
+
+Life Plan
+	Goal[]
+	Milestone[]
+	
+Notes
+	String text;
+	Int id;
+	
+Day
+	Goal[]
+	Schedule[]
+	Card[]
+
+Goal
+	String descrip;
+	Int priority;
+	
+Milestone
+	String descrip;
+	String category;
+	String notes;
+	
+Schedule
+	Event[]
+	
+Event
+	Date date;
+	String descrip;
+
+So what if the Planner tab shows this data, where our Plenact Database Demo also synchronizes that with storage on the Bluehost database for us?

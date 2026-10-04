@@ -1,0 +1,28 @@
+@brief		iOS Dev Notes
+@details 	Plenact App
+@auth		Justin Reina
+@date 		10/3/26
+
+
+@section 	Plan
+
+	9. Where then, can you help me update plenact.com to a live, showtime version as our app begins to launch?
+
+		- Update and renovate plenact.com - bring it live!
+		
+		- With users, passwords and display of information
+		
+		- And bring website live!
+		
+		- Supporting pre-existing demo content now too though
+
+@section 	Demo User Accounts
+
+	//User
+	Jim
+	labtecZX6R!?
+
+	//Demo Member
+	Sally
+	sallyisRad4Me
+

@@ -1466,7 +1466,7 @@ struct CardDetailView: View {
                     dismiss()
 
                 } label: {
-                    Image(systemName: "xmark")
+                    Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(width: 44, height: 44)
@@ -1474,7 +1474,7 @@ struct CardDetailView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close card")
+                .accessibilityLabel("Back")
 
                 Spacer()
 

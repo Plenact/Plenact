@@ -1986,6 +1986,164 @@ private struct CardInfoEditorSheet: View {
 }
 
 
+/// Presents one Today list vertically, sharing its cards with the Week Board.
+struct TodayListDetailView: View {
+
+    @Binding var lists: [KanbanList] /* Shared local Board snapshot */
+    @Binding var labelLibrary: LabelLibrary /* Shared reusable label library */
+    @Binding var savedCardIDs: Set<Int> /* Device-local saved cards */
+
+    let listID: Int /* Focused list identity */
+    let currentUserName: String /* Current activity author */
+    let onClose: () -> Void /* Return to Today */
+    let onOpenWeek: () -> Void /* Open this list in the Week workspace */
+
+    @State private var newCardTitle = "" /* Inline card-creation draft */
+
+    private var focusedList: KanbanList? {
+        lists.first { $0.id == listID }
+    }
+
+    var body: some View {
+
+        NavigationStack {
+            GeometryReader { geometry in
+                ZStack {
+                    Color(.systemGray6).ignoresSafeArea()
+
+                    if let focusedList {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(focusedList.subtitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 4)
+
+                                ForEach(focusedList.cards) { card in
+                                    if card.isSectionDivider {
+                                        Rectangle()
+                                            .fill(Color.secondary.opacity(0.45))
+                                            .frame(height: 2)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 10)
+                                    } else {
+                                        NavigationLink(value: card) {
+                                            KanbanCardView(
+                                                card: card,
+                                                height: max(geometry.size.height * 0.20, 128),
+                                                displaySettings: BoardDisplaySettings(),
+                                                labelLibrary: labelLibrary,
+                                                onUpdateCard: updateCard,
+                                                onDeleteCard: { deleteCard(card.id) }
+                                            ) {
+                                                toggleCard(card.id)
+                                            }
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+
+                                HStack(spacing: 10) {
+                                    TextField("Add a card to \(focusedList.title)…", text: $newCardTitle)
+                                        .submitLabel(.done)
+                                        .onSubmit(addCard)
+
+                                    Button(action: addCard) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.title2)
+                                    }
+                                    .disabled(newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                    .accessibilityLabel("Add card to \(focusedList.title)")
+                                }
+                                .padding(12)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                            }
+                            .padding(16)
+                        }
+                        .background(.clear)
+                    } else {
+                        ContentUnavailableView("List unavailable", systemImage: "list.bullet")
+                    }
+                }
+            }
+            .navigationTitle(focusedList?.title ?? "Today")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Today", systemImage: "chevron.left", action: onClose)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Open in Week", action: onOpenWeek)
+                }
+            }
+            .navigationDestination(for: KanbanCard.self) { card in
+                CardDetailView(
+                    card: card,
+                    labelLibrary: $labelLibrary,
+                    availableLists: lists.filter { $0.id != listID },
+                    currentUserName: currentUserName,
+                    savedCardIDs: $savedCardIDs,
+                    onTitleToggle: updateCard,
+                    onMoveToList: { destinationListID in
+                        moveCard(card.id, toListID: destinationListID)
+                    }
+                )
+            }
+            .onChange(of: lists) { _, updatedLists in
+                KanbanBoardPersistence.saveLists(updatedLists)
+            }
+            .onChange(of: labelLibrary) { _, updatedLibrary in
+                LabelLibraryStore.save(updatedLibrary)
+            }
+        }
+    }
+
+    private func toggleCard(_ cardID: Int) {
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }),
+              let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { return }
+        lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
+    }
+
+    private func updateCard(_ updatedCard: KanbanCard) {
+        guard let listIndex = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == updatedCard.id }) }),
+              let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == updatedCard.id }) else { return }
+        lists[listIndex].cards[cardIndex] = updatedCard
+    }
+
+    private func deleteCard(_ cardID: Int) {
+        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+        lists[listIndex].cards.removeAll { $0.id == cardID }
+    }
+
+    private func moveCard(_ cardID: Int, toListID destinationListID: Int) {
+        guard let sourceListIndex = lists.firstIndex(where: { $0.id == listID }),
+              let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }),
+              sourceListIndex != destinationListIndex,
+              let cardIndex = lists[sourceListIndex].cards.firstIndex(where: { $0.id == cardID }) else { return }
+
+        var movedCard = lists[sourceListIndex].cards.remove(at: cardIndex)
+        movedCard.listTitle = lists[destinationListIndex].title
+        lists[destinationListIndex].cards.append(movedCard)
+    }
+
+    private func addCard() {
+        let title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
+
+        let nextCardID = (lists.flatMap { $0.cards.map(\.id) }.max() ?? -1) + 1
+        lists[listIndex].cards.append(
+            KanbanCard(
+                id: nextCardID,
+                word: title,
+                listTitle: lists[listIndex].title,
+                isDivider: KanbanCard.isDividerTitle(title)
+            )
+        )
+        newCardTitle = ""
+    }
+}
+
+
 // -------------------------------------- MARK: - Previews -------------------------------------- //
 
 /// Preview the complete board presentation with deterministic sample data

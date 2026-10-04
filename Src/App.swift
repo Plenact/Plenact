@@ -145,6 +145,7 @@ private struct AppRootView: View {
     @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
     @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
     @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
+    @State private var boardTargetCardID: Int?
     @State private var savedCardIDs = SavedCardPersistence.load()              /* Device-local saved cards                              */
     @State private var quickCreateRequest = 0                                  /* Center-bar quick-create request                       */
     @State private var showsCenterNewCardSheet = false                       /* Destination picker for New outside Today              */
@@ -174,6 +175,7 @@ private struct AppRootView: View {
                 },
                 onToggleCardCompletion: toggleCardCompletion,
                 onOpenBoardList: openBoardList,
+                onOpenBoardCard: openBoardCard,
                 quickCreateRequest: quickCreateRequest
             )
             .tabItem {
@@ -185,6 +187,7 @@ private struct AppRootView: View {
             ContentView(
                 lists: $lists,
                 boardTargetListID: $boardTargetListID,
+                boardTargetCardID: $boardTargetCardID,
                 savedCardIDs: $savedCardIDs
             )
                 .tabItem {
@@ -340,7 +343,14 @@ private struct AppRootView: View {
     }
 
     private func openBoardList(_ listID: Int) {
+        boardTargetCardID = nil
         boardTargetListID   = listID
+        selectedDestination = .board
+    }
+
+    private func openBoardCard(listID: Int, cardID: Int) {
+        boardTargetCardID = cardID
+        boardTargetListID = listID
         selectedDestination = .board
     }
 
@@ -413,6 +423,7 @@ private struct TodayHomeView: View {
     let onAddCard:          (Int, String, String) -> Void   /* Add a card to an existing Board list               */
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                        */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
+    let onOpenBoardCard:    (Int, Int)             -> Void
     let quickCreateRequest: Int                             /* Center-bar requests for the Today composer         */
 
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
@@ -584,6 +595,7 @@ private struct TodayHomeView: View {
         onAddCard:       @escaping (Int, String, String) -> Void,
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
+        onOpenBoardCard: @escaping (Int, Int) -> Void,
         quickCreateRequest: Int
     ) {
 
@@ -595,6 +607,7 @@ private struct TodayHomeView: View {
         self.onAddCard       = onAddCard
         self.onToggleCardCompletion = onToggleCardCompletion
         self.onOpenBoardList = onOpenBoardList
+        self.onOpenBoardCard = onOpenBoardCard
         self.quickCreateRequest = quickCreateRequest
 
         let savedListID = UserDefaults.standard.object(forKey: Self.todayListStorageKey(for: .now)) as? Int /* Persisted date-specific selection */
@@ -917,7 +930,11 @@ private struct TodayHomeView: View {
                 }
             }
             .sheet(isPresented: $showsSearch) {
-                TodaySearchView(lists: lists, onOpenBoardList: onOpenBoardList)
+                TodaySearchView(
+                    lists: lists,
+                    onOpenBoardList: onOpenBoardList,
+                    onOpenBoardCard: onOpenBoardCard
+                )
             }
             .sheet(item: $selectedLabel) { label in
                 TodayLabelCardsView(label: label, cards: cards(using: label.id), onOpenBoardList: onOpenBoardList)
@@ -1216,15 +1233,99 @@ private struct CenterNewCardSheet: View {
 }
 
 
-private struct TodaySearchResult: Identifiable {
+struct TodaySearchResult: Identifiable {
 
     let listID: Int /* Board list opened when this result is selected */
-    let cardID: Int /* Stable card identity */
+    let cardID: Int? /* Stable card identity, or nil for a list result */
     let cardTitle: String /* Matching card title */
     let listTitle: String /* Containing list title */
     let detail: String /* Supporting detail shown under the title */
 
-    var id: String { "\(listID):\(cardID)" }
+    var id: String { "\(listID):\(cardID.map(String.init) ?? "list")" }
+}
+
+enum TodaySearchScope: String, CaseIterable, Identifiable {
+    case all = "All"
+    case boards = "Boards"
+    case labels = "Labels"
+    case users = "Users"
+
+    var id: String { rawValue }
+}
+
+enum RecentSearchStore {
+    private static let key = "Plenact.RecentSearches.v1"
+
+    static func load(from defaults: UserDefaults = .standard) -> [String] {
+        defaults.stringArray(forKey: key) ?? []
+    }
+
+    @discardableResult
+    static func remember(_ query: String, in defaults: UserDefaults = .standard) -> [String] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        var searches = load(from: defaults)
+        guard !term.isEmpty else { return searches }
+        searches.removeAll { $0.caseInsensitiveCompare(term) == .orderedSame }
+        searches.insert(term, at: 0)
+        searches = Array(searches.prefix(10))
+        defaults.set(searches, forKey: key)
+        return searches
+    }
+
+    static func clear(in defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key)
+    }
+}
+
+enum TodaySearchIndex {
+    static func results(query: String, scope: TodaySearchScope, lists: [KanbanList], library: LabelLibrary) -> [TodaySearchResult] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return [] }
+        if scope == .boards {
+            return lists.compactMap { list in
+                guard list.title.localizedStandardContains(term) || list.subtitle.localizedStandardContains(term) else { return nil }
+                return TodaySearchResult(
+                    listID: list.id, cardID: nil, cardTitle: list.title, listTitle: list.title,
+                    detail: "\(list.cards.filter { !$0.isSectionDivider }.count) cards"
+                )
+            }
+        }
+
+        return lists.flatMap { list in
+            list.cards.compactMap { card -> TodaySearchResult? in
+                guard !card.isSectionDivider else { return nil }
+                let checklistText = card.checklists.flatMap { [$0.title] + $0.items.map(\.title) }
+                let commentText = card.comments.flatMap { [$0.author, $0.body] }
+                let users = card.members.map(\.displayName)
+                let labels = library.labels.filter { card.labelIDs.contains($0.id) }
+                let labelText = labels.flatMap { label in
+                    [label.name] + library.categories.filter { $0.id == label.categoryID }.map(\.name)
+                }
+                let searchableText: [String]
+                switch scope {
+                    case .labels: searchableText = labelText
+                    case .users: searchableText = users
+                    case .all:
+                        searchableText = [list.title, card.word, card.descriptionOverride ?? "", card.subtitleOverride ?? ""]
+                            + checklistText + commentText + users + labelText
+                    case .boards: searchableText = []
+                }
+                guard searchableText.contains(where: { $0.localizedStandardContains(term) }) else { return nil }
+                let detail: String
+                switch scope {
+                    case .labels: detail = labels.map(\.name).joined(separator: ", ")
+                    case .users: detail = users.joined(separator: ", ")
+                    default:
+                        detail = [card.subtitleOverride, card.descriptionOverride].compactMap { $0 }
+                            .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+                            ?? checklistText.first ?? ""
+                }
+                return TodaySearchResult(
+                    listID: list.id, cardID: card.id, cardTitle: card.word, listTitle: list.title, detail: detail
+                )
+            }
+        }
+    }
 }
 
 
@@ -1233,51 +1334,52 @@ private struct TodaySearchView: View {
 
     let lists: [KanbanList] /* Current locally stored Board snapshot */
     let onOpenBoardList: (Int) -> Void /* Navigate to a result's containing list */
+    let onOpenBoardCard: (Int, Int) -> Void
 
     @Environment(\.dismiss) private var dismiss /* Close the search sheet */
     @FocusState private var searchFieldFocused: Bool /* Search field focus state */
     @State private var query = "" /* User-entered search text */
+    @State private var scope: TodaySearchScope = .all
+    @State private var recentSearches = RecentSearchStore.load()
+    @State private var labelLibrary = LabelLibraryStore.load()
 
     private var results: [TodaySearchResult] {
+        TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
+    }
 
-        let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized search term */
-        guard !searchTerm.isEmpty else { return [] }
+    private func rememberSearch() {
+        recentSearches = RecentSearchStore.remember(query)
+    }
 
-        return lists.flatMap { list in
-            list.cards.compactMap { card in
-                guard !card.isSectionDivider else { return nil }
-
-                let checklistText = card.checklists.flatMap { checklist in
-                    [checklist.title] + checklist.items.map(\.title)
+    private var recentSearchList: some View {
+        List {
+            Section {
+                ForEach(recentSearches, id: \.self) { search in
+                    Button {
+                        query = search
+                        rememberSearch()
+                        searchFieldFocused = false
+                    } label: {
+                        Label(search, systemImage: "clock.arrow.circlepath")
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.plain)
                 }
-                let commentText = card.comments.flatMap { [$0.author, $0.body] }
-                let assigneeText = card.members.map(\.displayName)
-                let searchableText = [
-                    list.title,
-                    card.word,
-                    card.descriptionOverride ?? "",
-                    card.subtitleOverride ?? ""
-                ] + checklistText + commentText + assigneeText
-
-                guard searchableText.contains(where: { $0.localizedStandardContains(searchTerm) }) else {
-                    return nil
+            } header: {
+                HStack {
+                    Text("Recent searches")
+                    Spacer()
+                    Button("Clear") {
+                        RecentSearchStore.clear()
+                        recentSearches = []
+                    }
+                    .accessibilityLabel("Clear recent searches")
                 }
-
-                let detail = [card.subtitleOverride, card.descriptionOverride]
-                    .compactMap { $0 }
-                    .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
-                    ?? checklistText.first
-                    ?? ""
-
-                return TodaySearchResult(
-                    listID: list.id,
-                    cardID: card.id,
-                    cardTitle: card.word,
-                    listTitle: list.title,
-                    detail: detail
-                )
             }
         }
+        .listStyle(.plain)
     }
 
     var body: some View {
@@ -1288,12 +1390,18 @@ private struct TodaySearchView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
 
-                    TextField("Search cards and lists", text: $query)
+                    TextField("Search", text: $query)
                         .focused($searchFieldFocused)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.search)
                         .accessibilityLabel("Search local Board")
+                        .onSubmit {
+                            rememberSearch()
+                            searchFieldFocused = false
+                        }
 
                     if !query.isEmpty {
                         Button {
@@ -1312,17 +1420,32 @@ private struct TodaySearchView: View {
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
                 .padding()
 
+                Picker("Search filter", selection: $scope) {
+                    ForEach(TodaySearchScope.allCases) { scope in
+                        Text(scope.rawValue).tag(scope)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    searchEmptyState(
-                        title: "Search your Board",
-                        detail: "Find cards by title, list, details, checklist, comment, or assignee."
-                    )
+                    if recentSearches.isEmpty {
+                        searchEmptyState(title: "No recent searches", detail: "")
+                    } else {
+                        recentSearchList
+                    }
                 } else if results.isEmpty {
                     searchEmptyState(title: "No results", detail: "Try another word or phrase.")
                 } else {
                     List(results) { result in
                         Button {
-                            onOpenBoardList(result.listID)
+                            rememberSearch()
+                            if let cardID = result.cardID {
+                                onOpenBoardCard(result.listID, cardID)
+                            } else {
+                                onOpenBoardList(result.listID)
+                            }
                             dismiss()
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
@@ -1358,9 +1481,7 @@ private struct TodaySearchView: View {
             }
         }
         .presentationDetents([.large])
-        .task {
-            searchFieldFocused = true
-        }
+        .onDisappear { rememberSearch() }
     }
 
     private func searchEmptyState(title: String, detail: String) -> some View {

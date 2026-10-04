@@ -37,7 +37,9 @@ struct ContentView: View {
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
+    @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
+    @State private var navigationPath = NavigationPath()
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -61,11 +63,33 @@ struct ContentView: View {
     init(
         lists: Binding<[KanbanList]>,
         boardTargetListID: Binding<Int?> = .constant(nil),
+        boardTargetCardID: Binding<Int?> = .constant(nil),
         savedCardIDs: Binding<Set<Int>> = .constant([])
     ) {
         _lists = lists
         _boardTargetListID = boardTargetListID
+        _boardTargetCardID = boardTargetCardID
         _savedCardIDs = savedCardIDs
+    }
+
+    private func openPendingBoardTarget(using listProxy: ScrollViewProxy) {
+        guard let targetListID = boardTargetListID,
+              lists.contains(where: { $0.id == targetListID }) else {
+            boardTargetListID = nil
+            boardTargetCardID = nil
+            return
+        }
+
+        listProxy.scrollTo(targetListID, anchor: .center)
+
+        if let targetCardID = boardTargetCardID,
+           let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) {
+            navigationPath = NavigationPath()
+            navigationPath.append(card)
+        }
+
+        boardTargetListID = nil
+        boardTargetCardID = nil
     }
 
 
@@ -693,7 +717,7 @@ struct ContentView: View {
     /// Builds the board scene and its horizontally scrollable list collection.
     var body: some View { /* Board scene and list collection */
 
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             
             GeometryReader { screen in
 
@@ -760,24 +784,19 @@ struct ContentView: View {
                             }
                             .scrollTargetBehavior(.viewAligned)
                             .onChange(of: boardTargetListID) { _, targetListID in
-                                guard let targetListID, /* Requested Today destination */
-                                      lists.contains(where: { $0.id == targetListID }) else {
-                                    boardTargetListID = nil
-                                    return
-                                }
-
+                                guard targetListID != nil else { return }
                                 withAnimation(.easeInOut(duration: 0.25)) {
-                                    listProxy.scrollTo(targetListID, anchor: .center)
+                                    openPendingBoardTarget(using: listProxy)
                                 }
-
-                                boardTargetListID = nil
+                            }
+                            .onChange(of: boardTargetCardID) { _, cardID in
+                                guard cardID != nil else { return }
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    openPendingBoardTarget(using: listProxy)
+                                }
                             }
                             .onAppear {
-                                guard let targetListID = boardTargetListID, /* Pending Board navigation target */
-                                      lists.contains(where: { $0.id == targetListID }) else { return }
-
-                                listProxy.scrollTo(targetListID, anchor: .center)
-                                boardTargetListID = nil
+                                openPendingBoardTarget(using: listProxy)
                             }
                         }
                         }

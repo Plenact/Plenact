@@ -16,6 +16,59 @@ import XCTest
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testRecentSearchesAreOrderedDeduplicatedAndClearable() throws {
+        let suite = "Plenact.SearchTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        RecentSearchStore.remember("  Monday  ", in: defaults)
+        RecentSearchStore.remember("Work", in: defaults)
+        XCTAssertEqual(RecentSearchStore.remember("monday", in: defaults), ["monday", "Work"])
+        XCTAssertEqual(RecentSearchStore.remember("  ", in: defaults), ["monday", "Work"])
+        for index in 0..<12 {
+            RecentSearchStore.remember("Search \(index)", in: defaults)
+        }
+        XCTAssertEqual(RecentSearchStore.load(from: defaults).count, 10)
+        XCTAssertEqual(RecentSearchStore.load(from: defaults).first, "Search 11")
+        RecentSearchStore.clear(in: defaults)
+        XCTAssertTrue(RecentSearchStore.load(from: defaults).isEmpty)
+    }
+
+    func testSearchScopesUseOnlyTheirSelectedFields() {
+        let card = KanbanCard(
+            id: 1, word: "Proposal", listTitle: "Monday",
+            members: [.manual("Jamie")], labelIDs: ["work-scheduled"],
+            descriptionOverride: "Budget review"
+        )
+        let lists = [KanbanList(id: 0, title: "Monday", cards: [card])]
+        func matches(_ term: String, _ scope: TodaySearchScope) -> [TodaySearchResult] {
+            TodaySearchIndex.results(query: term, scope: scope, lists: lists, library: .starter)
+        }
+
+        XCTAssertEqual(matches("Scheduled", .labels).map(\.cardID), [1])
+        XCTAssertEqual(matches("Work", .labels).count, 1)
+        XCTAssertTrue(matches("Proposal", .labels).isEmpty)
+        XCTAssertEqual(matches("Jamie", .users).map(\.cardID), [1])
+        XCTAssertTrue(matches("Budget", .users).isEmpty)
+        XCTAssertEqual(matches("Budget", .all).count, 1)
+        XCTAssertEqual(matches("Scheduled", .all).count, 1)
+        XCTAssertEqual(matches("Monday", .boards).map(\.listID), [0])
+        XCTAssertTrue(matches("Proposal", .boards).isEmpty)
+        XCTAssertTrue(matches(" ", .all).isEmpty)
+    }
+
+    func testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers() {
+        let divider = KanbanCard(id: 1, word: "Divider", listTitle: "Monday", isDivider: true)
+        let lists = [
+            KanbanList(id: 0, title: "Monday", cards: [divider]),
+            KanbanList(id: 2, title: "Empty list", cards: [])
+        ]
+        let results = TodaySearchIndex.results(query: "Empty", scope: .boards, lists: lists, library: .starter)
+        XCTAssertEqual(results.map(\.listID), [2])
+        XCTAssertNil(results.first?.cardID)
+        XCTAssertTrue(TodaySearchIndex.results(query: "Divider", scope: .all, lists: lists, library: .starter).isEmpty)
+    }
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testStarterBoardDocumentRoundTrips
     /// @brief      Encode and decode the complete starter Board document

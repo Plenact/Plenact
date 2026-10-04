@@ -51,7 +51,7 @@ struct Plenact: App {
 private enum AppDestination: Hashable {
     case today       /* Today's planning entry point */
     case board       /* Complete kanban workspace   */
-    case calendar    /* Date-oriented card view      */
+    case lists       /* All lists in the current Board */
     case saved       /* Device-local saved cards     */
 }
 
@@ -196,11 +196,11 @@ private struct AppRootView: View {
                 .tag(AppDestination.board)
                 .toolbar(.hidden, for: .tabBar)
 
-            TodayCalendarView(lists: lists, onOpenBoardList: openBoardList)
+            BoardListsView(lists: lists, onOpenBoardList: openBoardList)
                 .tabItem {
-                    Label("Calendar", systemImage: "calendar")
+                    Label("Lists", systemImage: "list.bullet")
                 }
-                .tag(AppDestination.calendar)
+                .tag(AppDestination.lists)
                 .toolbar(.hidden, for: .tabBar)
 
             SavedCardsView(lists: lists, savedCardIDs: savedCardIDs, onOpenBoardList: openBoardList)
@@ -234,7 +234,7 @@ private struct AppRootView: View {
                     .frame(maxWidth: .infinity, minHeight: 54)
                     .accessibilityHidden(true)
 
-                tabButton(.calendar, title: "Calendar", systemImage: "calendar")
+                tabButton(.lists, title: "Lists", systemImage: "list.bullet")
                 tabButton(.saved, title: "Saved", systemImage: "bookmark.fill")
             }
             .padding(.horizontal, 12)
@@ -1613,7 +1613,110 @@ private struct CalendarCardResult: Identifiable {
 
 
 /// Shows a month grid from existing card start/due dates and routes into Board lists.
-private struct TodayCalendarView: View {
+private struct BoardListsView: View {
+
+    let lists: [KanbanList]
+    let onOpenBoardList: (Int) -> Void
+
+    @State private var searchText = ""
+
+    private var filteredLists: [KanbanList] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return lists }
+        return lists.filter { list in
+            list.title.localizedStandardContains(query)
+                || list.subtitle.localizedStandardContains(query)
+                || list.cards.contains { !$0.isSectionDivider && $0.word.localizedStandardContains(query) }
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            TodayPaperBackground()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Lists")
+                            .font(.largeTitle.weight(.bold))
+                        Text("All lists in your Week board")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
+                        TextField("Find a list or card", text: $searchText)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 46)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+
+                    if filteredLists.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(lists.isEmpty ? "No lists yet" : "No matching lists")
+                                .font(.headline)
+                            Text(lists.isEmpty ? "Add a list from Week to get started." : "Try another list or card name.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .modifier(TodayPanelSurface())
+                    } else {
+                        ForEach(filteredLists) { list in
+                            Button {
+                                onOpenBoardList(list.id)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "rectangle.3.group")
+                                        .font(.title3)
+                                        .foregroundStyle(.tint)
+                                        .frame(width: 36, height: 40)
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(list.title)
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                        Text(list.subtitle)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer(minLength: 8)
+
+                                    Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
+                                        .font(.subheadline.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .modifier(TodayPanelSurface())
+                            .accessibilityLabel("\(list.title), \(list.cards.filter { !$0.isSectionDivider }.count) cards")
+                            .accessibilityHint("Open this list in Week.")
+                        }
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: 560, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+}
+
+
+struct TodayCalendarView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
     let onOpenBoardList: (Int) -> Void /* Navigate to the card's list */

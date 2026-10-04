@@ -39,6 +39,7 @@ struct ContentView: View {
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
     @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
+    @State private var showsCalendar = false
     @State private var navigationPath = NavigationPath()
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
@@ -738,6 +739,7 @@ struct ContentView: View {
                             onRenameMember:   renameMember,
                             onDeleteMember:   removeMember,
                             onSetMemberColor: setMemberColor,
+                            onOpenCalendar:   { showsCalendar = true },
                             onAddList:        addList
                         )
 
@@ -823,6 +825,14 @@ struct ContentView: View {
                     }
                 )
             }
+            .sheet(isPresented: $showsCalendar) {
+                TodayCalendarView(lists: lists) { listID in
+                    showsCalendar = false
+                    boardTargetCardID = nil
+                    boardTargetListID = listID
+                }
+                .presentationDetents([.large])
+            }
             .onChange(of: lists) { _, updatedLists in
                 KanbanBoardPersistence.saveLists(updatedLists)
             }
@@ -850,6 +860,7 @@ struct BoardHeader: View {
     let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
     let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments           */
     let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
+    let onOpenCalendar: () -> Void
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
@@ -872,6 +883,16 @@ struct BoardHeader: View {
             }
 
             Spacer()
+
+            Button(action: onOpenCalendar) {
+                Image(systemName: "calendar")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Calendar")
 
             Menu {
                 

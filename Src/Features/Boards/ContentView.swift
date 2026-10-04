@@ -864,6 +864,7 @@ struct ContentView: View {
                                             },
                                             onArchiveList:      { archiveList(with: list.id) },
                                             onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
+                                            onArchiveCard:      archiveCard,
                                             onUpdateCard:       updateCard,
                                             onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
                                             }
@@ -1421,6 +1422,7 @@ struct KanbanListView: View {
     let onRestoreArchivedCard: (Int) -> Void
     let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
     let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
+    let onArchiveCard: (Int) -> Void
     let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
     let onMoveCard: (Int, Int) -> Void          /* Move a card to a destination index in this list                */
 
@@ -1550,7 +1552,8 @@ struct KanbanListView: View {
                                 displaySettings: displaySettings,
                                 labelLibrary:    labelLibrary,
                                 onUpdateCard:    onUpdateCard,
-                                onDeleteCard:    { onDeleteCard(card.id) }
+                                onDeleteCard:    { onDeleteCard(card.id) },
+                                onArchiveCard:   { onArchiveCard(card.id) }
                             ) {
                                 toggleCardTitle(card.id)
                             }
@@ -2001,6 +2004,7 @@ struct KanbanCardView: View {
     let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
     let onUpdateCard: (KanbanCard) -> Void          /* The action invoked when card details are updated              */
     let onDeleteCard: () -> Void                    /* The action invoked when this card is deleted                  */
+    let onArchiveCard: () -> Void
     let onToggle: () -> Void                        /* Callback invoked when the card's title checkbox is toggled    */
 
     @State private var renameDraft        = ""      /* Draft text for the rename operation                           */
@@ -2101,6 +2105,10 @@ struct KanbanCardView: View {
                 Spacer(minLength: 4)
 
                 Menu {
+                    Button(action: onArchiveCard) {
+                        Label("Archive Card", systemImage: "archivebox")
+                    }
+
                     Button(role: .destructive) {
                         isConfirmingDelete = true
                     } label: {
@@ -2363,7 +2371,8 @@ struct TodayListDetailView: View {
                                                 displaySettings: BoardDisplaySettings(),
                                                 labelLibrary: labelLibrary,
                                                 onUpdateCard: updateCard,
-                                                onDeleteCard: { deleteCard(card.id) }
+                                                onDeleteCard: { deleteCard(card.id) },
+                                                onArchiveCard: { archiveCard(card.id) }
                                             ) {
                                                 toggleCard(card.id)
                                             }

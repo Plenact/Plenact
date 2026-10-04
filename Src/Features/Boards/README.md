@@ -39,6 +39,8 @@ List Actions includes **View Archived Cards** above **Archive completed cards**.
 
 The card detail screen's upper-right **Card actions** menu also includes **Archive Card**, for both completed and incomplete cards. It saves current detail edits, moves the card into its list's archive, and closes the detail screen. This works from the Week board, personal collections, and the focused Today list. Section dividers cannot be individually archived.
 
+Card rows also offer **Archive Card** above **Delete Card** in their `...` menu, both on Board lists and in **Open today's list**. Row archiving uses the same saved archive without opening card details or changing completion status. Existing delete confirmation, rename, and card-info actions remain available.
+
 Older saved lists default to an empty archive, and empty archives are omitted from JSON to preserve the existing remote payload shape. Nonempty local archives are rejected by shared-Board validation because the remote schema does not support them. Copying a list copies only its active cards. Cards removed by the previous archive implementation cannot be recovered.
 
 ## Archived Lists and Boards

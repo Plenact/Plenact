@@ -10,7 +10,8 @@
 //
 // @notes      Board data flows through caller-owned bindings; onListsChanged controls active-list
 //             persistence. App-root callers retain and save complete active/archive snapshots.
-//             Display settings, list tint/watch state, and member colors are transient view state.
+//             Board presentation is a local preference; badge settings, list tint/watch state,
+//             and member colors are transient view state.
 //             Archive operations retain card records and files; deletion may trigger file pruning
 //
 // @section    Opens
@@ -74,6 +75,31 @@ struct BoardDisplaySettings {
     var showDueDateBadges     = true    /* Display due date badges on cards    */
 }
 
+enum BoardPresentation: String, CaseIterable, Identifiable {
+    case standard
+    case overview
+
+    static let storageKey = "Plenact.BoardPresentation.v1"
+    var id: String { rawValue }
+    var title: String { self == .standard ? "Standard" : "Overview" }
+    var minimumCardHeight: CGFloat { self == .standard ? 112 : 80 }
+
+    func columnWidth(viewportWidth: CGFloat, accessibilitySize: Bool) -> CGFloat {
+        guard viewportWidth.isFinite, viewportWidth > 28 else { return 1 }
+        let available = viewportWidth - 28
+        if accessibilitySize { return available }
+        return min(available, self == .standard ? 360 : 240)
+    }
+}
+
+private struct BoardCardHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
 
 private struct BoardListCenterPreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGFloat] = [:]
@@ -121,11 +147,14 @@ struct ContentView: View {
     @State private var showsArchivedLists = false
     @State private var navigationPath = NavigationPath()
     @State private var lastReportedVisibleListID: Int?
+    @State private var visibleListID: Int?
     @State private var draggedListID: Int?
     @State private var listCenters: [Int: CGFloat] = [:]
     @State private var listDragLocation: CGFloat?
     @State private var listDragGrabOffset: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reducesMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @AppStorage(BoardPresentation.storageKey) private var presentation = BoardPresentation.standard
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -211,7 +240,8 @@ struct ContentView: View {
             return
         }
 
-        listProxy.scrollTo(targetListID, anchor: .center)
+        visibleListID = targetListID
+        listProxy.scrollTo(targetListID, anchor: .leading)
 
         if let targetCardID = boardTargetCardID,
            let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) {
@@ -424,30 +454,6 @@ struct ContentView: View {
         }
 
         lists.append(KanbanList(id: nextListID, title: newTitle, cards: []))
-    }
-
-
-    ///
-    /// @fcn        ContentView.safeFrameDimension(_:subtracting:)
-    /// @brief      Return a finite positive frame dimension after applying an inset
-    /// @details    Subtracts the requested inset and substitutes a one-point minimum when the
-    ///             result is non-finite or too small
-    ///
-    /// @param[in]  dimension  Proposed source dimension from the parent geometry
-    /// @param[in]  inset      Amount to subtract from the source dimension
-    ///
-    /// @return     (CGFloat) finite dimension of at least one point
-    ///
-    /// @pre        No input range is required; non-finite and undersized results are handled
-    /// @post       The result is finite and greater than zero
-    ///
-    private func safeFrameDimension(_ dimension: CGFloat, subtracting inset: CGFloat) -> CGFloat {
-
-        let availableDimension = (dimension - inset) /* Dimension remaining after the inset */
-        
-        guard availableDimension.isFinite else { return 1 }
-        
-        return max(availableDimension, 1)
     }
 
 
@@ -985,7 +991,7 @@ struct ContentView: View {
 
         NavigationStack(path: $navigationPath) {
             
-            GeometryReader { screen in
+            GeometryReader { _ in
 
                 ZStack {
                     LinearGradient(
@@ -999,6 +1005,7 @@ struct ContentView: View {
 
                         BoardHeader(
                             settings:         $displaySettings,
+                            presentation:     $presentation,
                             activeMembers:    activeMembers,
                             memberColors:     memberColors,
                             onRenameMember:   renameMember,
@@ -1026,9 +1033,9 @@ struct ContentView: View {
                                         ZStack {
                                         KanbanListView(
                                             list:               list,
-                                            screenSize:         screen.size,
                                             availableListHeight: listArea.size.height,
                                             displaySettings:    displaySettings,
+                                            presentation:       presentation,
                                             labelLibrary:       labelLibrary,
                                             toggleCardTitle:    { cardID in toggleCardTitle(in: listIndex, cardID: cardID)
                                             },
@@ -1060,13 +1067,13 @@ struct ContentView: View {
                                             onListDragEnded: { endListDrag(list.id) }
                                         )
                                         .frame(
-                                            width: safeFrameDimension(screen.size.width, subtracting: 28)
+                                            width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize)
                                         )
                                         .scaleEffect(draggedListID == list.id && !reducesMotion ? 1.025 : 1)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
                                         }
-                                        .frame(width: safeFrameDimension(screen.size.width, subtracting: 28))
+                                        .frame(width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize))
                                         .background {
                                             GeometryReader { geometry in
                                                 Color.clear.preference(
@@ -1084,17 +1091,24 @@ struct ContentView: View {
                                 .padding(.horizontal, 14)
                             }
                             .scrollTargetBehavior(.viewAligned)
+                            .scrollPosition(id: $visibleListID, anchor: .leading)
                             .scrollDisabled(draggedListID != nil)
                             .coordinateSpace(name: "WeekListsViewport")
                             .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
                                 listCenters = centers
-                                guard draggedListID == nil else { return }
-                                guard let nearestListID = centers.min(by: {
-                                    abs($0.value - listArea.size.width / 2) < abs($1.value - listArea.size.width / 2)
-                                })?.key,
-                                nearestListID != lastReportedVisibleListID else { return }
-                                lastReportedVisibleListID = nearestListID
-                                onListViewed(nearestListID)
+                            }
+                            .onChange(of: visibleListID) { _, listID in
+                                guard draggedListID == nil, let listID,
+                                      lists.contains(where: { $0.id == listID }),
+                                      listID != lastReportedVisibleListID else { return }
+                                lastReportedVisibleListID = listID
+                                onListViewed(listID)
+                            }
+                            .onChange(of: presentation) { _, _ in
+                                if let listID = draggedListID { endListDrag(listID) }
+                            }
+                            .onChange(of: listArea.size) { _, _ in
+                                if let listID = draggedListID { endListDrag(listID) }
                             }
                             .onChange(of: boardTargetListID) { _, targetListID in
                                 guard targetListID != nil else { return }
@@ -1109,6 +1123,9 @@ struct ContentView: View {
                                 }
                             }
                             .onAppear {
+                                if visibleListID == nil {
+                                    visibleListID = lists.first?.id
+                                }
                                 openPendingBoardTarget(using: listProxy)
                             }
                             .task(id: draggedListID) {
@@ -1201,6 +1218,7 @@ struct ContentView: View {
 struct BoardHeader: View {
 
     @Binding var settings: BoardDisplaySettings      /* Board display settings                              */
+    @Binding var presentation: BoardPresentation
     let activeMembers:     [String]                  /* Unique users assigned to active cards               */
     let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name         */
     let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
@@ -1283,6 +1301,11 @@ struct BoardHeader: View {
             }
 
             Menu {
+                Picker("Board presentation", selection: $presentation) {
+                    ForEach(BoardPresentation.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
                 Button("Board Settings", systemImage: "gearshape") { showingSettings = true }
                 Button("View Archived Lists", systemImage: "archivebox", action: onViewArchivedLists)
                 if onArchiveBoard != nil {
@@ -1308,6 +1331,7 @@ struct BoardHeader: View {
             
             BoardSettingsView(
                 settings:         $settings,
+                presentation:     $presentation,
                 activeMembers:    activeMembers,
                 memberColors:     memberColors,
                 onRenameMember:   onRenameMember,
@@ -1383,6 +1407,7 @@ private struct ArchivedListsView: View {
 private struct BoardSettingsView: View {
 
     @Binding var settings: BoardDisplaySettings             /* Bound to the board's display preferences        */
+    @Binding var presentation: BoardPresentation
 
     @Environment(\.dismiss) private var dismiss             /* Dismiss action for the settings sheet           */
 
@@ -1429,6 +1454,19 @@ private struct BoardSettingsView: View {
         NavigationStack {
 
             Form {
+
+                Section {
+                    Picker("Board presentation", selection: $presentation) {
+                        ForEach(BoardPresentation.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Presentation")
+                } footer: {
+                    Text("Standard shows supporting summaries. Overview shows narrower lists and concise cards. This preference applies to Week and personal boards on this device; it does not change your content.")
+                }
 
                 Section("Card badges") {
                     Toggle("Checklist progress", isOn: $settings.showChecklistProgress)
@@ -1695,9 +1733,9 @@ struct KanbanListView: View {
     }
 
     let list: KanbanList                        /* The kanban list data rendered by the view                      */
-    let screenSize: CGSize                      /* The size of the device screen used for layout calculations     */    
     let availableListHeight: CGFloat
     let displaySettings: BoardDisplaySettings   /* The board's display settings affecting card and list rendering */
+    let presentation: BoardPresentation
     let labelLibrary: LabelLibrary              /* Shared categorized labels available to the cards               */
     let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
     let canMoveEarlier: Bool                    /* Indicates whether the list can be moved earlier in the board   */
@@ -1723,6 +1761,8 @@ struct KanbanListView: View {
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
     @State private var headerHeight: CGFloat = 72
+    @State private var measuredCardHeights: [Int: CGFloat] = [:]
+    @ScaledMetric(relativeTo: .body) private var cardScale = 1.0
     @GestureState private var isHoldingList = false
 
 
@@ -1752,32 +1792,29 @@ struct KanbanListView: View {
 
     ///
     /// @fcn        KanbanListView.cardHeight
-    /// @brief      Calculate the quarter-screen target height for card rows
-    /// @details    Returns a one-point minimum for nonfinite or undersized screen-height calculations
+    /// @brief      Calculate a Dynamic Type-scaled minimum height for card rows
+    /// @details    Uses the local presentation preset rather than a fraction of screen height
     ///
     /// @return     (CGFloat) finite target height of at least one point
     /// @post       Screen geometry and list content remain unchanged
     ///
-    private var cardHeight: CGFloat { /* Fixed card height derived from screen geometry */
-
-        let quarterHeight = screenSize.height * 0.25 /* Original quarter-screen card target */
-        
-        return quarterHeight.isFinite ? max(quarterHeight, 1) : 1
+    private var cardHeight: CGFloat {
+        presentation.minimumCardHeight * cardScale
     }
 
 
     ///
     /// @fcn        KanbanListView.cardCollectionContentHeight
     /// @brief      Estimate the vertical space required by this list's rows
-    /// @details    Budgets 44 points for dividers, at least 48 points for cards, and 64 points
-    ///             for collection controls/spacing, with an 88-point minimum
+    /// @details    Uses measured card heights when available, scaled minimums for unmeasured rows,
+    ///             44 points for dividers, and an allowance for the Add card row and spacing
     ///
     /// @return     (CGFloat) estimated collection height in points
     /// @post       No card order or layout state is modified
     ///
     private var cardCollectionContentHeight: CGFloat {
         let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in
-            height + (card.isSectionDivider ? 44 : max(cardHeight, 48))
+            height + (card.isSectionDivider ? 44 : max(measuredCardHeights[card.id] ?? 0, cardHeight) + 8)
         }
         return max(88, rowHeight + 64)
     }
@@ -1814,18 +1851,17 @@ struct KanbanListView: View {
 
         VStack(spacing: 0) {
 
-            HStack(alignment: .top) {
-
-                VStack(alignment: .leading, spacing: 3) {
-
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(list.title)
                         .font(.title3.weight(.bold))
-
-                    Text(list.subtitle)
-                        .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
+                    Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .gesture(listReorderGesture)
                 .accessibilityElement(children: .combine)
@@ -1840,6 +1876,17 @@ struct KanbanListView: View {
                     if !holding { onListDragEnded() }
                 }
                 .sensoryFeedback(.selection, trigger: isHoldingList)
+                HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 3) {
+
+                    if presentation == .standard {
+                        Text(list.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Button {
 
@@ -1850,7 +1897,7 @@ struct KanbanListView: View {
 
                     Image(systemName: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle")
                         .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -1863,25 +1910,22 @@ struct KanbanListView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
                 Button {
                     activeSheet = .listActions
                 } label: {
 
                     Image(systemName: "ellipsis")
                         .foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(list.title) list actions")
+                }
             }
             .padding(.horizontal, 14)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
             .background {
                 GeometryReader { header in
                     Color.clear
@@ -1920,12 +1964,21 @@ struct KanbanListView: View {
                                 card:            card,
                                 height:          cardHeight,
                                 displaySettings: displaySettings,
+                                presentation:    presentation,
                                 labelLibrary:    labelLibrary,
                                 onUpdateCard:    onUpdateCard,
                                 onDeleteCard:    { onDeleteCard(card.id) },
                                 onArchiveCard:   { onArchiveCard(card.id) }
                             ) {
                                 toggleCardTitle(card.id)
+                            }
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.preference(
+                                        key: BoardCardHeightPreferenceKey.self,
+                                        value: [card.id: geometry.size.height]
+                                    )
+                                }
                             }
                         }
                         .buttonStyle(.plain)
@@ -1974,6 +2027,9 @@ struct KanbanListView: View {
             .contentMargins(.bottom, cardCollectionContentHeight > cardCollectionHeight ? 80 : 0, for: .scrollContent)
             .background(.clear)
             .frame(height: cardCollectionHeight)
+            .onPreferenceChange(BoardCardHeightPreferenceKey.self) { heights in
+                measuredCardHeights.merge(heights, uniquingKeysWith: { _, latest in latest })
+            }
             .padding(.horizontal, 4)
             .padding(.bottom, 24)
         }
@@ -2442,8 +2498,9 @@ private struct ArchivedCardsView: View {
 struct KanbanCardView: View {
 
     let card: KanbanCard                            /* The kanban card being displayed                               */
-    let height: CGFloat                             /* The fixed height of the card view                             */
+    let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
+    var presentation: BoardPresentation = .standard
     let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
     let onUpdateCard: (KanbanCard) -> Void          /* The action invoked when card details are updated              */
     let onDeleteCard: () -> Void                    /* The action invoked when this card is deleted                  */
@@ -2454,6 +2511,7 @@ struct KanbanCardView: View {
     @State private var isRenaming         = false   /* Flag indicating if the rename operation is active             */
     @State private var isEditingInfo      = false   /* Flag indicating if the card info editing mode is active       */
     @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
 
     ///
@@ -2543,7 +2601,7 @@ struct KanbanCardView: View {
 
     ///
     /// @fcn        KanbanCardView.body
-    /// @brief      Render a fixed-height card summary and card action menu
+    /// @brief      Render a content-fitting card summary and card action menu
     /// @details    Shows completion, supporting text, up to three label chips plus overflow,
     ///             and preference-controlled metadata badges. Provides archive, confirmed delete,
     ///             validated rename, and full display-text editing
@@ -2565,6 +2623,7 @@ struct KanbanCardView: View {
                     Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
                         .font(.headline)
                         .foregroundStyle(card.isTitleChecked ? .green : .secondary)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
@@ -2572,89 +2631,62 @@ struct KanbanCardView: View {
                 Text(card.word)
                     .font(.headline)
                     .foregroundStyle(.primary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (presentation == .overview ? 2 : 3))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
+            }
 
-                Spacer(minLength: 4)
+            if presentation == .standard && !card.subtitle.isEmpty {
+                Text(card.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
 
-                Menu {
-                    Button(action: onArchiveCard) {
-                        Label("Archive Card", systemImage: "archivebox")
+            if presentation == .standard && !cardLabels.isEmpty {
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 5) {
+                        ForEach(cardLabels.prefix(3)) { label in
+                            KanbanLabelChip(label: label)
+                        }
+                        if cardLabels.count > 3 {
+                            Text("+\(cardLabels.count - 3)")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
                     }
-
-                    Button(role: .destructive) {
-                        isConfirmingDelete = true
-                    } label: {
-                        Label("Delete Card", systemImage: "trash")
-                    }
-
-                    Button {
-                        renameDraft = card.word
-                        isRenaming = true
-                        
-                    } label: {
-                        Label("Rename Card", systemImage: "pencil")
-                    }
-
-                    Button {
-                        isEditingInfo = true
-                        
-                    } label: {
-                        Label("Update Card Info", systemImage: "slider.horizontal.3")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
+                    .fixedSize(horizontal: true, vertical: false)
+                    Text("\(cardLabels.count) labels")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Card actions")
             }
 
-            Text(card.subtitle)
-                .font(.subheadline)
+            HStack(alignment: .center, spacing: 4) {
+                ViewThatFits(in: .horizontal) {
+                    if !dynamicTypeSize.isAccessibilitySize {
+                        HStack(spacing: 10) { cardBadges }
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        cardBadges
+                    }
+                }
+                .labelStyle(.titleAndIcon)
+                .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-
-            if !cardLabels.isEmpty {
-                
-                HStack(spacing: 5) {
-                    
-                    ForEach(cardLabels.prefix(3)) { label in
-                        KanbanLabelChip(label: label)
-                    }
-
-                    if cardLabels.count > 3 {
-                        Text("+\(cardLabels.count - 3)")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                cardActions
             }
-
-            HStack(spacing: 14) {
-
-                if displaySettings.showCommentCounts {
-                    Label("\(card.commentCount)", systemImage: "text.bubble")
-                }
-
-                if displaySettings.showChecklistProgress {
-                    Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
-                }
-
-                if displaySettings.showDueDateBadges && card.hasDueDate {
-                    Label("Today", systemImage: "calendar")
-                }
-
-                Spacer()
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
-        .padding(14)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(presentation == .overview ? 8 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: max(height - 8, 40), alignment: .top)
-        .background(.white)
+        .frame(minHeight: height, alignment: .top)
+        .background(.background)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
@@ -2682,6 +2714,50 @@ struct KanbanCardView: View {
                 onUpdateCard(cardUpdated(title: title, subtitle: subtitle, description: description))
             }
             .databaseActivityOverlay()
+        }
+    }
+
+    private var cardActions: some View {
+        Menu {
+            Button(action: onArchiveCard) {
+                Label("Archive Card", systemImage: "archivebox")
+            }
+            Button(role: .destructive) {
+                isConfirmingDelete = true
+            } label: {
+                Label("Delete Card", systemImage: "trash")
+            }
+            Button {
+                renameDraft = card.word
+                isRenaming = true
+            } label: {
+                Label("Rename Card", systemImage: "pencil")
+            }
+            Button {
+                isEditingInfo = true
+            } label: {
+                Label("Update Card Info", systemImage: "slider.horizontal.3")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Card actions")
+    }
+
+    @ViewBuilder
+    private var cardBadges: some View {
+        if displaySettings.showCommentCounts {
+            Label("\(card.commentCount)", systemImage: "text.bubble")
+        }
+        if displaySettings.showChecklistProgress {
+            Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
+        }
+        if displaySettings.showDueDateBadges && card.hasDueDate {
+            Label("Today", systemImage: "calendar")
         }
     }
 }
@@ -2861,7 +2937,7 @@ struct TodayListDetailView: View {
                                         NavigationLink(value: card) {
                                             KanbanCardView(
                                                 card: card,
-                                                height: max(geometry.size.height * 0.20, 128),
+                                                height: BoardPresentation.standard.minimumCardHeight,
                                                 displaySettings: BoardDisplaySettings(),
                                                 labelLibrary: labelLibrary,
                                                 onUpdateCard: updateCard,

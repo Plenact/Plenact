@@ -47,6 +47,12 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 **List Actions → Add card** closes the actions sheet before presenting the new-card form for that same list. The form's Add action creates the card; Cancel leaves the list unchanged. The direct **+ Add card** row uses the same form.
 
+## Board Presentation
+
+**Board options > Board presentation** and **Board Settings > Presentation** offer **Standard** and **Overview**. The preference is stored locally, shared by Week and personal collections, and does not change Board JSON. Standard uses columns up to 360 points wide with supporting card summaries; Overview uses columns up to 240 points wide and omits subtitle/label summaries. Cards fit their displayed content with minimum heights of 112/80 points, scaled for Dynamic Type on Board lists. List titles have a separate header row; card actions sit beside the badges rather than squeezing the title. Both landscape directions and portrait are declared for iPhone.
+
+At accessibility text sizes, columns expand to the available width, titles are not line-limited, and badges stack. Controls are not scaled down. The focused Today list keeps Standard-style content-fitting cards. See [Board Presentation](../../../Doc/Board-Presentation.md) for context-preservation boundaries and device acceptance checks; a continuous zoom slider is not implemented.
+
 ## Reordering Lists
 
 Touch and hold a list's title/header text for about half a second, then drag horizontally to reorder it. The held list lifts visually and gives selection feedback. Holding within the left or right edge of the board viewport moves it one position in that direction every 550 ms and scrolls it into view, allowing a restored list to travel across the entire board. Release to finish; the existing Board persistence path saves the updated order.

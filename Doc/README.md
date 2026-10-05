@@ -6,6 +6,8 @@ This directory holds Plenact's product, UX, architecture, demonstration, and cod
 
 - [`Life-Planning-Model.md`](Life-Planning-Model.md) - product-model reference for Lists, Cards, checklist actions, planning views, and the proposed weekly review
 
+- [`Board-Presentation.md`](Board-Presentation.md) - implemented Standard/Overview presets, portrait/landscape layout, local preferences, and remaining device acceptance checks
+
 - [`Today-View-Architecture.md`](Today-View-Architecture.md) - current app boundaries and incremental architecture direction
 
 - [`Today-View-UI.md`](Today-View-UI.md) - Today screen behavior and interaction proposal

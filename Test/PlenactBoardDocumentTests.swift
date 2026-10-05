@@ -17,6 +17,201 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testBoardPresentationWidthsInPortraitLandscapeAndAccessibility() {
+        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 360)
+        XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 393, accessibilitySize: false), 240)
+        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 852, accessibilitySize: false), 360)
+        XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 852, accessibilitySize: false), 240)
+        XCTAssertLessThanOrEqual(2 * 360 + 12 + 28, 852)
+        XCTAssertLessThanOrEqual(3 * 240 + 24 + 28, 852)
+        for preset in BoardPresentation.allCases {
+            XCTAssertEqual(preset.columnWidth(viewportWidth: 320, accessibilitySize: true), 292)
+            XCTAssertEqual(preset.columnWidth(viewportWidth: 200, accessibilitySize: false), 172)
+            for width: CGFloat in [0, 28, -1, .nan, .infinity] {
+                XCTAssertEqual(preset.columnWidth(viewportWidth: width, accessibilitySize: false), 1)
+            }
+        }
+    }
+
+    @MainActor
+    func testBoardPresentationPreferenceIsLocalAndLeavesBoardSnapshotsUntouched() throws {
+        let suite = "Plenact.BoardPresentationTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let week = try JSONEncoder().encode(SampleData.lists)
+        var board = PersonalCollection(title: "Synthetic project", kind: .board)
+        board.lists = SampleData.lists
+        board.savedCardIDs = [0]
+        board.isArchived = true
+        let collections = try JSONEncoder().encode([board])
+        defaults.set(week, forKey: "Plenact.Board.v1")
+        defaults.set(collections, forKey: "Plenact.PersonalCollections.v1")
+        let preference = AppStorage(wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults)
+        XCTAssertEqual(preference.wrappedValue, .standard)
+        preference.wrappedValue = .overview
+        XCTAssertEqual(defaults.string(forKey: BoardPresentation.storageKey), "overview")
+        let reopened = AppStorage(wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults)
+        XCTAssertEqual(reopened.wrappedValue, .overview)
+        preference.wrappedValue = .standard
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), week)
+        XCTAssertEqual(defaults.data(forKey: "Plenact.PersonalCollections.v1"), collections)
+    }
+
+    @MainActor
+    func testRenderedCardsFitContentWithoutQuarterScreenHeights() {
+        let card = KanbanCard(id: 100, word: "Prepare a plan", listTitle: "Synthetic list")
+        func measuredHeight(_ preset: BoardPresentation, size: DynamicTypeSize, width: CGFloat) -> CGFloat {
+            let view = KanbanCardView(
+                card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
+                presentation: preset, labelLibrary: .starter,
+                onUpdateCard: { _ in XCTFail("Layout must not edit a card") },
+                onDeleteCard: { XCTFail("Layout must not delete a card") },
+                onArchiveCard: { XCTFail("Layout must not archive a card") },
+                onToggle: { XCTFail("Layout must not toggle a card") }
+            )
+            .environment(\.dynamicTypeSize, size)
+            let controller = UIHostingController(rootView: view)
+            return controller.sizeThatFits(in: CGSize(width: width, height: 10_000)).height
+        }
+        let standard = measuredHeight(.standard, size: .large, width: 360)
+        let overview = measuredHeight(.overview, size: .large, width: 240)
+        XCTAssertGreaterThanOrEqual(standard, 112)
+        XCTAssertLessThan(standard, 160)
+        XCTAssertGreaterThanOrEqual(overview, 80)
+        XCTAssertLessThan(overview, standard)
+        XCTAssertGreaterThan(measuredHeight(.overview, size: .accessibility5, width: 292), overview)
+    }
+
+    @MainActor
+    func testCardSummaryDoesNotStretchToFillListHeight() {
+        let card = KanbanCard(id: 101, word: "Review the week ahead", listTitle: "Synthetic list")
+        for preset in BoardPresentation.allCases {
+            let controller = UIHostingController(rootView: KanbanCardView(
+                card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
+                presentation: preset, labelLibrary: .starter,
+                onUpdateCard: { _ in XCTFail("Layout must not edit content") },
+                onDeleteCard: {}, onArchiveCard: {}, onToggle: {}
+            ).environment(\.dynamicTypeSize, .large))
+            let width: CGFloat = preset == .standard ? 360 : 240
+            let shortProposal = controller.sizeThatFits(in: CGSize(width: width, height: 300))
+            let tallProposal = controller.sizeThatFits(in: CGSize(width: width, height: 900))
+            XCTAssertEqual(shortProposal.height, tallProposal.height, accuracy: 1)
+            XCTAssertLessThan(tallProposal.height, preset == .standard ? 170 : 130)
+        }
+    }
+
+    @MainActor
+    func testNavigationLinkedCardRowsRemainCompactInAList() async throws {
+        let card = KanbanCard(id: 102, word: "Review the week ahead", listTitle: "Synthetic list")
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        func collectionView(in view: UIView) -> UICollectionView? {
+            if let collection = view as? UICollectionView { return collection }
+            return view.subviews.compactMap { collectionView(in: $0) }.first
+        }
+        for preset in BoardPresentation.allCases {
+            let view = NavigationStack {
+                List {
+                    NavigationLink {
+                        Text("Synthetic card detail")
+                    } label: {
+                        KanbanCardView(
+                            card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
+                            presentation: preset, labelLibrary: .starter,
+                            onUpdateCard: { _ in XCTFail("Rendering must not edit content") },
+                            onDeleteCard: {}, onArchiveCard: {}, onToggle: {}
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .listStyle(.plain)
+            }
+            .environment(\.dynamicTypeSize, .large)
+            let controller = UIHostingController(rootView: view)
+            window.rootViewController = controller
+            window.frame = CGRect(x: 0, y: 0, width: preset == .standard ? 360 : 240, height: 700)
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(100))
+            let collection = try XCTUnwrap(collectionView(in: controller.view))
+            let row = try XCTUnwrap(collection.visibleCells.first)
+            XCTAssertLessThan(row.bounds.height, preset == .standard ? 210 : 180)
+        }
+    }
+
+    @MainActor
+    func testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent() async throws {
+        let suite = "Plenact.BoardRelayoutTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var lists = SampleData.lists
+        lists[0].archiveCard(id: lists[0].cards[0].id)
+        var archived = SampleData.lists[1]
+        archived.isArchived = true
+        var archives = [archived]
+        var saved: Set<Int> = [lists[0].archivedCards[0].id]
+        let focusedListID = lists[3].id
+        var targetList: Int? = focusedListID
+        var targetCard: Int?
+        var visibleListID: Int?
+        let revealedTarget = expectation(description: "Reveal the requested middle list")
+        var didRevealTarget = false
+        let originalLists = lists
+        let originalArchives = archives
+        let originalSaved = saved
+        let view = ContentView(
+            lists: Binding(get: { lists }, set: { lists = $0 }),
+            archivedLists: Binding(get: { archives }, set: { archives = $0 }),
+            boardTargetListID: Binding(get: { targetList }, set: { targetList = $0 }),
+            boardTargetCardID: Binding(get: { targetCard }, set: { targetCard = $0 }),
+            savedCardIDs: Binding(get: { saved }, set: { saved = $0 }),
+            onListViewed: { listID in
+                visibleListID = listID
+                if listID == focusedListID && !didRevealTarget {
+                    didRevealTarget = true
+                    revealedTarget.fulfill()
+                }
+            },
+            boardTitle: "Synthetic board",
+            onListsChanged: { _ in XCTFail("Presentation must not request a Board save") },
+            retainedAttachmentLists: { [] }
+        )
+        .defaultAppStorage(defaults)
+        let controller = UIHostingController(rootView: view)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previousKeyWindow?.makeKey()
+        }
+        await fulfillment(of: [revealedTarget], timeout: 2)
+        for preset in BoardPresentation.allCases {
+            defaults.set(preset.rawValue, forKey: BoardPresentation.storageKey)
+            for size in [CGSize(width: 393, height: 852), CGSize(width: 852, height: 393)] {
+                window.frame.size = size
+                controller.view.frame = window.bounds
+                controller.view.setNeedsLayout()
+                controller.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(100))
+                XCTAssertEqual(lists, originalLists)
+                XCTAssertEqual(archives, originalArchives)
+                XCTAssertEqual(saved, originalSaved)
+                XCTAssertEqual(visibleListID, focusedListID)
+            }
+        }
+    }
+
     func testListReorderingMovesRestoredMondayToFirstWithoutChangingContent() throws {
         var lists = SampleData.lists
         let monday = lists.removeFirst()

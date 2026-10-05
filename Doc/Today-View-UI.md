@@ -64,3 +64,7 @@ A future weekly review may offer a deliberate way to revisit plans, but it shoul
 ## Responsive Behavior
 
 On iPhone, use a single-column scroll view and keep today's list actions and board-list browser easy to reach without covering content. On larger displays, retain the same order and reading hierarchy. Validate with larger accessibility text sizes and VoiceOver as well as the default presentation.
+
+The shared lower navigation bar uses a compact-height layout in landscape: icon/caption groups are horizontal, the New button is 44 points, and controls remain within the 52-point content area above the bottom safe area. Portrait keeps the raised New presentation. Both layouts retain keyboard overlay behavior rather than moving the toolbar above Quick capture's keyboard.
+
+The paper background extends through the horizontal and bottom container safe areas so it fills the screen width in either landscape direction. Only the decorative background extends into these areas; navigation controls retain safe-area protection from the camera cutout and home indicator.

@@ -306,6 +306,7 @@ private struct AppRootView: View {
     @State private var showsCenterNewCardSheet = false                         /* Destination picker for New outside Today              */
     @State private var isWeekListRequestArmed = false
     @State private var weekListShakeTrigger = 0
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
 
     ///
@@ -451,14 +452,15 @@ private struct AppRootView: View {
     /// @post       Button and gesture callbacks update navigation and creation-request state
     ///
     private var bottomNavigationBar: some View {
+        let isCompact = verticalSizeClass == .compact
 
-        ZStack(alignment: .top) {
+        return ZStack(alignment: isCompact ? .center : .top) {
             HStack(spacing: 4) {
                 tabButton(.today, title: "Today", systemImage: "sun.max.fill")
                 tabButton(.board, title: "Week", systemImage: "rectangle.3.group.fill")
 
                 Color.clear
-                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 54)
                     .accessibilityHidden(true)
 
                 tabButton(.lists, title: "Lists", systemImage: "list.bullet")
@@ -468,9 +470,12 @@ private struct AppRootView: View {
             .padding(.top, 4)
             .padding(.bottom, 4)
             .frame(maxWidth: .infinity)
-            .offset(y: 25)
+            .offset(y: isCompact ? 0 : 25)
 
-            VStack(spacing: 6) {
+            let newLayout = isCompact
+                ? AnyLayout(HStackLayout(spacing: 6))
+                : AnyLayout(VStackLayout(spacing: 6))
+            newLayout {
                 Button {
                     if isWeekListRequestArmed {
                         isWeekListRequestArmed = false
@@ -485,7 +490,7 @@ private struct AppRootView: View {
                         .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(.white)
                         .rotationEffect(.degrees(-7))
-                        .frame(width: 68, height: 68)
+                        .frame(width: isCompact ? 44 : 68, height: isCompact ? 44 : 68)
                         .background(Color.accentColor, in: Circle())
                         .shadow(color: Color.black.opacity(0.22), radius: 8, x: 2, y: 4)
                         .contentShape(Circle())
@@ -512,11 +517,11 @@ private struct AppRootView: View {
                             .foregroundStyle(.white.opacity(0.92))
                     }
             }
-            .offset(y: 14)
+            .offset(y: isCompact ? 0 : 14)
             .zIndex(2)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 74)
+        .frame(height: isCompact ? 52 : 74)
         .background(alignment: .bottom) {
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
@@ -531,9 +536,9 @@ private struct AppRootView: View {
                         .frame(height: 1)
                 }
             }
-            .frame(height: 85)
+            .frame(height: isCompact ? 52 : 85)
             .frame(maxHeight: .infinity, alignment: .bottom)
-            .ignoresSafeArea(edges: .bottom)
+            .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
             .allowsHitTesting(false)
         }
         .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: -4)
@@ -562,7 +567,10 @@ private struct AppRootView: View {
 
         } label: {
 
-            VStack(spacing: 4) {
+            let layout = verticalSizeClass == .compact
+                ? AnyLayout(HStackLayout(spacing: 6))
+                : AnyLayout(VStackLayout(spacing: 4))
+            layout {
 
                 Image(systemName: systemImage)
                     .font(.system(size: 23, weight: .semibold))
@@ -572,7 +580,7 @@ private struct AppRootView: View {
                         .font(.caption)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 54)
+            .frame(maxWidth: .infinity, minHeight: verticalSizeClass == .compact ? 44 : 54)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

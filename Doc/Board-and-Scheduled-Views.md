@@ -20,6 +20,7 @@ BoardView is the complete, editable kanban workspace. It should preserve the exi
 
 - Keep the board title and board-level actions in a consistent header.
 - Present lists as horizontally navigable columns/pages, with clear list title, card count, and list actions.
+- Standard and Overview are implemented local presentation presets for Week and personal collections. Columns adapt to portrait/landscape width, and card summaries grow with their displayed content rather than using quarter-screen heights. See [Board Presentation](Board-Presentation.md) for usage, accessibility behavior, and remaining device checks.
 - Keep cards vertically ordered within each list. Divider cards remain in the order and position chosen by the user.
 - Keep card creation, editing, completion, movement, labels, checklists, attachments, and list management in the Board/card-detail workflows already implemented.
 - Provide a list index or list picker so users can reach a named list without relying on repeated horizontal swipes. A deep link from Today or Scheduled targets a list by `KanbanList.id`, never by title or current array index.

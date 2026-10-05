@@ -6,9 +6,13 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 ## Development Work
 
+- List Zoom like Trello!!!
 
+- Panoramic like Trello!
 
 ### Carryover
+
+- aNote note / Trello card view sharing, overlap and use considerations for data organization and presentation in Plenact
 
 - Today View
 
@@ -31,21 +35,14 @@ Opens
 - New File Menu App Review
 	- add to New Installs Reset Procedure iff
 	
-bf1aa4c3a83b485b26bb6ca38ef94d5ec19341c4
 Opens now:
 
 - Quick capture keyboard raise bug!
-
-- Beautiful! And what may a good initialization prompt for our new Plenact Production Agent be?
 
 
 - "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
 
 //................................................................................//
-
-- List Zoom like Trello!!!
-
-- Panoramic like Trello!
 
 - List submenus!!!
 	Card List Actions
@@ -64,6 +61,7 @@ Opens now:
 - Real phone init freeze quietly will database init loads
 
 - Quick capture keyboard loads and unexpectedly raises lower toolbar!
+
 // -------------------------------------------------------------------------------------------//
 
 ## Current Product

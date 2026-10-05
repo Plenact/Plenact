@@ -1,7 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // @file       PlenactAPIClient.swift
 // @brief      HTTPS client and Keychain session boundary for the Plenact shared demo API
-// @details    Keeps server credentials and remote Board snapshots separate from local persistence
+// @details    Provides the authenticated client for the app's synthetic shared-demo service, not
+//             production multi-tenant synchronization; ordinary local Board data is not uploaded
 // -------------------------------------------------------------------------------------------------
 import Foundation
 import Security
@@ -20,8 +21,21 @@ struct PlenactRemoteUser: Codable, Equatable, Identifiable {
     let displayName: String         /* User's display name            */
     var accountRole: String?        /* User's role in the account     */
 
+    ///
+    /// @fcn        PlenactRemoteUser.id
+    /// @brief      Expose the remote user ID as the identifiable value
+    /// @details    Reuses the stable account identifier for SwiftUI lists
+    ///
+    /// @return     (String) server-assigned user identifier
+    ///
     var id: String { userID } /* Stable identity for SwiftUI lists */
 
+    ///
+    /// Maps approved remote-user fields to the directory JSON names
+    ///
+    /// @section    Purpose
+    ///     Keep the user identity response coding contract explicit
+    ///
     enum CodingKeys: String, CodingKey {
         case userID      = "user_id"
         case username
@@ -43,6 +57,12 @@ struct PlenactRemoteSession: Codable, Equatable {
     let expiresAtUTC: String                /* Expiration timestamp in UTC     */
     let user:         PlenactRemoteUser     /* Associated remote user          */
 
+    ///
+    /// Maps remote-session fields to the authentication JSON names
+    ///
+    /// @section    Purpose
+    ///     Keep the bearer session response coding contract explicit
+    ///
     enum CodingKeys: String, CodingKey {
         case accessToken  = "access_token"
         case expiresAtUTC = "expires_at_utc"
@@ -110,6 +130,12 @@ private struct PlenactCreateMemberRequest: Encodable {
     let displayName: String /* New member's directory name */
     let password:    String /* Temporary member password */
 
+    ///
+    /// Maps member provisioning fields to the API request names
+    ///
+    /// @section    Purpose
+    ///     Keep the invited-member request coding contract explicit
+    ///
     enum CodingKeys: String, CodingKey {
         case username
         case displayName = "display_name"
@@ -130,6 +156,12 @@ struct PlenactBoardWriteRequest: Encodable {
     let document:         PlenactBoardDocument /* Complete snapshot payload */
     let seedKind:         String?              /* Explicit first-seed marker */
 
+    ///
+    /// Maps Board write fields to the snapshot API request names
+    ///
+    /// @section    Purpose
+    ///     Preserve the API's expected revision, document, and seed field names
+    ///
     enum CodingKeys: String, CodingKey {
         case expectedRevision = "expected_revision"
         case document
@@ -151,6 +183,12 @@ private struct PlenactAssignmentRequest: Encodable {
     let action:           String   /* Assign or unassign operation */
     let userID:           String?  /* Editor-selected target; omitted for members */
 
+    ///
+    /// Maps registered assignment mutation fields to the API request names
+    ///
+    /// @section    Purpose
+    ///     Keep the assignment endpoint's expected revision and target fields explicit
+    ///
     enum CodingKeys: String, CodingKey {
         case expectedRevision = "expected_revision"
         case cardID = "card_id"
@@ -171,6 +209,12 @@ private struct PlenactAPIErrorResponse: Decodable {
     let error:           String  /* Stable server error code */
     let currentRevision: Int64? /* Current revision included with conflicts */
 
+    ///
+    /// Maps stable API error fields to their JSON response names
+    ///
+    /// @section    Purpose
+    ///     Decode the error code and optional current revision from service responses
+    ///
     enum CodingKeys: String, CodingKey {
         case error
         case currentRevision = "current_revision"
@@ -194,7 +238,13 @@ enum PlenactAPIError: LocalizedError {
     case revisionConflict(Int64?)
     case server(String)
 
-    /// Return a safe message for presentation without exposing response internals
+    ///
+    /// @fcn        PlenactAPIError.errorDescription
+    /// @brief      Return a safe message for presentation without exposing response internals
+    /// @details    Maps known API error cases to concise shared-demo UI text
+    ///
+    /// @return     (String?) user-facing description for the error
+    ///
     var errorDescription: String? { /* Safe user-facing error text */
 
         switch self {
@@ -231,9 +281,14 @@ enum PlenactSessionStore {
     private static let account = "shared-demo-session" /* Keychain account key */
     private static let service = Bundle.main.bundleIdentifier.map { "\($0).remote-session" } ?? "Plenact.remote-session" /* App-specific Keychain service */
 
-    /// Load the previously authenticated remote session from Keychain
+    ///
+    /// @fcn        PlenactSessionStore.load()
+    /// @brief      Load the previously authenticated remote session from Keychain
+    /// @details    Reads the app-specific generic-password item and decodes its session payload
     ///
     /// @return     (PlenactRemoteSession?) stored session, or nil when none is available
+    ///
+    /// @post       The Keychain item remains unchanged
     ///
     static func load() -> PlenactRemoteSession? {
 
@@ -255,11 +310,17 @@ enum PlenactSessionStore {
         return try? JSONDecoder().decode(PlenactRemoteSession.self, from: data)
     }
 
-    /// Save the remote bearer session with device-only accessibility
+    ///
+    /// @fcn        PlenactSessionStore.save(_:)
+    /// @brief      Save the remote bearer session with device-only accessibility
+    /// @details    Encodes the session and updates or adds its app-specific Keychain item
     ///
     /// @param[in]  session Authenticated remote identity and access token
     ///
     /// @return     (Bool) true when Keychain accepted the session value
+    ///
+    /// @pre        session contains the authenticated remote identity and token to persist
+    /// @post       The Keychain item contains the encoded session when true is returned
     ///
     @discardableResult
     static func save(_ session: PlenactRemoteSession) -> Bool {
@@ -289,7 +350,15 @@ enum PlenactSessionStore {
         return updateStatus == errSecSuccess
     }
 
-    /// Remove the stored remote session from Keychain
+    ///
+    /// @fcn        PlenactSessionStore.remove()
+    /// @brief      Remove the stored remote session from Keychain
+    /// @details    Deletes only the app-specific session item
+    ///
+    /// @return     (Void) requests removal of the stored remote session
+    ///
+    /// @post       No local profile or Board data is changed
+    ///
     static func remove() {
 
         let query: [String: Any] = [ /* Keychain item identity */
@@ -313,6 +382,15 @@ struct PlenactAPIClient {
 
     static let maximumJSONBodyBytes = 1_048_576 /* Maximum UTF-8 JSON HTTP body size */
 
+    ///
+    /// @fcn        PlenactAPIClient.isJSONBodyWithinLimit(_:)
+    /// @brief      Check whether JSON bytes fit within the client size limit
+    /// @details    Compares the data length with maximumJSONBodyBytes
+    ///
+    /// @param[in]  body Encoded or received JSON body
+    ///
+    /// @return     (Bool) true when body does not exceed the configured byte limit
+    ///
     static func isJSONBodyWithinLimit(_ body: Data) -> Bool {
         body.count <= maximumJSONBodyBytes
     }
@@ -320,7 +398,10 @@ struct PlenactAPIClient {
     private let baseURL: URL       /* Validated HTTPS API base URL */
     private let session: URLSession /* Transport used for API requests */
 
-    /// Create a client using the configured HTTPS endpoint or an injected test URL
+    ///
+    /// @fcn        PlenactAPIClient.init(baseURL:session:)
+    /// @brief      Create a client using the configured HTTPS endpoint or an injected URL
+    /// @details    Validates and normalizes the endpoint before storing the URLSession transport
     ///
     /// @param[in]  baseURL Optional API base URL override
     /// @param[in]  session URL session used to send requests
@@ -328,6 +409,8 @@ struct PlenactAPIClient {
     /// @return     (PlenactAPIClient) configured transport client
     ///
     /// @throws     PlenactAPIError when the endpoint is missing or is not HTTPS
+    ///
+    /// @post       The client stores a validated HTTPS base URL and the provided transport
     ///
     init(baseURL: URL? = nil, session: URLSession = .shared) throws {
 
@@ -368,7 +451,11 @@ struct PlenactAPIClient {
         self.session = session       /* Store request transport */
     }
 
-    /// Authenticate a user and store the returned bearer session in Keychain
+    ///
+    /// @fcn        PlenactAPIClient.login(username:password:)
+    /// @brief      Authenticate a shared-demo user and store the returned bearer session
+    /// @details    Sends credentials to the configured authentication endpoint and persists the
+    ///             returned session in Keychain
     ///
     /// @param[in]  username Normalized demo account handle
     /// @param[in]  password Account password submitted over HTTPS
@@ -376,6 +463,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactRemoteSession) authenticated identity and session
     ///
     /// @throws     PlenactAPIError for request, authentication, or Keychain failures
+    ///
+    /// @pre        The configured endpoint is the trusted HTTPS shared-demo service
+    /// @post       The returned session is saved in Keychain, or a save failure is reported
     ///
     func login(username: String, password: String) async throws -> PlenactRemoteSession {
 
@@ -392,9 +482,17 @@ struct PlenactAPIClient {
         return response
     }
 
-    /// Revoke the current server session and remove its Keychain value
+    ///
+    /// @fcn        PlenactAPIClient.logout(_:)
+    /// @brief      Revoke a remote session and remove its Keychain value
+    /// @details    Attempts the logout request and removes the stored session even if revocation
+    ///             fails
     ///
     /// @param[in]  remoteSession Authenticated session to revoke
+    ///
+    /// @return     (Void) attempts remote revocation and clears the stored session
+    ///
+    /// @post       The session is removed from Keychain
     ///
     func logout(_ remoteSession: PlenactRemoteSession) async {
         _ = try? await send(
@@ -407,13 +505,19 @@ struct PlenactAPIClient {
         PlenactSessionStore.remove()
     }
 
-    /// Fetch the active registered-user directory
+    ///
+    /// @fcn        PlenactAPIClient.directory(token:)
+    /// @brief      Fetch the active registered-user directory
+    /// @details    Returns the approved remote user fields visible to the authenticated account
     ///
     /// @param[in]  token Bearer token for the current account
     ///
     /// @return     ([PlenactRemoteUser]) safe active-user directory entries
     ///
     /// @throws     PlenactAPIError when the directory request fails
+    ///
+    /// @pre        token is a valid bearer credential for the shared-demo service
+    /// @post       No local profile or Board data is changed
     ///
     func directory(token: String) async throws -> [PlenactRemoteUser] {
 
@@ -425,7 +529,11 @@ struct PlenactAPIClient {
         return response.users
     }
 
-    /// Create an invited member account as the Board editor
+    ///
+    /// @fcn        PlenactAPIClient.createMember(token:username:displayName:password:)
+    /// @brief      Create an invited member account as the Board editor
+    /// @details    Sends account fields to the authenticated user endpoint and returns its safe
+    ///             directory identity
     ///
     /// @param[in]  token       Board-editor bearer token
     /// @param[in]  username    New member's login handle
@@ -435,6 +543,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactRemoteUser) provisioned member identity
     ///
     /// @throws     PlenactAPIError when the editor request is rejected
+    ///
+    /// @pre        token belongs to a shared-demo Board editor and account fields meet service rules
+    /// @post       A member account is created only when the service accepts the request
     ///
     func createMember(token: String, username: String, displayName: String, password: String) async throws -> PlenactRemoteUser {
 
@@ -452,7 +563,10 @@ struct PlenactAPIClient {
         return response.user
     }
 
-    /// Fetch the current shared Board snapshot and server revision metadata
+    ///
+    /// @fcn        PlenactAPIClient.board(token:)
+    /// @brief      Fetch the current shared-demo Board snapshot
+    /// @details    Retrieves the document and server-maintained revision provenance
     ///
     /// @param[in]  token Bearer token for a registered demo user
     ///
@@ -460,11 +574,17 @@ struct PlenactAPIClient {
     ///
     /// @throws     PlenactAPIError when the Board is unavailable or request fails
     ///
+    /// @pre        token authenticates an account on the shared-demo service
+    /// @post       Local Board persistence remains unchanged
+    ///
     func board(token: String) async throws -> PlenactBoardSnapshotResponse {
         try await send(path: "board.php", method: "GET", token: token)
     }
 
-    /// Save a full Board snapshot using optimistic revision checking
+    ///
+    /// @fcn        PlenactAPIClient.saveBoard(token:document:expectedRevision:)
+    /// @brief      Save a shared-demo Board snapshot using optimistic revision checking
+    /// @details    Validates the document and requires a positive expected revision before writing
     ///
     /// @param[in]  token            Board-editor bearer token
     /// @param[in]  document         Validated Board payload to persist
@@ -473,6 +593,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactBoardWriteResponse) newly appended snapshot revision
     ///
     /// @throws     PlenactAPIError when validation or the revision check fails
+    ///
+    /// @pre        The caller explicitly edits the shared-demo Board and supplies its fetched revision
+    /// @post       A successful request appends the accepted remote snapshot
     ///
     func saveBoard(token: String, document: PlenactBoardDocument, expectedRevision: Int64) async throws -> PlenactBoardWriteResponse {
 
@@ -488,11 +611,18 @@ struct PlenactAPIClient {
         )
     }
 
-    /// Build the approved initial seed without reading or mutating local Board storage
+    ///
+    /// @fcn        PlenactAPIClient.sampleDataDocument(for:)
+    /// @brief      Build the approved initial seed without reading or mutating local Board storage
+    /// @details    Copies synthetic weekday SampleData and maps its known manual Jim assignment
+    ///             to the supplied registered demo user
     ///
     /// @param[in]  user Registered account receiving the known starter assignment
     ///
     /// @return     (PlenactBoardDocument) synthetic SampleData with its explicit Jim mapping
+    ///
+    /// @pre        user identifies the registered account receiving the seeded assignment
+    /// @post       Local SampleData and Board storage are unchanged
     ///
     static func sampleDataDocument(for user: PlenactRemoteUser) -> PlenactBoardDocument {
 
@@ -523,7 +653,11 @@ struct PlenactAPIClient {
         return PlenactBoardDocument(lists: sampleLists, labelLibrary: .starter)
     }
 
-    /// Initialize revision one from the synthetic weekday SampleData only
+    ///
+    /// @fcn        PlenactAPIClient.publishSampleData(token:user:expectedRevision:)
+    /// @brief      Initialize revision one from the synthetic weekday SampleData only
+    /// @details    Requires an unseeded shared Board and marks the request as the approved initial
+    ///             SampleData seed
     ///
     /// @param[in]  token            Board-editor bearer token
     /// @param[in]  user             Authenticated editor receiving the starter assignment
@@ -532,6 +666,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactBoardWriteResponse) seeded shared Board revision
     ///
     /// @throws     PlenactAPIError when seed preconditions or the request fail
+    ///
+    /// @pre        expectedRevision is zero and the target is the shared demo Board
+    /// @post       The synthetic seed is published only if the service accepts revision zero
     ///
     func publishSampleData(token: String, user: PlenactRemoteUser, expectedRevision: Int64) async throws -> PlenactBoardWriteResponse {
 
@@ -553,7 +690,10 @@ struct PlenactAPIClient {
         )
     }
 
-    /// Add or remove an assignment through the server-enforced role boundary
+    ///
+    /// @fcn        PlenactAPIClient.changeAssignment(token:expectedRevision:cardID:action:userID:)
+    /// @brief      Add or remove an assignment through the server-enforced role boundary
+    /// @details    Sends the expected revision and target identity to the assignment endpoint
     ///
     /// @param[in]  token            Current registered-user bearer token
     /// @param[in]  expectedRevision Last shared Board revision read
@@ -564,6 +704,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactAssignmentResponse) resulting revision and mutation status
     ///
     /// @throws     PlenactAPIError when authorization or revision checks fail
+    ///
+    /// @pre        action is an assignment operation supported by the API
+    /// @post       The server applies at most the authorized assignment mutation
     ///
     func changeAssignment(token: String, expectedRevision: Int64, cardID: Int, action: String, userID: String? = nil) async throws -> PlenactAssignmentResponse {
 
@@ -580,7 +723,10 @@ struct PlenactAPIClient {
         )
     }
 
-    /// Encode and send a Board snapshot with an optional initial-seed marker
+    ///
+    /// @fcn        PlenactAPIClient.writeBoard(token:document:expectedRevision:seedKind:)
+    /// @brief      Encode and send a Board snapshot with an optional initial-seed marker
+    /// @details    Uses the shared Board endpoint and its optimistic revision request format
     ///
     /// @param[in]  token            Authenticated bearer credential
     /// @param[in]  document         Complete Board document
@@ -590,6 +736,9 @@ struct PlenactAPIClient {
     /// @return     (PlenactBoardWriteResponse) write result
     ///
     /// @throws     PlenactAPIError when encoding or the server request fails
+    ///
+    /// @pre        Caller has selected an explicit shared-demo Board write operation
+    /// @post       The server result is returned without changing local Board persistence
     ///
     private func writeBoard(token: String, document: PlenactBoardDocument, expectedRevision: Int64, seedKind: String?) async throws -> PlenactBoardWriteResponse {
 
@@ -605,7 +754,10 @@ struct PlenactAPIClient {
         )
     }
 
-    /// Send a JSON request body and decode its response
+    ///
+    /// @fcn        PlenactAPIClient.send(path:method:token:body:)
+    /// @brief      Encode and send a JSON request body
+    /// @details    Enforces the outgoing JSON size limit before forwarding encoded bytes
     ///
     /// @param[in]  path   API endpoint path
     /// @param[in]  method HTTP method
@@ -614,7 +766,11 @@ struct PlenactAPIClient {
     ///
     /// @return     (Response) decoded API response
     ///
-    /// @throws     PlenactAPIError when transport, status, or decoding fails
+    /// @throws     PlenactAPIError for an oversized body or API/response failure; JSON encoding and
+    ///             transport errors are propagated
+    ///
+    /// @pre        body can be encoded by JSONEncoder
+    /// @post       Request processing is delegated with the encoded body
     ///
     private func send<Response: Decodable, Body: Encodable>(
         path: String,
@@ -629,7 +785,10 @@ struct PlenactAPIClient {
         return try await send(path: path, method: method, token: token, bodyData: encodedBody)
     }
 
-    /// Send a request without a body and decode its response
+    ///
+    /// @fcn        PlenactAPIClient.send(path:method:token:)
+    /// @brief      Send a request without a body and decode its response
+    /// @details    Forwards the endpoint and optional bearer credential with no request payload
     ///
     /// @param[in]  path   API endpoint path
     /// @param[in]  method HTTP method
@@ -637,7 +796,9 @@ struct PlenactAPIClient {
     ///
     /// @return     (Response) decoded API response
     ///
-    /// @throws     PlenactAPIError when transport, status, or decoding fails
+    /// @throws     PlenactAPIError for API or response failures; transport errors are propagated
+    ///
+    /// @post       No request body is attached
     ///
     private func send<Response: Decodable>(
         path: String,
@@ -648,7 +809,11 @@ struct PlenactAPIClient {
         try await send(path: path, method: method, token: token, bodyData: nil)
     }
 
-    /// Build and execute a request with already encoded body data
+    ///
+    /// @fcn        PlenactAPIClient.send(path:method:token:bodyData:)
+    /// @brief      Execute a request with already encoded body data
+    /// @details    Tracks the request as a shared-database operation and clears activity on either
+    ///             success or failure
     ///
     /// @param[in]  path     API endpoint path
     /// @param[in]  method   HTTP method
@@ -657,7 +822,10 @@ struct PlenactAPIClient {
     ///
     /// @return     (Response) decoded API response
     ///
-    /// @throws     PlenactAPIError when transport, status, or decoding fails
+    /// @throws     PlenactAPIError for oversized data, API status, or response decoding failures;
+    ///             transport errors are propagated
+    ///
+    /// @post       The activity entry is ended before returning or rethrowing
     ///
     private func send<Response: Decodable>(
         path: String,
@@ -678,6 +846,22 @@ struct PlenactAPIClient {
         }
     }
 
+    ///
+    /// @fcn        PlenactAPIClient.executeRequest(path:method:token:bodyData:)
+    /// @brief      Build, execute, validate, and decode one HTTP request
+    /// @details    Applies JSON headers and optional bearer authorization, enforces response size,
+    ///             maps known status errors, and decodes successful response data
+    ///
+    /// @param[in]  path     API endpoint path relative to the configured base URL
+    /// @param[in]  method   HTTP method for the request
+    /// @param[in]  token    Optional bearer credential
+    /// @param[in]  bodyData Optional encoded JSON request data
+    ///
+    /// @return     (Response) decoded successful API response
+    ///
+    /// @throws     PlenactAPIError for invalid response, oversized payload, API status, or decoding
+    ///             failures; transport errors are propagated
+    ///
     private func executeRequest<Response: Decodable>(
         path: String,
         method: String,
@@ -728,7 +912,12 @@ struct PlenactAPIClient {
         }
     }
 
-    /// Represents a successful endpoint with no response fields
+    ///
+    /// Represents an empty successful API response body shape
+    ///
+    /// @section    Purpose
+    ///     Allow endpoints with no response fields to use the common Decodable request path
+    ///
     private struct EmptyResponse: Decodable {}
 }
 

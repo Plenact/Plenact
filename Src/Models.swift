@@ -2,6 +2,8 @@
 // @file       Models.swift
 // @brief      Domain models and deterministic sample data for the Plenact board
 // @details    Defines cards, lists, derived display values, and preview content generation
+//             This root-level source is legacy and is not included in the active Xcode target;
+//             the compiled models are maintained in Src/Features/Boards/Models.swift
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
@@ -44,12 +46,27 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
-    /// Indicates whether this item should render and behave as a section divider
+    ///
+    /// @fcn        KanbanCard.isSectionDivider
+    /// @brief      Determine whether the card represents a section divider
+    /// @details    Combines the persisted divider flag with the recognized title marker
+    ///
+    /// @return     (Bool) true when the card should render as a divider
+    /// @post       Card state is unchanged
+    ///
     var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
         isDivider || Self.isDividerTitle(word)
     }
 
-    /// Recognizes the ASCII marker and dash characters substituted by iOS smart punctuation
+    ///
+    /// @fcn        KanbanCard.isDividerTitle(_:)
+    /// @brief      Recognize a divider marker in card-title text
+    /// @details    Accepts runs of supported dash characters and the single en, em, or horizontal bar
+    ///
+    /// @param[in]  title  Candidate card title
+    /// @return     (Bool) true when the trimmed title is a divider marker
+    /// @post       The supplied title is unchanged
+    ///
     static func isDividerTitle(_ title: String) -> Bool {
 
         let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
@@ -78,7 +95,14 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @param[in]  isTitleChecked        Whether the card's main title checkbox is selected
     /// @param[in]  startDate             Optional start date for the card
     /// @param[in]  dueDate               Optional due date for the card
+    /// @param[in]  checklists            Optional checklist groups; defaults to the sample groups
+    /// @param[in]  comments              Activity comments attached to the card
+    /// @param[in]  members               Names assigned to the card
+    /// @param[in]  labelIDs              Stable IDs of labels assigned to the card
+    /// @param[in]  attachments           Optional attachment metadata
+    /// @param[in]  dismissedActivityIDs  Generated activity IDs hidden by the user
     /// @param[in]  descriptionOverride   Optional user-edited description
+    /// @param[in]  subtitleOverride      Optional user-edited board subtitle
     ///
     /// @return     (KanbanCard) configured card instance
     ///
@@ -108,7 +132,14 @@ struct KanbanCard: Identifiable, Hashable, Codable {
         ]
     }
 
-    /// Human-readable label for the card's start date
+    ///
+    /// @fcn        KanbanCard.startDateLabel
+    /// @brief      Return the card's display label for its start date
+    /// @details    Formats an explicit start date or supplies the sample default when none is set
+    ///
+    /// @return     (String) formatted start date or "Today"
+    /// @post       Card date state is unchanged
+    ///
     var startDateLabel: String { /* Start-date badge text or default */
 
         guard let startDate else { /* No explicit start date */
@@ -118,7 +149,14 @@ struct KanbanCard: Identifiable, Hashable, Codable {
         return Self.dateFormatter.string(from: startDate)
     }
 
-    /// Human-readable label for the card's due date
+    ///
+    /// @fcn        KanbanCard.dueDateLabel
+    /// @brief      Return the card's display label for its due date
+    /// @details    Formats an explicit due date or supplies the sample default when none is set
+    ///
+    /// @return     (String) formatted due date or "Tomorrow"
+    /// @post       Card date state is unchanged
+    ///
     var dueDateLabel: String { /* Due-date badge text or default */
 
         guard let dueDate else { /* No explicit due date */
@@ -139,7 +177,14 @@ struct KanbanCard: Identifiable, Hashable, Codable {
         return formatter
     }()
 
-    /// Short supporting copy shown beneath the card title
+    ///
+    /// @fcn        KanbanCard.subtitle
+    /// @brief      Resolve supporting copy shown beneath the card title
+    /// @details    Prefers a user-edited subtitle and otherwise selects deterministic sample text
+    ///
+    /// @return     (String) explicit subtitle or sample supporting copy
+    /// @post       Card content is unchanged
+    ///
     var subtitle: String { /* Supporting card text or user override */
         if let subtitleOverride { /* User-edited subtitle */
             return subtitleOverride
@@ -148,29 +193,65 @@ struct KanbanCard: Identifiable, Hashable, Codable {
         return ["A small idea with suspiciously large ambitions", "Make progress before the coffee gets cold", "A practical plan, lightly seasoned with chaos", "One more useful thing for today's board", "Future success, pending a snack break"][id % 5]
     }
 
-    /// Checklist labels used by the card detail presentation
+    ///
+    /// @fcn        KanbanCard.checklistItems
+    /// @brief      Return the action titles from the first checklist
+    /// @details    Provides the legacy string-list view of the first checklist's stable items
+    ///
+    /// @return     ([String]) first checklist titles, or an empty array when no checklist exists
+    /// @post       Checklist state is unchanged
+    ///
     var checklistItems: [String] { /* Titles from the first checklist */
 
         checklists.first?.items.map(\.title) ?? []
     }
 
-    /// Number of checklist items shown as complete for this sample card
+    ///
+    /// @fcn        KanbanCard.completedChecklistItems
+    /// @brief      Return the completion count from the first checklist
+    /// @details    Uses the checklist's derived completed-item count
+    ///
+    /// @return     (Int) completed items in the first checklist, or zero when none exists
+    /// @post       Checklist state is unchanged
+    ///
     var completedChecklistItems: Int { /* Completion count for the first checklist */
         
         checklists.first?.completed ?? 0
     }
 
-    /// Number of sample comments shown on the board card
+    ///
+    /// @fcn        KanbanCard.commentCount
+    /// @brief      Count comments attached to the card
+    /// @details    Reports the current activity-comment collection size
+    ///
+    /// @return     (Int) number of card comments
+    /// @post       Comments are unchanged
+    ///
     var commentCount: Int { /* Number of activity comments */
         comments.count
     }
 
-    /// Indicates whether the sample card displays a due-date badge
+    ///
+    /// @fcn        KanbanCard.hasDueDate
+    /// @brief      Determine whether this sample card shows a due-date badge
+    /// @details    Uses the deterministic sample-card identity rule
+    ///
+    /// @return     (Bool) true for IDs not congruent to one modulo three
+    /// @post       Card date state is unchanged
+    ///
     var hasDueDate: Bool { /* Sample badge visibility for the card */
         id % 3 != 1
     }
 
-    /// Humorous context paragraph shown in the card detail view
+    ///
+    /// @fcn        KanbanCard.funParagraph
+    /// @brief      Resolve the card's detail description
+    /// @details    Uses an explicit description when present or chooses a repeatable sample
+    ///             paragraph from the card ID and list title
+    ///
+    /// @return     (String) user-provided description or deterministic sample context
+    /// @post       Card content is unchanged
+    ///
     var funParagraph: String { /* User description or generated sample context */
 
         if let descriptionOverride { /* User-authored description */
@@ -233,7 +314,14 @@ struct KanbanList: Identifiable, Hashable, Codable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
 
 
-    /// Supporting copy shown beneath the list title.
+    ///
+    /// @fcn        KanbanList.subtitle
+    /// @brief      Resolve supporting copy beneath the list title
+    /// @details    Selects a deterministic sample subtitle using the list identity
+    ///
+    /// @return     (String) supporting list text
+    /// @post       List state is unchanged
+    ///
     var subtitle: String { /* Supporting text for the list header */
         let subtitles = ["Ideas taking shape", "Ready for a little momentum", "Currently in progress", "Nearly across the finish line", "Done, or at least confidently presented"] /* List subtitle options */
 
@@ -483,21 +571,31 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
 
 // -------------------------------------- MARK: - Card Comment ------------------------------- //
 
-/// A comment posted to a kanban card's activity feed
+///
+/// Represents a comment posted to a kanban card's activity feed
+///
+/// @section    Purpose
+///     Preserve comment identity, author, content, and creation time together
+///
 struct KanbanComment: Identifiable, Hashable, Codable {
     let id:        UUID         /* Unique identifier for the comment                 */
     let author:    String       /* Author of the comment                             */
     let body:      String       /* Body text of the comment                          */
     let createdAt: Date         /* Timestamp indicating when the comment was created */
 
-    /// Create a card comment with a stable identity and timestamp
     ///
-    /// @param[in]  id        Comment identity
-    /// @param[in]  author    Display name of the comment author
-    /// @param[in]  body      Comment text
-    /// @param[in]  createdAt Comment creation time
+    /// @fcn        KanbanComment.init(id:author:body:createdAt:)
+    /// @brief      Initialize a card activity comment
+    /// @details    Stores the supplied author and text with an explicit or newly generated
+    ///             identity and timestamp
     ///
+    /// @param[in]  id         Comment identity
+    /// @param[in]  author     Display name of the comment author
+    /// @param[in]  body       Comment text
+    /// @param[in]  createdAt  Comment creation time
     /// @return     (KanbanComment) configured activity comment
+    ///
+    /// @post       The comment contains the supplied values
     ///
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now) {
         self.id        = id

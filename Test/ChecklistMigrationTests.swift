@@ -1,7 +1,11 @@
 // -------------------------------------------------------------------------------------------------
 // @file       ChecklistMigrationTests.swift
 // @brief      Checklist-item persistence compatibility tests
-// @details    Verifies revision 0 string migration and stable checklist-item round trips
+// @details    Verifies revision 0 string migration, deterministic action IDs, completion-index
+//             compatibility, rich action round trips, starter weekday content, and manual/
+//             registered card-assignee decoding. Uses synthetic in-memory Board fixtures
+//
+// @notes      Tests protect Codable compatibility without migrating saved application data
 //
 // -------------------------------------------------------------------------------------------------
 import XCTest
@@ -68,6 +72,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertFalse(checklist.items[2].isCompleted)
     }
 
+
     ///
     /// @fcn        ChecklistMigrationTests.testLegacyMigrationProducesDeterministicItemIDs
     /// @brief      Verify legacy checklist items receive repeatable identities
@@ -94,6 +99,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertEqual(firstDecode.items.map(\.id), secondDecode.items.map(\.id))
         XCTAssertNotEqual(firstDecode.items[0].id, firstDecode.items[1].id)
     }
+
 
     ///
     /// @fcn        ChecklistMigrationTests.testExplicitCompletionIndicesPreserveItemIDs
@@ -122,6 +128,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertFalse(checklist.items[0].isCompleted)
         XCTAssertTrue(checklist.items[1].isCompleted)
     }
+
 
     ///
     /// @fcn        ChecklistMigrationTests.testCurrentChecklistRoundTripUsesItemRecords
@@ -156,6 +163,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertEqual(decoded, checklist)
     }
 
+
       ///
       /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction
       /// @brief      Decode a stable checklist item written before action content existed
@@ -180,6 +188,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertEqual(item.title, "Existing action")
         XCTAssertEqual(item.content, .standard)
       }
+
 
       ///
       /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips
@@ -210,6 +219,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
         XCTAssertEqual(decoded, checklist)
       }
+
 
       ///
       /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions
@@ -253,6 +263,7 @@ final class ChecklistMigrationTests: XCTestCase {
           }
         }
       }
+      
 
       ///
       /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists
@@ -284,6 +295,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertTrue(SampleData.lists[6].cards.contains { $0.word == "Review the upcoming calendar" })
       }
 
+
       ///
       /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees
       /// @brief      Preserve revision 0 card member strings as manual assignments
@@ -311,6 +323,7 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertEqual(card.members.map(\.displayName), ["Jim", "Sally"])
         XCTAssertTrue(card.members.allSatisfy { $0.kind == .manual && $0.userID == nil })
     }
+
 
     ///
     /// @fcn        ChecklistMigrationTests.testRegisteredCardAssigneeRoundTripsStableUserID
@@ -340,3 +353,4 @@ final class ChecklistMigrationTests: XCTestCase {
         XCTAssertEqual(decoded.members[0].displayName, "Jim")
     }
 }
+

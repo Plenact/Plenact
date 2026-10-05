@@ -1,7 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // @file       PlenactDemoAccountSection.swift
 // @brief      Shared demo login, directory, and SampleData initialization controls
-// @details    Keeps server account/session state separate from the local profile and Board
+// @details    Exposes authentication and a synthetic shared-demo Board separately from local
+//             profile and Board storage; this is not production multi-tenant synchronization
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
 
@@ -10,7 +11,11 @@ import SwiftUI
 /// Presents the authenticated shared-demo account and Board controls
 ///
 /// @section    Purpose
-///     Keep remote identity, Board edits, and assignment actions separate from local profile and Board storage
+///     Keep shared-demo identity, Board edits, and assignment actions separate from local profile
+///     and Board storage
+///
+/// @note       Only the explicit SampleData initialization flow seeds the shared Board; normal
+///             local Board changes are not uploaded by this view
 ///
 struct PlenactDemoAccountSection: View {
 
@@ -27,26 +32,55 @@ struct PlenactDemoAccountSection: View {
     @State private var remoteDraft:          PlenactBoardDocument? /* Editable remote-only Board copy */
 
     @State private var currentRevision:      Int64? /* Last fetched server revision */
-    @State private var activeOperationCount = 0
+    @State private var activeOperationCount = 0 /* Number of in-flight demo service operations */
+
+    ///
+    /// @fcn        PlenactDemoAccountSection.isWorking
+    /// @brief      Report whether a shared-demo operation is in flight
+    /// @details    Derives the busy state from the active operation count
+    ///
+    /// @return     (Bool) true while at least one operation is active
+    ///
     private var isWorking: Bool { activeOperationCount > 0 }
     @State private var needsConflictReload = false /* Stale-draft reload requirement */
     @State private var alertMessage        = "" /* Current alert text */
     @State private var showsAlert          = false /* Shared-demo alert presentation state */
     @State private var confirmsSeed        = false /* Initial SampleData confirmation state */
 
-    /// Indicates whether the editor can initialize the unseeded shared Board
+    ///
+    /// @fcn        PlenactDemoAccountSection.canInitializeSampleBoard
+    /// @brief      Indicate whether the editor can initialize the shared demo Board
+    /// @details    Requires editor role and the unseeded revision marker
+    ///
+    /// @return     (Bool) true when the SampleData seed action is available
+    ///
     private var canInitializeSampleBoard: Bool {                                    /* Editor permission and unseeded revision */
 
         remoteSession?.user.accountRole == "board_editor" && currentRevision == 0
     }
 
-    /// Indicates whether the remote draft differs from its last fetched snapshot
+    ///
+    /// @fcn        PlenactDemoAccountSection.hasUnsavedRemoteEdits
+    /// @brief      Indicate whether the remote draft differs from its last fetched snapshot
+    /// @details    Compares the editable shared-demo document with the fetched document
+    ///
+    /// @return     (Bool) true when a draft differs from the last fetched snapshot
+    ///
     private var hasUnsavedRemoteEdits: Bool {                                       /* Draft differs from the fetched snapshot */
         
         remoteDraft != nil && remoteDraft != remoteSnapshot?.document
     }
 
-    /// Builds the account form, remote directory, and shared Board controls
+    ///
+    /// @fcn        PlenactDemoAccountSection.body
+    /// @brief      Build the sign-in, directory, and shared-demo Board controls
+    /// @details    Separates authenticated shared-demo actions from local Board and profile state
+    ///
+    /// @return     (some View) shared-demo account and Board section
+    ///
+    /// @pre        The view state is initialized from the stored session, when available
+    /// @post       Shared-demo mutations occur only through explicit authenticated actions
+    ///
     var body: some View {                                                           /* Account form, directory, and shared Board controls */
 
         Section("Shared demo") {
@@ -202,9 +236,15 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Authenticate the entered account and refresh its shared demo data
+    ///
+    /// @fcn        PlenactDemoAccountSection.signIn()
+    /// @brief      Authenticate the entered shared-demo account
+    /// @details    Exchanges the entered credentials for a Keychain-backed session, then refreshes
+    ///             the remote directory and Board state
     ///
     /// @return     (Void) updates the local view state and Keychain session
+    ///
+    /// @post       The password draft is cleared after either success or failure
     ///
     @MainActor
     private func signIn() async {
@@ -228,9 +268,15 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Fetch the latest directory and shared Board snapshot
+    ///
+    /// @fcn        PlenactDemoAccountSection.refreshRemoteState()
+    /// @brief      Fetch the latest shared-demo directory and Board snapshot
+    /// @details    Updates only remote view state and handles unseeded or expired-session responses
     ///
     /// @return     (Void) updates remote view state without replacing the local Board
+    ///
+    /// @pre        A registered remote session is available
+    /// @post       Local Board persistence remains unchanged
     ///
     @MainActor
     private func refreshRemoteState() async {
@@ -272,9 +318,16 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Initialize the shared Board using the explicit synthetic SampleData seed
+    ///
+    /// @fcn        PlenactDemoAccountSection.initializeSampleBoard()
+    /// @brief      Initialize the shared demo Board using synthetic SampleData
+    /// @details    Publishes the approved seed only from the editor's revision-zero state and then
+    ///             refreshes remote state
     ///
     /// @return     (Void) updates the fetched shared revision or presents an error
+    ///
+    /// @pre        The active account is an editor and the remote Board is unseeded
+    /// @post       Local profile, Board, and attachment data are not modified
     ///
     @MainActor
     private func initializeSampleBoard() async {
@@ -306,11 +359,17 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Revoke a remote session and clear its local Keychain-backed presentation state
+    ///
+    /// @fcn        PlenactDemoAccountSection.signOut(_:)
+    /// @brief      Revoke a shared-demo session and clear its local presentation state
+    /// @details    Attempts server logout when the endpoint is configured, then clears the session
+    ///             and fetched remote data
     ///
     /// @param[in]  session Authenticated remote session to sign out
     ///
     /// @return     (Void) clears the remote session and directory state
+    ///
+    /// @post       Shared-demo session and view state are cleared
     ///
     @MainActor
     private func signOut(_ session: PlenactRemoteSession) async {
@@ -333,13 +392,19 @@ struct PlenactDemoAccountSection: View {
         currentRevision = nil
     }
 
-    /// Build one expandable section of the fetched shared Board
+    ///
+    /// @fcn        PlenactDemoAccountSection.sharedListContent(_:session:revision:)
+    /// @brief      Build one expandable section of the fetched shared demo Board
+    /// @details    Omits section-divider cards from the displayed count and content
     ///
     /// @param[in]  list     Board list displayed by the section
     /// @param[in]  session  Authenticated user and assignment permissions
     /// @param[in]  revision Snapshot revision used for mutation checks
     ///
     /// @return     (some View) expandable list of shared cards
+    ///
+    /// @pre        list belongs to the fetched shared Board snapshot
+    /// @post       The view does not mutate local Board storage
     ///
     @ViewBuilder
     private func sharedListContent(_ list: KanbanList, session: PlenactRemoteSession, revision: Int64) -> some View {
@@ -353,13 +418,21 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Build a shared-card row with role-appropriate editing and assignments
+    ///
+    /// @fcn        PlenactDemoAccountSection.sharedCardContent(_:session:revision:)
+    /// @brief      Build a shared-card row with role-appropriate editing and assignments
+    /// @details    Editors modify the remote draft while registered users can perform permitted
+    ///             assignment operations
     ///
     /// @param[in]  card     Shared Board card shown in the row
     /// @param[in]  session  Authenticated user and assignment permissions
     /// @param[in]  revision Snapshot revision used for mutation checks
     ///
     /// @return     (some View) editor or member-facing shared-card controls
+    ///
+    /// @pre        card and session come from the current shared-demo snapshot
+    /// @post       Title, completion, and manual-assignee edits remain in remoteDraft until save;
+    ///             registered-user assignments are submitted separately through the API
     ///
     @ViewBuilder
     private func sharedCardContent(_ card: KanbanCard, session: PlenactRemoteSession, revision: Int64) -> some View {
@@ -444,13 +517,19 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Apply an assignment mutation using the latest known Board revision
+    ///
+    /// @fcn        PlenactDemoAccountSection.changeOwnAssignment(cardID:action:targetUserID:)
+    /// @brief      Apply an assignment mutation using the latest known shared Board revision
+    /// @details    Sends the mutation to the server and refreshes the shared snapshot afterward
     ///
     /// @param[in]  cardID       Stable target card ID
     /// @param[in]  action       Assignment operation
     /// @param[in]  targetUserID Optional editor-selected account ID
     ///
     /// @return     (Void) refreshes the shared Board after the operation
+    ///
+    /// @pre        A remote session and current Board revision are available
+    /// @post       Local Board data remains unchanged
     ///
     @MainActor
     private func changeOwnAssignment(cardID: Int, action: String, targetUserID: String? = nil) async {
@@ -475,11 +554,18 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Create a binding into the remote draft for one stable card identity
+    ///
+    /// @fcn        PlenactDemoAccountSection.cardBinding(cardID:)
+    /// @brief      Create a binding into the remote draft for one stable card identity
+    /// @details    Locates the card's current list and card indices and writes updates back to the
+    ///             remote-only document draft
     ///
     /// @param[in]  cardID Stable card ID to locate in the draft
     ///
     /// @return     (Binding<KanbanCard>?) editable remote-card binding, when found
+    ///
+    /// @pre        remoteDraft contains the shared document to edit
+    /// @post       Resolving the binding does not change the draft
     ///
     private func cardBinding(cardID: Int) -> Binding<KanbanCard>? {
           guard let document = remoteDraft, /* Current remote-only draft */
@@ -499,11 +585,17 @@ struct PlenactDemoAccountSection: View {
         )
     }
 
-    /// Add a manual person to the selected remote card draft
+    ///
+    /// @fcn        PlenactDemoAccountSection.addManualAssignee(cardID:)
+    /// @brief      Add a manual person to the selected shared-demo card draft
+    /// @details    Trims the entry, appends a manual assignment, and clears that card's draft text
     ///
     /// @param[in]  cardID Stable card ID receiving the manual assignment
     ///
     /// @return     (Void) appends a manual-only assignment to the unsaved draft
+    ///
+    /// @pre        cardID identifies a card in the current remote draft
+    /// @post       The updated assignment remains unsaved in remoteDraft
     ///
     private func addManualAssignee(cardID: Int) {
         let displayName = manualAssigneeDrafts[cardID, default: ""].trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized manual name */
@@ -512,21 +604,33 @@ struct PlenactDemoAccountSection: View {
         manualAssigneeDrafts[cardID] = ""
     }
 
-    /// Remove one manual assignment from the selected remote card draft
+    ///
+    /// @fcn        PlenactDemoAccountSection.removeManualAssignee(cardID:assigneeID:)
+    /// @brief      Remove one manual assignment from the selected shared-demo card draft
+    /// @details    Deletes only the matching manual member from the draft card
     ///
     /// @param[in]  cardID      Stable card ID containing the assignment
     /// @param[in]  assigneeID  Stable manual-assignment identity
     ///
     /// @return     (Void) removes only the selected manual assignment
     ///
+    /// @pre        cardID identifies a card in the current remote draft
+    /// @post       Other assignments and local Board data remain unchanged
+    ///
     private func removeManualAssignee(cardID: Int, assigneeID: UUID) {
         guard let binding = cardBinding(cardID: cardID) else { return } /* Require a matching remote card */
         binding.wrappedValue.members.removeAll { $0.kind == .manual && $0.id == assigneeID }
     }
 
-    /// Save Jim's full remote Board draft against its fetched revision
+    ///
+    /// @fcn        PlenactDemoAccountSection.saveSharedBoard()
+    /// @brief      Save the editor's shared-demo Board draft against its fetched revision
+    /// @details    Writes only a valid remote draft and marks revision conflicts for reload
     ///
     /// @return     (Void) refreshes after success or preserves the draft on conflict
+    ///
+    /// @pre        An editor session, fetched snapshot, and valid remote draft are available
+    /// @post       The local Board and profile stores are unchanged
     ///
     @MainActor
     private func saveSharedBoard() async {
@@ -552,9 +656,15 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Create a member account through the editor-only invite flow
+    ///
+    /// @fcn        PlenactDemoAccountSection.createMember()
+    /// @brief      Create a shared-demo member account through the editor-only invite flow
+    /// @details    Submits the entered credentials and refreshes the directory on success
     ///
     /// @return     (Void) refreshes the directory and clears the entered password
+    ///
+    /// @pre        The signed-in account has the shared-demo editor role
+    /// @post       The temporary password draft is cleared after success or failure
     ///
     @MainActor
     private func createMember() async {
@@ -581,22 +691,33 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
-    /// Present a user-facing description for an API or transport error
+    ///
+    /// @fcn        PlenactDemoAccountSection.present(_:)
+    /// @brief      Present a user-facing description for an API or transport error
+    /// @details    Converts the error to its localized description and forwards it to alert state
     ///
     /// @param[in]  error Error being presented
     ///
     /// @return     (Void) updates the shared-demo alert state
+    ///
+    /// @pre        error describes a failure suitable for display in the demo section
+    /// @post       The error alert is presented
     ///
     @MainActor
     private func present(_ error: Error) {
         present(error.localizedDescription)
     }
 
-    /// Present a user-facing shared-demo message
+    ///
+    /// @fcn        PlenactDemoAccountSection.present(_:)
+    /// @brief      Present a user-facing shared-demo message
+    /// @details    Stores the supplied text and enables the shared-demo alert
     ///
     /// @param[in]  message Alert text to display
     ///
     /// @return     (Void) updates the shared-demo alert state
+    ///
+    /// @post       The alert displays message
     ///
     @MainActor
     private func present(_ message: String) {

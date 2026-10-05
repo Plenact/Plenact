@@ -20,6 +20,12 @@
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
 
+///
+/// Adds active and archived projections to a complete Board-list binding
+///
+/// @section    Purpose
+///     Let child views update one partition without discarding the other
+///
 extension Binding where Value == [KanbanList] {
 
     ///
@@ -70,20 +76,70 @@ extension Binding where Value == [KanbanList] {
 ///     Keep card progress, comment, and date visibility preferences together
 ///
 struct BoardDisplaySettings {
+    /// Whether cards show checklist completion progress.
     var showChecklistProgress = true    /* Display checklist progress on cards */
+    /// Whether cards show their comment count.
     var showCommentCounts     = true    /* Display comment counts on cards     */
+    /// Whether cards show due-date badges.
     var showDueDateBadges     = true    /* Display due date badges on cards    */
 }
 
+///
+/// Selects the density and width behavior of Board columns
+///
+/// @section    Purpose
+///     Offer a readable Standard layout and a compact Overview layout
+///
 enum BoardPresentation: String, CaseIterable, Identifiable {
     case standard
     case overview
 
+    /// User-defaults key for the locally stored Board presentation selection.
     static let storageKey = "Plenact.BoardPresentation.v1"
+
+    ///
+    /// @fcn        BoardPresentation.id
+    /// @brief      Identify a Board presentation option
+    /// @details    Uses the stable raw case value for SwiftUI selection identity
+    ///
+    /// @return     (String) presentation identity
+    /// @post       No presentation preference is changed
+    ///
     var id: String { rawValue }
+
+    ///
+    /// @fcn        BoardPresentation.title
+    /// @brief      Provide the user-facing name of a presentation option
+    /// @details    Maps each layout case to its menu label
+    ///
+    /// @return     (String) Standard or Overview
+    /// @post       The selected presentation remains unchanged
+    ///
     var title: String { self == .standard ? "Standard" : "Overview" }
+
+    ///
+    /// @fcn        BoardPresentation.minimumCardHeight
+    /// @brief      Provide the minimum card height for this layout
+    /// @details    Standard cards retain more vertical space than Overview cards
+    ///
+    /// @return     (CGFloat) minimum card height in points
+    /// @post       No view or preference state is modified
+    ///
     var minimumCardHeight: CGFloat { self == .standard ? 112 : 80 }
 
+    ///
+    /// @fcn        BoardPresentation.columnWidth(viewportWidth:accessibilitySize:)
+    /// @brief      Calculate the column width for this presentation
+    /// @details    Accessibility text sizing receives all usable width; other sizes use
+    ///             a layout-specific maximum while retaining horizontal margins
+    ///
+    /// @param[in]  viewportWidth    Available viewport width in points
+    /// @param[in]  accessibilitySize  Whether the current text size is an accessibility size
+    ///
+    /// @return     (CGFloat) column width in points
+    /// @pre        Widths at or below the horizontal inset are treated as invalid
+    /// @post       No Board state is modified
+    ///
     func columnWidth(viewportWidth: CGFloat, accessibilitySize: Bool) -> CGFloat {
         guard viewportWidth.isFinite, viewportWidth > 28 else { return 1 }
         let available = viewportWidth - 28
@@ -92,16 +148,41 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
     }
 }
 
+///
+/// Collects measured card heights from list-card views
+///
+/// @section    Purpose
+///     Let a list calculate its vertical card-collection size from rendered content
+///
 private struct BoardCardHeightPreferenceKey: PreferenceKey {
+    /// Current card-height reports keyed by card identity.
     static var defaultValue: [Int: CGFloat] = [:]
 
+    ///
+    /// @fcn        BoardCardHeightPreferenceKey.reduce(value:nextValue:)
+    /// @brief      Merge card-height reports from child views
+    /// @details    The latest value replaces an earlier report for the same card identity
+    ///
+    /// @param[in,out] value      Accumulated card-height map
+    /// @param[in]     nextValue  Provider of the next child height map
+    ///
+    /// @return     (Void) merges the next report into value
+    /// @post       Card identities not reported by nextValue remain in the map
+    ///
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
 
 
+///
+/// Collects horizontal center measurements for Board lists
+///
+/// @section    Purpose
+///     Let the board identify and report the list nearest the visible viewport center
+///
 private struct BoardListCenterPreferenceKey: PreferenceKey {
+    /// Current list-center reports keyed by list identity.
     static var defaultValue: [Int: CGFloat] = [:]
 
     ///
@@ -131,29 +212,51 @@ private struct BoardListCenterPreferenceKey: PreferenceKey {
 struct ContentView: View {
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
+    /// Archived lists belonging to the same board.
     @Binding private var archivedLists: [KanbanList]
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
+    /// Optional card identity to open after navigating to its containing list.
     @Binding private var boardTargetCardID: Int?
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
+    /// Reports which list is nearest the center of the visible board.
     let onListViewed: (Int) -> Void
+    /// Title displayed in the board header.
     let boardTitle: String
+    /// Supporting text displayed beneath the board title.
     let boardSubtitle: String
+    /// Whether the board header offers the Add list action.
     let allowsAddingLists: Bool
+    /// Optional action that returns to the parent collection view.
     let onClose: (() -> Void)?
+    /// Optional parent-owned action for archiving the complete board.
     let onArchiveBoard: (() -> Void)?
+    /// Receives active-list snapshots for caller-owned persistence.
     let onListsChanged: @MainActor ([KanbanList]) -> Void
+    /// Supplies other retained snapshots whose attachment files must not be pruned.
     let retainedAttachmentLists: () -> [KanbanList]
+    /// Controls presentation of the calendar sheet.
     @State private var showsCalendar = false
+    /// Controls presentation of archived lists.
     @State private var showsArchivedLists = false
+    /// Navigation stack path for card-detail destinations.
     @State private var navigationPath = NavigationPath()
+    /// Last visible list identity sent through `onListViewed`.
     @State private var lastReportedVisibleListID: Int?
+    /// Currently centered list identity.
     @State private var visibleListID: Int?
+    /// List identity currently being dragged for reordering.
     @State private var draggedListID: Int?
+    /// Measured horizontal centers keyed by list identity.
     @State private var listCenters: [Int: CGFloat] = [:]
+    /// Current horizontal location of an active list drag.
     @State private var listDragLocation: CGFloat?
+    /// Horizontal offset between the drag start and the grabbed list center.
     @State private var listDragGrabOffset: CGFloat = 0
+    /// Environment preference used to reduce or remove animated transitions.
     @Environment(\.accessibilityReduceMotion) private var reducesMotion
+    /// Current Dynamic Type size used when selecting Board dimensions.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Locally persisted choice between Standard and Overview Board layouts.
     @AppStorage(BoardPresentation.storageKey) private var presentation = BoardPresentation.standard
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
@@ -1218,23 +1321,32 @@ struct ContentView: View {
 struct BoardHeader: View {
 
     @Binding var settings: BoardDisplaySettings      /* Board display settings                              */
+    /// Shared Standard/Overview selection displayed in the Board options menu.
     @Binding var presentation: BoardPresentation
     let activeMembers:     [String]                  /* Unique users assigned to active cards               */
     let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name         */
     let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
     let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments           */
     let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
+    /// Opens the calendar view for the current board.
     let onOpenCalendar: () -> Void
+    /// Board name shown in the header.
     let title: String
+    /// Supporting board description shown in the header.
     let subtitle: String
+    /// Whether to expose list creation in the header.
     let allowsAddingLists: Bool
+    /// Optional action returning to the owning collection.
     let onClose: (() -> Void)?
+    /// Opens the archived-list browser.
     let onViewArchivedLists: () -> Void
+    /// Optional callback that archives the board after confirmation.
     let onArchiveBoard: (() -> Void)?
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
+    /// Controls confirmation before archiving the complete board.
     @State private var confirmsArchiveBoard = false
 
 
@@ -1344,10 +1456,19 @@ struct BoardHeader: View {
 }
 
 
+///
+/// Presents the archived lists belonging to one board
+///
+/// @section    Purpose
+///     Let the user restore a list without deleting its retained cards
+///
 private struct ArchivedListsView: View {
 
+    /// Archived lists available for restoration.
     @Binding var lists: [KanbanList]
+    /// Requests restoration of a list by identity.
     let onRestore: (Int) -> Void
+    /// Dismiss action for the archive browser.
     @Environment(\.dismiss) private var dismiss
 
 
@@ -1399,6 +1520,9 @@ private struct ArchivedListsView: View {
 }
 
 
+///
+/// Presents controls for Board card metadata and layout preferences
+///
 /// @section    Purpose
 ///     Let the user control which metadata badges appear on board cards
 ///
@@ -1407,6 +1531,7 @@ private struct ArchivedListsView: View {
 private struct BoardSettingsView: View {
 
     @Binding var settings: BoardDisplaySettings             /* Bound to the board's display preferences        */
+    /// Shared presentation choice updated immediately from Board settings.
     @Binding var presentation: BoardPresentation
 
     @Environment(\.dismiss) private var dismiss             /* Dismiss action for the settings sheet           */
@@ -1636,6 +1761,12 @@ private struct MemberColorTarget: Identifiable {
 ///
 /// @note       Opacity selection is disabled so the icon remains fully visible
 ///
+///
+/// Presents the color editor for one Board member
+///
+/// @section    Purpose
+///     Let the user preview and save a member's icon color
+///
 private struct MemberColorEditorSheet: View {
 
     let memberName: String              /* The name of the member whose color is being edited         */
@@ -1733,8 +1864,10 @@ struct KanbanListView: View {
     }
 
     let list: KanbanList                        /* The kanban list data rendered by the view                      */
+    /// Maximum vertical space available to the list's card collection.
     let availableListHeight: CGFloat
     let displaySettings: BoardDisplaySettings   /* The board's display settings affecting card and list rendering */
+    /// Layout preset that controls the list's card dimensions.
     let presentation: BoardPresentation
     let labelLibrary: LabelLibrary              /* Shared categorized labels available to the cards               */
     let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
@@ -1745,24 +1878,34 @@ struct KanbanListView: View {
     let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
     let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
     let onArchiveCompleted: () -> Void          /* The action invoked to archive all completed cards in the list  */
+    /// Archived cards retained by this list.
     @Binding var archivedCards: [KanbanCard]
+    /// Requests restoration of an archived card by identity.
     let onRestoreArchivedCard: (Int) -> Void
     let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
     let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
+    /// Requests archival of an active card by identity.
     let onArchiveCard: (Int) -> Void
     let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
     let onMoveCard: (Int, Int) -> Void          /* Move a card to a destination index in this list                */
+    /// Reports list-reorder drag updates to the owning board.
     let onListDragChanged: (DragGesture.Value?) -> Void
+    /// Reports completion or cancellation of a list-reorder drag.
     let onListDragEnded: () -> Void
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
+    /// Opens card creation after the active list-actions sheet has dismissed.
     @State private var opensNewCardAfterDismissal = false
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
+    /// Measured height of the list header used to size its card collection.
     @State private var headerHeight: CGFloat = 72
+    /// Measured card heights keyed by stable card identity.
     @State private var measuredCardHeights: [Int: CGFloat] = [:]
+    /// Dynamic Type scaling factor applied to card content.
     @ScaledMetric(relativeTo: .body) private var cardScale = 1.0
+    /// Transient state indicating a list title is being held for reordering.
     @GestureState private var isHoldingList = false
 
 
@@ -2084,7 +2227,6 @@ struct KanbanListView: View {
 ///
 private struct HideNavigationLinkIndicator: ViewModifier {
 
-    @ViewBuilder
     ///
     /// @fcn        HideNavigationLinkIndicator.body(content:)
     /// @brief      Configure navigation indicator visibility for the modified content
@@ -2098,6 +2240,7 @@ private struct HideNavigationLinkIndicator: ViewModifier {
     /// @pre        SwiftUI invokes this function when the modifier is applied to a view
     /// @post       The original content is preserved, with supported navigation indicators hidden
     ///
+    @ViewBuilder
     func body(content: Content) -> some View {
 
         if #available(iOS 18.0, *) {
@@ -2279,7 +2422,9 @@ private struct KanbanListActionsSheet: View {
     let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
     let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
     let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
+    /// Archived cards available to restore to the active list.
     @Binding var archivedCards: [KanbanCard]
+    /// Restores an archived card by stable card identity.
     let onRestoreArchivedCard: (Int) -> Void
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
 
@@ -2427,10 +2572,19 @@ private struct KanbanListActionsSheet: View {
 
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
 
+///
+/// Presents cards retained in a list's archive
+///
+/// @section    Purpose
+///     Let the user restore archived cards while preserving their stored card state
+///
 private struct ArchivedCardsView: View {
 
+    /// Title of the list whose archived cards are being browsed.
     let listTitle: String
+    /// Archived card snapshot supplied by the owning list.
     @Binding var cards: [KanbanCard]
+    /// Requests restoration of an archived card by identity.
     let onRestore: (Int) -> Void
 
 
@@ -2500,10 +2654,12 @@ struct KanbanCardView: View {
     let card: KanbanCard                            /* The kanban card being displayed                               */
     let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
+    /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard
     let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
     let onUpdateCard: (KanbanCard) -> Void          /* The action invoked when card details are updated              */
     let onDeleteCard: () -> Void                    /* The action invoked when this card is deleted                  */
+    /// Requests archival of the displayed card.
     let onArchiveCard: () -> Void
     let onToggle: () -> Void                        /* Callback invoked when the card's title checkbox is toggled    */
 
@@ -2511,6 +2667,7 @@ struct KanbanCardView: View {
     @State private var isRenaming         = false   /* Flag indicating if the rename operation is active             */
     @State private var isEditingInfo      = false   /* Flag indicating if the card info editing mode is active       */
     @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
+    /// Current Dynamic Type size used to adapt the compact card layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
 
@@ -2717,6 +2874,14 @@ struct KanbanCardView: View {
         }
     }
 
+    ///
+    /// @fcn        KanbanCardView.cardActions
+    /// @brief      Provide the card's archive, delete, rename, and edit actions
+    /// @details    Builds the ellipsis menu and delegates each operation to the card callbacks
+    ///
+    /// @return     (some View) accessible card-action menu
+    /// @post       Card state changes only after a selected action is invoked
+    ///
     private var cardActions: some View {
         Menu {
             Button(action: onArchiveCard) {
@@ -2748,6 +2913,14 @@ struct KanbanCardView: View {
         .accessibilityLabel("Card actions")
     }
 
+    ///
+    /// @fcn        KanbanCardView.cardBadges
+    /// @brief      Build the card metadata badges selected in Board settings
+    /// @details    Conditionally presents comment count, checklist progress, and due-date indicators
+    ///
+    /// @return     (some View) zero or more enabled card badges
+    /// @post       Card data and display settings remain unchanged
+    ///
     @ViewBuilder
     private var cardBadges: some View {
         if displaySettings.showCommentCounts {
@@ -2871,10 +3044,16 @@ private struct CardInfoEditorSheet: View {
 }
 
 
-/// Presents one Today list vertically, sharing its cards with the Week Board.
+///
+/// Presents one Today list vertically while sharing its cards with the Week Board
+///
+/// @section    Purpose
+///     Provide focused-list capture and card actions against the shared Board snapshot
+///
 struct TodayListDetailView: View {
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
+    /// Archived lists and cards retained to reserve identities during creation.
     let reservedLists: [KanbanList]
     @Binding var labelLibrary: LabelLibrary /* Shared reusable label library */
     @Binding var savedCardIDs: Set<Int> /* Device-local saved cards */

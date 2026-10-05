@@ -106,6 +106,12 @@ private enum TodayListPickerMode: String, Identifiable {
     }
 }
 
+///
+/// Resolves a valid default destination for the Today screen
+///
+/// @section    Purpose
+///     Keep initial list-choice precedence independent from view construction
+///
 enum TodayListSelection {
 
     ///
@@ -139,6 +145,10 @@ enum TodayListSelection {
 
 
 /// Persists device-local bookmarks without changing the shared Board document.
+///
+/// @section    Purpose
+///     Isolate bookmark preference reads and writes from the shared Board snapshot
+///
 private enum SavedCardPersistence {
 
     private static let storageKey = "Plenact.SavedCardIDs.v1" /* Versioned local bookmark key */
@@ -173,9 +183,15 @@ private enum SavedCardPersistence {
 }
 
 
+///
+/// Persists the most recently viewed Week list identity
+///
+/// @section    Purpose
+///     Reuse a valid destination for subsequent card creation
+///
 enum LastViewedListStore {
 
-    private static let key = "Plenact.LastViewedList.v1"
+    private static let key = "Plenact.LastViewedList.v1" /* Versioned last-viewed-list preference key */
 
 
     ///
@@ -230,8 +246,19 @@ enum LastViewedListStore {
 }
 
 
+///
+/// Carries the latest vertical offset reported by Today content
+///
+/// @section    Purpose
+///     Bridge child scroll geometry to the header's fade observer
+///
 private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 
+    ///
+    /// @section    Purpose
+    ///     Carry the latest vertical scroll offset from Today content to its observer
+    ///
+    /// Latest vertical offset reported by Today scroll content.
     static var defaultValue: CGFloat = 0
 
 
@@ -251,6 +278,12 @@ private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 
 
 /// Reports actual content movement using native scroll geometry when available.
+///
+/// Tracks Today scroll movement to control the header fade
+///
+/// @section    Purpose
+///     Use native scroll geometry where available and a coordinate-space fallback otherwise
+///
 private struct TodayScrollFadeTracking: ViewModifier {
 
     @Binding var isScrolled: Bool           /* Header fade visibility state */
@@ -294,19 +327,19 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 private struct AppRootView: View {
 
-    @State private var lists: [KanbanList] = []
-    @State private var collections = PersonalCollectionStore.load()
-    @State private var hasLoadedBoard = false
+    @State private var lists: [KanbanList] = []                              /* Complete in-memory Week snapshot */
+    @State private var collections = PersonalCollectionStore.load()          /* Device-local personal collections */
+    @State private var hasLoadedBoard = false                         /* Whether the initial Week snapshot has loaded */
     @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
     @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
     @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
-    @State private var boardTargetCardID: Int?
+    @State private var boardTargetCardID: Int?                                /* Card requested by a Today-to-Board navigation           */
     @State private var savedCardIDs = SavedCardPersistence.load()              /* Device-local saved cards                              */
     @State private var quickCreateRequest = 0                                  /* Center-bar quick-create request                       */
     @State private var showsCenterNewCardSheet = false                         /* Destination picker for New outside Today              */
-    @State private var isWeekListRequestArmed = false
-    @State private var weekListShakeTrigger = 0
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var isWeekListRequestArmed = false                         /* Whether New's long press will create a Week list       */
+    @State private var weekListShakeTrigger = 0                               /* Trigger for long-press confirmation animation         */
+    @Environment(\.verticalSizeClass) private var verticalSizeClass           /* Layout size class used to compact the landscape bar    */
 
 
     ///
@@ -786,7 +819,7 @@ private struct AppRootView: View {
 private struct TodayHomeView: View {
 
     @Binding var lists:     [KanbanList]                    /* Shared local Board lists                           */
-    @Binding var archivedLists: [KanbanList]
+    @Binding var archivedLists: [KanbanList]                   /* Archived Week lists retained for example-load undo */
     @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details        */
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
@@ -794,7 +827,7 @@ private struct TodayHomeView: View {
     let onAddCard:          (Int, String, String) -> Void   /* Add a card to an existing Board list               */
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
-    let onOpenBoardCard:    (Int, Int)             -> Void
+    let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
     let quickCreateRequest: Int                             /* Center-bar requests for the Today composer         */
 
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
@@ -1637,16 +1670,20 @@ private struct TodayHomeView: View {
 
 
 /// Creates a card with optional supporting detail in a chosen board list.
+///
+/// @section    Purpose
+///     Collect card text and destination before submitting through the parent callback
+///
 private struct QuickNoteComposer: View {
 
-    @Binding var lists: [KanbanList]
-    let onSave: (Int, String, String) -> Void
+    @Binding var lists: [KanbanList]                         /* Current destination lists */
+    let onSave: (Int, String, String) -> Void                /* Submit list ID, title, and detail */
 
-    @Environment(\.dismiss) private var dismiss /* Close the full-size editor           */
+    @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
-    @State private var title = ""               /* New card title                       */
-    @State private var description = ""         /* Optional card detail                 */
-    @State private var selectedListID: Int?
+    @State private var title = ""               /* New card title */
+    @State private var description = ""         /* Optional card detail */
+    @State private var selectedListID: Int?      /* Destination selected in the form */
 
 
     ///
@@ -1741,6 +1778,12 @@ private struct QuickNoteComposer: View {
 }
 
 
+///
+/// Represents a local search match with navigation provenance
+///
+/// @section    Purpose
+///     Keep the result identity and containing list available to result rows
+///
 struct TodaySearchResult: Identifiable {
 
     let listID: Int /* Board list opened when this result is selected */
@@ -1761,6 +1804,12 @@ struct TodaySearchResult: Identifiable {
 }
 
 
+///
+/// Limits local search to supported kinds of Board content
+///
+/// @section    Purpose
+///     Supply stable picker choices for the Today search screen
+///
 enum TodaySearchScope: String, CaseIterable, Identifiable {
     case all = "All"
     case boards = "Boards"
@@ -1779,8 +1828,14 @@ enum TodaySearchScope: String, CaseIterable, Identifiable {
 }
 
 
+///
+/// Stores the device-local history of recent search terms
+///
+/// @section    Purpose
+///     Centralize bounded, deduplicated search-history preference access
+///
 enum RecentSearchStore {
-    private static let key = "Plenact.RecentSearches.v1"
+    private static let key = "Plenact.RecentSearches.v1" /* Versioned local search-history key */
 
 
     ///
@@ -1837,6 +1892,12 @@ enum RecentSearchStore {
 }
 
 
+///
+/// Searches a supplied local Board snapshot and returns matching destinations
+///
+/// @section    Purpose
+///     Keep query matching independent from search presentation and persistence
+///
 enum TodaySearchIndex {
 
     ///
@@ -1906,18 +1967,24 @@ enum TodaySearchIndex {
 
 
 /// Searches card content in the local Board and opens results in their existing lists.
+///
+/// Searches the local Board and presents matching destinations
+///
+/// @section    Purpose
+///     Keep query, filter, recent-history, and result navigation state in one sheet
+///
 private struct TodaySearchView: View {
 
     let lists: [KanbanList] /* Current locally stored Board snapshot */
     let onOpenBoardList: (Int) -> Void /* Navigate to a result's containing list */
-    let onOpenBoardCard: (Int, Int) -> Void
+    let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs */
 
     @Environment(\.dismiss) private var dismiss /* Close the search sheet */
     @FocusState private var searchFieldFocused: Bool /* Search field focus state */
     @State private var query = "" /* User-entered search text */
-    @State private var scope: TodaySearchScope = .all
-    @State private var recentSearches = RecentSearchStore.load()
-    @State private var labelLibrary = LabelLibraryStore.load()
+    @State private var scope: TodaySearchScope = .all             /* Selected local-search scope */
+    @State private var recentSearches = RecentSearchStore.load()  /* Device-local recent terms */
+    @State private var labelLibrary = LabelLibraryStore.load()    /* Definitions used for label matches */
 
 
     ///
@@ -2128,6 +2195,12 @@ private struct TodaySearchView: View {
 }
 
 
+///
+/// Associates a matched card with the list that contains it
+///
+/// @section    Purpose
+///     Preserve routing context for label results
+///
 private struct TodayLabelCard: Identifiable {
 
     let card: KanbanCard /* Matched Board card */
@@ -2146,6 +2219,12 @@ private struct TodayLabelCard: Identifiable {
 }
 
 
+///
+/// Represents one label and its matching cards in Today browsing
+///
+/// @section    Purpose
+///     Keep the reusable label and its current Board matches together
+///
 private struct TodayLabelUsage: Identifiable {
 
     let label: KanbanLabel /* Reusable label definition */
@@ -2163,6 +2242,12 @@ private struct TodayLabelUsage: Identifiable {
 }
 
 
+///
+/// Represents one populated label category and its applied labels
+///
+/// @section    Purpose
+///     Provide grouped data for Today label browsing
+///
 private struct TodayLabelCategoryUsage: Identifiable {
 
     let category: KanbanLabelCategory /* Label category */
@@ -2191,6 +2276,12 @@ private struct TodayLabelCategoryUsage: Identifiable {
 
 
 /// Opens the cards currently assigned one label.
+///
+/// Presents the cards currently assigned one selected label
+///
+/// @section    Purpose
+///     Show matching cards with their list provenance and route to the containing Week list
+///
 private struct TodayLabelCardsView: View {
 
     let label: KanbanLabel /* Selected label */
@@ -2243,6 +2334,12 @@ private struct TodayLabelCardsView: View {
 }
 
 
+///
+/// Identifies one dated-card result in the calendar
+///
+/// @section    Purpose
+///     Carry card and list identity with the title and matching-date marker
+///
 private struct CalendarCardResult: Identifiable {
 
     let cardID: Int /* Stable card identity */
@@ -2264,16 +2361,22 @@ private struct CalendarCardResult: Identifiable {
 }
 
 
+///
+/// Presents Week and personal collections in a searchable directory
+///
+/// @section    Purpose
+///     Route users to Week lists and manage local personal collections
+///
 private struct BoardListsView: View {
 
-    let lists: [KanbanList]
-    let onOpenBoardList: (Int) -> Void
+    let lists: [KanbanList]                         /* Complete current Week snapshot */
+    let onOpenBoardList: (Int) -> Void              /* Route to a Week list by ID */
 
-    @Binding var collections: [PersonalCollection]
-    @State private var searchText = ""
-    @State private var editingCollection: PersonalCollection?
-    @State private var openedCollection: PersonalCollection?
-    @State private var deletingCollection: PersonalCollection?
+    @Binding var collections: [PersonalCollection]            /* Shared device-local collections */
+    @State private var searchText = ""                         /* Directory search query */
+    @State private var editingCollection: PersonalCollection? /* Collection draft being edited */
+    @State private var openedCollection: PersonalCollection?  /* Collection board presented full-screen */
+    @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation */
 
     ///
     /// @fcn        BoardListsView.filteredCollections
@@ -2538,12 +2641,18 @@ private struct BoardListsView: View {
 }
 
 
+///
+/// Presents a personal collection through the shared Board interface
+///
+/// @section    Purpose
+///     Reuse Board behavior while binding edits and archive actions to the collection
+///
 private struct PersonalCollectionBoardView: View {
 
-    @Binding var collection: PersonalCollection
-    let retainedLists: [KanbanList]
-    let onArchive: () throws -> Void
-    @Environment(\.dismiss) private var dismiss
+    @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
+    let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
+    let onArchive: () throws -> Void                /* Persist archival of this collection */
+    @Environment(\.dismiss) private var dismiss     /* Close the collection board */
 
     ///
     /// @fcn        PersonalCollectionBoardView.body
@@ -2580,12 +2689,18 @@ private struct PersonalCollectionBoardView: View {
 }
 
 
+///
+/// Edits a local personal collection using an isolated draft
+///
+/// @section    Purpose
+///     Apply collection naming and appearance only after explicit Save
+///
 private struct PersonalCollectionSettingsView: View {
 
-    let isNew: Bool
-    let onSave: (PersonalCollection) -> Void
-    @State private var draft: PersonalCollection
-    @Environment(\.dismiss) private var dismiss
+    let isNew: Bool                               /* Whether this form creates a new collection */
+    let onSave: (PersonalCollection) -> Void      /* Submit the complete collection draft */
+    @State private var draft: PersonalCollection  /* Isolated editable collection copy */
+    @Environment(\.dismiss) private var dismiss   /* Close the settings sheet */
 
 
     ///
@@ -2683,6 +2798,12 @@ private struct PersonalCollectionSettingsView: View {
 }
 
 
+///
+/// Provides display names for the personal-collection icon choices
+///
+/// @section    Purpose
+///     Keep picker labels alongside the collection icon type
+///
 extension PersonalCollectionIcon {
 
     ///
@@ -2708,12 +2829,18 @@ extension PersonalCollectionIcon {
 }
 
 
+///
+/// Presents a searchable directory of active Week lists
+///
+/// @section    Purpose
+///     Find existing lists and cards, then open the containing Week list
+///
 private struct WeekListsDirectoryView: View {
 
-    let lists: [KanbanList]
-    let onOpenBoardList: (Int) -> Void
+    let lists: [KanbanList]                 /* Active Week lists available for browsing */
+    let onOpenBoardList: (Int) -> Void      /* Route to a selected Week list */
 
-    @State private var searchText = ""
+    @State private var searchText = ""      /* List and card-title query */
 
     ///
     /// @fcn        WeekListsDirectoryView.filteredLists
@@ -2831,6 +2958,12 @@ private struct WeekListsDirectoryView: View {
 }
 
 
+///
+/// Browses card start and due dates using the user's local calendar
+///
+/// @section    Purpose
+///     Show dated cards by month and route selections to their Week lists
+///
 struct TodayCalendarView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
@@ -2839,7 +2972,7 @@ struct TodayCalendarView: View {
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now /* Visible month */
     @State private var selectedDate = Calendar.current.startOfDay(for: .now) /* Selected local day */
 
-    private let weekdayColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
+    private let weekdayColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7) /* Seven localized calendar columns */
 
     ///
     /// @fcn        TodayCalendarView.weekdaySymbols
@@ -3098,6 +3231,12 @@ struct TodayCalendarView: View {
 }
 
 
+///
+/// Associates a bookmarked card with its containing Week list
+///
+/// @section    Purpose
+///     Preserve navigation context for Saved card rows
+///
 private struct SavedCardResult: Identifiable {
 
     let card: KanbanCard /* Saved card data */
@@ -3118,13 +3257,19 @@ private struct SavedCardResult: Identifiable {
 
 
 /// Shows device-local bookmarks for cards in the current Board.
+///
+/// Presents local card bookmarks and archived board snapshots
+///
+/// @section    Purpose
+///     Provide access to saved cards and save-first board restoration
+///
 private struct SavedCardsView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
     let savedCardIDs: Set<Int> /* Local bookmark set */
-    @Binding var collections: [PersonalCollection]
+    @Binding var collections: [PersonalCollection] /* Collections whose archived boards can be restored */
     let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
-    let onRestoreBoard: (UUID) -> Void
+    let onRestoreBoard: (UUID) -> Void /* Restore a saved board by identity */
 
     ///
     /// @fcn        SavedCardsView.savedCards
@@ -3246,7 +3391,12 @@ private struct SavedCardsView: View {
 }
 
 
-/// Shows the selected Today list's progress and next open cards.
+///
+/// Shows the selected Today list's progress and next open cards
+///
+/// @section    Purpose
+///     Summarize the current focus and expose completion and list-navigation actions
+///
 private struct TodayFocusSection: View {
 
     let list: KanbanList? /* List selected as the current Today focus */
@@ -3365,6 +3515,12 @@ private struct TodayFocusSection: View {
 }
 
 
+///
+/// Draws the shared paper texture behind Today surfaces
+///
+/// @section    Purpose
+///     Keep the decorative background consistent and noninteractive
+///
 private struct TodayPaperBackground: View {
 
     ///
@@ -3391,7 +3547,12 @@ private struct TodayPaperBackground: View {
 }
 
 
-/// Gives Today sections a readable raised surface over the full-screen paper texture.
+///
+/// Gives Today sections a readable raised surface over the full-screen paper texture
+///
+/// @section    Purpose
+///     Apply one consistent panel treatment without intercepting content interaction
+///
 private struct TodayPanelSurface: ViewModifier {
 
     ///

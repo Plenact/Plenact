@@ -26,12 +26,6 @@ Opens
 	Import leading statements in style.swift
 	struct headers
 
-Opens
-- RESET PROCEDURE
-- Setup Documents
-- iCloud full!
-- Settings Notifications
-
 - New File Menu App Review
 	- add to New Installs Reset Procedure iff
 	

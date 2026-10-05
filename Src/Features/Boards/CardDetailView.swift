@@ -88,6 +88,7 @@ struct CardDetailView: View {
         }
     }
 
+
     ///
     /// Identifies the modal sheet currently presented by the card detail view
     ///
@@ -132,6 +133,7 @@ struct CardDetailView: View {
             }
         }
     }
+
 
     /// Stable identifiers and display copy for the card's generated activity entries
     ///
@@ -181,6 +183,7 @@ struct CardDetailView: View {
         }
     }
 
+
     /// Selection modes available for the card's Activity feed
     ///
     /// @section    Purpose
@@ -220,6 +223,7 @@ struct CardDetailView: View {
         }
     }
 
+
     /// Identifies which editable card field currently has focus
     ///
     /// @section    Purpose
@@ -240,6 +244,7 @@ struct CardDetailView: View {
     @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
+    /// Optional callback that archives the latest synchronized card snapshot.
     let onArchive: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
@@ -265,6 +270,7 @@ struct CardDetailView: View {
     @State private var showingAttachmentNotice = false       /* Whether an attachment notice is presented                    */
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
 
+
     ///
     /// @fcn        CardDetailView.linkedCardsByID
     /// @brief      Index cards available as checklist-link destinations
@@ -278,6 +284,7 @@ struct CardDetailView: View {
     private var linkedCardsByID: [Int: KanbanCard] {   /* Linked cards by ID */
         Dictionary(uniqueKeysWithValues: availableLists.flatMap(\.cards).map { ($0.id, $0) })
     }
+
 
     ///
     /// @fcn        CardDetailView.init
@@ -336,6 +343,7 @@ struct CardDetailView: View {
         _checklists = State(initialValue: card.checklists)                      /* Initialize checklist state from the card's stored values             */
     }
 
+
     ///
     /// @fcn        CardDetailView.memberIconColor(for:)
     /// @brief      Resolve the display color assigned to a member name
@@ -383,6 +391,7 @@ struct CardDetailView: View {
         }
     }
 
+
     ///
     /// @fcn        CardDetailView.selectedLabels
     /// @brief      Resolve assigned label IDs into display definitions
@@ -398,7 +407,6 @@ struct CardDetailView: View {
     }
 
 
-    @MainActor
     ///
     /// @fcn        CardDetailView.importPhotos(from:)
     /// @brief      Import selected photo-library items as card attachments
@@ -414,6 +422,7 @@ struct CardDetailView: View {
     ///
     /// @note       Successful imports are retained even if another selected item fails to load or save
     ///
+    @MainActor
     private func importPhotos(from photoItems: [PhotosPickerItem]) async {
 
         var importFailed = false /* Whether any selected media failed to import */
@@ -450,6 +459,7 @@ struct CardDetailView: View {
         }
     }
 
+
     ///
     /// @fcn        CardDetailView.addWebLink(_:)
     /// @brief      Add a validated web URL to the card's attachment list
@@ -466,6 +476,7 @@ struct CardDetailView: View {
         activeSheet = nil
         syncCardState(attachments: attachments)
     }
+
 
     ///
     /// @fcn        CardDetailView.addClipboardLink()
@@ -491,6 +502,7 @@ struct CardDetailView: View {
         addWebLink(url)
     }
 
+
     ///
     /// @fcn        CardDetailView.showAttachmentSourceComingSoon(_:)
     /// @brief      Explain an attachment source that is not yet supported
@@ -507,6 +519,7 @@ struct CardDetailView: View {
         showingAttachmentNotice = true
         activeSheet             = nil
     }
+
 
     ///
     /// @fcn        CardDetailView.removeAttachment(_:)
@@ -2904,7 +2917,12 @@ struct ActivityRow: View {
 }
 
 
+///
 /// Renders a posted card comment and its authoring time in the activity feed
+///
+/// @section    Purpose
+///     Present comment text and author context with a consistent activity timestamp
+///
 struct CommentActivityRow: View {
 
     let comment: KanbanComment      /* The comment data rendered by the row           */

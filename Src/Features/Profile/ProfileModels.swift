@@ -11,20 +11,45 @@ import Foundation
 
 // -------------------------------------- MARK: - Avatar Color --------------------------------- //
 
-/// Stores an arbitrary sRGB color while decoding palette tokens from older profiles
+///
+/// Stores an avatar color as sRGB components and supports legacy palette-token decoding
+///
+/// @section    Purpose
+///     Keep profile color data Codable while allowing users to select colors beyond the built-in
+///     palette
+///
 struct ProfileColor: Hashable, Codable {
 
-    var red: Double
-    var green: Double
-    var blue: Double
-    var legacyToken: String?
+    var red: Double /* sRGB red component */
+    var green: Double /* sRGB green component */
+    var blue: Double /* sRGB blue component */
+    var legacyToken: String? /* Legacy palette token retained for compatible encoding */
 
+    ///
+    /// Maps the keyed RGB representation used for custom profile colors
+    ///
+    /// @section    Purpose
+    ///     Restrict component-based color encoding to the persisted RGB fields
+    ///
     private enum CodingKeys: String, CodingKey {
         case red
         case green
         case blue
     }
 
+    ///
+    /// @fcn        ProfileColor.init(red:green:blue:)
+    /// @brief      Create a profile color from sRGB components
+    /// @details    Stores the component values and marks the color as a custom RGB value
+    ///
+    /// @param[in]  red    sRGB red component
+    /// @param[in]  green  sRGB green component
+    /// @param[in]  blue   sRGB blue component
+    ///
+    /// @return     (ProfileColor) configured RGB color
+    ///
+    /// @post       The color has no legacy palette token
+    ///
     init(red: Double, green: Double, blue: Double) {
         self.red = red
         self.green = green
@@ -32,6 +57,18 @@ struct ProfileColor: Hashable, Codable {
         legacyToken = nil
     }
 
+    ///
+    /// @fcn        ProfileColor.init(hue:saturation:brightness:)
+    /// @brief      Create an sRGB profile color from HSB components
+    /// @details    Clamps saturation and brightness to their supported unit interval before
+    ///             converting the color to RGB
+    ///
+    /// @param[in]  hue         Hue value, wrapped to one full turn
+    /// @param[in]  saturation  Saturation value, clamped to 0 through 1
+    /// @param[in]  brightness Brightness value, clamped to 0 through 1
+    ///
+    /// @return     (ProfileColor) converted RGB color
+    ///
     init(hue: Double, saturation: Double, brightness: Double) {
         let hue = (hue - floor(hue)) * 6
         let saturation = min(max(saturation, 0), 1)
@@ -57,17 +94,30 @@ struct ProfileColor: Hashable, Codable {
         )
     }
 
-    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")
-    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")
-    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")
-    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")
-    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")
-    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white")
-    static let charcoal = Self(red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")
-    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")
-    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")
-    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")
+    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal") /* Teal palette color */
+    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue") /* Blue palette color */
+    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green") /* Green palette color */
+    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange") /* Orange palette color */
+    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite") /* Graphite palette color */
+    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white") /* White palette color */
+    static let charcoal = Self(red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal") /* Charcoal palette color */
+    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon") /* Lemon palette color */
+    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky") /* Sky palette color */
+    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral") /* Coral palette color */
 
+    ///
+    /// @fcn        ProfileColor.init(red:green:blue:legacyToken:)
+    /// @brief      Create a profile color associated with a legacy palette token
+    /// @details    Stores the RGB components and token so compatible encoding can preserve the
+    ///             older string representation
+    ///
+    /// @param[in]  red         sRGB red component
+    /// @param[in]  green       sRGB green component
+    /// @param[in]  blue        sRGB blue component
+    /// @param[in]  legacyToken Known palette token for this color
+    ///
+    /// @return     (ProfileColor) configured palette color
+    ///
     private init(red: Double, green: Double, blue: Double, legacyToken: String) {
         self.red = red
         self.green = green
@@ -75,6 +125,17 @@ struct ProfileColor: Hashable, Codable {
         self.legacyToken = legacyToken
     }
 
+    ///
+    /// @fcn        ProfileColor.hueSaturationBrightness
+    /// @brief      Convert the stored RGB components to HSB values
+    /// @details    Derives hue, saturation, and brightness from the maximum and minimum
+    ///             component values
+    ///
+    /// @return     (tuple) hue, saturation, and brightness components
+    ///
+    /// @pre        RGB components contain the color to convert
+    /// @post       The stored RGB components remain unchanged
+    ///
     var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) {
         let maximum = max(red, green, blue)
         let minimum = min(red, green, blue)
@@ -94,6 +155,17 @@ struct ProfileColor: Hashable, Codable {
         return (hue, maximum == 0 ? 0 : delta / maximum, maximum)
     }
 
+    ///
+    /// @fcn        ProfileColor.init(from:)
+    /// @brief      Decode a profile color from legacy or component-based data
+    /// @details    Accepts known legacy palette strings or keyed sRGB component values
+    ///
+    /// @param[in]  decoder Source of the encoded color
+    ///
+    /// @return     (ProfileColor) decoded color
+    ///
+    /// @throws     DecodingError for an unknown legacy token; keyed-value decoder failures propagate
+    ///
     init(from decoder: Decoder) throws {
         if let container = try? decoder.singleValueContainer(),
            let token = try? container.decode(String.self) {
@@ -115,6 +187,17 @@ struct ProfileColor: Hashable, Codable {
         )
     }
 
+    ///
+    /// @fcn        ProfileColor.encode(to:)
+    /// @brief      Encode a profile color using its compatible representation
+    /// @details    Preserves recognized legacy palette tokens and encodes custom colors by RGB
+    ///
+    /// @param[in]  encoder Destination for the encoded color
+    ///
+    /// @return     (Void) writes the color representation to the encoder
+    ///
+    /// @throws     Error when the encoder cannot represent the stored color value
+    ///
     func encode(to encoder: Encoder) throws {
         if let legacyToken {
             var container = encoder.singleValueContainer()
@@ -127,6 +210,15 @@ struct ProfileColor: Hashable, Codable {
         }
     }
 
+    ///
+    /// @fcn        ProfileColor.legacyColor(_:)
+    /// @brief      Resolve a known legacy palette token
+    /// @details    Maps tokens supported by older profile snapshots to their color constants
+    ///
+    /// @param[in]  token Previously encoded palette name
+    ///
+    /// @return     (ProfileColor?) matching color, or nil for an unsupported token
+    ///
     private static func legacyColor(_ token: String) -> Self? {
         switch token {
             case "teal": teal
@@ -144,13 +236,31 @@ struct ProfileColor: Hashable, Codable {
     }
 }
 
+///
+/// Names the profile color model for avatar backgrounds
+///
+/// @section    Purpose
+///     Clarify the role of ProfileColor when used for an avatar's background
+///
 typealias ProfileAvatarColor = ProfileColor
+
+///
+/// Names the profile color model for avatar icon and initials foregrounds
+///
+/// @section    Purpose
+///     Clarify the role of ProfileColor when used for avatar foreground content
+///
 typealias ProfileAvatarForegroundColor = ProfileColor
 
 
 // -------------------------------------- MARK: - Avatar Icon ---------------------------------- //
 
+///
 /// Identifies a stable built-in icon choice for the local profile avatar
+///
+/// @section    Purpose
+///     Persist icon selections using stable tokens independent of their display symbols
+///
 enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable {
 
     case initials
@@ -166,6 +276,13 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable {
     case star
     case cloud
 
+    ///
+    /// @fcn        ProfileAvatarIcon.id
+    /// @brief      Expose the icon token as its stable identity
+    /// @details    Reuses the persisted raw value for identifiable icon choices
+    ///
+    /// @return     (String) icon identifier
+    ///
     var id: String { rawValue }
 }
 
@@ -185,6 +302,12 @@ struct LocalProfilePreferences: Hashable, Codable {
     var usesLargeControls:   Bool   /* Use taller key actions */
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
 
+    ///
+    /// Maps local planning and presentation preference keys
+    ///
+    /// @section    Purpose
+    ///     Keep the Codable preference field names explicit
+    ///
     private enum CodingKeys: String, CodingKey {
         case defaultListID
         case usesReducedContent
@@ -204,6 +327,8 @@ struct LocalProfilePreferences: Hashable, Codable {
     ///
     /// @return     (LocalProfilePreferences) configured personalization values
     ///
+    /// @post       Stored values match the provided preference selections
+    ///
     init(
         defaultListID: Int? = nil,
         usesReducedContent: Bool = false,
@@ -217,6 +342,20 @@ struct LocalProfilePreferences: Hashable, Codable {
         self.showsNavigationLabels = showsNavigationLabels
     }
 
+    ///
+    /// @fcn        LocalProfilePreferences.init(from:)
+    /// @brief      Decode profile preferences with defaults for newer fields
+    /// @details    Preserves compatibility with saved preference snapshots that omit optional
+    ///             values introduced by later app versions
+    ///
+    /// @param[in]  decoder Source of the encoded preference values
+    ///
+    /// @return     (LocalProfilePreferences) decoded settings
+    ///
+    /// @throws     DecodingError when a present value cannot be decoded
+    ///
+    /// @post       Missing supported preference keys receive their declared defaults
+    ///
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self) /* Saved preference fields */
         self.init(
@@ -248,9 +387,15 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     var avatarColor: ProfileColor              /* Avatar background color */
     var avatarIcon:  ProfileAvatarIcon         /* Avatar icon token       */
     var avatarForegroundColor: ProfileColor   /* Icon and initials color */
-    var avatarPhotoFileName: String?
+    var avatarPhotoFileName: String?         /* Filename for the separately stored avatar photo */
     var preferences: LocalProfilePreferences   /* Local personalization   */
 
+    ///
+    /// Maps the local profile properties used in saved snapshots
+    ///
+    /// @section    Purpose
+    ///     Keep the Codable profile field names explicit
+    ///
     private enum CodingKeys: String, CodingKey {
         case id
         case createdAt
@@ -264,6 +409,20 @@ struct LocalProfile: Identifiable, Hashable, Codable {
         case preferences
     }
 
+    ///
+    /// @fcn        LocalProfile.init(from:)
+    /// @brief      Decode a local profile snapshot
+    /// @details    Restores stable identity and local fields while applying defaults for avatar
+    ///             properties absent from older profile data
+    ///
+    /// @param[in]  decoder Source of the encoded profile
+    ///
+    /// @return     (LocalProfile) decoded local profile
+    ///
+    /// @throws     DecodingError when required profile values cannot be decoded
+    ///
+    /// @post       Missing optional avatar values receive the current profile defaults
+    ///
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
@@ -287,6 +446,9 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     ///
     /// @return     (String) one or two uppercase avatar characters
     ///
+    /// @pre        displayName contains the name text to summarize
+    /// @post       Profile data remains unchanged
+    ///
     var initials: String {   /* Avatar text */
 
         let components = displayName.split(whereSeparator: \.isWhitespace)    /* Name components */
@@ -297,7 +459,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     }
 
     ///
-    /// @fcn        LocalProfile.init(id:createdAt:displayName:email:context:avatarColor:avatarIcon:avatarForegroundColor:preferences:)
+    /// @fcn        LocalProfile.init(id:createdAt:displayName:email:context:avatarColor:avatarIcon:avatarForegroundColor:avatarPhotoFileName:preferences:)
     /// @brief      Initialize a local Plenact profile
     /// @details    Stores user-entered identity and settings without authentication secrets
     ///
@@ -306,12 +468,15 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     /// @param[in]  displayName  User-facing display name
     /// @param[in]  email        Optional locally stored email text
     /// @param[in]  context      Optional role or planning context
-    /// @param[in]  avatarColor  Selected avatar palette token
+    /// @param[in]  avatarColor  Selected avatar background color
     /// @param[in]  avatarIcon   Selected avatar icon token
     /// @param[in]  avatarForegroundColor Selected initials and icon foreground token
+    /// @param[in]  avatarPhotoFileName Filename of the separately stored avatar photo
     /// @param[in]  preferences  Local planning and presentation settings
     ///
     /// @return     (LocalProfile) configured local identity
+    ///
+    /// @post       Stored values match the supplied profile fields
     ///
     init(
         id:          UUID                    = UUID(),

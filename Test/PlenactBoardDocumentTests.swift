@@ -1,7 +1,12 @@
 // -------------------------------------------------------------------------------------------------
 // @file       PlenactBoardDocumentTests.swift
-// @brief      Versioned Board sync document tests
-// @details    Verifies snapshot validation, typed assignees, and JSON round trips
+// @brief      Board contracts, local persistence, and presentation regression tests
+// @details    Covers versioned shared-demo documents, archive/restore compatibility, isolated
+//             preference stores, canonical search/selection helpers, background-save failures,
+//             and hosted SwiftUI sizing/re-layout. API activity uses an in-process URLProtocol
+//
+// @notes      Synthetic fixtures do not access the live demo database. Corruption tests verify
+//             load-time byte retention, not protection against a later write to fallback content
 //
 // -------------------------------------------------------------------------------------------------
 import XCTest
@@ -13,10 +18,15 @@ import SwiftUI
 /// Verifies the Plenact-specific Board snapshot contract
 ///
 /// @section    Purpose
-///     Protect schema versioning and stable references before the document is sent to an API
+///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardPresentationWidthsInPortraitLandscapeAndAccessibility
+    /// @brief      Verify preset widths and invalid-geometry handling
+    /// @details    Checks exact caps, landscape capacity, narrow viewports, and accessibility sizing
+    ///
     func testBoardPresentationWidthsInPortraitLandscapeAndAccessibility() {
         XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 360)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 393, accessibilitySize: false), 240)
@@ -33,23 +43,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardPresentationPreferenceIsLocalAndLeavesBoardSnapshotsUntouched
+    /// @brief      Persist presentation independently of Board snapshots
+    /// @details    Reopens an isolated AppStorage preference and compares untouched Week/collection bytes
+    /// @throws     Preference-suite unwrap or fixture encoding failures
+    ///
     @MainActor
     func testBoardPresentationPreferenceIsLocalAndLeavesBoardSnapshotsUntouched() throws {
         let suite = "Plenact.BoardPresentationTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        
         defer { defaults.removePersistentDomain(forName: suite) }
+        
         let week = try JSONEncoder().encode(SampleData.lists)
         var board = PersonalCollection(title: "Synthetic project", kind: .board)
         board.lists = SampleData.lists
         board.savedCardIDs = [0]
         board.isArchived = true
+        
         let collections = try JSONEncoder().encode([board])
         defaults.set(week, forKey: "Plenact.Board.v1")
         defaults.set(collections, forKey: "Plenact.PersonalCollections.v1")
+        
         let preference = AppStorage(wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults)
         XCTAssertEqual(preference.wrappedValue, .standard)
         preference.wrappedValue = .overview
         XCTAssertEqual(defaults.string(forKey: BoardPresentation.storageKey), "overview")
+        
         let reopened = AppStorage(wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults)
         XCTAssertEqual(reopened.wrappedValue, .overview)
         preference.wrappedValue = .standard
@@ -57,9 +79,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: "Plenact.PersonalCollections.v1"), collections)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRenderedCardsFitContentWithoutQuarterScreenHeights
+    /// @brief      Measure compact summaries and accessibility growth
+    /// @details    Hosts both presets and rejects layout callbacks that would mutate the card
+    ///
     @MainActor
     func testRenderedCardsFitContentWithoutQuarterScreenHeights() {
+
         let card = KanbanCard(id: 100, word: "Prepare a plan", listTitle: "Synthetic list")
+
+        ///
+        /// @fcn        measuredHeight(_:size:width:)
+        /// @brief      Measure a synthetic card at the requested preset and text size
+        /// @details    Proposes ample height so the hosting controller reports content-fitting height
+        /// @param[in]  preset  Card presentation preset
+        /// @param[in]  size    Dynamic Type environment value
+        /// @param[in]  width   Proposed card width in points
+        /// @return     (CGFloat) hosted card height in points
+        ///
         func measuredHeight(_ preset: BoardPresentation, size: DynamicTypeSize, width: CGFloat) -> CGFloat {
             let view = KanbanCardView(
                 card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
@@ -73,6 +112,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let controller = UIHostingController(rootView: view)
             return controller.sizeThatFits(in: CGSize(width: width, height: 10_000)).height
         }
+
+
         let standard = measuredHeight(.standard, size: .large, width: 360)
         let overview = measuredHeight(.overview, size: .large, width: 240)
         XCTAssertGreaterThanOrEqual(standard, 112)
@@ -82,24 +123,41 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertGreaterThan(measuredHeight(.overview, size: .accessibility5, width: 292), overview)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardSummaryDoesNotStretchToFillListHeight
+    /// @brief      Reject vertical expansion under a taller layout proposal
+    /// @details    Compares 300- and 900-point proposals for the same synthetic card in both presets
+    ///
     @MainActor
     func testCardSummaryDoesNotStretchToFillListHeight() {
+
         let card = KanbanCard(id: 101, word: "Review the week ahead", listTitle: "Synthetic list")
         for preset in BoardPresentation.allCases {
+            
             let controller = UIHostingController(rootView: KanbanCardView(
                 card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                 presentation: preset, labelLibrary: .starter,
                 onUpdateCard: { _ in XCTFail("Layout must not edit content") },
                 onDeleteCard: {}, onArchiveCard: {}, onToggle: {}
             ).environment(\.dynamicTypeSize, .large))
+            
             let width: CGFloat = preset == .standard ? 360 : 240
             let shortProposal = controller.sizeThatFits(in: CGSize(width: width, height: 300))
             let tallProposal = controller.sizeThatFits(in: CGSize(width: width, height: 900))
+            
             XCTAssertEqual(shortProposal.height, tallProposal.height, accuracy: 1)
             XCTAssertLessThan(tallProposal.height, preset == .standard ? 170 : 130)
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNavigationLinkedCardRowsRemainCompactInAList
+    /// @brief      Verify card sizing inside native navigation-linked List rows
+    /// @details    Attaches a hosting window to the current scene and restores the prior key window
+    /// @throws     Scene/row unwrap failures or cancellation of the layout delay
+    ///
     @MainActor
     func testNavigationLinkedCardRowsRemainCompactInAList() async throws {
         let card = KanbanCard(id: 102, word: "Review the week ahead", listTitle: "Synthetic list")
@@ -111,6 +169,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previousKeyWindow?.makeKey()
         }
+
+
+        ///
+        /// @fcn        collectionView(in:)
+        /// @brief      Locate the List's backing collection view in the hosted hierarchy
+        /// @details    Recursively searches subviews and returns the first match
+        /// @param[in]  view  Root of the UIKit subtree to inspect
+        /// @return     (UICollectionView?) first matching view, or nil
+        ///
         func collectionView(in view: UIView) -> UICollectionView? {
             if let collection = view as? UICollectionView { return collection }
             return view.subviews.compactMap { collectionView(in: $0) }.first
@@ -145,6 +212,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent
+    /// @brief      Retain the requested list and content through Board re-layout
+    /// @details    Varies viewport/preset and compares active lists, archives, bookmarks, and visible ID
+    /// @throws     Fixture setup failures or cancellation of the layout delay
+    ///
     @MainActor
     func testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent() async throws {
         let suite = "Plenact.BoardRelayoutTests.\(UUID().uuidString)"
@@ -212,6 +286,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListReorderingMovesRestoredMondayToFirstWithoutChangingContent
+    /// @brief      Move an existing list without replacing its records
+    /// @details    Checks moves to both ends and JSON round-trip equality of the resulting order
+    /// @throws     Board encoding or decoding errors
+    ///
     func testListReorderingMovesRestoredMondayToFirstWithoutChangingContent() throws {
         var lists = SampleData.lists
         let monday = lists.removeFirst()
@@ -224,6 +305,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(restored, lists)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListReorderingRejectsMissingAndOutOfBoundsMoves
+    /// @brief      Leave list order unchanged for invalid or redundant moves
+    /// @details    Exercises missing IDs, both bounds, and the current position
+    ///
     func testListReorderingRejectsMissingAndOutOfBoundsMoves() {
         var lists = SampleData.lists
         let original = lists
@@ -234,6 +321,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(lists, original)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListDragEdgeThresholdsAndInvalidGeometry
+    /// @brief      Verify list-drag edge activation at exact thresholds
+    /// @details    Checks left/right bands, narrow viewports, and nonfinite geometry
+    ///
     func testListDragEdgeThresholdsAndInvalidGeometry() {
         XCTAssertEqual(BoardListReordering.edgeDirection(at: 63, viewportWidth: 400), -1)
         XCTAssertEqual(BoardListReordering.edgeDirection(at: 64, viewportWidth: 400), 0)
@@ -247,6 +340,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(BoardListReordering.edgeDirection(at: 83, viewportWidth: 100), 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace
+    /// @brief      Persist retained archives and an intentionally empty Week
+    /// @details    Uses an isolated suite and awaits the ordered persistence queue after each save
+    /// @throws     Preference-suite unwrap failures
+    ///
     @MainActor
     func testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace() async throws {
         let suite = "Plenact.WeekArchiveTests.\(UUID().uuidString)"
@@ -263,6 +363,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(emptyWeek.isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListArchiveBindingsPreserveCardsAndRestoreAtEnd
+    /// @brief      Preserve list records through active/archive binding projections
+    /// @details    Archives, round-trips, and appends the restored list after existing active lists
+    /// @throws     JSON round-trip or archived-list unwrap failures
+    ///
     @MainActor
     func testListArchiveBindingsPreserveCardsAndRestoreAtEnd() throws {
         let original = SampleData.lists[0]
@@ -284,6 +391,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(snapshot, [SampleData.lists[1], original])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWholeWeekArchiveRestoresAsSeparateUniquelyNamedBoard
+    /// @brief      Restore a Week archive as a separate personal Board
+    /// @details    Checks collision-safe naming while retaining IDs, archived lists/cards, and bookmarks
+    /// @throws     Collection encoding or decoding errors
+    ///
     func testWholeWeekArchiveRestoresAsSeparateUniquelyNamedBoard() throws {
         var archivedList = SampleData.lists[1]
         archivedList.isArchived = true
@@ -305,6 +419,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(board.lists[1].isArchived)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testArchivedPersonalBoardPersistsAndRestoresWithoutRenamingItsLists
+    /// @brief      Persist archive state and restore a personal Board with its lists intact
+    /// @details    Resolves a Board-title collision without changing contained lists or saved-card IDs
+    /// @throws     Checked saves, JSON conversion, or Board unwrap failures
+    ///
     func testArchivedPersonalBoardPersistsAndRestoresWithoutRenamingItsLists() throws {
         let suite = "Plenact.BoardArchiveTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -326,6 +447,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [restored])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalBoardArchiveSavesBeforeReturningUpdatedState
+    /// @brief      Confirm successful archive commits return the saved collection state
+    /// @details    Keeps the input and unrelated collection unchanged while checking persisted output
+    /// @throws     Preference-suite unwrap or checked-save failures
+    ///
     func testPersonalBoardArchiveSavesBeforeReturningUpdatedState() throws {
         let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -340,6 +468,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), updated)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalBoardArchiveFailureKeepsMemoryAndSavedSnapshotActive
+    /// @brief      Reject an unencodable archive without publishing a new collection state
+    /// @details    An infinite card date forces encoding failure; memory and the saved Board stay active
+    /// @throws     Fixture setup or initial checked-save failures
+    ///
     func testPersonalBoardArchiveFailureKeepsMemoryAndSavedSnapshotActive() throws {
         let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -360,6 +495,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [board])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalBoardArchiveRejectsMissingBoardWithoutChangingSavedData
+    /// @brief      Preserve saved collections when the requested Board ID is absent
+    /// @details    Attempts archive with an unrelated UUID and compares the original stored collection
+    /// @throws     Fixture setup or initial checked-save failures
+    ///
     func testPersonalBoardArchiveRejectsMissingBoardWithoutChangingSavedData() throws {
         let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -370,6 +512,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [board])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLegacyPersonalBoardDefaultsToActiveAndArchivedListsStayOutOfSearch
+    /// @brief      Preserve legacy active defaults and exclude archived lists from active projections
+    /// @details    Omits isArchived from old JSON, then verifies hidden cards/counts and demo validation
+    /// @throws     JSON conversion or unwrap failures
+    ///
     func testLegacyPersonalBoardDefaultsToActiveAndArchivedListsStayOutOfSearch() throws {
         let original = PersonalCollection(title: "Project", kind: .board)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
@@ -384,6 +533,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.validationMessage, "Archived lists are stored locally and cannot be published to the shared Board.")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLegacyListsLoadWithEmptyArchiveAndKeepExistingJSONShape
+    /// @brief      Preserve the old list JSON shape when no archive is present
+    /// @details    Decodes a three-field list and checks its re-encoded key set
+    /// @throws     JSON conversion or unwrap failures
+    ///
     func testLegacyListsLoadWithEmptyArchiveAndKeepExistingJSONShape() throws {
         let data = Data("{\"id\":1,\"title\":\"Monday\",\"cards\":[]}".utf8)
         let list = try JSONDecoder().decode(KanbanList.self, from: data)
@@ -393,6 +549,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(Set(object.keys), ["id", "title", "cards"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testArchivingAndRestoringPreservesFullCardAndDivider
+    /// @brief      Retain completed-card content and attachment references through archive/restore
+    /// @details    Checks idempotence, divider exclusion, Codable round trip, and restoration at the end
+    /// @throws     List encoding or decoding errors
+    ///
     func testArchivingAndRestoringPreservesFullCardAndDivider() throws {
         var completed = SampleData.lists[0].cards[0]
         completed.isTitleChecked = true
@@ -417,6 +580,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(list.cards, [divider, active, completed])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testArchivedCardsStayOutOfSearchAndReserveTheirIDs
+    /// @brief      Exclude archived cards from active search without reusing their identities
+    /// @details    Includes retained cards in ID allocation and rejects archives in shared-demo documents
+    ///
     func testArchivedCardsStayOutOfSearchAndReserveTheirIDs() {
         let archived = KanbanCard(id: 900, word: "Archived task", listTitle: "Monday", isTitleChecked: true)
         let list = KanbanList(
@@ -430,6 +599,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.validationMessage, "Archived cards are stored locally and cannot be published to the shared Board.")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testIndividualArchiveAcceptsIncompleteCardsAndPreservesContent
+    /// @brief      Archive individual cards independently of completion state
+    /// @details    Rejects divider/duplicate archives and restores an incomplete card without marking it done
+    /// @throws     List encoding or decoding errors
+    ///
     func testIndividualArchiveAcceptsIncompleteCardsAndPreservesContent() throws {
         var incomplete = SampleData.lists[0].cards[0]
         incomplete.isTitleChecked = false
@@ -452,6 +628,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(list.archivedCards, [complete])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalListRenamePreservesArchivedCards
+    /// @brief      Update archived cards' list-title references when renaming a personal list
+    /// @details    Checks retained content and the resulting collection's JSON round trip
+    /// @throws     Collection encoding or decoding errors
+    ///
     func testPersonalListRenamePreservesArchivedCards() throws {
         var collection = PersonalCollection(title: "Original", kind: .list)
         let archived = KanbanCard(id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true)
@@ -464,6 +647,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(restored, collection)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testAPIActivityEndsAfterSuccessFailureAndCancellation
+    /// @brief      Balance activity tracking across synthetic API outcomes
+    /// @details    An ephemeral intercepted session returns success, timeout, or cancellation without networking
+    /// @throws     Fixture unwrap/client setup failures or unexpected error types
+    ///
     @MainActor
     func testAPIActivityEndsAfterSuccessFailureAndCancellation() async throws {
         let configuration = URLSessionConfiguration.ephemeral
@@ -487,6 +677,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDatabaseActivityKeepsSpinnerUntilAllOperationsFinish
+    /// @brief      Keep activity visible until the last tracked operation ends
+    /// @details    Checks message handoff and harmless repeated completion of the first operation
+    ///
     @MainActor
     func testDatabaseActivityKeepsSpinnerUntilAllOperationsFinish() {
         let activity = DatabaseActivity()
@@ -506,10 +702,39 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(activity.message)
     }
 
+
+    ///
+    /// Intercepts synthetic activity-test requests without accessing a remote endpoint
+    ///
+    /// @section    Purpose
+    ///     Supply deterministic success/failure callbacks while inspecting MainActor activity state
+    ///
     private final class ActivityTestURLProtocol: URLProtocol {
+
+        ///
+        /// @fcn        ActivityTestURLProtocol.canInit(with:)
+        /// @brief      Accept every request in the dedicated ephemeral test session
+        /// @details    The test installs this protocol only on its synthetic session configuration
+        /// @param[in]  request  Request offered by URL loading
+        /// @return     (Bool) true
+        ///
         override class func canInit(with request: URLRequest) -> Bool { true }
+
+        ///
+        /// @fcn        ActivityTestURLProtocol.canonicalRequest(for:)
+        /// @brief      Preserve the synthetic request as supplied
+        /// @details    No URL or header normalization is needed for host-selected test outcomes
+        /// @param[in]  request  Intercepted request
+        /// @return     (URLRequest) unchanged request
+        ///
         override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
+        ///
+        /// @fcn        ActivityTestURLProtocol.startLoading
+        /// @brief      Deliver the response selected by the synthetic hostname
+        /// @details    Checks activity before/after yielding; returns empty users or a transport error
+        /// @post       Starts an asynchronous MainActor task that notifies the URLProtocol client
+        ///
         override func startLoading() {
             Task { @MainActor in
                 XCTAssertTrue(DatabaseActivity.shared.isWorking)
@@ -539,9 +764,20 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }
         }
 
+        ///
+        /// @fcn        ActivityTestURLProtocol.stopLoading
+        /// @brief      Provide the required URLProtocol cancellation hook
+        /// @details    This fixture performs no resource cleanup and does not cancel its spawned task
+        ///
         override func stopLoading() {}
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDatabaseActivityErrorsRemainUntilDismissed
+    /// @brief      Retain a reported error after activity finishes
+    /// @details    Checks that only explicit dismissal clears the error message
+    ///
     @MainActor
     func testDatabaseActivityErrorsRemainUntilDismissed() {
         let activity = DatabaseActivity()
@@ -554,6 +790,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(activity.errorMessage)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBackgroundBoardSavesPreserveLatestSnapshot
+    /// @brief      Persist the most recent queued Week snapshot
+    /// @details    Enqueues two writes in an isolated suite and awaits a load before comparing stored bytes
+    /// @throws     Preference/data unwrap or JSON decoding failures
+    ///
     @MainActor
     func testBackgroundBoardSavesPreserveLatestSnapshot() async throws {
         let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
@@ -571,6 +814,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: data), last)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBackgroundBoardSaveFailurePreservesPreviousSnapshot
+    /// @brief      Retain a valid Week snapshot when a later save cannot encode
+    /// @details    Uses an infinite date to force failure and checks both retained data and error reporting
+    /// @throws     Preference-suite unwrap failures
+    ///
     @MainActor
     func testBackgroundBoardSaveFailurePreservesPreviousSnapshot() async throws {
         let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
@@ -593,6 +843,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(DatabaseActivity.shared.errorMessage?.hasPrefix("Could not save the Board:") == true)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBackgroundBoardLoadReportsCorruptionWithoutRemovingData
+    /// @brief      Report unreadable Week data while retaining its original bytes at load time
+    /// @details    Confirms the current sample fallback; does not test protection against subsequent saves
+    /// @throws     Preference-suite unwrap failures
+    ///
     @MainActor
     func testBackgroundBoardLoadReportsCorruptionWithoutRemovingData() async throws {
         let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"
@@ -609,6 +866,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), invalidData)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRecentSearchesAreOrderedDeduplicatedAndClearable
+    /// @brief      Verify recent-search normalization, ordering, capacity, and explicit clearing
+    /// @details    Uses isolated preferences and checks case-insensitive deduplication and the ten-entry limit
+    /// @throws     Preference-suite unwrap failures
+    ///
     func testRecentSearchesAreOrderedDeduplicatedAndClearable() throws {
         let suite = "Plenact.SearchTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -627,16 +891,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(RecentSearchStore.load(from: defaults).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSearchScopesUseOnlyTheirSelectedFields
+    /// @brief      Keep Board, label, user, and all-content searches within their intended fields
+    /// @details    Uses one synthetic card to distinguish matches in title, description, assignment, and labels
+    ///
     func testSearchScopesUseOnlyTheirSelectedFields() {
+
         let card = KanbanCard(
             id: 1, word: "Proposal", listTitle: "Monday",
             members: [.manual("Jamie")], labelIDs: ["work-scheduled"],
             descriptionOverride: "Budget review"
         )
         let lists = [KanbanList(id: 0, title: "Monday", cards: [card])]
+
+        ///
+        /// @fcn        matches(_:_:)
+        /// @brief      Query the fixed synthetic search fixture
+        /// @details    Uses the starter label library for label-name and group-name matching
+        /// @param[in]  term   Search text
+        /// @param[in]  scope  Fields to search
+        /// @return     ([TodaySearchResult]) matching canonical references
+        ///
         func matches(_ term: String, _ scope: TodaySearchScope) -> [TodaySearchResult] {
             TodaySearchIndex.results(query: term, scope: scope, lists: lists, library: .starter)
         }
+
 
         XCTAssertEqual(matches("Scheduled", .labels).map(\.cardID), [1])
         XCTAssertEqual(matches("Work", .labels).count, 1)
@@ -650,6 +931,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(matches(" ", .all).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers
+    /// @brief      Keep empty lists discoverable without treating dividers as activities
+    /// @details    Checks a list-only result has no card ID and divider text produces no all-content match
+    ///
     func testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers() {
         let divider = KanbanCard(id: 1, word: "Divider", listTitle: "Monday", isDivider: true)
         let lists = [
@@ -662,7 +949,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(TodaySearchIndex.results(query: "Divider", scope: .all, lists: lists, library: .starter).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleLoadUndoSnapshotPersistsAndClears
+    /// @brief      Round-trip the retained snapshot used by Load Example undo
+    /// @details    Saves synthetic lists and today's selection in an isolated suite, then explicitly clears them
+    /// @throws     Preference-suite unwrap failures
+    ///
     func testExampleLoadUndoSnapshotPersistsAndClears() throws {
+
         let suite = "Plenact.ExampleLoadUndoTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -677,6 +972,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(ExampleLoadUndoStore.load(from: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLastViewedListResolvesSavedSelectionAndFallbacks
+    /// @brief      Resolve saved list identity against current active lists
+    /// @details    Checks saved preference priority, a missing saved target, and an empty workspace
+    /// @throws     Preference-suite unwrap failures
+    ///
     func testLastViewedListResolvesSavedSelectionAndFallbacks() throws {
         let suite = "Plenact.LastViewedListTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -689,6 +991,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LastViewedListStore.resolve(in: [], fallback: nil, from: defaults), nil)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayDefaultsToMondayAfterSavedAndProfileChoices
+    /// @brief      Verify initial Today selection priority
+    /// @details    Checks valid saved/profile choices before the named-Monday fallback
+    ///
     func testTodayDefaultsToMondayAfterSavedAndProfileChoices() {
         let lists = [
             KanbanList(id: 3, title: "Tuesday", cards: []),
@@ -701,6 +1009,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayListSelection.initialListID(savedListID: 99, profileDefaultListID: nil, lists: lists), 7)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionPersistencePreservesOrderAndLeavesWeekUntouched
+    /// @brief      Keep personal collections ordered and independent of the Week store
+    /// @details    Persists synthetic Board/list collections and compares unchanged Week bytes
+    /// @throws     Preference-suite unwrap or Week encoding failures
+    ///
     func testPersonalCollectionPersistencePreservesOrderAndLeavesWeekUntouched() throws {
         let suite = "Plenact.PersonalCollectionTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -721,6 +1036,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(shopping.cardCount, 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionRenameAndSearchPreserveCardIdentity
+    /// @brief      Rename a personal list without replacing cards or matching dividers
+    /// @details    Checks trimmed naming, synchronized list titles, active counts, and searchable description text
+    ///
     func testPersonalCollectionRenameAndSearchPreserveCardIdentity() {
         var collection = PersonalCollection(title: "Shopping", kind: .list)
         collection.lists[0].cards = [
@@ -743,6 +1064,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         board.rename(to: "Research")
         XCTAssertEqual(board.lists.map(\.title), ["Ideas", "In progress", "Done"])
     }
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testStarterBoardDocumentRoundTrips
@@ -767,6 +1089,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(decoded.lists.map(\.title), SampleData.listTitles)
     }
 
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testRegisteredAssigneeRequiresUUID
     /// @brief      Reject invalid registered-user identifiers
@@ -787,6 +1110,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.validationMessage, "Registered card assignees need a valid stable user ID.")
     }
 
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testManualAssigneeCannotContainUserID
     /// @brief      Keep manual names distinct from registered accounts
@@ -806,6 +1130,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         XCTAssertEqual(document.validationMessage, "Manual card assignees cannot contain a registered user ID.")
     }
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testDocumentRejectsEmptyCardTitle
@@ -828,6 +1153,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             "Each Board card needs a unique nonnegative ID, title, and matching list title."
         )
     }
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testSampleDataSeedMapsKnownStarterAssigneeToJim
@@ -857,7 +1183,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(SampleData.lists[0].cards[0].members[0].kind, .manual)
     }
 
-    /// Verify the complete encoded seed request fits the confirmed v1 JSON body ceiling
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSampleDataSeedRequestFitsJSONBodyLimit
+    /// @brief      Fit the complete synthetic seed request within the client's JSON body ceiling
+    /// @details    Encodes the versioned document and request envelope, not just the Board payload
+    /// @throws     Request encoding failures
+    ///
     func testSampleDataSeedRequestFitsJSONBodyLimit() throws {
 
         let jim = PlenactRemoteUser(
@@ -876,7 +1208,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertLessThanOrEqual(encodedRequest.count, PlenactAPIClient.maximumJSONBodyBytes)
     }
 
-    /// Verify the client accepts exactly 1 MiB and rejects a body one byte over
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testJSONBodySizeLimitIncludesExactBoundary
+    /// @brief      Verify the inclusive JSON request-size limit
+    /// @details    Checks exactly one MiB is accepted and one byte more is rejected
+    ///
     func testJSONBodySizeLimitIncludesExactBoundary() {
 
         let maximumBody = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes)
@@ -885,6 +1222,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(PlenactAPIClient.isJSONBodyWithinLimit(maximumBody))
         XCTAssertFalse(PlenactAPIClient.isJSONBodyWithinLimit(oversizedBody))
     }
+    
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testAPIClientRejectsPlainHTTPEndpoint

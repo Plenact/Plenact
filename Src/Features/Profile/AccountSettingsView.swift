@@ -1,7 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // @file       AccountSettingsView.swift
 // @brief      Local profile avatar and Account & Settings experience
-// @details    Creates, edits, and removes local-only profile information and personalization
+// @details    Creates, edits, and removes local-only profile information and personalization;
+//             this is separate from shared-demo authentication
 //
 // @notes      This feature performs no authentication, credential storage, or network access
 //
@@ -14,10 +15,16 @@ import ImageIO
 
 // -------------------------------------- MARK: - Avatar Palette ------------------------------- //
 
+///
+/// Provides SwiftUI display formatting for the Codable profile color model
+///
+/// @section    Purpose
+///     Keep color presentation helpers outside the local profile data model
+///
 extension ProfileColor {
 
     ///
-    /// @fcn        ProfileAvatarColor.color
+    /// @fcn        ProfileColor.color
     /// @brief      Resolve the palette token to its SwiftUI color
     /// @details    Keeps SwiftUI presentation outside the Codable profile model
     ///
@@ -34,6 +41,17 @@ extension ProfileColor {
         }
     }
 
+
+    ///
+    /// @fcn        ProfileColor.hexString
+    /// @brief      Format the profile color as an RGB hexadecimal string
+    /// @details    Clamps each component to the unit range before converting to a byte
+    ///
+    /// @return     (String) six-digit RGB color prefixed with #
+    ///
+    /// @pre        The color stores RGB component values
+    /// @post       The stored color remains unchanged
+    ///
     var hexString: String {
         String(
             format: "#%02X%02X%02X",
@@ -44,8 +62,22 @@ extension ProfileColor {
     }
 }
 
+
+///
+/// Provides display labels and SF Symbols for profile avatar icon choices
+///
+/// @section    Purpose
+///     Resolve persisted icon tokens into the text and imagery used by SwiftUI
+///
 extension ProfileAvatarIcon {
 
+    ///
+    /// @fcn        ProfileAvatarIcon.title
+    /// @brief      Return a display title for an avatar icon choice
+    /// @details    Maps each persisted icon case to its user-facing name
+    ///
+    /// @return     (String) display title for this icon
+    ///
     var title: String {
         switch self {
             case .initials:     "Initials"
@@ -63,6 +95,14 @@ extension ProfileAvatarIcon {
         }
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIcon.symbolName
+    /// @brief      Return the SF Symbol associated with an avatar icon choice
+    /// @details    Initials use no symbol; the remaining cases map to built-in symbols
+    ///
+    /// @return     (String?) SF Symbol name, or nil for initials
+    ///
     var symbolName: String? {
         switch self {
             case .initials:     nil
@@ -93,14 +133,18 @@ struct ProfileAvatarView: View {
 
     let profile: LocalProfile?   /* Current local profile */
     let size:    CGFloat         /* Stable avatar size    */
-    var photoData: Data? = nil
+    var photoData: Data? = nil /* In-memory photo override for the profile's stored filename */
 
     ///
     /// @fcn        ProfileAvatarView.body
     /// @brief      Build the local profile avatar
-    /// @details    Shows the selected symbol or initials for an existing profile
+    /// @details    Shows an available local photo over the selected symbol or initials for an
+    ///             existing profile
     ///
     /// @return     (some View) circular profile identity
+    ///
+    /// @pre        The optional profile and avatar size are configured
+    /// @post       Rendering does not modify profile or photo data
     ///
     var body: some View { /* Circular local-profile avatar */
 
@@ -156,8 +200,8 @@ struct AccountSettingsView: View {
     let lists:    [KanbanList]                   /* Default-list choices   */
     let onSave:   (LocalProfile) -> Void         /* Profile save callback  */
     let onRemove: () -> Void                     /* Profile removal        */
-    let onLoadExample: () -> Bool
-    let onUndoExampleLoad: () -> Bool
+    let onLoadExample: () -> Bool             /* Callback loading the local synthetic example board */
+    let onUndoExampleLoad: () -> Bool         /* Callback restoring the previous local board */
 
     @Environment(\.dismiss) private var dismiss  /* Sheet dismissal       */
 
@@ -174,14 +218,15 @@ struct AccountSettingsView: View {
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
-    @State private var confirmsLoadExample  = false
-    @State private var confirmsUndoExample = false
-    @State private var hasUndoableExample = false
-    @State private var exampleOperationError: String?
-    @State private var isChoosingAvatarIcon = false
-    @State private var profileSheetDetent: PresentationDetent = .large
-    @State private var avatarPhotoData:    Data?
-    @State private var photoSaveError:     String?
+    @State private var confirmsLoadExample  = false                  /* Example-load confirmation state */
+    @State private var confirmsUndoExample = false                   /* Example-undo confirmation state */
+    @State private var hasUndoableExample = false                    /* Whether a prior local Board can be restored */
+    @State private var exampleOperationError: String?                /* Local example operation failure text */
+    @State private var isChoosingAvatarIcon = false                  /* Whether the nested avatar picker is visible */
+    @State private var profileSheetDetent: PresentationDetent = .large /* Current profile-sheet height */
+    @State private var avatarPhotoData:    Data?                     /* Draft avatar photo bytes */
+    @State private var photoSaveError:     String?                   /* Avatar photo persistence error text */
+
 
     ///
     /// @fcn        AccountSettingsView.trimmedDisplayName
@@ -190,21 +235,29 @@ struct AccountSettingsView: View {
     ///
     /// @return     (String) normalized display name
     ///
+    /// @pre        displayName contains the current draft
+    /// @post       The draft remains unchanged
+    ///
     private var trimmedDisplayName: String {   /* Normalized name */
         displayName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+
     ///
-    /// @fcn        AccountSettingsView.init(profile:lists:onSave:onRemove:)
+    /// @fcn        AccountSettingsView.init(profile:lists:onSave:onRemove:onLoadExample:onUndoExampleLoad:)
     /// @brief      Initialize local profile drafts and callbacks
     /// @details    Seeds existing values or calm defaults for first profile creation
     ///
-    /// @param[in]  profile   Existing local profile, when created
+    /// @param[in]  profile   Existing local profile when editing, or nil when creating
     /// @param[in]  lists     Current Board lists available as a default
     /// @param[in]  onSave    Callback receiving a complete profile snapshot
     /// @param[in]  onRemove  Callback removing only local profile data
+    /// @param[in]  onLoadExample Callback loading the local synthetic example Board
+    /// @param[in]  onUndoExampleLoad Callback restoring the local Board snapshot
     ///
     /// @return     (AccountSettingsView) configured local profile form
+    ///
+    /// @post       Draft state begins with the existing profile or local defaults
     ///
     init(
         profile:  LocalProfile?,
@@ -242,12 +295,17 @@ struct AccountSettingsView: View {
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
     }
 
+
     ///
     /// @fcn        AccountSettingsView.saveProfile
     /// @brief      Save normalized local identity and personalization
     /// @details    Preserves profile identity and creation date across edits
     ///
     /// @return     (Void) invokes the save callback and dismisses the sheet
+    ///
+    /// @pre        The caller enables Save only when the normalized display name is non-empty
+    /// @post       On successful photo persistence, the normalized profile is saved and the sheet
+    ///             is dismissed; a photo write failure leaves the sheet open
     ///
     private func saveProfile() {
 
@@ -286,6 +344,7 @@ struct AccountSettingsView: View {
         dismiss()
     }
 
+
     ///
     /// @fcn        AccountSettingsView.body
     /// @brief      Build the local Account & Settings form
@@ -293,7 +352,11 @@ struct AccountSettingsView: View {
     ///
     /// @return     (some View) local profile creation or editing sheet
     ///
-    var body: some View { /* Local profile form and shared-demo controls */
+    /// @pre        Profile callbacks and list choices are initialized
+    /// @post       Profile and settings changes stay local; loading the synthetic example board is
+    ///             an explicit local replacement action
+    ///
+    var body: some View { /* Local profile form and local example-board controls */
 
         NavigationStack {
 
@@ -519,27 +582,46 @@ struct AccountSettingsView: View {
 }
 
 
+///
+/// Edits a profile avatar's icon, colors, or locally selected photo
+///
+/// @section    Purpose
+///     Stage avatar changes locally and commit them only when the picker is saved
+///
 private struct ProfileAvatarIconPicker: View {
 
-    @Binding var selection: ProfileAvatarIcon
-    @Binding var avatarColor: ProfileAvatarColor
-    @Binding var foregroundColor: ProfileAvatarForegroundColor
-    @Binding var photoData: Data?
-    let displayName: String
+    @Binding var selection: ProfileAvatarIcon /* Parent's saved icon choice */
+    @Binding var avatarColor: ProfileAvatarColor /* Parent's saved avatar background */
+    @Binding var foregroundColor: ProfileAvatarForegroundColor /* Parent's saved icon and initials color */
+    @Binding var photoData: Data? /* Parent's saved in-memory photo bytes */
+    let displayName: String /* Name used to preview initials */
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var draftIcon: ProfileAvatarIcon
-    @State private var draftAvatarColor: ProfileAvatarColor
-    @State private var draftForegroundColor: ProfileAvatarForegroundColor
-    @State private var isEditingColorMap = false
-    @State private var draftPhotoData: Data?
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var cropImage: AvatarCropImage?
-    @State private var isLoadingPhoto = false
-    @State private var photoError: String?
+    @Environment(\.dismiss) private var dismiss /* Picker dismissal action */
+    @State private var draftIcon: ProfileAvatarIcon /* Unsaved icon selection */
+    @State private var draftAvatarColor: ProfileAvatarColor /* Unsaved avatar background */
+    @State private var draftForegroundColor: ProfileAvatarForegroundColor /* Unsaved foreground color */
+    @State private var isEditingColorMap = false /* Whether a nested color editor is active */
+    @State private var draftPhotoData: Data? /* Unsaved photo bytes */
+    @State private var selectedPhoto: PhotosPickerItem? /* Current system photo selection */
+    @State private var cropImage: AvatarCropImage? /* Image awaiting crop confirmation */
+    @State private var isLoadingPhoto = false /* Whether selected photo data is loading */
+    @State private var photoError: String? /* Photo selection or decoding error */
 
-    private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)]
+    private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)] /* Adaptive icon-grid layout */
 
+    ///
+    /// @fcn        ProfileAvatarIconPicker.init(selection:avatarColor:foregroundColor:photoData:displayName:)
+    /// @brief      Initialize the avatar editor from parent bindings
+    /// @details    Copies current selections into local draft state so Cancel does not commit edits
+    ///
+    /// @param[in]  selection       Parent binding for the selected icon
+    /// @param[in]  avatarColor     Parent binding for the avatar background
+    /// @param[in]  foregroundColor Parent binding for icon and initials color
+    /// @param[in]  photoData       Parent binding for optional photo bytes
+    /// @param[in]  displayName     Name used for the initials preview
+    ///
+    /// @return     (ProfileAvatarIconPicker) initialized avatar editor
+    ///
     init(
         selection: Binding<ProfileAvatarIcon>,
         avatarColor: Binding<ProfileAvatarColor>,
@@ -558,10 +640,29 @@ private struct ProfileAvatarIconPicker: View {
         _draftPhotoData = State(initialValue: photoData.wrappedValue)
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.initials
+    /// @brief      Derive the initials shown in the avatar preview
+    /// @details    Uses the local-profile initials formatting for the current display name
+    ///
+    /// @return     (String) one or two uppercase initials, or the profile fallback
+    ///
     private var initials: String {
         LocalProfile(displayName: displayName).initials
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.saveSelection()
+    /// @brief      Commit the staged avatar choices to the parent bindings
+    /// @details    Copies the draft icon, colors, and photo bytes before dismissing the picker
+    ///
+    /// @return     (Void) updates the parent selection and closes the picker
+    ///
+    /// @pre        Draft avatar values contain the choices to retain
+    /// @post       Parent bindings match the draft values
+    ///
     private func saveSelection() {
         selection = draftIcon
         avatarColor = draftAvatarColor
@@ -570,6 +671,14 @@ private struct ProfileAvatarIconPicker: View {
         dismiss()
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.previewHeader
+    /// @brief      Build the current avatar preview header
+    /// @details    Renders the draft appearance beside the display name
+    ///
+    /// @return     (some View) avatar preview and profile name
+    ///
     private var previewHeader: some View {
         HStack(spacing: 14) {
             ProfileAvatarView(
@@ -595,7 +704,15 @@ private struct ProfileAvatarIconPicker: View {
         .padding(.top, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+    
 
+    ///
+    /// @fcn        ProfileAvatarIconPicker.colorControls
+    /// @brief      Build controls for avatar background and foreground colors
+    /// @details    Opens the color-map picker with role-appropriate presets
+    ///
+    /// @return     (some View) navigation links for the two avatar colors
+    ///
     private var colorControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             NavigationLink {
@@ -641,6 +758,14 @@ private struct ProfileAvatarIconPicker: View {
         .padding()
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.iconGrid
+    /// @brief      Build the built-in avatar icon selection grid
+    /// @details    Updates the icon draft and clears a selected photo when an icon is chosen
+    ///
+    /// @return     (some View) selectable grid of supported avatar icons
+    ///
     private var iconGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Choose an icon")
@@ -688,6 +813,15 @@ private struct ProfileAvatarIconPicker: View {
         .background(.background)
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.body
+    /// @brief      Build the avatar selection and photo-import interface
+    /// @details    Loads selected photos for cropping and exposes staged icon, color, and photo
+    ///             changes
+    ///
+    /// @return     (some View) avatar editor with photo selection and Save/Cancel actions
+    ///
     var body: some View {
         VStack(spacing: 0) {
             previewHeader
@@ -758,6 +892,17 @@ private struct ProfileAvatarIconPicker: View {
         }
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.colorSettingRow(_:color:)
+    /// @brief      Build a row describing one selected avatar color
+    /// @details    Shows its label, color swatch, hexadecimal value, and navigation affordance
+    ///
+    /// @param[in]  title Color role displayed in the row
+    /// @param[in]  color Current color value for that role
+    ///
+    /// @return     (some View) tappable-style color setting row
+    ///
     private func colorSettingRow(_ title: String, color: ProfileColor) -> some View {
         HStack(spacing: 10) {
             Text(title)
@@ -780,6 +925,19 @@ private struct ProfileAvatarIconPicker: View {
         .contentShape(Rectangle())
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarIconPicker.avatarPreview(icon:background:foreground:size:)
+    /// @brief      Render one icon choice using the current color draft
+    /// @details    Displays the SF Symbol or profile initials within a circular color swatch
+    ///
+    /// @param[in]  icon       Icon represented by the preview
+    /// @param[in]  background Avatar circle background
+    /// @param[in]  foreground Icon or initials foreground
+    /// @param[in]  size       Diameter of the preview
+    ///
+    /// @return     (some View) circular avatar preview
+    ///
     private func avatarPreview(
         icon: ProfileAvatarIcon,
         background: ProfileAvatarColor,
@@ -806,13 +964,38 @@ private struct ProfileAvatarIconPicker: View {
 }
 
 
+///
+/// Identifies a decoded image being presented to the avatar crop flow
+///
+/// @section    Purpose
+///     Make the pending crop image usable as an identifiable SwiftUI sheet item
+///
 private struct AvatarCropImage: Identifiable {
-    let id = UUID()
-    let image: UIImage
+    let id = UUID() /* Identity for the pending crop presentation */
+    let image: UIImage /* Decoded source image */
 }
 
+
+///
+/// Decodes, constrains, and renders square avatar-photo crops
+///
+/// @section    Purpose
+///     Share image preparation and crop geometry between photo selection and the crop interface
+///
 enum AvatarPhotoCrop {
 
+    ///
+    /// @fcn        AvatarPhotoCrop.image(from:)
+    /// @brief      Decode image data into a transformed thumbnail
+    /// @details    Applies image orientation and limits the thumbnail's longest edge to 2048 pixels
+    ///
+    /// @param[in]  data Encoded image bytes selected by the user
+    ///
+    /// @return     (UIImage?) decoded thumbnail, or nil when ImageIO cannot create one
+    ///
+    /// @pre        data contains an image representation supported by ImageIO
+    /// @post       The source data remains unchanged
+    ///
     static func image(from data: Data) -> UIImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
@@ -823,6 +1006,20 @@ enum AvatarPhotoCrop {
         return UIImage(cgImage: thumbnail)
     }
 
+
+    ///
+    /// @fcn        AvatarPhotoCrop.constrainedOffset(_:imageSize:side:zoom:)
+    /// @brief      Clamp a crop offset so the crop remains covered by the image
+    /// @details    Computes the visible overflow at the requested zoom and bounds horizontal and
+    ///             vertical movement independently
+    ///
+    /// @param[in]  offset    Requested image translation in points
+    /// @param[in]  imageSize Source image dimensions
+    /// @param[in]  side      Square crop viewport side length
+    /// @param[in]  zoom      Image magnification factor
+    ///
+    /// @return     (CGSize) offset limited to the available image overflow
+    ///
     static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize {
         let scale = max(side / imageSize.width, side / imageSize.height) * zoom
         let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)
@@ -833,6 +1030,22 @@ enum AvatarPhotoCrop {
         )
     }
 
+
+    ///
+    /// @fcn        AvatarPhotoCrop.jpeg(image:side:zoom:offset:)
+    /// @brief      Render the selected crop as a square JPEG
+    /// @details    Draws the constrained image region into a 512-by-512 opaque renderer
+    ///
+    /// @param[in]  image Source photo to crop
+    /// @param[in]  side  Crop viewport side length in points
+    /// @param[in]  zoom  Image magnification factor
+    /// @param[in]  offset Requested image translation in points
+    ///
+    /// @return     (Data?) JPEG bytes, or nil for invalid dimensions or failed encoding
+    ///
+    /// @pre        side and image dimensions are positive for a crop to be produced
+    /// @post       The source image remains unchanged
+    ///
     static func jpeg(image: UIImage, side: CGFloat, zoom: CGFloat, offset: CGSize) -> Data? {
         guard side > 0, image.size.width > 0, image.size.height > 0 else { return nil }
         let scale = max(side / image.size.width, side / image.size.height) * zoom
@@ -853,18 +1066,39 @@ enum AvatarPhotoCrop {
     }
 }
 
+
+///
+/// Lets the user position and magnify a photo inside a circular avatar crop
+///
+/// @section    Purpose
+///     Provide direct-manipulation and directional controls before saving a square JPEG crop
+///
 private struct AvatarPhotoCropView: View {
 
-    let image: UIImage
-    let onUsePhoto: (Data) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var zoom: CGFloat = 1
-    @State private var offset: CGSize = .zero
-    @State private var cropSide: CGFloat = 1
-    @GestureState private var drag: CGSize = .zero
-    @GestureState private var magnification: CGFloat = 1
-    @State private var cropFailed = false
+    let image: UIImage /* Decoded source photo */
+    let onUsePhoto: (Data) -> Void /* Callback receiving the cropped JPEG */
+    @Environment(\.dismiss) private var dismiss /* Crop-sheet dismissal action */
+    @State private var zoom: CGFloat = 1 /* Current image zoom */
+    @State private var offset: CGSize = .zero /* Current image translation */
+    @State private var cropSide: CGFloat = 1 /* Current square crop viewport side */
+    @GestureState private var drag: CGSize = .zero /* In-progress drag translation */
+    @GestureState private var magnification: CGFloat = 1 /* In-progress pinch scale */
+    @State private var cropFailed = false /* Whether crop rendering failed */
 
+
+    ///
+    /// @fcn        AvatarPhotoCropView.stage(side:)
+    /// @brief      Build the interactive crop viewport
+    /// @details    Constrains the image to the square crop and applies drag and magnification
+    ///             gestures
+    ///
+    /// @param[in]  side Side length of the crop viewport
+    ///
+    /// @return     (some View) clipped image with crop mask and gestures
+    ///
+    /// @pre        image has positive dimensions and side is positive
+    /// @post       User interaction updates the crop view's zoom and offset state
+    ///
     private func stage(side: CGFloat) -> some View {
         let currentZoom = min(max(zoom * magnification, 1), 6)
         let currentOffset = AvatarPhotoCrop.constrainedOffset(
@@ -919,6 +1153,17 @@ private struct AvatarPhotoCropView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AvatarPhotoCropView.body
+    /// @brief      Build the avatar photo crop screen
+    /// @details    Combines the crop viewport, zoom and movement controls, and JPEG save action
+    ///
+    /// @return     (some View) interactive crop screen with Cancel and Use Photo actions
+    ///
+    /// @pre        image and crop callback are configured
+    /// @post       Use Photo returns cropped data only when rendering succeeds
+    ///
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
@@ -975,29 +1220,62 @@ private struct AvatarPhotoCropView: View {
     }
 }
 
+
+///
+/// Names one preset color offered by the profile color picker
+///
+/// @section    Purpose
+///     Pair a user-facing preset label with its profile color value
+///
 private struct ProfileColorPreset: Identifiable {
 
-    let name: String
-    let color: ProfileColor
+    let name: String /* Display name for the preset */
+    let color: ProfileColor /* Preset color value */
 
+    ///
+    /// @fcn        ProfileColorPreset.id
+    /// @brief      Expose the preset name as its SwiftUI identity
+    /// @details    Preset names are used as the stable identity in this picker
+    ///
+    /// @return     (String) preset name
+    ///
     var id: String { name }
 }
 
 
+///
+/// Edits a profile color with a color map, brightness control, and named presets
+///
+/// @section    Purpose
+///     Keep color adjustments in a draft until the user confirms the selection
+///
 private struct ProfileColorMapPicker: View {
 
-    let title: String
-    let defaultColor: ProfileColor
-    let presets: [ProfileColorPreset]
-    @Binding var selection: ProfileColor
-    private let initialColor: ProfileColor
+    let title: String /* Color role shown in navigation and preview */
+    let defaultColor: ProfileColor /* Role-specific default choice */
+    let presets: [ProfileColorPreset] /* Named colors available for quick selection */
+    @Binding var selection: ProfileColor /* Parent color value committed on save */
+    private let initialColor: ProfileColor /* Value used by Reset */
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var hue: Double
-    @State private var saturation: Double
-    @State private var brightness: Double
-    @State private var isEditingRGB = false
+    @Environment(\.dismiss) private var dismiss /* Picker dismissal action */
+    @State private var hue: Double /* Draft hue component */
+    @State private var saturation: Double /* Draft saturation component */
+    @State private var brightness: Double /* Draft brightness component */
+    @State private var isEditingRGB = false /* Whether the nested RGB editor is active */
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.init(title:selection:defaultColor:presets:)
+    /// @brief      Initialize color-picker state from the current selection
+    /// @details    Converts the initial RGB value to HSB components for interactive editing
+    ///
+    /// @param[in]  title       Color role shown by the picker
+    /// @param[in]  selection   Parent binding updated on Save
+    /// @param[in]  defaultColor Role-specific default color
+    /// @param[in]  presets     Named quick-selection colors
+    ///
+    /// @return     (ProfileColorMapPicker) initialized color editor
+    ///
     init(
         title: String,
         selection: Binding<ProfileColor>,
@@ -1015,23 +1293,65 @@ private struct ProfileColorMapPicker: View {
         _brightness = State(initialValue: components.brightness)
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.selectedColor
+    /// @brief      Resolve the current HSB draft to an RGB profile color
+    /// @details    Converts the color-map and brightness state for display and saving
+    ///
+    /// @return     (ProfileColor) color represented by the current draft
+    ///
     private var selectedColor: ProfileColor {
         ProfileColor(hue: hue, saturation: saturation, brightness: brightness)
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.saveSelection()
+    /// @brief      Commit the selected color to its parent binding
+    /// @details    Writes the current HSB-derived color and dismisses the picker
+    ///
+    /// @return     (Void) updates selection and closes the picker
+    ///
     private func saveSelection() {
         selection = selectedColor
         dismiss()
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.resetColor()
+    /// @brief      Restore the color that was selected when the picker opened
+    /// @details    Reloads the initial RGB value into the editable HSB state
+    ///
+    /// @return     (Void) resets the current color draft
+    ///
     private func resetColor() {
         setColor(initialColor)
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.useDefaultColor()
+    /// @brief      Select the role-specific default color
+    /// @details    Loads the configured default into the editable HSB state
+    ///
+    /// @return     (Void) updates the current color draft
+    ///
     private func useDefaultColor() {
         setColor(defaultColor)
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.setColor(_:)
+    /// @brief      Load an RGB profile color into the editable HSB state
+    /// @details    Uses the model conversion to update hue, saturation, and brightness together
+    ///
+    /// @param[in]  color RGB color to display and edit
+    ///
+    /// @return     (Void) updates the three draft components
+    ///
     private func setColor(_ color: ProfileColor) {
         let components = color.hueSaturationBrightness
         hue = components.hue
@@ -1039,6 +1359,14 @@ private struct ProfileColorMapPicker: View {
         brightness = components.brightness
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.hexEditorLink
+    /// @brief      Build the link to direct RGB color editing
+    /// @details    Shows the current color and opens ProfileRGBColorEditor for hexadecimal input
+    ///
+    /// @return     (some View) navigation link for entering RGB values
+    ///
     private var hexEditorLink: some View {
         NavigationLink {
             ProfileRGBColorEditor(color: selectedColor) { updatedColor in
@@ -1074,6 +1402,17 @@ private struct ProfileColorMapPicker: View {
         .buttonStyle(.plain)
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapPicker.body
+    /// @brief      Build the interactive profile color picker
+    /// @details    Combines RGB editing, the hue/saturation surface, presets, and brightness control
+    ///
+    /// @return     (some View) color picker with Reset, Default, Save, and Cancel actions
+    ///
+    /// @pre        The parent selection and color presets are initialized
+    /// @post       The parent value changes only when Save is selected
+    ///
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             hexEditorLink
@@ -1148,14 +1487,31 @@ private struct ProfileColorMapPicker: View {
 }
 
 
+///
+/// Edits the red, green, and blue channels of a profile color
+///
+/// @section    Purpose
+///     Offer direct RGB channel controls as an alternative to the color map
+///
 private struct ProfileRGBColorEditor: View {
 
-    let onSave: (ProfileColor) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var red: Double
-    @State private var green: Double
-    @State private var blue: Double
+    let onSave: (ProfileColor) -> Void /* Callback receiving the edited profile color */
+    @Environment(\.dismiss) private var dismiss /* Editor dismissal action */
+    @State private var red: Double /* Draft red channel in the 0...255 range */
+    @State private var green: Double /* Draft green channel in the 0...255 range */
+    @State private var blue: Double /* Draft blue channel in the 0...255 range */
 
+
+    ///
+    /// @fcn        ProfileRGBColorEditor.init(color:onSave:)
+    /// @brief      Initialize RGB controls from an existing profile color
+    /// @details    Converts normalized color components to 8-bit channel values
+    ///
+    /// @param[in]  color  Starting color value
+    /// @param[in]  onSave Callback receiving the edited color
+    ///
+    /// @return     (ProfileRGBColorEditor) initialized RGB editor
+    ///
     init(color: ProfileColor, onSave: @escaping (ProfileColor) -> Void) {
         self.onSave = onSave
         _red = State(initialValue: color.red * 255)
@@ -1163,15 +1519,42 @@ private struct ProfileRGBColorEditor: View {
         _blue = State(initialValue: color.blue * 255)
     }
 
+
+    ///
+    /// @fcn        ProfileRGBColorEditor.editedColor
+    /// @brief      Convert the channel drafts to a profile color
+    /// @details    Normalizes each 8-bit channel to the model's RGB component range
+    ///
+    /// @return     (ProfileColor) color represented by the current channel values
+    ///
     private var editedColor: ProfileColor {
         ProfileColor(red: red / 255, green: green / 255, blue: blue / 255)
     }
 
+
+    ///
+    /// @fcn        ProfileRGBColorEditor.saveColor()
+    /// @brief      Return the edited RGB color to the parent picker
+    /// @details    Invokes the save callback and dismisses the editor
+    ///
+    /// @return     (Void) sends the edited color to onSave
+    ///
     private func saveColor() {
         onSave(editedColor)
         dismiss()
     }
 
+
+    ///
+    /// @fcn        ProfileRGBColorEditor.body
+    /// @brief      Build the direct RGB editing interface
+    /// @details    Presents one channel control for each component of the profile color
+    ///
+    /// @return     (some View) RGB editor with Cancel and Save actions
+    ///
+    /// @pre        The editor has initial channel values and a save callback
+    /// @post       The parent color is updated only when Save is selected
+    ///
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 12) {
@@ -1210,24 +1593,59 @@ private struct ProfileRGBColorEditor: View {
 }
 
 
+///
+/// Edits one 8-bit RGB channel with slider and hexadecimal input
+///
+/// @section    Purpose
+///     Keep slider and two-digit hexadecimal entry synchronized for a single color channel
+///
 private struct RGBChannelControl: View {
 
-    let title: String
-    @Binding var value: Double
+    let title: String /* Channel label */
+    @Binding var value: Double /* Channel intensity from 0 through 255 */
 
-    @State private var hexValue: String
-    @FocusState private var isEditingHex: Bool
+    @State private var hexValue: String /* Editable two-character hexadecimal value */
+    @FocusState private var isEditingHex: Bool /* Whether the text field owns focus */
 
+
+    ///
+    /// @fcn        RGBChannelControl.init(title:value:)
+    /// @brief      Initialize a channel editor with its label and value binding
+    /// @details    Formats the current numeric channel value as two hexadecimal digits
+    ///
+    /// @param[in]  title Channel label
+    /// @param[in]  value Binding to the numeric channel value
+    ///
+    /// @return     (RGBChannelControl) initialized channel editor
+    ///
     init(title: String, value: Binding<Double>) {
         self.title = title
         _value = value
         _hexValue = State(initialValue: Self.hexString(value.wrappedValue))
     }
 
+
+    ///
+    /// @fcn        RGBChannelControl.hexString(_:)
+    /// @brief      Format a channel value as two uppercase hexadecimal digits
+    /// @details    Rounds the numeric channel value to the nearest integer before formatting
+    ///
+    /// @param[in]  value Channel intensity to format
+    ///
+    /// @return     (String) two-digit hexadecimal channel text
+    ///
     private static func hexString(_ value: Double) -> String {
         String(format: "%02X", Int(value.rounded()))
     }
 
+
+    ///
+    /// @fcn        RGBChannelControl.body
+    /// @brief      Build the slider and hexadecimal field for one channel
+    /// @details    Synchronizes typed hexadecimal input with the bound numeric channel value
+    ///
+    /// @return     (some View) labeled RGB channel control
+    ///
     var body: some View {
         HStack(spacing: 10) {
             Text(title)
@@ -1266,12 +1684,27 @@ private struct RGBChannelControl: View {
 }
 
 
+///
+/// Provides an interactive two-dimensional hue and saturation selector
+///
+/// @section    Purpose
+///     Update bound HSB components by direct manipulation and expose adjustable accessibility
+///     actions
+///
 private struct ProfileColorMapSurface: View {
 
-    @Binding var hue: Double
-    @Binding var saturation: Double
-    let brightness: Double
+    @Binding var hue: Double /* Selected horizontal hue coordinate */
+    @Binding var saturation: Double /* Selected vertical saturation coordinate */
+    let brightness: Double /* Fixed brightness used for the surface preview */
 
+
+    ///
+    /// @fcn        ProfileColorMapSurface.spectrum
+    /// @brief      Return the hues used for the color-map gradient
+    /// @details    Defines evenly spaced full-saturation colors around the hue circle
+    ///
+    /// @return     ([Color]) gradient stops spanning red through the hue spectrum
+    ///
     private var spectrum: [Color] {
         [
             Color(hue: 0, saturation: 1, brightness: 1, opacity: 1),
@@ -1284,6 +1717,18 @@ private struct ProfileColorMapSurface: View {
         ]
     }
 
+
+    ///
+    /// @fcn        ProfileColorMapSurface.body
+    /// @brief      Build the hue and saturation selection surface
+    /// @details    Layers the hue spectrum, saturation and brightness treatments, and a marker
+    ///             for the current color
+    ///
+    /// @return     (some View) accessible color map with direct manipulation
+    ///
+    /// @pre        Hue, saturation, and brightness describe the current draft color
+    /// @post       User input updates only the bound hue and saturation values
+    ///
     var body: some View {
         GeometryReader { geometry in
             let width = max(geometry.size.width, 1)

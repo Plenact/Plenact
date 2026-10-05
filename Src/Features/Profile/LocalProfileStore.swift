@@ -13,7 +13,8 @@ import Foundation
 /// Loads, saves, and removes the local profile on the current installation
 ///
 /// @section    Purpose
-///     Isolate profile persistence behind a replaceable boundary for possible future sessions
+///     Isolate local profile persistence from authentication, credentials, network access, and
+///     the app's Board data
 ///
 /// @note   Removing the profile never removes Board, label, or attachment data
 ///
@@ -40,6 +41,7 @@ enum LocalProfileStore {
         return try? JSONDecoder().decode(LocalProfile.self, from: data)
     }
 
+
     ///
     /// @fcn        LocalProfileStore.save(_:to:)
     /// @brief      Save the complete local profile snapshot
@@ -60,6 +62,7 @@ enum LocalProfileStore {
         defaults.set(data, forKey: storageKey)
     }
 
+
     ///
     /// @fcn        LocalProfileStore.remove(from:)
     /// @brief      Remove only the local profile snapshot
@@ -76,9 +79,26 @@ enum LocalProfileStore {
     }
 }
 
+
+///
+/// Stores avatar photo bytes separately from the Codable local profile
+///
+/// @section    Purpose
+///     Keep image data in the app container while the profile stores only its filename
+///
 enum ProfileAvatarPhotoStore {
 
+    ///
+    /// @fcn        ProfileAvatarPhotoStore.directory()
+    /// @brief      Resolve and create the local avatar-photo directory
+    /// @details    Uses the app's Documents directory and creates the ProfileAvatars subdirectory
+    ///
+    /// @return     (URL) app-local avatar photo directory
+    ///
+    /// @throws     File-system error when the Documents directory cannot be resolved or created
+    ///
     private static func directory() throws -> URL {
+
         let documents = try FileManager.default.url(
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
@@ -87,21 +107,60 @@ enum ProfileAvatarPhotoStore {
         return directory
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarPhotoStore.save(_:)
+    /// @brief      Save avatar photo data in the app's local photo directory
+    /// @details    Writes the data atomically to a unique JPEG-named file
+    ///
+    /// @param[in]  data Avatar photo bytes to persist
+    ///
+    /// @return     (String) unique filename for the saved photo
+    ///
+    /// @throws     File-system error when directory creation or file writing fails
+    ///
     static func save(_ data: Data) throws -> String {
         let fileName = "\(UUID().uuidString).jpg"
         try data.write(to: directory().appendingPathComponent(fileName), options: .atomic)
         return fileName
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarPhotoStore.load(_:)
+    /// @brief      Load a locally stored avatar photo
+    /// @details    Accepts only a single filename component before reading from the avatar directory
+    ///
+    /// @param[in]  fileName Stored avatar filename, when available
+    ///
+    /// @return     (Data?) photo bytes when the file can be read, otherwise nil
+    ///
+    /// @pre        fileName is a filename previously returned by save(_:)
+    /// @post       The stored photo is unchanged
+    ///
     static func load(_ fileName: String?) -> Data? {
         guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
               let directory = try? directory() else { return nil }
         return try? Data(contentsOf: directory.appendingPathComponent(fileName))
     }
 
+
+    ///
+    /// @fcn        ProfileAvatarPhotoStore.remove(_:)
+    /// @brief      Remove a locally stored avatar photo
+    /// @details    Resolves only a single filename component within the avatar directory
+    ///
+    /// @param[in]  fileName Stored avatar filename, when available
+    ///
+    /// @return     (Void) removes the matching file when it can be resolved
+    ///
+    /// @pre        fileName identifies a photo stored by this store
+    /// @post       Other local profile, Board, label, and attachment data is unchanged
+    ///
     static func remove(_ fileName: String?) {
         guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
               let directory = try? directory() else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
     }
 }
+

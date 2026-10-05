@@ -1,7 +1,11 @@
 // -------------------------------------------------------------------------------------------------
 // @file       LocalProfileStoreTests.swift
 // @brief      Local profile persistence tests
-// @details    Verifies profile round trips and removal without using production preferences
+// @details    Exercises local profile round trips, legacy preference/color decoding, avatar
+//             file storage, and synthetic photo cropping. Profile values use isolated preferences;
+//             the avatar-file test creates and removes its own fixture through the photo store
+//
+// @notes      Local identity is not authentication. These tests do not contact a remote service
 //
 // -------------------------------------------------------------------------------------------------
 import XCTest
@@ -33,6 +37,7 @@ final class LocalProfileStoreTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
+
     ///
     /// @fcn        LocalProfileStoreTests.tearDown
     /// @brief      Remove isolated profile-test preferences
@@ -44,6 +49,7 @@ final class LocalProfileStoreTests: XCTestCase {
 
         super.tearDown()
     }
+
 
     ///
     /// @fcn        LocalProfileStoreTests.testProfileRoundTripPreservesPersonalization
@@ -77,7 +83,13 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertEqual(LocalProfileStore.load(from: defaults), profile)
     }
 
-    /// Verify profiles saved before navigation-label preference was added keep labels visible
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testOlderPreferencesDefaultToShowingNavigationLabels
+    /// @brief      Preserve navigation captions for older preference snapshots
+    /// @details    Decodes JSON without the caption field and checks the compatibility default
+    /// @throws     JSON decoding errors
+    ///
     func testOlderPreferencesDefaultToShowingNavigationLabels() throws {
 
         let legacyPreferencesJSON = Data(
@@ -88,6 +100,13 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertTrue(preferences.showsNavigationLabels)
     }
 
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testOlderProfilesDefaultToInitialsAvatar
+    /// @brief      Supply avatar defaults for profiles saved before avatar options existed
+    /// @details    Checks initials, white foreground, and the absence of a photo reference
+    /// @throws     JSON decoding errors
+    ///
     func testOlderProfilesDefaultToInitialsAvatar() throws {
 
         let legacyProfileJSON = Data(
@@ -100,6 +119,13 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertNil(profile.avatarPhotoFileName)
     }
 
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testLegacyAvatarColorTokensStillDecode
+    /// @brief      Retain named-color compatibility in saved profiles
+    /// @details    Verifies legacy teal/coral tokens and the leaf icon decode together
+    /// @throws     JSON decoding errors
+    ///
     func testLegacyAvatarColorTokensStillDecode() throws {
 
         let legacyProfileJSON = Data(
@@ -111,6 +137,7 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertEqual(profile.avatarIcon, .leaf)
         XCTAssertEqual(profile.avatarForegroundColor, .coral)
     }
+
 
     ///
     /// @fcn        LocalProfileStoreTests.testRemoveClearsOnlyProfileValue
@@ -129,6 +156,7 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertNil(LocalProfileStore.load(from: defaults))
     }
 
+
     ///
     /// @fcn        LocalProfileStoreTests.testInitialsUseTwoNameComponents
     /// @brief      Build compact avatar text from a local display name
@@ -141,6 +169,13 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertEqual(LocalProfile(displayName: "").initials, "P")
     }
 
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testAvatarPhotoFileRoundTripAndRemoval
+    /// @brief      Verify avatar bytes can be saved, loaded, and removed
+    /// @details    Uses synthetic bytes, rejects a traversal filename, and cleans up its own file
+    /// @throws     Avatar file creation errors
+    ///
     func testAvatarPhotoFileRoundTripAndRemoval() throws {
         let data = Data([1, 2, 3, 4])
         let fileName = try ProfileAvatarPhotoStore.save(data)
@@ -152,6 +187,12 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertNil(ProfileAvatarPhotoStore.load(fileName))
     }
 
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testAvatarCropConstrainsPanToImageEdges
+    /// @brief      Bound photo panning at different aspect ratios and zoom levels
+    /// @details    Compares clamped offsets against exact horizontal and vertical limits
+    ///
     func testAvatarCropConstrainsPanToImageEdges() {
         XCTAssertEqual(
             AvatarPhotoCrop.constrainedOffset(
@@ -169,6 +210,13 @@ final class LocalProfileStoreTests: XCTestCase {
         )
     }
 
+
+    ///
+    /// @fcn        LocalProfileStoreTests.testAvatarCropExportsSelectedRegionAsBoundedJPEG
+    /// @brief      Verify crop dimensions and the selected region of a synthetic image
+    /// @details    Renders red/blue halves, exports the offset crop, and measures its average color
+    /// @throws     XCTest unwrap failures if image export or decoding fails
+    ///
     func testAvatarCropExportsSelectedRegionAsBoundedJPEG() throws {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -200,3 +248,4 @@ final class LocalProfileStoreTests: XCTestCase {
         XCTAssertNil(AvatarPhotoCrop.image(from: Data([1, 2, 3])))
     }
 }
+

@@ -1,7 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // @file       PlenactBoardDocument.swift
 // @brief      Versioned Board document exchanged with the shared demo API
-// @details    Bundles current Plenact lists and labels for atomic snapshot synchronization
+// @details    Defines the Board shape used by the explicit shared-demo service flow; local Board
+//             state is not implicitly uploaded
 //
 // -------------------------------------------------------------------------------------------------
 import Foundation
@@ -26,6 +27,12 @@ struct PlenactBoardDocument: Codable, Equatable {
     var lists:         [KanbanList] /* Ordered lists and cards   */
     var labelLibrary:  LabelLibrary /* Reusable label catalog   */
 
+    ///
+    /// Maps Board document properties to the shared-demo JSON contract
+    ///
+    /// @section    Purpose
+    ///     Keep schema, board key, and label library field names explicit
+    ///
     enum CodingKeys: String, CodingKey {
         case schemaVersion = "schema_version"
         case boardKey      = "board_key"
@@ -44,6 +51,8 @@ struct PlenactBoardDocument: Codable, Equatable {
     ///
     /// @return     (PlenactBoardDocument) current version-one Board payload
     ///
+    /// @post       The document stores the current schema version and supplied snapshot values
+    ///
     init(boardKey: String = "shared-demo", lists: [KanbanList], labelLibrary: LabelLibrary) {
 
         self.schemaVersion = Self.currentSchemaVersion
@@ -59,6 +68,9 @@ struct PlenactBoardDocument: Codable, Equatable {
     ///             targets remain allowed so the UI can display an unavailable reference
     ///
     /// @return     (String?) validation message or nil when the document is structurally valid
+    ///
+    /// @pre        lists, cards, and assignments contain the document's current snapshot data
+    /// @post       The document remains unchanged
     ///
     var validationMessage: String? {   /* Snapshot validation result */
 
@@ -145,6 +157,12 @@ struct PlenactBoardSnapshotResponse: Decodable {
     let storedByUserID: String             /* Verified storage actor       */
     let storageOrigin: String              /* Controlled write origin      */
 
+    ///
+    /// Maps snapshot provenance fields to the server response names
+    ///
+    /// @section    Purpose
+    ///     Decode revision and storage metadata independently of the Board document
+    ///
     enum CodingKeys: String, CodingKey {
         case revision
         case document

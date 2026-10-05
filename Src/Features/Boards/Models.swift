@@ -4,10 +4,10 @@
 // @details    Defines cards, lists, derived display values, and weekday starter content
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
+// @last rev   10/04/26
 //
 // @section    Opens
-//     Consider more board\ specific naming to file
-//     Modularize into shorter, multiple files! 
+//     Consider separating persistence, collection, and sample-data models into focused files
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -61,6 +61,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
         self.displayName = displayName
     }
 
+
     ///
     /// @fcn        CardAssignee.manual(_:)
     /// @brief      Create a free-text assignment
@@ -73,6 +74,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     static func manual(_ displayName: String) -> CardAssignee {
         CardAssignee(kind: .manual, displayName: displayName)
     }
+
 
     ///
     /// @fcn        CardAssignee.registered(userID:displayName:)
@@ -87,6 +89,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     static func registered(userID: String, displayName: String) -> CardAssignee {
         CardAssignee(kind: .registeredUser, userID: userID, displayName: displayName)
     }
+
 
     ///
     /// @fcn        CardAssignee.init(stringLiteral:)
@@ -131,12 +134,28 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
-    /// Indicates whether this item should render and behave as a section divider
+    ///
+    /// @fcn        KanbanCard.isSectionDivider
+    /// @brief      Determine whether this card represents a section divider
+    /// @details    Combines the explicit divider flag with recognition of the displayed marker
+    ///
+    /// @return     (Bool) whether the card should render and behave as a divider
+    /// @post       Card state remains unchanged
+    ///
     var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
         isDivider || Self.isDividerTitle(word)
     }
 
-    /// Recognizes the ASCII marker and dash characters substituted by iOS smart punctuation
+    ///
+    /// @fcn        KanbanCard.isDividerTitle(_:)
+    /// @brief      Recognize a divider marker in a card title
+    /// @details    Accepts supported dash characters, including iOS smart-punctuation variants
+    ///
+    /// @param[in]  title  Candidate card title
+    ///
+    /// @return     (Bool) whether the title is a recognized divider marker
+    /// @post       The title and card state remain unchanged
+    ///
     static func isDividerTitle(_ title: String) -> Bool {
 
         let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
@@ -165,12 +184,19 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  isTitleChecked        Whether the card's main title checkbox is selected
     /// @param[in]  startDate             Optional start date for the card
     /// @param[in]  dueDate               Optional due date for the card
+    /// @param[in]  checklists            Checklist groups; nil selects the seeded defaults
+    /// @param[in]  comments              Activity comments associated with the card
+    /// @param[in]  members               Registered and manual card assignments
+    /// @param[in]  labelIDs              Stable identifiers of assigned labels
+    /// @param[in]  attachments           Optional photo attachment metadata
+    /// @param[in]  dismissedActivityIDs  Generated activity entries dismissed by the user
     /// @param[in]  descriptionOverride   Optional user-edited description
+    /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
     ///
     /// @return     (KanbanCard) configured card instance
     ///
-    /// @pre        All values should be valid for the board's deterministic sample data
-    /// @post       The card contains the provided identity, title text, and checked state
+    /// @pre        Supplied values are valid for the caller's Board state
+    /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
     init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
 
@@ -194,6 +220,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             KanbanChecklist(title: "Routine", items: ["Home",                        "Gym",                      "Work"])
         ]
     }
+
 
     ///
     /// @fcn        KanbanCard.init(from:)
@@ -238,6 +265,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         )
     }
 
+
     ///
     /// Identifies persisted card fields for legacy and typed assignment decoding
     ///
@@ -262,7 +290,16 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case subtitleOverride
     }
 
+
     /// Human-readable label for the card's start date
+    ///
+    /// @fcn        KanbanCard.startDateLabel
+    /// @brief      Provide the start-date badge text
+    /// @details    Formats the optional start date for compact Board display
+    ///
+    /// @return     (String) formatted date, or "Today" when no start date is set
+    /// @post       Card dates are unchanged
+    ///
     var startDateLabel: String { /* Start-date badge text or default */
 
         guard let startDate else { /* No explicit start date */
@@ -273,6 +310,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     }
 
     /// Human-readable label for the card's due date
+    ///
+    /// @fcn        KanbanCard.dueDateLabel
+    /// @brief      Provide the due-date badge text
+    /// @details    Formats the optional due date for compact Board display
+    ///
+    /// @return     (String) formatted date, or "Tomorrow" when no due date is set
+    /// @post       Card dates are unchanged
+    ///
     var dueDateLabel: String { /* Due-date badge text or default */
 
         guard let dueDate else { /* No explicit due date */
@@ -293,7 +338,16 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return formatter
     }()
 
+
     /// Short supporting copy shown beneath the card title
+    ///
+    /// @fcn        KanbanCard.subtitle
+    /// @brief      Resolve the card's supporting Board text
+    /// @details    Uses the edited subtitle when present and otherwise derives sample text
+    ///
+    /// @return     (String) supporting text shown beneath the card title
+    /// @post       Card state is unchanged
+    ///
     var subtitle: String { /* Supporting card text or user override */
         if let subtitleOverride { /* Explicitly edited subtitle */
             return subtitleOverride
@@ -303,26 +357,66 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     }
 
     /// Checklist labels used by the card detail presentation
+    ///
+    /// @fcn        KanbanCard.checklistItems
+    /// @brief      Return action titles from the first checklist
+    /// @details    Provides the compact card-summary checklist surface
+    ///
+    /// @return     ([String]) action titles, or an empty array when no checklist exists
+    /// @post       Checklist state is unchanged
+    ///
     var checklistItems: [String] { /* Titles from the first checklist */
         checklists.first?.items.map(\.title) ?? []
     }
 
     /// Number of checklist items shown as complete for this sample card
+    ///
+    /// @fcn        KanbanCard.completedChecklistItems
+    /// @brief      Count completed actions in the first checklist
+    /// @details    Derives the compact card progress count from its checklist records
+    ///
+    /// @return     (Int) completed action count, or zero when no checklist exists
+    /// @post       Checklist state is unchanged
+    ///
     var completedChecklistItems: Int { /* Completion count for the first checklist */
         checklists.first?.completed ?? 0
     }
 
     /// Number of sample comments shown on the board card
+    ///
+    /// @fcn        KanbanCard.commentCount
+    /// @brief      Count the card's comments
+    /// @details    Reports the number of user-authored comment records
+    ///
+    /// @return     (Int) number of comments associated with the card
+    /// @post       Comment state is unchanged
+    ///
     var commentCount: Int { /* Number of activity comments */
         comments.count
     }
 
     /// Indicates whether the sample card displays a due-date badge
+    ///
+    /// @fcn        KanbanCard.hasDueDate
+    /// @brief      Determine whether the card has a due date
+    /// @details    Exposes due-date presence for Board badge presentation
+    ///
+    /// @return     (Bool) whether a due date is set
+    /// @post       Card state is unchanged
+    ///
     var hasDueDate: Bool { /* Sample badge visibility for the card */
         id % 3 != 1
     }
 
     /// Humorous context paragraph shown in the card detail view
+    ///
+    /// @fcn        KanbanCard.funParagraph
+    /// @brief      Resolve the card's descriptive text
+    /// @details    Prefers the user's description override to generated sample context
+    ///
+    /// @return     (String) description shown for the card
+    /// @post       Card state is unchanged
+    ///
     var funParagraph: String { /* User description or generated sample context */
 
         if let descriptionOverride { /* User-authored description */
@@ -383,11 +477,32 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     let id:        Int              /* Unique identifier for the kanban list */
     let title:     String           /* Title of the kanban list              */
     var cards:     [KanbanCard]     /* Cards contained within the list       */
-    var archivedCards: [KanbanCard]
-    var isArchived: Bool = false
+    var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
+    var isArchived: Bool = false    /* Whether this list is in the board archive */
 
+    ///
+    /// @fcn        KanbanList.allCards
+    /// @brief      Return active and archived cards together
+    /// @details    Preserves active cards before archived cards in the combined snapshot
+    ///
+    /// @return     ([KanbanCard]) all cards retained by the list
+    /// @post       The list's active and archived collections are unchanged
+    ///
     var allCards: [KanbanCard] { cards + archivedCards }
 
+    ///
+    /// @fcn        KanbanList.init(id:title:cards:archivedCards:)
+    /// @brief      Initialize a board list and its retained cards
+    /// @details    Creates the list with active cards and an optional archived-card snapshot
+    ///
+    /// @param[in]  id            Stable list identity
+    /// @param[in]  title         Displayed list title
+    /// @param[in]  cards         Active cards in the list
+    /// @param[in]  archivedCards Cards retained in this list's archive
+    ///
+    /// @return     (KanbanList) configured board list
+    /// @post       The list is active; archive status defaults to false
+    ///
     init(id: Int, title: String, cards: [KanbanCard], archivedCards: [KanbanCard] = []) {
         self.id = id
         self.title = title
@@ -395,20 +510,53 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         self.archivedCards = archivedCards
     }
 
+
+    ///
+    /// Identifies persisted list fields used by the custom Codable implementation
+    ///
+    /// @section    Purpose
+    ///     Preserve backward-compatible decoding when archived fields are absent
+    ///
     private enum CodingKeys: String, CodingKey {
         case id, title, cards, archivedCards, isArchived
     }
 
+
+    ///
+    /// @fcn        KanbanList.init(from:)
+    /// @brief      Decode a current or older saved board list
+    /// @details    Missing archive fields are initialized as empty and inactive
+    ///
+    /// @param[in]  decoder  Decoder containing the list snapshot
+    ///
+    /// @return     (KanbanList) decoded list with available archive data
+    ///
+    /// @throws     DecodingError when required list fields cannot be decoded
+    ///
     init(from decoder: Decoder) throws {
+
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(Int.self, forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
-        cards = try container.decode([KanbanCard].self, forKey: .cards)
+        id            = try container.decode(Int.self, forKey: .id)
+        title         = try container.decode(String.self, forKey: .title)
+        cards         = try container.decode([KanbanCard].self, forKey: .cards)
         archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
-        isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+        isArchived    = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
     }
 
+
+    ///
+    /// @fcn        KanbanList.encode(to:)
+    /// @brief      Encode the list and any non-default archive state
+    /// @details    Omits empty archived cards and a false archive flag from the encoded snapshot
+    ///
+    /// @param[in]  encoder  Encoder receiving the list snapshot
+    ///
+    /// @return     (Void) writes the list fields to the encoder
+    ///
+    /// @throws     EncodingError when list values cannot be encoded
+    ///
     func encode(to encoder: Encoder) throws {
+
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
@@ -421,23 +569,61 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         }
     }
 
+
+    ///
+    /// @fcn        KanbanList.archiveCompletedCards
+    /// @brief      Move checked non-divider cards into the list archive
+    /// @details    Leaves section dividers and unchecked cards in the active collection
+    ///
+    /// @return     (Void) updates this list's active and archived card arrays
+    /// @post       Every checked non-divider card is retained in archivedCards
+    ///
     mutating func archiveCompletedCards() {
         archivedCards.append(contentsOf: cards.filter { !$0.isSectionDivider && $0.isTitleChecked })
         cards.removeAll { !$0.isSectionDivider && $0.isTitleChecked }
     }
 
+
+    ///
+    /// @fcn        KanbanList.archiveCard(id:)
+    /// @brief      Archive one active card by stable identity
+    /// @details    Section dividers are not eligible for card archival
+    ///
+    /// @param[in]  cardID  Identity of the active card to archive
+    ///
+    /// @return     (Void) moves the matching card when present
+    /// @post       Missing IDs and divider IDs leave the list unchanged
+    ///
     mutating func archiveCard(id cardID: Int) {
         guard let index = cards.firstIndex(where: { $0.id == cardID && !$0.isSectionDivider }) else { return }
         archivedCards.append(cards.remove(at: index))
     }
 
+
+    ///
+    /// @fcn        KanbanList.restoreArchivedCard(id:)
+    /// @brief      Restore one archived card to the active list
+    /// @details    Appends the matching archived card to the active collection
+    ///
+    /// @param[in]  cardID  Identity of the archived card to restore
+    ///
+    /// @return     (Void) moves the matching card when present
+    /// @post       A missing ID leaves the list unchanged
+    ///
     mutating func restoreArchivedCard(id cardID: Int) {
         guard let index = archivedCards.firstIndex(where: { $0.id == cardID }) else { return }
         cards.append(archivedCards.remove(at: index))
     }
 
 
-    /// Supporting copy shown beneath the list title.
+    ///
+    /// @fcn        KanbanList.subtitle
+    /// @brief      Provide supporting copy for the list header
+    /// @details    Selects a deterministic subtitle using the list identity
+    ///
+    /// @return     (String) supporting text shown beneath the list title
+    /// @post       No list state is modified
+    ///
     var subtitle: String { /* Supporting text for the list header */
         let subtitles = ["Ideas taking shape", "Ready for a little momentum", "Currently in progress", "Nearly across the finish line", "Done, or at least confidently presented"] /* List subtitle options */
 
@@ -552,6 +738,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
         }
     }
 
+
     ///
     /// @fcn        KanbanChecklistActionContent.encode(to:)
     /// @brief      Encode one explicit checklist action-content value
@@ -619,6 +806,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         self.content     = content
     }
 
+
     ///
     /// @fcn        KanbanChecklistItem.init(stringLiteral:)
     /// @brief      Create a standard action from a string literal
@@ -631,6 +819,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     init(stringLiteral value: String) {
         self.init(title: value)
     }
+
 
     ///
     /// @fcn        KanbanChecklistItem.init(from:)
@@ -653,6 +842,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         content     = try container.decodeIfPresent(KanbanChecklistActionContent.self, forKey: .content) ?? .standard
     }
 
+
     ///
     /// @fcn        KanbanChecklistItem.encode(to:)
     /// @brief      Encode stable item state and its explicit action content
@@ -673,6 +863,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         try container.encode(isCompleted, forKey: .isCompleted)
         try container.encode(content,     forKey: .content)
     }
+
 
     ///
     /// Identifies persisted checklist-item fields
@@ -765,6 +956,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
         self.items = normalizedItems
     }
 
+
     ///
     /// @fcn        KanbanChecklist.init(from:)
     /// @brief      Decode current checklist items or migrate revision 0 string items
@@ -808,6 +1000,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
         self.init(id: id, title: title, items: migratedItems)
     }
 
+
     ///
     /// @fcn        KanbanChecklist.encode(to:)
     /// @brief      Encode the stable checklist-item representation
@@ -828,6 +1021,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
         try container.encode(items, forKey: .items)
     }
 
+
     ///
     /// Identifies persisted checklist fields across current and revision 0 snapshots
     ///
@@ -840,6 +1034,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
         case items                  /* Current or legacy actions */
         case completedItemIndices   /* Revision 0 completion    */
     }
+
 
     ///
     /// @fcn        KanbanChecklist.migratedItemID(checklistID:itemIndex:)
@@ -871,19 +1066,31 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
 
 // -------------------------------------- MARK: - Card Comment ------------------------------- //
 
-/// A comment posted to a kanban card's activity feed
+///
+/// Represents a user-authored entry in a kanban card's activity feed
+///
+/// @section    Purpose
+///     Preserve comment identity, author, content, and creation time as card data
+///
 struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
     let id:        UUID         /* Unique identifier for the comment                 */
     let author:    String       /* Author of the comment                             */
     let body:      String       /* Body text of the comment                          */
     let createdAt: Date         /* Timestamp indicating when the comment was created */
 
-    /// Create a card comment with a stable identity and timestamp
+    ///
+    /// @fcn        KanbanComment.init(id:author:body:createdAt:)
+    /// @brief      Initialize a card activity comment
+    /// @details    Uses the supplied content and defaults the identity and timestamp when omitted
+    ///
     ///
     /// @param[in]  id        Comment identity
     /// @param[in]  author    Display name of the comment author
     /// @param[in]  body      Comment text
     /// @param[in]  createdAt Comment creation time
+    ///
+    /// @return     (KanbanComment) configured activity entry
+    /// @post       The comment retains the supplied author and text
     ///
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now) {
         self.id = id
@@ -894,16 +1101,51 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
 }
 
 
+///
+/// Provides list-ordering and drag-edge calculations for the Board
+///
+/// @section    Purpose
+///     Keep list reorder operations independent from the view gesture implementation
+///
 enum BoardListReordering {
+
+    ///
+    /// @fcn        BoardListReordering.move(_:to:in:)
+    /// @brief      Move a list to a destination index
+    /// @details    Removes the identified list and inserts it at the requested position
+    ///
+    /// @param[in]  listID        Identity of the list to move
+    /// @param[in]  destination   Destination index in the list array
+    /// @param[in,out] lists      Mutable ordered list collection
+    ///
+    /// @return     (Bool) whether the requested move was performed
+    /// @post       Invalid identities, indices, or same-position moves leave lists unchanged
+    ///
     @discardableResult
     static func move(_ listID: Int, to destination: Int, in lists: inout [KanbanList]) -> Bool {
+
         guard let source = lists.firstIndex(where: { $0.id == listID }),
               lists.indices.contains(destination), source != destination else { return false }
+
         let list = lists.remove(at: source)
+
         lists.insert(list, at: destination)
+
         return true
     }
 
+
+    ///
+    /// @fcn        BoardListReordering.edgeDirection(at:viewportWidth:)
+    /// @brief      Resolve the horizontal edge direction for a drag location
+    /// @details    Returns a direction only when the location falls inside an edge activation zone
+    ///
+    /// @param[in]  x              Horizontal drag location
+    /// @param[in]  viewportWidth  Width of the visible board viewport
+    ///
+    /// @return     (Int) -1 for the leading edge, 1 for the trailing edge, or 0 otherwise
+    /// @post       No list or drag state is modified
+    ///
     static func edgeDirection(at x: CGFloat, viewportWidth: CGFloat) -> Int {
         guard x.isFinite, viewportWidth.isFinite, viewportWidth > 0 else { return 0 }
         let edgeWidth = min(64, viewportWidth * 0.18)
@@ -913,21 +1155,25 @@ enum BoardListReordering {
     }
 }
 
+
 ///
-/// Persists the active board as a Codable snapshot in local user defaults
+/// Identifies whether a saved personal collection is a single list or a board
 ///
 /// @section    Purpose
-///     Restore card and list state across app launches without requiring a remote service
-///
-/// @details    Decodes the saved board when available and falls back to deterministic sample data on first launch or invalid data
-///
-/// @note       The storage key is versioned so future persistence format changes can be migrated deliberately
+///     Preserve collection behavior and presentation independently of its title
 ///
 enum PersonalCollectionKind: String, CaseIterable, Codable {
-    case list = "List"
+    case list  = "List"
     case board = "Board"
 }
 
+
+///
+/// Provides the supported symbols for saved personal collections
+///
+/// @section    Purpose
+///     Keep collection icon choices explicit and persistable
+///
 enum PersonalCollectionIcon: String, CaseIterable, Codable {
     case notes = "note.text"
     case tasks = "checklist"
@@ -939,18 +1185,48 @@ enum PersonalCollectionIcon: String, CaseIterable, Codable {
     case upcoming = "calendar"
 }
 
-struct PersonalCollection: Identifiable, Hashable, Codable {
-    let id: UUID
-    var title: String
-    let kind: PersonalCollectionKind
-    var icon: PersonalCollectionIcon
-    var color: ProfileColor
-    var lists: [KanbanList]
-    var savedCardIDs: Set<Int>
-    var isArchived: Bool? = nil
 
+///
+/// Represents a user-owned list or multi-list board
+///
+/// @section    Purpose
+///     Keep collection identity, presentation, board content, and bookmarks together
+///
+struct PersonalCollection: Identifiable, Hashable, Codable {
+    let id: UUID                         /* Stable collection identity */
+    var title: String                    /* User-facing collection title */
+    let kind: PersonalCollectionKind     /* List or multi-column board */
+    var icon: PersonalCollectionIcon     /* Symbol shown for the collection */
+    var color: ProfileColor              /* Collection accent color */
+    var lists: [KanbanList]              /* Lists and cards owned by the collection */
+    var savedCardIDs: Set<Int>           /* Bookmarked cards retained by the collection */
+    var isArchived: Bool? = nil          /* Optional archive state for older saved data */
+
+    ///
+    /// @fcn        PersonalCollection.isActive
+    /// @brief      Determine whether the collection is active
+    /// @details    Treats a missing archive flag in older snapshots as active
+    ///
+    /// @return     (Bool) whether the collection is not archived
+    /// @post       Collection state is unchanged
+    ///
     var isActive: Bool { isArchived != true }
 
+    ///
+    /// @fcn        PersonalCollection.init(id:title:kind:icon:color:)
+    /// @brief      Create a personal collection with its initial list structure
+    /// @details    Single-list collections receive one list; boards receive Ideas, In progress,
+    ///             and Done lists
+    ///
+    /// @param[in]  id     Stable collection identity
+    /// @param[in]  title  User-facing collection title
+    /// @param[in]  kind   Whether the collection is a list or board
+    /// @param[in]  icon   Symbol used for the collection
+    /// @param[in]  color  Accent color used for the collection
+    ///
+    /// @return     (PersonalCollection) initialized collection with empty lists and bookmarks
+    /// @post       No collection persistence or board edits are performed
+    ///
     init(
         id: UUID = UUID(), title: String, kind: PersonalCollectionKind,
         icon: PersonalCollectionIcon = .notes, color: ProfileColor = .teal
@@ -965,11 +1241,32 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         savedCardIDs = []
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.cardCount
+    /// @brief      Count active non-divider cards owned by the collection
+    /// @details    Excludes archived lists and section-divider rows
+    ///
+    /// @return     (Int) number of active cards across the collection
+    /// @post       Collection lists and cards are unchanged
+    ///
     var cardCount: Int {
         lists.filter { !$0.isArchived }.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.rename(to:)
+    /// @brief      Rename a collection and synchronize a single-list title
+    /// @details    For list collections, updates the title on both active and archived cards
+    ///
+    /// @param[in]  name  New collection name
+    ///
+    /// @return     (Void) updates the collection title and, for lists, its card context
+    /// @post       Board collections retain their internal list titles
+    ///
     mutating func rename(to name: String) {
+
         title = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard kind == .list, let column = lists.first else { return }
         var cards = column.cards
@@ -980,6 +1277,17 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         lists[0].isArchived = column.isArchived
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.matches(_:)
+    /// @brief      Search the collection title, active lists, and active cards
+    /// @details    Uses localized-standard matching and ignores section dividers
+    ///
+    /// @param[in]  query  Search text entered by the user
+    ///
+    /// @return     (Bool) whether the query is empty or matches searchable collection content
+    /// @post       Collection state is unchanged
+    ///
     func matches(_ query: String) -> Bool {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return term.isEmpty || title.localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
@@ -990,12 +1298,34 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         }
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.restore(existingTitles:)
+    /// @brief      Restore the collection and resolve a conflicting title
+    /// @details    Adds a restored suffix for the Week Board, then selects a unique title
+    ///
+    /// @param[in]  existingTitles  Titles that must remain unique
+    ///
+    /// @return     (Void) updates the title if needed and clears archive state
+    /// @post       The collection becomes active
+    ///
     mutating func restore(existingTitles: [String]) {
         let base = title == "Week Board" ? "Week Board (Restored)" : title
         title = Self.uniqueTitle(base, existingTitles: existingTitles)
         isArchived = false
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.archivedWeekBoard(lists:savedCardIDs:)
+    /// @brief      Create an archived collection from the Week Board snapshot
+    /// @details    Retains supplied lists and bookmarks in a board collection marked archived
+    ///
+    /// @param[in]  lists         Week Board lists to retain
+    /// @param[in]  savedCardIDs  Bookmarks associated with the Week Board
+    ///
+    /// @return     (PersonalCollection) archived Week Board collection
+    ///
     static func archivedWeekBoard(lists: [KanbanList], savedCardIDs: Set<Int>) -> PersonalCollection {
         var board = PersonalCollection(title: "Week Board", kind: .board, icon: .project)
         board.lists = lists
@@ -1004,6 +1334,18 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         return board
     }
 
+
+    ///
+    /// @fcn        PersonalCollection.uniqueTitle(_:existingTitles:)
+    /// @brief      Select a title not already in use
+    /// @details    Compares titles without case sensitivity and appends a numbered suffix on collision
+    ///
+    /// @param[in]  base           Preferred title
+    /// @param[in]  existingTitles Titles that must remain unique
+    ///
+    /// @return     (String) unique title based on base
+    /// @post       Input title values are unchanged
+    ///
     static func uniqueTitle(_ base: String, existingTitles: [String]) -> String {
         let titles = Set(existingTitles.map { $0.lowercased() })
         var candidate = base
@@ -1016,23 +1358,81 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     }
 }
 
+
+///
+/// Loads and saves personal collection snapshots in user defaults
+///
+/// @section    Purpose
+///     Persist user-owned collection metadata and board content locally
+///
 enum PersonalCollectionStore {
+    /// Versioned storage key for saved personal collections.
     private static let key = "Plenact.PersonalCollections.v1"
 
+    ///
+    /// @fcn        PersonalCollectionStore.load(from:)
+    /// @brief      Load saved personal collections
+    /// @details    Returns an empty collection when no value exists or decoding fails
+    ///
+    /// @param[in]  defaults  Defaults store to read
+    ///
+    /// @return     ([PersonalCollection]) decoded collections or an empty array
+    /// @post       Stored values are unchanged
+    ///
     static func load(from defaults: UserDefaults = .standard) -> [PersonalCollection] {
         guard let data = defaults.data(forKey: key) else { return [] }
         return (try? JSONDecoder().decode([PersonalCollection].self, from: data)) ?? []
     }
 
+
+    ///
+    /// @fcn        PersonalCollectionStore.save(_:to:)
+    /// @brief      Save personal collections when encoding succeeds
+    /// @details    Encodes the complete collection snapshot and writes it to the versioned key
+    ///
+    /// @param[in]  collections  Collections to persist
+    /// @param[in]  defaults     Defaults store to update
+    ///
+    /// @return     (Void) writes encoded data when encoding succeeds
+    /// @post       Encoding failure leaves the stored value unchanged
+    ///
     static func save(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(collections) else { return }
         defaults.set(data, forKey: key)
     }
 
+
+    ///
+    /// @fcn        PersonalCollectionStore.saveChecked(_:to:)
+    /// @brief      Encode and save personal collections while reporting encoding failures
+    /// @details    Propagates JSON encoding errors to the caller instead of silently skipping the write
+    ///
+    /// @param[in]  collections  Collections to persist
+    /// @param[in]  defaults     Defaults store to update
+    ///
+    /// @return     (Void) writes the encoded collection snapshot
+    ///
+    /// @throws     EncodingError when the collection snapshot cannot be encoded
+    ///
     static func saveChecked(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) throws {
         defaults.set(try JSONEncoder().encode(collections), forKey: key)
     }
 
+
+    ///
+    /// @fcn        PersonalCollectionStore.archiveBoard(id:in:to:)
+    /// @brief      Archive an active board collection and persist the result
+    /// @details    Rejects missing, non-board, and already archived collection identities
+    ///
+    /// @param[in]  id           Identity of the board to archive
+    /// @param[in]  collections  Current collection snapshot
+    /// @param[in]  defaults     Defaults store to update
+    ///
+    /// @return     ([PersonalCollection]) updated snapshot with the board archived
+    ///
+    /// @throws     CocoaError when no active board has the supplied identity
+    /// @throws     EncodingError when the updated snapshot cannot be encoded
+    ///
     static func archiveBoard(
         id: UUID,
         in collections: [PersonalCollection],
@@ -1048,17 +1448,43 @@ enum PersonalCollectionStore {
     }
 }
 
+
+///
+/// Captures the Board state and Today-list selection before loading example data
+///
+/// @section    Purpose
+///     Preserve the prior local state for an explicit undo operation
+///
 struct ExampleLoadUndoSnapshot: Codable, Equatable {
 
-    let lists: [KanbanList]
-    let todayListID: Int?
+    let lists: [KanbanList]   /* Board lists to restore */
+    let todayListID: Int?     /* Previously selected Today list, when set */
 }
 
 
+///
+/// Stores the undo snapshot for loading example Board data
+///
+/// @section    Purpose
+///     Keep one locally persisted pre-example snapshot available for undo
+///
 enum ExampleLoadUndoStore {
 
+    /// Versioned storage key for the saved undo snapshot.
     private static let storageKey = "Plenact.ExampleLoadUndo.v1"
 
+    ///
+    /// @fcn        ExampleLoadUndoStore.save(lists:todayListID:to:)
+    /// @brief      Save a pre-example Board snapshot
+    /// @details    Returns false when the snapshot cannot be encoded
+    ///
+    /// @param[in]  lists        Board lists to preserve
+    /// @param[in]  todayListID  Selected Today list identity, if any
+    /// @param[in]  defaults     Defaults store to update
+    ///
+    /// @return     (Bool) whether the encoded snapshot was saved
+    /// @post       A successful save replaces the previously stored undo snapshot
+    ///
     @discardableResult
     static func save(
         lists: [KanbanList],
@@ -1071,26 +1497,71 @@ enum ExampleLoadUndoStore {
         return true
     }
 
+
+    ///
+    /// @fcn        ExampleLoadUndoStore.load(from:)
+    /// @brief      Load the saved pre-example Board snapshot
+    /// @details    Returns nil when no snapshot exists or decoding fails
+    ///
+    /// @param[in]  defaults  Defaults store to read
+    ///
+    /// @return     (ExampleLoadUndoSnapshot?) decoded snapshot, or nil
+    /// @post       Stored values are unchanged
+    ///
     static func load(from defaults: UserDefaults = .standard) -> ExampleLoadUndoSnapshot? {
         guard let data = defaults.data(forKey: storageKey) else { return nil }
         return try? JSONDecoder().decode(ExampleLoadUndoSnapshot.self, from: data)
     }
 
+
+    ///
+    /// @fcn        ExampleLoadUndoStore.clear(from:)
+    /// @brief      Remove the saved pre-example Board snapshot
+    /// @details    Deletes only the undo snapshot key from the selected defaults store
+    ///
+    /// @param[in]  defaults  Defaults store to update
+    ///
+    /// @return     (Void) removes the saved snapshot
+    ///
     static func clear(from defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: storageKey)
     }
 }
 
 
+///
+/// Persists and restores Board snapshots in local user defaults
+///
+/// @section    Purpose
+///     Keep Board data available across launches without requiring a remote service
+///
+/// @details    Background operations report load and save failures through DatabaseActivity
+///
 enum KanbanBoardPersistence {
 
+    /// Versioned storage key for the serialized Board snapshot.
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
+
+    /// Serial queue used for Board snapshot I/O.
     private static let queue = DispatchQueue(label: "Plenact.Board.persistence", qos: .userInitiated)
 
+    ///
+    /// @fcn        KanbanBoardPersistence.loadListsInBackground(suiteName:)
+    /// @brief      Load Board lists using the persistence queue
+    /// @details    Reports load failures and displays deterministic sample data without deleting
+    ///             the unreadable saved snapshot
+    ///
+    /// @param[in]  suiteName  Optional defaults suite; nil selects standard defaults
+    ///
+    /// @return     ([KanbanList]) decoded lists or the starter Board on failure
+    /// @post       Saved data is not modified by loading
+    ///
     @MainActor
     static func loadListsInBackground(suiteName: String? = nil) async -> [KanbanList] {
+
         let activity = DatabaseActivity.shared
         let operation = activity.begin("Loading Board...")
+
         defer { activity.end(operation) }
 
         let result: Result<[KanbanList], Error> = await withCheckedContinuation { continuation in
@@ -1102,20 +1573,42 @@ enum KanbanBoardPersistence {
                 })
             }
         }
+
         switch result {
-        case .success(let lists):
-            return lists
-        case .failure(let error):
-            activity.report("Could not load the saved Board: \(error.localizedDescription) The starter Board is displayed; saved data has not been removed.")
-            return SampleData.lists
+            case .success(let lists):
+                return lists
+            case .failure(let error):
+                activity.report("Could not load the saved Board: \(error.localizedDescription) The starter Board is displayed; saved data has not been removed.")
+                return SampleData.lists
         }
     }
 
+
+    ///
+    /// @fcn        KanbanBoardPersistence.saveListsInBackground(_:)
+    /// @brief      Request a background save of Board lists
+    /// @details    Enqueues the supplied snapshot for serialized persistence
+    ///
+    /// @param[in]  lists  Board lists to save
+    ///
+    /// @return     (Void) forwards the snapshot to the save queue
+    ///
     @MainActor
     static func saveListsInBackground(_ lists: [KanbanList]) {
         enqueueSave(lists)
     }
 
+
+    ///
+    /// @fcn        KanbanBoardPersistence.enqueueSave(_:suiteName:)
+    /// @brief      Queue a Board snapshot for asynchronous persistence
+    /// @details    Performs the write on the serial persistence queue and reports write errors
+    ///
+    /// @param[in]  lists      Board lists to save
+    /// @param[in]  suiteName  Optional defaults suite; nil selects standard defaults
+    ///
+    /// @return     (Void) schedules the save operation
+    ///
     @MainActor
     static func enqueueSave(_ lists: [KanbanList], suiteName: String? = nil) {
         let activity = DatabaseActivity.shared
@@ -1138,6 +1631,18 @@ enum KanbanBoardPersistence {
 
     }
 
+
+    ///
+    /// @fcn        KanbanBoardPersistence.persistenceDefaults(suiteName:)
+    /// @brief      Resolve the defaults store for a persistence operation
+    /// @details    Uses standard defaults when no suite name is supplied
+    ///
+    /// @param[in]  suiteName  Optional defaults suite name
+    ///
+    /// @return     (UserDefaults) selected defaults store
+    ///
+    /// @throws     CocoaError when the named defaults suite cannot be created
+    ///
     private static func persistenceDefaults(suiteName: String?) throws -> UserDefaults {
         guard let suiteName else { return .standard }
         guard let defaults = UserDefaults(suiteName: suiteName) else {
@@ -1145,6 +1650,7 @@ enum KanbanBoardPersistence {
         }
         return defaults
     }
+
 
     ///
     /// @fcn        KanbanBoardPersistence.loadLists
@@ -1167,6 +1673,7 @@ enum KanbanBoardPersistence {
 
         return lists
     }
+
 
     ///
     /// @fcn        KanbanBoardPersistence.saveLists(_:)
@@ -1265,6 +1772,7 @@ enum SampleData {
         ]
     ]
 
+
     ///
     /// @fcn        SampleData.actionDetail(title:description:steps:comment:)
     /// @brief      Build one deterministic reduced-detail demonstration
@@ -1291,6 +1799,7 @@ enum SampleData {
             comments:    comments
         )
     }
+    
 
     ///
     /// @fcn        SampleData.enrichedChecklists(for:linkedCard:)

@@ -1,8 +1,8 @@
 // -------------------------------------------------------------------------------------------------
 // @file       PhotoAttachments.swift
-// @brief      Photo attachment model, local file storage, and picker/gallery components
-// @details    Imports image selections, stores photo bytes in the app container, and presents
-//             attached photos
+// @brief      Media attachment models, local file storage, and picker/gallery components
+// @details    Imports image selections, stores photo and video bytes in the app container, and
+//             presents attached photos, videos, and web links
 //
 // @notes      Cards persist attachment metadata and IDs; image data remains outside the board JSON
 //
@@ -46,11 +46,25 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
     let addedAt:   Date                     /* Attachment creation time       */
 
+    ///
+    /// @fcn        KanbanAttachment.kind
+    /// @brief      Resolve the attachment's content kind
+    /// @details    Uses explicit metadata when available and infers legacy photo or link records
+    ///             from whether a URL is present
+    ///
+    /// @return     (KanbanAttachmentKind) resolved photo, video, or link kind
+    ///
+    /// @pre        The attachment contains its persisted metadata
+    /// @post       No attachment fields are modified
+    ///
     var kind: KanbanAttachmentKind { /* Resolved kind for legacy and current records */
         mediaKind ?? (url == nil ? .photo : .link)
     }
 
-    /// Create attachment metadata for local media or a remote link
+    ///
+    /// @fcn        KanbanAttachment.init(id:fileName:url:mediaKind:addedAt:)
+    /// @brief      Create attachment metadata for local media or a remote link
+    /// @details    Stores the supplied stable identity, location metadata, and creation date
     ///
     /// @param[in]  id        Stable attachment identity
     /// @param[in]  fileName  Local media filename, when stored on this device
@@ -59,6 +73,9 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  addedAt   Attachment creation time
     ///
     /// @return     (KanbanAttachment) configured attachment metadata
+    ///
+    /// @pre        Supplied metadata describes the attachment location and content, when known
+    /// @post       Stored fields match the provided values
     ///
     init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now) {
         self.id        = id
@@ -71,7 +88,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 
 
 ///
-/// Stores imported card photos in the app's private Documents directory and validates web links
+/// Stores imported card media in the app's private Documents directory and validates web links
 ///
 /// @section    Purpose
 ///     Keep image data out of UserDefaults while allowing board JSON to retain lightweight photo
@@ -119,15 +136,15 @@ enum CardAttachmentStore {
     
     ///
     /// @fcn        CardAttachmentStore.fileURL(for:)
-    /// @brief      Resolve an attachment record to its local image URL
+    /// @brief      Resolve an attachment record to its local media URL
     /// @details    Combines the app's Documents directory, attachment subdirectory, and stored
     ///             filename
     ///
-    /// @param[in]  attachment  Metadata identifying the stored photo file
+    /// @param[in]  attachment  Metadata identifying the stored media file
     ///
-    /// @return     (URL?) local image URL, or nil when the Documents directory is unavailable
+    /// @return     (URL?) local media URL, or nil when its filename or Documents directory is unavailable
     ///
-    /// @pre        attachment.fileName is the filename returned when the image was saved
+    /// @pre        attachment.fileName is the filename returned when the media was saved
     /// @post       No file data or attachment metadata is modified
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL? {
@@ -144,11 +161,18 @@ enum CardAttachmentStore {
             .appendingPathComponent(fileName, isDirectory: false)
     }
 
-    /// Resolve a local URL only when an attachment represents a photo
+
+    ///
+    /// @fcn        CardAttachmentStore.imageURL(for:)
+    /// @brief      Resolve a local URL only when an attachment represents a photo
+    /// @details    Delegates filename resolution to the attachment store after checking the kind
     ///
     /// @param[in]  attachment Attachment metadata to inspect
     ///
-    /// @return     (URL?) local photo URL, or nil for other media and unavailable files
+    /// @return     (URL?) local photo URL, or nil for other media or an unresolved filename
+    ///
+    /// @pre        attachment contains its persisted media metadata
+    /// @post       No file data or attachment metadata is modified
     ///
     static func imageURL(for attachment: KanbanAttachment) -> URL? {
         
@@ -157,11 +181,18 @@ enum CardAttachmentStore {
         return fileURL(for: attachment)
     }
 
-    /// Validate and parse a web address entered as text
+
+    ///
+    /// @fcn        CardAttachmentStore.webURL(from:)
+    /// @brief      Validate and parse a web address entered as text
+    /// @details    Trims surrounding whitespace and accepts only HTTP or HTTPS URLs with a host
     ///
     /// @param[in]  text Candidate URL text
     ///
     /// @return     (URL?) HTTP or HTTPS URL with a host, or nil when invalid
+    ///
+    /// @pre        text contains a candidate URL
+    /// @post       The input text is unchanged
     ///
     static func webURL(from text: String) -> URL? {
         
@@ -259,8 +290,22 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
     case link
     case clipboard
 
+    ///
+    /// @fcn        CardAttachmentSource.id
+    /// @brief      Expose the source token as its stable identity
+    /// @details    Reuses the enum raw value for picker rows
+    ///
+    /// @return     (String) attachment-source identifier
+    ///
     var id: String { rawValue } /* Stable picker identity */
 
+    ///
+    /// @fcn        CardAttachmentSource.title
+    /// @brief      Return the display title for an attachment source
+    /// @details    Maps each source case to its picker-row label
+    ///
+    /// @return     (String) display text defined for the source
+    ///
     var title: String { /* User-facing attachment-source label */
         switch self {
             case .trello:         "Trello"
@@ -276,6 +321,13 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
         }
     }
 
+    ///
+    /// @fcn        CardAttachmentSource.symbolName
+    /// @brief      Return the SF Symbol name for an attachment source
+    /// @details    Maps each source case to the icon shown in the picker
+    ///
+    /// @return     (String) SF Symbol identifier for the source
+    ///
     var symbolName: String { /* SF Symbol for the picker row */
         switch self {
             case .trello:         "square.split.2x2"
@@ -310,11 +362,18 @@ struct CardAttachmentSourceSheet: View {
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
 
     
-    /// Dispatch the action associated with one attachment source
+    ///
+    /// @fcn        CardAttachmentSourceSheet.select(_:)
+    /// @brief      Dispatch the action associated with one attachment source
+    /// @details    Invokes link or clipboard callbacks, leaves photo selection to PhotosPicker,
+    ///             and reports unsupported source choices
     ///
     /// @param[in]  source Selected attachment source
     ///
     /// @return     (Void) invokes the matching callback or system picker
+    ///
+    /// @pre        source is one of the available attachment sources
+    /// @post       The corresponding callback is invoked where applicable
     ///
     private func select(_ source: CardAttachmentSource) {
         switch source {
@@ -330,6 +389,17 @@ struct CardAttachmentSourceSheet: View {
         }
     }
 
+
+    ///
+    /// @fcn        CardAttachmentSourceSheet.body
+    /// @brief      Build the attachment-source picker
+    /// @details    Presents PhotosPicker for media and dispatches the other source actions
+    ///
+    /// @return     (some View) attachment-source sheet
+    ///
+    /// @pre        The selection binding and action callbacks are configured
+    /// @post       Selecting a source dispatches its supported action
+    ///
     var body: some View { /* Attachment-source picker */
         
         NavigationStack {
@@ -383,10 +453,28 @@ struct CardLinkAttachmentSheet: View {
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
     @State private var urlDraft = "" /* User-entered URL text */
 
+    ///
+    /// @fcn        CardLinkAttachmentSheet.validatedURL
+    /// @brief      Return the parsed URL when the current draft is valid
+    /// @details    Delegates URL validation to CardAttachmentStore
+    ///
+    /// @return     (URL?) valid HTTP or HTTPS URL, or nil for invalid draft text
+    ///
     private var validatedURL: URL? { /* Parsed URL when the draft is valid */
         CardAttachmentStore.webURL(from: urlDraft)
     }
 
+
+    ///
+    /// @fcn        CardLinkAttachmentSheet.body
+    /// @brief      Build the manual web-link form
+    /// @details    Collects URL text and enables submission only when validation succeeds
+    ///
+    /// @return     (some View) link-entry sheet with Cancel and Add actions
+    ///
+    /// @pre        The save callback and dismissal environment are available
+    /// @post       A valid submitted URL is passed to the save callback
+    ///
     var body: some View {               /* Manual web-link form */
 
         NavigationStack {
@@ -422,9 +510,16 @@ struct CardLinkAttachmentSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    /// Submit the entered URL when it passes web-link validation
+
+    ///
+    /// @fcn        CardLinkAttachmentSheet.saveLink
+    /// @brief      Submit the entered URL when it passes web-link validation
+    /// @details    Calls the owner callback and dismisses the sheet for a valid draft
     ///
     /// @return     (Void) invokes the save callback and dismisses the sheet
+    ///
+    /// @pre        The draft has a validated URL
+    /// @post       The callback receives that URL and the sheet is dismissed
     ///
     private func saveLink() {
 
@@ -438,10 +533,10 @@ struct CardLinkAttachmentSheet: View {
 
 
 ///
-/// Displays a square thumbnail for an attached photo
+/// Displays a square thumbnail for an attached card item
 ///
 /// @section    Purpose
-///     Provide a compact preview for the attachment gallery in card details
+///     Provide a compact preview for photos, videos, and web links in card details
 ///
 struct CardAttachmentThumbnail: View {
 
@@ -449,8 +544,9 @@ struct CardAttachmentThumbnail: View {
 
     ///
     /// @fcn        CardAttachmentThumbnail.body
-    /// @brief      Build a square preview for an attached photo
-    /// @details    Loads the local image file and displays a cropped thumbnail, or a photo placeholder if unavailable
+    /// @brief      Build a square preview for an attached card item
+    /// @details    Shows a link or video symbol, a cropped local photo, or a photo placeholder when
+    ///             the local image cannot be loaded
     ///
     /// @return     (some View) square attachment thumbnail or missing-photo fallback
     ///
@@ -508,10 +604,10 @@ struct CardAttachmentThumbnail: View {
 
 
 ///
-/// Displays an attached photo at a larger size
+/// Displays an attached photo or video at a larger size
 ///
 /// @section    Purpose
-///     Allow users to inspect a photo after opening its card-detail thumbnail
+///     Allow users to inspect local media after opening its card-detail thumbnail
 ///
 struct CardAttachmentPreview: View {
 
@@ -522,7 +618,8 @@ struct CardAttachmentPreview: View {
     ///
     /// @fcn        CardAttachmentPreview.body
     /// @brief      Build a large preview for an attached photo
-    /// @details    Displays the local image scaled to fit, with a fallback view if the file is unavailable
+    /// @details    Plays a local video or displays a local photo scaled to fit, with a fallback
+    ///             view when the referenced file is unavailable
     ///
     /// @return     (some View) navigable image preview with a Done action
     ///

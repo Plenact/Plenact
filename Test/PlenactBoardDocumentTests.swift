@@ -23,6 +23,138 @@ import SwiftUI
 final class PlenactBoardDocumentTests: XCTestCase {
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalListExamplesContainSafeIndependentCards
+    /// @brief      Verify the six example lists meet their content and compatibility contract
+    /// @details    Checks card limits, unique local IDs, empty optional activity/media fields,
+    ///             correct list ownership, and Codable round trips
+    /// @throws     Collection encoding or decoding failures
+    ///
+    func testPersonalListExamplesContainSafeIndependentCards() throws {
+
+        XCTAssertEqual(PersonalListExample.allCases.map(\.rawValue), [
+            "On the Table", "In the Queue", "Scheduled", "Shopping", "Up for Brew", "Misc."
+        ])
+
+        for example in PersonalListExample.allCases {
+
+            let collection = example.makeCollection(existingTitles: [])
+
+            XCTAssertEqual(collection.kind, .list)
+            XCTAssertEqual(collection.lists.count, 1)
+            XCTAssertTrue(collection.isActive)
+            XCTAssertTrue(collection.savedCardIDs.isEmpty)
+            XCTAssertGreaterThanOrEqual(collection.cardCount, 5)
+            XCTAssertLessThanOrEqual(collection.cardCount, 20)
+
+            let cards = collection.lists[0].cards
+
+            XCTAssertEqual(Set(cards.map(\.id)).count, cards.count)
+            XCTAssertEqual(Set(cards.map(\.word)).count, cards.count)
+
+            for card in cards {
+                XCTAssertEqual(card.listTitle, collection.title)
+                XCTAssertFalse(card.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                XCTAssertFalse(card.descriptionOverride?.isEmpty ?? true)
+                XCTAssertEqual(card.subtitleOverride, "Example")
+                XCTAssertFalse(card.isTitleChecked)
+                XCTAssertFalse(card.isSectionDivider)
+                XCTAssertNil(card.startDate)
+                XCTAssertNil(card.dueDate)
+                XCTAssertTrue(card.checklists.isEmpty)
+                XCTAssertTrue(card.comments.isEmpty)
+                XCTAssertTrue(card.members.isEmpty)
+                XCTAssertTrue(card.labelIDs.isEmpty)
+                XCTAssertTrue(card.attachments?.isEmpty ?? true)
+            }
+            let restored = try JSONDecoder().decode(
+                PersonalCollection.self, from: JSONEncoder().encode(collection)
+            )
+            XCTAssertEqual(restored, collection)
+        }
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleDraftsDoNotWriteOrReplaceExistingCollections
+    /// @brief      Preserve stored Week and personal work while generating or discarding examples
+    /// @details    Uses isolated preferences, fresh draft identities, collision-safe naming, and an
+    ///             explicit append/save; checks existing collections and Week bytes remain unchanged
+    /// @throws     Fixture setup, checked-save, or JSON encoding failures
+    ///
+    func testExampleDraftsDoNotWriteOrReplaceExistingCollections() throws {
+
+        let suite = "Plenact.PersonalExampleTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let week = try JSONEncoder().encode(SampleData.lists)
+
+        defaults.set(week, forKey: "Plenact.Board.v1")
+
+        var retained = PersonalCollection(title: "Shopping", kind: .list)
+
+        retained.isArchived = true
+        retained.lists[0].cards = [KanbanCard(id: 99, word: "Existing", listTitle: "Shopping", checklists: [])]
+        retained.savedCardIDs = [99]
+
+        try PersonalCollectionStore.saveChecked([retained], to: defaults)
+        
+        let originalBytes = defaults.data(forKey: "Plenact.PersonalCollections.v1")
+        let first = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title])
+        let second = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title, first.title])
+        
+        XCTAssertNotEqual(first.id, second.id)
+        XCTAssertEqual(first.title, "Shopping (2)")
+        XCTAssertEqual(second.title, "Shopping (3)")
+        XCTAssertEqual(defaults.data(forKey: "Plenact.PersonalCollections.v1"), originalBytes)
+        
+        var renamed = first
+        
+        renamed.rename(to: "My shopping")
+        
+        XCTAssertTrue(renamed.lists[0].cards.allSatisfy { $0.listTitle == "My shopping" })
+        XCTAssertEqual(renamed.lists[0].cards.map(\.id), first.lists[0].cards.map(\.id))
+        
+        try PersonalCollectionStore.saveChecked([retained, renamed], to: defaults)
+        
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [retained, renamed])
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), week)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryRowsFitLongTitlesAndAccessibilityText
+    /// @brief      Verify Library entries fit their content across viewport and text sizes
+    /// @details    Hosts synthetic collection rows at portrait/landscape widths; accessibility
+    ///             text must grow vertically instead of retaining a fixed row height
+    ///
+    @MainActor
+    func testLibraryRowsFitLongTitlesAndAccessibilityText() {
+
+        for width: CGFloat in [280, 700] {
+
+            let row = LibraryCollectionRow(
+                title: "Ideas and plans for the coming season",
+                subtitle: "Board · 3 lists", icon: "square.stack.3d.up", color: .blue, count: 12
+            )
+
+            let standard = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .large))
+                .sizeThatFits(in: CGSize(width: width, height: 10_000))
+
+            let accessible = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .accessibility5))
+                .sizeThatFits(in: CGSize(width: width, height: 10_000))
+
+            XCTAssertEqual(standard.width, width, accuracy: 1)
+            XCTAssertEqual(accessible.width, width, accuracy: 1)
+            XCTAssertGreaterThanOrEqual(standard.height, 68)
+            XCTAssertGreaterThan(accessible.height, standard.height)
+            XCTAssertLessThan(accessible.height, 1_000)
+        }
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testBoardPresentationWidthsInPortraitLandscapeAndAccessibility
     /// @brief      Verify preset widths and invalid-geometry handling
     /// @details    Checks exact caps, landscape capacity, narrow viewports, and accessibility sizing

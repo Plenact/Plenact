@@ -22,6 +22,10 @@ Board-presentation tests verify exact Standard/Overview widths, portrait/landsca
 
 Card-layout regressions also compare short/tall height proposals and measure actual navigation-linked List rows to catch excessive vertical expansion in the scrolling container. Landscape root-toolbar appearance and keyboard overlay behavior still need a hands-on check.
 
+Library row coverage hosts a long synthetic collection title at portrait/landscape widths and checks content-fitting growth at accessibility text sizes. On-device acceptance still needs Library navigation, search, create/cancel, edit/reorder, Saved restoration, VoiceOver, and both landscape directions. This presentation update does not introduce standalone notes or a new persistence format.
+
+Personal-list example tests verify all six template names, the 5–20-card requirement, distinct card IDs, ownership, empty date/media/assignment fields, and Codable round trips. Isolated-store tests check draft creation has no writes, repeated selections receive fresh collection IDs and collision-safe titles, renaming preserves card identities, and explicit append/save preserves retained collections and Week bytes. These model tests do not establish sheet dismissal or Cancel/Save interactions; exercise both Examples entry points, preview/select, cancel at each stage, repeated insertion, and narrow/large-text button layout on device.
+
 ## Running Tests
 
 Use the shared `Plenact` scheme with an installed iPhone simulator:

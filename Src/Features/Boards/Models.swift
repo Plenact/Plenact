@@ -1,10 +1,11 @@
 // --------------------------------------------------------------------------------------------------
 // @file       Models.swift
 // @brief      Domain models and deterministic sample data for the Plenact board
-// @details    Defines cards, lists, derived display values, and weekday starter content
+// @details    Defines cards, lists, derived display values, weekday starter content, and optional
+//             synthetic personal-list examples that create independent unsaved collection drafts
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
-// @last rev   10/04/26
+// @last rev   10/05/26
 //
 // @section    Opens
 //     Consider separating persistence, collection, and sample-data models into focused files
@@ -1165,6 +1166,159 @@ enum BoardListReordering {
 enum PersonalCollectionKind: String, CaseIterable, Codable {
     case list  = "List"
     case board = "Board"
+}
+
+
+///
+/// Defines optional synthetic examples for personal lists
+///
+/// @section    Purpose
+///     Demonstrate organizing contexts without replacing existing content or introducing note records
+///
+enum PersonalListExample: String, CaseIterable, Identifiable {
+
+    case onTheTable    = "On the Table"
+    case inTheQueue    = "In the Queue"
+    case scheduled     = "Scheduled"
+    case shopping      = "Shopping"
+    case upForBrew     = "Up for Brew"
+    case miscellaneous = "Misc."
+
+    ///
+    /// @fcn        PersonalListExample.id
+    /// @brief      Identify an example in the chooser
+    /// @details    Uses the fixed display name; saved collections receive independent UUIDs
+    /// @return     (String) example identity
+    ///
+    var id: String { rawValue }
+
+    ///
+    /// @fcn        PersonalListExample.summary
+    /// @brief      Explain the example's organizing intent
+    /// @details    Describes optional use rather than assigning dates or required lifecycle states
+    /// @return     (String) chooser explanation
+    ///
+    var summary: String {
+
+        switch self {
+            case .onTheTable:   "Things you would like to accomplish today."
+            case .inTheQueue:    "Things to get to soon, perhaps this week."
+            case .scheduled:     "Plans ahead, without automatic dates or reminders."
+            case .shopping:      "Groceries, supplies, and purchases to consider."
+            case .upForBrew:     "Ideas taking shape, with no commitment required."
+            case .miscellaneous: "Useful reference details and thoughts to keep."
+        }
+    }
+
+    ///
+    /// @fcn        PersonalListExample.cards
+    /// @brief      Supply synthetic card titles and supporting details
+    /// @details    Fixtures contain no real personal records, media references, assignments, or dates
+    /// @return     ([(String, String)]) ordered title/detail pairs
+    ///
+    var cards: [(String, String)] {
+
+        switch self {
+
+            case .onTheTable: [
+                ("Water the garden", "Check the soil before watering the pots and garden beds."),
+                ("Call Dad", "Make time for a relaxed catch-up."),
+                ("Clean the kitchen", "Clear the counters, wash dishes, and wipe the stovetop."),
+                ("Take a short walk", "Choose a nearby route and enjoy some time outside."),
+                ("Prepare dinner", "Check what is already in the fridge before choosing a meal."),
+                ("Reply to a friend", "Send the message you have been meaning to write."),
+                ("Tidy the desk", "Put away loose papers and make room for the next task."),
+                ("Choose tomorrow's first step", "Write down one useful starting point, without planning every hour.")
+            ]
+            case .inTheQueue: [
+                ("Review household accounts", "Gather recent statements and note any questions."),
+                ("Call the accountant", "Prepare a short list of questions before getting in touch."),
+                ("Research a software release", "Read the release notes and compatibility requirements."),
+                ("Update the coding project", "Choose a small change, run tests, and review the result."),
+                ("Book a vehicle service", "Check the maintenance record and compare available appointments."),
+                ("Sort the hallway cupboard", "Start with one shelf and set aside items to donate."),
+                ("Plan meals for the week", "Choose a few flexible meals and check pantry supplies."),
+                ("Return a borrowed book", "Arrange a convenient time with its owner.")
+            ]
+            case .scheduled: [
+                ("Church this Sunday", "Confirm the service time and travel plan yourself."),
+                ("Prepare to file taxes", "Check applicable deadlines and gather the documents you need."),
+                ("Parents coming into town", "Confirm their travel details and discuss plans together."),
+                ("Dinner with friends", "Agree on a place, time, and any food preferences."),
+                ("Library workshop", "Check the organizer's current listing and registration details."),
+                ("Home maintenance visit", "Confirm access arrangements with the service provider."),
+                ("Birthday gathering", "Discuss the date and guest plans before making arrangements."),
+                ("Community garden session", "Check the group's schedule and what to bring.")
+            ]
+            case .shopping: [
+                ("Fresh vegetables", "Choose seasonal vegetables for the meals you plan to cook."),
+                ("Fruit for the week", "Check what is already at home and buy a useful amount."),
+                ("Bread and oats", "Compare pantry supplies before adding quantities."),
+                ("Milk or a preferred alternative", "Choose the type and amount that suits your household."),
+                ("Dish soap", "Check whether a refill is available."),
+                ("Light bulbs", "Confirm the fitting and brightness before buying."),
+                ("Charging cable", "Check connector compatibility and the length you need."),
+                ("Garden supplies", "Measure the space and compare soil or pot options.")
+            ]
+            case .upForBrew: [
+                ("Visit Grandma for her birthday", "Explore travel options and ask what she would enjoy."),
+                ("Explore a Tanzania trip", "Research seasons, costs, and official travel guidance before deciding."),
+                ("Plan time together as a couple", "Talk about activities you would both enjoy."),
+                ("Try a new hobby", "Browse a few possibilities without committing to equipment yet."),
+                ("Start a small herb garden", "Consider sunlight, space, and a few easy-to-use herbs."),
+                ("Build a personal coding tool", "Capture the problem it could solve and a small first experiment."),
+                ("Host a neighborhood meal", "Explore interest, venue options, and a manageable format."),
+                ("Learn a new language", "Think about why it interests you and sample an introductory resource.")
+            ]
+            case .miscellaneous: [
+                ("A friend's favorite band", "Synthetic reference: Derek enjoys Incubus."),
+                ("Museum showtimes", "Keep the official listing link here and check it before a visit."),
+                ("Conversation notes from a walk", "Example reflection: we talked about gardens and possible weekend plans."),
+                ("A book recommendation", "Synthetic reference: a friend suggested exploring a local history book."),
+                ("A meal worth making again", "Example: roasted vegetables with rice; add your own recipe details."),
+                ("Gift ideas", "Keep possibilities here and check preferences before purchasing."),
+                ("Project reference links", "Collect documentation links and explain why each is useful."),
+                ("A thought to revisit", "Example: make more room for unhurried afternoons.")
+            ]
+        }
+    }
+
+
+    ///
+    /// @fcn        PersonalListExample.makeCollection(existingTitles:)
+    /// @brief      Build an independent example-list draft
+    /// @details    Creates a fresh collection UUID, collision-safe title, and collection-local card IDs.
+    ///             Explicit empty checklists and descriptions avoid the generic sample-card defaults
+    /// @param[in]  existingTitles  Current and retained collection names
+    /// @return     (PersonalCollection) unsaved list draft with eight synthetic cards
+    /// @post       No persistence, network operation, or existing record mutation occurs
+    ///
+    func makeCollection(existingTitles: [String]) -> PersonalCollection {
+
+        let icon:  PersonalCollectionIcon
+        let color: ProfileColor
+
+        switch self {
+            case .onTheTable:    (icon, color) = (.tasks,    .coral)
+            case .inTheQueue:    (icon, color) = (.project,  .teal)
+            case .scheduled:     (icon, color) = (.upcoming, .graphite)
+            case .shopping:      (icon, color) = (.shopping, .orange)
+            case .upForBrew:     (icon, color) = (.home,     .green)
+            case .miscellaneous: (icon, color) = (.notes,    .blue)
+        }
+
+        let title      = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
+        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+
+        collection.lists[0].cards = cards.enumerated().map { index, content in
+        
+            KanbanCard(
+                id: index, word: content.0, listTitle: title, checklists: [],
+                descriptionOverride: content.1, subtitleOverride: "Example"
+            )
+        }
+        return collection
+    }
 }
 
 

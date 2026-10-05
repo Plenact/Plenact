@@ -2,13 +2,13 @@
 // @file       App.swift
 // @brief      Application entry point and Today-first navigation shell
 // @details    Owns the shared Week snapshot, personal collections, local profile, and bookmarks.
-//             Composes Today, Week, Lists, and Saved; implements date-scoped list selection,
+//             Composes Today, Week, Library, and Saved; implements date-scoped list selection,
 //             quick card capture, local search, label browsing, and card-date calendar views.
 //             Coordinates board archive/restore operations and local persistence callbacks
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   10/04/26
+// @last rev   10/05/26
 //
 // @notes      Archived lists remain in the complete Week snapshot but are excluded from active
 //             view bindings. Restored Week archives become separate personal boards.
@@ -63,7 +63,7 @@ struct Plenact: App {
 private enum AppDestination: Hashable {
     case today       /* Today's planning entry point   */
     case board       /* Complete kanban workspace      */
-    case lists       /* All lists in the current Board */
+    case lists       /* Library of Week and personal collections */
     case saved       /* Device-local saved cards       */
 }
 
@@ -426,7 +426,7 @@ private struct AppRootView: View {
 
             BoardListsView(lists: lists, onOpenBoardList: openBoardList, collections: $collections)
                 .tabItem {
-                    Label("Lists", systemImage: "list.bullet")
+                    Label("Library", systemImage: "books.vertical")
                 }
                 .tag(AppDestination.lists)
                 .toolbar(.hidden, for: .tabBar)
@@ -496,8 +496,8 @@ private struct AppRootView: View {
                     .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 54)
                     .accessibilityHidden(true)
 
-                tabButton(.lists, title: "Lists", systemImage: "list.bullet")
-                tabButton(.saved, title: "Saved", systemImage: "bookmark.fill")
+                tabButton(.lists, title: "Library", systemImage: "books.vertical.fill")
+                tabButton(.saved, title: "Saved",   systemImage: "bookmark.fill")
             }
             .padding(.horizontal, 12)
             .padding(.top, 4)
@@ -2362,21 +2362,95 @@ private struct CalendarCardResult: Identifiable {
 
 
 ///
-/// Presents Week and personal collections in a searchable directory
+/// Displays a recognizable organizing space within the Library
 ///
 /// @section    Purpose
-///     Route users to Week lists and manage local personal collections
+///     Share readable collection identity and card counts across Week and personal entries
+///
+struct LibraryCollectionRow: View {
+
+    let title: String      /* User-owned collection or Week Board title       */
+    let subtitle: String   /* Collection kind and active-list context         */
+    let icon: String       /* SF Symbol representing the organizing space     */
+    let color: Color       /* Collection accent, not its only identifying cue */
+    let count: Int         /* Active non-divider card count                   */
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
+
+    ///
+    /// @fcn        LibraryCollectionRow.body
+    /// @brief      Present the space's name, kind, and labeled card count
+    /// @details    Uses a tinted icon and accent strip; accessibility text sizes place the count
+    ///             below the title rather than compressing it into a trailing column
+    /// @return     (some View) content-fitting directory row with combined accessibility text
+    /// @post       Rendering does not modify the owning Board or collection
+    ///
+    var body: some View {
+
+        HStack(spacing: 12) {
+
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 4, height: 48)
+                .accessibilityHidden(true)
+
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(color)
+                .frame(width: 48, height: 48)
+                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityHidden(true)
+
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                : AnyLayout(HStackLayout(spacing: 12))
+
+            layout {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Text(count == 1 ? "1 card" : "\(count) cards")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 10)
+        .frame(minHeight: 68)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+
+///
+/// Presents Week and personal collections in the Library
+///
+/// @section    Purpose
+///     Offer recognizable organizing spaces while preserving Week and collection ownership
 ///
 private struct BoardListsView: View {
 
-    let lists: [KanbanList]                         /* Complete current Week snapshot */
-    let onOpenBoardList: (Int) -> Void              /* Route to a Week list by ID */
+    let lists: [KanbanList]                                    /* Complete current Week snapshot              */
+    let onOpenBoardList: (Int) -> Void                         /* Route to a Week list by ID                  */
 
-    @Binding var collections: [PersonalCollection]            /* Shared device-local collections */
-    @State private var searchText = ""                         /* Directory search query */
-    @State private var editingCollection: PersonalCollection? /* Collection draft being edited */
-    @State private var openedCollection: PersonalCollection?  /* Collection board presented full-screen */
-    @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation */
+    @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
+    @State private var searchText = ""                         /* Directory search query                      */
+    @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
+    @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
+    @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
+    @State private var showsExamples = false                   /* Present the synthetic list chooser          */
+    @State private var pendingExample: PersonalCollection?     /* Unsaved draft waiting for chooser dismissal */
+
 
     ///
     /// @fcn        BoardListsView.filteredCollections
@@ -2389,6 +2463,7 @@ private struct BoardListsView: View {
     private var filteredCollections: [PersonalCollection] {
         collections.filter { $0.isActive && $0.matches(searchText) }
     }
+
 
     ///
     /// @fcn        BoardListsView.showsWeek
@@ -2451,7 +2526,7 @@ private struct BoardListsView: View {
     ///
     /// @fcn        BoardListsView.row(title:subtitle:icon:color:count:)
     /// @brief      Render a consistent collection-directory row
-    /// @details    Combines a tinted symbol, two text lines, and a trailing monospaced count;
+    /// @details    Combines a collection accent, readable title/type, and an explicitly labeled count;
     ///             the caller supplies navigation or editing interaction
     ///
     /// @param[in]  title     Primary collection name
@@ -2463,28 +2538,7 @@ private struct BoardListsView: View {
     /// @post       Rendering does not change collection state
     ///
     private func row(title: String, subtitle: String, icon: String, color: Color, count: Int) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
-                .frame(width: 40, height: 40)
-                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 8)
-            Text("\(count)")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
+        LibraryCollectionRow(title: title, subtitle: subtitle, icon: icon, color: color, count: count)
     }
 
 
@@ -2499,12 +2553,19 @@ private struct BoardListsView: View {
     ///
     private var createMenu: some View {
         Menu {
+
             Button("New List", systemImage: "list.bullet") {
                 editingCollection = PersonalCollection(title: "", kind: .list)
             }
+
             Button("New Board", systemImage: "rectangle.3.group") {
                 editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
             }
+
+            Button("Examples", systemImage: "plus") {
+                showsExamples = true
+            }
+
             Menu("Starter Lists") {
                 ForEach(["On the table", "In the queue", "Upcoming", "Shopping", "Reminders"], id: \.self) { title in
                     Button(title) {
@@ -2515,6 +2576,7 @@ private struct BoardListsView: View {
                     }
                 }
             }
+
             Menu("Starter Boards") {
                 ForEach(["General Notes", "Girlfriend Important Details", "New Project Notes"], id: \.self) { title in
                     Button(title) {
@@ -2543,10 +2605,15 @@ private struct BoardListsView: View {
     ///             persistence and does not alter Week. Archived collections remain outside active rows
     ///
     var body: some View {
+
         NavigationStack {
+
             List {
+
                 if showsWeek {
-                    Section {
+
+                    Section("Weekly planning") {
+
                         NavigationLink {
                             WeekListsDirectoryView(lists: lists.filter { !$0.isArchived }, onOpenBoardList: onOpenBoardList)
                         } label: {
@@ -2559,19 +2626,23 @@ private struct BoardListsView: View {
                     }
                 }
 
-                Section("Collections") {
+                Section {
+
                     ForEach(filteredCollections) { collection in
+
                         Button {
                             openedCollection = collection
                         } label: {
                             row(
                                 title: collection.title,
-                                subtitle: collection.kind == .board ? "Board · \(collection.lists.count) lists" : "List",
+                                subtitle: collection.kind == .board ? "Board · \(collection.lists.filter { !$0.isArchived }.count) lists" : "List",
                                 icon: collection.icon.rawValue, color: collection.color.color,
                                 count: collection.cardCount
                             )
                         }
                         .buttonStyle(.plain)
+                        .listRowBackground(collection.color.color.opacity(0.08))
+                        .accessibilityHint("Opens this personal collection")
                         .contextMenu {
                             Button("Edit", systemImage: "pencil") { editingCollection = collection }
                             Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
@@ -2590,14 +2661,38 @@ private struct BoardListsView: View {
                     }
 
                     if filteredCollections.isEmpty {
-                        Text(searchText.isEmpty ? "No personal collections yet" : "No matching collections")
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label(
+                                searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    ? "Your own organizing spaces" : "No matching collections",
+                                systemImage: "books.vertical"
+                            )
+                            .font(.headline)
+                            Text(
+                                searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    ? "Keep ideas, projects, and everyday plans together in personal lists and boards."
+                                    : "Try another collection name or card title."
+                            )
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                ViewThatFits(in: .horizontal) {
+                                    HStack(spacing: 12) { collectionCreationButtons }
+                                    VStack(alignment: .leading, spacing: 12) { collectionCreationButtons }
+                                }
+                            }
+                        }
+                        .padding(.vertical, 12)
                     }
+                } header: {
+                    Text("Personal collections")
+                } footer: {
+                    Text("Lists organize cards. Boards bring several lists together. Archived boards are in Saved.")
                 }
             }
             .scrollContentBackground(.hidden)
             .background { TodayPaperBackground() }
-            .navigationTitle("Lists")
+            .navigationTitle("Library")
             .searchable(text: $searchText, prompt: "Find a collection or card")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -2611,6 +2706,17 @@ private struct BoardListsView: View {
                     isNew: !collections.contains(where: { $0.id == collection.id }),
                     onSave: saveCollection
                 )
+            }
+            .sheet(isPresented: $showsExamples, onDismiss: {
+                if let pendingExample {
+                    editingCollection = pendingExample
+                    self.pendingExample = nil
+                }
+            }) {
+                PersonalListExamplesView { example in
+                    pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
+                    showsExamples = false
+                }
             }
             .fullScreenCover(item: $openedCollection) { collection in
                 PersonalCollectionBoardView(
@@ -2635,6 +2741,84 @@ private struct BoardListsView: View {
                 Button("Cancel", role: .cancel) { deletingCollection = nil }
             } message: {
                 Text("This deletes the collection and its cards. Your Week board is not affected.")
+            }
+        }
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.collectionCreationButtons
+    /// @brief      Offer blank-list creation alongside optional examples
+    /// @details    Shared content fits horizontally or vertically without changing creation semantics
+    /// @return     (some View) two independently accessible creation buttons
+    /// @post       Actions present an unsaved form or chooser; collections remain unchanged
+    ///
+    private var collectionCreationButtons: some View {
+
+        Group {
+            Button("Create a list", systemImage: "plus") {
+                editingCollection = PersonalCollection(title: "", kind: .list)
+            }
+            Button("Examples", systemImage: "plus") {
+                showsExamples = true
+            }
+        }
+        .buttonStyle(.bordered)
+    }
+}
+
+
+///
+/// Presents optional synthetic list examples with an inspectable card preview
+///
+/// @section    Purpose
+///     Let people choose a draft without writing data or replacing their existing work
+///
+private struct PersonalListExamplesView: View {
+
+    let onSelect: (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
+    @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
+
+
+    ///
+    /// @fcn        PersonalListExamplesView.body
+    /// @brief      Show all six organizing examples and their card titles
+    /// @details    Expanding a preview is read-only; Use example opens the save-before-adding flow
+    /// @return     (some View) scrollable chooser with an explicit Cancel action
+    ///
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("Synthetic examples to explore and make your own. Selecting one opens a draft; only Save adds a new personal list. Your Week Board and existing collections stay unchanged.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(PersonalListExample.allCases) { example in
+                    Section(example.rawValue) {
+                        Text(example.summary)
+                        DisclosureGroup("Preview \(example.cards.count) example cards") {
+                            ForEach(example.cards.indices, id: \.self) { index in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(example.cards[index].0).font(.headline)
+                                    Text(example.cards[index].1)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                        Button("Use \(example.rawValue)", systemImage: "plus") {
+                            onSelect(example)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Example Lists")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
     }
@@ -2782,6 +2966,17 @@ private struct PersonalCollectionSettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                }
+                
+                if isNew && draft.cardCount > 0 {
+                    Section("Cards included") {
+                        Text("These example cards will be added only when you save this new personal list.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        ForEach(draft.lists.flatMap(\.cards)) { card in
+                            Text(card.word)
+                        }
+                    }
                 }
             }
             .navigationTitle(isNew ? "New \(draft.kind.rawValue)" : "Edit Collection")
@@ -3373,7 +3568,7 @@ private struct SavedCardsView: View {
                                         .accessibilityLabel("Restore \(board.title)")
                                 }
                             }
-                            Text("Restored boards appear in Lists. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
+                            Text("Restored boards appear in Library. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

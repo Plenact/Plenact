@@ -56,6 +56,15 @@ Opens now:
 
 - Quick capture keyboard loads and unexpectedly raises lower toolbar!
 
+
+### Coming Next
+
+- CLEAN data encapsulation
+
+- RELIABLE, versioned database record
+
+- Full app representation!! Win/Lin/Apple/Android/Web-Desktop/Web-Mobile
+
 // -------------------------------------------------------------------------------------------//
 
 ## Current Product

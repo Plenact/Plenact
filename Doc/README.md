@@ -4,7 +4,7 @@ This directory holds Plenact's product, UX, architecture, demonstration, and cod
 
 - [`Production-Preparation-Handoff.md`](Production-Preparation-Handoff.md) - verified product, architecture, data-safety, and release-preparation handoff for the next production agent
 
-- [`Life-Planning-Model.md`](Life-Planning-Model.md) - product-model reference for Lists, Cards, checklist actions, planning views, and the proposed weekly review
+- [`Life-Planning-Model.md`](Life-Planning-Model.md) - product-model reference for Lists, Cards, checklist actions, the Library/personal-collections hub, planning views, and the proposed weekly review
 
 - [`Board-Presentation.md`](Board-Presentation.md) - implemented Standard/Overview presets, portrait/landscape layout, local preferences, and remaining device acceptance checks
 

@@ -21,10 +21,31 @@ Plenact's organizing model is:
 | **Checklist item** | Expresses a concrete action that can move a card forward. | Checklist items belong to their card; they are not a separate task database. |
 | **Today** | Helps focus on a selected existing Week list for a particular date. | It projects canonical Board records and does not own duplicate cards. |
 | **Week / Board** | Shows and organizes the larger ordered planning workspace. | Existing card and list order remains user-controlled. |
+| **Library** | Provides access to the Week Board and the person's own collections. | Personal collections remain local lists or Boards, not a standalone Notes store. |
 | **Saved** | Provides access to locally bookmarked cards and archived Boards. | Archive retains discoverable, restorable content; it is not deletion or a backup. |
 | **Review** | Offers a deliberate opportunity to reconsider plans and choose what to do next. | A weekly-review workflow is a proposed direction, not an implemented feature. |
 
 These are complementary ways to organize and view work, not a set of required lifecycle states. A card can remain an idea, have no date, or have no checklist. People may use personal collections as their context without adopting a fixed set of “life areas.”
+
+## Library and personal collections
+
+The former Lists tab is now **Library**, with a books-style navigation icon. Its Week Board entry remains separate from **Personal collections**. Collection rows use the person's chosen title, icon, and color, with an explicit active-card count; Board subtitles count active lists. Search, list/Board creation, editing, ordering, and opening the existing content remain available. The empty state explains personal spaces and offers the existing list-creation form. Archived Boards remain in Saved.
+
+This is a presentation update, not a new hierarchy or migration. Lists still organize cards, and the central New action keeps its existing capture behavior. Collection names or note-like icons do not establish standalone notes.
+
+Collection titles wrap, card counts include text rather than color-only cues, and accessibility text sizes place counts below the title. Validation on October 5, 2026: `xcodebuild test -project Plenact.xcodeproj -scheme Plenact -destination 'platform=iOS Simulator,name=iPhone 15 Pro Max' -parallel-testing-enabled NO -only-testing:PlenactTests/PlenactBoardDocumentTests` passed **45 tests, 0 failures**, including hosted Library rows at portrait/landscape widths and accessibility text sizes. The earlier iPhone 17 destination was unavailable. Physical-device appearance, full create/edit/reorder/navigation interactions, and VoiceOver remain acceptance checks, not established by row measurements.
+
+**Future exploration:** the owner is considering Card and Note as different interfaces to an underlying Plenact item. The item name, identity model, editing semantics, and relationship to existing cards are undecided. This concept is not implemented and does not authorize converting or duplicating saved records.
+
+### Optional personal-list examples
+
+**Examples** appears beside **Create a list** in the empty Library state and remains available from Library's upper **+** menu after collections exist. The buttons stack when horizontal space or larger text requires it.
+
+The chooser offers **On the Table**, **In the Queue**, **Scheduled**, **Shopping**, **Up for Brew**, and **Misc.**, each with eight synthetic cards and supporting descriptions. Expand a preview, choose **Use …**, then review the existing collection form and its included-card list. Only **Save** adds a new personal list; canceling the chooser or form does not add it. Each selection receives a fresh collection identity and an initially collision-safe title. The person can edit the title, icon, or color before saving.
+
+These examples do not replace Week or existing collections, reference attachment files, assign people, create bookmarks, or automatically set dates/reminders. Scheduled is a planning context, not a calendar service. Misc. demonstrates reference-style cards, not a separate Notes type. After saving, the cards are ordinary editable local content. This feature is separate from Today's **Load Example**, which has different Week replacement/undo semantics.
+
+Validation: the same targeted iPhone 15 Pro Max command above passed **47 tests, 0 failures** after adding the examples. New tests check all six names, card-count bounds, identities, optional-field safety, round trips, no writes during draft creation, collision-safe names, and preservation of existing collection/Week snapshots after an explicit append/save. The actual chooser-to-form transition, Cancel/Save interaction, both entry points, and adaptive button appearance remain hands-on acceptance checks.
 
 ## Planning loop
 

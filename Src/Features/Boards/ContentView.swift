@@ -230,6 +230,12 @@ struct ContentView: View {
     let onClose: (() -> Void)?
     /// Optional parent-owned action for archiving the complete board.
     let onArchiveBoard: (() -> Void)?
+    /// Optional parent-owned permanent Board deletion.
+    let onDeleteBoard: (() -> Void)?
+    /// Names the special Week clearing action without implying removal of its tab.
+    let deleteBoardTitle: String
+    /// Optional save-first boundary for confirmed card/list removal.
+    let onCommitDeletion: (([KanbanList], Set<Int>) throws -> Void)?
     /// Receives active-list snapshots for caller-owned persistence.
     let onListsChanged: @MainActor ([KanbanList]) -> Void
     /// Supplies other retained snapshots whose attachment files must not be pruned.
@@ -304,6 +310,9 @@ struct ContentView: View {
         allowsAddingLists: Bool = true,
         onClose: (() -> Void)? = nil,
         onArchiveBoard: (() -> Void)? = nil,
+        onDeleteBoard: (() -> Void)? = nil,
+        deleteBoardTitle: String = "Delete Board",
+        onCommitDeletion: (([KanbanList], Set<Int>) throws -> Void)? = nil,
         onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
         retainedAttachmentLists: @escaping () -> [KanbanList] = {
             PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
@@ -320,6 +329,9 @@ struct ContentView: View {
         self.allowsAddingLists = allowsAddingLists
         self.onClose = onClose
         self.onArchiveBoard = onArchiveBoard
+        self.onDeleteBoard = onDeleteBoard
+        self.deleteBoardTitle = deleteBoardTitle
+        self.onCommitDeletion = onCommitDeletion
         self.onListsChanged = onListsChanged
         self.retainedAttachmentLists = retainedAttachmentLists
     }
@@ -598,28 +610,62 @@ struct ContentView: View {
 
 
     ///
-    /// @fcn        ContentView.deleteCard(in:cardID:)
-    /// @brief      Remove one card from a board list
-    /// @details    Finds the active list by ID, removes matching active cards, and prunes files
-    ///             against current, archived, and externally retained snapshots
+    /// @fcn        ContentView.deleteCard(_:)
+    /// @brief      Remove one confirmed card from this Board
+    /// @details    Includes active/archive partitions and delegates save-first removal to the owner;
+    ///             media cleanup occurs only after persistence succeeds
     ///
-    /// @param[in]  listID  Stable identifier of the list containing the card
     /// @param[in]  cardID  Stable identifier of the card to delete
     ///
-    /// @return     (Void) updates the selected list in the board state
+    /// @return     (Bool) whether the card and bookmark were successfully removed
+    /// @post       Failed saves leave the canonical records unchanged
     ///
-    /// @pre        listID identifies a list in the board
-    /// @post       The matching card no longer appears in that list
-    ///
-    private func deleteCard(in listID: Int, cardID: Int) {
-
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return } /* List containing the card */
-
-        lists[listIndex].cards.removeAll { $0.id == cardID }
-
-        pruneUnreferencedAttachments()
+    @discardableResult
+    private func deleteCard(_ cardID: Int) -> Bool {
+        var snapshot = lists + archivedLists
+        var bookmarks = savedCardIDs
+        BoardContentDeletion.card(cardID, in: &snapshot, savedCardIDs: &bookmarks)
+        return commitDeletion(snapshot, bookmarks: bookmarks)
     }
 
+    ///
+    /// @fcn        ContentView.deleteList(_:)
+    /// @brief      Permanently remove a confirmed list and its retained cards
+    /// @details    Updates both partitions and removes only this Board's contained bookmarks
+    /// @param[in]  id  List identity in this Board
+    /// @return     (Void) updates caller-owned state without pruning unsaved media references
+    ///
+    private func deleteList(_ id: Int) {
+        var snapshot = lists + archivedLists
+        var bookmarks = savedCardIDs
+        BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
+        commitDeletion(snapshot, bookmarks: bookmarks)
+    }
+
+    ///
+    /// @fcn        ContentView.commitDeletion(_:bookmarks:)
+    /// @brief      Delegate permanent removal to the owner's save-first boundary
+    /// @details    Production callers persist the complete snapshot before publishing state
+    /// @param[in]  snapshot  Proposed remaining lists including archives
+    /// @param[in]  bookmarks  Remaining Board-local bookmarks
+    /// @return     (Bool) successful persistence/publication, or false after a reported error
+    ///
+    @discardableResult
+    private func commitDeletion(_ snapshot: [KanbanList], bookmarks: Set<Int>) -> Bool {
+        do {
+            if let onCommitDeletion {
+                try onCommitDeletion(snapshot, bookmarks)
+            } else {
+                lists = snapshot.filter { !$0.isArchived }
+                archivedLists = snapshot.filter(\.isArchived)
+                savedCardIDs = bookmarks
+            }
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not delete content: \(error.localizedDescription) It has been retained.")
+            return false
+        }
+    }
 
     ///
     /// @fcn        ContentView.moveCard(in:cardID:toIndex:)
@@ -1121,6 +1167,8 @@ struct ContentView: View {
                             onClose: onClose,
                             onViewArchivedLists: { showsArchivedLists = true },
                             onArchiveBoard: onArchiveBoard,
+                            onDeleteBoard: onDeleteBoard,
+                            deleteBoardTitle: deleteBoardTitle,
                             onAddList:        addList
                         )
 
@@ -1160,8 +1208,10 @@ struct ContentView: View {
                                             onRestoreArchivedCard: { cardID in
                                                 restoreArchivedCard(in: list.id, cardID: cardID)
                                             },
+                                            onDeleteArchivedCard: { cardID in deleteCard(cardID) },
                                             onArchiveList:      { archiveList(with: list.id) },
-                                            onDeleteCard:       { cardID in deleteCard(in: list.id, cardID: cardID) },
+                                            onDeleteList:       { deleteList(list.id) },
+                                            onDeleteCard:       { cardID in deleteCard(cardID) },
                                             onArchiveCard:      archiveCard,
                                             onUpdateCard:       updateCard,
                                             onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
@@ -1284,11 +1334,18 @@ struct ContentView: View {
                     },
                     onArchive: {
                         archiveCard(card.id)
+                    },
+                    onDelete: {
+                        deleteCard(card.id)
                     }
                 )
             }
             .sheet(isPresented: $showsCalendar) {
-                TodayCalendarView(lists: lists) { listID in
+                TodayCalendarView(
+                    lists: lists,
+                    onArchiveCard: archiveCard,
+                    onDeleteCard: { deleteCard($0) }
+                ) { listID in
                     showsCalendar = false
                     boardTargetCardID = nil
                     boardTargetListID = listID
@@ -1296,7 +1353,10 @@ struct ContentView: View {
                 .presentationDetents([.large])
             }
             .sheet(isPresented: $showsArchivedLists) {
-                ArchivedListsView(lists: $archivedLists, onRestore: restoreArchivedList)
+                ArchivedListsView(
+                    lists: $archivedLists, onRestore: restoreArchivedList, onDelete: deleteList,
+                    onDeleteCard: { _, cardID in deleteCard(cardID) }
+                )
                     .databaseActivityOverlay()
             }
             .onChange(of: lists) { _, updatedLists in
@@ -1342,12 +1402,15 @@ struct BoardHeader: View {
     let onViewArchivedLists: () -> Void
     /// Optional callback that archives the board after confirmation.
     let onArchiveBoard: (() -> Void)?
+    let onDeleteBoard: (() -> Void)? /* Confirmed parent-owned Board removal */
+    let deleteBoardTitle: String /* Week content clearing or personal Board deletion label */
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
     /// Controls confirmation before archiving the complete board.
     @State private var confirmsArchiveBoard = false
+    @State private var confirmsDeleteBoard = false /* Permanent Board deletion confirmation */
 
 
     ///
@@ -1370,7 +1433,7 @@ struct BoardHeader: View {
                         .frame(width: 32, height: 44)
                 }
                 .foregroundStyle(.white)
-                .accessibilityLabel("Back to Lists")
+                .accessibilityLabel("Back to Library")
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -1423,6 +1486,9 @@ struct BoardHeader: View {
                 if onArchiveBoard != nil {
                     Button("Archive Board", systemImage: "archivebox") { confirmsArchiveBoard = true }
                 }
+                if onDeleteBoard != nil {
+                    Button(deleteBoardTitle, systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
+                }
             } label: {
                 Image(systemName: "ellipsis.circle.fill")
                     .font(.title2)
@@ -1438,6 +1504,12 @@ struct BoardHeader: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("All lists and cards will be kept on this device. Restore the board from Saved.")
+        }
+        .confirmationDialog(deleteBoardTitle + "?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible) {
+            Button(deleteBoardTitle, role: .destructive) { onDeleteBoard?() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Permanently removes all active and archived lists, cards, and bookmarks in this board. This cannot be undone. Other boards and retained archive copies are unchanged.")
         }
         .sheet(isPresented: $showingSettings) {
             
@@ -1468,6 +1540,9 @@ private struct ArchivedListsView: View {
     @Binding var lists: [KanbanList]
     /// Requests restoration of a list by identity.
     let onRestore: (Int) -> Void
+    let onDelete: (Int) -> Void /* Permanently remove a confirmed archived list */
+    let onDeleteCard: (Int, Int) -> Void /* Remove a card within the archived list */
+    @State private var deletingList: KanbanList? /* List awaiting permanent deletion */
     /// Dismiss action for the archive browser.
     @Environment(\.dismiss) private var dismiss
 
@@ -1487,7 +1562,14 @@ private struct ArchivedListsView: View {
                 ForEach(lists) { list in
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(list.title).font(.headline)
+                            NavigationLink(list.title) {
+                                ArchivedListContentsView(
+                                    lists: $lists, listID: list.id,
+                                    onDeleteCard: { onDeleteCard(list.id, $0) },
+                                    onDeleteList: { onDelete(list.id) }
+                                )
+                            }
+                            .font(.headline)
                             Text("\(list.cards.filter { !$0.isSectionDivider }.count) cards · \(list.archivedCards.count) archived cards")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -1496,6 +1578,9 @@ private struct ArchivedListsView: View {
                         Button("Restore") { onRestore(list.id) }
                             .buttonStyle(.bordered)
                             .accessibilityLabel("Restore \(list.title)")
+                        Button("Delete", systemImage: "trash", role: .destructive) { deletingList = list }
+                            .labelStyle(.iconOnly)
+                            .accessibilityLabel("Delete \(list.title)")
                     }
                 }
             }
@@ -1510,12 +1595,201 @@ private struct ArchivedListsView: View {
             }
             .navigationTitle("Archived Lists")
             .navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog("Delete \(deletingList?.title ?? "list")?", isPresented: Binding(
+                get: { deletingList != nil }, set: { if !$0 { deletingList = nil } }
+            ), titleVisibility: .visible) {
+                Button("Delete List", role: .destructive) {
+                    if let deletingList { onDelete(deletingList.id) }
+                    deletingList = nil
+                }
+                Button("Cancel", role: .cancel) { deletingList = nil }
+            } message: {
+                Text("This permanently deletes the list, all its active and archived cards, and their bookmarks. This cannot be undone.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
             }
         }
+    }
+}
+
+///
+/// Makes the contents of an archived list inspectable without restoring it
+///
+/// @section    Purpose
+///     Offer confirmed card deletion for both retained card partitions
+///
+private struct ArchivedListContentsView: View {
+    @Binding var lists: [KanbanList] /* Canonical retained lists */
+    let listID: Int /* Archived list identity */
+    let onDeleteCard: (Int) -> Void /* Owner removes confirmed cards */
+    let onDeleteList: () -> Void /* Owner removes the confirmed list */
+    @State private var deletingCard: KanbanCard? /* Card awaiting permanent removal */
+    @State private var confirmsDeleteList = false /* Complete retained list deletion */
+    @Environment(\.dismiss) private var dismiss /* Close a deleted list */
+
+    ///
+    /// @fcn        ArchivedListContentsView.list
+    /// @brief      Resolve the current archived list by identity
+    /// @details    Failed saves keep the original rows visible rather than hiding snapshot records
+    /// @return     (KanbanList?) current retained list
+    ///
+    private var list: KanbanList? { lists.first { $0.id == listID } }
+
+    ///
+    /// @fcn        ArchivedListContentsView.body
+    /// @brief      Browse all retained cards and offer permanent removal
+    /// @details    Leaves the list archived and does not create editable copies of its cards
+    /// @return     (some View) retained-content list with confirmation
+    ///
+    var body: some View {
+        List(list?.allCards ?? []) { card in
+            VStack(alignment: .leading, spacing: 8) {
+                NavigationLink(card.word) {
+                    ArchivedCardInspectionView(card: card) {
+                        onDeleteCard(card.id)
+                        return !(list?.allCards.contains { $0.id == card.id } ?? false)
+                    }
+                }
+                .font(.headline)
+                Text(card.funParagraph).foregroundStyle(.secondary)
+                Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = card }
+            }
+        }
+        .navigationTitle(list?.title ?? "List unavailable")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Delete List", systemImage: "trash", role: .destructive) { confirmsDeleteList = true }
+            }
+        }
+        .confirmationDialog("Delete this list?", isPresented: $confirmsDeleteList, titleVisibility: .visible) {
+            Button("Delete List", role: .destructive) {
+                onDeleteList()
+                if list == nil { dismiss() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Permanently deletes this list, all retained cards, and bookmarks. This cannot be undone.")
+        }
+        .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
+            get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive) {
+                if let deletingCard {
+                    onDeleteCard(deletingCard.id)
+                }
+                deletingCard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCard = nil }
+        } message: {
+            Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
+        }
+    }
+}
+
+///
+/// Displays retained card content without synchronizing an editable snapshot
+///
+/// @section    Purpose
+///     Allow inspection and confirmed permanent deletion before restoration
+///
+struct ArchivedCardInspectionView: View {
+    let card: KanbanCard /* Retained card snapshot */
+    let onDelete: () -> Bool /* Owner reports successful save-first removal */
+    @State private var confirmsDelete = false /* Permanent deletion confirmation */
+    @Environment(\.dismiss) private var dismiss /* Return after deletion */
+
+    ///
+    /// @fcn        ArchivedCardInspectionView.body
+    /// @brief      Inspect retained description, checklist actions, comments, and media references
+    /// @details    This read-only view never writes stale card state on disappearance
+    /// @return     (some View) archived card detail with a confirmed Delete Card action
+    ///
+    var body: some View {
+        List {
+            Section("Description") { Text(card.funParagraph) }
+            ForEach(card.checklists) { checklist in
+                Section(checklist.title) {
+                    ForEach(checklist.items) { item in
+                        Label(item.title, systemImage: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    }
+                }
+            }
+            Section("Attachments") {
+                ForEach(card.attachments ?? []) { attachment in
+                    if let url = attachment.url {
+                        Link("Open link", destination: url)
+                    } else if let url = CardAttachmentStore.fileURL(for: attachment) {
+                        ShareLink(item: url) {
+                            Label(attachment.fileName ?? "Attachment", systemImage: "paperclip")
+                        }
+                    }
+                }
+            }
+            Section("Comments") {
+                ForEach(card.comments) { comment in
+                    VStack(alignment: .leading) {
+                        Text(comment.author).font(.headline)
+                        Text(comment.body)
+                    }
+                }
+            }
+            Button("Delete Card", systemImage: "trash", role: .destructive) { confirmsDelete = true }
+        }
+        .navigationTitle(card.word)
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Delete \(card.word)?", isPresented: $confirmsDelete, titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive) { if onDelete() { dismiss() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone. Other retained copies are unchanged.")
+        }
+    }
+}
+
+///
+/// Provides consistent archive/delete context actions for canonical projection rows
+///
+/// @section    Purpose
+///     Keep Search, labels, Calendar, and list pickers from owning duplicate content
+///
+struct ContentLifecycleActions: ViewModifier {
+    let title: String /* Canonical content name used for confirmation */
+    let kind: String /* Card or List */
+    let onArchive: (() -> Void)? /* Optional retention action; dividers support deletion only */
+    let onDelete: () -> Bool /* Owner reports saved removal of the confirmed record */
+    @State private var confirmsDelete = false /* Permanent removal confirmation */
+    @Environment(\.dismiss) private var dismiss /* Close snapshot projections after mutation */
+
+    ///
+    /// @fcn        ContentLifecycleActions.body(content:)
+    /// @brief      Add accessible lifecycle actions and permanent deletion confirmation
+    /// @details    Delegates mutations to the canonical owner and closes the snapshot projection
+    /// @param[in]  content  Projection row to decorate
+    /// @return     (some View) contextual archive/delete actions
+    ///
+    func body(content: Content) -> some View {
+        content
+            .contextMenu {
+                if let onArchive {
+                    Button("Archive \(kind)", systemImage: "archivebox") { onArchive(); dismiss() }
+                }
+                Button("Delete \(kind)", systemImage: "trash", role: .destructive) { confirmsDelete = true }
+            }
+            .accessibilityActions {
+                if let onArchive {
+                    Button("Archive \(kind)") { onArchive(); dismiss() }
+                }
+                Button("Delete \(kind)") { confirmsDelete = true }
+            }
+            .confirmationDialog("Delete \(title)?", isPresented: $confirmsDelete, titleVisibility: .visible) {
+                Button("Delete \(kind)", role: .destructive) { if onDelete() { dismiss() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Permanently deletes this \(kind.lowercased()) and its contents and bookmarks. This cannot be undone. Other retained copies are unchanged.")
+            }
     }
 }
 
@@ -1882,7 +2156,9 @@ struct KanbanListView: View {
     @Binding var archivedCards: [KanbanCard]
     /// Requests restoration of an archived card by identity.
     let onRestoreArchivedCard: (Int) -> Void
+    let onDeleteArchivedCard: (Int) -> Void /* Confirmed removal of a retained card */
     let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
+    let onDeleteList: () -> Void /* Confirmed removal of this list and its retained content */
     let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
     /// Requests archival of an active card by identity.
     let onArchiveCard: (Int) -> Void
@@ -1899,6 +2175,7 @@ struct KanbanListView: View {
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
+    @State private var deletingCard: KanbanCard? /* Swipe deletion awaiting confirmation */
     /// Measured height of the list header used to size its card collection.
     @State private var headerHeight: CGFloat = 72
     /// Measured card heights keyed by stable card identity.
@@ -2096,6 +2373,10 @@ struct KanbanListView: View {
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
                         .accessibilityLabel("Open section divider")
+                        .contextMenu {
+                            Button("Delete Divider", systemImage: "trash", role: .destructive) { deletingCard = card }
+                        }
+                        .accessibilityAction(named: "Delete Divider") { deletingCard = card }
                             .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
@@ -2129,9 +2410,9 @@ struct KanbanListView: View {
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
-                                onDeleteCard(card.id)
+                                deletingCard = card
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -2179,6 +2460,17 @@ struct KanbanListView: View {
         .background(listTint.color)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
+        .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
+            get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive) {
+                if let deletingCard { onDeleteCard(deletingCard.id) }
+                deletingCard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCard = nil }
+        } message: {
+            Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
+        }
         .sheet(item: $activeSheet, onDismiss: {
             guard opensNewCardAfterDismissal else { return }
             opensNewCardAfterDismissal = false
@@ -2202,7 +2494,9 @@ struct KanbanListView: View {
                     onArchiveCompleted: onArchiveCompleted,
                     archivedCards: $archivedCards,
                     onRestoreArchivedCard: onRestoreArchivedCard,
-                    onArchiveList:      onArchiveList
+                    onDeleteArchivedCard: onDeleteArchivedCard,
+                    onArchiveList:      onArchiveList,
+                    onDeleteList: onDeleteList
                 )
                 .databaseActivityOverlay()
             case .newCard:
@@ -2426,10 +2720,13 @@ private struct KanbanListActionsSheet: View {
     @Binding var archivedCards: [KanbanCard]
     /// Restores an archived card by stable card identity.
     let onRestoreArchivedCard: (Int) -> Void
+    let onDeleteArchivedCard: (Int) -> Void /* Permanently remove a confirmed archived card */
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
+    let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
     @State private var confirmingArchive = false /* Archive confirmation presentation state */
+    @State private var confirmingDelete = false /* Permanent list deletion confirmation */
 
 
     ///
@@ -2523,7 +2820,8 @@ private struct KanbanListActionsSheet: View {
                         ArchivedCardsView(
                             listTitle: list.title,
                             cards: $archivedCards,
-                            onRestore: onRestoreArchivedCard
+                            onRestore: onRestoreArchivedCard,
+                            onDelete: onDeleteArchivedCard
                         )
                     } label: {
                         Label("View Archived Cards", systemImage: "archivebox")
@@ -2543,6 +2841,7 @@ private struct KanbanListActionsSheet: View {
                     } label: {
                         Label("Archive list", systemImage: "archivebox")
                     }
+                    Button("Delete List", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                 }
             }
             .listStyle(.insetGrouped)
@@ -2560,6 +2859,15 @@ private struct KanbanListActionsSheet: View {
                 Button("Archive list", role: .destructive) {
                     onArchiveList()
                     dismiss()
+                }
+                .confirmationDialog("Delete \(list.title)?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                    Button("Delete List", role: .destructive) {
+                        onDeleteList()
+                        dismiss()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone.")
                 }
             }
         }
@@ -2586,6 +2894,8 @@ private struct ArchivedCardsView: View {
     @Binding var cards: [KanbanCard]
     /// Requests restoration of an archived card by identity.
     let onRestore: (Int) -> Void
+    let onDelete: (Int) -> Void /* Owner removes confirmed archived cards */
+    @State private var deletingCard: KanbanCard? /* Archived card awaiting deletion */
 
 
     ///
@@ -2603,7 +2913,13 @@ private struct ArchivedCardsView: View {
                 ForEach(cards) { card in
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(card.word).font(.headline)
+                            NavigationLink(card.word) {
+                                ArchivedCardInspectionView(card: card) {
+                                    onDelete(card.id)
+                                    return !cards.contains { $0.id == card.id }
+                                }
+                            }
+                            .font(.headline)
                             if !card.funParagraph.isEmpty {
                                 Text(card.funParagraph)
                                     .font(.subheadline)
@@ -2617,6 +2933,9 @@ private struct ArchivedCardsView: View {
                         }
                         .buttonStyle(.bordered)
                         .accessibilityLabel("Restore \(card.word)")
+                        Button("Delete", systemImage: "trash", role: .destructive) { deletingCard = card }
+                            .labelStyle(.iconOnly)
+                            .accessibilityLabel("Delete \(card.word)")
                     }
                 }
             } header: {
@@ -2639,6 +2958,17 @@ private struct ArchivedCardsView: View {
         }
         .navigationTitle("Archived Cards")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
+            get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive) {
+                if let deletingCard { onDelete(deletingCard.id) }
+                deletingCard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCard = nil }
+        } message: {
+            Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
+        }
     }
 }
 
@@ -3062,6 +3392,7 @@ struct TodayListDetailView: View {
     let currentUserName: String /* Current activity author */
     let onClose: () -> Void /* Return to Today */
     let onOpenWeek: () -> Void /* Open this list in the Week workspace */
+    let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
     @State private var newCardTitle = "" /* Inline card-creation draft */
 
@@ -3109,6 +3440,10 @@ struct TodayListDetailView: View {
                                     if card.isSectionDivider {
                                         Rectangle()
                                             .fill(Color.secondary.opacity(0.45))
+                                            .modifier(ContentLifecycleActions(
+                                                title: "Divider", kind: "Card", onArchive: nil,
+                                                onDelete: { deleteCard(card.id) }
+                                            ))
                                             .frame(height: 2)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 10)
@@ -3176,6 +3511,9 @@ struct TodayListDetailView: View {
                     },
                     onArchive: {
                         archiveCard(card.id)
+                    },
+                    onDelete: {
+                        deleteCard(card.id)
                     }
                 )
             }
@@ -3238,15 +3576,15 @@ struct TodayListDetailView: View {
     ///
     /// @fcn        TodayListDetailView.deleteCard(_:)
     /// @brief      Remove a card from the focused list
-    /// @details    Removes matching active records only; archived cards and bookmark IDs remain untouched
+    /// @details    Delegates complete active/archive record and bookmark removal to the Week owner
     ///
     /// @param[in]  cardID  Identity to remove from the focused list
-    /// @return     (Void) updates shared active-card state
-    /// @post       A missing focused list does nothing; this path does not prune attachment files
+    /// @return     (Bool) successful checked save and canonical removal
+    /// @post       Failed persistence leaves content, bookmarks, and detail drafts retained
     ///
-    private func deleteCard(_ cardID: Int) {
-        guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else { return }
-        lists[listIndex].cards.removeAll { $0.id == cardID }
+    @discardableResult
+    private func deleteCard(_ cardID: Int) -> Bool {
+        onPermanentDelete(cardID)
     }
 
 

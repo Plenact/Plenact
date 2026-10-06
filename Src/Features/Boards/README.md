@@ -27,7 +27,7 @@ Labels and attachments remain sibling features because they have their own model
 
 `KanbanBoardPersistence` stores lists and cards as local JSON under the versioned `Plenact.Board.v1` key. Persisted Codable fields, stable card/list/checklist IDs, and attachment filenames are compatibility contracts
 
-The app loads its initial Board with `loadListsInBackground` and submits edits with `saveListsInBackground`. JSON encoding/decoding and UserDefaults access run on a serial background queue, preserving save order without blocking UI animation. Board value models conform to `Sendable` for safe snapshot transfer. A shared busy banner is shown on the app shell, focused Today list, Board/card editing sheets, and Account & Settings. Local persistence errors remain visible until dismissed; stored data is not deleted on a decoding failure. The synchronous helpers remain available for non-UI use.
+The app loads its initial Board with `loadListsInBackground` and submits normal edits with `saveListsInBackground`. JSON encoding/decoding and UserDefaults access run on a serial background queue, preserving save order without blocking UI animation. Confirmed permanent Week deletion uses `saveListsChecked`, waiting behind earlier queued writes before publishing the remaining content and bookmarks; this synchronous boundary may briefly block interaction on large Boards. Board value models conform to `Sendable` for safe snapshot transfer. A shared busy banner is shown on the app shell, focused Today list, Board/card editing sheets, and Account & Settings. Local persistence errors remain visible until dismissed; stored data is not deleted on a decoding failure.
 
 Revision 0 string checklist items migrate to stable `KanbanChecklistItem` records during decoding. Checklist actions can contain standard text, a stable link to another Board card, or reduced Action Detail content. See [`../../../Doc/Checklist-Actions-Architecture.md`](../../../Doc/Checklist-Actions-Architecture.md) and [`../../../Test/`](../../../Test/README.md)
 
@@ -63,13 +63,34 @@ Only the title area starts a list drag; card-reordering controls and list action
 
 The board's **Board options** (`...`) menu provides **Board Settings**, **View Archived Lists**, and **Archive Board** (for the Week Board and personal boards). List archiving sets a backward-compatible `isArchived` marker on the original list rather than deleting it. **View Archived Lists** restores lists to the end of their original board, preserving list/card IDs, archived cards, completion, and attachments. Archived lists are hidden from Today, active searches, card counts, and navigation choices. New IDs and attachment cleanup still account for archived content. Existing snapshots without the marker remain active; archived lists cannot be published through the current remote schema.
 
-**Archive Board** asks for confirmation and keeps the complete local board, including archived lists/cards and bookmarks. Archived boards are hidden from Library and shown in **Saved → Archived Boards** with Restore actions. Restoration returns a personal board to Library with a unique title, without changing its contents. Archived Week Boards restore as separate personal boards named **Week Board (Restored)**, **Week Board (Restored) (2)**, etc.; the current Week Board is never replaced. Archiving the Week Board leaves an empty Week workspace for new lists. Archived boards retain attachment files.
+**Archive Board** asks for confirmation and keeps the complete local board, including archived lists/cards and bookmarks. Personal lists can also be archived from their collection menu or Library row. Archived collections are hidden from Library and shown in **Saved → Archived Collections** with Restore and Delete actions. Restoration returns a personal collection to Library with a unique title, without changing its contents. Archived Week Boards restore as separate personal boards named **Week Board (Restored)**, **Week Board (Restored) (2)**, etc.; the current Week Board is never replaced. Archiving the Week Board leaves an empty Week workspace for new lists. Archived collections retain attachment files.
 
 Personal-board archiving persists the complete updated collection snapshot before changing the in-memory archive flag or dismissing the board. If encoding fails, the board remains open and active, the previous stored snapshot is unchanged, and an error banner is shown.
 
 The app root shares the personal-collection state between Library and Saved and persists the complete Week snapshot, including archived lists. Archive flags and content are stored together, so active-only views cannot overwrite the archives. Loading Example replaces active and archived Week lists together; Undo Last Load restores both.
 
 ## Product Boundary
+
+### Archive and permanent deletion
+
+**Archive retains content; Delete permanently removes it.** Archives are not backups. Every new permanent-deletion entry point asks for confirmation and describes the affected content. Deletion has no undo guarantee and never deletes an independent retained Board/collection copy.
+
+| Content | Active entry points | Retained-content entry points |
+| --- | --- | --- |
+| Card | Board/Today row actions and detail; Search, label results, Calendar, and Saved bookmarks through context actions | Archived-card rows/details; cards within archived lists and Saved archived collections |
+| List | Board List Actions; Week directory, Today picker, and Search row context actions | View Archived Lists rows and retained-list detail; lists inside archived collections |
+| Personal Board/list collection | Collection menu and Library row context/swipe actions | Saved Archived Collections rows and contents menu |
+| Week Board | Board menu and Library Week row: Archive Board or **Delete Week contents** | Its separate archived copy has normal collection deletion in Saved |
+
+Deleting a list includes its active and archived cards. Deleting a collection includes every retained list/card and that collection's bookmarks. Deleting a card removes only its owning Board's bookmark; equal numeric IDs in other collections are unrelated. Section dividers have Delete controls but are not individually archivable.
+
+The Week workspace/tab is permanent. **Delete Week contents** clears its active and archived lists/cards/bookmarks without removing Week or replacing/deleting separate personal or archived copies. Load Example's previously retained undo snapshot is also separate and remains protected.
+
+Production deletion persists the complete remaining snapshot before publishing removal. A failed checked save reports an error and retains the canonical content. Card detail keeps the editor/drafts open if deletion fails; successful deletion suppresses delayed editor synchronization and photo imports so stale details cannot recreate content. Archive inspectors are read-only and do not synchronize stale card snapshots.
+
+Media cleanup considers only filenames referenced by the removed content, and runs after a successful save. Current and persisted Week/collections, nested archives, and Load Example undo references protect shared files. Unrelated files are not scanned or removed. Unreadable retained snapshots block cleanup and produce a notice; file removal errors are reported. This is reference-aware local cleanup, not secure erasure, a complete orphan sweep, or a backup/recovery system.
+
+Compatibility fields, stable IDs, attachment filenames, and storage keys are unchanged. The known corrupt-data fallback/recovery gap is not resolved by these controls.
 
 The Board is local to this app installation. Members are currently free-text assignments rather than accounts. A future registered-user directory and typed card-assignment model are described in [`../../../Doc/Users/README.md`](../../../Doc/Users/README.md); they are not implemented. The feature does not provide cloud synchronization, shared permissions, calendar synchronization, or a remote database
 

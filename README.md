@@ -6,9 +6,15 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 ## Development Work
 
-- List Zoom like Trello!!!
+- Lists/Notes Interface Idea
 
-- Panoramic like Trello!
+- Kanban Look & Feel Idea
+	- List Zoom like Trello!!!
+	- Panoramic like Trello!
+
+- Kanban Card/Note Representation Concept
+
+- Calendar Idea
 
 ### Carryover
 
@@ -33,6 +39,7 @@ Opens now:
 
 - Quick capture keyboard raise bug!
 
+- Have Alex capture his "hundreds" of tests in written, reproducible form that also produces results, so we can begin to consistently test and verify our app is working
 
 - "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
 

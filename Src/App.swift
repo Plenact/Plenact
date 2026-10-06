@@ -400,6 +400,10 @@ private struct AppRootView: View {
                 onToggleCardCompletion: toggleCardCompletion,
                 onOpenBoardList: openBoardList,
                 onOpenBoardCard: openBoardCard,
+                onArchiveCard: archiveWeekCard,
+                onDeleteCard: deleteWeekCard,
+                onArchiveList: archiveWeekList,
+                onDeleteList: deleteWeekList,
                 quickCreateRequest: quickCreateRequest
             )
             .tabItem {
@@ -416,6 +420,9 @@ private struct AppRootView: View {
                 savedCardIDs: $savedCardIDs,
                 onListViewed: rememberLastViewedList,
                 onArchiveBoard: archiveWeekBoard,
+                onDeleteBoard: deleteWeekContents,
+                deleteBoardTitle: "Delete Week contents",
+                onCommitDeletion: commitWeekDeletion,
                 onListsChanged: { _ in }
             )
                 .tabItem {
@@ -424,7 +431,11 @@ private struct AppRootView: View {
                 .tag(AppDestination.board)
                 .toolbar(.hidden, for: .tabBar)
 
-            BoardListsView(lists: lists, onOpenBoardList: openBoardList, collections: $collections)
+            BoardListsView(
+                lists: lists, onOpenBoardList: openBoardList, collections: $collections,
+                onArchiveWeek: archiveWeekBoard, onDeleteWeek: deleteWeekContents,
+                onArchiveList: archiveWeekList, onDeleteList: deleteWeekList
+            )
                 .tabItem {
                     Label("Library", systemImage: "books.vertical")
                 }
@@ -436,7 +447,10 @@ private struct AppRootView: View {
                 savedCardIDs: savedCardIDs,
                 collections: $collections,
                 onOpenBoardList: openBoardList,
-                onRestoreBoard: restoreBoard
+                onRestoreBoard: restoreBoard,
+                onDeleteBoard: deletePersonalBoard,
+                onArchiveCard: archiveWeekCard,
+                onDeleteCard: deleteWeekCard
             )
                 .tabItem {
                     Label("Saved", systemImage: "bookmark")
@@ -451,13 +465,16 @@ private struct AppRootView: View {
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
         }
-        .onChange(of: lists) { _, _ in
+        .onChange(of: lists) { old, updated in
             guard hasLoadedBoard else { return }
-            KanbanBoardPersistence.saveListsInBackground(lists)
+            let candidates = CardAttachmentStore.fileNames(in: old).subtracting(CardAttachmentStore.fileNames(in: updated))
+            KanbanBoardPersistence.enqueueSave(updated, onSuccess: { cleanDeletedMedia(candidates) })
         }
-        .onChange(of: collections) { _, updated in
+        .onChange(of: collections) { old, updated in
             do {
                 try PersonalCollectionStore.saveChecked(updated)
+                cleanDeletedMedia(CardAttachmentStore.fileNames(in: old.flatMap(\.lists))
+                    .subtracting(CardAttachmentStore.fileNames(in: updated.flatMap(\.lists))))
             } catch {
                 DatabaseActivity.shared.report("Could not save your boards: \(error.localizedDescription)")
             }
@@ -669,6 +686,143 @@ private struct AppRootView: View {
         }
     }
 
+    ///
+    /// @fcn        AppRootView.cleanDeletedMedia(_:)
+    /// @brief      Clean saved removal candidates against all retained content
+    /// @details    Includes in-memory and persisted Week/collections plus the retained undo snapshot;
+    ///             unreadable persisted references block cleanup and produce an explicit notice
+    /// @param[in]  candidates  Filenames removed by a successfully saved mutation
+    ///
+    private func cleanDeletedMedia(_ candidates: Set<String>) {
+        guard !candidates.isEmpty else { return }
+        do {
+            let persistedWeek = try UserDefaults.standard.data(forKey: "Plenact.Board.v1")
+                .map { try JSONDecoder().decode([KanbanList].self, from: $0) } ?? []
+            let persistedCollections = try UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1")
+                .map { try JSONDecoder().decode([PersonalCollection].self, from: $0) } ?? []
+            let undo = try UserDefaults.standard.data(forKey: "Plenact.ExampleLoadUndo.v1")
+                .map { try JSONDecoder().decode(ExampleLoadUndoSnapshot.self, from: $0) }
+            let retained = lists + collections.flatMap(\.lists) + persistedWeek
+                + persistedCollections.flatMap(\.lists) + (undo?.lists ?? [])
+            try CardAttachmentStore.removeDeletedFiles(candidates, keeping: CardAttachmentStore.fileNames(in: retained))
+        } catch {
+            DatabaseActivity.shared.report("Content was saved, but some unused media could not be removed: \(error.localizedDescription)")
+        }
+    }
+
+    ///
+    /// @fcn        AppRootView.deleteWeekContents
+    /// @brief      Clear confirmed Week content without removing the workspace
+    /// @details    Keeps separate personal/archive copies and resets pending navigation
+    ///
+    private func deleteWeekContents() {
+        do {
+            try commitWeekDeletion([], [])
+            boardTargetListID = nil
+            boardTargetCardID = nil
+        } catch {
+            DatabaseActivity.shared.report("Could not delete Week contents: \(error.localizedDescription) They have been retained.")
+        }
+    }
+
+    ///
+    /// @fcn        AppRootView.commitWeekDeletion(_:_:)
+    /// @brief      Persist confirmed Week removal before updating bindings
+    /// @details    Cleans only saved removal candidates and preserves retained media references
+    /// @param[in]  snapshot  Complete remaining Week snapshot
+    /// @param[in]  bookmarks  Remaining Week bookmarks
+    /// @throws     Encoding or preference errors; visible state stays unchanged
+    ///
+    private func commitWeekDeletion(_ snapshot: [KanbanList], _ bookmarks: Set<Int>) throws {
+        let candidates = CardAttachmentStore.fileNames(in: lists).subtracting(CardAttachmentStore.fileNames(in: snapshot))
+        try KanbanBoardPersistence.saveListsChecked(snapshot)
+        lists = snapshot
+        savedCardIDs = bookmarks
+        SavedCardPersistence.save(bookmarks)
+        cleanDeletedMedia(candidates)
+    }
+
+    ///
+    /// @fcn        AppRootView.deletePersonalBoard(_:)
+    /// @brief      Save removal of a confirmed personal collection before publishing it
+    /// @details    Failure leaves the collection retained and reports an error
+    /// @param[in]  id  Collection UUID, not a Board-local card ID
+    ///
+    @discardableResult
+    private func deletePersonalBoard(_ id: UUID) -> Bool {
+        let updated = collections.filter { $0.id != id }
+        do {
+            try PersonalCollectionStore.saveChecked(updated)
+            collections = updated
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not delete the collection: \(error.localizedDescription) It has been retained.")
+            return false
+        }
+    }
+
+    ///
+    /// @fcn        AppRootView.archiveWeekList(_:)
+    /// @brief      Retain a Week list outside active navigation
+    /// @details    Changes only its archive marker
+    /// @param[in]  id  Week list identity
+    ///
+    private func archiveWeekList(_ id: Int) {
+        if let index = lists.firstIndex(where: { $0.id == id }) { lists[index].isArchived = true }
+    }
+
+    ///
+    /// @fcn        AppRootView.deleteWeekList(_:)
+    /// @brief      Remove confirmed Week list content and bookmarks
+    /// @details    Applies the shared complete-snapshot deletion helper
+    /// @param[in]  id  Week list identity
+    ///
+    @discardableResult
+    private func deleteWeekList(_ id: Int) -> Bool {
+        var snapshot = lists
+        var bookmarks = savedCardIDs
+        BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
+        do {
+            try commitWeekDeletion(snapshot, bookmarks)
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not delete the list: \(error.localizedDescription) It has been retained.")
+            return false
+        }
+    }
+
+    ///
+    /// @fcn        AppRootView.archiveWeekCard(_:)
+    /// @brief      Archive a bookmarked Week card without removing its bookmark
+    /// @details    Finds the owning list by Board-local identity
+    /// @param[in]  id  Week card identity
+    ///
+    private func archiveWeekCard(_ id: Int) {
+        if let index = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == id }) }) {
+            lists[index].archiveCard(id: id)
+        }
+    }
+
+    ///
+    /// @fcn        AppRootView.deleteWeekCard(_:)
+    /// @brief      Permanently remove a confirmed bookmarked Week card
+    /// @details    Includes archive partitions and removes its bookmark
+    /// @param[in]  id  Week card identity
+    ///
+    @discardableResult
+    private func deleteWeekCard(_ id: Int) -> Bool {
+        var snapshot = lists
+        var bookmarks = savedCardIDs
+        BoardContentDeletion.card(id, in: &snapshot, savedCardIDs: &bookmarks)
+        do {
+            try commitWeekDeletion(snapshot, bookmarks)
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not delete the card: \(error.localizedDescription) It has been retained.")
+            return false
+        }
+    }
+
 
     ///
     /// @fcn        AppRootView.restoreBoard(_:)
@@ -828,6 +982,10 @@ private struct TodayHomeView: View {
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
     let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
+    let onArchiveCard: (Int) -> Void /* Retain a canonical Week card */
+    let onDeleteCard: (Int) -> Bool /* Report successful confirmed Week card removal */
+    let onArchiveList: (Int) -> Void /* Retain a canonical Week list */
+    let onDeleteList: (Int) -> Bool /* Report successful confirmed Week list removal */
     let quickCreateRequest: Int                             /* Center-bar requests for the Today composer         */
 
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
@@ -1081,6 +1239,10 @@ private struct TodayHomeView: View {
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
         onOpenBoardCard: @escaping (Int, Int) -> Void,
+        onArchiveCard: @escaping (Int) -> Void,
+        onDeleteCard: @escaping (Int) -> Bool,
+        onArchiveList: @escaping (Int) -> Void,
+        onDeleteList: @escaping (Int) -> Bool,
         quickCreateRequest: Int
     ) {
 
@@ -1094,6 +1256,10 @@ private struct TodayHomeView: View {
         self.onToggleCardCompletion = onToggleCardCompletion
         self.onOpenBoardList = onOpenBoardList
         self.onOpenBoardCard = onOpenBoardCard
+        self.onArchiveCard = onArchiveCard
+        self.onDeleteCard = onDeleteCard
+        self.onArchiveList = onArchiveList
+        self.onDeleteList = onDeleteList
         self.quickCreateRequest = quickCreateRequest
 
         let storageKey = Self.todayListStorageKey(for: .now)
@@ -1495,7 +1661,8 @@ private struct TodayHomeView: View {
                         onOpenWeek: {
                             showsTodayList = false
                             onOpenBoardList(selectedTodayList.id)
-                        }
+                        },
+                        onPermanentDelete: onDeleteCard
                     )
                 }
             }
@@ -1516,11 +1683,16 @@ private struct TodayHomeView: View {
                 TodaySearchView(
                     lists: lists,
                     onOpenBoardList: onOpenBoardList,
-                    onOpenBoardCard: onOpenBoardCard
+                    onOpenBoardCard: onOpenBoardCard,
+                    onArchiveCard: onArchiveCard, onDeleteCard: onDeleteCard,
+                    onArchiveList: onArchiveList, onDeleteList: onDeleteList
                 )
             }
             .sheet(item: $selectedLabel) { label in
-                TodayLabelCardsView(label: label, cards: cards(using: label.id), onOpenBoardList: onOpenBoardList)
+                TodayLabelCardsView(
+                    label: label, cards: cards(using: label.id), onOpenBoardList: onOpenBoardList,
+                    onArchiveCard: onArchiveCard, onDeleteCard: onDeleteCard
+                )
             }
             .onAppear {
                 labelLibrary = LabelLibraryStore.load()
@@ -1576,6 +1748,10 @@ private struct TodayHomeView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint(mode == .chooseToday ? "Sets this as today's plan" : "Opens this list on the board")
+                            .modifier(ContentLifecycleActions(
+                                title: list.title, kind: "List",
+                                onArchive: { onArchiveList(list.id) }, onDelete: { onDeleteList(list.id) }
+                            ))
                         }
                     }
                     .navigationTitle(mode.title)
@@ -1978,6 +2154,10 @@ private struct TodaySearchView: View {
     let lists: [KanbanList] /* Current locally stored Board snapshot */
     let onOpenBoardList: (Int) -> Void /* Navigate to a result's containing list */
     let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs */
+    let onArchiveCard: (Int) -> Void /* Canonical Week archive */
+    let onDeleteCard: (Int) -> Bool /* Confirmed canonical Week deletion result */
+    let onArchiveList: (Int) -> Void /* Canonical Week list archive */
+    let onDeleteList: (Int) -> Bool /* Confirmed canonical list deletion result */
 
     @Environment(\.dismiss) private var dismiss /* Close the search sheet */
     @FocusState private var searchFieldFocused: Bool /* Search field focus state */
@@ -2146,6 +2326,16 @@ private struct TodaySearchView: View {
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
+                        .modifier(ContentLifecycleActions(
+                            title: result.cardTitle, kind: result.cardID == nil ? "List" : "Card",
+                            onArchive: {
+                                if let id = result.cardID { onArchiveCard(id) } else { onArchiveList(result.listID) }
+                            },
+                            onDelete: {
+                                if let id = result.cardID { return onDeleteCard(id) }
+                                return onDeleteList(result.listID)
+                            }
+                        ))
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -2287,6 +2477,8 @@ private struct TodayLabelCardsView: View {
     let label: KanbanLabel /* Selected label */
     let cards: [TodayLabelCard] /* Matching Board cards */
     let onOpenBoardList: (Int) -> Void /* Navigate to the card's Board list */
+    let onArchiveCard: (Int) -> Void /* Archive the canonical label match */
+    let onDeleteCard: (Int) -> Bool /* Report confirmed canonical label-match removal */
 
     @Environment(\.dismiss) private var dismiss /* Close the label card list */
 
@@ -2318,6 +2510,10 @@ private struct TodayLabelCardsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .modifier(ContentLifecycleActions(
+                    title: result.card.word, kind: "Card",
+                    onArchive: { onArchiveCard(result.card.id) }, onDelete: { onDeleteCard(result.card.id) }
+                ))
             }
             .navigationTitle(label.name)
             .navigationBarTitleDisplayMode(.inline)
@@ -2444,6 +2640,13 @@ private struct BoardListsView: View {
     let onOpenBoardList: (Int) -> Void                         /* Route to a Week list by ID                  */
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
+    let onArchiveWeek: () -> Void /* Root retains the complete Week snapshot */
+    let onDeleteWeek: () -> Void /* Root clears confirmed Week contents */
+    let onArchiveList: (Int) -> Void /* Root archives a Week list */
+    let onDeleteList: (Int) -> Bool /* Root reports confirmed Week list removal */
+    @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
+    @State private var confirmsArchiveWeek = false /* External Week archive confirmation */
+    @State private var confirmsDeleteWeek = false /* External Week clearing confirmation */
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -2615,13 +2818,28 @@ private struct BoardListsView: View {
                     Section("Weekly planning") {
 
                         NavigationLink {
-                            WeekListsDirectoryView(lists: lists.filter { !$0.isArchived }, onOpenBoardList: onOpenBoardList)
+                            WeekListsDirectoryView(
+                                lists: lists.filter { !$0.isArchived }, onOpenBoardList: onOpenBoardList,
+                                onArchiveList: onArchiveList, onDeleteList: onDeleteList
+                            )
                         } label: {
                             row(
                                 title: "Week Board", subtitle: "\(lists.filter { !$0.isArchived }.count) lists",
                                 icon: "rectangle.3.group", color: .blue,
                                 count: lists.filter { !$0.isArchived }.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
                             )
+                        }
+                        .contextMenu {
+                            Button("Archive Board", systemImage: "archivebox") { confirmsArchiveWeek = true }
+                            Button("Delete Week contents", systemImage: "trash", role: .destructive) { confirmsDeleteWeek = true }
+                        }
+                        .accessibilityActions {
+                            Button("Archive Board") { confirmsArchiveWeek = true }
+                            Button("Delete Week contents") { confirmsDeleteWeek = true }
+                        }
+                        .swipeActions(allowsFullSwipe: false) {
+                            Button("Delete", role: .destructive) { confirmsDeleteWeek = true }
+                            Button("Archive") { confirmsArchiveWeek = true }
                         }
                     }
                 }
@@ -2645,10 +2863,17 @@ private struct BoardListsView: View {
                         .accessibilityHint("Opens this personal collection")
                         .contextMenu {
                             Button("Edit", systemImage: "pencil") { editingCollection = collection }
+                            Button("Archive", systemImage: "archivebox") { archivingCollection = collection }
                             Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
+                        }
+                        .accessibilityActions {
+                            Button("Edit Collection") { editingCollection = collection }
+                            Button("Archive Collection") { archivingCollection = collection }
+                            Button("Delete Collection") { deletingCollection = collection }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Delete", role: .destructive) { deletingCollection = collection }
+                            Button("Archive") { archivingCollection = collection }
                             Button("Edit") { editingCollection = collection }
                                 .tint(.blue)
                         }
@@ -2724,7 +2949,21 @@ private struct BoardListsView: View {
                     retainedLists: lists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
                         + (ExampleLoadUndoStore.load()?.lists ?? []),
                     onArchive: {
-                        collections = try PersonalCollectionStore.archiveBoard(id: collection.id, in: collections)
+                        collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
+                    },
+                    onDelete: {
+                        let updated = collections.filter { $0.id != collection.id }
+                        try PersonalCollectionStore.saveChecked(updated)
+                        collections = updated
+                    },
+                    onCommitDeletion: { updated in
+                        guard let index = collections.firstIndex(where: { $0.id == updated.id }) else {
+                            throw CocoaError(.validationMissingMandatoryProperty)
+                        }
+                        var snapshot = collections
+                        snapshot[index] = updated
+                        try PersonalCollectionStore.saveChecked(snapshot)
+                        collections = snapshot
                     }
                 )
             }
@@ -2734,13 +2973,48 @@ private struct BoardListsView: View {
             )) {
                 Button("Delete", role: .destructive) {
                     if let deletingCollection {
-                        collections.removeAll { $0.id == deletingCollection.id }
+                        do {
+                            let updated = collections.filter { $0.id != deletingCollection.id }
+                            try PersonalCollectionStore.saveChecked(updated)
+                            collections = updated
+                        } catch {
+                            DatabaseActivity.shared.report("Could not delete the collection: \(error.localizedDescription) It has been retained.")
+                        }
                     }
                     deletingCollection = nil
                 }
                 Button("Cancel", role: .cancel) { deletingCollection = nil }
             } message: {
-                Text("This deletes the collection and its cards. Your Week board is not affected.")
+                Text("Permanently deletes this collection, all active and archived lists/cards, and its bookmarks. This cannot be undone. Your Week board is not affected.")
+            }
+            .confirmationDialog("Archive \(archivingCollection?.title ?? "collection")?", isPresented: Binding(
+                get: { archivingCollection != nil }, set: { if !$0 { archivingCollection = nil } }
+            ), titleVisibility: .visible) {
+                Button("Archive") {
+                    if let archivingCollection {
+                        do {
+                            collections = try PersonalCollectionStore.archiveCollection(id: archivingCollection.id, in: collections)
+                        } catch {
+                            DatabaseActivity.shared.report("Could not archive the collection: \(error.localizedDescription)")
+                        }
+                    }
+                    archivingCollection = nil
+                }
+                Button("Cancel", role: .cancel) { archivingCollection = nil }
+            } message: {
+                Text("Keeps all content on this device. Restore it from Saved.")
+            }
+            .confirmationDialog("Archive Week Board?", isPresented: $confirmsArchiveWeek, titleVisibility: .visible) {
+                Button("Archive Board", action: onArchiveWeek)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Retains a complete copy in Saved and leaves an empty Week workspace.")
+            }
+            .confirmationDialog("Delete Week contents?", isPresented: $confirmsDeleteWeek, titleVisibility: .visible) {
+                Button("Delete Week contents", role: .destructive, action: onDeleteWeek)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Permanently deletes Week's active and archived lists, cards, and bookmarks. This cannot be undone. Separate personal and archived Boards are unchanged.")
             }
         }
     }
@@ -2836,6 +3110,8 @@ private struct PersonalCollectionBoardView: View {
     @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
     let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
     let onArchive: () throws -> Void                /* Persist archival of this collection */
+    let onDelete: () throws -> Void /* Persist permanent removal of this collection */
+    let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
     @Environment(\.dismiss) private var dismiss     /* Close the collection board */
 
     ///
@@ -2857,14 +3133,29 @@ private struct PersonalCollectionBoardView: View {
             boardSubtitle: collection.kind.rawValue,
             allowsAddingLists: collection.kind == .board,
             onClose: { dismiss() },
-            onArchiveBoard: collection.kind == .board ? {
+            onArchiveBoard: {
                 do {
                     try onArchive()
                     dismiss()
                 } catch {
                     DatabaseActivity.shared.report("Could not archive the board: \(error.localizedDescription) The board has not been removed.")
                 }
-            } : nil,
+            },
+            onDeleteBoard: {
+                do {
+                    try onDelete()
+                    dismiss()
+                } catch {
+                    DatabaseActivity.shared.report("Could not delete the collection: \(error.localizedDescription) It has been retained.")
+                }
+            },
+            deleteBoardTitle: collection.kind == .board ? "Delete Board" : "Delete Collection",
+            onCommitDeletion: { lists, bookmarks in
+                var updated = collection
+                updated.lists = lists
+                updated.savedCardIDs = bookmarks
+                try onCommitDeletion(updated)
+            },
             onListsChanged: { _ in },
             retainedAttachmentLists: { retainedLists }
         )
@@ -3034,6 +3325,11 @@ private struct WeekListsDirectoryView: View {
 
     let lists: [KanbanList]                 /* Active Week lists available for browsing */
     let onOpenBoardList: (Int) -> Void      /* Route to a selected Week list */
+    let onArchiveList: (Int) -> Void /* Retain a Week list */
+    let onDeleteList: (Int) -> Bool /* Report confirmed Week list removal */
+    @State private var archivingList: KanbanList? /* List awaiting archive confirmation */
+    @State private var deletingList: KanbanList? /* List awaiting permanent deletion */
+    @State private var removedListIDs: Set<Int> = [] /* Hide mutated snapshot entries until parent refresh */
 
     @State private var searchText = ""      /* List and card-title query */
 
@@ -3049,8 +3345,9 @@ private struct WeekListsDirectoryView: View {
     ///
     private var filteredLists: [KanbanList] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return lists }
-        return lists.filter { list in
+        let available = lists.filter { !removedListIDs.contains($0.id) }
+        guard !query.isEmpty else { return available }
+        return available.filter { list in
             list.title.localizedStandardContains(query)
                 || list.subtitle.localizedStandardContains(query)
                 || list.cards.contains { !$0.isSectionDivider && $0.word.localizedStandardContains(query) }
@@ -3122,7 +3419,6 @@ private struct WeekListsDirectoryView: View {
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
-
                                     Spacer(minLength: 8)
 
                                     Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
@@ -3138,6 +3434,14 @@ private struct WeekListsDirectoryView: View {
                             }
                             .buttonStyle(.plain)
                             .modifier(TodayPanelSurface())
+                            .contextMenu {
+                                Button("Archive List", systemImage: "archivebox") { archivingList = list }
+                                Button("Delete List", systemImage: "trash", role: .destructive) { deletingList = list }
+                            }
+                            .accessibilityActions {
+                                Button("Archive List") { archivingList = list }
+                                Button("Delete List") { deletingList = list }
+                            }
                             .accessibilityLabel("\(list.title), \(list.cards.filter { !$0.isSectionDivider }.count) cards")
                             .accessibilityHint("Open this list in Week.")
                         }
@@ -3148,6 +3452,33 @@ private struct WeekListsDirectoryView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .scrollIndicators(.hidden)
+        }
+        .confirmationDialog("Archive \(archivingList?.title ?? "list")?", isPresented: Binding(
+            get: { archivingList != nil }, set: { if !$0 { archivingList = nil } }
+        ), titleVisibility: .visible) {
+            Button("Archive List") {
+                if let archivingList {
+                    onArchiveList(archivingList.id)
+                    removedListIDs.insert(archivingList.id)
+                }
+                archivingList = nil
+            }
+            Button("Cancel", role: .cancel) { archivingList = nil }
+        } message: {
+            Text("Keeps the list and all its cards in Week's Archived Lists.")
+        }
+        .confirmationDialog("Delete \(deletingList?.title ?? "list")?", isPresented: Binding(
+            get: { deletingList != nil }, set: { if !$0 { deletingList = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete List", role: .destructive) {
+                if let deletingList, onDeleteList(deletingList.id) {
+                    removedListIDs.insert(deletingList.id)
+                }
+                deletingList = nil
+            }
+            Button("Cancel", role: .cancel) { deletingList = nil }
+        } message: {
+            Text("Permanently deletes this list, active and archived cards, and their bookmarks. This cannot be undone.")
         }
     }
 }
@@ -3162,6 +3493,8 @@ private struct WeekListsDirectoryView: View {
 struct TodayCalendarView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
+    let onArchiveCard: (Int) -> Void /* Canonical archive callback */
+    let onDeleteCard: (Int) -> Bool /* Confirmed deletion result */
     let onOpenBoardList: (Int) -> Void /* Navigate to the card's list */
 
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now /* Visible month */
@@ -3322,6 +3655,11 @@ struct TodayCalendarView: View {
                                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                                 }
                                 .buttonStyle(.plain)
+                                .modifier(ContentLifecycleActions(
+                                    title: result.title, kind: "Card",
+                                    onArchive: { onArchiveCard(result.cardID) },
+                                    onDelete: { onDeleteCard(result.cardID) }
+                                ))
                             }
                         }
                     }
@@ -3465,6 +3803,12 @@ private struct SavedCardsView: View {
     @Binding var collections: [PersonalCollection] /* Collections whose archived boards can be restored */
     let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
     let onRestoreBoard: (UUID) -> Void /* Restore a saved board by identity */
+    let onDeleteBoard: (UUID) -> Bool /* Save permanent collection removal and report success */
+    let onArchiveCard: (Int) -> Void /* Archive a Week bookmark's canonical card */
+    let onDeleteCard: (Int) -> Bool /* Report confirmed Week bookmark-card removal */
+    @State private var deletingBoard: PersonalCollection? /* Saved collection awaiting removal */
+    @State private var deletingCard: KanbanCard? /* Week bookmark awaiting removal */
+    @State private var inspectingBoard: PersonalCollection? /* Archived collection being browsed */
 
     ///
     /// @fcn        SavedCardsView.savedCards
@@ -3506,7 +3850,7 @@ private struct SavedCardsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Saved")
                             .font(.largeTitle.weight(.bold))
-                        Text("Bookmarks and archived boards on this device")
+                        Text("Bookmarks and archived collections on this device")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -3544,20 +3888,29 @@ private struct SavedCardsView: View {
                                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button("Archive Card", systemImage: "archivebox") { onArchiveCard(result.card.id) }
+                                    Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = result.card }
+                                }
+                                .accessibilityActions {
+                                    Button("Archive Card") { onArchiveCard(result.card.id) }
+                                    Button("Delete Card") { deletingCard = result.card }
+                                }
                             }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
                     .modifier(TodayPanelSurface())
-                    if collections.contains(where: { $0.isArchived == true && $0.kind == .board }) {
+                    if collections.contains(where: { $0.isArchived == true }) {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Archived Boards").font(.title2.weight(.semibold))
-                            ForEach(collections.filter { $0.isArchived == true && $0.kind == .board }) { board in
+                            Text("Archived Collections").font(.title2.weight(.semibold))
+                            ForEach(collections.filter { $0.isArchived == true }) { board in
                                 HStack {
                                     Image(systemName: "archivebox").foregroundStyle(.secondary)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(board.title).font(.headline)
+                                        Button(board.title) { inspectingBoard = board }
+                                            .font(.headline)
                                         Text("\(board.lists.count) lists · \(board.lists.flatMap(\.allCards).filter { !$0.isSectionDivider }.count) cards")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -3566,6 +3919,9 @@ private struct SavedCardsView: View {
                                     Button("Restore") { onRestoreBoard(board.id) }
                                         .buttonStyle(.bordered)
                                         .accessibilityLabel("Restore \(board.title)")
+                                    Button("Delete", systemImage: "trash", role: .destructive) { deletingBoard = board }
+                                        .labelStyle(.iconOnly)
+                                        .accessibilityLabel("Delete \(board.title)")
                                 }
                             }
                             Text("Restored boards appear in Library. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
@@ -3581,6 +3937,151 @@ private struct SavedCardsView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .background(.clear)
+        }
+        .confirmationDialog("Delete \(deletingBoard?.title ?? "collection")?", isPresented: Binding(
+            get: { deletingBoard != nil }, set: { if !$0 { deletingBoard = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Collection", role: .destructive) {
+                if let deletingBoard { _ = onDeleteBoard(deletingBoard.id) }
+                deletingBoard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingBoard = nil }
+        } message: {
+            Text("Permanently deletes this retained collection, active and archived lists/cards, and bookmarks. This cannot be undone.")
+        }
+        .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
+            get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete Card", role: .destructive) {
+                if let deletingCard { _ = onDeleteCard(deletingCard.id) }
+                deletingCard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCard = nil }
+        } message: {
+            Text("Permanently deletes the card and its bookmark from Week. This cannot be undone.")
+        }
+        .sheet(item: $inspectingBoard) { board in
+            ArchivedCollectionContentsView(
+                collection: Binding(
+                    get: { collections.first { $0.id == board.id } ?? board },
+                    set: { updated in
+                        guard let index = collections.firstIndex(where: { $0.id == updated.id }) else { return }
+                        do {
+                            var snapshot = collections
+                            snapshot[index] = updated
+                            try PersonalCollectionStore.saveChecked(snapshot)
+                            collections = snapshot
+                        } catch {
+                            DatabaseActivity.shared.report("Could not delete archived content: \(error.localizedDescription) It has been retained.")
+                        }
+                    }
+                ),
+                onDeleteBoard: { onDeleteBoard(board.id) },
+                onRestoreBoard: { onRestoreBoard(board.id) }
+            )
+            .databaseActivityOverlay()
+        }
+    }
+}
+
+///
+/// Browses all retained content inside an archived personal collection
+///
+/// @section    Purpose
+///     Provide confirmed list/card deletion without restoring or duplicating the Board
+///
+private struct ArchivedCollectionContentsView: View {
+    @Binding var collection: PersonalCollection /* Canonical retained collection */
+    let onDeleteBoard: () -> Bool /* Parent reports saved collection removal */
+    let onRestoreBoard: () -> Void /* Parent saves restoration */
+    @Environment(\.dismiss) private var dismiss /* Return to Saved */
+    @State private var deletingList: KanbanList? /* Nested list awaiting removal */
+    @State private var deletingCard: KanbanCard? /* Retained card awaiting removal */
+    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation */
+
+    ///
+    /// @fcn        ArchivedCollectionContentsView.deleteCard(_:)
+    /// @brief      Save complete retained-card and bookmark removal through the canonical binding
+    /// @details    The owner reports save errors; failed saves leave its binding unchanged
+    /// @param[in]  id  Card identity within this collection
+    /// @return     (Bool) whether the canonical card was removed
+    ///
+    @discardableResult
+    private func deleteCard(_ id: Int) -> Bool {
+        var updated = collection
+        BoardContentDeletion.card(id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
+        collection = updated
+        return !collection.lists.contains { $0.allCards.contains { $0.id == id } }
+    }
+
+    ///
+    /// @fcn        ArchivedCollectionContentsView.body
+    /// @brief      Inspect archived collection lists and their active/archive cards
+    /// @details    Deletion updates the owning collection's complete snapshot and local bookmarks
+    /// @return     (some View) retained-content browser with restore and deletion controls
+    ///
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(collection.lists) { list in
+                    Section(list.title + (list.isArchived ? " (archived)" : "")) {
+                        ForEach(list.allCards) { card in
+                            NavigationLink(card.word) {
+                                ArchivedCardInspectionView(card: card) {
+                                    deleteCard(card.id)
+                                }
+                            }
+                            .contextMenu {
+                                Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = card }
+                            }
+                            .accessibilityAction(named: "Delete Card") { deletingCard = card }
+                        }
+                        Button("Delete List", systemImage: "trash", role: .destructive) { deletingList = list }
+                    }
+                }
+            }
+            .navigationTitle(collection.title)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu("Collection actions", systemImage: "ellipsis.circle") {
+                        Button("Restore") { onRestoreBoard(); dismiss() }
+                        Button("Delete Collection", systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
+                    }
+                }
+            }
+            .confirmationDialog("Delete \(deletingList?.title ?? "list")?", isPresented: Binding(
+                get: { deletingList != nil }, set: { if !$0 { deletingList = nil } }
+            ), titleVisibility: .visible) {
+                Button("Delete List", role: .destructive) {
+                    if let deletingList {
+                        var updated = collection
+                        BoardContentDeletion.list(deletingList.id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
+                        collection = updated
+                    }
+                    deletingList = nil
+                }
+                Button("Cancel", role: .cancel) { deletingList = nil }
+            } message: {
+                Text("Permanently deletes this list, all retained cards, and bookmarks. This cannot be undone.")
+            }
+            .confirmationDialog("Delete Collection?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible) {
+                Button("Delete Collection", role: .destructive) { if onDeleteBoard() { dismiss() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Permanently deletes all content in this retained collection. This cannot be undone.")
+            }
+            .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
+                get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+            ), titleVisibility: .visible) {
+                Button("Delete Card", role: .destructive) {
+                    if let deletingCard { deleteCard(deletingCard.id) }
+                    deletingCard = nil
+                }
+                Button("Cancel", role: .cancel) { deletingCard = nil }
+            } message: {
+                Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
+            }
         }
     }
 }

@@ -5,11 +5,12 @@
 //             checklist actions, and activity. Includes reduced Action Detail and member draft
 //             editors, reusable section/row components, and custom swipe-to-delete interactions
 //
-// @last rev   10/04/26
+// @last rev   10/05/26
 //
 // @notes      CardDetailView holds local working state and emits complete snapshots through the
 //             optional onTitleToggle callback, which handles more than completion alone.
-//             The caller owns Board persistence, movement, archival, and attachment-file pruning.
+//             The caller owns Board persistence, movement, archival, deletion, and attachment-file pruning.
+//             Confirmed deletion suppresses further snapshots before invoking onDelete and dismissing.
 //             Member and Action Detail sheets use explicit Save/Cancel drafts; main card edits
 //             synchronize as they occur. Generated activity is display copy, not a stored audit log
 //
@@ -246,6 +247,8 @@ struct CardDetailView: View {
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
     /// Optional callback that archives the latest synchronized card snapshot.
     let onArchive: (() -> Void)?
+    /// Optional callback permanently deleting this card and its caller-owned content.
+    let onDelete: (() -> Bool)? /* Save-first removal; false keeps the editor and drafts open */
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
@@ -269,6 +272,8 @@ struct CardDetailView: View {
     @State private var activityFilter: ActivityFilter = .all /* The currently selected activity filter for the card          */
     @State private var showingAttachmentNotice = false       /* Whether an attachment notice is presented                    */
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
+    @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
+    @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
 
 
     ///
@@ -301,6 +306,7 @@ struct CardDetailView: View {
     /// @param[in]  onTitleToggle  Optional callback receiving every complete edited card snapshot
     /// @param[in]  onMoveToList   Optional callback receiving a destination list ID
     /// @param[in]  onArchive      Optional callback archiving the latest synchronized card
+    /// @param[in]  onDelete       Optional save-first deletion callback; false retains the editor and drafts
     ///
     /// @return     (CardDetailView) configured card detail presentation
     /// @post       Initialization does not submit edits or mutate caller-owned bindings
@@ -315,7 +321,8 @@ struct CardDetailView: View {
         savedCardIDs: Binding<Set<Int>>        = .constant([]),
         onTitleToggle: ((KanbanCard) -> Void)? = nil,       /* Callback invoked when the card title checkbox is toggled     */
         onMoveToList: ((Int) -> Void)?         = nil,       /* Callback invoked when the card is moved                      */
-        onArchive: (() -> Void)? = nil
+        onArchive: (() -> Void)? = nil,
+        onDelete: (() -> Bool)? = nil
     ) {
 
         self.card           = card                                              /* The kanban card being displayed in detail                            */
@@ -327,6 +334,7 @@ struct CardDetailView: View {
         self.onTitleToggle  = onTitleToggle                                     /* Callback invoked when the card title checkbox is toggled             */
         self.onMoveToList   = onMoveToList                                      /* Callback invoked when the card is moved                              */
         self.onArchive = onArchive
+        self.onDelete = onDelete
 
         _titleChecked         = State(initialValue: card.isTitleChecked)        /* Initialize the title checked state based on the card's current value */
         _titleText            = State(initialValue: card.word)                  /* Initialize the editable title from the card                          */
@@ -425,6 +433,8 @@ struct CardDetailView: View {
     @MainActor
     private func importPhotos(from photoItems: [PhotosPickerItem]) async {
 
+        guard !hasDeletedCard else { return }
+
         var importFailed = false /* Whether any selected media failed to import */
 
         for photoItem in photoItems { /* Selected Photos-library item */
@@ -434,6 +444,7 @@ struct CardDetailView: View {
                     importFailed = true
                     continue
                 }
+                guard !hasDeletedCard else { return }
 
                 let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type */
                 let isVideo = photoItem.supportedContentTypes.contains { /* Whether the selection is video media */
@@ -559,7 +570,8 @@ struct CardDetailView: View {
     /// @param[in]  clearDueDate   Whether to remove the card's due date
     ///
     /// @return     (Void) invokes the optional snapshot callback
-    /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent update
+    /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent update.
+    ///             Confirmed deletion suppresses all snapshots, including dismissal and delayed edits
     /// @note       Date removal requires the corresponding clear flag; nil dates retain working values.
     ///             The unchanged generated subtitle remains nil when no original override existed
     ///
@@ -575,6 +587,8 @@ struct CardDetailView: View {
         clearStartDate: Bool                = false,        /* Whether to clear the start date  */
         clearDueDate:   Bool                = false         /* Whether to clear the due date    */
     ) {
+
+        guard !hasDeletedCard else { return }
 
         let nextTitleChecked = titleChecked   ?? self.titleChecked /* Effective checked state */
         let nextTitle         = title         ?? titleText /* Effective card title */
@@ -604,6 +618,30 @@ struct CardDetailView: View {
         )
 
         onTitleToggle?(updatedCard)
+    }
+
+
+    ///
+    /// @fcn        CardDetailView.deleteCard()
+    /// @brief      Permanently delete the card after explicit confirmation
+    /// @details    Blocks snapshot synchronization before clearing focus or invoking the caller,
+    ///             so dismissal and delayed editor callbacks cannot recreate the deleted card
+    ///
+    /// @return     (Void) dismisses after successful deletion; failed saves retain the editor and drafts
+    /// @pre        The user confirmed permanent deletion; onDelete owns persistence and file pruning
+    /// @post       Further onTitleToggle synchronization is disabled for this detail instance.
+    ///             Missing callbacks and repeated successful deletion requests have no effect
+    ///
+    private func deleteCard() {
+        guard let onDelete, !hasDeletedCard else { return }
+
+        hasDeletedCard = true
+        guard onDelete() else {
+            hasDeletedCard = false
+            return
+        }
+        focusedField = nil
+        dismiss()
     }
 
 
@@ -1273,11 +1311,12 @@ struct CardDetailView: View {
     /// @brief      Build the card detail presentation
     /// @details    Composes inline text editing, completion, dates, attachments, labels, members,
     ///             typed checklist actions, activity filtering, and comments. Coordinates all editors,
-    ///             media import/preview, bookmark toggling, movement, and optional card archival
+    ///             media import/preview, bookmark toggling, movement, and optional card archival/deletion
     ///
     /// @return     (some View) rendered card detail screen
     /// @post       Main edits emit complete snapshots as they occur; archive emits the latest snapshot
-    ///             before invoking onArchive and dismissing. Attachment failures show a notice
+    ///             before invoking onArchive and dismissing. Confirmed deletion invokes onDelete
+    ///             and dismisses without further snapshots. Attachment failures show a notice
     /// @note       Dividers display a minimal surface without task actions. Label/catalog persistence
     ///             and Board updates belong to the caller; closing does not revert prior submitted edits
     ///
@@ -1725,6 +1764,13 @@ struct CardDetailView: View {
                                 Label("Archive Card", systemImage: "archivebox")
                             }
                         }
+                        if onDelete != nil, !card.isSectionDivider {
+                            Button(role: .destructive) {
+                                showingDeleteConfirmation = true
+                            } label: {
+                                Label("Delete Card", systemImage: "trash")
+                            }
+                        }
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(.title2)
@@ -1733,6 +1779,12 @@ struct CardDetailView: View {
                             .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Card actions")
+                }
+                if card.isSectionDivider, onDelete != nil {
+                    Button("Delete Divider", systemImage: "trash", role: .destructive) {
+                        showingDeleteConfirmation = true
+                    }
+                    .frame(minWidth: 44, minHeight: 44)
                 }
             }
             .padding(.horizontal, 16)
@@ -1752,6 +1804,12 @@ struct CardDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(attachmentNoticeMessage)
+        }
+        .alert("Permanently delete this card?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete Card", role: .destructive, action: deleteCard)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes this card and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {

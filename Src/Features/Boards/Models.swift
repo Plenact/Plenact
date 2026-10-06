@@ -1168,6 +1168,46 @@ enum PersonalCollectionKind: String, CaseIterable, Codable {
     case board = "Board"
 }
 
+///
+/// Applies permanent removal to a complete Board snapshot
+///
+/// @section    Purpose
+///     Keep active/archive removal and Board-local bookmark cleanup consistent
+///
+enum BoardContentDeletion {
+    ///
+    /// @fcn        BoardContentDeletion.card(_:in:savedCardIDs:)
+    /// @brief      Remove a card from every active/archive partition of its owning Board
+    /// @details    Only the supplied Board is inspected; equal IDs in other collections are unaffected
+    /// @param[in]  id  Board-local card identity
+    /// @param[in,out] lists  Complete Board snapshot
+    /// @param[in,out] savedCardIDs  Bookmarks belonging to that Board
+    /// @return     (Void) removes matching records and their bookmark
+    ///
+    static func card(_ id: Int, in lists: inout [KanbanList], savedCardIDs: inout Set<Int>) {
+        for index in lists.indices {
+            lists[index].cards.removeAll { $0.id == id }
+            lists[index].archivedCards.removeAll { $0.id == id }
+        }
+        savedCardIDs.remove(id)
+    }
+
+    ///
+    /// @fcn        BoardContentDeletion.list(_:in:savedCardIDs:)
+    /// @brief      Remove a list together with its active and archived cards
+    /// @details    Removes bookmarks only for identities owned by the removed list
+    /// @param[in]  id  Board-local list identity
+    /// @param[in,out] lists  Complete Board snapshot
+    /// @param[in,out] savedCardIDs  Bookmarks belonging to that Board
+    /// @return     (Void) removes the list and contained bookmarks
+    ///
+    static func list(_ id: Int, in lists: inout [KanbanList], savedCardIDs: inout Set<Int>) {
+        let removedIDs = Set(lists.filter { $0.id == id }.flatMap(\.allCards).map(\.id))
+        lists.removeAll { $0.id == id }
+        savedCardIDs.subtract(removedIDs)
+    }
+}
+
 
 ///
 /// Defines optional synthetic examples for personal lists
@@ -1600,6 +1640,28 @@ enum PersonalCollectionStore {
         try saveChecked(updated, to: defaults)
         return updated
     }
+
+    ///
+    /// @fcn        PersonalCollectionStore.archiveCollection(id:in:to:)
+    /// @brief      Retain an active personal list or Board outside Library
+    /// @details    Saves the complete updated collection snapshot before returning it
+    /// @param[in]  id  Collection UUID
+    /// @param[in]  collections  Current complete snapshot
+    /// @param[in]  defaults  Destination preferences
+    /// @return     ([PersonalCollection]) successfully saved archive state
+    /// @throws     Validation or encoding errors; original state is unchanged
+    ///
+    static func archiveCollection(
+        id: UUID, in collections: [PersonalCollection], to defaults: UserDefaults = .standard
+    ) throws -> [PersonalCollection] {
+        guard let index = collections.firstIndex(where: { $0.id == id && $0.isActive }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        var updated = collections
+        updated[index].isArchived = true
+        try saveChecked(updated, to: defaults)
+        return updated
+    }
 }
 
 
@@ -1700,6 +1762,22 @@ enum KanbanBoardPersistence {
     private static let queue = DispatchQueue(label: "Plenact.Board.persistence", qos: .userInitiated)
 
     ///
+    /// @fcn        KanbanBoardPersistence.saveListsChecked(_:suiteName:)
+    /// @brief      Save a destructive snapshot before changing visible state
+    /// @details    Encodes first, then waits behind earlier queued writes to preserve save ordering
+    /// @param[in]  lists  Complete Week snapshot
+    /// @param[in]  suiteName  Optional isolated preference suite
+    /// @throws     Encoding or preference-suite errors; no write occurs on encoding failure
+    ///
+    static func saveListsChecked(_ lists: [KanbanList], suiteName: String? = nil) throws {
+        let data = try JSONEncoder().encode(lists)
+        try queue.sync {
+            let defaults = try persistenceDefaults(suiteName: suiteName)
+            defaults.set(data, forKey: storageKey)
+        }
+    }
+
+    ///
     /// @fcn        KanbanBoardPersistence.loadListsInBackground(suiteName:)
     /// @brief      Load Board lists using the persistence queue
     /// @details    Reports load failures and displays deterministic sample data without deleting
@@ -1762,9 +1840,13 @@ enum KanbanBoardPersistence {
     /// @param[in]  suiteName  Optional defaults suite; nil selects standard defaults
     ///
     /// @return     (Void) schedules the save operation
+    /// @param[in]  onSuccess  Optional main-actor cleanup invoked only after a successful write
     ///
     @MainActor
-    static func enqueueSave(_ lists: [KanbanList], suiteName: String? = nil) {
+    static func enqueueSave(
+        _ lists: [KanbanList], suiteName: String? = nil,
+        onSuccess: (@MainActor () -> Void)? = nil
+    ) {
         let activity = DatabaseActivity.shared
         let operation = activity.begin("Saving Board...")
 
@@ -1778,6 +1860,8 @@ enum KanbanBoardPersistence {
             Task { @MainActor in
                 if case .failure(let error) = result {
                     activity.report("Could not save the Board: \(error.localizedDescription) Your latest changes are not saved. Please try editing again.")
+                } else {
+                    onSuccess?()
                 }
                 activity.end(operation)
             }

@@ -45,6 +45,8 @@ A future weekly review may offer a deliberate way to revisit plans, but it shoul
 - “Open today's list” opens the existing Board positioned at the selected day list. “Browse all lists” exposes every existing list by its stable ID, including lists not assigned to Today.
 - Preserve the list's manually chosen card order and divider rows in Today and when opening Board.
 - Tapping a task navigates to its existing card details where possible; completion updates the same persisted card, not a Today-only copy.
+- Card row/detail controls offer Archive and confirmed permanent Delete. Today list choices, Search, label results, Calendar, and Saved bookmarks delegate their lifecycle actions to the same canonical Week records rather than removing a projection-only copy. Archived content can be inspected and deleted through the retained-content browsers.
+- Deletion removes the owning bookmark and saves the complete remaining Week snapshot before publishing removal. It does not delete separate personal/archived copies or remove the permanent Week workspace. See [archive/deletion entry points and media safety](../Src/Features/Boards/README.md#archive-and-permanent-deletion).
 - Add task, if included in the first increment, creates a card in an explicitly selected existing list.
 - If the selected list was removed or cannot be resolved, ask the person to choose another list; do not silently pick the first list.
 - When Quick capture is focused, the custom lower navigation toolbar stays anchored at the screen bottom and the keyboard covers it; the toolbar must not rise above the keyboard.

@@ -22,14 +22,14 @@ Plenact's organizing model is:
 | **Today** | Helps focus on a selected existing Week list for a particular date. | It projects canonical Board records and does not own duplicate cards. |
 | **Week / Board** | Shows and organizes the larger ordered planning workspace. | Existing card and list order remains user-controlled. |
 | **Library** | Provides access to the Week Board and the person's own collections. | Personal collections remain local lists or Boards, not a standalone Notes store. |
-| **Saved** | Provides access to locally bookmarked cards and archived Boards. | Archive retains discoverable, restorable content; it is not deletion or a backup. |
+| **Saved** | Provides access to locally bookmarked Week cards and archived personal collections. | Archive retains discoverable, restorable content; confirmed Delete is permanent and archives are not backups. |
 | **Review** | Offers a deliberate opportunity to reconsider plans and choose what to do next. | A weekly-review workflow is a proposed direction, not an implemented feature. |
 
 These are complementary ways to organize and view work, not a set of required lifecycle states. A card can remain an idea, have no date, or have no checklist. People may use personal collections as their context without adopting a fixed set of “life areas.”
 
 ## Library and personal collections
 
-The former Lists tab is now **Library**, with a books-style navigation icon. Its Week Board entry remains separate from **Personal collections**. Collection rows use the person's chosen title, icon, and color, with an explicit active-card count; Board subtitles count active lists. Search, list/Board creation, editing, ordering, and opening the existing content remain available. The empty state explains personal spaces and offers the existing list-creation form. Archived Boards remain in Saved.
+The former Lists tab is now **Library**, with a books-style navigation icon. Its Week Board entry remains separate from **Personal collections**. Collection rows use the person's chosen title, icon, and color, with an explicit active-card count; Board subtitles count active lists. Search, list/Board creation, editing, ordering, and opening the existing content remain available. The empty state explains personal spaces and offers the existing list-creation form. Archived Boards and personal lists remain in Saved's **Archived Collections** section.
 
 This is a presentation update, not a new hierarchy or migration. Lists still organize cards, and the central New action keeps its existing capture behavior. Collection names or note-like icons do not establish standalone notes.
 
@@ -46,6 +46,14 @@ The chooser offers **On the Table**, **In the Queue**, **Scheduled**, **Shopping
 These examples do not replace Week or existing collections, reference attachment files, assign people, create bookmarks, or automatically set dates/reminders. Scheduled is a planning context, not a calendar service. Misc. demonstrates reference-style cards, not a separate Notes type. After saving, the cards are ordinary editable local content. This feature is separate from Today's **Load Example**, which has different Week replacement/undo semantics.
 
 Validation: the same targeted iPhone 15 Pro Max command above passed **47 tests, 0 failures** after adding the examples. New tests check all six names, card-count bounds, identities, optional-field safety, round trips, no writes during draft creation, collision-safe names, and preservation of existing collection/Week snapshots after an explicit append/save. The actual chooser-to-form transition, Cancel/Save interaction, both entry points, and adaptive button appearance remain hands-on acceptance checks.
+
+## User-directed content lifecycle
+
+Cards, lists, and collections offer confirmed permanent deletion alongside their existing archive controls, including retained-content browsers. Archive means keep for later; Delete removes the selected record, its contained content, and its owning bookmarks. Other retained copies remain independent. Week can be archived or have its contents deleted, but its workspace remains available.
+
+Deletion operates on the canonical local records, saves before publishing removal, and protects media still referenced by other retained content or the existing Load Example undo snapshot. It does not introduce remote synchronization or change the hierarchy. See the [lifecycle action matrix and safety boundaries](../Src/Features/Boards/README.md#archive-and-permanent-deletion).
+
+Hands-on acceptance still needs confirmation/Cancel, restoration, deletion followed by relaunch, focused-editor failure/dismissal, photo import during deletion, shared attachments, both landscape directions, large text, and VoiceOver. Helper tests alone do not establish those interactions.
 
 ## Planning loop
 

@@ -23,6 +23,163 @@ import SwiftUI
 final class PlenactBoardDocumentTests: XCTestCase {
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testPermanentCardDeletionIncludesArchivesAndRemovesOnlyOwningBookmarks
+    /// @brief      Remove retained card records without affecting other Board-local identities
+    /// @details    Exercises an archived list and keeps an independent collection with an equal card ID
+    ///
+    func testPermanentCardDeletionIncludesArchivesAndRemovesOnlyOwningBookmarks() {
+        let card = KanbanCard(id: 12, word: "Synthetic", listTitle: "Retained", checklists: [])
+        var archivedList = KanbanList(id: 3, title: "Retained", cards: [], archivedCards: [card])
+        archivedList.isArchived = true
+        var snapshot = [archivedList, KanbanList(id: 4, title: "Other", cards: [
+            KanbanCard(id: 13, word: "Keep", listTitle: "Other", checklists: [])
+        ])]
+        let independent = [archivedList]
+        var bookmarks: Set<Int> = [12, 13]
+        BoardContentDeletion.card(12, in: &snapshot, savedCardIDs: &bookmarks)
+        XCTAssertTrue(snapshot[0].allCards.isEmpty)
+        XCTAssertEqual(snapshot[1].cards.map(\.id), [13])
+        XCTAssertEqual(bookmarks, [13])
+        XCTAssertEqual(independent[0].archivedCards, [card])
+        BoardContentDeletion.card(12, in: &snapshot, savedCardIDs: &bookmarks)
+        XCTAssertEqual(bookmarks, [13])
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPermanentListDeletionRemovesNestedArchivesAndPreservesRemainingOrder
+    /// @brief      Remove complete list content and its bookmarks from either partition
+    /// @details    Checks empty-board encoding and leaves unrelated cards/bookmarks unchanged
+    /// @throws     JSON encoding or decoding failures
+    ///
+    func testPermanentListDeletionRemovesNestedArchivesAndPreservesRemainingOrder() throws {
+        let first = KanbanList(id: 1, title: "First", cards: [
+            KanbanCard(id: 10, word: "Active", listTitle: "First", checklists: [])
+        ], archivedCards: [
+            KanbanCard(id: 11, word: "Archived", listTitle: "First", checklists: [])
+        ])
+        let second = KanbanList(id: 2, title: "Keep", cards: [
+            KanbanCard(id: 12, word: "Keep", listTitle: "Keep", checklists: [])
+        ])
+        var snapshot = [first, second]
+        var bookmarks: Set<Int> = [10, 11, 12]
+        BoardContentDeletion.list(1, in: &snapshot, savedCardIDs: &bookmarks)
+        XCTAssertEqual(snapshot, [second])
+        XCTAssertEqual(bookmarks, [12])
+        BoardContentDeletion.list(2, in: &snapshot, savedCardIDs: &bookmarks)
+        XCTAssertTrue(snapshot.isEmpty)
+        XCTAssertTrue(bookmarks.isEmpty)
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(snapshot)), [])
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDeletionMediaCleanupPreservesRetainedCopiesAndUnrelatedFiles
+    /// @brief      Remove only explicit deletion candidates with no remaining references
+    /// @details    Creates synthetic media files; protects archive/undo references and an unrelated file
+    /// @throws     File creation or cleanup failures
+    ///
+    func testDeletionMediaCleanupPreservesRetainedCopiesAndUnrelatedFiles() throws {
+        let candidate = try CardAttachmentStore.saveMedia(Data([1, 2, 3]), kind: .photo, fileExtension: "jpg")
+        let unrelated = try CardAttachmentStore.saveMedia(Data([4, 5, 6]), kind: .photo, fileExtension: "jpg")
+        let candidateName = try XCTUnwrap(candidate.fileName)
+        let unrelatedName = try XCTUnwrap(unrelated.fileName)
+        defer {
+            try? CardAttachmentStore.removeDeletedFiles([candidateName, unrelatedName], keeping: [])
+        }
+        var card = KanbanCard(id: 1, word: "Retained", listTitle: "Archive", checklists: [])
+        card.attachments = [candidate]
+        var archived = KanbanList(id: 1, title: "Archive", cards: [], archivedCards: [card])
+        archived.isArchived = true
+        let retainedNames = CardAttachmentStore.fileNames(in: [archived])
+        try CardAttachmentStore.removeDeletedFiles([candidateName], keeping: retainedNames)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: candidate)).path))
+        try CardAttachmentStore.removeDeletedFiles([candidateName], keeping: [])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: candidate)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: unrelated)).path))
+        for invalidName in ["", ".", "..", "../outside.jpg"] {
+            XCTAssertThrowsError(try CardAttachmentStore.removeDeletedFiles([invalidName], keeping: []))
+        }
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalListArchiveSaveFailureLeavesPriorSnapshotUntouched
+    /// @brief      Verify personal lists archive through the same save-first boundary as Boards
+    /// @details    Retains nested cards/bookmarks, then forces encoding failure with an infinite date
+    /// @throws     Preference-suite setup or checked-save failures
+    ///
+    func testPersonalListArchiveSaveFailureLeavesPriorSnapshotUntouched() throws {
+        let suite = "Plenact.ListLifecycleTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let original = PersonalListExample.shopping.makeCollection(existingTitles: [])
+        try PersonalCollectionStore.saveChecked([original], to: defaults)
+        let archived = try PersonalCollectionStore.archiveCollection(id: original.id, in: [original], to: defaults)
+        XCTAssertFalse(archived[0].isActive)
+        XCTAssertEqual(archived[0].lists, original.lists)
+        var invalid = original
+        invalid.lists[0].cards[0].dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
+        XCTAssertThrowsError(try PersonalCollectionStore.archiveCollection(id: invalid.id, in: [invalid], to: defaults))
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), archived)
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekSaveCompletionRunsOnlyAfterSuccessfulWrite
+    /// @brief      Gate deletion cleanup on successful ordered persistence
+    /// @details    Checks valid completion and rejects completion when JSON encoding fails
+    /// @throws     Fixture setup failures
+    ///
+    @MainActor
+    func testWeekSaveCompletionRunsOnlyAfterSuccessfulWrite() async throws {
+        let suite = "Plenact.DeletionCompletionTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            DatabaseActivity.shared.dismissError()
+        }
+        let success = expectation(description: "Completion follows write")
+        KanbanBoardPersistence.enqueueSave([], suiteName: suite, onSuccess: {
+            XCTAssertNotNil(defaults.data(forKey: "Plenact.Board.v1"))
+            success.fulfill()
+        })
+        await fulfillment(of: [success], timeout: 2)
+        var invalid = KanbanCard(id: 1, word: "Invalid", listTitle: "List", checklists: [])
+        invalid.dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
+        let rejected = expectation(description: "No cleanup after failed write")
+        rejected.isInverted = true
+        KanbanBoardPersistence.enqueueSave(
+            [KanbanList(id: 1, title: "List", cards: [invalid])], suiteName: suite,
+            onSuccess: { rejected.fulfill() }
+        )
+        await fulfillment(of: [rejected], timeout: 0.2)
+        XCTAssertNotNil(DatabaseActivity.shared.errorMessage)
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: XCTUnwrap(defaults.data(forKey: "Plenact.Board.v1"))), [])
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckedWeekDeletionWaitsForEarlierWritesAndPreservesDiskOnFailure
+    /// @brief      Verify a checked destructive save cannot be overwritten by older queued edits
+    /// @details    Uses isolated preferences and rejects an unencodable remaining card without changing disk
+    /// @throws     Preference-suite setup, encoding, or decoding errors
+    ///
+    @MainActor
+    func testCheckedWeekDeletionWaitsForEarlierWritesAndPreservesDiskOnFailure() throws {
+        let suite = "Plenact.CheckedDeletionTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let prior = [KanbanList(id: 1, title: "Earlier edit", cards: [
+            KanbanCard(id: 1, word: "Synthetic", listTitle: "Earlier edit", checklists: [])
+        ])]
+        KanbanBoardPersistence.enqueueSave(prior, suiteName: suite)
+        try KanbanBoardPersistence.saveListsChecked([], suiteName: suite)
+        let saved = try XCTUnwrap(defaults.data(forKey: "Plenact.Board.v1"))
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: saved), [])
+
+        var invalid = prior
+        invalid[0].cards[0].dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
+        XCTAssertThrowsError(try KanbanBoardPersistence.saveListsChecked(invalid, suiteName: suite))
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), saved)
+    }
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testPersonalListExamplesContainSafeIndependentCards
     /// @brief      Verify the six example lists meet their content and compatibility contract
     /// @details    Checks card limits, unique local IDs, empty optional activity/media fields,

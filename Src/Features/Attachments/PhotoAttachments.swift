@@ -99,6 +99,39 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 ///
 enum CardAttachmentStore {
 
+    ///
+    /// @fcn        CardAttachmentStore.fileNames(in:)
+    /// @brief      Collect retained local media references from complete Board snapshots
+    /// @details    Includes both active and archived cards regardless of the list's archive state
+    /// @param[in]  lists  Complete retained lists
+    /// @return     (Set<String>) referenced media filenames
+    ///
+    static func fileNames(in lists: [KanbanList]) -> Set<String> {
+        Set(lists.flatMap(\.allCards).flatMap { $0.attachments ?? [] }.compactMap(\.fileName))
+    }
+
+    ///
+    /// @fcn        CardAttachmentStore.removeDeletedFiles(_:keeping:)
+    /// @brief      Remove only media belonging to successfully saved deletions
+    /// @details    Never scans unrelated files; skips names still referenced by any retained snapshot
+    /// @param[in]  candidates  Previously referenced filenames affected by the saved mutation
+    /// @param[in]  retained  All filenames still retained by the app
+    /// @throws     File removal errors; absent files are already removed
+    ///
+    static func removeDeletedFiles(_ candidates: Set<String>, keeping retained: Set<String>) throws {
+        for name in candidates.subtracting(retained) {
+            guard name == (name as NSString).lastPathComponent,
+                  !name.isEmpty, name != ".", name != ".." else {
+                throw CocoaError(.fileWriteInvalidFileName)
+            }
+            let attachment = KanbanAttachment(fileName: name)
+            guard let url = fileURL(for: attachment) else { throw CocoaError(.fileNoSuchFile) }
+            if FileManager.default.fileExists(atPath: url.path) {
+                try FileManager.default.removeItem(at: url)
+            }
+        }
+    }
+
     private static let directoryName = "CardAttachments" /* Local media folder name */
 
     ///

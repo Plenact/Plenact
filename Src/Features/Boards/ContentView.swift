@@ -743,6 +743,7 @@ struct ContentView: View {
                 members:              card.members,
                 labelIDs:             card.labelIDs,
                 attachments:          card.attachments,
+                coverAttachmentID:    card.coverAttachmentID,
                 dismissedActivityIDs: card.dismissedActivityIDs,
                 descriptionOverride:  card.descriptionOverride,
                 subtitleOverride:     card.subtitleOverride
@@ -1709,6 +1710,9 @@ struct ArchivedCardInspectionView: View {
     ///
     var body: some View {
         List {
+            if let cover = card.coverAttachment {
+                Section("Card Cover") { CardCoverPreview(attachment: cover) }
+            }
             Section("Description") { Text(card.funParagraph) }
             ForEach(card.checklists) { checklist in
                 Section(checklist.title) {
@@ -1804,6 +1808,7 @@ struct ContentLifecycleActions: ViewModifier {
 ///
 private struct BoardSettingsView: View {
 
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true /* Device-only visibility */
     @Binding var settings: BoardDisplaySettings             /* Bound to the board's display preferences        */
     /// Shared presentation choice updated immediately from Board settings.
     @Binding var presentation: BoardPresentation
@@ -1871,6 +1876,11 @@ private struct BoardSettingsView: View {
                     Toggle("Checklist progress", isOn: $settings.showChecklistProgress)
                     Toggle("Comment counts",     isOn: $settings.showCommentCounts)
                     Toggle("Due-date badges",    isOn: $settings.showDueDateBadges)
+                }
+                Section {
+                    Toggle("Show card covers", isOn: $showsCardCovers)
+                } footer: {
+                    Text("Applies to Board and Today card rows on this device. Turning this off keeps every cover selection and attachment.")
                 }
 
                 Section("Members") {
@@ -2981,6 +2991,7 @@ private struct ArchivedCardsView: View {
 ///
 struct KanbanCardView: View {
 
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true /* Shared display-only preference */
     let card: KanbanCard                            /* The kanban card being displayed                               */
     let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
@@ -3056,6 +3067,7 @@ struct KanbanCardView: View {
             members:              card.members,
             labelIDs:             card.labelIDs,
             attachments:          card.attachments,
+            coverAttachmentID:    card.coverAttachmentID,
             dismissedActivityIDs: card.dismissedActivityIDs,
             descriptionOverride:  description,
             subtitleOverride:     subtitle
@@ -3101,6 +3113,10 @@ struct KanbanCardView: View {
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: 9) {
+
+            if showsCardCovers, let cover = card.coverAttachment {
+                CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
+            }
 
             HStack(alignment: .center, spacing: 8) {
 
@@ -3214,6 +3230,13 @@ struct KanbanCardView: View {
     ///
     private var cardActions: some View {
         Menu {
+            if card.coverAttachmentID != nil {
+                Button("Remove Cover", systemImage: "photo.badge.minus") {
+                    var updated = card
+                    updated.coverAttachmentID = nil
+                    onUpdateCard(updated)
+                }
+            }
             Button(action: onArchiveCard) {
                 Label("Archive Card", systemImage: "archivebox")
             }

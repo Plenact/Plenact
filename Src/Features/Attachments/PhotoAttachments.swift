@@ -13,6 +13,7 @@
 // -------------------------------------------------------------------------------------------------
 import AVKit
 import Foundation
+import ImageIO
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -30,6 +31,123 @@ enum KanbanAttachmentKind: String, Codable, Sendable {
     case link
 }
 
+///
+/// Original bundled illustrations used only by synthetic examples
+///
+/// @section    Purpose
+///     Keep example drafts side-effect-free and independent of personal media files
+///
+enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
+    case garden, mountains, workspace
+
+    ///
+    /// @fcn        ExampleCoverImage.url
+    /// @brief      Resolve the immutable bundled illustration
+    /// @details    Only known resource names can be resolved; no remote downloads occur
+    /// @return     (URL?) bundled PNG location
+    ///
+    var url: URL? {
+        Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
+    }
+}
+
+///
+/// Decorative, bounded preview shared by card rows and cover controls
+///
+/// @section    Purpose
+///     Load photos away from the main actor without creating or modifying files
+///
+struct CardCoverPreview: View {
+    let attachment: KanbanAttachment /* Explicitly selected photo */
+    var height: CGFloat = 128 /* Fixed preview height, independent of source image dimensions */
+    @State private var image: UIImage? /* Downsampled image for this presentation */
+    @State private var unavailable = false /* Explicit missing/invalid-image feedback */
+
+    ///
+    /// @fcn        CardCoverPreview.body
+    /// @brief      Render the selected cover without hiding the card's text identity
+    /// @details    Task identity/cancellation prevents a previous image from replacing a changed cover
+    /// @return     (some View) decorative cropped image or visible unavailable notice
+    ///
+    var body: some View {
+        GeometryReader { geometry in
+            Group {
+                if let image {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else if unavailable {
+                    Label("Cover unavailable", systemImage: "photo")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Color.secondary.opacity(0.08)
+                }
+            }
+            .frame(width: geometry.size.width, height: height)
+            .clipped()
+        }
+        .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityHidden(!unavailable)
+        .task(id: attachment) {
+            image = nil
+            unavailable = false
+            let result = await Task.detached(priority: .utility) {
+                Result { try CardAttachmentStore.coverThumbnail(for: attachment) }
+            }.value
+            guard !Task.isCancelled else { return }
+            switch result {
+                case .success(let thumbnail): image = thumbnail
+                case .failure: unavailable = true
+            }
+        }
+    }
+}
+
+///
+/// Visual chooser for photos already attached to a card
+///
+/// @section    Purpose
+///     Make cover replacement recognizable without relying on numbered photo menus
+///
+struct CardCoverPicker: View {
+    let photos: [KanbanAttachment] /* Current attached photo choices */
+    let selectedID: UUID? /* Current cover, if explicitly enabled */
+    let onSelect: (UUID) -> Void /* Owner validates and saves selection */
+    @Environment(\.dismiss) private var dismiss /* Cancel or return after choosing */
+
+    ///
+    /// @fcn        CardCoverPicker.body
+    /// @brief      Show recognizable photo choices and a clear Cancel path
+    /// @details    Cancel does not mutate a card; choosing a row reuses its existing attachment
+    /// @return     (some View) navigable cover-photo chooser
+    ///
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                    Button {
+                        onSelect(photo.id)
+                        dismiss()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            CardCoverPreview(attachment: photo)
+                            Label("Photo \(index + 1)", systemImage: selectedID == photo.id ? "checkmark.circle.fill" : "photo")
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Photo \(index + 1)\(selectedID == photo.id ? ", current cover" : "")")
+                    .accessibilityHint("Use this attached photo as the card cover.")
+                }
+            }
+            .navigationTitle("Choose Card Cover")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+        }
+    }
+}
+
 
 ///
 /// Identifies one photo, video, or web link attached to a card
@@ -45,6 +163,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     let url:       URL?                     /* Remote web-link destination    */
     let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
     let addedAt:   Date                     /* Attachment creation time       */
+    let exampleImage: ExampleCoverImage?    /* Immutable original example illustration, never user media */
 
     ///
     /// @fcn        KanbanAttachment.kind
@@ -71,18 +190,20 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  url       Remote web URL, when the attachment is a link
     /// @param[in]  mediaKind Explicit photo, video, or link content type
     /// @param[in]  addedAt   Attachment creation time
+    /// @param[in]  exampleImage  Optional bundled illustration for synthetic examples
     ///
     /// @return     (KanbanAttachment) configured attachment metadata
     ///
     /// @pre        Supplied metadata describes the attachment location and content, when known
     /// @post       Stored fields match the provided values
     ///
-    init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now) {
+    init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil) {
         self.id        = id
         self.fileName  = fileName
         self.url       = url
         self.mediaKind = mediaKind
         self.addedAt   = addedAt
+        self.exampleImage = exampleImage
     }
 }
 
@@ -98,6 +219,28 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 ///             removeUnreferencedFiles(keeping:)
 ///
 enum CardAttachmentStore {
+
+    ///
+    /// @fcn        CardAttachmentStore.coverThumbnail(for:)
+    /// @brief      Decode a bounded, orientation-correct cover image
+    /// @details    Downsamples before decoding so Board rows do not load full-size camera images
+    /// @param[in]  attachment  Local or bundled photo metadata
+    /// @return     (UIImage) thumbnail with at most 960 pixels on its longest edge
+    /// @throws     Read/decode errors for missing or invalid media
+    ///
+    static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage {
+        guard let url = imageURL(for: attachment),
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 960,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return UIImage(cgImage: image)
+    }
 
     ///
     /// @fcn        CardAttachmentStore.fileNames(in:)
@@ -181,6 +324,8 @@ enum CardAttachmentStore {
     /// @post       No file data or attachment metadata is modified
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL? {
+
+        if let exampleImage = attachment.exampleImage { return exampleImage.url }
 
         guard let fileName = attachment.fileName, /* Stored local filename */
               

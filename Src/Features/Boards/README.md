@@ -47,6 +47,23 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 **List Actions → Add card** closes the actions sheet before presenting the new-card form for that same list. The form's Add action creates the card; Cancel leaves the list unchanged. The direct **+ Add card** row uses the same form.
 
+## Optional Card Covers
+
+Open a card's **Card Cover** section:
+
+- **Add Photo as Cover** imports one explicitly chosen photo through the system picker and attaches/selects it.
+- **Choose Attached Photo / Change Cover** opens a visual chooser of that card's existing photos. Cancel changes nothing. The attachment gallery also offers **Set as Cover** and **Remove Cover**, including accessibility actions.
+- **Remove Cover** disables this card's preview without removing its photo. It is also available in the Board/Today card-row menu. No replacement image is selected automatically.
+- **Board Settings → Show card covers** hides all Board/Today row covers on this installation without changing selections or attachment records. Card details retain their preview and controls for editing.
+
+Standard and focused Today rows use a 128-point decorative cover; Overview uses 72 points. Titles, completion, badges, and menus remain available. Media is downsampled off the main actor to at most 960 pixels on its longest edge. Missing/invalid images show **Cover unavailable**, not another photo or a network fallback.
+
+The optional `coverAttachmentID` references an existing photo attachment UUID. Older saved cards decode without a cover, nil selections omit the new JSON key, and neither storage keys nor existing filenames/IDs change. Removing the selected attachment also clears its cover; deleting an unrelated attachment does not. Videos, links, missing IDs, and dividers cannot be selected as covers. Archive/restore, list copying, renaming, and detail synchronization retain the selection. Superseded or removed cover-import requests cannot re-enable a cover when their photo transfer finishes.
+
+Three new starter-Board cards and the first card in **On the Table**, **In the Queue**, and **Up for Brew** demonstrate original bundled illustrations. Example previews/drafts create no personal media files; most cards stay text-only. Existing saved Boards/collections are not changed or retrofitted. Load Example keeps its existing explicit replacement/undo behavior. Bundled illustration references are separate from deletable Documents filenames. The dormant shared-demo seed omits local covers/illustrations and its existing server contract is unchanged.
+
+This is a local presentation feature, not remote media storage or backup. See [attachment boundaries](../Attachments/README.md) and [cover validation/device acceptance](../../../Test/README.md).
+
 ## Board Presentation
 
 **Board options > Board presentation** and **Board Settings > Presentation** offer **Standard** and **Overview**. The preference is stored locally, shared by Week and personal collections, and does not change Board JSON. Standard uses columns up to 360 points wide with supporting card summaries; Overview uses columns up to 240 points wide and omits subtitle/label summaries. Cards fit their displayed content with minimum heights of 112/80 points, scaled for Dynamic Type on Board lists. List titles have a separate header row; card actions sit beside the badges rather than squeezing the title. Both landscape directions and portrait are declared for iPhone.

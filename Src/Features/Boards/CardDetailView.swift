@@ -266,6 +266,10 @@ struct CardDetailView: View {
     @State private var members: [CardAssignee]               /* Registered and manual card assignments                       */
     @State private var selectedLabelIDs: [String]            /* Stable IDs of labels assigned to this card                   */
     @State private var attachments: [KanbanAttachment]       /* Photo attachments currently assigned to the card             */
+    @State private var coverAttachmentID: UUID? /* Explicit cover selection; nil means disabled */
+    @State private var selectedCoverPhoto: PhotosPickerItem? /* One photo explicitly selected for a cover */
+    @State private var coverImportID: UUID? /* Superseded requests cannot enable an old cover */
+    @State private var showsCoverPicker = false /* Visual chooser for already attached photos */
     @State private var selectedPhotoItems: [PhotosPickerItem] = [] /* Photos selected from the system photo library          */
     @State private var commentDraft = ""                     /* Text currently entered in the comment composer               */
     @State private var dismissedActivityIDs: Set<String>     /* IDs of activity entries that have been dismissed by the user */
@@ -346,6 +350,7 @@ struct CardDetailView: View {
         _members              = State(initialValue: card.members)               /* Initialize assigned members from the selected card                   */
         _selectedLabelIDs     = State(initialValue: card.labelIDs)              /* Initialize selected labels from the card                             */
         _attachments          = State(initialValue: card.attachments ?? [])     /* Initialize photo attachments from the card                           */
+        _coverAttachmentID    = State(initialValue: card.coverAttachmentID)
         _dismissedActivityIDs = State(initialValue: card.dismissedActivityIDs)  /* Initialize dismissed activity IDs from the card state                */
 
         _checklists = State(initialValue: card.checklists)                      /* Initialize checklist state from the card's stored values             */
@@ -369,6 +374,75 @@ struct CardDetailView: View {
         return memberColors[normalizedName] ?? .accentColor
     }
 
+
+    ///
+    /// @fcn        CardDetailView.coverControls
+    /// @brief      Offer explicit photo selection, replacement, and non-destructive cover removal
+    /// @details    Photo-library selection attaches one new photo; existing photos reuse their IDs.
+    ///             Removing a cover preserves all attachments and never auto-selects another image
+    /// @return     (some View) visible cover controls and optional preview
+    ///
+    private var coverControls: some View {
+        DetailSection(title: "Card Cover") {
+            if let cover = attachments.first(where: { $0.id == coverAttachmentID && $0.kind == .photo }) {
+                CardCoverPreview(attachment: cover)
+            }
+            Button(coverAttachmentID == nil ? "Choose Attached Photo" : "Change Cover", systemImage: "photo") {
+                showsCoverPicker = true
+            }
+            .disabled(!attachments.contains { $0.kind == .photo })
+            .frame(minHeight: 44)
+
+            PhotosPicker(selection: $selectedCoverPhoto, matching: .images) {
+                Label("Add Photo as Cover", systemImage: "photo.badge.plus")
+                    .frame(minHeight: 44)
+            }
+
+            if coverAttachmentID != nil || coverImportID != nil {
+                Button("Remove Cover", systemImage: "photo.badge.minus") {
+                    setCover(nil)
+                }
+                .frame(minHeight: 44)
+                .accessibilityHint("Keeps the photo attached to this card.")
+            }
+            Text("Covers are optional. Removing a cover keeps its photo attached. Choose an attached photo here or use Set as Cover on a photo's menu.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .onChange(of: selectedCoverPhoto) { _, photoItem in
+            guard let photoItem else { return }
+            let requestID = UUID()
+            coverImportID = requestID
+            Task { await importPhotos(from: [photoItem], coverRequestID: requestID) }
+        }
+        .sheet(isPresented: $showsCoverPicker) {
+            CardCoverPicker(
+                photos: attachments.filter { $0.kind == .photo },
+                selectedID: coverAttachmentID,
+                onSelect: { setCover($0) }
+            )
+        }
+    }
+
+    ///
+    /// @fcn        CardDetailView.setCover(_:)
+    /// @brief      Validate and synchronize an explicit cover choice
+    /// @details    Uses current attachment drafts and reports invalid selection without replacing the cover
+    /// @param[in]  id  Attached photo identity, or nil to remove the cover
+    ///
+    private func setCover(_ id: UUID?) {
+        var updated = card
+        updated.attachments = attachments
+        do {
+            try updated.setCover(id)
+            coverImportID = nil
+            selectedCoverPhoto = nil
+            coverAttachmentID = updated.coverAttachmentID
+            syncCardState()
+        } catch {
+            DatabaseActivity.shared.report("Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
+        }
+    }
 
     ///
     /// @fcn        CardDetailView.attachmentContent(for:)
@@ -401,6 +475,52 @@ struct CardDetailView: View {
 
 
     ///
+    /// @fcn        CardDetailView.attachmentGalleryItem(_:)
+    /// @brief      Add cover and removal actions to one attachment thumbnail
+    /// @details    Only photos can become covers; accessibility actions mirror the contextual menu
+    /// @param[in]  attachment  Current attachment metadata
+    /// @return     (some View) interactive gallery item
+    ///
+    private func attachmentGalleryItem(_ attachment: KanbanAttachment) -> some View {
+        attachmentContent(for: attachment)
+            .contextMenu {
+                if attachment.kind == .photo {
+                    Button(coverAttachmentID == attachment.id ? "Remove Cover" : "Set as Cover") {
+                        setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
+                    }
+                }
+                Button("Remove attachment", systemImage: "trash", role: .destructive) {
+                    removeAttachment(attachment)
+                }
+            }
+            .accessibilityLabel(attachment.url == nil ? "View attached media" : "Open attached link")
+            .accessibilityActions {
+                if attachment.kind == .photo {
+                    Button(coverAttachmentID == attachment.id ? "Remove Cover" : "Set as Cover") {
+                        setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
+                    }
+                }
+                Button("Remove attachment") { removeAttachment(attachment) }
+            }
+    }
+
+    ///
+    /// @fcn        CardDetailView.attachmentGallery
+    /// @brief      Present current attachments with per-photo cover controls
+    /// @details    Keeps the gallery's view-builder expression separate from the full card editor
+    /// @return     (some View) adaptive attachment grid
+    ///
+    private var attachmentGallery: some View {
+        DetailSection(title: "Attachments") {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
+                ForEach(attachments) { attachment in
+                    attachmentGalleryItem(attachment)
+                }
+            }
+        }
+    }
+
+    ///
     /// @fcn        CardDetailView.selectedLabels
     /// @brief      Resolve assigned label IDs into display definitions
     /// @details    Preserves selection order and omits identities missing from the shared catalog
@@ -422,6 +542,7 @@ struct CardDetailView: View {
     ///             synchronizes the attachment metadata to the card, and reports partial failures
     ///
     /// @param[in]  photoItems  PhotosPicker items selected for the current card
+    /// @param[in]  coverRequestID  Explicit cover import identity; nil means ordinary attachment import
     ///
     /// @return     (Void) updates the card with successfully imported photo and video attachments
     ///
@@ -431,9 +552,10 @@ struct CardDetailView: View {
     /// @note       Successful imports are retained even if another selected item fails to load or save
     ///
     @MainActor
-    private func importPhotos(from photoItems: [PhotosPickerItem]) async {
+    private func importPhotos(from photoItems: [PhotosPickerItem], coverRequestID: UUID? = nil) async {
 
         guard !hasDeletedCard else { return }
+        if let coverRequestID, coverImportID != coverRequestID { return }
 
         var importFailed = false /* Whether any selected media failed to import */
 
@@ -445,6 +567,7 @@ struct CardDetailView: View {
                     continue
                 }
                 guard !hasDeletedCard else { return }
+                if let coverRequestID, coverImportID != coverRequestID { return }
 
                 let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type */
                 let isVideo = photoItem.supportedContentTypes.contains { /* Whether the selection is video media */
@@ -453,14 +576,22 @@ struct CardDetailView: View {
                 let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category */
                 let fileExtension = contentType?.preferredFilenameExtension ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
 
-                attachments.append(try CardAttachmentStore.saveMedia(mediaData, kind: mediaKind, fileExtension: fileExtension))
+                let attachment = try CardAttachmentStore.saveMedia(mediaData, kind: mediaKind, fileExtension: fileExtension)
+                attachments.append(attachment)
+                if coverRequestID != nil && mediaKind == .photo { coverAttachmentID = attachment.id }
             } catch {
                 importFailed = true
             }
         }
 
-        selectedPhotoItems = []
-        activeSheet        = nil
+        if let coverRequestID, coverImportID != coverRequestID { return }
+        if coverRequestID != nil {
+            coverImportID = nil
+            selectedCoverPhoto = nil
+        } else {
+            selectedPhotoItems = []
+            activeSheet = nil
+        }
 
         syncCardState(attachments: attachments)
 
@@ -546,7 +677,17 @@ struct CardDetailView: View {
     /// @post       Matching attachment IDs are absent locally; this helper does not delete stored files directly
     ///
     private func removeAttachment(_ attachment: KanbanAttachment) {
-        attachments.removeAll { $0.id == attachment.id }
+        let removesCover = coverAttachmentID == attachment.id
+        var updated = card
+        updated.attachments = attachments
+        updated.coverAttachmentID = coverAttachmentID
+        updated.removeAttachment(attachment.id)
+        attachments = updated.attachments ?? []
+        coverAttachmentID = updated.coverAttachmentID
+        if removesCover {
+            coverImportID = nil
+            selectedCoverPhoto = nil
+        }
         syncCardState(attachments: attachments)
     }
 
@@ -612,6 +753,7 @@ struct CardDetailView: View {
             members:              nextMembers,
             labelIDs:             nextLabelIDs,
             attachments:          nextAttachments,
+            coverAttachmentID:    coverAttachmentID,
             dismissedActivityIDs: dismissedActivityIDs,
             descriptionOverride:  descriptionText,
             subtitleOverride:     nextSubtitle
@@ -1424,26 +1566,12 @@ struct CardDetailView: View {
                         }
                     }
 
+                    if !card.isSectionDivider {
+                        coverControls
+                    }
+
                     if !attachments.isEmpty {
-                        
-                        DetailSection(title: "Attachments") {
-                            
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
-                                
-                                ForEach(attachments) { attachment in
-                                    
-                                    attachmentContent(for: attachment)
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            removeAttachment(attachment)
-                                        } label: {
-                                            Label("Remove attachment", systemImage: "trash")
-                                        }
-                                    }
-                                    .accessibilityLabel(attachment.url == nil ? "View attached media" : "Open attached link")
-                                }
-                            }
-                        }
+                        attachmentGallery
                     }
 
                     //****************************************************************************//

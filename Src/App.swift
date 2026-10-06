@@ -3073,6 +3073,14 @@ private struct PersonalListExamplesView: View {
                         DisclosureGroup("Preview \(example.cards.count) example cards") {
                             ForEach(example.cards.indices, id: \.self) { index in
                                 VStack(alignment: .leading, spacing: 4) {
+                                    if index == 0, let illustration = example.coverIllustration {
+                                        CardCoverPreview(attachment: KanbanAttachment(
+                                            mediaKind: .photo, exampleImage: illustration
+                                        ))
+                                        Text("Optional example cover")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                     Text(example.cards[index].0).font(.headline)
                                     Text(example.cards[index].1)
                                         .font(.subheadline)
@@ -3265,6 +3273,9 @@ private struct PersonalCollectionSettingsView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         ForEach(draft.lists.flatMap(\.cards)) { card in
+                            if let cover = card.coverAttachment {
+                                CardCoverPreview(attachment: cover, height: 96)
+                            }
                             Text(card.word)
                         }
                     }

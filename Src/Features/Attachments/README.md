@@ -4,6 +4,14 @@ Plenact cards can hold local photos, local videos, and web links. Attachment con
 
 Users can choose supported media through the system photo picker, add a valid `http` or `https` link, and view attachments associated with a card. Removing a card or attachment may remove local media after it is no longer referenced anywhere on the board.
 
+### Card covers
+
+Card detail's **Card Cover** section provides a visual chooser for attached photos, **Add Photo as Cover**, and **Remove Cover**. Photo thumbnail menus also offer **Set as Cover**. Selection is explicit: attaching a photo normally never creates a cover. Removing a cover keeps the attachment and bytes; removing the selected attachment clears the cover without choosing a fallback.
+
+Covers reuse the selected attachment UUID; no second image file is saved. Videos and links are not cover choices. The device-only **Board Settings → Show card covers** switch hides row previews without altering content. Original bundled example photos use an optional typed `exampleImage` reference instead of a Documents filename, so canceled example drafts create no files and cleanup never treats these app resources as user media.
+
+`CardCoverPreview` downscales local/bundled photos off the main actor before displaying bounded, decorative previews. Its decode path applies image orientation and limits the longest edge to 960 pixels. Missing images show a visible unavailable notice. It does not fetch images from external links.
+
 ## Implementation
 
 [`PhotoAttachments.swift`](PhotoAttachments.swift) contains:
@@ -26,6 +34,6 @@ Do not present private-container storage as guaranteed secure sharing or backup.
 - No cloud or multi-device attachment synchronization.
 - No collaborative attachment permissions.
 - No external document-provider workflow.
-- File cleanup errors are currently ignored rather than shown to the user.
+- Legacy broad orphan-pruning paths still ignore cleanup errors; confirmed deletion uses candidate-only cleanup and reports failures.
 
 Developers changing attachment Codable fields or paths must preserve existing metadata and file references.

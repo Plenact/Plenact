@@ -132,8 +132,47 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
     var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
     var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
+    var coverAttachmentID:    UUID?              /* Explicitly chosen photo; nil disables this card's cover */
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
+
+    ///
+    /// @fcn        KanbanCard.coverAttachment
+    /// @brief      Resolve the explicitly selected photo without automatic fallback
+    /// @details    Missing attachments, nonphotos, and dividers do not produce a cover
+    /// @return     (KanbanAttachment?) selected photo metadata
+    ///
+    var coverAttachment: KanbanAttachment? {
+        guard !isSectionDivider, let coverAttachmentID else { return nil }
+        return attachments?.first { $0.id == coverAttachmentID && $0.kind == .photo }
+    }
+
+    ///
+    /// @fcn        KanbanCard.setCover(_:)
+    /// @brief      Select an attached photo or disable the cover without removing media
+    /// @details    Rejects nonphoto/missing identities and preserves the prior selection on error
+    /// @param[in]  id  Attached photo identity, or nil to remove the cover
+    /// @throws     Validation error for an unavailable photo or divider
+    ///
+    mutating func setCover(_ id: UUID?) throws {
+        if let id {
+            guard !isSectionDivider, attachments?.contains(where: { $0.id == id && $0.kind == .photo }) == true else {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+        }
+        coverAttachmentID = id
+    }
+
+    ///
+    /// @fcn        KanbanCard.removeAttachment(_:)
+    /// @brief      Remove attachment metadata and clear only its selected cover
+    /// @details    Does not delete files or automatically select another attached photo
+    /// @param[in]  id  Attachment identity belonging to this card
+    ///
+    mutating func removeAttachment(_ id: UUID) {
+        attachments?.removeAll { $0.id == id }
+        if coverAttachmentID == id { coverAttachmentID = nil }
+    }
 
     ///
     /// @fcn        KanbanCard.isSectionDivider
@@ -190,6 +229,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  members               Registered and manual card assignments
     /// @param[in]  labelIDs              Stable identifiers of assigned labels
     /// @param[in]  attachments           Optional photo attachment metadata
+    /// @param[in]  coverAttachmentID     Explicit cover photo identity; nil keeps the card text-only
     /// @param[in]  dismissedActivityIDs  Generated activity entries dismissed by the user
     /// @param[in]  descriptionOverride   Optional user-edited description
     /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
@@ -199,7 +239,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -212,6 +252,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.members              = members                 /* Names of users assigned to the card                */
         self.labelIDs             = labelIDs                /* Stable IDs of labels assigned to the card          */
         self.attachments          = attachments             /* Photo attachment metadata for the card             */
+        self.coverAttachmentID    = coverAttachmentID
         self.dismissedActivityIDs = dismissedActivityIDs    /* Set of activity IDs that were dismissed by user    */
         self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
         self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
@@ -260,6 +301,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             members:              decodedMembers,
             labelIDs:             try container.decodeIfPresent([String].self, forKey: .labelIDs) ?? [],
             attachments:          try container.decodeIfPresent([KanbanAttachment].self, forKey: .attachments),
+            coverAttachmentID:    try container.decodeIfPresent(UUID.self, forKey: .coverAttachmentID),
             dismissedActivityIDs: try container.decodeIfPresent(Set<String>.self, forKey: .dismissedActivityIDs) ?? [],
             descriptionOverride:  try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
             subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
@@ -286,6 +328,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case members
         case labelIDs
         case attachments
+        case coverAttachmentID
         case dismissedActivityIDs
         case descriptionOverride
         case subtitleOverride
@@ -1233,6 +1276,21 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     ///
+    /// @fcn        PersonalListExample.coverIllustration
+    /// @brief      Identify the optional original illustration for the first example card
+    /// @details    Only three examples demonstrate covers; the remaining cards stay text-only
+    /// @return     (ExampleCoverImage?) bundled illustration without creating attachment files
+    ///
+    var coverIllustration: ExampleCoverImage? {
+        switch self {
+            case .onTheTable: .garden
+            case .inTheQueue: .workspace
+            case .upForBrew: .mountains
+            default: nil
+        }
+    }
+
+    ///
     /// @fcn        PersonalListExample.summary
     /// @brief      Explain the example's organizing intent
     /// @details    Describes optional use rather than assigning dates or required lifecycle states
@@ -1253,7 +1311,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
     ///
     /// @fcn        PersonalListExample.cards
     /// @brief      Supply synthetic card titles and supporting details
-    /// @details    Fixtures contain no real personal records, media references, assignments, or dates
+    /// @details    Fixtures contain no real personal records, user-media references, assignments, or dates
     /// @return     ([(String, String)]) ordered title/detail pairs
     ///
     var cards: [(String, String)] {
@@ -1352,10 +1410,16 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
 
         collection.lists[0].cards = cards.enumerated().map { index, content in
         
-            KanbanCard(
+            var card = KanbanCard(
                 id: index, word: content.0, listTitle: title, checklists: [],
                 descriptionOverride: content.1, subtitleOverride: "Example"
             )
+            if index == 0, let illustration = coverIllustration {
+                let attachment = KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
+                card.attachments = [attachment]
+                card.coverAttachmentID = attachment.id
+            }
+            return card
         }
         return collection
     }
@@ -2099,7 +2163,7 @@ enum SampleData {
 
             let cards = cardTitlesByDay[listIndex].map { cardTitle -> KanbanCard in /* Seed the day's activities */
 
-                let card = KanbanCard( /* Construct one synthetic starter card */
+                var card = KanbanCard( /* Construct one synthetic starter card */
                     id:             globalIndex,
                     word:           cardTitle,
                     listTitle:      title,
@@ -2108,6 +2172,12 @@ enum SampleData {
                     labelIDs:       [LabelLibrary.starterLabelIDs[globalIndex % LabelLibrary.starterLabelIDs.count]]
                 )
 
+                if listIndex < 3 && cardTitle == cardTitlesByDay[listIndex].first {
+                    let illustration = ExampleCoverImage.allCases[listIndex]
+                    let attachment = KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
+                    card.attachments = [attachment]
+                    card.coverAttachmentID = attachment.id
+                }
                 globalIndex += 1
 
                 return card

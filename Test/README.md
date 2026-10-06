@@ -30,7 +30,11 @@ Card-layout regressions also compare short/tall height proposals and measure act
 
 Library row coverage hosts a long synthetic collection title at portrait/landscape widths and checks content-fitting growth at accessibility text sizes. On-device acceptance still needs Library navigation, search, create/cancel, edit/reorder, Saved restoration, VoiceOver, and both landscape directions. This presentation update does not introduce standalone notes or a new persistence format.
 
-Personal-list example tests verify all six template names, the 5–20-card requirement, distinct card IDs, ownership, empty date/media/assignment fields, and Codable round trips. Isolated-store tests check draft creation has no writes, repeated selections receive fresh collection IDs and collision-safe titles, renaming preserves card identities, and explicit append/save preserves retained collections and Week bytes. These model tests do not establish sheet dismissal or Cancel/Save interactions; exercise both Examples entry points, preview/select, cancel at each stage, repeated insertion, and narrow/large-text button layout on device.
+Personal-list example tests verify all six template names, the 5–20-card requirement, distinct card IDs, ownership, empty date/personal-media/assignment fields, and Codable round trips. Three examples now include one original bundled cover each. Isolated-store tests check draft creation has no writes, repeated selections receive fresh collection IDs and collision-safe titles, renaming preserves card identities, and explicit append/save preserves retained collections and Week bytes. These model tests do not establish sheet dismissal or Cancel/Save interactions; exercise both Examples entry points, preview/select, cancel at each stage, repeated insertion, and narrow/large-text button layout on device.
+
+Cover tests verify backward-compatible decoding and omitted nil keys; explicit photo-only selection; missing-ID/video/link/divider rejection; removal without fallback or photo deletion; archive/restore and independent-copy retention; actual bundled-resource loading; a synthetic 2400-by-1600 photo downsampled to exactly 960-by-640; and bounded Standard/Overview hosted rows with isolated visibility preferences. The synthetic API seed test verifies local cover and illustration metadata are omitted without contacting a server.
+
+Cover device acceptance: add a new photo as a cover, choose/change an existing photo using the visual chooser, cancel selection, remove the cover from detail and row menus, remove selected/unrelated attachments, hide/re-enable covers in Board Settings, relaunch, copy a list, and archive/restore through Week and personal collections. Check large photos, unavailable files, photo-transfer errors, Remove Cover or replacement during a pending transfer, deletion with an in-flight import, landscape, large text, and VoiceOver. Automated model/layout checks do not establish picker or gesture behavior.
 
 ## Running Tests
 
@@ -44,6 +48,8 @@ xcodebuild test -project Plenact.xcodeproj -scheme Plenact \
 
 Discover locally installed destinations with `xcodebuild -showdestinations -project Plenact.xcodeproj -scheme Plenact`
 
-Validation on October 5, 2026: the full command above passed **72 tests, 0 failures**. The focused run adding `-only-testing:PlenactTests/PlenactBoardDocumentTests` passed **53 tests, 0 failures**. Editor diagnostics reported no errors in the changed Swift files, and `git diff --check` passed. Xcode emitted its metadata-extraction notice because these targets do not depend on AppIntents. PHP contract checks were not rerun for this Swift-only milestone.
+Archive/delete validation on October 5, 2026: the full command above passed **72 tests, 0 failures**. The focused run adding `-only-testing:PlenactTests/PlenactBoardDocumentTests` passed **53 tests, 0 failures**.
+
+Card-cover validation later on October 5, 2026: the final full command above passed **78 tests, 0 failures**, including **59 Board tests**. An intermediate focused run passed **58 Board tests** before the additional large-local-photo regression. Editor diagnostics reported no errors in the changed Swift files, and `git diff --check` passed. Xcode emitted its metadata-extraction notice because these targets do not depend on AppIntents. No live service was accessed; PHP contract checks were not rerun for this local Swift feature.
 
 Keep persistence fixtures focused on compatibility contracts. Do not use real customer, health, or private board data in tests

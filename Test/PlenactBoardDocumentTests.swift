@@ -23,6 +23,185 @@ import SwiftUI
 final class PlenactBoardDocumentTests: XCTestCase {
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCoversAreExplicitAndBackwardCompatible
+    /// @brief      Preserve legacy cards and opt-in cover metadata through Codable
+    /// @details    Attached photos never implicitly enable a cover; nil fields remain absent in JSON
+    /// @throws     Encoding, decoding, or cover validation errors
+    ///
+    func testCoversAreExplicitAndBackwardCompatible() throws {
+        let legacy = Data(#"{"id":1,"word":"Synthetic","listTitle":"Local","checklists":[]}"#.utf8)
+        var card = try JSONDecoder().decode(KanbanCard.self, from: legacy)
+        XCTAssertNil(card.coverAttachmentID)
+        let photo = KanbanAttachment(fileName: "synthetic.jpg", mediaKind: .photo)
+        card.attachments = [photo]
+        XCTAssertNil(card.coverAttachment)
+        let uncoveredJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(card)) as? [String: Any])
+        XCTAssertNil(uncoveredJSON["coverAttachmentID"])
+        let attachmentJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(photo)) as? [String: Any])
+        XCTAssertNil(attachmentJSON["exampleImage"])
+        try card.setCover(photo.id)
+        XCTAssertEqual(card.coverAttachment, photo)
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(restored, card)
+        try card.setCover(nil)
+        XCTAssertNil(card.coverAttachment)
+        XCTAssertEqual(card.attachments, [photo])
+        try card.setCover(photo.id)
+        XCTAssertEqual(card.coverAttachment, photo)
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCoverSelectionAndAttachmentRemovalNeverChooseFallbackPhotos
+    /// @brief      Validate photo ownership and keep cover removal separate from media deletion
+    /// @details    Rejects links/videos/missing IDs; deleting an unrelated photo preserves the cover
+    /// @throws     Valid cover selection errors
+    ///
+    func testCoverSelectionAndAttachmentRemovalNeverChooseFallbackPhotos() throws {
+        let first = KanbanAttachment(fileName: "first.jpg", mediaKind: .photo)
+        let second = KanbanAttachment(fileName: "second.jpg", mediaKind: .photo)
+        let video = KanbanAttachment(fileName: "video.mov", mediaKind: .video)
+        let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
+        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [],
+                              attachments: [first, second, video, link])
+        try card.setCover(first.id)
+        for id in [video.id, link.id, UUID()] {
+            XCTAssertThrowsError(try card.setCover(id))
+            XCTAssertEqual(card.coverAttachmentID, first.id)
+        }
+        card.removeAttachment(second.id)
+        XCTAssertEqual(card.coverAttachmentID, first.id)
+        card.removeAttachment(first.id)
+        XCTAssertNil(card.coverAttachmentID)
+        XCTAssertNil(card.coverAttachment)
+        XCTAssertEqual(card.attachments, [video, link])
+        card.attachments = [second]
+        XCTAssertNil(card.coverAttachment)
+        card.coverAttachmentID = UUID()
+        XCTAssertNil(card.coverAttachment)
+        card.isDivider = true
+        XCTAssertThrowsError(try card.setCover(second.id))
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCoverArchiveRestoreAndIndependentCopyRetainAttachmentIdentity
+    /// @brief      Keep cover selections across retained partitions and independent card copies
+    /// @details    Removing a copy's cover does not change the original card or shared attachment
+    /// @throws     Cover validation and Codable errors
+    ///
+    func testCoverArchiveRestoreAndIndependentCopyRetainAttachmentIdentity() throws {
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden)
+        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo])
+        try card.setCover(photo.id)
+        var list = KanbanList(id: 1, title: "Local", cards: [card])
+        list.archiveCard(id: card.id)
+        var restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(restored.archivedCards.first?.coverAttachment, photo)
+        restored.restoreArchivedCard(id: card.id)
+        XCTAssertEqual(restored.cards.first, card)
+        var copy = card
+        try copy.setCover(nil)
+        XCTAssertEqual(card.coverAttachment, photo)
+        XCTAssertEqual(copy.attachments, card.attachments)
+        XCTAssertTrue(CardAttachmentStore.fileNames(in: [list]).isEmpty)
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBundledExampleCoversDecodeWithoutPersonalFilesOrNetwork
+    /// @brief      Verify resource target membership and bounded image decoding
+    /// @details    Exactly three optional examples and three starter cards have original bundled covers
+    /// @throws     Missing resources, image decoding, or fixture errors
+    ///
+    func testBundledExampleCoversDecodeWithoutPersonalFilesOrNetwork() throws {
+        for example in ExampleCoverImage.allCases {
+            let photo = KanbanAttachment(mediaKind: .photo, exampleImage: example)
+            XCTAssertNotNil(example.url)
+            let thumbnail = try CardAttachmentStore.coverThumbnail(for: photo)
+            let image = try XCTUnwrap(thumbnail.cgImage)
+            XCTAssertLessThanOrEqual(max(image.width, image.height), 960)
+            XCTAssertGreaterThan(min(image.width, image.height), 0)
+            XCTAssertNil(photo.fileName)
+            XCTAssertNil(photo.url)
+        }
+        XCTAssertThrowsError(try CardAttachmentStore.coverThumbnail(for: KanbanAttachment(fileName: "missing-\(UUID()).jpg")))
+        XCTAssertEqual(SampleData.lists.flatMap(\.allCards).compactMap(\.coverAttachment).count, 3)
+        let drafts = PersonalListExample.allCases.map { $0.makeCollection(existingTitles: []) }
+        XCTAssertEqual(drafts.flatMap(\.lists).flatMap(\.allCards).compactMap(\.coverAttachment).count, 3)
+        XCTAssertTrue(CardAttachmentStore.fileNames(in: drafts.flatMap(\.lists)).isEmpty)
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLargeLocalCoverIsDownsampledAndRemovalKeepsItsMedia
+    /// @brief      Verify actual large-photo decoding and non-destructive cover disabling
+    /// @details    Creates one synthetic PNG; cleans only its uniquely named fixture file
+    /// @throws     Media creation, decoding, validation, or cleanup errors
+    ///
+    func testLargeLocalCoverIsDownsampledAndRemovalKeepsItsMedia() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2400, height: 1600), format: format)
+        let bytes = renderer.pngData { context in
+            UIColor.systemGreen.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 2400, height: 1600))
+        }
+        let photo = try CardAttachmentStore.saveMedia(bytes, kind: .photo, fileExtension: "png")
+        let fileName = try XCTUnwrap(photo.fileName)
+        defer { try? CardAttachmentStore.removeDeletedFiles([fileName], keeping: []) }
+        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo])
+        try card.setCover(photo.id)
+        let image = try XCTUnwrap(try CardAttachmentStore.coverThumbnail(for: photo).cgImage)
+        XCTAssertEqual(image.width, 960)
+        XCTAssertEqual(image.height, 640)
+        try card.setCover(nil)
+        XCTAssertEqual(card.attachments, [photo])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: photo)).path))
+        XCTAssertThrowsError(try CardAttachmentStore.coverThumbnail(for: KanbanAttachment(fileName: fileName, mediaKind: .video)))
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCoverRowsRemainBoundedAndCanBeDisabledWithoutContentChanges
+    /// @brief      Measure cover visibility in actual Standard/Overview card rows
+    /// @details    Uses isolated display preferences and rejects mutation callbacks during layout
+    /// @throws     Preference suite setup errors
+    ///
+    @MainActor
+    func testCoverRowsRemainBoundedAndCanBeDisabledWithoutContentChanges() throws {
+        let suite = "Plenact.CoverLayoutTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden)
+        let card = KanbanCard(id: 1, word: "Garden", listTitle: "Local", checklists: [],
+                              attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "")
+        ///
+        /// @fcn        measure(_:enabled:)
+        /// @brief      Host a synthetic card at a fixed width with isolated cover visibility
+        /// @details    Proposes ample height to verify intrinsic content fitting
+        /// @param[in]  preset  Board density
+        /// @param[in]  enabled  Cover display preference
+        /// @return     (CGFloat) hosted row height
+        ///
+        func measure(_ preset: BoardPresentation, enabled: Bool) -> CGFloat {
+            defaults.set(enabled, forKey: "Plenact.CardCovers.enabled")
+            let row = KanbanCardView(
+                card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
+                presentation: preset, labelLibrary: .starter,
+                onUpdateCard: { _ in XCTFail("Layout must not change covers") },
+                onDeleteCard: { XCTFail("Layout must not delete") },
+                onArchiveCard: { XCTFail("Layout must not archive") },
+                onToggle: { XCTFail("Layout must not toggle") }
+            ).defaultAppStorage(defaults)
+            return UIHostingController(rootView: row).sizeThatFits(in: CGSize(width: 320, height: 10_000)).height
+        }
+        let standard = measure(.standard, enabled: true)
+        let overview = measure(.overview, enabled: true)
+        XCTAssertGreaterThan(standard, overview)
+        XCTAssertGreaterThan(standard, measure(.standard, enabled: false) + 100)
+        XCTAssertGreaterThan(overview, measure(.overview, enabled: false) + 50)
+        XCTAssertLessThan(standard, 350)
+        XCTAssertEqual(card.coverAttachmentID, photo.id)
+        XCTAssertEqual(card.attachments, [photo])
+    }
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testPermanentCardDeletionIncludesArchivesAndRemovesOnlyOwningBookmarks
     /// @brief      Remove retained card records without affecting other Board-local identities
     /// @details    Exercises an archived list and keeps an independent collection with an equal card ID
@@ -221,7 +400,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 XCTAssertTrue(card.comments.isEmpty)
                 XCTAssertTrue(card.members.isEmpty)
                 XCTAssertTrue(card.labelIDs.isEmpty)
-                XCTAssertTrue(card.attachments?.isEmpty ?? true)
+                for attachment in card.attachments ?? [] {
+                    XCTAssertNotNil(attachment.exampleImage)
+                    XCTAssertNil(attachment.fileName)
+                    XCTAssertNil(attachment.url)
+                }
+                if card.coverAttachmentID != nil { XCTAssertNotNil(card.coverAttachment) }
             }
             let restored = try JSONDecoder().decode(
                 PersonalCollection.self, from: JSONEncoder().encode(collection)
@@ -1465,6 +1649,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(document.validationMessage)
         XCTAssertEqual(document.lists.map(\.title), SampleData.listTitles)
         XCTAssertEqual(document.labelLibrary, .starter)
+        XCTAssertTrue(document.lists.flatMap(\.allCards).allSatisfy {
+            $0.coverAttachmentID == nil && $0.attachments == nil
+        })
         XCTAssertEqual(seededAssignments.count, SampleData.lists.flatMap(\.cards).flatMap(\.members).count)
         XCTAssertTrue(seededAssignments.allSatisfy {
             $0.kind == .registeredUser && $0.userID == jim.userID && $0.displayName == jim.displayName

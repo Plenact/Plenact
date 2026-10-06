@@ -30,6 +30,7 @@ No pinch gesture or continuous zoom slider is implemented. These presets adjust 
 | Card minimum height at default text size | 112 points | 80 points |
 | Title summary | Up to three lines | Up to two lines |
 | Supporting subtitle and label summary | Shown | Omitted from the summary only |
+| Explicitly selected card cover, when enabled | 128-point decorative preview | 72-point decorative preview |
 | Enabled comment/checklist/date badges | Shown | Shown |
 | Completion and card actions | Available | Available |
 
@@ -42,6 +43,8 @@ In a 393-point-wide portrait viewport, Standard is predominantly one list and Ov
 Dynamic Type continues to control text size. At accessibility text sizes, both presets use the available column width, titles are not line-limited, and badges stack vertically. Label summaries fall back to a count if individual chips do not fit. Completion and card-menu controls retain 44-point targets.
 
 The focused **Open today's list** screen continues to use Standard-style summaries, now with a content-fitting 112-point minimum instead of a viewport-height proportion. It does not become a multi-column overview.
+
+**Board Settings → Show card covers** stores a separate device-only preference under `Plenact.CardCovers.enabled` (default on). It hides row images, not attachment records or cover selections. Existing cards remain text-only until explicitly selected. Card detail provides Add Photo as Cover, a visual attached-photo chooser, and Remove Cover; removing a cover never deletes the photo. See [Card Covers](../Src/Features/Boards/README.md#optional-card-covers).
 
 ## Content and state safety
 

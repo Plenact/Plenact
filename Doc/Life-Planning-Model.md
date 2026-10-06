@@ -51,6 +51,8 @@ Validation: the same targeted iPhone 15 Pro Max command above passed **47 tests,
 
 Card covers are an optional visual aid, not a new content type. People explicitly choose an attached photo or add a photo as a cover. Removing a cover keeps its attachment; a device display preference can hide all row covers without changing their selections. Existing saved work is not automatically given images. Details and behavior are documented in [Optional Card Covers](../Src/Features/Boards/README.md#optional-card-covers).
 
+The offline **Cover Library** offers 48 original illustrations in six artwork categories, eight per category, plus All Covers browsing. Categories do not classify or restrict cards. Choosing is explicit, Cancel leaves content unchanged, and no card analysis or network service is involved. Color customization, search, and recommendations remain proposed follow-ups.
+
 Cards, lists, and collections offer confirmed permanent deletion alongside their existing archive controls, including retained-content browsers. Archive means keep for later; Delete removes the selected record, its contained content, and its owning bookmarks. Other retained copies remain independent. Week can be archived or have its contents deleted, but its workspace remains available.
 
 Deletion operates on the canonical local records, saves before publishing removal, and protects media still referenced by other retained content or the existing Load Example undo snapshot. It does not introduce remote synchronization or change the hierarchy. See the [lifecycle action matrix and safety boundaries](../Src/Features/Boards/README.md#archive-and-permanent-deletion).

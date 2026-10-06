@@ -164,6 +164,24 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     }
 
     ///
+    /// @fcn        KanbanCard.useLibraryCover(_:)
+    /// @brief      Attach and select a bundled illustration without replacing personal photos
+    /// @details    Reuses an existing matching attachment; repeat selection does not create duplicates
+    /// @param[in]  image  Explicit user-selected library illustration
+    /// @throws     Validation error for a divider; original card remains unchanged
+    ///
+    mutating func useLibraryCover(_ image: ExampleCoverImage) throws {
+        guard !isSectionDivider else { throw CocoaError(.validationMissingMandatoryProperty) }
+        let attachment = attachments?.first { $0.exampleImage == image && $0.kind == .photo }
+            ?? KanbanAttachment(mediaKind: .photo, exampleImage: image)
+        if !(attachments ?? []).contains(where: { $0.id == attachment.id }) {
+            if attachments == nil { attachments = [] }
+            attachments?.append(attachment)
+        }
+        try setCover(attachment.id)
+    }
+
+    ///
     /// @fcn        KanbanCard.removeAttachment(_:)
     /// @brief      Remove attachment metadata and clear only its selected cover
     /// @details    Does not delete files or automatically select another attached photo

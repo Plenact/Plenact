@@ -51,6 +51,7 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 Open a card's **Card Cover** section:
 
+- **Browse Cover Library** offers all 48 bundled illustrations or six category filters with eight choices each. Tap an illustration to select it; Cancel leaves the card unchanged. Earlier photos and illustration attachments remain available.
 - **Add Photo as Cover** imports one explicitly chosen photo through the system picker and attaches/selects it.
 - **Choose Attached Photo / Change Cover** opens a visual chooser of that card's existing photos. Cancel changes nothing. The attachment gallery also offers **Set as Cover** and **Remove Cover**, including accessibility actions.
 - **Remove Cover** disables this card's preview without removing its photo. It is also available in the Board/Today card-row menu. No replacement image is selected automatically.
@@ -63,6 +64,8 @@ The optional `coverAttachmentID` references an existing photo attachment UUID. O
 Three new starter-Board cards and the first card in **On the Table**, **In the Queue**, and **Up for Brew** demonstrate original bundled illustrations. Example previews/drafts create no personal media files; most cards stay text-only. Existing saved Boards/collections are not changed or retrofitted. Load Example keeps its existing explicit replacement/undo behavior. Bundled illustration references are separate from deletable Documents filenames. The dormant shared-demo seed omits local covers/illustrations and its existing server contract is unchanged.
 
 This is a local presentation feature, not remote media storage or backup. See [attachment boundaries](../Attachments/README.md) and [cover validation/device acceptance](../../../Test/README.md).
+
+The library uses the existing typed bundled-image field rather than a new storage format. Repeated choices reuse the card's attachment identity. Its 48-image catalog does not change the three seeded demo selections. Color customization and automatic recommendations are not implemented.
 
 ## Board Presentation
 

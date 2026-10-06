@@ -23,6 +23,111 @@ import SwiftUI
 final class PlenactBoardDocumentTests: XCTestCase {
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testOfflineLibraryContains48DistinctBundledIllustrations
+    /// @brief      Verify the complete six-category library is shipped with the app
+    /// @details    Checks actual app resources, exact canvas dimensions, distinct bytes, and total size.
+    ///             Does not enable covers or write personal media files
+    /// @throws     Missing bundle resources, image decoding, or file-read errors
+    ///
+    func testOfflineLibraryContains48DistinctBundledIllustrations() throws {
+        let categories = CoverCategory.allCases
+        XCTAssertEqual(categories.count, 6)
+        for category in categories { XCTAssertEqual(category.images.count, 8, category.rawValue) }
+        let images = categories.flatMap(\.images)
+        let names = images.map(\.rawValue)
+        XCTAssertEqual(names.count, 48)
+        XCTAssertEqual(Set(names).count, 48)
+        XCTAssertEqual(Set(images), Set(ExampleCoverImage.allCases))
+        var distinctImages: Set<Data> = []
+        var totalBytes = 0
+        for name in names {
+            let url = try XCTUnwrap(Bundle.main.url(
+                forResource: name, withExtension: "png", subdirectory: "CardCoverImages"
+            ), "Missing bundled illustration: \(name)")
+            let bytes = try Data(contentsOf: url)
+            let image = try XCTUnwrap(UIImage(data: bytes)?.cgImage, "Unreadable illustration: \(name)")
+            XCTAssertEqual(image.width, 960, name)
+            XCTAssertEqual(image.height, 480, name)
+            XCTAssertTrue(distinctImages.insert(bytes).inserted, "Duplicate illustration: \(name)")
+            totalBytes += bytes.count
+        }
+        XCTAssertEqual(distinctImages.count, 48)
+        XCTAssertLessThan(totalBytes, 1_048_576, "Keep the initial offline artwork below one MiB")
+        let directory = try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("CardCoverImages")
+        let bundledNames = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "png" }
+            .map { $0.deletingPathExtension().lastPathComponent }
+        XCTAssertEqual(Set(bundledNames), Set(names))
+        XCTAssertEqual(Array(ExampleCoverImage.allCases.prefix(3)), [.garden, .mountains, .workspace])
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibrarySelectionReusesAttachmentsAndPreservesPersonalContent
+    /// @brief      Select, replace, remove, and reselect illustrations without losing personal media
+    /// @details    Covers repeated selections, archive/restore, independent copies, and Codable identifiers
+    /// @throws     Cover validation and encoding/decoding errors
+    ///
+    func testLibrarySelectionReusesAttachmentsAndPreservesPersonalContent() throws {
+        let photo = KanbanAttachment(fileName: "synthetic-personal.jpg", mediaKind: .photo)
+        var card = KanbanCard(id: 9, word: "My plan", listTitle: "Local", checklists: [],
+                              attachments: [photo], coverAttachmentID: photo.id, descriptionOverride: "Keep this")
+        for image in ExampleCoverImage.allCases {
+            let before = card.attachments?.count ?? 0
+            try card.useLibraryCover(image)
+            let selectedID = card.coverAttachmentID
+            try card.useLibraryCover(image)
+            XCTAssertEqual(card.attachments?.count, before + 1)
+            XCTAssertEqual(card.coverAttachmentID, selectedID)
+            XCTAssertEqual(card.coverAttachment?.exampleImage, image)
+            XCTAssertEqual(card.attachments?.first, photo)
+            XCTAssertEqual(card.descriptionOverride, "Keep this")
+            XCTAssertNil(card.coverAttachment?.fileName)
+        }
+        let snapshot = card
+        var list = KanbanList(id: 1, title: "Local", cards: [card])
+        list.archiveCard(id: card.id)
+        let decoded = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(decoded.archivedCards.first, snapshot)
+        try card.setCover(nil)
+        XCTAssertEqual(card.attachments, snapshot.attachments)
+        try card.useLibraryCover(.garden)
+        XCTAssertEqual(card.attachments?.count, 49)
+        XCTAssertEqual(card.coverAttachment?.exampleImage, .garden)
+        XCTAssertEqual(snapshot.coverAttachment?.exampleImage, ExampleCoverImage.allCases.last)
+        card.isDivider = true
+        let rejected = card
+        XCTAssertThrowsError(try card.useLibraryCover(.coding))
+        XCTAssertEqual(card, rejected)
+    }
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCoverLibraryLayoutDoesNotSelectOrWriteOnPresentation
+    /// @brief      Host the actual library at narrow, landscape, and accessibility sizes
+    /// @details    Layout and presentation alone must not select images or alter preference data
+    ///
+    @MainActor
+    func testCoverLibraryLayoutDoesNotSelectOrWriteOnPresentation() {
+        for (width, height, size) in [
+            (320.0, 640.0, DynamicTypeSize.large),
+            (852.0, 393.0, DynamicTypeSize.large),
+            (320.0, 640.0, DynamicTypeSize.accessibility5)
+        ] {
+            let view = CardCoverLibrary(selectedImage: .garden, onSelect: { _ in
+                XCTFail("Presentation must not select or attach an image")
+                return false
+            }).environment(\.dynamicTypeSize, size)
+            let controller = UIHostingController(rootView: view)
+            controller.loadViewIfNeeded()
+            controller.view.frame = CGRect(x: 0, y: 0, width: width, height: height)
+            controller.view.layoutIfNeeded()
+            let fitting = controller.sizeThatFits(in: CGSize(width: width, height: height))
+            XCTAssertTrue(fitting.width.isFinite && fitting.height.isFinite)
+            XCTAssertGreaterThan(fitting.height, 0)
+            XCTAssertLessThanOrEqual(fitting.width, width)
+        }
+    }
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testCoversAreExplicitAndBackwardCompatible
     /// @brief      Preserve legacy cards and opt-in cover metadata through Codable
     /// @details    Attached photos never implicitly enable a cover; nil fields remain absent in JSON

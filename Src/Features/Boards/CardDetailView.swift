@@ -270,6 +270,7 @@ struct CardDetailView: View {
     @State private var selectedCoverPhoto: PhotosPickerItem? /* One photo explicitly selected for a cover */
     @State private var coverImportID: UUID? /* Superseded requests cannot enable an old cover */
     @State private var showsCoverPicker = false /* Visual chooser for already attached photos */
+    @State private var showsCoverLibrary = false /* Offline category-based illustration chooser */
     @State private var selectedPhotoItems: [PhotosPickerItem] = [] /* Photos selected from the system photo library          */
     @State private var commentDraft = ""                     /* Text currently entered in the comment composer               */
     @State private var dismissedActivityIDs: Set<String>     /* IDs of activity entries that have been dismissed by the user */
@@ -384,6 +385,10 @@ struct CardDetailView: View {
     ///
     private var coverControls: some View {
         DetailSection(title: "Card Cover") {
+            Button("Browse Cover Library", systemImage: "photo.on.rectangle.angled") {
+                showsCoverLibrary = true
+            }
+            .frame(minHeight: 44)
             if let cover = attachments.first(where: { $0.id == coverAttachmentID && $0.kind == .photo }) {
                 CardCoverPreview(attachment: cover)
             }
@@ -422,6 +427,12 @@ struct CardDetailView: View {
                 onSelect: { setCover($0) }
             )
         }
+        .sheet(isPresented: $showsCoverLibrary) {
+            CardCoverLibrary(
+                selectedImage: attachments.first { $0.id == coverAttachmentID }?.exampleImage,
+                onSelect: useLibraryCover
+            )
+        }
     }
 
     ///
@@ -441,6 +452,31 @@ struct CardDetailView: View {
             syncCardState()
         } catch {
             DatabaseActivity.shared.report("Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
+        }
+    }
+
+    ///
+    /// @fcn        CardDetailView.useLibraryCover(_:)
+    /// @brief      Publish a library selection while preserving all working card content
+    /// @details    Reuses attachment identities and cancels superseded cover photo imports
+    /// @param[in]  image  Explicit illustration choice
+    /// @return     (Bool) whether selection succeeded; errors are shown through standard feedback
+    ///
+    private func useLibraryCover(_ image: ExampleCoverImage) -> Bool {
+        guard !hasDeletedCard else { return false }
+        var updated = card
+        updated.attachments = attachments
+        do {
+            try updated.useLibraryCover(image)
+            attachments = updated.attachments ?? []
+            coverAttachmentID = updated.coverAttachmentID
+            coverImportID = nil
+            selectedCoverPhoto = nil
+            syncCardState()
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not select this cover: \(error.localizedDescription)")
+            return false
         }
     }
 

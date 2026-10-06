@@ -32,13 +32,71 @@ enum KanbanAttachmentKind: String, Codable, Sendable {
 }
 
 ///
-/// Original bundled illustrations used only by synthetic examples
+/// Categories for the offline illustration library
+///
+/// @section    Purpose
+///     Organize artwork without imposing categories on people's cards
+///
+enum CoverCategory: String, CaseIterable, Identifiable {
+    case home = "Home & Everyday"
+    case nature = "Nature & Garden"
+    case work = "Work & Learning"
+    case food = "Food & Shopping"
+    case travel = "Travel & Outdoors"
+    case creativity = "Creativity & Connection"
+
+    ///
+    /// @fcn        CoverCategory.id
+    /// @brief      Identify a category filter
+    /// @return     (String) stable category label
+    ///
+    var id: String { rawValue }
+
+    ///
+    /// @fcn        CoverCategory.images
+    /// @brief      Supply eight ordered illustrations per category
+    /// @details    Categories describe artwork only, not card ownership or semantics
+    /// @return     ([ExampleCoverImage]) explicit curated category membership
+    ///
+    var images: [ExampleCoverImage] {
+        switch self {
+            case .home: [.readingCorner, .tidyHome, .laundryDay, .homeRepairs, .cozySofa, .cleanKitchen, .petCare, .deskLamp]
+            case .nature: [.garden, .wateringPlants, .forestPath, .flowerBouquet, .sunrise, .herbPots, .rainyDay, .butterfly]
+            case .work: [.workspace, .studyBooks, .writingNotes, .projectPlanning, .learning, .calendarPlan, .coding, .goalSteps]
+            case .food: [.freshProduce, .cooking, .groceryBag, .coffeeBreak, .baking, .breakfast, .pantry, .market]
+            case .travel: [.mountains, .camping, .coastalWalk, .cycling, .travelBag, .trainTrip, .sailboat, .picnic]
+            case .creativity: [.painting, .music, .conversation, .sharedMeal, .photography, .crafting, .gift, .gameNight]
+        }
+    }
+}
+
+///
+/// Original bundled illustrations for examples and explicit user cover choices
 ///
 /// @section    Purpose
 ///     Keep example drafts side-effect-free and independent of personal media files
 ///
 enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
     case garden, mountains, workspace
+    case readingCorner = "reading-corner", tidyHome = "tidy-home", laundryDay = "laundry-day", homeRepairs = "home-repairs"
+    case wateringPlants = "watering-plants", forestPath = "forest-path", flowerBouquet = "flower-bouquet", sunrise
+    case studyBooks = "study-books", writingNotes = "writing-notes", projectPlanning = "project-planning", learning
+    case freshProduce = "fresh-produce", cooking, groceryBag = "grocery-bag", coffeeBreak = "coffee-break"
+    case camping, coastalWalk = "coastal-walk", cycling, travelBag = "travel-bag"
+    case painting, music, conversation, sharedMeal = "shared-meal"
+    case cozySofa = "cozy-sofa", cleanKitchen = "clean-kitchen", petCare = "pet-care", deskLamp = "desk-lamp"
+    case herbPots = "herb-pots", rainyDay = "rainy-day", butterfly
+    case calendarPlan = "calendar-plan", coding, goalSteps = "goal-steps"
+    case baking, breakfast, pantry, market
+    case trainTrip = "train-trip", sailboat, picnic
+    case photography, crafting, gift, gameNight = "game-night"
+
+    ///
+    /// @fcn        ExampleCoverImage.title
+    /// @brief      Provide a readable artwork label without embedded image text
+    /// @return     (String) human-readable name
+    ///
+    var title: String { rawValue.replacingOccurrences(of: "-", with: " ").capitalized }
 
     ///
     /// @fcn        ExampleCoverImage.url
@@ -48,6 +106,76 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
     ///
     var url: URL? {
         Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
+    }
+}
+
+///
+/// Offline visual library with category filters and explicit cover selection
+///
+/// @section    Purpose
+///     Browse all 48 original illustrations without downloading or analyzing card content
+///
+struct CardCoverLibrary: View {
+    let selectedImage: ExampleCoverImage? /* Current library cover, if any */
+    let onSelect: (ExampleCoverImage) -> Bool /* Owner validates and publishes an explicit choice */
+    @State private var category: CoverCategory? /* nil shows All Covers */
+    @Environment(\.dynamicTypeSize) private var textSize /* Use a single column for accessibility text */
+    @Environment(\.dismiss) private var dismiss /* Cancel or close a successful selection */
+
+    ///
+    /// @fcn        CardCoverLibrary.body
+    /// @brief      Offer category browsing, named previews, and a non-destructive Cancel path
+    /// @details    No selection or attachment is created until a person taps an illustration
+    /// @return     (some View) adaptive offline library
+    ///
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Picker("Cover category", selection: $category) {
+                        Text("All Covers").tag(Optional<CoverCategory>.none)
+                        ForEach(CoverCategory.allCases) { category in
+                            Text(category.rawValue).tag(Optional(category))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(minHeight: 44)
+                    Text("Choose an illustration to use as this card's cover. Your existing photos stay attached.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    LazyVGrid(columns: textSize.isAccessibilitySize
+                              ? [GridItem(.flexible())]
+                              : [GridItem(.adaptive(minimum: 150))], spacing: 16) {
+                        ForEach(category?.images ?? CoverCategory.allCases.flatMap(\.images), id: \.self) { image in
+                            Button {
+                                if onSelect(image) { dismiss() }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    CardCoverPreview(attachment: KanbanAttachment(
+                                        mediaKind: .photo, exampleImage: image
+                                    ), height: 96)
+                                    Label(image.title, systemImage: selectedImage == image ? "checkmark.circle.fill" : "photo")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(8)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(image.title + (selectedImage == image ? ", current cover" : ""))
+                            .accessibilityHint("Use this illustration as the card cover.")
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Cover Library")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+        }
     }
 }
 

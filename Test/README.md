@@ -36,6 +36,16 @@ Cover tests verify backward-compatible decoding and omitted nil keys; explicit p
 
 Cover device acceptance: add a new photo as a cover, choose/change an existing photo using the visual chooser, cancel selection, remove the cover from detail and row menus, remove selected/unrelated attachments, hide/re-enable covers in Board Settings, relaunch, copy a list, and archive/restore through Week and personal collections. Check large photos, unavailable files, photo-transfer errors, Remove Cover or replacement during a pending transfer, deletion with an in-flight import, landscape, large text, and VoiceOver. Automated model/layout checks do not establish picker or gesture behavior.
 
+Offline library coverage verifies exactly six categories of eight illustrations, no missing/duplicate category membership, and all 48 files in the actual app bundle. Each decodes at exactly 960-by-480 pixels with distinct PNG bytes; total artwork stays below one MiB. The original three enum cases retain their names/order for demo compatibility.
+
+Selection regressions cover all 48 choices, matching-attachment UUID reuse, personal-photo retention, replacing/removing/reselecting covers, unchanged descriptions, archive Codable round trips, independent copies, and divider rejection. Hosted library checks exercise narrow/landscape/accessibility layouts without selecting or attaching anything.
+
+Library device acceptance: open Browse Cover Library from Week and personal card details, browse all six filters and All Covers, scroll to the last image, Cancel without changes, select/replace/remove/reselect, hide/re-enable row covers, and relaunch. Check retained photos, archive/restore, copying, large text, both landscape directions, VoiceOver category/preview/current-cover labels, and replacing a photo import that is still in flight. Hosted layout/model tests do not establish taps, sheet dismissal, or VoiceOver behavior.
+
+Historical artwork-only validation on October 5, 2026 passed two focused bundle/demo tests before the chooser was implemented. That initial 27-image payload was 591,408 bytes; the completed 48-image payload is 978,105 bytes. Neither figure represents App Store download size.
+
+Completed Cover Library validation on October 5, 2026: the focused run with `-only-testing:PlenactTests/PlenactBoardDocumentTests` passed **62 tests, 0 failures**, and the full command below passed **81 tests, 0 failures**. App/test targets built, the 48-image contact sheet was visually reviewed, editor diagnostics reported no errors in changed Swift files, and `git diff --check` passed. This local feature did not access a live service; PHP checks were not rerun. New chooser interactions and VoiceOver still require device acceptance.
+
 ## Running Tests
 
 Use the shared `Plenact` scheme with an installed iPhone simulator:

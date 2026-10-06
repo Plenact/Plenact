@@ -12,6 +12,29 @@ Covers reuse the selected attachment UUID; no second image file is saved. Videos
 
 `CardCoverPreview` downscales local/bundled photos off the main actor before displaying bounded, decorative previews. Its decode path applies image orientation and limits the longest edge to 960 pixels. Missing images show a visible unavailable notice. It does not fetch images from external links.
 
+### Offline Cover Library
+
+Open **Card detail → Card Cover → Browse Cover Library**. The chooser starts with **All Covers**, and its category menu offers six groups of eight illustrations. Tap a named preview to attach/select it; **Cancel** leaves the card unchanged. The current library cover is marked with a check and an accessible label. Accessibility text sizes use a single column, and labels wrap.
+
+The [bundled cover images](../../CardCoverImages/) now contain **48 original illustrations**, including all 27 previously prepared images unchanged and 21 additions. Each uses the same 960-by-480 canvas, muted palette, simple geometric shapes, and no embedded text.
+
+| Category | Eight illustrations |
+| --- | --- |
+| Home & Everyday | Reading corner, Tidy home, Laundry day, Home repairs, Cozy sofa, Clean kitchen, Pet care, Desk lamp |
+| Nature & Garden | Garden, Watering plants, Forest path, Flower bouquet, Sunrise, Herb pots, Rainy day, Butterfly |
+| Work & Learning | Workspace, Study books, Writing notes, Project planning, Learning, Calendar plan, Coding, Goal steps |
+| Food & Shopping | Fresh produce, Cooking, Grocery bag, Coffee break, Baking, Breakfast, Pantry, Market |
+| Travel & Outdoors | Mountains, Camping, Coastal walk, Cycling, Travel bag, Train trip, Sailboat, Picnic |
+| Creativity & Connection | Painting, Music, Conversation, Shared meal, Photography, Crafting, Gift, Game night |
+
+The artwork was drawn programmatically from original shapes, without stock imagery, remote downloads, paid image-generation calls, or personal content. PNG filenames use lowercase hyphenated versions of these titles. The existing folder resource reference includes the new files in the app bundle; no additional target entries are needed.
+
+Measured PNG payload: **978,105 bytes for all 48 images** (about 955 KiB). This is the image-file total, not an App Store download-size measurement.
+
+Selection creates lightweight attachment metadata referencing the bundled image through the existing `exampleImage` field. Repeated selection reuses a matching attachment UUID rather than adding duplicates. Changing covers preserves personal photos and earlier illustration attachments, which can be reused or removed in the normal gallery. **Remove Cover** clears only the selected cover; **Show card covers** remains the device-only row visibility switch.
+
+Existing demo selections, attachment formats, storage keys, and user covers remain unchanged. Categories organize artwork, not cards. Nothing is automatically applied, no card text is analyzed or transmitted, and canceled browsing creates no files. Color customization, search, and recommendations remain future work.
+
 ## Implementation
 
 [`PhotoAttachments.swift`](PhotoAttachments.swift) contains:

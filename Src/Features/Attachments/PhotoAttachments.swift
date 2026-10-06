@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       PhotoAttachments.swift
 // @brief      Media attachment models, local file storage, and picker/gallery components
 // @details    Imports image selections, stores photo and video bytes in the app container, and
@@ -6,11 +6,11 @@
 //
 // @notes      Cards persist attachment metadata and IDs; image data remains outside the board JSON
 //
-// @section     Opens
+// @section    Opens
 //      Function Headers
 //      Variable Comments
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import AVKit
 import Foundation
 import ImageIO
@@ -60,6 +60,7 @@ enum CoverCategory: String, CaseIterable, Identifiable {
     ///
     var images: [ExampleCoverImage] {
         switch self {
+
             case .home: [.readingCorner, .tidyHome, .laundryDay, .homeRepairs, .cozySofa, .cleanKitchen, .petCare, .deskLamp]
             case .nature: [.garden, .wateringPlants, .forestPath, .flowerBouquet, .sunrise, .herbPots, .rainyDay, .butterfly]
             case .work: [.workspace, .studyBooks, .writingNotes, .projectPlanning, .learning, .calendarPlan, .coding, .goalSteps]
@@ -138,6 +139,7 @@ struct CardCoverLibrary: View {
                             Text(category.rawValue).tag(Optional(category))
                         }
                     }
+
                     .pickerStyle(.menu)
                     .frame(minHeight: 44)
                     Text("Choose an illustration to use as this card's cover. Your existing photos stay attached.")
@@ -148,7 +150,10 @@ struct CardCoverLibrary: View {
                               : [GridItem(.adaptive(minimum: 150))], spacing: 16) {
                         ForEach(category?.images ?? CoverCategory.allCases.flatMap(\.images), id: \.self) { image in
                             Button {
-                                if onSelect(image) { dismiss() }
+                                if onSelect(image) {
+
+                                    dismiss()
+                                }
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
                                     CardCoverPreview(attachment: KanbanAttachment(
@@ -159,17 +164,21 @@ struct CardCoverLibrary: View {
                                         .foregroundStyle(.primary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
+
                                 .padding(8)
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                             }
+
                             .buttonStyle(.plain)
                             .accessibilityLabel(image.title + (selectedImage == image ? ", current cover" : ""))
                             .accessibilityHint("Use this illustration as the card cover.")
                         }
                     }
                 }
+
                 .padding()
             }
+
             .navigationTitle("Cover Library")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -201,6 +210,7 @@ struct CardCoverPreview: View {
         GeometryReader { geometry in
             Group {
                 if let image {
+
                     Image(uiImage: image).resizable().scaledToFill()
                 } else if unavailable {
                     Label("Cover unavailable", systemImage: "photo")
@@ -210,20 +220,28 @@ struct CardCoverPreview: View {
                     Color.secondary.opacity(0.08)
                 }
             }
+
             .frame(width: geometry.size.width, height: height)
             .clipped()
         }
+
         .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .accessibilityHidden(!unavailable)
         .task(id: attachment) {
             image = nil
             unavailable = false
+
             let result = await Task.detached(priority: .utility) {
                 Result { try CardAttachmentStore.coverThumbnail(for: attachment) }
             }.value
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else {
+
+                return
+            }
+
             switch result {
+
                 case .success(let thumbnail): image = thumbnail
                 case .failure: unavailable = true
             }
@@ -262,11 +280,13 @@ struct CardCoverPicker: View {
                             Label("Photo \(index + 1)", systemImage: selectedID == photo.id ? "checkmark.circle.fill" : "photo")
                         }
                     }
+
                     .buttonStyle(.plain)
                     .accessibilityLabel("Photo \(index + 1)\(selectedID == photo.id ? ", current cover" : "")")
                     .accessibilityHint("Use this attached photo as the card cover.")
                 }
             }
+
             .navigationTitle("Choose Card Cover")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -326,6 +346,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     /// @post       Stored fields match the provided values
     ///
     init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil) {
+
         self.id        = id
         self.fileName  = fileName
         self.url       = url
@@ -352,11 +373,15 @@ enum CardAttachmentStore {
     /// @fcn        CardAttachmentStore.coverThumbnail(for:)
     /// @brief      Decode a bounded, orientation-correct cover image
     /// @details    Downsamples before decoding so Board rows do not load full-size camera images
+    ///
     /// @param[in]  attachment  Local or bundled photo metadata
+    ///
     /// @return     (UIImage) thumbnail with at most 960 pixels on its longest edge
+    ///
     /// @throws     Read/decode errors for missing or invalid media
     ///
     static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage {
+
         guard let url = imageURL(for: attachment),
               let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
@@ -367,6 +392,7 @@ enum CardAttachmentStore {
               ] as CFDictionary) else {
             throw CocoaError(.fileReadCorruptFile)
         }
+
         return UIImage(cgImage: image)
     }
 
@@ -374,30 +400,47 @@ enum CardAttachmentStore {
     /// @fcn        CardAttachmentStore.fileNames(in:)
     /// @brief      Collect retained local media references from complete Board snapshots
     /// @details    Includes both active and archived cards regardless of the list's archive state
+    ///
     /// @param[in]  lists  Complete retained lists
+    ///
     /// @return     (Set<String>) referenced media filenames
     ///
     static func fileNames(in lists: [KanbanList]) -> Set<String> {
+
         Set(lists.flatMap(\.allCards).flatMap { $0.attachments ?? [] }.compactMap(\.fileName))
     }
 
     ///
     /// @fcn        CardAttachmentStore.removeDeletedFiles(_:keeping:)
     /// @brief      Remove only media belonging to successfully saved deletions
-    /// @details    Never scans unrelated files; skips names still referenced by any retained snapshot
+    /// @details    Never scans unrelated files; skips names still referenced by any retained
+    ///             snapshot
+    ///
     /// @param[in]  candidates  Previously referenced filenames affected by the saved mutation
-    /// @param[in]  retained  All filenames still retained by the app
+    /// @param[in]  retained    All filenames still retained by the app
+    ///
+    /// @return     (Void) remove only media belonging to successfully saved deletions
+    ///
     /// @throws     File removal errors; absent files are already removed
     ///
     static func removeDeletedFiles(_ candidates: Set<String>, keeping retained: Set<String>) throws {
+
         for name in candidates.subtracting(retained) {
+
             guard name == (name as NSString).lastPathComponent,
                   !name.isEmpty, name != ".", name != ".." else {
                 throw CocoaError(.fileWriteInvalidFileName)
             }
+
             let attachment = KanbanAttachment(fileName: name)
-            guard let url = fileURL(for: attachment) else { throw CocoaError(.fileNoSuchFile) }
+
+            guard let url = fileURL(for: attachment) else {
+
+                throw CocoaError(.fileNoSuchFile)
+            }
+
             if FileManager.default.fileExists(atPath: url.path) {
+
                 try FileManager.default.removeItem(at: url)
             }
         }
@@ -417,11 +460,11 @@ enum CardAttachmentStore {
     ///
     /// @return     (KanbanAttachment) metadata for the newly stored media file
     ///
+    /// @throws     File-system error if the Documents directory cannot be obtained, created, or
+    ///             written
+    ///
     /// @pre        mediaData contains transferable photo or video bytes
     /// @post       A new media file exists in the app's Documents/CardAttachments directory
-    ///
-    /// @throws     File-system error if the Documents directory cannot be obtained, created,
-    ///             or written
     ///
     static func saveMedia(_ mediaData: Data, kind: KanbanAttachmentKind, fileExtension: String) throws -> KanbanAttachment {
 
@@ -446,14 +489,18 @@ enum CardAttachmentStore {
     ///
     /// @param[in]  attachment  Metadata identifying the stored media file
     ///
-    /// @return     (URL?) local media URL, or nil when its filename or Documents directory is unavailable
+    /// @return     (URL?) local media URL, or nil when its filename or Documents directory is
+    ///             unavailable
     ///
     /// @pre        attachment.fileName is the filename returned when the media was saved
     /// @post       No file data or attachment metadata is modified
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL? {
 
-        if let exampleImage = attachment.exampleImage { return exampleImage.url }
+        if let exampleImage = attachment.exampleImage {
+
+            return exampleImage.url
+        }
 
         guard let fileName = attachment.fileName, /* Stored local filename */
               
@@ -473,7 +520,7 @@ enum CardAttachmentStore {
     /// @brief      Resolve a local URL only when an attachment represents a photo
     /// @details    Delegates filename resolution to the attachment store after checking the kind
     ///
-    /// @param[in]  attachment Attachment metadata to inspect
+    /// @param[in]  attachment  Attachment metadata to inspect
     ///
     /// @return     (URL?) local photo URL, or nil for other media or an unresolved filename
     ///
@@ -482,7 +529,10 @@ enum CardAttachmentStore {
     ///
     static func imageURL(for attachment: KanbanAttachment) -> URL? {
         
-        guard attachment.kind == .photo else { return nil }
+        guard attachment.kind == .photo else {
+
+            return nil
+        }
         
         return fileURL(for: attachment)
     }
@@ -493,7 +543,7 @@ enum CardAttachmentStore {
     /// @brief      Validate and parse a web address entered as text
     /// @details    Trims surrounding whitespace and accepts only HTTP or HTTPS URLs with a host
     ///
-    /// @param[in]  text Candidate URL text
+    /// @param[in]  text  Candidate URL text
     ///
     /// @return     (URL?) HTTP or HTTPS URL with a host, or nil when invalid
     ///
@@ -535,36 +585,42 @@ enum CardAttachmentStore {
     static func removeUnreferencedFiles(keeping fileNames: Set<String>) {
 
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
+
             return
         }
 
         let directoryURL = documentsURL.appendingPathComponent(directoryName, isDirectory: true) /* Attachment folder URL */
 
         guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else { /* Files available for cleanup */
+
             return
         }
 
         for fileURL in files where !fileNames.contains(fileURL.lastPathComponent) {
+
             try? FileManager.default.removeItem(at: fileURL)
         }
     }
     
 
     ///
-    /// @fcn        CardAttachmentStore.attachmentsDirectory
+    /// @fcn        CardAttachmentStore.attachmentsDirectory()
     /// @brief      Return the app's photo attachment directory
-    /// @details    Resolves Documents/CardAttachments and creates the directory if it does not already exist
+    /// @details    Resolves Documents/CardAttachments and creates the directory if it does not
+    ///             already exist
     ///
     /// @return     (URL) directory used to store imported card images
+    ///
+    /// @throws     CocoaError when the Documents directory is unavailable or directory creation
+    ///             fails
     ///
     /// @pre        The app has access to its user Documents directory
     /// @post       The returned directory exists and is ready to receive files
     ///
-    /// @throws     CocoaError when the Documents directory is unavailable or directory creation fails
-    ///
     private static func attachmentsDirectory() throws -> URL {
 
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
+
             throw CocoaError(.fileNoSuchFile)
         }
 
@@ -614,6 +670,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
     ///
     var title: String { /* User-facing attachment-source label */
         switch self {
+
             case .trello:         "Trello"
             case .confluence:     "Confluence"
             case .jira:           "Jira"
@@ -636,6 +693,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
     ///
     var symbolName: String { /* SF Symbol for the picker row */
         switch self {
+
             case .trello:         "square.split.2x2"
             case .confluence:     "water.waves"
             case .jira:           "checkmark.circle"
@@ -671,10 +729,10 @@ struct CardAttachmentSourceSheet: View {
     ///
     /// @fcn        CardAttachmentSourceSheet.select(_:)
     /// @brief      Dispatch the action associated with one attachment source
-    /// @details    Invokes link or clipboard callbacks, leaves photo selection to PhotosPicker,
-    ///             and reports unsupported source choices
+    /// @details    Invokes link or clipboard callbacks, leaves photo selection to PhotosPicker, and
+    ///             reports unsupported source choices
     ///
-    /// @param[in]  source Selected attachment source
+    /// @param[in]  source  Selected attachment source
     ///
     /// @return     (Void) invokes the matching callback or system picker
     ///
@@ -682,7 +740,9 @@ struct CardAttachmentSourceSheet: View {
     /// @post       The corresponding callback is invoked where applicable
     ///
     private func select(_ source: CardAttachmentSource) {
+
         switch source {
+
             case .link:
                 onAddLink()
             case .clipboard:
@@ -715,6 +775,7 @@ struct CardAttachmentSourceSheet: View {
                 ForEach(CardAttachmentSource.allCases) { source in
 
                     if source == .photoOrVideo {
+
                         PhotosPicker(selection: $photoSelection, maxSelectionCount: 12, matching: .any(of: [.images, .videos])) {
                             Label(source.title, systemImage: source.symbolName)
                                 .foregroundStyle(.primary)
@@ -730,6 +791,7 @@ struct CardAttachmentSourceSheet: View {
                     }
                 }
             }
+
             .navigationTitle("Add attachment from")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -740,6 +802,7 @@ struct CardAttachmentSourceSheet: View {
                 }
             }
         }
+
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -796,6 +859,7 @@ struct CardLinkAttachmentSheet: View {
                         .onSubmit(saveLink)
                 }
             }
+
             .navigationTitle("Add link")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -804,21 +868,24 @@ struct CardLinkAttachmentSheet: View {
                         dismiss()
                     }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         saveLink()
                     }
+
                     .disabled(validatedURL == nil)
                 }
             }
         }
+
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
 
 
     ///
-    /// @fcn        CardLinkAttachmentSheet.saveLink
+    /// @fcn        CardLinkAttachmentSheet.saveLink()
     /// @brief      Submit the entered URL when it passes web-link validation
     /// @details    Calls the owner callback and dismisses the sheet for a valid draft
     ///
@@ -829,7 +896,10 @@ struct CardLinkAttachmentSheet: View {
     ///
     private func saveLink() {
 
-        guard let validatedURL else { return } /* Require a valid web address */
+        guard let validatedURL else {
+
+            return
+        } /* Require a valid web address */
 
         onSave(validatedURL)
 
@@ -875,6 +945,7 @@ struct CardAttachmentThumbnail: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
                 }
+
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.secondarySystemGroupedBackground))
@@ -903,6 +974,7 @@ struct CardAttachmentThumbnail: View {
                     .background(Color(.secondarySystemGroupedBackground))
             }
         }
+
         .aspectRatio(1, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
@@ -954,6 +1026,7 @@ struct CardAttachmentPreview: View {
                     ContentUnavailableView("Photo unavailable", systemImage: "photo")
                 }
             }
+
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Attachment")
@@ -968,6 +1041,7 @@ struct CardAttachmentPreview: View {
                 }
             }
         }
+
         .presentationDetents([.large])
     }
 }

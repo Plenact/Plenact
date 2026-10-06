@@ -1,10 +1,10 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       PlenactBoardDocument.swift
 // @brief      Versioned Board document exchanged with the shared demo API
 // @details    Defines the Board shape used by the explicit shared-demo service flow; local Board
 //             state is not implicitly uploaded
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import Foundation
 
 
@@ -83,10 +83,14 @@ struct PlenactBoardDocument: Codable, Equatable {
         var cardIDs: Set<Int> = []   /* Unique Board card IDs  */
 
         for list in lists {
+
             guard !list.isArchived else {
+
                 return "Archived lists are stored locally and cannot be published to the shared Board."
             }
+
             guard list.archivedCards.isEmpty else {
+
                 return "Archived cards are stored locally and cannot be published to the shared Board."
             }
 
@@ -112,6 +116,7 @@ struct PlenactBoardDocument: Codable, Equatable {
                     let displayName = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized assignee label */
 
                     guard !displayName.isEmpty else {
+
                         return "Each card assignee needs a display name."
                     }
 

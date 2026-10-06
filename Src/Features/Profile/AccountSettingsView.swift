@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       AccountSettingsView.swift
 // @brief      Local profile avatar and Account & Settings experience
 // @details    Creates, edits, and removes local-only profile information and personalization;
@@ -6,7 +6,7 @@
 //
 // @notes      This feature performs no authentication, credential storage, or network access
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import SwiftUI
 import PhotosUI
 import UIKit
@@ -32,6 +32,7 @@ extension ProfileColor {
     ///
     var color: Color {   /* Avatar color */
         switch legacyToken {
+
             case "teal":     Color.teal
             case "blue":     Color.blue
             case "green":    Color.green
@@ -80,6 +81,7 @@ extension ProfileAvatarIcon {
     ///
     var title: String {
         switch self {
+
             case .initials:     "Initials"
             case .person:       "Person"
             case .personCircle: "Portrait"
@@ -105,6 +107,7 @@ extension ProfileAvatarIcon {
     ///
     var symbolName: String? {
         switch self {
+
             case .initials:     nil
             case .person:       "person.fill"
             case .personCircle: "person.crop.circle.fill"
@@ -153,7 +156,9 @@ struct ProfileAvatarView: View {
                 .fill(profile?.avatarColor.color ?? Color.secondary.opacity(0.16))
 
             if let profile {
+
                 if let symbolName = profile.avatarIcon.symbolName {
+
                     Image(systemName: symbolName)
                         .font(.system(size: size * 0.4, weight: .semibold))
                         .foregroundStyle(profile.avatarForegroundColor.color)
@@ -168,6 +173,7 @@ struct ProfileAvatarView: View {
                     .foregroundStyle(.secondary)
             }
         }
+
         .frame(width: size, height: size)
         .overlay {
             if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName),
@@ -179,6 +185,7 @@ struct ProfileAvatarView: View {
                     .clipShape(Circle())
             }
         }
+
         .accessibilityHidden(true)
     }
 }
@@ -297,7 +304,7 @@ struct AccountSettingsView: View {
 
 
     ///
-    /// @fcn        AccountSettingsView.saveProfile
+    /// @fcn        AccountSettingsView.saveProfile()
     /// @brief      Save normalized local identity and personalization
     /// @details    Preserves profile identity and creation date across edits
     ///
@@ -310,14 +317,18 @@ struct AccountSettingsView: View {
     private func saveProfile() {
 
         let photoFileName: String?
+
         do {
+
             if let avatarPhotoData {
+
                 photoFileName = try ProfileAvatarPhotoStore.save(avatarPhotoData)
             } else {
                 photoFileName = nil
             }
         } catch {
             photoSaveError = error.localizedDescription
+
             return
         }
 
@@ -406,6 +417,7 @@ struct AccountSettingsView: View {
                                 Spacer()
                             }
                         }
+
                         .accessibilityLabel("Choose profile icon")
                         .accessibilityHint("Choose an icon or use your initials.")
 
@@ -427,7 +439,9 @@ struct AccountSettingsView: View {
                         } label: {
                             Label("Load Example", systemImage: "square.and.arrow.down")
                         }
+
                         if hasUndoableExample {
+
                             Button("Undo Last Load", systemImage: "arrow.uturn.backward", role: .destructive) {
                                 confirmsUndoExample = true
                             }
@@ -437,6 +451,7 @@ struct AccountSettingsView: View {
                              ? "Your previous board is saved on this device and can be restored with Undo Last Load."
                              : "Load Plenact's example board on this device. This replaces your current lists and cards.")
                     }
+
                     .alert("Could not update board", isPresented: Binding(
                         get: { exampleOperationError != nil },
                         set: { if !$0 { exampleOperationError = nil } }
@@ -447,6 +462,7 @@ struct AccountSettingsView: View {
                     }
 
                     if let profile {
+
                         Section {
                             LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
 
@@ -503,11 +519,13 @@ struct AccountSettingsView: View {
                     Label("Settings", systemImage: "gearshape")
                 }
             }
+
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
             .databaseActivityOverlay()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if !isChoosingAvatarIcon {
+
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
                             dismiss()
@@ -520,6 +538,7 @@ struct AccountSettingsView: View {
                     }
                 }
             }
+
             .confirmationDialog(
                 "Remove local profile?",
                 isPresented: $confirmsRemoval,
@@ -535,6 +554,7 @@ struct AccountSettingsView: View {
             } message: {
                 Text("Your Board, labels, and attachments will remain on this device.")
             }
+
             .confirmationDialog(
                 "Replace this board with the example?",
                 isPresented: $confirmsLoadExample,
@@ -542,15 +562,18 @@ struct AccountSettingsView: View {
             ) {
                 Button("Load Example", role: .destructive) {
                     if onLoadExample() {
+
                         hasUndoableExample = true
                     } else {
                         exampleOperationError = "A backup could not be saved, so the example was not loaded."
                     }
                 }
+
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Your current lists and cards on this device will be replaced. No data will be uploaded.")
             }
+
             .confirmationDialog(
                 "Restore the board from before the example was loaded?",
                 isPresented: $confirmsUndoExample,
@@ -558,16 +581,19 @@ struct AccountSettingsView: View {
             ) {
                 Button("Undo Load Example", role: .destructive) {
                     if onUndoExampleLoad() {
+
                         hasUndoableExample = false
                     } else {
                         exampleOperationError = "The saved board snapshot could not be restored."
                     }
                 }
+
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This replaces the current board with the saved lists and cards from before Load Example.")
             }
         }
+
         .presentationDetents([.height(620), .large], selection: $profileSheetDetent)
         .presentationDragIndicator(.visible)
         .alert("Could not save avatar", isPresented: Binding(
@@ -629,6 +655,7 @@ private struct ProfileAvatarIconPicker: View {
         photoData: Binding<Data?>,
         displayName: String
     ) {
+
         _selection = selection
         _avatarColor = avatarColor
         _foregroundColor = foregroundColor
@@ -664,6 +691,7 @@ private struct ProfileAvatarIconPicker: View {
     /// @post       Parent bindings match the draft values
     ///
     private func saveSelection() {
+
         selection = draftIcon
         avatarColor = draftAvatarColor
         foregroundColor = draftForegroundColor
@@ -700,6 +728,7 @@ private struct ProfileAvatarIconPicker: View {
 
             Spacer(minLength: 0)
         }
+
         .padding(.horizontal)
         .padding(.top, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -731,8 +760,10 @@ private struct ProfileAvatarIconPicker: View {
                     .onAppear { isEditingColorMap = true }
                     .onDisappear { isEditingColorMap = false }
             } label: {
+
                 colorSettingRow("Avatar color", color: draftAvatarColor)
             }
+
             .buttonStyle(.plain)
 
             NavigationLink {
@@ -751,10 +782,13 @@ private struct ProfileAvatarIconPicker: View {
                     .onAppear { isEditingColorMap = true }
                     .onDisappear { isEditingColorMap = false }
             } label: {
+
                 colorSettingRow("Icon and initials", color: draftForegroundColor)
             }
+
             .buttonStyle(.plain)
         }
+
         .padding()
     }
 
@@ -785,6 +819,7 @@ private struct ProfileAvatarIconPicker: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                         }
+
                         .frame(maxWidth: .infinity, minHeight: 68)
                         .background(
                             draftIcon == icon ? Color.accentColor.opacity(0.12) : Color.clear,
@@ -797,8 +832,10 @@ private struct ProfileAvatarIconPicker: View {
                                     lineWidth: draftIcon == icon ? 2 : 1
                                 )
                         }
+
                         .contentShape(RoundedRectangle(cornerRadius: 8))
                     }
+
                     .buttonStyle(.plain)
                     .accessibilityLabel(icon.title)
                     .accessibilityValue(draftIcon == icon ? "Selected" : "")
@@ -806,6 +843,7 @@ private struct ProfileAvatarIconPicker: View {
                 }
             }
         }
+
         .padding(.horizontal)
         .padding(.top, 12)
         .padding(.bottom, 8)
@@ -831,16 +869,25 @@ private struct ProfileAvatarIconPicker: View {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Label(draftPhotoData == nil ? "Choose Photo" : "Replace Photo", systemImage: "photo")
                     }
+
                     .disabled(isLoadingPhoto)
-                    if isLoadingPhoto { ProgressView() }
+
+                    if isLoadingPhoto {
+
+                        ProgressView()
+                    }
+
                     if draftPhotoData != nil {
+
                         Button("Remove Photo", role: .destructive) { draftPhotoData = nil }
                     } else {
                         colorControls
                     }
                 }
+
                 .padding(.top, 12)
             }
+
             .frame(maxHeight: .infinity)
 
             Rectangle()
@@ -849,29 +896,50 @@ private struct ProfileAvatarIconPicker: View {
 
             iconGrid
         }
+
         .navigationTitle("Choose Icon")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .task(id: selectedPhoto) {
-            guard let selectedPhoto else { return }
+            guard let selectedPhoto else {
+
+                return
+            }
+
             isLoadingPhoto = true
-            defer { isLoadingPhoto = false }
+
+            defer {
+
+                isLoadingPhoto = false
+            }
+
             do {
+
                 guard let data = try await selectedPhoto.loadTransferable(type: Data.self),
                       let image = AvatarPhotoCrop.image(from: data) else {
                     throw CocoaError(.fileReadCorruptFile)
                 }
-                guard !Task.isCancelled else { return }
+
+                guard !Task.isCancelled else {
+
+                    return
+                }
+
                 cropImage = AvatarCropImage(image: image)
             } catch {
-                if !Task.isCancelled { photoError = error.localizedDescription }
+                if !Task.isCancelled {
+
+                    photoError = error.localizedDescription
+                }
             }
         }
+
         .sheet(item: $cropImage, onDismiss: { selectedPhoto = nil }) { crop in
             AvatarPhotoCropView(image: crop.image) { data in
                 draftPhotoData = data
             }
         }
+
         .alert("Could not load photo", isPresented: Binding(
             get: { photoError != nil },
             set: { if !$0 { photoError = nil; selectedPhoto = nil } }
@@ -882,9 +950,11 @@ private struct ProfileAvatarIconPicker: View {
         }
         .toolbar {
             if !isEditingColorMap {
+
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save", action: saveSelection)
                 }
@@ -898,12 +968,13 @@ private struct ProfileAvatarIconPicker: View {
     /// @brief      Build a row describing one selected avatar color
     /// @details    Shows its label, color swatch, hexadecimal value, and navigation affordance
     ///
-    /// @param[in]  title Color role displayed in the row
-    /// @param[in]  color Current color value for that role
+    /// @param[in]  title  Color role displayed in the row
+    /// @param[in]  color  Current color value for that role
     ///
     /// @return     (some View) tappable-style color setting row
     ///
     private func colorSettingRow(_ title: String, color: ProfileColor) -> some View {
+
         HStack(spacing: 10) {
             Text(title)
             Spacer()
@@ -921,6 +992,7 @@ private struct ProfileAvatarIconPicker: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
+
         .frame(maxWidth: .infinity, minHeight: 44)
         .contentShape(Rectangle())
     }
@@ -931,10 +1003,10 @@ private struct ProfileAvatarIconPicker: View {
     /// @brief      Render one icon choice using the current color draft
     /// @details    Displays the SF Symbol or profile initials within a circular color swatch
     ///
-    /// @param[in]  icon       Icon represented by the preview
-    /// @param[in]  background Avatar circle background
-    /// @param[in]  foreground Icon or initials foreground
-    /// @param[in]  size       Diameter of the preview
+    /// @param[in]  icon        Icon represented by the preview
+    /// @param[in]  background  Avatar circle background
+    /// @param[in]  foreground  Icon or initials foreground
+    /// @param[in]  size        Diameter of the preview
     ///
     /// @return     (some View) circular avatar preview
     ///
@@ -944,12 +1016,14 @@ private struct ProfileAvatarIconPicker: View {
         foreground: ProfileAvatarForegroundColor,
         size: CGFloat
     ) -> some View {
+
         ZStack {
             Circle()
                 .fill(background.color)
                 .frame(width: size, height: size)
 
             if let symbolName = icon.symbolName {
+
                 Image(systemName: symbolName)
                     .font(.system(size: size * 0.4, weight: .semibold))
                     .foregroundStyle(foreground.color)
@@ -959,6 +1033,7 @@ private struct ProfileAvatarIconPicker: View {
                     .foregroundStyle(foreground.color)
             }
         }
+
         .accessibilityHidden(true)
     }
 }
@@ -989,7 +1064,7 @@ enum AvatarPhotoCrop {
     /// @brief      Decode image data into a transformed thumbnail
     /// @details    Applies image orientation and limits the thumbnail's longest edge to 2048 pixels
     ///
-    /// @param[in]  data Encoded image bytes selected by the user
+    /// @param[in]  data  Encoded image bytes selected by the user
     ///
     /// @return     (UIImage?) decoded thumbnail, or nil when ImageIO cannot create one
     ///
@@ -997,6 +1072,7 @@ enum AvatarPhotoCrop {
     /// @post       The source data remains unchanged
     ///
     static func image(from data: Data) -> UIImage? {
+
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -1013,17 +1089,19 @@ enum AvatarPhotoCrop {
     /// @details    Computes the visible overflow at the requested zoom and bounds horizontal and
     ///             vertical movement independently
     ///
-    /// @param[in]  offset    Requested image translation in points
-    /// @param[in]  imageSize Source image dimensions
-    /// @param[in]  side      Square crop viewport side length
-    /// @param[in]  zoom      Image magnification factor
+    /// @param[in]  offset     Requested image translation in points
+    /// @param[in]  imageSize  Source image dimensions
+    /// @param[in]  side       Square crop viewport side length
+    /// @param[in]  zoom       Image magnification factor
     ///
     /// @return     (CGSize) offset limited to the available image overflow
     ///
     static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize {
+
         let scale = max(side / imageSize.width, side / imageSize.height) * zoom
         let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)
         let verticalLimit = max(0, (imageSize.height * scale - side) / 2)
+
         return CGSize(
             width: min(max(offset.width, -horizontalLimit), horizontalLimit),
             height: min(max(offset.height, -verticalLimit), verticalLimit)
@@ -1036,10 +1114,10 @@ enum AvatarPhotoCrop {
     /// @brief      Render the selected crop as a square JPEG
     /// @details    Draws the constrained image region into a 512-by-512 opaque renderer
     ///
-    /// @param[in]  image Source photo to crop
-    /// @param[in]  side  Crop viewport side length in points
-    /// @param[in]  zoom  Image magnification factor
-    /// @param[in]  offset Requested image translation in points
+    /// @param[in]  image   Source photo to crop
+    /// @param[in]  side    Crop viewport side length in points
+    /// @param[in]  zoom    Image magnification factor
+    /// @param[in]  offset  Requested image translation in points
     ///
     /// @return     (Data?) JPEG bytes, or nil for invalid dimensions or failed encoding
     ///
@@ -1047,14 +1125,22 @@ enum AvatarPhotoCrop {
     /// @post       The source image remains unchanged
     ///
     static func jpeg(image: UIImage, side: CGFloat, zoom: CGFloat, offset: CGSize) -> Data? {
-        guard side > 0, image.size.width > 0, image.size.height > 0 else { return nil }
+
+        guard side > 0, image.size.width > 0, image.size.height > 0 else {
+
+            return nil
+        }
+
         let scale = max(side / image.size.width, side / image.size.height) * zoom
         let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)
         let outputScale = 512 / side
         let format = UIGraphicsImageRendererFormat()
+
         format.scale = 1
         format.opaque = true
+
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 512, height: 512), format: format)
+
         return renderer.image { _ in
             image.draw(in: CGRect(
                 x: ((side - image.size.width * scale) / 2 + offset.width) * outputScale,
@@ -1092,7 +1178,7 @@ private struct AvatarPhotoCropView: View {
     /// @details    Constrains the image to the square crop and applies drag and magnification
     ///             gestures
     ///
-    /// @param[in]  side Side length of the crop viewport
+    /// @param[in]  side  Side length of the crop viewport
     ///
     /// @return     (some View) clipped image with crop mask and gestures
     ///
@@ -1100,6 +1186,7 @@ private struct AvatarPhotoCropView: View {
     /// @post       User interaction updates the crop view's zoom and offset state
     ///
     private func stage(side: CGFloat) -> some View {
+
         let currentZoom = min(max(zoom * magnification, 1), 6)
         let currentOffset = AvatarPhotoCrop.constrainedOffset(
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
@@ -1117,6 +1204,7 @@ private struct AvatarPhotoCropView: View {
                 path.addRect(CGRect(x: 0, y: 0, width: side, height: side))
                 path.addEllipse(in: CGRect(x: 0, y: 0, width: side, height: side))
             }
+
             .fill(.black.opacity(0.55), style: FillStyle(eoFill: true))
             .allowsHitTesting(false)
 
@@ -1124,6 +1212,7 @@ private struct AvatarPhotoCropView: View {
                 .strokeBorder(.white, lineWidth: 2)
                 .allowsHitTesting(false)
         }
+
         .frame(width: side, height: side)
         .clipped()
         .contentShape(Rectangle())
@@ -1168,6 +1257,7 @@ private struct AvatarPhotoCropView: View {
         NavigationStack {
             GeometryReader { geometry in
                 let side = max(1, min(geometry.size.width - 32, geometry.size.height - 160, 360))
+
                 VStack(spacing: 16) {
                     stage(side: side)
 
@@ -1177,6 +1267,7 @@ private struct AvatarPhotoCropView: View {
                             .accessibilityLabel("Photo zoom")
                         Image(systemName: "plus.magnifyingglass")
                     }
+
                     .frame(maxWidth: 360)
 
                     HStack(spacing: 20) {
@@ -1190,20 +1281,25 @@ private struct AvatarPhotoCropView: View {
                             .accessibilityLabel("Move photo right")
                         Button("Reset") { zoom = 1; offset = .zero }
                     }
+
                     .buttonStyle(.bordered)
                 }
+
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
+
             .navigationTitle("Crop Photo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Use Photo") {
                         if let data = AvatarPhotoCrop.jpeg(image: image, side: cropSide, zoom: zoom, offset: offset) {
+
                             onUsePhoto(data)
                             dismiss()
                         } else {
@@ -1212,10 +1308,12 @@ private struct AvatarPhotoCropView: View {
                     }
                 }
             }
+
             .alert("Could not crop photo", isPresented: $cropFailed) {
                 Button("OK", role: .cancel) {}
             }
         }
+
         .presentationDetents([.large])
     }
 }
@@ -1282,12 +1380,15 @@ private struct ProfileColorMapPicker: View {
         defaultColor: ProfileColor,
         presets: [ProfileColorPreset]
     ) {
+
         self.title = title
         self.defaultColor = defaultColor
         self.presets = presets
         _selection = selection
         initialColor = selection.wrappedValue
+
         let components = selection.wrappedValue.hueSaturationBrightness
+
         _hue = State(initialValue: components.hue)
         _saturation = State(initialValue: components.saturation)
         _brightness = State(initialValue: components.brightness)
@@ -1314,6 +1415,7 @@ private struct ProfileColorMapPicker: View {
     /// @return     (Void) updates selection and closes the picker
     ///
     private func saveSelection() {
+
         selection = selectedColor
         dismiss()
     }
@@ -1327,6 +1429,7 @@ private struct ProfileColorMapPicker: View {
     /// @return     (Void) resets the current color draft
     ///
     private func resetColor() {
+
         setColor(initialColor)
     }
 
@@ -1339,6 +1442,7 @@ private struct ProfileColorMapPicker: View {
     /// @return     (Void) updates the current color draft
     ///
     private func useDefaultColor() {
+
         setColor(defaultColor)
     }
 
@@ -1348,12 +1452,14 @@ private struct ProfileColorMapPicker: View {
     /// @brief      Load an RGB profile color into the editable HSB state
     /// @details    Uses the model conversion to update hue, saturation, and brightness together
     ///
-    /// @param[in]  color RGB color to display and edit
+    /// @param[in]  color  RGB color to display and edit
     ///
     /// @return     (Void) updates the three draft components
     ///
     private func setColor(_ color: ProfileColor) {
+
         let components = color.hueSaturationBrightness
+
         hue = components.hue
         saturation = components.saturation
         brightness = components.brightness
@@ -1397,8 +1503,10 @@ private struct ProfileColorMapPicker: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
+
             .contentShape(Rectangle())
         }
+
         .buttonStyle(.plain)
     }
 
@@ -1439,13 +1547,16 @@ private struct ProfileColorMapPicker: View {
                                     .font(.caption2)
                                     .lineLimit(1)
                             }
+
                             .frame(width: 56, height: 48)
                             .contentShape(Rectangle())
                         }
+
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(preset.name) preset")
                     }
                 }
+
                 .padding(.vertical, 2)
             }
 
@@ -1457,6 +1568,7 @@ private struct ProfileColorMapPicker: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
+
                 Slider(value: $brightness, in: 0...1)
                     .tint(selectedColor.color)
             }
@@ -1469,15 +1581,18 @@ private struct ProfileColorMapPicker: View {
 
             Spacer(minLength: 0)
         }
+
         .padding()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             if !isEditingRGB {
+
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save", action: saveSelection)
                 }
@@ -1513,6 +1628,7 @@ private struct ProfileRGBColorEditor: View {
     /// @return     (ProfileRGBColorEditor) initialized RGB editor
     ///
     init(color: ProfileColor, onSave: @escaping (ProfileColor) -> Void) {
+
         self.onSave = onSave
         _red = State(initialValue: color.red * 255)
         _green = State(initialValue: color.green * 255)
@@ -1540,6 +1656,7 @@ private struct ProfileRGBColorEditor: View {
     /// @return     (Void) sends the edited color to onSave
     ///
     private func saveColor() {
+
         onSave(editedColor)
         dismiss()
     }
@@ -1577,6 +1694,7 @@ private struct ProfileRGBColorEditor: View {
 
             Spacer(minLength: 0)
         }
+
         .padding()
         .navigationTitle("RGB Values")
         .navigationBarTitleDisplayMode(.inline)
@@ -1585,6 +1703,7 @@ private struct ProfileRGBColorEditor: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
             }
+
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: saveColor)
             }
@@ -1619,6 +1738,7 @@ private struct RGBChannelControl: View {
     /// @return     (RGBChannelControl) initialized channel editor
     ///
     init(title: String, value: Binding<Double>) {
+
         self.title = title
         _value = value
         _hexValue = State(initialValue: Self.hexString(value.wrappedValue))
@@ -1630,11 +1750,12 @@ private struct RGBChannelControl: View {
     /// @brief      Format a channel value as two uppercase hexadecimal digits
     /// @details    Rounds the numeric channel value to the nearest integer before formatting
     ///
-    /// @param[in]  value Channel intensity to format
+    /// @param[in]  value  Channel intensity to format
     ///
     /// @return     (String) two-digit hexadecimal channel text
     ///
     private static func hexString(_ value: Double) -> String {
+
         String(format: "%02X", Int(value.rounded()))
     }
 
@@ -1663,19 +1784,26 @@ private struct RGBChannelControl: View {
                 .focused($isEditingHex)
                 .onChange(of: value) { _, newValue in
                     if !isEditingHex {
+
                         hexValue = Self.hexString(newValue)
                     }
                 }
+
                 .onChange(of: hexValue) { _, newValue in
                     let validCharacters = Set("0123456789ABCDEF")
                     let normalized = String(newValue.uppercased().filter { validCharacters.contains($0) }.prefix(2))
+
                     if normalized != newValue {
+
                         hexValue = normalized
                     }
+
                     value = normalized.isEmpty ? 0 : Double(UInt8(normalized, radix: 16) ?? 0)
                 }
+
                 .onChange(of: isEditingHex) { _, isEditing in
                     if !isEditing {
+
                         hexValue = Self.hexString(value)
                     }
                 }
@@ -1750,12 +1878,14 @@ private struct ProfileColorMapSurface: View {
                         Circle()
                             .strokeBorder(.black.opacity(0.75), lineWidth: 1)
                     }
+
                     .shadow(color: .black.opacity(0.25), radius: 2)
                     .position(
                         x: min(max(hue * width, 15), width - 15),
                         y: min(max((1 - saturation) * height, 15), height - 15)
                     )
             }
+
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .contentShape(RoundedRectangle(cornerRadius: 8))
             .gesture(
@@ -1770,12 +1900,14 @@ private struct ProfileColorMapSurface: View {
             .accessibilityValue("Hue \(Int(hue * 360)) degrees, saturation \(Int(saturation * 100)) percent")
             .accessibilityAdjustableAction { direction in
                 switch direction {
+
                     case .increment: hue = min(hue + 0.02, 1)
                     case .decrement: hue = max(hue - 0.02, 0)
                     @unknown default: break
                 }
             }
         }
+
         .frame(height: 240)
     }
 }

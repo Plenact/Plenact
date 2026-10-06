@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       ChecklistMigrationTests.swift
 // @brief      Checklist-item persistence compatibility tests
 // @details    Verifies revision 0 string migration, deterministic action IDs, completion-index
@@ -7,7 +7,7 @@
 //
 // @notes      Tests protect Codable compatibility without migrating saved application data
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import XCTest
 @testable import Plenact
 
@@ -21,10 +21,10 @@ import XCTest
 final class ChecklistMigrationTests: XCTestCase {
 
     ///
-    /// @fcn        ChecklistMigrationTests.testLegacyBoardSnapshotDecodesChecklistItems
+    /// @fcn        ChecklistMigrationTests.testLegacyBoardSnapshotDecodesChecklistItems()
     /// @brief      Decode checklist actions from a complete revision 0 board snapshot
-    /// @details    Exercises migration through list, card, and checklist nesting rather than decoding
-    ///             only the checklist value in isolation
+    /// @details    Exercises migration through list, card, and checklist nesting rather than
+    ///             decoding only the checklist value in isolation
     ///
     /// @return     (Void) succeeds when legacy text and completion migrate without loss
     ///
@@ -74,7 +74,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
     ///
-    /// @fcn        ChecklistMigrationTests.testLegacyMigrationProducesDeterministicItemIDs
+    /// @fcn        ChecklistMigrationTests.testLegacyMigrationProducesDeterministicItemIDs()
     /// @brief      Verify legacy checklist items receive repeatable identities
     /// @details    Decodes the same revision 0 value twice and compares migrated item UUIDs
     ///
@@ -102,11 +102,13 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
     ///
-    /// @fcn        ChecklistMigrationTests.testExplicitCompletionIndicesPreserveItemIDs
+    /// @fcn        ChecklistMigrationTests.testExplicitCompletionIndicesPreserveItemIDs()
     /// @brief      Preserve stable IDs while applying compatibility completion indices
-    /// @details    Confirms arbitrary positional completion updates direct item state without replacement
+    /// @details    Confirms arbitrary positional completion updates direct item state without
+    ///             replacement
     ///
-    /// @return     (Void) succeeds when identity is unchanged and completion matches supplied positions
+    /// @return     (Void) succeeds when identity is unchanged and completion matches supplied
+    ///             positions
     ///
     func testExplicitCompletionIndicesPreserveItemIDs() {
 
@@ -131,11 +133,13 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
     ///
-    /// @fcn        ChecklistMigrationTests.testCurrentChecklistRoundTripUsesItemRecords
+    /// @fcn        ChecklistMigrationTests.testCurrentChecklistRoundTripUsesItemRecords()
     /// @brief      Round-trip the current stable checklist-item format
-    /// @details    Confirms new JSON contains item records, omits the legacy index field, and decodes equally
+    /// @details    Confirms new JSON contains item records, omits the legacy index field, and
+    ///             decodes equally
     ///
-    /// @return     (Void) succeeds when the current checklist representation round-trips without loss
+    /// @return     (Void) succeeds when the current checklist representation round-trips without
+    ///             loss
     ///
     /// @throws     Encoding, JSON inspection, decoding, or unwrap failures
     ///
@@ -165,7 +169,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
       ///
-      /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction
+      /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction()
       /// @brief      Decode a stable checklist item written before action content existed
       /// @details    Verifies the absent content field receives standard text behavior
       ///
@@ -191,7 +195,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
       ///
-      /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips
+      /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips()
       /// @brief      Round-trip linked-card and Action Detail payloads
       /// @details    Protects stable card references and reduced owned content across board saves
       ///
@@ -222,12 +226,13 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
       ///
-      /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions
+      /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions()
       /// @brief      Verify every seeded activity card demonstrates linked and detailed actions
-      /// @details    Requires one resolvable cross-list card link and two Action Details while leaving
-      ///             section-divider cards free of demonstration content
+      /// @details    Requires one resolvable cross-list card link and two Action Details while
+      ///             leaving section-divider cards free of demonstration content
       ///
-      /// @return     (Void) succeeds when the complete starter Board meets the demonstration contract
+      /// @return     (Void) succeeds when the complete starter Board meets the demonstration
+      ///             contract
       ///
       func testEveryStarterCardDemonstratesRichActions() {
 
@@ -238,17 +243,27 @@ final class ChecklistMigrationTests: XCTestCase {
         for card in SampleData.lists.flatMap(\.cards) {
 
           if card.isSectionDivider {
+
             XCTAssertTrue(card.checklists.flatMap(\.items).allSatisfy { $0.content == .standard })
             continue
           }
 
           let actions = card.checklists.flatMap(\.items)   /* Card checklist actions */
           let linkedCardIDs = actions.compactMap { item -> Int? in /* Resolved linked-card target IDs */
-            guard case .linkedCard(let cardID) = item.content else { return nil } /* Linked card ID */
+            guard case .linkedCard(let cardID) = item.content else {
+
+                return nil
+            } /* Linked card ID */
+
             return cardID
           }
+
           let detailCount = actions.filter { item in /* Count reduced Action Details */
-            guard case .actionDetail = item.content else { return false }
+            guard case .actionDetail = item.content else {
+
+                return false
+            }
+
             return true
           }.count
 
@@ -256,6 +271,7 @@ final class ChecklistMigrationTests: XCTestCase {
           XCTAssertEqual(detailCount, 2, "\(card.word) should demonstrate two Action Details")
 
           if let linkedCardID = linkedCardIDs.first { /* First seeded linked-card target */
+
             let linkedCard = cardsByID[linkedCardID]   /* Resolved sample target */
 
             XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
@@ -266,10 +282,10 @@ final class ChecklistMigrationTests: XCTestCase {
       
 
       ///
-      /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists
+      /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists()
       /// @brief      Verify the starter Board represents a complete planning week
-      /// @details    Protects weekday ordering, daily card counts, divider placement, and representative
-      ///             planning content from accidental regression
+      /// @details    Protects weekday ordering, daily card counts, divider placement, and
+      ///             representative planning content from accidental regression
       ///
       /// @return     (Void) succeeds when all seven weekday lists meet the starter contract
       ///
@@ -297,7 +313,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
       ///
-      /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees
+      /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees()
       /// @brief      Preserve revision 0 card member strings as manual assignments
       /// @details    Confirms old Board snapshots do not accidentally claim registered identities
       ///
@@ -326,7 +342,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
 
     ///
-    /// @fcn        ChecklistMigrationTests.testRegisteredCardAssigneeRoundTripsStableUserID
+    /// @fcn        ChecklistMigrationTests.testRegisteredCardAssigneeRoundTripsStableUserID()
     /// @brief      Preserve registered identity separately from its display name
     /// @details    Verifies the Board Codable model stores a stable user ID for an assignee
     ///

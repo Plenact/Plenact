@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       CardDetailView.swift
 // @brief      Detailed kanban card presentation and supporting components
 // @details    Defines the card detail screen, sections, actions, metadata rows, and activity feed
@@ -10,7 +10,7 @@
 // @section    Opens
 //     Modularize into separate files
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import SwiftUI
 import PhotosUI
 import UIKit
@@ -76,6 +76,7 @@ struct CardDetailView: View {
         ///
         var title: String { /* User-facing date-field label */
             switch self {
+
                 case .start: return "Start date"
                 case .due:   return "Due date"
             }
@@ -113,6 +114,7 @@ struct CardDetailView: View {
         var id: String {                            /* Stable identity for the active sheet                */
 
             switch self {
+
                 case .date(let field):                   "date-\(field.id)" /* Selected date field */
                 case .members:                           "members"
                 case .labels:                            "labels"
@@ -145,10 +147,10 @@ struct CardDetailView: View {
         var id: String { rawValue } /* Stable generated-activity identity */
 
         ///
-        /// @fcn        GeneratedActivity.text(for:actorName:)
+        /// @fcn        CardDetailView.GeneratedActivity.text(for:actorName:)
         /// @brief      Generate the display text for an activity entry
-        /// @details    Resolves this activity type into user-visible copy using the selected
-        ///             card's title and list
+        /// @details    Resolves this activity type into user-visible copy using the selected card's
+        ///             title and list
         ///
         /// @param[in]  card       Card whose activity feed is being rendered
         /// @param[in]  actorName  Current user name shown as the activity actor
@@ -161,6 +163,7 @@ struct CardDetailView: View {
         func text(for card: KanbanCard, actorName: String) -> String {
             
             switch self {
+
                 case .addedCard:
                     return "\(actorName) added \(card.word) to this card"
                 case .createdCard:
@@ -304,12 +307,6 @@ struct CardDetailView: View {
         _checklists = State(initialValue: card.checklists)                      /* Initialize checklist state from the card's stored values             */
     }
 
-    /// Resolve the display color assigned to a member name
-    ///
-    /// @param[in]  memberName Display name whose normalized color key is queried
-    ///
-    /// @return     (Color) assigned member color or the system accent color
-    ///
     ///
     /// @fcn        CardDetailView.memberIconColor(for:)
     /// @brief      Resolve the display color for an assigned member
@@ -317,7 +314,9 @@ struct CardDetailView: View {
     ///             explicit member color exists
     ///
     /// @param[in]  memberName  Member display name
-    /// @return     (Color) configured member color or the system accent color
+    ///
+    /// @return     (Color) assigned member color or the system accent color
+    ///
     /// @post       Member assignments and color mappings are unchanged
     ///
     private func memberIconColor(for memberName: String) -> Color {
@@ -345,17 +344,19 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.importPhotos(from:)
     /// @brief      Import selected photo-library items as card attachments
-    /// @details    Loads each selected photo or video, stores successful transfers in the app container,
-    ///             synchronizes the attachment metadata to the card, and reports partial failures
+    /// @details    Loads each selected photo or video, stores successful transfers in the app
+    ///             container, synchronizes the attachment metadata to the card, and reports partial
+    ///             failures
     ///
     /// @param[in]  photoItems  PhotosPicker items selected for the current card
     ///
     /// @return     (Void) updates the card with successfully imported photo and video attachments
     ///
     /// @pre        photoItems were selected from the PhotosPicker for this card
-    /// @post       The selection is cleared; saved attachment records are synchronized to board state
-    ///
-    /// @note       Successful imports are retained even if another selected item fails to load or save
+    /// @post       The selection is cleared; saved attachment records are synchronized to board
+    ///             state
+    /// @note       Successful imports are retained even if another selected item fails to load or
+    ///             save
     ///
     @MainActor
     private func importPhotos(from photoItems: [PhotosPickerItem]) async {
@@ -365,7 +366,9 @@ struct CardDetailView: View {
         for photoItem in photoItems { /* Selected Photos-library item */
             
             do {
+
                 guard let mediaData = try await photoItem.loadTransferable(type: Data.self) else { /* Transferred media bytes */
+
                     importFailed = true
                     continue
                 }
@@ -374,6 +377,7 @@ struct CardDetailView: View {
                 let isVideo = photoItem.supportedContentTypes.contains { /* Whether the selection is video media */
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
+
                 let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category */
                 let fileExtension = contentType?.preferredFilenameExtension ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
 
@@ -389,6 +393,7 @@ struct CardDetailView: View {
         syncCardState(attachments: attachments)
 
         if importFailed {
+
             attachmentNoticeMessage = "One or more selected photos or videos could not be added. Please try again."
             showingAttachmentNotice = true
         }
@@ -400,10 +405,13 @@ struct CardDetailView: View {
     /// @details    Appends a link attachment, closes the source sheet, and synchronizes card state
     ///
     /// @param[in]  url  Web address selected for attachment
+    ///
     /// @return     (Void) updates attachment state and the parent card
+    ///
     /// @post       The URL is represented as a link attachment on this card
     ///
     private func addWebLink(_ url: URL) {
+
         attachments.append(KanbanAttachment(url: url, mediaKind: .link))
         activeSheet = nil
         syncCardState(attachments: attachments)
@@ -412,10 +420,11 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.addClipboardLink()
     /// @brief      Read and add a web address from the system clipboard
-    /// @details    Parses the clipboard URL through CardAttachmentStore and presents a notice
-    ///             when no valid web link is available
+    /// @details    Parses the clipboard URL through CardAttachmentStore and presents a notice when
+    ///             no valid web link is available
     ///
     /// @return     (Void) adds a valid link or updates the attachment notice
+    ///
     /// @post       Invalid clipboard content does not change the card
     ///
     private func addClipboardLink() {
@@ -440,7 +449,9 @@ struct CardDetailView: View {
     /// @details    Presents a source-specific notice and closes the source chooser
     ///
     /// @param[in]  source  Display name of the unavailable attachment source
+    ///
     /// @return     (Void) updates notice and sheet presentation state
+    ///
     /// @post       Card attachments remain unchanged
     ///
     private func showAttachmentSourceComingSoon(_ source: String) {
@@ -453,8 +464,9 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.removeAttachment(_:)
     /// @brief      Remove one photo from the current card
-    /// @details    Deletes the attachment record from local detail state and synchronizes the updated card;
-    ///             the board owner removes the stored image file if no card references it
+    /// @details    Deletes the attachment record from local detail state and synchronizes the
+    ///             updated card; the board owner removes the stored image file if no card
+    ///             references it
     ///
     /// @param[in]  attachment  Photo attachment selected for removal
     ///
@@ -464,6 +476,7 @@ struct CardDetailView: View {
     /// @post       The selected photo is no longer assigned to this card
     ///
     private func removeAttachment(_ attachment: KanbanAttachment) {
+
         attachments.removeAll { $0.id == attachment.id }
         syncCardState(attachments: attachments)
     }
@@ -485,7 +498,9 @@ struct CardDetailView: View {
     /// @param[in]  dueDate         Optional replacement due date
     /// @param[in]  clearStartDate  Whether to clear the current start date
     /// @param[in]  clearDueDate    Whether to clear the current due date
+    ///
     /// @return     (Void) emits the updated card when the callback is configured
+    ///
     /// @post       The parent receives the current card state for its persistence path
     ///
     private func syncCardState(
@@ -538,11 +553,13 @@ struct CardDetailView: View {
     /// @details    Flips the title checkbox state and synchronizes the updated card
     ///
     /// @return     (Void) updates local and parent title-completion state
+    ///
     /// @post       The card's title-completion flag is inverted
     ///
     private func toggleCardTitle() {
 
         let nextChecked = !titleChecked /* Inverted title completion state */
+
         titleChecked    = nextChecked
 
         syncCardState(titleChecked: nextChecked)
@@ -556,13 +573,17 @@ struct CardDetailView: View {
     ///             synchronizes the updated card
     ///
     /// @return     (Void) appends and syncs a nonempty comment
+    ///
     /// @post       Empty drafts leave comment state unchanged
     ///
     private func postComment() {
 
         let text = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment draft */
 
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty else {
+
+            return
+        }
 
         comments.append(KanbanComment(author: "Justin Reina", body: text))
         commentDraft = ""
@@ -585,6 +606,7 @@ struct CardDetailView: View {
     /// @post       Comment is absent from Activity feed & remains deleted after reopening card
     ///
     private func deleteComment(with commentID: UUID) {
+
         comments.removeAll { $0.id == commentID }
         syncCardState()
     }
@@ -594,7 +616,7 @@ struct CardDetailView: View {
     /// @fcn        CardDetailView.dismissGeneratedActivity(_:)
     /// @brief      Dismiss one generated activity entry from the current card
     /// @details    Records the entry's stable identifier as dismissed and synchronizes that state
-    ///              with the board
+    ///             with the board
     ///
     /// @param[in]  activity  Generated activity entry selected for removal
     ///
@@ -604,6 +626,7 @@ struct CardDetailView: View {
     /// @post       The entry stays dismissed when the card is reopened
     ///
     private func dismissGeneratedActivity(_ activity: GeneratedActivity) {
+
         dismissedActivityIDs.insert(activity.id)
         syncCardState()
     }
@@ -615,12 +638,15 @@ struct CardDetailView: View {
     /// @details    Clears only the requested date, synchronizes the card, and closes the picker
     ///
     /// @param[in]  field  Date field to reset
+    ///
     /// @return     (Void) clears the selected date and dismisses its sheet
+    ///
     /// @post       The other date field remains unchanged
     ///
     private func resetDate(for field: DateField) {
 
         switch field {
+
             case .start:
                 startDate = nil
                 syncCardState(clearStartDate: true)
@@ -640,7 +666,9 @@ struct CardDetailView: View {
     ///             synchronizes the chosen field and dismisses the sheet
     ///
     /// @param[in]  field  Card date field being edited
+    ///
     /// @return     (Binding<Date>) binding for the date picker
+    ///
     /// @post       Reading the binding does not change card state
     ///
     private func dateBinding(for field: DateField) -> Binding<Date> {
@@ -677,13 +705,15 @@ struct CardDetailView: View {
 
 
     ///
-    /// @fcn        CardDetailView.moveCardMenu(label:)
+    /// @fcn        CardDetailView.moveCardMenu(@ViewBuilder:)
     /// @brief      Build the shared destination-list menu
     /// @details    Invokes the move callback and dismisses detail after a destination is selected;
     ///             the menu is disabled when no destinations are available
     ///
     /// @param[in]  label  View builder for the menu's visible label
+    ///
     /// @return     (some View) destination menu with the supplied label
+    ///
     /// @post       No card is moved until a destination is selected
     ///
     @ViewBuilder
@@ -698,6 +728,7 @@ struct CardDetailView: View {
         } label: {
             label()
         }
+
         .disabled(availableLists.isEmpty)
     }
 
@@ -734,10 +765,12 @@ struct CardDetailView: View {
             Spacer()
 
             Button {
+
                 activeSheet = .date(field)
             } label: {
                 Text(dateLabel)
             }
+
             .buttonStyle(.plain)
             .accessibilityLabel("\(currentDate == nil ? "Add" : "Edit") \(fieldName)")
         }
@@ -759,11 +792,13 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.addChecklist(using:)
     /// @brief      Append a new checklist to the selected card
-    /// @details    Adds a default checklist and first item, synchronizes the card, then scrolls
-    ///             the checklist into view and focuses its first item
+    /// @details    Adds a default checklist and first item, synchronizes the card, then scrolls the
+    ///             checklist into view and focuses its first item
     ///
     /// @param[in]  scrollProxy  Proxy used to reveal the new checklist
+    ///
     /// @return     (Void) adds, synchronizes, and reveals the checklist
+    ///
     /// @post       The new checklist is selected for first-item focus
     ///
     private func addChecklist(using scrollProxy: ScrollViewProxy) {
@@ -777,6 +812,7 @@ struct CardDetailView: View {
         syncCardState()
 
         DispatchQueue.main.async {
+
             withAnimation(.easeInOut) {
                 scrollProxy.scrollTo(checklist.id, anchor: .center)
             }
@@ -787,11 +823,13 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.deleteChecklist(with:)
     /// @brief      Remove a checklist from the selected card
-    /// @details    Filters the local checklist collection by its stable identifier and
-    ///             synchronizes the updated card
+    /// @details    Filters the local checklist collection by its stable identifier and synchronizes
+    ///             the updated card
     ///
     /// @param[in]  checklistID  Identifier of the checklist to remove
+    ///
     /// @return     (Void) removes and synchronizes a matching checklist
+    ///
     /// @post       A checklist with the supplied ID is no longer rendered
     ///
     private func deleteChecklist(with checklistID: UUID) {
@@ -817,11 +855,19 @@ struct CardDetailView: View {
     ///
     private func renameChecklist(with checklistID: UUID, to title: String) {
         
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { return } /* Checklist position */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else {
+            return
+        } /* Checklist position */
         
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized checklist title */
         
-        guard !trimmedTitle.isEmpty else { return }
+        guard !trimmedTitle.isEmpty else {
+
+            return
+        }
 
         let checklist = checklists[checklistIndex] /* Current checklist snapshot */
 
@@ -838,8 +884,8 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.toggleAllItems(in:)
     /// @brief      Check every item or clear all checks in one checklist
-    /// @details    Clears completion when all non-empty items are already checked; otherwise
-    ///             checks every item
+    /// @details    Clears completion when all non-empty items are already checked; otherwise checks
+    ///             every item
     ///
     /// @param[in]  checklistID  Stable identifier of the checklist to update
     ///
@@ -850,7 +896,12 @@ struct CardDetailView: View {
     ///
     private func toggleAllItems(in checklistID: UUID) {
 
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { return } /* Checklist position */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else {
+            return
+        } /* Checklist position */
 
         let checklist            = checklists[checklistIndex]                                                                   /* current checklist               */
         let allItemsAreCompleted = !checklist.items.isEmpty && checklist.completedItemIndices.count == checklist.items.count    /* all non-empty items are checked */
@@ -884,7 +935,10 @@ struct CardDetailView: View {
     private func moveChecklist(with checklistID: UUID, direction: ChecklistMoveDirection) {
 
         // Ensure the checklist exists and there is more than one checklist to move
-        guard let sourceIndex = checklists.firstIndex(where: { $0.id == checklistID }), /* Current checklist position */
+        guard let sourceIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }), /* Current checklist position */
               checklists.count > 1 else {
             return
         }
@@ -892,6 +946,7 @@ struct CardDetailView: View {
         let destinationIndex: Int /* Position resolved from the requested direction */
 
         switch direction {
+
             case .top:
                 destinationIndex = 0
             case .up:
@@ -902,7 +957,10 @@ struct CardDetailView: View {
                 destinationIndex = checklists.count - 1
         }
 
-        guard sourceIndex != destinationIndex else { return }
+        guard sourceIndex != destinationIndex else {
+
+            return
+        }
 
         let movedChecklist = checklists.remove(at: sourceIndex) /* Checklist removed before reinsertion */
 
@@ -919,13 +977,18 @@ struct CardDetailView: View {
     ///             synchronizes the card
     ///
     /// @param[in]  checklistID  Identifier of the checklist receiving the item
+    ///
     /// @return     (Void) updates and synchronizes a matching checklist
+    ///
     /// @post       The new item appears above the checklist's Add item control
     ///
     private func addItem(to checklistID: UUID) {
 
         // Find the index of the checklist to which the new item will be added
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { /* Target checklist position */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else { /* Target checklist position */
             return
         }
 
@@ -948,13 +1011,18 @@ struct CardDetailView: View {
     ///
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being toggled
+    ///
     /// @return     (Void) updates a matching checklist when found
+    ///
     /// @post       The selected item's completion state is inverted
     ///
     private func toggleItem(in checklistID: UUID, at itemIndex: Int) {
 
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { /* Checklist being toggled */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else { /* Checklist being toggled */
             return
         }
 
@@ -963,6 +1031,7 @@ struct CardDetailView: View {
 
         // Toggle the completion state of the specified item within the checklist
         if completedItemIndices.contains(itemIndex) {
+
             completedItemIndices.remove(itemIndex)
         } else {
             completedItemIndices.insert(itemIndex)
@@ -988,13 +1057,18 @@ struct CardDetailView: View {
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being edited
     /// @param[in]  text         New display text for the item
+    ///
     /// @return     (Void) updates the item when its checklist and index exist
+    ///
     /// @post       The edited text is displayed in the checklist row
     ///
     private func updateItem(in checklistID: UUID, at itemIndex: Int, with text: String) {
         
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { /* Checklist being edited */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else { /* Checklist being edited */
             return
         }
 
@@ -1003,6 +1077,7 @@ struct CardDetailView: View {
 
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else {
+
             return
         }
 
@@ -1027,13 +1102,18 @@ struct CardDetailView: View {
     ///
     /// @param[in]  checklistID  Identifier of the checklist being updated
     /// @param[in]  itemIndex    Zero-based index of the item being deleted
+    ///
     /// @return     (Void) updates the checklist when the target item exists
+    ///
     /// @post       The selected item is removed and later completion indices are adjusted
     ///
     private func deleteItem(in checklistID: UUID, at itemIndex: Int) {
 
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: { $0.id == checklistID }) else { /* Checklist being edited */
+        guard let checklistIndex = checklists.firstIndex(where: {
+
+            $0.id == checklistID
+        }) else { /* Checklist being edited */
             return
         }
 
@@ -1042,10 +1122,12 @@ struct CardDetailView: View {
 
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else {
+
             return
         }
 
         var items = checklist.items     /* Mutable checklist actions */
+
         items.remove(at: itemIndex)     /* Remove the specified item from the checklist    */
 
         // Recalculate the set of completed item indices after the deletion
@@ -1055,6 +1137,7 @@ struct CardDetailView: View {
 
                 // Skip the index if it matches the deleted item index
                 guard index != itemIndex else {
+
                     return nil
                 }
 
@@ -1075,11 +1158,13 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.checklistBlock(for:)
     /// @brief      Build a checklist block wired to card checklist actions
-    /// @details    Connects row actions to checklist state handlers and supplies the one-time first-item focus request
+    /// @details    Connects row actions to checklist state handlers and supplies the one-time
+    ///             first-item focus request
     ///
     /// @param[in]  checklist  Checklist data and identity used to configure the block
     ///
-    /// @return     (some View) identified checklist block with edit, completion, add, delete, and rename actions
+    /// @return     (some View) identified checklist block with edit, completion, add, delete, and
+    ///             rename actions
     ///
     /// @pre        checklist belongs to the current card's checklist collection
     /// @post       Rendering the block does not mutate checklist state
@@ -1092,6 +1177,7 @@ struct CardDetailView: View {
         ChecklistBlock(
             checklist: checklist,
             onDelete: {
+
                 deleteChecklist(with: checklist.id)
             },
             onAddItem: {
@@ -1157,6 +1243,7 @@ struct CardDetailView: View {
 
                     Spacer(minLength: 0)
                 }
+
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(16)
 
@@ -1174,6 +1261,7 @@ struct CardDetailView: View {
                                 .font(.title2)
                                 .foregroundStyle(titleChecked ? .blue : .secondary)
                         }
+
                         .buttonStyle(.plain)
                         .accessibilityLabel(titleChecked ? "Uncheck card title" : "Check card title")
 
@@ -1197,6 +1285,7 @@ struct CardDetailView: View {
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
+
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Move card from \(card.listTitle)")
                                 }
@@ -1209,6 +1298,7 @@ struct CardDetailView: View {
                                 .submitLabel(.done)
                                 .overlay(alignment: .leading) {
                                     if focusedField != .subtitle {
+
                                         Text(subtitleText)
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
@@ -1227,6 +1317,7 @@ struct CardDetailView: View {
                         Spacer()
 
                     }
+
                     .padding(16)
 
                     //****************************************************************************//
@@ -1266,6 +1357,7 @@ struct CardDetailView: View {
                                             } label: {
                                                 CardAttachmentThumbnail(attachment: attachment)
                                             }
+
                                             .buttonStyle(.plain)
                                         }
                                     }
@@ -1276,6 +1368,7 @@ struct CardDetailView: View {
                                             Label("Remove attachment", systemImage: "trash")
                                         }
                                     }
+
                                     .accessibilityLabel(attachment.url == nil ? "View attached media" : "Open attached link")
                                 }
                             }
@@ -1299,12 +1392,14 @@ struct CardDetailView: View {
                             .onTapGesture {
                                 focusedField = .description
                             }
+
                             .onChange(of: descriptionText) {
                                 syncCardState()
                             }
                             .toolbar {
                                 ToolbarItemGroup(placement: .keyboard) {
                                     if focusedField == .description {
+
                                         Spacer()
                                         Button {
                                             focusedField = nil
@@ -1313,6 +1408,7 @@ struct CardDetailView: View {
                                                 .font(.system(size: 16, weight: .semibold))
                                                 .frame(width: 30, height: 30)
                                         }
+
                                         .foregroundStyle(.blue)
                                     }
                                 }
@@ -1327,11 +1423,13 @@ struct CardDetailView: View {
                     DetailSection(title: "Details") {
 
                         if startDate != nil {
+
                             dateRow(for: .start)
                             Divider()
                         }
 
                         if dueDate != nil {
+
                             dateRow(for: .due)
                             Divider()
                         }
@@ -1363,10 +1461,12 @@ struct CardDetailView: View {
                                     }
                                 }
                             }
+
                             .font(.subheadline)
                             .padding(.vertical, 5)
                             .contentShape(Rectangle())
                         }
+
                         .buttonStyle(.plain)
                         .accessibilityLabel("Edit card labels")
 
@@ -1395,6 +1495,7 @@ struct CardDetailView: View {
                                                 .foregroundStyle(memberIconColor(for: member))
                                         }
                                     }
+
                                     .frame(minWidth: 22, alignment: .leading)
                                 }
 
@@ -1407,10 +1508,12 @@ struct CardDetailView: View {
                                     .lineLimit(1)
                                     .truncationMode(.tail)
                             }
+
                             .font(.subheadline)
                             .padding(.vertical, 5)
                             .contentShape(Rectangle())
                         }
+
                         .buttonStyle(.plain)
                         .accessibilityLabel("Edit assigned members")
                     }
@@ -1452,10 +1555,12 @@ struct CardDetailView: View {
                                 Image(systemName: "gearshape")
                                     .foregroundStyle(.secondary)
                             }
+
                             .accessibilityLabel("Activity options")
                         }
 
                         if activityFilter != .cardActivity {
+
                             ForEach(comments) { comment in
                                 CommentActivityRow(
                                     comment: comment,
@@ -1467,6 +1572,7 @@ struct CardDetailView: View {
                         }
 
                         if activityFilter != .comments {
+
                             ForEach(GeneratedActivity.allCases.filter { !dismissedActivityIDs.contains($0.id) }) { activity in
                                 ActivityRow(
                                     text: activity.text(for: card, actorName: currentUserName),
@@ -1477,6 +1583,7 @@ struct CardDetailView: View {
                             }
                         }
                     }
+
                     .padding(16)
                     .background(.background)
                     .overlay(alignment: .bottom) { Divider() }
@@ -1499,16 +1606,20 @@ struct CardDetailView: View {
                             Image(systemName: "paperplane.fill")
                                 .font(.body.weight(.semibold))
                         }
+
                         .disabled(commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityLabel("Post comment")
                     }
+
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
             }
+
             .padding(.bottom, 12)
             }
         }
+
         .safeAreaInset(edge: .top, spacing: 0) {
 
             HStack(spacing: 12) {
@@ -1524,6 +1635,7 @@ struct CardDetailView: View {
                         .background(Color(.systemGray5), in: Circle())
                         .contentShape(Circle())
                 }
+
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close card")
 
@@ -1559,6 +1671,7 @@ struct CardDetailView: View {
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
+
                     .accessibilityLabel("Add to card")
 
                     Menu {
@@ -1588,29 +1701,38 @@ struct CardDetailView: View {
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
+
                     .accessibilityLabel("Card actions")
                 }
             }
+
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
             .background(Color(.systemGroupedBackground))
         }
+
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .onChange(of: selectedPhotoItems) { _, photoItems in
-            guard !photoItems.isEmpty else { return }
+            guard !photoItems.isEmpty else {
+
+                return
+            }
             Task {
                 await importPhotos(from: photoItems)
             }
         }
+
         .alert("Attachment notice", isPresented: $showingAttachmentNotice) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(attachmentNoticeMessage)
         }
+
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
+
                 case .date(let field): /* Selected date field */
                     NavigationStack {
                         DatePicker(
@@ -1629,6 +1751,7 @@ struct CardDetailView: View {
                                     resetDate(for: field)
                                 }
                             }
+
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button("Done") {
                                     activeSheet = nil
@@ -1636,6 +1759,7 @@ struct CardDetailView: View {
                             }
                         }
                     }
+
                     .presentationDetents([.medium, .large])
 
                 case .members:
@@ -1643,6 +1767,7 @@ struct CardDetailView: View {
                         members = updatedMembers
                         syncCardState(members: updatedMembers)
                     }
+
                     .presentationDetents([.medium, .large])
 
                 case .labels:
@@ -1652,6 +1777,7 @@ struct CardDetailView: View {
 
                         syncCardState(labelIDs: updatedLabelIDs)
                     }
+
                     .presentationDetents([.large])
 
                 case .attachmentSources:
@@ -1742,6 +1868,7 @@ private struct CardMembersSheet: View {
             let normalizedName = trimmedMember.lowercased() /* Case-insensitive deduplication key */
 
             guard !trimmedMember.isEmpty, seenNames.insert(normalizedName).inserted else {
+
                 return nil
             }
 
@@ -1761,13 +1888,14 @@ private struct CardMembersSheet: View {
     /// @post       Draft member state begins with the supplied assignments
     ///
     init(members: [String], memberColors: [String: Color], onSave: @escaping ([String]) -> Void) {
+
         self.onSave = onSave
         self.memberColors = memberColors
         _members = State(initialValue: members)
     }
 
     ///
-    /// @fcn        CardMembersSheet.addMember
+    /// @fcn        CardMembersSheet.addMember()
     /// @brief      Add the current member draft to the assigned-user list
     /// @details    Appends trimmed draft & clears input when non-empty & not already assigned
     ///
@@ -1776,12 +1904,14 @@ private struct CardMembersSheet: View {
     /// @pre        memberDraft contains the current text entered in the Add user field
     /// @post       A valid unique name is appended and memberDraft is cleared; invalid or duplicate
     ///             drafts are unchanged
-    ///
     /// @note       Duplicate detection is case-insensitive
     ///
     private func addMember() {
         
-        guard canAddMember else { return }
+        guard canAddMember else {
+
+            return
+        }
 
         members.append(trimmedMemberDraft)
         memberDraft = ""
@@ -1804,6 +1934,7 @@ private struct CardMembersSheet: View {
                 Section("Assigned users") {
 
                     if members.isEmpty {
+
                         Text("No users assigned")
                             .foregroundStyle(.secondary)
                     }
@@ -1818,6 +1949,7 @@ private struct CardMembersSheet: View {
                             TextField("Name or email", text: $members[index])
                                 .textInputAutocapitalization(.never)
                         }
+
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
 
                             Button(role: .destructive) {
@@ -1841,11 +1973,13 @@ private struct CardMembersSheet: View {
                         Button(action: addMember) {
                             Image(systemName: "plus.circle.fill")
                         }
+
                         .disabled(!canAddMember)
                         .accessibilityLabel("Add member")
                     }
                 }
             }
+
             .navigationTitle("Card members")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1855,6 +1989,7 @@ private struct CardMembersSheet: View {
                         dismiss()
                     }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     
                     Button("Save") {
@@ -1864,6 +1999,7 @@ private struct CardMembersSheet: View {
                 }
             }
         }
+
         .presentationDragIndicator(.visible)
     }
 }
@@ -1938,6 +2074,7 @@ struct DetailSection<Content: View>: View {
                             Image(systemName: trailing)
                                 .foregroundStyle(.secondary)
                         }
+
                         .buttonStyle(.plain)
                         .accessibilityLabel("Add \(title.lowercased())")
                     } else {
@@ -1951,6 +2088,7 @@ struct DetailSection<Content: View>: View {
 
             content()
         }
+
         .padding(16)
         .background(.background)
         .overlay(alignment: .bottom) { Divider() }
@@ -1992,6 +2130,7 @@ struct ActionTile: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .tint(color)
         }
+
         .buttonStyle(.plain)
     }
 }
@@ -2033,6 +2172,7 @@ struct DetailRow: View {
             Text(value)
                 .foregroundStyle(.secondary)
         }
+
         .font(.subheadline)
         .padding(.vertical, 5)
     }
@@ -2125,6 +2265,7 @@ struct ChecklistBlock: View {
                         titleDraft = checklist.title
                         isRenaming = true
                     }
+
                     .accessibilityHint("Touch and hold to rename this checklist")
 
                 Spacer()
@@ -2144,6 +2285,7 @@ struct ChecklistBlock: View {
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
+
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCollapsed ? "Expand checklist" : "Collapse checklist")
 
@@ -2155,6 +2297,7 @@ struct ChecklistBlock: View {
                     } label: {
                         Label(allItemsAreCompleted ? "Uncheck All" : "Check All", systemImage: allItemsAreCompleted ? "square" : "checkmark.square")
                     }
+
                     .disabled(checklist.items.isEmpty)
 
                     Divider()
@@ -2162,21 +2305,25 @@ struct ChecklistBlock: View {
                     Button("Move to the Top", systemImage: "arrow.up.to.line") {
                         onMove(.top)
                     }
+
                     .disabled(!canMoveUp)
 
                     Button("Move Up", systemImage: "arrow.up") {
                         onMove(.up)
                     }
+
                     .disabled(!canMoveUp)
 
                     Button("Move Down", systemImage: "arrow.down") {
                         onMove(.down)
                     }
+
                     .disabled(!canMoveDown)
 
                     Button("Move to the Bottom", systemImage: "arrow.down.to.line") {
                         onMove(.bottom)
                     }
+
                     .disabled(!canMoveDown)
 
                     Divider()
@@ -2195,9 +2342,11 @@ struct ChecklistBlock: View {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(.secondary)
                 }
+
                 .buttonStyle(.plain)
                 .accessibilityLabel("Checklist actions")
             }
+
             .padding(.bottom, 6)
 
             if !isCollapsed {
@@ -2232,9 +2381,11 @@ struct ChecklistBlock: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 6)
                 }
+
                 .buttonStyle(.plain)
             }
         }
+
         .padding(.vertical, 6)
         .alert("Rename Checklist", isPresented: $isRenaming) {
             TextField("Checklist title", text: $titleDraft)
@@ -2242,6 +2393,7 @@ struct ChecklistBlock: View {
             Button("Save") {
                 onRename(titleDraft)
             }
+
             .disabled(titleDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         } message: {
             Text("Enter a name for this checklist.")
@@ -2292,6 +2444,7 @@ struct ChecklistItemRow: View {
                     .frame(maxHeight: .infinity)
                     .background(.red)
             }
+
             .buttonStyle(.plain)
             .accessibilityLabel("Delete item")
 
@@ -2302,6 +2455,7 @@ struct ChecklistItemRow: View {
                     Image(systemName: isCompleted ? "checkmark.square.fill" : "square")
                         .foregroundStyle(isCompleted ? .blue : .secondary)
                 }
+
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
 
@@ -2312,7 +2466,10 @@ struct ChecklistItemRow: View {
                 .font(.subheadline)
                 .focused($isTextFocused)
                 .onAppear {
-                    guard shouldFocus else { return }
+                    guard shouldFocus else {
+
+                        return
+                    }
                     DispatchQueue.main.async {
                         isTextFocused = true
                         onFocusHandled()
@@ -2321,6 +2478,7 @@ struct ChecklistItemRow: View {
 
                 Spacer()
             }
+
             .padding(.vertical, 6)
             .padding(.horizontal, 2)
             .background(.background)
@@ -2330,6 +2488,7 @@ struct ChecklistItemRow: View {
                 DragGesture(minimumDistance: 12)
                     .onChanged { value in
                         guard abs(value.translation.width) > abs(value.translation.height) else {
+
                             return
                         }
 
@@ -2337,11 +2496,13 @@ struct ChecklistItemRow: View {
                     }
                     .onEnded { value in
                         guard abs(value.translation.width) > abs(value.translation.height) else {
+
                             return
                         }
 
                         withAnimation(.easeOut(duration: 0.2)) {
                             if value.translation.width < -120 {
+
                                 onDelete()
                             } else {
                                 horizontalOffset = value.translation.width < -36 ? -72 : 0
@@ -2350,6 +2511,7 @@ struct ChecklistItemRow: View {
                     }
             )
         }
+
         .clipped()
     }
 }
@@ -2475,6 +2637,7 @@ struct ActivitySwipeRow<Content: View>: View {
             deletionAccessibilityLabel: String = "Delete activity",
             @ViewBuilder content: @escaping () -> Content
         ) {
+
             self.onDelete = onDelete
             self.deletionAccessibilityLabel = deletionAccessibilityLabel
             self.content = content
@@ -2501,6 +2664,7 @@ struct ActivitySwipeRow<Content: View>: View {
                         .frame(maxHeight: .infinity)
                         .background(.red)
                 }
+
                 .buttonStyle(.plain)
                 .accessibilityLabel(deletionAccessibilityLabel)
 
@@ -2515,6 +2679,7 @@ struct ActivitySwipeRow<Content: View>: View {
                         DragGesture(minimumDistance: 12)
                             .onChanged { value in
                                 guard abs(value.translation.width) > abs(value.translation.height) else {
+
                                     return
                                 }
                                 horizontalOffset = min(0, max(-72, value.translation.width))
@@ -2522,10 +2687,12 @@ struct ActivitySwipeRow<Content: View>: View {
 
                             .onEnded { value in
                                 guard abs(value.translation.width) > abs(value.translation.height) else {
+
                                     return
                                 }
                                 withAnimation(.easeOut(duration: 0.2)) {
                                     if value.translation.width < -120 {
+
                                         onDelete()
                                     } else {
                                         horizontalOffset = value.translation.width < -36 ? -72 : 0
@@ -2534,6 +2701,7 @@ struct ActivitySwipeRow<Content: View>: View {
                             }
                     )
             }
+
             .clipped()
         }
     }

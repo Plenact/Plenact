@@ -1,9 +1,10 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       PlenactAPIClient.swift
 // @brief      HTTPS client and Keychain session boundary for the Plenact shared demo API
 // @details    Provides the authenticated client for the app's synthetic shared-demo service, not
 //             production multi-tenant synchronization; ordinary local Board data is not uploaded
-// -------------------------------------------------------------------------------------------------
+//
+// --------------------------------------------------------------------------------------------------
 import Foundation
 import Security
 
@@ -248,6 +249,7 @@ enum PlenactAPIError: LocalizedError {
     var errorDescription: String? { /* Safe user-facing error text */
 
         switch self {
+
             case .endpointNotConfigured:
                 return "The shared demo API endpoint is not configured in this build."
             case .invalidEndpoint:
@@ -261,7 +263,12 @@ enum PlenactAPIError: LocalizedError {
             case .boardNotSeeded:
                 return "The shared demo Board has not been initialized yet."
             case .revisionConflict(let revision): /* Current server revision, when available */
-                if let revision { /* Revision value used in the conflict message */ return "The shared Board changed. Its current revision is \(revision). Refresh before retrying." }
+
+                if let revision {
+
+                    /* Revision value used in the conflict message */ return "The shared Board changed. Its current revision is \(revision). Refresh before retrying."
+                }
+
                 return "The shared Board changed. Refresh before retrying."
             case .server(let code): /* Stable API error code */
                 return "The shared demo request could not be completed (\(code))."
@@ -315,7 +322,7 @@ enum PlenactSessionStore {
     /// @brief      Save the remote bearer session with device-only accessibility
     /// @details    Encodes the session and updates or adds its app-specific Keychain item
     ///
-    /// @param[in]  session Authenticated remote identity and access token
+    /// @param[in]  session  Authenticated remote identity and access token
     ///
     /// @return     (Bool) true when Keychain accepted the session value
     ///
@@ -324,7 +331,11 @@ enum PlenactSessionStore {
     ///
     @discardableResult
     static func save(_ session: PlenactRemoteSession) -> Bool {
-        guard let data = try? JSONEncoder().encode(session) else { return false } /* Encoded session payload */
+
+        guard let data = try? JSONEncoder().encode(session) else {
+
+            return false
+        } /* Encoded session payload */
 
         let query: [String: Any] = [ /* Keychain item identity */
             kSecClass as String: kSecClassGenericPassword,
@@ -387,11 +398,12 @@ struct PlenactAPIClient {
     /// @brief      Check whether JSON bytes fit within the client size limit
     /// @details    Compares the data length with maximumJSONBodyBytes
     ///
-    /// @param[in]  body Encoded or received JSON body
+    /// @param[in]  body  Encoded or received JSON body
     ///
     /// @return     (Bool) true when body does not exceed the configured byte limit
     ///
     static func isJSONBodyWithinLimit(_ body: Data) -> Bool {
+
         body.count <= maximumJSONBodyBytes
     }
 
@@ -427,10 +439,14 @@ struct PlenactAPIClient {
             configuredURL = URL(string: value) /* Parse the configured endpoint */
 
         } else {
+
             configuredURL = nil /* No endpoint configured for this build */
         }
 
-        guard let configuredURL else { throw PlenactAPIError.endpointNotConfigured } /* Required API endpoint */
+        guard let configuredURL else {
+
+            throw PlenactAPIError.endpointNotConfigured
+        } /* Required API endpoint */
 
         guard configuredURL.scheme?.lowercased() == "https",
               configuredURL.host != nil,
@@ -443,9 +459,14 @@ struct PlenactAPIClient {
         var components = URLComponents(url: configuredURL, resolvingAgainstBaseURL: false) /* Mutable URL normalization components */
 
         if components?.path.hasSuffix("/") == false {
+
             components?.path.append("/")
         }
-        guard let normalizedURL = components?.url else { throw PlenactAPIError.invalidEndpoint } /* Normalized endpoint URL */
+
+        guard let normalizedURL = components?.url else {
+
+            throw PlenactAPIError.invalidEndpoint
+        } /* Normalized endpoint URL */
 
         self.baseURL = normalizedURL /* Store validated endpoint */
         self.session = session       /* Store request transport */
@@ -457,8 +478,8 @@ struct PlenactAPIClient {
     /// @details    Sends credentials to the configured authentication endpoint and persists the
     ///             returned session in Keychain
     ///
-    /// @param[in]  username Normalized demo account handle
-    /// @param[in]  password Account password submitted over HTTPS
+    /// @param[in]  username  Normalized demo account handle
+    /// @param[in]  password  Account password submitted over HTTPS
     ///
     /// @return     (PlenactRemoteSession) authenticated identity and session
     ///
@@ -475,6 +496,7 @@ struct PlenactAPIClient {
             body: PlenactLoginRequest(username: username, password: password)
         )
         guard PlenactSessionStore.save(response) else {
+
             await logout(response)
             throw PlenactAPIError.server("keychain_unavailable")
         }
@@ -488,13 +510,14 @@ struct PlenactAPIClient {
     /// @details    Attempts the logout request and removes the stored session even if revocation
     ///             fails
     ///
-    /// @param[in]  remoteSession Authenticated session to revoke
+    /// @param[in]  remoteSession  Authenticated session to revoke
     ///
     /// @return     (Void) attempts remote revocation and clears the stored session
     ///
     /// @post       The session is removed from Keychain
     ///
     func logout(_ remoteSession: PlenactRemoteSession) async {
+
         _ = try? await send(
             path: "auth.php",
             method: "POST",
@@ -510,7 +533,7 @@ struct PlenactAPIClient {
     /// @brief      Fetch the active registered-user directory
     /// @details    Returns the approved remote user fields visible to the authenticated account
     ///
-    /// @param[in]  token Bearer token for the current account
+    /// @param[in]  token  Bearer token for the current account
     ///
     /// @return     ([PlenactRemoteUser]) safe active-user directory entries
     ///
@@ -535,16 +558,17 @@ struct PlenactAPIClient {
     /// @details    Sends account fields to the authenticated user endpoint and returns its safe
     ///             directory identity
     ///
-    /// @param[in]  token       Board-editor bearer token
-    /// @param[in]  username    New member's login handle
-    /// @param[in]  displayName New member's directory name
-    /// @param[in]  password    New member's temporary password
+    /// @param[in]  token        Board-editor bearer token
+    /// @param[in]  username     New member's login handle
+    /// @param[in]  displayName  New member's directory name
+    /// @param[in]  password     New member's temporary password
     ///
     /// @return     (PlenactRemoteUser) provisioned member identity
     ///
     /// @throws     PlenactAPIError when the editor request is rejected
     ///
-    /// @pre        token belongs to a shared-demo Board editor and account fields meet service rules
+    /// @pre        token belongs to a shared-demo Board editor and account fields meet service
+    ///             rules
     /// @post       A member account is created only when the service accepts the request
     ///
     func createMember(token: String, username: String, displayName: String, password: String) async throws -> PlenactRemoteUser {
@@ -568,7 +592,7 @@ struct PlenactAPIClient {
     /// @brief      Fetch the current shared-demo Board snapshot
     /// @details    Retrieves the document and server-maintained revision provenance
     ///
-    /// @param[in]  token Bearer token for a registered demo user
+    /// @param[in]  token  Bearer token for a registered demo user
     ///
     /// @return     (PlenactBoardSnapshotResponse) current immutable Board revision
     ///
@@ -578,6 +602,7 @@ struct PlenactAPIClient {
     /// @post       Local Board persistence remains unchanged
     ///
     func board(token: String) async throws -> PlenactBoardSnapshotResponse {
+
         try await send(path: "board.php", method: "GET", token: token)
     }
 
@@ -586,20 +611,22 @@ struct PlenactAPIClient {
     /// @brief      Save a shared-demo Board snapshot using optimistic revision checking
     /// @details    Validates the document and requires a positive expected revision before writing
     ///
-    /// @param[in]  token            Board-editor bearer token
-    /// @param[in]  document         Validated Board payload to persist
-    /// @param[in]  expectedRevision Last revision read by the editor
+    /// @param[in]  token             Board-editor bearer token
+    /// @param[in]  document          Validated Board payload to persist
+    /// @param[in]  expectedRevision  Last revision read by the editor
     ///
     /// @return     (PlenactBoardWriteResponse) newly appended snapshot revision
     ///
     /// @throws     PlenactAPIError when validation or the revision check fails
     ///
-    /// @pre        The caller explicitly edits the shared-demo Board and supplies its fetched revision
+    /// @pre        The caller explicitly edits the shared-demo Board and supplies its fetched
+    ///             revision
     /// @post       A successful request appends the accepted remote snapshot
     ///
     func saveBoard(token: String, document: PlenactBoardDocument, expectedRevision: Int64) async throws -> PlenactBoardWriteResponse {
 
         guard expectedRevision > 0, document.validationMessage == nil else {
+
             throw PlenactAPIError.server("invalid_board_write")
         }
 
@@ -614,10 +641,10 @@ struct PlenactAPIClient {
     ///
     /// @fcn        PlenactAPIClient.sampleDataDocument(for:)
     /// @brief      Build the approved initial seed without reading or mutating local Board storage
-    /// @details    Copies synthetic weekday SampleData and maps its known manual Jim assignment
-    ///             to the supplied registered demo user
+    /// @details    Copies synthetic weekday SampleData and maps its known manual Jim assignment to
+    ///             the supplied registered demo user
     ///
-    /// @param[in]  user Registered account receiving the known starter assignment
+    /// @param[in]  user  Registered account receiving the known starter assignment
     ///
     /// @return     (PlenactBoardDocument) synthetic SampleData with its explicit Jim mapping
     ///
@@ -641,6 +668,7 @@ struct PlenactAPIClient {
                 sampleLists[listIndex].cards[cardIndex].members = card.members.map { assignee /* Existing seed assignment */ in
 
                     guard assignee.kind == .manual, assignee.displayName == "Justin Reina" else {
+
                         return assignee
                     }
 
@@ -663,9 +691,9 @@ struct PlenactAPIClient {
     /// @details    Requires an unseeded shared Board and marks the request as the approved initial
     ///             SampleData seed
     ///
-    /// @param[in]  token            Board-editor bearer token
-    /// @param[in]  user             Authenticated editor receiving the starter assignment
-    /// @param[in]  expectedRevision Required initial revision value of zero
+    /// @param[in]  token             Board-editor bearer token
+    /// @param[in]  user              Authenticated editor receiving the starter assignment
+    /// @param[in]  expectedRevision  Required initial revision value of zero
     ///
     /// @return     (PlenactBoardWriteResponse) seeded shared Board revision
     ///
@@ -677,12 +705,14 @@ struct PlenactAPIClient {
     func publishSampleData(token: String, user: PlenactRemoteUser, expectedRevision: Int64) async throws -> PlenactBoardWriteResponse {
 
         guard expectedRevision == 0 else {
+
             throw PlenactAPIError.server("sample_seed_requires_revision_zero")
         }
 
         let document = Self.sampleDataDocument(for: user) /* Explicit SampleData seed document */
 
         guard document.validationMessage == nil else {
+
             throw PlenactAPIError.server("invalid_sample_data")
         }
 
@@ -699,11 +729,12 @@ struct PlenactAPIClient {
     /// @brief      Add or remove an assignment through the server-enforced role boundary
     /// @details    Sends the expected revision and target identity to the assignment endpoint
     ///
-    /// @param[in]  token            Current registered-user bearer token
-    /// @param[in]  expectedRevision Last shared Board revision read
-    /// @param[in]  cardID           Stable target card ID
-    /// @param[in]  action           Assignment operation, either assign or unassign
-    /// @param[in]  userID           Optional editor-selected account ID; members are scoped to self
+    /// @param[in]  token             Current registered-user bearer token
+    /// @param[in]  expectedRevision  Last shared Board revision read
+    /// @param[in]  cardID            Stable target card ID
+    /// @param[in]  action            Assignment operation, either assign or unassign
+    /// @param[in]  userID            Optional editor-selected account ID; members are scoped to
+    ///             self
     ///
     /// @return     (PlenactAssignmentResponse) resulting revision and mutation status
     ///
@@ -732,10 +763,10 @@ struct PlenactAPIClient {
     /// @brief      Encode and send a Board snapshot with an optional initial-seed marker
     /// @details    Uses the shared Board endpoint and its optimistic revision request format
     ///
-    /// @param[in]  token            Authenticated bearer credential
-    /// @param[in]  document         Complete Board document
-    /// @param[in]  expectedRevision Last revision read by the caller
-    /// @param[in]  seedKind         Approved initial seed identifier, when applicable
+    /// @param[in]  token             Authenticated bearer credential
+    /// @param[in]  document          Complete Board document
+    /// @param[in]  expectedRevision  Last revision read by the caller
+    /// @param[in]  seedKind          Approved initial seed identifier, when applicable
     ///
     /// @return     (PlenactBoardWriteResponse) write result
     ///
@@ -763,10 +794,10 @@ struct PlenactAPIClient {
     /// @brief      Encode and send a JSON request body
     /// @details    Enforces the outgoing JSON size limit before forwarding encoded bytes
     ///
-    /// @param[in]  path   API endpoint path
-    /// @param[in]  method HTTP method
-    /// @param[in]  token  Optional bearer credential
-    /// @param[in]  body   Encodable request payload
+    /// @param[in]  path    API endpoint path
+    /// @param[in]  method  HTTP method
+    /// @param[in]  token   Optional bearer credential
+    /// @param[in]  body    Encodable request payload
     ///
     /// @return     (Response) decoded API response
     ///
@@ -784,7 +815,11 @@ struct PlenactAPIClient {
     ) async throws -> Response {
 
         let encodedBody = try JSONEncoder().encode(body) /* Encoded request payload */
-        guard Self.isJSONBodyWithinLimit(encodedBody) else { throw PlenactAPIError.payloadTooLarge }
+
+        guard Self.isJSONBodyWithinLimit(encodedBody) else {
+
+            throw PlenactAPIError.payloadTooLarge
+        }
 
         return try await send(path: path, method: method, token: token, bodyData: encodedBody)
     }
@@ -794,9 +829,9 @@ struct PlenactAPIClient {
     /// @brief      Send a request without a body and decode its response
     /// @details    Forwards the endpoint and optional bearer credential with no request payload
     ///
-    /// @param[in]  path   API endpoint path
-    /// @param[in]  method HTTP method
-    /// @param[in]  token  Optional bearer credential
+    /// @param[in]  path    API endpoint path
+    /// @param[in]  method  HTTP method
+    /// @param[in]  token   Optional bearer credential
     ///
     /// @return     (Response) decoded API response
     ///
@@ -819,10 +854,10 @@ struct PlenactAPIClient {
     /// @details    Tracks the request as a shared-database operation and clears activity on either
     ///             success or failure
     ///
-    /// @param[in]  path     API endpoint path
-    /// @param[in]  method   HTTP method
-    /// @param[in]  token    Optional bearer credential
-    /// @param[in]  bodyData Encoded request body, when present
+    /// @param[in]  path      API endpoint path
+    /// @param[in]  method    HTTP method
+    /// @param[in]  token     Optional bearer credential
+    /// @param[in]  bodyData  Encoded request body, when present
     ///
     /// @return     (Response) decoded API response
     ///
@@ -838,11 +873,14 @@ struct PlenactAPIClient {
         bodyData: Data?
     ) async throws -> Response {
         let operation = await DatabaseActivity.shared.begin("Synchronizing shared database...")
+
         do {
+
             let response: Response = try await executeRequest(
                 path: path, method: method, token: token, bodyData: bodyData
             )
             await DatabaseActivity.shared.end(operation)
+
             return response
         } catch {
             await DatabaseActivity.shared.end(operation)
@@ -856,10 +894,10 @@ struct PlenactAPIClient {
     /// @details    Applies JSON headers and optional bearer authorization, enforces response size,
     ///             maps known status errors, and decodes successful response data
     ///
-    /// @param[in]  path     API endpoint path relative to the configured base URL
-    /// @param[in]  method   HTTP method for the request
-    /// @param[in]  token    Optional bearer credential
-    /// @param[in]  bodyData Optional encoded JSON request data
+    /// @param[in]  path      API endpoint path relative to the configured base URL
+    /// @param[in]  method    HTTP method for the request
+    /// @param[in]  token     Optional bearer credential
+    /// @param[in]  bodyData  Optional encoded JSON request data
     ///
     /// @return     (Response) decoded successful API response
     ///
@@ -881,25 +919,34 @@ struct PlenactAPIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         if let bodyData { /* Optional encoded request payload */
+
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = bodyData
         }
+
         if let token { /* Optional bearer credential */
+
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
         let (data, response) = try await session.data(for: request) /* Response bytes and transport metadata */
 
         guard let httpResponse = response as? HTTPURLResponse else { /* Require an HTTP response */
+
             throw PlenactAPIError.invalidResponse
         }
-        guard Self.isJSONBodyWithinLimit(data) else { throw PlenactAPIError.payloadTooLarge } /* Bound downloaded JSON */
+
+        guard Self.isJSONBodyWithinLimit(data) else {
+
+            throw PlenactAPIError.payloadTooLarge
+        } /* Bound downloaded JSON */
 
         guard (200..<300).contains(httpResponse.statusCode) else {
 
             let serverError = try? JSONDecoder().decode(PlenactAPIErrorResponse.self, from: data) /* Optional API error payload */
 
             switch serverError?.error {
+
                 case "unauthorized":      throw PlenactAPIError.unauthorized
                 case "board_not_seeded":  throw PlenactAPIError.boardNotSeeded
                 case "revision_conflict": throw PlenactAPIError.revisionConflict(serverError?.currentRevision)
@@ -909,6 +956,7 @@ struct PlenactAPIClient {
         }
 
         do {
+
             return try JSONDecoder().decode(Response.self, from: data)
 
         } catch {

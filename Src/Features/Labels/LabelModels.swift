@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       LabelModels.swift
 // @brief      Shared label catalog models, persistence, palette, and chip presentation
 // @details    Defines reusable categorized labels, stable card assignments, local catalog storage,
@@ -6,7 +6,7 @@
 //
 // @notes      Card assignments store label IDs; the shared catalog owns label names, categories, and colors
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import Foundation
 import SwiftUI
 
@@ -63,6 +63,7 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     var color: Color { /* SwiftUI color resolved from the persisted token */
         switch self {
+
             case .mint:   Color(red: 0.17, green: 0.72, blue: 0.55)
             case .yellow: Color(red: 0.91, green: 0.79, blue: 0.13)
             case .orange: Color(red: 0.96, green: 0.55, blue: 0.10)
@@ -182,7 +183,7 @@ enum LabelLibraryStore {
     private static let storageKey = "Plenact.LabelLibrary.v1" /* Versioned local catalog key */
 
     ///
-    /// @fcn        LabelLibraryStore.load
+    /// @fcn        LabelLibraryStore.load()
     /// @brief      Load the saved label catalog
     /// @details    Decodes the local JSON snapshot and returns the starter catalog when no valid
     ///             saved catalog exists
@@ -193,6 +194,7 @@ enum LabelLibraryStore {
     /// @post       Stored data is unchanged; callers receive a usable label library
     ///
     static func load() -> LabelLibrary {
+
           guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
               let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else { /* Decoded catalog */
             return .starter
@@ -215,7 +217,12 @@ enum LabelLibraryStore {
     ///             unchanged
     ///
     static func save(_ library: LabelLibrary) {
-        guard let data = try? JSONEncoder().encode(library) else { return } /* Encoded catalog snapshot */
+
+        guard let data = try? JSONEncoder().encode(library) else {
+
+            return
+        } /* Encoded catalog snapshot */
+
         UserDefaults.standard.set(data, forKey: storageKey)
     }
 }

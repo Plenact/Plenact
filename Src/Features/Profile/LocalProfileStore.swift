@@ -1,9 +1,9 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       LocalProfileStore.swift
 // @brief      Local profile persistence
 // @details    Encodes one optional local profile without accounts, passwords, or network access
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import Foundation
 
 
@@ -36,7 +36,10 @@ enum LocalProfileStore {
     ///
     static func load(from defaults: UserDefaults = .standard) -> LocalProfile? {
 
-        guard let data = defaults.data(forKey: storageKey) else { return nil } /* Stored profile bytes */
+        guard let data = defaults.data(forKey: storageKey) else {
+
+            return nil
+        } /* Stored profile bytes */
 
         return try? JSONDecoder().decode(LocalProfile.self, from: data)
     }
@@ -57,7 +60,10 @@ enum LocalProfileStore {
     ///
     static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard) {
 
-        guard let data = try? JSONEncoder().encode(profile) else { return } /* Encoded profile snapshot */
+        guard let data = try? JSONEncoder().encode(profile) else {
+
+            return
+        } /* Encoded profile snapshot */
 
         defaults.set(data, forKey: storageKey)
     }
@@ -75,6 +81,7 @@ enum LocalProfileStore {
     /// @post       Board, labels, attachments, and Today selections remain available
     ///
     static func remove(from defaults: UserDefaults = .standard) {
+
         defaults.removeObject(forKey: storageKey)
     }
 }
@@ -103,7 +110,9 @@ enum ProfileAvatarPhotoStore {
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
         let directory = documents.appendingPathComponent("ProfileAvatars", isDirectory: true)
+
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
         return directory
     }
 
@@ -113,15 +122,18 @@ enum ProfileAvatarPhotoStore {
     /// @brief      Save avatar photo data in the app's local photo directory
     /// @details    Writes the data atomically to a unique JPEG-named file
     ///
-    /// @param[in]  data Avatar photo bytes to persist
+    /// @param[in]  data  Avatar photo bytes to persist
     ///
     /// @return     (String) unique filename for the saved photo
     ///
     /// @throws     File-system error when directory creation or file writing fails
     ///
     static func save(_ data: Data) throws -> String {
+
         let fileName = "\(UUID().uuidString).jpg"
+
         try data.write(to: directory().appendingPathComponent(fileName), options: .atomic)
+
         return fileName
     }
 
@@ -129,9 +141,10 @@ enum ProfileAvatarPhotoStore {
     ///
     /// @fcn        ProfileAvatarPhotoStore.load(_:)
     /// @brief      Load a locally stored avatar photo
-    /// @details    Accepts only a single filename component before reading from the avatar directory
+    /// @details    Accepts only a single filename component before reading from the avatar
+    ///             directory
     ///
-    /// @param[in]  fileName Stored avatar filename, when available
+    /// @param[in]  fileName  Stored avatar filename, when available
     ///
     /// @return     (Data?) photo bytes when the file can be read, otherwise nil
     ///
@@ -139,6 +152,7 @@ enum ProfileAvatarPhotoStore {
     /// @post       The stored photo is unchanged
     ///
     static func load(_ fileName: String?) -> Data? {
+
         guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
               let directory = try? directory() else { return nil }
         return try? Data(contentsOf: directory.appendingPathComponent(fileName))
@@ -150,7 +164,7 @@ enum ProfileAvatarPhotoStore {
     /// @brief      Remove a locally stored avatar photo
     /// @details    Resolves only a single filename component within the avatar directory
     ///
-    /// @param[in]  fileName Stored avatar filename, when available
+    /// @param[in]  fileName  Stored avatar filename, when available
     ///
     /// @return     (Void) removes the matching file when it can be resolved
     ///
@@ -158,6 +172,7 @@ enum ProfileAvatarPhotoStore {
     /// @post       Other local profile, Board, label, and attachment data is unchanged
     ///
     static func remove(_ fileName: String?) {
+
         guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
               let directory = try? directory() else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))

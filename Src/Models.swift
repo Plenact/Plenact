@@ -62,12 +62,13 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     ///
     /// @fcn        KanbanCard.isDividerTitle(_:)
     /// @brief      Recognize a divider marker in card-title text
-    /// @details    Accepts runs of supported dash characters and the single en, em, or horizontal bar
+    /// @details    Accepts runs of supported dash characters and the single en, em, or horizontal
+    ///             bar
     ///
     /// @param[in]  title  Candidate card title
-    /// 
+    ///
     /// @return     (Bool) true when the trimmed title is a divider marker
-    /// 
+    ///
     /// @post       The supplied title is unchanged
     ///
     static func isDividerTitle(_ title: String) -> Bool {
@@ -147,6 +148,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     var startDateLabel: String { /* Start-date badge text or default */
 
         guard let startDate else { /* No explicit start date */
+
             return "Today"
         }
 
@@ -165,6 +167,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     var dueDateLabel: String { /* Due-date badge text or default */
 
         guard let dueDate else { /* No explicit due date */
+
             return "Tomorrow"
         }
 
@@ -193,6 +196,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     ///
     var subtitle: String { /* Supporting card text or user override */
         if let subtitleOverride { /* User-edited subtitle */
+
             return subtitleOverride
         }
 
@@ -266,6 +270,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     var funParagraph: String { /* User description or generated sample context */
 
         if let descriptionOverride { /* User-authored description */
+
             return descriptionOverride
         }
 
@@ -503,6 +508,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
             }
 
             self.init(id: id, title: title, items: currentItems)
+
             return
         }
 
@@ -525,7 +531,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///
     /// @fcn        KanbanChecklist.encode(to:)
     /// @brief      Encode the stable checklist-item representation
-    /// @details    Writes checklist identity, title, and item records without the legacy completion-index field
+    /// @details    Writes checklist identity, title, and item records without the legacy
+    ///             completion-index field
     ///
     /// @param[in]  encoder  Encoder receiving the current checklist representation
     ///
@@ -558,8 +565,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///
     /// @fcn        KanbanChecklist.migratedItemID(checklistID:itemIndex:)
     /// @brief      Produce a repeatable identity for a legacy positional item
-    /// @details    Retains the first 80 bits of checklist identity and uses the legacy item position
-    ///             for the final UUID component
+    /// @details    Retains the first 80 bits of checklist identity and uses the legacy item
+    ///             position for the final UUID component
     ///
     /// @param[in]  checklistID  Stable identity of the containing legacy checklist
     /// @param[in]  itemIndex    Zero-based position of the legacy string item
@@ -573,7 +580,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
 
         let components = checklistID.uuidString.split(separator: "-")           /* UUID components */
 
-        guard components.count == 5 else { return UUID() }
+        guard components.count == 5 else {
+
+            return UUID()
+        }
 
         let itemComponent = String(format: "%012llX", UInt64(itemIndex))        /* Position suffix */
         let migratedValue = "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)" /* Migrated UUID text */
@@ -638,9 +648,10 @@ enum KanbanBoardPersistence {
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
 
     ///
-    /// @fcn        KanbanBoardPersistence.loadLists
+    /// @fcn        KanbanBoardPersistence.loadLists()
     /// @brief      Load the saved board lists
-    /// @details    Decodes the locally stored JSON snapshot and returns sample data if no valid snapshot exists
+    /// @details    Decodes the locally stored JSON snapshot and returns sample data if no valid
+    ///             snapshot exists
     ///
     /// @return     ([KanbanList]) restored board lists or the deterministic starter board
     ///
@@ -663,18 +674,23 @@ enum KanbanBoardPersistence {
     ///
     /// @fcn        KanbanBoardPersistence.saveLists(_:)
     /// @brief      Save the current board lists
-    /// @details    Encodes the supplied list and card state as JSON and writes it to the versioned user-defaults key
+    /// @details    Encodes the supplied list and card state as JSON and writes it to the versioned
+    ///             user-defaults key
     ///
     /// @param[in]  lists  Board lists and their current card state
     ///
     /// @return     (Void) stores the encoded board snapshot when encoding succeeds
     ///
     /// @pre        lists contains the current in-memory board state
-    /// @post       A valid encoded snapshot is stored locally; encoding failure leaves prior stored data unchanged
+    /// @post       A valid encoded snapshot is stored locally; encoding failure leaves prior stored
+    ///             data unchanged
     ///
     static func saveLists(_ lists: [KanbanList]) {
 
-        guard let data = try? JSONEncoder().encode(lists) else { return } /* Encoded Board snapshot */
+        guard let data = try? JSONEncoder().encode(lists) else {
+
+            return
+        } /* Encoded Board snapshot */
 
         UserDefaults.standard.set(data, forKey: storageKey)
     }

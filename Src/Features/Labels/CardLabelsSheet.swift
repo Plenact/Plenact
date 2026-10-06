@@ -1,4 +1,4 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       CardLabelsSheet.swift
 // @brief      Categorized label browser and card assignment editor
 // @details    Lets users browse a shared label catalog, toggle card assignments, and create labels
@@ -6,7 +6,7 @@
 //
 // @notes      Catalog and assignment edits remain local to this sheet until the user saves
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
@@ -67,10 +67,16 @@ struct CardLabelsSheet: View {
     /// @return     (Bool) true when the current form can create a label
     ///
     private var canCreateLabel: Bool { /* Form validity for label creation */
-        guard !trimmedLabelName.isEmpty else { return false }
+        guard !trimmedLabelName.isEmpty else {
+
+            return false
+        }
+
         if categorySelection == newCategoryID {
+
             return !trimmedCategoryName.isEmpty
         }
+
         return library.categories.contains(where: { $0.id == categorySelection })
     }
 
@@ -90,6 +96,7 @@ struct CardLabelsSheet: View {
     /// @post       The sheet's draft state starts with the provided catalog and assignments
     ///
     init(library: LabelLibrary, selectedLabelIDs: [String], onSave: @escaping (LabelLibrary, [String]) -> Void) {
+
         self.onSave = onSave
         _library = State(initialValue: library)
         _selectedLabelIDs = State(initialValue: selectedLabelIDs)
@@ -109,7 +116,9 @@ struct CardLabelsSheet: View {
     /// @post       The label's selected state is inverted in the local draft
     ///
     private func toggleLabel(_ labelID: String) {
+
         if selectedLabelIDs.contains(labelID) {
+
             selectedLabelIDs.removeAll { $0 == labelID }
         } else {
             selectedLabelIDs.append(labelID)
@@ -117,7 +126,7 @@ struct CardLabelsSheet: View {
     }
 
     ///
-    /// @fcn        CardLabelsSheet.createLabel
+    /// @fcn        CardLabelsSheet.createLabel()
     /// @brief      Create a reusable label and assign it to the current card
     /// @details    Validates the drafts, reuses a case-insensitive matching category or creates
     ///             one, then appends the label and selects its stable ID
@@ -126,16 +135,25 @@ struct CardLabelsSheet: View {
     ///
     /// @pre        canCreateLabel is true for the current form state
     /// @post       The new label appears in the catalog and is selected for this card
-    ///
     /// @note       The shared catalog is committed only when Save invokes onSave
     ///
     private func createLabel() {
-        guard canCreateLabel else { return }
+
+        guard canCreateLabel else {
+
+            return
+        }
 
         let categoryID: String /* Category assigned to the new label */
+
         if categorySelection == newCategoryID {
+
             let normalizedName = trimmedCategoryName.lowercased() /* Case-insensitive category lookup key */
-            if let existingCategory = library.categories.first(where: { $0.name.lowercased() == normalizedName }) { /* Reuse a matching category */
+
+            if let existingCategory = library.categories.first(where: {
+
+                $0.name.lowercased() == normalizedName
+            }) { /* Reuse a matching category */
                 categoryID = existingCategory.id
             } else {
                 categoryID = UUID().uuidString
@@ -211,8 +229,10 @@ struct CardLabelsSheet: View {
                                                 .foregroundStyle(.tint)
                                         }
                                     }
+
                                     .contentShape(Rectangle())
                                 }
+
                                 .buttonStyle(.plain)
                             }
                         }
@@ -227,10 +247,12 @@ struct CardLabelsSheet: View {
                         ForEach(library.categories) { category in
                             Text(category.name).tag(category.id)
                         }
+
                         Text("New category...").tag(newCategoryID)
                     }
 
                     if categorySelection == newCategoryID {
+
                         TextField("New category name", text: $newCategoryDraft)
                             .textInputAutocapitalization(.words)
                     }
@@ -243,17 +265,21 @@ struct CardLabelsSheet: View {
                                 Circle()
                                     .fill(color.color)
                             }
+
                             .tag(color)
                         }
                     }
+
                     .pickerStyle(.menu)
 
                     Button(action: createLabel) {
                         Label("Create and add label", systemImage: "plus")
                     }
+
                     .disabled(!canCreateLabel)
                 }
             }
+
             .navigationTitle("Card labels")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -262,6 +288,7 @@ struct CardLabelsSheet: View {
                         dismiss()
                     }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(library, selectedLabelIDs)
@@ -270,6 +297,7 @@ struct CardLabelsSheet: View {
                 }
             }
         }
+
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

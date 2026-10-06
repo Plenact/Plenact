@@ -1,11 +1,11 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       ProfileModels.swift
 // @brief      Local profile identity and personalization models
 // @details    Defines user-controlled local identity and settings without online authentication
 //
 // @notes      Profile data remains separate from Board persistence and never stores passwords
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import Foundation
 
 
@@ -51,6 +51,7 @@ struct ProfileColor: Hashable, Codable {
     /// @post       The color has no legacy palette token
     ///
     init(red: Double, green: Double, blue: Double) {
+
         self.red = red
         self.green = green
         self.blue = blue
@@ -70,6 +71,7 @@ struct ProfileColor: Hashable, Codable {
     /// @return     (ProfileColor) converted RGB color
     ///
     init(hue: Double, saturation: Double, brightness: Double) {
+
         let hue = (hue - floor(hue)) * 6
         let saturation = min(max(saturation, 0), 1)
         let brightness = min(max(brightness, 0), 1)
@@ -78,6 +80,7 @@ struct ProfileColor: Hashable, Codable {
         let components: (Double, Double, Double)
 
         switch Int(floor(hue)) {
+
             case 0: components = (chroma, intermediate, 0)
             case 1: components = (intermediate, chroma, 0)
             case 2: components = (0, chroma, intermediate)
@@ -87,6 +90,7 @@ struct ProfileColor: Hashable, Codable {
         }
 
         let offset = brightness - chroma
+
         self.init(
             red: components.0 + offset,
             green: components.1 + offset,
@@ -119,6 +123,7 @@ struct ProfileColor: Hashable, Codable {
     /// @return     (ProfileColor) configured palette color
     ///
     private init(red: Double, green: Double, blue: Double, legacyToken: String) {
+
         self.red = red
         self.green = green
         self.blue = blue
@@ -143,6 +148,7 @@ struct ProfileColor: Hashable, Codable {
         let hue: Double
 
         if delta == 0 {
+
             hue = 0
         } else if maximum == red {
             hue = ((green - blue) / delta + (green < blue ? 6 : 0)) / 6
@@ -167,19 +173,24 @@ struct ProfileColor: Hashable, Codable {
     /// @throws     DecodingError for an unknown legacy token; keyed-value decoder failures propagate
     ///
     init(from decoder: Decoder) throws {
+
         if let container = try? decoder.singleValueContainer(),
            let token = try? container.decode(String.self) {
             guard let color = Self.legacyColor(token) else {
+
                 throw DecodingError.dataCorrupted(.init(
                     codingPath: decoder.codingPath,
                     debugDescription: "Unknown legacy profile color: \(token)"
                 ))
             }
+
             self = color
+
             return
         }
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
         self.init(
             red: try container.decode(Double.self, forKey: .red),
             green: try container.decode(Double.self, forKey: .green),
@@ -192,18 +203,22 @@ struct ProfileColor: Hashable, Codable {
     /// @brief      Encode a profile color using its compatible representation
     /// @details    Preserves recognized legacy palette tokens and encodes custom colors by RGB
     ///
-    /// @param[in]  encoder Destination for the encoded color
+    /// @param[in]  encoder  Destination for the encoded color
     ///
     /// @return     (Void) writes the color representation to the encoder
     ///
     /// @throws     Error when the encoder cannot represent the stored color value
     ///
     func encode(to encoder: Encoder) throws {
+
         if let legacyToken {
+
             var container = encoder.singleValueContainer()
+
             try container.encode(legacyToken)
         } else {
             var container = encoder.container(keyedBy: CodingKeys.self)
+
             try container.encode(red, forKey: .red)
             try container.encode(green, forKey: .green)
             try container.encode(blue, forKey: .blue)
@@ -215,12 +230,14 @@ struct ProfileColor: Hashable, Codable {
     /// @brief      Resolve a known legacy palette token
     /// @details    Maps tokens supported by older profile snapshots to their color constants
     ///
-    /// @param[in]  token Previously encoded palette name
+    /// @param[in]  token  Previously encoded palette name
     ///
     /// @return     (ProfileColor?) matching color, or nil for an unsupported token
     ///
     private static func legacyColor(_ token: String) -> Self? {
+
         switch token {
+
             case "teal": teal
             case "blue": blue
             case "green": green
@@ -357,7 +374,9 @@ struct LocalProfilePreferences: Hashable, Codable {
     /// @post       Missing supported preference keys receive their declared defaults
     ///
     init(from decoder: Decoder) throws {
+
         let container = try decoder.container(keyedBy: CodingKeys.self) /* Saved preference fields */
+
         self.init(
             defaultListID: try container.decodeIfPresent(Int.self, forKey: .defaultListID),
             usesReducedContent: try container.decodeIfPresent(Bool.self, forKey: .usesReducedContent) ?? false,
@@ -424,7 +443,9 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     /// @post       Missing optional avatar values receive the current profile defaults
     ///
     init(from decoder: Decoder) throws {
+
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
         self.init(
             id: try container.decode(UUID.self, forKey: .id),
             createdAt: try container.decode(Date.self, forKey: .createdAt),

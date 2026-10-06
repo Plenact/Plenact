@@ -1,9 +1,9 @@
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // @file       DatabaseActivity.swift
 // @brief      Shared database activity state and SwiftUI overlay
 // @details    Publishes in-flight operation messages and dismissible errors for database requests
 //
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 ///
@@ -46,14 +46,17 @@ final class DatabaseActivity: ObservableObject {
     /// @brief      Register a database operation as active
     /// @details    Adds a new operation entry so views can show progress until it is ended
     ///
-    /// @param[in]  message Progress text associated with the operation
+    /// @param[in]  message  Progress text associated with the operation
     ///
     /// @return     (UUID) identifier required to end this operation
     ///
     @discardableResult
     func begin(_ message: String) -> UUID {
+
         let id = UUID()
+
         operations.append((id, message))
+
         return id
     }
 
@@ -63,11 +66,12 @@ final class DatabaseActivity: ObservableObject {
     /// @brief      Remove an operation from the active set
     /// @details    Removes every active entry carrying the supplied identifier
     ///
-    /// @param[in]  id Operation identifier returned by begin(_:)
+    /// @param[in]  id  Operation identifier returned by begin(_:)
     ///
     /// @return     (Void) updates the active operation collection
     ///
     func end(_ id: UUID) {
+
         operations.removeAll { $0.id == id }
     }
 
@@ -77,11 +81,12 @@ final class DatabaseActivity: ObservableObject {
     /// @brief      Publish an error message for the shared database UI
     /// @details    Replaces the currently visible error text
     ///
-    /// @param[in]  message Error text to present
+    /// @param[in]  message  Error text to present
     ///
     /// @return     (Void) updates errorMessage
     ///
     func report(_ message: String) {
+
         errorMessage = message
     }
 
@@ -94,6 +99,7 @@ final class DatabaseActivity: ObservableObject {
     /// @return     (Void) clears errorMessage
     ///
     func dismissError() {
+
         errorMessage = nil
     }
 }
@@ -115,7 +121,7 @@ private struct DatabaseActivityOverlay: ViewModifier {
     /// @brief      Overlay current database activity on the modified content
     /// @details    Shows progress while work is active and exposes any reported error for dismissal
     ///
-    /// @param[in]  content View to decorate with activity feedback
+    /// @param[in]  content  View to decorate with activity feedback
     ///
     /// @return     (some View) content with a top-aligned activity or error overlay
     ///
@@ -134,25 +140,31 @@ private struct DatabaseActivityOverlay: ViewModifier {
                             ProgressView()
 
                             VStack(alignment: .leading, spacing: 2) {
+
                                 Text(message).font(.subheadline.weight(.semibold))
                                 Text("Please wait a moment.").font(.caption)
                             }
                         }
+
                         .accessibilityElement(children: .combine)
                         .accessibilityIdentifier("databaseActivity")
                         .allowsHitTesting(false)
                     }
+
                     if let errorMessage = activity.errorMessage {
+
                         HStack(alignment: .top, spacing: 12) {
                             Text(errorMessage).font(.subheadline)
                             Button("Dismiss", systemImage: "xmark") {
                                 activity.dismissError()
                             }
+
                             .labelStyle(.iconOnly)
                             .accessibilityLabel("Dismiss database error")
                         }
                     }
                 }
+
                 .padding(14)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                 .shadow(radius: 4, y: 2)
@@ -179,6 +191,7 @@ extension View {
     /// @return     (some View) modified view with database activity feedback
     ///
     func databaseActivityOverlay() -> some View {
+
         modifier(DatabaseActivityOverlay())
     }
 }

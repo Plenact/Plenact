@@ -8,10 +8,16 @@ import Foundation
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   9/24/26
+// @last rev   10/6/26
 //
-// @notes     This template favors readability, maintainability, and debug support over compactness
-//            The result is intentionally practical for human review and long-term support
+// @notes      This template favors readability, maintainability, and debug support over compactness
+//             The result is intentionally practical for human review and long-term support
+//             File headers use @file, @brief, and @details; add notes and sections when relevant
+//             Keep @author, @created, and @last rev header tags only in App.swift
+//             Function headers use @fcn, @brief, @details, and @return, plus @param for each input
+//             Include @throws for throwing functions and @pre, @post, or @note where relevant
+//             Use blank lines after function/control-flow openings and between logical steps
+//             Keep related declarations and assertions together; expand dense one-line bodies
 //
 // @section    Opens
 //      none current
@@ -77,6 +83,7 @@ enum AppError: LocalizedError, Sendable {
     var errorDescription: String? {
 
         switch self {
+
             case .missingConfiguration:
                 return "Missing required configuration."
 
@@ -145,7 +152,7 @@ struct Item: Identifiable, Codable, Sendable {
 protocol ItemServiceProtocol: Sendable {
 
     ///
-    /// @fcn        ItemServiceProtocol.fetchItems
+    /// @fcn        ItemServiceProtocol.fetchItems()
     /// @brief      Retrieve a collection of domain items
     /// @details    Async contract keeps the UI layer decoupled from implementation details
     ///
@@ -168,7 +175,7 @@ protocol ItemServiceProtocol: Sendable {
 final class ItemService: ItemServiceProtocol {
 
     ///
-    /// @fcn        ItemService.fetchItems
+    /// @fcn        ItemService.fetchItems()
     /// @brief      Return example data for the template
     /// @details    This sample intentionally keeps the implementation simple and easy to trace
     ///
@@ -222,7 +229,7 @@ final class ItemListViewModel: ObservableObject {
 
 
     ///
-    /// @fcn        ItemListViewModel.loadItems
+    /// @fcn        ItemListViewModel.loadItems()
     /// @brief      Load the latest data and update state
     /// @details    This method drives UI state transitions and captures service failures
     ///
@@ -262,10 +269,15 @@ final class ItemListViewModel: ObservableObject {
 // -------------------------------------- MARK: - Utility -------------------------------------- //
 
 ///
-/// Example helper to format a date as a string
+/// @fcn        formatDate(_:style:)
+/// @brief      Format a date using the requested date style and a short time
+/// @details    Creates a DateFormatter for this call and applies the supplied date style before
+///             formatting the value.
 ///
-/// @section    Purpose
-///     Provide a simple formatting utility for traceable example output
+/// @param[in]  date   Date value to format
+/// @param[in]  style  DateFormatter date style to apply
+///
+/// @return     (String) formatted date and short time
 ///
 func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
     
@@ -292,7 +304,7 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
 enum AppEntry {
 
     ///
-    /// @fcn        AppEntry.run
+    /// @fcn        AppEntry.run()
     /// @brief      Launch the sample flow for the template
     /// @details    This method is intentionally small and easy to follow during debugging
     ///

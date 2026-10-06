@@ -19,6 +19,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 import SwiftUI
+import UniformTypeIdentifiers
 
 ///
 /// Adds active and archived projections to a complete Board-list binding
@@ -176,10 +177,268 @@ private struct BoardCardHeightPreferenceKey: PreferenceKey {
 
 
 ///
+/// Reports card frames for same-Board insertion boundaries
+///
+/// @section    Purpose
+///     Locate visible card rows without copying their content into a drag payload
+///
+private struct BoardCardFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGRect] = [:]
+    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
+private struct BoardListFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [Int: CGRect] = [:]
+    static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
+/// Install a native drag interaction on the row's content container, separate from List reordering.
+struct BoardCardDragSource: UIViewRepresentable {
+    static let contentType = UTType(exportedAs: "com.plenact.local-board-card", conformingTo: .data)
+    let token: String
+    let onBegan: (CGPoint) -> Void
+    let onChanged: (CGPoint) -> Void
+    let onEnded: () -> Void
+
+    final class Probe: UIView {
+        weak var coordinator: Coordinator?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            coordinator?.install(from: self)
+        }
+    }
+
+    final class Coordinator: NSObject, UIDragInteractionDelegate {
+        var source: BoardCardDragSource
+        weak var container: UIView?
+        var interaction: UIDragInteraction?
+        private(set) var isDragging = false
+        var isDetached = false
+
+        init(_ source: BoardCardDragSource) { self.source = source }
+
+        func install(from probe: UIView) {
+            guard probe.window != nil else { return }
+            var ancestor = probe.superview
+            while let view = ancestor {
+                if let cell = view as? UICollectionViewCell {
+                    guard container !== cell.contentView else { return }
+                    if let interaction { container?.removeInteraction(interaction) }
+                    let drag = UIDragInteraction(delegate: self)
+                    drag.isEnabled = true
+                    cell.contentView.addInteraction(drag)
+                    container = cell.contentView
+                    interaction = drag
+                    return
+                }
+                ancestor = view.superview
+            }
+        }
+
+        func begin(at point: CGPoint) -> NSItemProvider {
+            isDragging = true
+            source.onBegan(point)
+            let provider = NSItemProvider()
+            provider.suggestedName = source.token
+            let data = Data(source.token.utf8)
+            provider.registerDataRepresentation(forTypeIdentifier: BoardCardDragSource.contentType.identifier,
+                                                visibility: .ownProcess) { completion in
+                completion(data, nil)
+                return nil
+            }
+            return provider
+        }
+
+        func finish() {
+            guard isDragging else { return }
+            isDragging = false
+            source.onEnded()
+            if isDetached, let interaction { container?.removeInteraction(interaction) }
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+            guard let window = interaction.view?.window else { return [] }
+            let item = UIDragItem(itemProvider: begin(at: session.location(in: window)))
+            item.localObject = self
+            return [item]
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, sessionDidMove session: UIDragSession) {
+            guard let window = interaction.view?.window else { return }
+            source.onChanged(session.location(in: window))
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession,
+                             didEndWith operation: UIDropOperation) {
+            finish()
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, sessionIsRestrictedToDraggingApplication session: UIDragSession) -> Bool {
+            true
+        }
+
+        func dragInteraction(_ interaction: UIDragInteraction, sessionAllowsMoveOperation session: UIDragSession) -> Bool {
+            true
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> Probe {
+        let probe = Probe()
+        probe.isUserInteractionEnabled = false
+        probe.coordinator = context.coordinator
+        return probe
+    }
+
+    func updateUIView(_ probe: Probe, context: Context) {
+        context.coordinator.source = self
+        context.coordinator.install(from: probe)
+    }
+
+    static func dismantleUIView(_ probe: Probe, coordinator: Coordinator) {
+        // A live native session may outlast the source cell while the Board scrolls.
+        coordinator.isDetached = true
+        if !coordinator.isDragging, let interaction = coordinator.interaction {
+            coordinator.container?.removeInteraction(interaction)
+        }
+    }
+}
+
+struct BoardCardDropSurface: UIViewRepresentable {
+    let token: String
+    var isEnabled = true
+    let onChanged: (CGPoint) -> Void
+    let onDrop: (CGPoint) -> Bool
+
+    final class RetainedInteraction: UIDropInteraction {
+        let receiver: Coordinator
+        init(receiver: Coordinator) {
+            self.receiver = receiver
+            super.init(delegate: receiver)
+        }
+    }
+
+    final class Probe: UIView {
+        weak var coordinator: Coordinator?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            coordinator?.install(from: self)
+        }
+    }
+
+    final class Coordinator: NSObject, UIDropInteractionDelegate, UICollectionViewDropDelegate {
+        var surface: BoardCardDropSurface
+        weak var container: UICollectionView?
+        weak var interaction: UIDropInteraction?
+        weak var originalDropDelegate: (any UICollectionViewDropDelegate)?
+
+        init(_ surface: BoardCardDropSurface) { self.surface = surface }
+
+        func install(from probe: UIView) {
+            guard probe.window != nil else { return }
+            var ancestor = probe.superview
+            while let view = ancestor {
+                if let collection = view as? UICollectionView {
+                    if let existing = collection.interactions.compactMap({ $0 as? RetainedInteraction }).first {
+                        existing.receiver.surface = surface
+                        collection.dropDelegate = surface.isEnabled ? existing.receiver : existing.receiver.originalDropDelegate
+                        container = collection
+                        interaction = existing
+                        return
+                    }
+                    guard container !== collection else { return }
+                    let drop = RetainedInteraction(receiver: self)
+                    originalDropDelegate = collection.dropDelegate
+                    collection.addInteraction(drop)
+                    collection.dropDelegate = surface.isEnabled ? self : originalDropDelegate
+                    container = collection
+                    interaction = drop
+                    return
+                }
+                ancestor = view.superview
+            }
+        }
+
+        func accepts(_ items: [UIDragItem]) -> Bool {
+            surface.isEnabled && items.count == 1 && items.allSatisfy {
+                guard let source = $0.localObject as? BoardCardDragSource.Coordinator else { return false }
+                return source.isDragging && source.source.token == surface.token
+            }
+        }
+
+        @discardableResult
+        func perform(_ items: [UIDragItem], at point: CGPoint) -> Bool {
+            guard accepts(items) else { return false }
+            surface.onChanged(point)
+            return surface.onDrop(point)
+        }
+
+        func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+            session.localDragSession != nil && accepts(session.items)
+        }
+
+        func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
+            guard accepts(session.items), let window = interaction.view?.window else {
+                return UIDropProposal(operation: .forbidden)
+            }
+            surface.onChanged(session.location(in: window))
+            return UIDropProposal(operation: .move)
+        }
+
+        func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
+            guard let window = interaction.view?.window else { return }
+            perform(session.items, at: session.location(in: window))
+        }
+
+        func collectionView(_ collectionView: UICollectionView, canHandle session: UIDropSession) -> Bool {
+            session.localDragSession != nil && accepts(session.items)
+        }
+
+        func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession,
+                            withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+            guard accepts(session.items), let window = collectionView.window else {
+                return UICollectionViewDropProposal(operation: .forbidden)
+            }
+            surface.onChanged(session.location(in: window))
+            return UICollectionViewDropProposal(operation: .move, intent: .unspecified)
+        }
+
+        func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+            guard let window = collectionView.window else { return }
+            perform(coordinator.session.items, at: coordinator.session.location(in: window))
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> Probe {
+        let probe = Probe()
+        probe.isUserInteractionEnabled = false
+        probe.coordinator = context.coordinator
+        return probe
+    }
+
+    func updateUIView(_ probe: Probe, context: Context) {
+        context.coordinator.surface = self
+        context.coordinator.install(from: probe)
+    }
+
+    static func dismantleUIView(_ probe: Probe, coordinator: Coordinator) {
+        // The list retains its one receiver while individual rows are virtualized.
+    }
+}
+
+///
 /// Collects horizontal center measurements for Board lists
 ///
 /// @section    Purpose
-///     Let the board identify and report the list nearest the visible viewport center
+///     Identify the list nearest the visible viewport center
 ///
 private struct BoardListCenterPreferenceKey: PreferenceKey {
     /// Current list-center reports keyed by list identity.
@@ -258,10 +517,17 @@ struct ContentView: View {
     @State private var listDragLocation: CGFloat?
     /// Horizontal offset between the drag start and the grabbed list center.
     @State private var listDragGrabOffset: CGFloat = 0
+    @State private var draggedCardID: Int?
+    @State private var cardDragLocation: CGPoint?
+    @State private var cardFrames: [Int: CGRect] = [:]
+    @State private var listFrames: [Int: CGRect] = [:]
+    @State private var cardDragViewportFrame: CGRect = .zero
+    @State private var cardDragToken = UUID().uuidString
     /// Environment preference used to reduce or remove animated transitions.
     @Environment(\.accessibilityReduceMotion) private var reducesMotion
     /// Current Dynamic Type size used when selecting Board dimensions.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.scenePhase) private var scenePhase
     /// Locally persisted choice between Standard and Overview Board layouts.
     @AppStorage(BoardPresentation.storageKey) private var presentation = BoardPresentation.standard
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
@@ -795,6 +1061,7 @@ struct ContentView: View {
     /// @post       Reports for another held list are ignored; reorder animation honors Reduce Motion
     ///
     private func updateListDrag(_ listID: Int, value: DragGesture.Value?) {
+        guard draggedCardID == nil else { return }
         if draggedListID == nil {
             draggedListID = listID
         }
@@ -1103,24 +1370,49 @@ struct ContentView: View {
     ///             or if the destination is the card's current list
     ///
     private func moveCard(_ cardID: Int, toListID destinationListID: Int) {
-
-          guard let sourceListIndex = lists.firstIndex(where: { list /* Candidate source list */ in
-                  list.cards.contains(where: { $0.id == cardID })
-              }), /* List currently containing the card */
-
-              let destinationListIndex = lists.firstIndex(where: { $0.id == destinationListID }), /* Requested destination list */
-
-              sourceListIndex != destinationListIndex,
-
-              let cardIndex = lists[sourceListIndex].cards.firstIndex(where: { $0.id == cardID }) else { /* Card position in the source list */
-
-            return
+        guard !lists.contains(where: { $0.id == destinationListID && $0.cards.contains(where: { $0.id == cardID }) }) else { return }
+        do {
+            try BoardCardMovement.move(cardID, to: destinationListID, in: &lists)
+        } catch {
+            DatabaseActivity.shared.report("Could not move this card: \(error.localizedDescription) Its content has been retained.")
         }
+    }
 
-        var movedCard       = lists[sourceListIndex].cards.remove(at: cardIndex) /* Card removed before transfer */
-        movedCard.listTitle = lists[destinationListIndex].title
-        
-        lists[destinationListIndex].cards.append(movedCard)
+    private var cardDropTarget: BoardCardDropTarget? {
+        guard let location = cardDragLocation, let draggedCardID else { return nil }
+        return BoardCardMovement.target(for: draggedCardID, at: location, viewport: cardDragViewportFrame,
+                                        lists: lists, listFrames: listFrames, cardFrames: cardFrames)
+    }
+
+    private func updateCardDrag(_ cardID: Int, location: CGPoint) {
+        guard draggedCardID == cardID else { return }
+        cardDragLocation = location
+    }
+
+    private func beginCardDrag(_ cardID: Int, location: CGPoint) {
+        guard draggedListID == nil, draggedCardID == nil else { return }
+        draggedCardID = cardID
+        cardDragLocation = location
+    }
+
+    @discardableResult
+    private func endCardDrag(_ cardID: Int, commit: Bool, location: CGPoint? = nil) -> Bool {
+        guard draggedCardID == cardID else { return false }
+        if let location { cardDragLocation = location }
+        defer {
+            draggedCardID = nil
+            cardDragLocation = nil
+        }
+        guard commit, let target = location.map({
+            BoardCardMovement.target(for: cardID, at: $0, viewport: cardDragViewportFrame,
+                                     lists: lists, listFrames: listFrames, cardFrames: cardFrames)
+        }) ?? cardDropTarget else { return false }
+        do {
+            return try BoardCardMovement.move(cardID, to: target.listID, before: target.beforeCardID, in: &lists)
+        } catch {
+            DatabaseActivity.shared.report("Could not move this card: \(error.localizedDescription) Its content has been retained.")
+            return false
+        }
     }
     
 
@@ -1218,7 +1510,22 @@ struct ContentView: View {
                                             onMoveCard:         { cardID, destinationIndex in moveCard(in: list.id, cardID: cardID, toIndex: destinationIndex)
                                             },
                                             onListDragChanged: { value in updateListDrag(list.id, value: value) },
-                                            onListDragEnded: { endListDrag(list.id) }
+                                            onListDragEnded: { endListDrag(list.id) },
+                                            draggedCardID: draggedCardID,
+                                            dropBeforeCardID: cardDropTarget?.listID == list.id ? cardDropTarget?.beforeCardID : nil,
+                                            isCardDropTarget: cardDropTarget?.listID == list.id,
+                                            onCardDragBegan: beginCardDrag,
+                                            onCardDragChanged: updateCardDrag,
+                                            onCardDragEnded: { cardID, commit, point in
+                                                endCardDrag(cardID, commit: commit, location: point)
+                                            },
+                                            cardDragToken: cardDragToken,
+                                            onCardDrop: { point in
+                                                guard let cardID = draggedCardID else { return false }
+                                                return endCardDrag(cardID, commit: true, location: point)
+                                            },
+                                            cardMoveDestinations: lists.filter { $0.id != list.id },
+                                            onMoveCardToList: { cardID, listID in moveCard(cardID, toListID: listID) }
                                         )
                                         .frame(
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize)
@@ -1234,6 +1541,8 @@ struct ContentView: View {
                                                     key: BoardListCenterPreferenceKey.self,
                                                     value: [list.id: geometry.frame(in: .named("WeekListsViewport")).midX]
                                                 )
+                                                .preference(key: BoardListFramePreferenceKey.self,
+                                                                    value: [list.id: geometry.frame(in: .global)])
                                             }
                                         }
                                         .id(list.id)
@@ -1251,6 +1560,18 @@ struct ContentView: View {
                             .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
                                 listCenters = centers
                             }
+                            .onPreferenceChange(BoardListFramePreferenceKey.self) { listFrames = $0 }
+                            .onPreferenceChange(BoardCardFramePreferenceKey.self) { cardFrames = $0 }
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.onAppear {
+                                        cardDragViewportFrame = geometry.frame(in: .global)
+                                    }
+                                    .onChange(of: geometry.frame(in: .global)) { _, frame in
+                                        cardDragViewportFrame = frame
+                                    }
+                                }
+                            }
                             .onChange(of: visibleListID) { _, listID in
                                 guard draggedListID == nil, let listID,
                                       lists.contains(where: { $0.id == listID }),
@@ -1260,9 +1581,16 @@ struct ContentView: View {
                             }
                             .onChange(of: presentation) { _, _ in
                                 if let listID = draggedListID { endListDrag(listID) }
+                                if let cardID = draggedCardID { endCardDrag(cardID, commit: false) }
+                            }
+                            .onChange(of: scenePhase) { _, phase in
+                                if phase != .active, let cardID = draggedCardID {
+                                    endCardDrag(cardID, commit: false)
+                                }
                             }
                             .onChange(of: listArea.size) { _, _ in
                                 if let listID = draggedListID { endListDrag(listID) }
+                                if let cardID = draggedCardID { endCardDrag(cardID, commit: false) }
                             }
                             .onChange(of: boardTargetListID) { _, targetListID in
                                 guard targetListID != nil else { return }
@@ -1307,8 +1635,34 @@ struct ContentView: View {
                                     DatabaseActivity.shared.report("Could not move the list: \(error.localizedDescription)")
                                 }
                             }
+                            .task(id: draggedCardID) {
+                                guard let cardID = draggedCardID else { return }
+                                do {
+                                    while !Task.isCancelled {
+                                        try await Task.sleep(for: .milliseconds(550))
+                                        guard draggedCardID == cardID, let location = cardDragLocation else { continue }
+                                        let direction = BoardListReordering.edgeDirection(
+                                            at: location.x - cardDragViewportFrame.minX,
+                                            viewportWidth: cardDragViewportFrame.width
+                                        )
+                                        guard direction != 0,
+                                              let current = lists.firstIndex(where: { $0.id == visibleListID }),
+                                              lists.indices.contains(current + direction) else { continue }
+                                        let nextID = lists[current + direction].id
+                                        withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
+                                            listProxy.scrollTo(nextID, anchor: .leading)
+                                            visibleListID = nextID
+                                        }
+                                    }
+                                } catch is CancellationError {
+                                    // Release or cancellation stops edge scrolling without moving a card.
+                                } catch {
+                                    DatabaseActivity.shared.report("Could not scroll while moving the card: \(error.localizedDescription)")
+                                }
+                            }
                             .onDisappear {
                                 if let listID = draggedListID { endListDrag(listID) }
+                                if let cardID = draggedCardID { endCardDrag(cardID, commit: false) }
                             }
                         }
                         }
@@ -2178,6 +2532,16 @@ struct KanbanListView: View {
     let onListDragChanged: (DragGesture.Value?) -> Void
     /// Reports completion or cancellation of a list-reorder drag.
     let onListDragEnded: () -> Void
+    var draggedCardID: Int? = nil
+    var dropBeforeCardID: Int? = nil
+    var isCardDropTarget = false
+    var onCardDragBegan: (Int, CGPoint) -> Void = { _, _ in }
+    var onCardDragChanged: (Int, CGPoint) -> Void = { _, _ in }
+    var onCardDragEnded: (Int, Bool, CGPoint?) -> Void = { _, _, _ in }
+    var cardDragToken = ""
+    var onCardDrop: (CGPoint) -> Bool = { _ in false }
+    var cardMoveDestinations: [KanbanList] = []
+    var onMoveCardToList: (Int, Int) -> Void = { _, _ in }
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
@@ -2264,6 +2628,23 @@ struct KanbanListView: View {
         return min(cardCollectionContentHeight, availableHeight)
     }
 
+    @ViewBuilder
+    private func cardInsertionMarker(before cardID: Int?) -> some View {
+        if isCardDropTarget && dropBeforeCardID == cardID {
+            Rectangle().fill(Color.accentColor).frame(height: 4)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var cardDropSurface: some View {
+        BoardCardDropSurface(token: cardDragToken,
+                             isEnabled: editMode != .active,
+                             onChanged: { point in
+                                 if let cardID = draggedCardID { onCardDragChanged(cardID, point) }
+                             },
+                             onDrop: onCardDrop)
+    }
 
     ///
     /// @fcn        KanbanListView.body
@@ -2383,6 +2764,14 @@ struct KanbanListView: View {
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
                         .accessibilityLabel("Open section divider")
+                        .overlay(alignment: .top) { cardInsertionMarker(before: card.id) }
+                        .background {
+                            GeometryReader { geometry in
+                                Color.clear.preference(key: BoardCardFramePreferenceKey.self,
+                                value: [card.id: geometry.frame(in: .global)])
+                            }
+                        }
+                        .background { cardDropSurface }
                         .contextMenu {
                             Button("Delete Divider", systemImage: "trash", role: .destructive) { deletingCard = card }
                         }
@@ -2392,31 +2781,53 @@ struct KanbanListView: View {
                             .listRowBackground(Color.clear)
                     } else {
 
-                        NavigationLink(value: card) {
+                            NavigationLink(value: card) {
 
-                            KanbanCardView(
-                                card:            card,
-                                height:          cardHeight,
-                                displaySettings: displaySettings,
-                                presentation:    presentation,
-                                labelLibrary:    labelLibrary,
-                                onUpdateCard:    onUpdateCard,
-                                onDeleteCard:    { onDeleteCard(card.id) },
-                                onArchiveCard:   { onArchiveCard(card.id) }
-                            ) {
-                                toggleCardTitle(card.id)
-                            }
-                            .background {
-                                GeometryReader { geometry in
-                                    Color.clear.preference(
-                                        key: BoardCardHeightPreferenceKey.self,
-                                        value: [card.id: geometry.size.height]
-                                    )
+                                KanbanCardView(
+                                    card:            card,
+                                    height:          cardHeight,
+                                    displaySettings: displaySettings,
+                                    presentation:    presentation,
+                                    labelLibrary:    labelLibrary,
+                                    onUpdateCard:    onUpdateCard,
+                                    onDeleteCard:    { onDeleteCard(card.id) },
+                                    onArchiveCard:   { onArchiveCard(card.id) }
+                                ) {
+                                    toggleCardTitle(card.id)
+                                }
+                                .background {
+                                    GeometryReader { geometry in
+                                        Color.clear.preference(
+                                            key: BoardCardHeightPreferenceKey.self,
+                                            value: [card.id: geometry.size.height]
+                                        )
+                                    }
                                 }
                             }
+                            .buttonStyle(.plain)
+                            .modifier(HideNavigationLinkIndicator())
+                            .background {
+                                if editMode != .active {
+                                    BoardCardDragSource(token: cardDragToken,
+                                                        onBegan: { onCardDragBegan(card.id, $0) },
+                                                        onChanged: { onCardDragChanged(card.id, $0) },
+                                                        onEnded: { onCardDragEnded(card.id, false, nil) })
+                                }
+                            }
+                        .accessibilityActions {
+                            ForEach(cardMoveDestinations) { list in
+                                Button("Move to \(list.title)") { onMoveCardToList(card.id, list.id) }
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .modifier(HideNavigationLinkIndicator())
+                        .opacity(draggedCardID == card.id ? 0.45 : 1)
+                        .overlay(alignment: .top) { cardInsertionMarker(before: card.id) }
+                        .background {
+                            GeometryReader { geometry in
+                                Color.clear.preference(key: BoardCardFramePreferenceKey.self,
+                                value: [card.id: geometry.frame(in: .global)])
+                            }
+                        }
+                        .background { cardDropSurface }
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -2431,6 +2842,7 @@ struct KanbanListView: View {
                 }
                 .onMove { sourceOffsets, destinationOffset in
 
+                    guard editMode == .active else { return }
                     guard let sourceIndex = sourceOffsets.first, /* Original drag source row */
                           list.cards.indices.contains(sourceIndex) else {
                         return
@@ -2440,6 +2852,7 @@ struct KanbanListView: View {
 
                     onMoveCard(list.cards[sourceIndex].id, finalIndex)
                 }
+                .moveDisabled(editMode != .active)
 
                 Button {
                     activeSheet = .newCard
@@ -2450,6 +2863,8 @@ struct KanbanListView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
                 }
+                .background { cardDropSurface }
+                .overlay(alignment: .top) { cardInsertionMarker(before: nil) }
                 .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
@@ -2468,6 +2883,12 @@ struct KanbanListView: View {
             .padding(.bottom, 24)
         }
         .background(listTint.color)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(isCardDropTarget ? Color.accentColor : .clear, lineWidth: 3)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
         .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(

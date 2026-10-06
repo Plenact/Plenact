@@ -901,9 +901,322 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMovementPreservesCompleteRecordAndRetainedArchives
+    /// @brief      Transfer the complete card while keeping bookmarks and archived records intact
+    /// @details    Checks insertion and a Codable round trip with synthetic media and dates
+    ///
+    func testCardMovementPreservesCompleteRecordAndRetainedArchives() throws {
+        var card = try XCTUnwrap(SampleData.lists[0].cards.first { !$0.isSectionDivider })
+        card.attachments = [KanbanAttachment(fileName: "synthetic-drag.jpg", mediaKind: .photo)]
+        try card.useLibraryCover(.music)
+        card.comments = [KanbanComment(author: "Synthetic", body: "Keep this note")]
+        card.members = [.manual("Example")]
+        card.labelIDs = ["synthetic-label"]
+        card.startDate = Date(timeIntervalSince1970: 1234)
+        card.dueDate = Date(timeIntervalSince1970: 5678)
+        card.descriptionOverride = "Retain every field"
+        let retained = KanbanCard(id: 901, word: "Archived", listTitle: "Source")
+        var lists = [
+            KanbanList(id: 1, title: "Source", cards: [card], archivedCards: [retained]),
+            KanbanList(id: 2, title: "Destination", cards: [
+                KanbanCard(id: 902, word: "First", listTitle: "Destination"),
+                KanbanCard(id: 903, word: "Last", listTitle: "Destination")
+            ])
+        ]
+        let savedIDs: Set<Int> = [card.id]
+        XCTAssertTrue(try BoardCardMovement.move(card.id, to: 2, before: 903, in: &lists))
+        var expected = card
+        expected.listTitle = "Destination"
+        XCTAssertEqual(lists[1].cards, [lists[1].cards[0], expected, lists[1].cards[2]])
+        XCTAssertEqual(lists[1].cards.map(\.id), [902, card.id, 903])
+        XCTAssertTrue(lists[0].cards.isEmpty)
+        XCTAssertEqual(lists[0].archivedCards, [retained])
+        XCTAssertEqual(lists.flatMap(\.cards).filter { savedIDs.contains($0.id) }, [expected])
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists)), lists)
+    }
+
+    func testCardMovementSupportsEmptyListsAndSameListInsertionBoundaries() throws {
+        let cards = (1...4).map { KanbanCard(id: $0, word: "Card \($0)", listTitle: "A") }
+        var lists = [KanbanList(id: 10, title: "A", cards: cards),
+                     KanbanList(id: 20, title: "Empty", cards: [])]
+        XCTAssertTrue(try BoardCardMovement.move(1, to: 10, before: 4, in: &lists))
+        XCTAssertEqual(lists[0].cards.map(\.id), [2, 3, 1, 4])
+        XCTAssertTrue(try BoardCardMovement.move(4, to: 10, before: 2, in: &lists))
+        XCTAssertEqual(lists[0].cards.map(\.id), [4, 2, 3, 1])
+        XCTAssertFalse(try BoardCardMovement.move(2, to: 10, before: 3, in: &lists))
+        XCTAssertFalse(try BoardCardMovement.move(2, to: 10, before: 2, in: &lists))
+        XCTAssertTrue(try BoardCardMovement.move(2, to: 10, in: &lists))
+        XCTAssertEqual(lists[0].cards.map(\.id), [4, 3, 1, 2])
+        XCTAssertTrue(try BoardCardMovement.move(2, to: 20, in: &lists))
+        XCTAssertEqual(lists[1].cards.map(\.id), [2])
+        XCTAssertEqual(lists[1].cards[0].listTitle, "Empty")
+        XCTAssertFalse(try BoardCardMovement.move(2, to: 20, in: &lists))
+    }
+
+    func testCardMovementRejectsStaleArchivedDividerAndAmbiguousSourcesAtomically() throws {
+        let card = KanbanCard(id: 1, word: "Card", listTitle: "A")
+        let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true)
+        let archive = KanbanCard(id: 3, word: "Retained", listTitle: "A")
+        var lists = [KanbanList(id: 10, title: "A", cards: [card, divider], archivedCards: [archive]),
+                     KanbanList(id: 20, title: "B", cards: [])]
+        let original = lists
+        for (id, destination, before) in [(999, 20, nil), (1, 999, nil), (1, 20, 999), (2, 20, nil), (3, 20, nil)] as [(Int, Int, Int?)] {
+            XCTAssertThrowsError(try BoardCardMovement.move(id, to: destination, before: before, in: &lists))
+            XCTAssertEqual(lists, original)
+        }
+        lists[1].isArchived = true
+        let archivedDestination = lists
+        XCTAssertThrowsError(try BoardCardMovement.move(1, to: 20, in: &lists))
+        XCTAssertEqual(lists, archivedDestination)
+        lists = original
+        lists[0].isArchived = true
+        let archivedSource = lists
+        XCTAssertThrowsError(try BoardCardMovement.move(1, to: 20, in: &lists))
+        XCTAssertEqual(lists, archivedSource)
+        lists = original
+        lists[1].cards = [card]
+        let duplicate = lists
+        XCTAssertThrowsError(try BoardCardMovement.move(1, to: 20, in: &lists))
+        XCTAssertEqual(lists, duplicate)
+        lists = original
+        lists[0].cards.append(card)
+        let sameListDuplicate = lists
+        XCTAssertThrowsError(try BoardCardMovement.move(1, to: 20, in: &lists))
+        XCTAssertEqual(lists, sameListDuplicate)
+    }
+
+    func testCardDropGeometryUsesMidpointsAndRejectsOutsideViewport() {
+        let lists = [KanbanList(id: 10, title: "A", cards: [
+            KanbanCard(id: 1, word: "A", listTitle: "A"),
+            KanbanCard(id: 2, word: "B", listTitle: "A"),
+            KanbanCard(id: 3, word: "C", listTitle: "A")
+        ]), KanbanList(id: 20, title: "Empty", cards: [])]
+        let listFrames = [10: CGRect(x: 100, y: 50, width: 200, height: 600),
+                          20: CGRect(x: 320, y: 50, width: 180, height: 160)]
+        let frames = [1: CGRect(x: 100, y: 130, width: 200, height: 100),
+                      2: CGRect(x: 100, y: 238, width: 200, height: 100),
+                      3: CGRect(x: 100, y: 346, width: 200, height: 100)]
+        let viewport = CGRect(x: 100, y: 50, width: 400, height: 600)
+        func target(_ x: CGFloat, _ y: CGFloat, frames: [Int: CGRect] = frames) -> BoardCardDropTarget? {
+            BoardCardMovement.target(for: 99, at: CGPoint(x: x + viewport.minX, y: y + viewport.minY), viewport: viewport,
+                                     lists: lists, listFrames: listFrames, cardFrames: frames)
+        }
+        XCTAssertEqual(target(50, 129), BoardCardDropTarget(listID: 10, beforeCardID: 1))
+        XCTAssertEqual(target(50, 130), BoardCardDropTarget(listID: 10, beforeCardID: 2))
+        XCTAssertEqual(target(50, 238), BoardCardDropTarget(listID: 10, beforeCardID: 3))
+        XCTAssertEqual(target(50, 400), BoardCardDropTarget(listID: 10, beforeCardID: nil))
+        XCTAssertEqual(target(250, 100), BoardCardDropTarget(listID: 20, beforeCardID: nil))
+        XCTAssertNil(target(210, 100))
+        XCTAssertNil(target(-1, 100))
+        XCTAssertNil(target(401, 100))
+        XCTAssertNil(target(50, 601))
+        XCTAssertNil(target(.nan, 100))
+        XCTAssertNil(BoardCardMovement.target(for: 99, at: CGPoint(x: 150, y: 150),
+                                             viewport: CGRect(x: 100, y: 50, width: CGFloat.infinity, height: 600),
+                                             lists: lists, listFrames: listFrames, cardFrames: frames))
+        XCTAssertNil(target(50, 100, frames: [:]))
+        XCTAssertEqual(target(50, 280, frames: [2: frames[2]!]), BoardCardDropTarget(listID: 10, beforeCardID: 3),
+                       "A long list's viewport edge must not silently append past unmeasured rows")
+        XCTAssertEqual(lists[0].cards.map(\.id), [1, 2, 3], "Hovering must not move records")
+    }
+
+    @MainActor
+    func testCardMovementPersistsInWeekAndPersonalBoardWithoutChangingOtherBoards() async throws {
+        let suite = "Plenact.CardMovementTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var lists = SampleData.lists
+        let card = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider })
+        let destination = lists[1].id
+        try BoardCardMovement.move(card.id, to: destination, in: &lists)
+        KanbanBoardPersistence.enqueueSave(lists, suiteName: suite)
+        let reloaded = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(reloaded, lists)
+        var personal = PersonalCollection(title: "Synthetic Board", kind: .board)
+        personal.lists = SampleData.lists
+        personal.savedCardIDs = [card.id]
+        var independent = PersonalCollection(title: "Separate Board", kind: .board)
+        independent.lists = personal.lists
+        try BoardCardMovement.move(card.id, to: destination, in: &personal.lists)
+        XCTAssertEqual(independent.lists, SampleData.lists)
+        let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(personal))
+        XCTAssertEqual(decoded.lists, lists)
+        try PersonalCollectionStore.saveChecked([personal, independent], to: defaults)
+        let restored = PersonalCollectionStore.load(from: defaults)
+        XCTAssertEqual(restored.map(\.lists), [personal.lists, independent.lists])
+        XCTAssertEqual(restored.first?.savedCardIDs, [card.id])
+    }
+
+    @MainActor
+    func testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout() async throws {
+        let list = KanbanList(id: 1, title: "Synthetic", cards: [
+            KanbanCard(id: 10, word: "A card with a longer title", listTitle: "Synthetic"),
+            KanbanCard(id: 11, word: "", listTitle: "Synthetic", isDivider: true),
+            KanbanCard(id: 12, word: "Another card", listTitle: "Synthetic")
+        ])
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        func collectionView(in view: UIView) -> UICollectionView? {
+            if let collection = view as? UICollectionView { return collection }
+            return view.subviews.compactMap { collectionView(in: $0) }.first
+        }
+        for (preset, textSize, width) in [
+            (BoardPresentation.standard, DynamicTypeSize.large, 360.0),
+            (.overview, .large, 240.0),
+            (.standard, .accessibility5, 320.0)
+        ] {
+            let view = KanbanListView(
+                list: list, availableListHeight: 700, displaySettings: BoardDisplaySettings(),
+                presentation: preset, labelLibrary: .starter, toggleCardTitle: { _ in },
+                canMoveEarlier: false, canMoveLater: false, onAddCard: { _, _ in },
+                onCopyList: {}, onMoveList: { _ in }, onSortList: { _ in }, onArchiveCompleted: {},
+                archivedCards: .constant([]), onRestoreArchivedCard: { _ in },
+                onDeleteArchivedCard: { _ in }, onArchiveList: {}, onDeleteList: {},
+                onDeleteCard: { _ in }, onArchiveCard: { _ in },
+                onUpdateCard: { _ in XCTFail("Layout must not update records") },
+                onMoveCard: { _, _ in XCTFail("Layout must not reorder records") },
+                onListDragChanged: { _ in }, onListDragEnded: {},
+                draggedCardID: 10, dropBeforeCardID: 12, isCardDropTarget: true,
+                onCardDragChanged: { _, _ in XCTFail("Layout must not begin a drag") },
+                onCardDragEnded: { _, _, _ in }
+            ).environment(\.dynamicTypeSize, textSize)
+            let controller = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 800)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(100))
+            let collection = try XCTUnwrap(collectionView(in: controller.view))
+            let itemCount = (0..<collection.numberOfSections).reduce(0) {
+                $0 + collection.numberOfItems(inSection: $1)
+            }
+            XCTAssertEqual(itemCount, 4, "Insertion markers must not introduce extra reorderable rows")
+            let dragSources = collection.visibleCells.flatMap { cell in
+                cell.contentView.interactions.compactMap { $0 as? UIDragInteraction }.filter {
+                    $0.delegate is BoardCardDragSource.Coordinator
+                }
+            }
+            XCTAssertFalse(dragSources.isEmpty, "Visible card bodies must have a native drag source")
+            XCTAssertTrue(dragSources.allSatisfy(\.isEnabled))
+            XCTAssertEqual(collection.interactions.filter {
+                ($0 as? UIDropInteraction)?.delegate is BoardCardDropSurface.Coordinator
+            }.count, 1, "Visible row probes must share exactly one native list drop receiver")
+            XCTAssertTrue(collection.dropDelegate is BoardCardDropSurface.Coordinator,
+                          "The native List collection must forward its drop callbacks to canonical movement")
+            XCTAssertGreaterThan(collection.bounds.height, 0)
+            XCTAssertLessThanOrEqual(collection.bounds.width, width)
+        }
+    }
+
+    @MainActor
+    func testNativeCardDragSourceUsesLocalTokenAndEndsCancellationOnce() async throws {
+        let declarations = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UTExportedTypeDeclarations") as? [[String: Any]])
+        let declaration = try XCTUnwrap(declarations.first {
+            ($0["UTTypeIdentifier"] as? String) == BoardCardDragSource.contentType.identifier
+        })
+        XCTAssertEqual(declaration["UTTypeConformsTo"] as? [String], ["public.data"])
+        var points: [CGPoint] = []
+        var ended = 0
+        let source = BoardCardDragSource(token: "synthetic-session",
+                                         onBegan: { points.append($0) },
+                                         onChanged: { points.append($0) },
+                                         onEnded: { ended += 1 })
+        let coordinator = source.makeCoordinator()
+        let point = CGPoint(x: 150, y: 320)
+        let provider = coordinator.begin(at: point)
+        XCTAssertEqual(points, [point])
+        XCTAssertTrue(coordinator.isDragging)
+        XCTAssertEqual(provider.suggestedName, "synthetic-session")
+        XCTAssertEqual(provider.registeredTypeIdentifiers, [BoardCardDragSource.contentType.identifier])
+        let data: Data = try await withCheckedThrowingContinuation { continuation in
+            provider.loadDataRepresentation(forTypeIdentifier: BoardCardDragSource.contentType.identifier) { data, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let data { continuation.resume(returning: data) }
+                else { continuation.resume(throwing: CocoaError(.fileReadUnknown)) }
+            }
+        }
+        XCTAssertEqual(String(data: data, encoding: .utf8), "synthetic-session",
+                       "Native drag payload must not contain card content or file references")
+        coordinator.finish()
+        coordinator.finish()
+        XCTAssertFalse(coordinator.isDragging)
+        XCTAssertEqual(ended, 1, "Drop/cancellation cleanup must not run twice")
+        XCTAssertTrue(coordinator.responds(to: NSSelectorFromString("dragInteraction:session:didEndWithOperation:")),
+                      "UIKit must recognize the real optional session-end callback")
+    }
+
+    @MainActor
+    func testNativeCardDragSourceSurvivesSourceRemovalUntilSessionEnd() {
+        var ended = 0
+        let source = BoardCardDragSource(token: "synthetic-session", onBegan: { _ in }, onChanged: { _ in },
+                                         onEnded: { ended += 1 })
+        let coordinator = source.makeCoordinator()
+        let container = UIView()
+        let interaction = UIDragInteraction(delegate: coordinator)
+        container.addInteraction(interaction)
+        coordinator.container = container
+        coordinator.interaction = interaction
+        _ = coordinator.begin(at: CGPoint(x: 1, y: 2))
+        BoardCardDragSource.dismantleUIView(BoardCardDragSource.Probe(), coordinator: coordinator)
+        XCTAssertEqual(ended, 0, "Virtualizing the source row must not end a live drag")
+        XCTAssertTrue(coordinator.isDragging)
+        XCTAssertTrue(container.interactions.contains { $0 === interaction })
+        coordinator.finish()
+        XCTAssertEqual(ended, 1)
+        XCTAssertFalse(container.interactions.contains { $0 === interaction })
+    }
+
+    @MainActor
+    func testNativeCardDropCommitsOriginalRecordAndRejectsForeignOrEndedSessions() throws {
+        let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Source")
+        var lists = [KanbanList(id: 10, title: "Source", cards: [card]),
+                     KanbanList(id: 20, title: "Destination", cards: [])]
+        var ends = 0
+        let source = BoardCardDragSource(token: "local-board", onBegan: { _ in },
+                                         onChanged: { _ in }, onEnded: { ends += 1 }).makeCoordinator()
+        let item = UIDragItem(itemProvider: source.begin(at: .zero))
+        item.localObject = source
+        var points: [CGPoint] = []
+        let drop = BoardCardDropSurface(token: "local-board", onChanged: { points.append($0) },
+                                        onDrop: { point in
+            guard let target = BoardCardMovement.target(
+                for: card.id, at: point, viewport: CGRect(x: 0, y: 100, width: 400, height: 600),
+                lists: lists, listFrames: [20: CGRect(x: 200, y: 100, width: 200, height: 600)],
+                cardFrames: [:]
+            ) else { return false }
+            do { return try BoardCardMovement.move(card.id, to: target.listID, in: &lists) }
+            catch { XCTFail("Drop failed: \(error)"); return false }
+        }).makeCoordinator()
+        let foreign = BoardCardDropSurface(token: "another-board", onChanged: { _ in XCTFail("Foreign hover") },
+                                           onDrop: { _ in XCTFail("Foreign drop"); return false }).makeCoordinator()
+        XCTAssertFalse(foreign.accepts([item]))
+        XCTAssertFalse(drop.accepts([UIDragItem(itemProvider: NSItemProvider())]))
+        XCTAssertTrue(drop.accepts([item]))
+        drop.surface.isEnabled = false
+        XCTAssertFalse(drop.accepts([item]), "Explicit native reorder mode must disable the cross-list receiver")
+        drop.surface.isEnabled = true
+        XCTAssertTrue(drop.perform([item], at: CGPoint(x: 250, y: 300)))
+        XCTAssertTrue(lists[0].cards.isEmpty)
+        var expected = card
+        expected.listTitle = "Destination"
+        XCTAssertEqual(lists[1].cards, [expected])
+        XCTAssertEqual(points, [CGPoint(x: 250, y: 300)])
+        source.finish()
+        XCTAssertEqual(ends, 1)
+        XCTAssertFalse(drop.accepts([item]))
+        XCTAssertFalse(drop.perform([item], at: CGPoint(x: 250, y: 300)))
+    }
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testListDragEdgeThresholdsAndInvalidGeometry
-    /// @brief      Verify list-drag edge activation at exact thresholds
-    /// @details    Checks left/right bands, narrow viewports, and nonfinite geometry
+    /// @brief      Verify drag-edge activation at exact thresholds
+    /// @details    Shared thresholds govern both list reordering and card-drag horizontal scrolling
     ///
     func testListDragEdgeThresholdsAndInvalidGeometry() {
         XCTAssertEqual(BoardListReordering.edgeDirection(at: 63, viewportWidth: 400), -1)

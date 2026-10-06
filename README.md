@@ -28,6 +28,9 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 	
 Opens
+
+- Ability to clear and reset and restart your database files
+
 - style.swift updates
 	Import leading statements in style.swift
 	struct headers

@@ -54,6 +54,7 @@ The focused **Open today's list** screen continues to use Standard-style summari
 - The Board uses stable list/card identities and an ID-bound scroll position so re-layout can retain the visible list rather than rebuilding a different Board.
 - Card detail navigation and list/card editing sheets are not deliberately dismissed or recreated by rotation or preset changes. Their draft retention still needs hands-on verification.
 - A list drag ends if presentation or viewport size changes, because its previous drag coordinates no longer describe the new layout. Ordinary menu and VoiceOver movement alternatives remain available.
+- A card drag cancels on re-layout, preset changes, backgrounding, or leaving the Board. Its record stays unchanged until a valid drop. Native whole-card drag sources support same-Board movement in both presets; horizontal edge scrolling reveals neighboring lists without reordering them. See [Dragging Cards Between Lists](../Src/Features/Boards/README.md#dragging-cards-between-lists).
 - This feature does not reset saved Boards, load examples, migrate stored content, synchronize data, or require a backend.
 
 Exact pixel offsets and the number of visible cards can change on rotation. Preserving context means retaining the same source list/card and edits, not freezing the old geometry.

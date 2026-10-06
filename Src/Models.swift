@@ -52,6 +52,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Combines the persisted divider flag with the recognized title marker
     ///
     /// @return     (Bool) true when the card should render as a divider
+    /// 
     /// @post       Card state is unchanged
     ///
     var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
@@ -64,7 +65,9 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Accepts runs of supported dash characters and the single en, em, or horizontal bar
     ///
     /// @param[in]  title  Candidate card title
+    /// 
     /// @return     (Bool) true when the trimmed title is a divider marker
+    /// 
     /// @post       The supplied title is unchanged
     ///
     static func isDividerTitle(_ title: String) -> Bool {
@@ -138,6 +141,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Formats an explicit start date or supplies the sample default when none is set
     ///
     /// @return     (String) formatted start date or "Today"
+    /// 
     /// @post       Card date state is unchanged
     ///
     var startDateLabel: String { /* Start-date badge text or default */
@@ -155,6 +159,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Formats an explicit due date or supplies the sample default when none is set
     ///
     /// @return     (String) formatted due date or "Tomorrow"
+    /// 
     /// @post       Card date state is unchanged
     ///
     var dueDateLabel: String { /* Due-date badge text or default */
@@ -183,6 +188,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Prefers a user-edited subtitle and otherwise selects deterministic sample text
     ///
     /// @return     (String) explicit subtitle or sample supporting copy
+    /// 
     /// @post       Card content is unchanged
     ///
     var subtitle: String { /* Supporting card text or user override */
@@ -199,6 +205,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Provides the legacy string-list view of the first checklist's stable items
     ///
     /// @return     ([String]) first checklist titles, or an empty array when no checklist exists
+    /// 
     /// @post       Checklist state is unchanged
     ///
     var checklistItems: [String] { /* Titles from the first checklist */
@@ -212,6 +219,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Uses the checklist's derived completed-item count
     ///
     /// @return     (Int) completed items in the first checklist, or zero when none exists
+    /// 
     /// @post       Checklist state is unchanged
     ///
     var completedChecklistItems: Int { /* Completion count for the first checklist */
@@ -225,6 +233,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Reports the current activity-comment collection size
     ///
     /// @return     (Int) number of card comments
+    /// 
     /// @post       Comments are unchanged
     ///
     var commentCount: Int { /* Number of activity comments */
@@ -237,6 +246,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     /// @details    Uses the deterministic sample-card identity rule
     ///
     /// @return     (Bool) true for IDs not congruent to one modulo three
+    /// 
     /// @post       Card date state is unchanged
     ///
     var hasDueDate: Bool { /* Sample badge visibility for the card */
@@ -250,6 +260,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     ///             paragraph from the card ID and list title
     ///
     /// @return     (String) user-provided description or deterministic sample context
+    /// 
     /// @post       Card content is unchanged
     ///
     var funParagraph: String { /* User description or generated sample context */
@@ -481,7 +492,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         let id        = try container.decode(UUID.self, forKey: .id)      /* Checklist ID     */
         let title     = try container.decode(String.self, forKey: .title) /* Checklist title  */
 
-        if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items) { /* Current actions */
+        if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items) {   /* Current actions */
 
             if let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) { /* Legacy completion */
 
@@ -495,9 +506,12 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
             return
         }
 
-        let legacyTitles           = try container.decode([String].self, forKey: .items) /* Legacy action text */
+        let legacyTitles           = try container.decode([String].self, forKey: .items)    /* Legacy action text */
+        
         let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? [] /* Legacy completion */
-        let migratedItems          = legacyTitles.enumerated().map { index, itemTitle in /* Migrated actions */
+        
+        let migratedItems          = legacyTitles.enumerated().map { index, itemTitle in    /* Migrated actions */
+
             KanbanChecklistItem(
                 id:          Self.migratedItemID(checklistID: id, itemIndex: index),
                 title:       itemTitle,
@@ -521,7 +535,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///
     func encode(to encoder: Encoder) throws {
 
-        var container = encoder.container(keyedBy: CodingKeys.self)   /* Output fields */
+        var container = encoder.container(keyedBy: CodingKeys.self)             /* Output fields */
 
         try container.encode(id,    forKey: .id)
         try container.encode(title, forKey: .title)
@@ -535,10 +549,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///     Keep current item records and the legacy completion field available to custom Codable logic
     ///
     private enum CodingKeys: String, CodingKey {
-        case id                     /* Checklist identity       */
-        case title                  /* Checklist display title  */
+        case id                     /* Checklist identity        */
+        case title                  /* Checklist display title   */
         case items                  /* Current or legacy actions */
-        case completedItemIndices   /* Revision 0 completion    */
+        case completedItemIndices   /* Revision 0 completion     */
     }
 
     ///
@@ -557,11 +571,11 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///
     private static func migratedItemID(checklistID: UUID, itemIndex: Int) -> UUID {
 
-        let components = checklistID.uuidString.split(separator: "-")   /* UUID components */
+        let components = checklistID.uuidString.split(separator: "-")           /* UUID components */
 
         guard components.count == 5 else { return UUID() }
 
-        let itemComponent = String(format: "%012llX", UInt64(itemIndex)) /* Position suffix */
+        let itemComponent = String(format: "%012llX", UInt64(itemIndex))        /* Position suffix */
         let migratedValue = "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)" /* Migrated UUID text */
 
         return UUID(uuidString: migratedValue) ?? UUID()
@@ -578,6 +592,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
 ///     Preserve comment identity, author, content, and creation time together
 ///
 struct KanbanComment: Identifiable, Hashable, Codable {
+
     let id:        UUID         /* Unique identifier for the comment                 */
     let author:    String       /* Author of the comment                             */
     let body:      String       /* Body text of the comment                          */
@@ -592,12 +607,14 @@ struct KanbanComment: Identifiable, Hashable, Codable {
     /// @param[in]  id         Comment identity
     /// @param[in]  author     Display name of the comment author
     /// @param[in]  body       Comment text
-    /// @param[in]  createdAt  Comment creation time
+    /// @param[in]  createdAt  Comment creation time.
+    /// 
     /// @return     (KanbanComment) configured activity comment
     ///
     /// @post       The comment contains the supplied values
     ///
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now) {
+
         self.id        = id
         self.author    = author
         self.body      = body
@@ -632,7 +649,7 @@ enum KanbanBoardPersistence {
     ///
     static func loadLists() -> [KanbanList] {
 
-          guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved Board bytes */
+          guard let data = UserDefaults.standard.data(forKey: storageKey),      /* Saved Board bytes */
 
               let lists = try? JSONDecoder().decode([KanbanList].self, from: data) else { /* Decoded Board lists */
                 
@@ -641,6 +658,7 @@ enum KanbanBoardPersistence {
 
         return lists
     }
+
 
     ///
     /// @fcn        KanbanBoardPersistence.saveLists(_:)
@@ -688,19 +706,19 @@ enum SampleData {
     ]
 
     /// Titles assigned to the five horizontally navigable board lists
-    static let listTitles = ["First", "Second", "Third", "Fourth", "Fifth"] /* Ordered sample-list names */
+    static let listTitles = ["First", "Second", "Third", "Fourth", "Fifth"]     /* Ordered sample-list names */
 
 
     /// Complete sample board generated from the titles and card words
-    static let lists: [KanbanList] = { /* Deterministic five-list sample Board */
+    static let lists: [KanbanList] = {                                          /* Deterministic five-list sample Board */
 
-        var globalIndex = 0 /* Board-wide list/card seed identity counter */
+        var globalIndex = 0                                                     /* Board-wide list/card seed identity counter */
 
         var initializedLists = listTitles.enumerated().map { listIndex, title in /* Seed one list per title */
 
             let cards = (0..<10).map { _ -> KanbanCard in /* Seed ten cards in the current list */
 
-                let card = KanbanCard( /* Construct one synthetic card */
+                let card = KanbanCard(                                          /* Construct one synthetic card */
                     id:             globalIndex,
                     word:           words[globalIndex % words.count],
                     listTitle:      title,
@@ -718,13 +736,13 @@ enum SampleData {
         }
 
         // Positions at which divider rows should be inserted for each list
-        let dividerPositionsByList: [[Int]] = [ /* Card positions receiving divider rows */
-            [3, 7],
-            [],
-            [5],
-            [],
-            [4]
-        ]
+        let dividerPositionsByList: [[Int]] = [                                 /* Card positions receiving divider rows */
+                                               [3, 7],
+                                               [],
+                                               [5],
+                                               [],
+                                               [4]
+                                              ]
 
         // Insert divider rows into the initialized lists at the specified positions
         for listIndex in dividerPositionsByList.indices {
@@ -734,6 +752,7 @@ enum SampleData {
 
                 // Insert a divider card at the calculated position within the current list
                 initializedLists[listIndex].cards.insert(
+
                     KanbanCard(
                         id:        globalIndex,
                         word:      "---",
@@ -750,3 +769,4 @@ enum SampleData {
         return initializedLists
     }()
 }
+

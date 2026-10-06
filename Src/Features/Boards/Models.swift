@@ -1164,6 +1164,78 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
 
 
 ///
+/// An insertion boundary in one active Board list
+struct BoardCardDropTarget: Equatable {
+    let listID: Int
+    let beforeCardID: Int?
+}
+
+///
+/// Moves complete canonical card records within one Board
+///
+/// @section    Purpose
+///     Share validated movement between drag/drop and the existing Move to List action
+///
+enum BoardCardMovement {
+    /// Transfer the canonical record at an insertion boundary; nil appends to the destination.
+    @discardableResult
+    static func move(_ cardID: Int, to listID: Int, before beforeCardID: Int? = nil,
+                     in lists: inout [KanbanList]) throws -> Bool {
+        let sources = lists.indices.filter { lists[$0].cards.contains { $0.id == cardID } }
+        guard sources.count == 1, let source = sources.first,
+              lists[source].cards.filter({ $0.id == cardID }).count == 1,
+              lists.filter({ $0.id == listID }).count == 1,
+              let destination = lists.firstIndex(where: { $0.id == listID && !$0.isArchived }),
+              !lists[source].isArchived,
+              let index = lists[source].cards.firstIndex(where: { $0.id == cardID }),
+              !lists[source].cards[index].isSectionDivider else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        if beforeCardID == cardID, source == destination { return false }
+        var updated = lists
+        var card = updated[source].cards.remove(at: index)
+        let insertion: Int
+        if let beforeCardID {
+            guard let position = updated[destination].cards.firstIndex(where: { $0.id == beforeCardID }) else {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+            insertion = position
+        } else {
+            insertion = updated[destination].cards.count
+        }
+        if source == destination && insertion == index { return false }
+        card.listTitle = updated[destination].title
+        updated[destination].cards.insert(card, at: insertion)
+        lists = updated
+        return true
+    }
+
+    /// Resolve visible row midpoints without mistaking the bottom of a long viewport for the list end.
+    static func target(for cardID: Int, at point: CGPoint, viewport: CGRect,
+                       lists: [KanbanList], listFrames: [Int: CGRect],
+                       cardFrames: [Int: CGRect]) -> BoardCardDropTarget? {
+        guard point.x.isFinite, point.y.isFinite,
+              viewport.origin.x.isFinite, viewport.origin.y.isFinite,
+              viewport.width.isFinite, viewport.height.isFinite,
+              viewport.width > 0, viewport.height > 0,
+              viewport.contains(point),
+              let list = lists.first(where: { !$0.isArchived && listFrames[$0.id]?.contains(point) == true }) else {
+            return nil
+        }
+        let cards = list.cards.filter { $0.id != cardID }
+        let measured = cards.enumerated().filter { cardFrames[$0.element.id] != nil }
+        if let next = measured.first(where: { point.y < (cardFrames[$0.element.id]?.midY ?? 0) }) {
+            return BoardCardDropTarget(listID: list.id, beforeCardID: next.element.id)
+        }
+        if let last = measured.last, cards.indices.contains(last.offset + 1) {
+            return BoardCardDropTarget(listID: list.id, beforeCardID: cards[last.offset + 1].id)
+        }
+        guard cards.isEmpty || !measured.isEmpty else { return nil }
+        return BoardCardDropTarget(listID: list.id, beforeCardID: nil)
+    }
+}
+
+///
 /// Provides list-ordering and drag-edge calculations for the Board
 ///
 /// @section    Purpose

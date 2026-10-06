@@ -20,6 +20,19 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.plenact.local-board-card</string>
+			<key>UTTypeDescription</key>
+			<string>Plenact Local Board Card Drag</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
 	<key>PLENACT_API_BASE_URL</key>
 	<string>$(PLENACT_API_BASE_URL)</string>
 	<key>UIApplicationSceneManifest</key>

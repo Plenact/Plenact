@@ -1178,13 +1178,7 @@ private struct AppRootView: View {
             var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
             updatedList.cards.append(
-                KanbanCard(
-                    id:                  nextCardID,
-                    word:                title,
-                    listTitle:           updatedList.title,
-                    isDivider:           KanbanCard.isDividerTitle(title),
-                    descriptionOverride: description.isEmpty ? nil : description
-                )
+                updatedList.makeItem(id: nextCardID, title: title, description: description.isEmpty ? nil : description)
             )
 
             lists[listIndex] = updatedList
@@ -2167,7 +2161,7 @@ private struct QuickNoteComposer: View {
     ///
     /// @param[in]  lists          Binding to available destination lists
     /// @param[in]  initialListID  Optional initially selected destination identity
-    /// @param[in]  onSave         Callback receiving list ID, trimmed title, and trimmed description
+    /// @param[in]  onSave         Callback receiving list ID, trimmed title, and body text
     /// @return     (QuickNoteComposer) initialized composer with empty text drafts
     ///
     init(lists: Binding<[KanbanList]>, initialListID: Int?, onSave: @escaping (Int, String, String) -> Void) {
@@ -2195,16 +2189,19 @@ private struct QuickNoteComposer: View {
     /// @fcn        QuickNoteComposer.body
     /// @brief      Present card text entry and destination selection
     /// @details    Disables Add until a nonempty trimmed title and an existing list resolve;
-    ///             Add submits trimmed text to the callback and then dismisses the composer
+    ///             Add trims the title/Card description but preserves Note body whitespace
+    ///             before submitting to the callback and dismissing the composer
     ///
     /// @return     (some View) large-sheet navigation form with Cancel and Add actions
     /// @post       Cancel discards the draft; creating/persisting a submitted card belongs to onSave
     ///
     var body: some View {
 
+        let presentation = lists.first(where: { $0.id == selectedListID })?.newItemPresentation ?? .card
+
         NavigationStack {
             Form {
-                Section("Card") {
+                Section(presentation.title) {
                     TextField("Title", text: $title)
                     TextField("Details (optional)", text: $description, axis: .vertical)
                         .lineLimit(4...8)
@@ -2228,7 +2225,7 @@ private struct QuickNoteComposer: View {
                 }
             }
 
-            .navigationTitle("New card")
+            .navigationTitle("New \(presentation.title.lowercased())")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
 
@@ -2243,7 +2240,7 @@ private struct QuickNoteComposer: View {
                     Button("Add") {
                         guard let selectedListID,
                               lists.contains(where: { $0.id == selectedListID }) else { return }
-                        onSave(selectedListID, trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
 
@@ -3685,6 +3682,19 @@ private struct PersonalCollectionSettingsView: View {
                     .pickerStyle(.menu)
                 }
                 
+                Section("New item defaults") {
+                    ForEach($draft.lists) { $list in
+                        Picker(list.title, selection: $list.newItemPresentation) {
+                            ForEach(ItemPresentation.allCases) { presentation in
+                                Text(presentation.title).tag(presentation)
+                            }
+                        }
+                    }
+                    Text("Applies only to new items. Existing Notes and Cards keep their own presentation.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 if isNew && draft.cardCount > 0 {
 
                     Section("Cards included") {

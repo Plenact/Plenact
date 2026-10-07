@@ -280,6 +280,9 @@ struct CardDetailView: View {
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
     @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
     @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
+    @State private var presentation: ItemPresentation
+    @State private var showsNoteDetails = false
+    @State private var hasEditedDescription = false
 
 
     ///
@@ -347,7 +350,8 @@ struct CardDetailView: View {
         _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
-        _descriptionText      = State(initialValue: card.funParagraph)          /* Initialize the editable description from the card                    */
+        _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
+        _presentation         = State(initialValue: card.presentation)
         _comments             = State(initialValue: card.comments)              /* Initialize comments from the selected card                           */
         _members              = State(initialValue: card.members)               /* Initialize assigned members from the selected card                   */
         _selectedLabelIDs     = State(initialValue: card.labelIDs)              /* Initialize selected labels from the card                             */
@@ -871,35 +875,64 @@ struct CardDetailView: View {
             return
         }
 
-        let nextTitleChecked = titleChecked   ?? self.titleChecked /* Effective checked state */
-        let nextTitle         = title         ?? titleText /* Effective card title */
-        let nextSubtitle      = subtitle      ?? (card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText) /* Effective subtitle override */
-        let nextMembers       = members       ?? self.members /* Effective assignees */
-        let nextLabelIDs      = labelIDs      ?? selectedLabelIDs /* Effective label IDs */
-        let nextAttachments   = attachments   ?? self.attachments /* Effective attachment metadata */
-        let nextStartDate     = clearStartDate ? nil : (startDate ?? self.startDate) /* Effective start date */
-        let nextDueDate       = clearDueDate   ? nil : (dueDate   ?? self.dueDate) /* Effective due date */
+        var updatedCard = workingCardSnapshot
 
-        let updatedCard = KanbanCard( /* Complete card snapshot sent to the parent */
-            id:                   card.id,
-            word:                 nextTitle,
-            listTitle:            card.listTitle,
-            isDivider:            card.isDivider,
-            isTitleChecked:       nextTitleChecked,
-            startDate:            nextStartDate,
-            dueDate:              nextDueDate,
-            checklists:           checklists,
-            comments:             comments,
-            members:              nextMembers,
-            labelIDs:             nextLabelIDs,
-            attachments:          nextAttachments,
-            coverAttachmentID:    coverAttachmentID,
-            dismissedActivityIDs: dismissedActivityIDs,
-            descriptionOverride:  descriptionText,
-            subtitleOverride:     nextSubtitle
-        )
+        if let title {
+
+            updatedCard.word = title
+        }
+        if let subtitle {
+
+            updatedCard.subtitleOverride = subtitle
+        }
+        if let members {
+
+            updatedCard.members = members
+        }
+        if let labelIDs {
+
+            updatedCard.labelIDs = labelIDs
+        }
+        if let attachments {
+
+            updatedCard.attachments = attachments
+        }
+        if let titleChecked {
+
+            updatedCard.isTitleChecked = titleChecked
+        }
+        updatedCard.startDate = clearStartDate ? nil : (startDate ?? self.startDate)
+        updatedCard.dueDate = clearDueDate ? nil : (dueDate ?? self.dueDate)
 
         onTitleToggle?(updatedCard)
+    }
+
+    ///
+    /// @fcn        CardDetailView.workingCardSnapshot
+    /// @brief      Overlay working fields on the original record without losing hidden content
+    /// @details    Keeps nil body/attachment values until edited and preserves future model fields
+    /// @return     (KanbanCard) complete current record without submitting or saving it
+    ///
+    private var workingCardSnapshot: KanbanCard {
+
+        var updated = card
+
+        updated.word = titleText
+        updated.subtitleOverride = card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText
+        updated.isTitleChecked = titleChecked
+        updated.startDate = startDate
+        updated.dueDate = dueDate
+        updated.members = members
+        updated.labelIDs = selectedLabelIDs
+        updated.attachments = attachments.isEmpty && card.attachments == nil ? nil : attachments
+        updated.coverAttachmentID = coverAttachmentID
+        updated.checklists = checklists
+        updated.comments = comments
+        updated.dismissedActivityIDs = dismissedActivityIDs
+        updated.descriptionOverride = hasEditedDescription ? descriptionText : card.descriptionOverride
+        updated.presentation = presentation
+
+        return updated
     }
 
 
@@ -1684,18 +1717,110 @@ struct CardDetailView: View {
 
 
     ///
-    /// @fcn        CardDetailView.body
-    /// @brief      Build the card detail presentation
-    /// @details    Composes inline text editing, completion, dates, attachments, labels, members,
-    ///             typed checklist actions, activity filtering, and comments. Coordinates all editors,
-    ///             media import/preview, bookmark toggling, movement, and optional card archival/deletion
+    /// @fcn        CardDetailView.changePresentation(to:)
+    /// @brief      Switch interfaces while preserving the working record and unsaved text
+    /// @details    Only changes presentation; generated Card copy is not inserted into a Note body
+    /// @param[in]  next  Requested interface
+    /// @return     (Void) synchronizes the same item without moving or duplicating it
     ///
-    /// @return     (some View) rendered card detail screen
-    /// @post       Main edits emit complete snapshots as they occur; archive emits the latest snapshot
-    ///             before invoking onArchive and dismissing. Confirmed deletion invokes onDelete
-    ///             and dismisses without further snapshots. Attachment failures show a notice
-    /// @note       Dividers display a minimal surface without task actions. Label/catalog persistence
-    ///             and Board updates belong to the caller; closing does not revert prior submitted edits
+    private func changePresentation(to next: ItemPresentation) {
+
+        focusedField = nil
+        presentation = next
+        showsNoteDetails = false
+
+        if !hasEditedDescription {
+
+            descriptionText = next == .note ? (card.descriptionOverride ?? "") : card.funParagraph
+        }
+
+        syncCardState()
+    }
+
+    ///
+    /// @fcn        CardDetailView.descriptionEditingBinding
+    /// @brief      Distinguish user-written text from generated Card display copy
+    /// @details    Interface changes do not mark the body as edited
+    /// @return     (Binding<String>) body editor binding
+    ///
+    private var descriptionEditingBinding: Binding<String> {
+        Binding(
+            get: { descriptionText },
+            set: {
+                hasEditedDescription = true
+                descriptionText = $0
+            }
+        )
+    }
+
+    ///
+    /// @fcn        CardDetailView.noteEditor
+    /// @brief      Present a roomy writing-first interface for the same Card record
+    /// @details    Keeps title/body editing immediate and exposes retained metadata through Details
+    /// @return     (some View) accessible Note editor without a task-completion checkbox
+    ///
+    private var noteEditor: some View {
+
+        VStack(alignment: .leading, spacing: 18) {
+
+            Text(card.listTitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            TextField("Note title", text: $titleText, axis: .vertical)
+                .font(.largeTitle.weight(.bold))
+                .focused($focusedField, equals: .title)
+                .accessibilityLabel("Note title")
+                .onChange(of: titleText) { _, newValue in
+                    syncCardState(title: newValue)
+                }
+
+            TextField("Start writing...", text: descriptionEditingBinding, axis: .vertical)
+                .font(.body)
+                .lineSpacing(6)
+                .frame(minHeight: 280, alignment: .topLeading)
+                .focused($focusedField, equals: .description)
+                .accessibilityLabel("Note body")
+                .onChange(of: descriptionText) {
+                    syncCardState()
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        if focusedField == .description || focusedField == .title {
+
+                            Spacer()
+                            Button("Done") { focusedField = nil }
+                        }
+                    }
+                }
+
+            if !attachments.isEmpty {
+
+                attachmentGallery
+            }
+
+            Button(showsNoteDetails ? "Hide Details" : "Show Details", systemImage: "info.circle") {
+                showsNoteDetails.toggle()
+            }
+            .frame(minHeight: 44)
+
+            Text("Dates, checklists, labels, members, and activity are retained in Details.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("plenact.noteEditor")
+    }
+
+    ///
+    /// @fcn        CardDetailView.body
+    /// @brief      Build the item detail presentation using its persisted Note or Card choice
+    /// @details    Notes lead with writing and hide metadata until Details is requested.
+    ///             Both interfaces share working state, complete snapshots, and lifecycle callbacks
+    /// @return     (some View) rendered item detail screen
+    /// @post       Main edits synchronize immediately; deletion suppresses further snapshots.
+    ///             Changing presentation retains content and does not relocate the item
     ///
     var body: some View { /* Full card-detail presentation */
 
@@ -1722,6 +1847,15 @@ struct CardDetailView: View {
                 ScrollView {
 
                 VStack(alignment: .leading, spacing: 0) {
+
+                    if presentation == .note {
+
+                        noteEditor
+                    }
+
+                    if presentation == .card || showsNoteDetails {
+
+                    if presentation == .card {
 
                     HStack(alignment: .center, spacing: 12) {
 
@@ -1789,6 +1923,7 @@ struct CardDetailView: View {
                     }
 
                     .padding(16)
+                    }
 
                     //****************************************************************************//
                     // SECTION: Quick Actions                                                     //
@@ -1811,7 +1946,7 @@ struct CardDetailView: View {
                         coverControls
                     }
 
-                    if !attachments.isEmpty {
+                    if presentation == .card && !attachments.isEmpty {
 
                         attachmentGallery
                     }
@@ -1822,9 +1957,11 @@ struct CardDetailView: View {
                     //          Presents humorous context assoc with selected card. Text expands  //
                     //          vertically so the complete description remains readable           //
                     //****************************************************************************//
+                    if presentation == .card {
+
                     DetailSection(title: "Description") {
 
-                        TextField("Description", text: $descriptionText, axis: .vertical)
+                        TextField("Description", text: descriptionEditingBinding, axis: .vertical)
                             .font(.body)
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1854,6 +1991,7 @@ struct CardDetailView: View {
                                     }
                                 }
                             }
+                    }
                     }
 
                     //****************************************************************************//
@@ -2054,6 +2192,7 @@ struct CardDetailView: View {
 
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                    }
                 }
             }
 
@@ -2093,10 +2232,11 @@ struct CardDetailView: View {
                     }
 
                     .buttonStyle(.plain)
-                    .accessibilityLabel(savedCardIDs.contains(card.id) ? "Remove from Saved" : "Save card")
+                    .accessibilityLabel(savedCardIDs.contains(card.id) ? "Remove from Saved" : "Save \(presentation.title.lowercased())")
 
                     Menu {
                         Button {
+                            showsNoteDetails = true
                             addChecklist(using: scrollProxy)
                         } label: {
                             Label("Add checklist", systemImage: "checklist")
@@ -2112,6 +2252,7 @@ struct CardDetailView: View {
                             Label(dueDate == nil ? "Add due date" : "Edit due date", systemImage: "calendar.badge.clock")
                         }
                         Button {
+                            showsNoteDetails = true
                             focusedField = .comment
                         } label: {
                             Label("Add comment", systemImage: "text.bubble")
@@ -2124,9 +2265,17 @@ struct CardDetailView: View {
                             .contentShape(Rectangle())
                     }
 
-                    .accessibilityLabel("Add to card")
+                    .accessibilityLabel("Add to \(presentation.title.lowercased())")
 
                     Menu {
+                        Button(
+                            presentation == .note ? "Make into Card" : "Make into Note",
+                            systemImage: presentation == .note ? "rectangle.stack" : "note.text"
+                        ) {
+                            changePresentation(to: presentation == .note ? .card : .note)
+                        }
+                        .disabled(onTitleToggle == nil)
+
                         Button(action: toggleCardTitle) {
                             Label(
                                 titleChecked ? "Mark incomplete" : "Mark complete",
@@ -2139,9 +2288,10 @@ struct CardDetailView: View {
                             Label("Edit description", systemImage: "text.alignleft")
                         }
                         moveCardMenu {
-                            Label("Move card", systemImage: "arrowshape.turn.up.right")
+                            Label("Move \(presentation.title.lowercased())", systemImage: "arrowshape.turn.up.right")
                         }
                         Button {
+                            showsNoteDetails = true
                             activityFilter = .all
                         } label: {
                             Label("Show all activity", systemImage: "clock.arrow.circlepath")
@@ -2154,7 +2304,7 @@ struct CardDetailView: View {
                                 onArchive()
                                 dismiss()
                             } label: {
-                                Label("Archive Card", systemImage: "archivebox")
+                                Label("Archive \(presentation.title)", systemImage: "archivebox")
                             }
                         }
 
@@ -2163,7 +2313,7 @@ struct CardDetailView: View {
                             Button(role: .destructive) {
                                 showingDeleteConfirmation = true
                             } label: {
-                                Label("Delete Card", systemImage: "trash")
+                                Label("Delete \(presentation.title)", systemImage: "trash")
                             }
                         }
                     } label: {
@@ -2174,7 +2324,7 @@ struct CardDetailView: View {
                             .contentShape(Rectangle())
                     }
 
-                    .accessibilityLabel("Card actions")
+                    .accessibilityLabel("\(presentation.title) actions")
                 }
 
                 if card.isSectionDivider, onDelete != nil {
@@ -2211,11 +2361,11 @@ struct CardDetailView: View {
             Text(attachmentNoticeMessage)
         }
 
-        .alert("Permanently delete this card?", isPresented: $showingDeleteConfirmation) {
-            Button("Delete Card", role: .destructive, action: deleteCard)
+        .alert("Permanently delete this \(presentation.title.lowercased())?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete \(presentation.title)", role: .destructive, action: deleteCard)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This permanently deletes this card and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
+            Text("This permanently deletes this \(presentation.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
         }
 
         .sheet(item: $activeSheet) { sheet in

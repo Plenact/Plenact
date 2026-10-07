@@ -1372,13 +1372,7 @@ struct ContentView: View {
 
         /// Append the new card to the list's cards array
         updatedList.cards.append(
-            KanbanCard(
-                id:                  nextCardID,
-                word:                title,
-                listTitle:           updatedList.title,
-                isDivider:           KanbanCard.isDividerTitle(title),
-                descriptionOverride: description
-            )
+            updatedList.makeItem(id: nextCardID, title: title, description: description)
         )
 
         lists[listIndex] = updatedList
@@ -1556,7 +1550,8 @@ struct ContentView: View {
                 coverAttachmentID:    card.coverAttachmentID,
                 dismissedActivityIDs: card.dismissedActivityIDs,
                 descriptionOverride:  card.descriptionOverride,
-                subtitleOverride:     card.subtitleOverride
+                subtitleOverride:     card.subtitleOverride,
+                presentation:         card.presentation
             )
 
             nextCardID += 1
@@ -1564,7 +1559,7 @@ struct ContentView: View {
             return copy
         }
 
-        lists.insert(KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards), at: sourceIndex + 1)
+        lists.insert(KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards, newItemPresentation: source.newItemPresentation), at: sourceIndex + 1)
     }
 
 
@@ -3859,7 +3854,7 @@ struct KanbanListView: View {
                 Button {
                     activeSheet = .newCard
                 } label: {
-                    Label("Add card", systemImage: "plus")
+                    Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -3946,7 +3941,7 @@ struct KanbanListView: View {
                 )
                 .databaseActivityOverlay()
             case .newCard:
-                NewKanbanCardSheet(listTitle: list.title, onCreate: onAddCard)
+                NewKanbanCardSheet(listTitle: list.title, presentation: list.newItemPresentation, onCreate: onAddCard)
                     .databaseActivityOverlay()
             }
         }
@@ -4010,6 +4005,7 @@ private struct HideNavigationLinkIndicator: ViewModifier {
 private struct NewKanbanCardSheet: View {
 
     let listTitle: String                               /* Title of the kanban list to which the new card will be added                             */
+    let presentation: ItemPresentation
     let onCreate: (String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
 
     @Environment(\.dismiss) private var dismiss         /* Environment variable to dismiss the current view */
@@ -4033,7 +4029,8 @@ private struct NewKanbanCardSheet: View {
     ///
     /// @fcn        NewKanbanCardSheet.body
     /// @brief      Collect a nonblank card title and optional description
-    /// @details    Accepts divider-marker titles; Add submits both trimmed fields and dismisses,
+    /// @details    Accepts divider-marker titles; Add trims the title and Card description,
+    ///             preserves Note body whitespace, and dismisses,
     ///             while Cancel dismisses without invoking the creation callback
     ///
     /// @return     (some View) new-card navigation form with medium/large sheet detents
@@ -4045,7 +4042,7 @@ private struct NewKanbanCardSheet: View {
 
             Form {
 
-                Section("Card details") {
+                Section("\(presentation.title) details") {
                     TextField("Title (or --- for divider)", text: $title)
                         .textInputAutocapitalization(.never)
                     TextField("Description", text: $description, axis: .vertical)
@@ -4053,7 +4050,7 @@ private struct NewKanbanCardSheet: View {
                 }
             }
 
-            .navigationTitle("New Card")
+            .navigationTitle("New \(presentation.title)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 
@@ -4067,7 +4064,7 @@ private struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     
                     Button("Add") {
-                        onCreate(trimmedTitle, description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        onCreate(trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
 
@@ -4203,7 +4200,7 @@ private struct KanbanListActionsSheet: View {
                     Button {
                         onAddCard()
                     } label: {
-                        Label("Add card", systemImage: "plus")
+                        Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
                     }
 
                     Button {
@@ -4539,7 +4536,8 @@ struct KanbanCardView: View {
             coverAttachmentID:    card.coverAttachmentID,
             dismissedActivityIDs: card.dismissedActivityIDs,
             descriptionOverride:  description,
-            subtitleOverride:     subtitle
+            subtitleOverride:     subtitle,
+            presentation:         card.presentation
         )
     }
 
@@ -4593,6 +4591,15 @@ struct KanbanCardView: View {
 
             HStack(alignment: .center, spacing: 8) {
 
+                if card.presentation == .note {
+
+                    Image(systemName: "note.text")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .accessibilityLabel("Note")
+                } else {
+
                 Button {
                     onToggle()
                 } label: {
@@ -4604,6 +4611,7 @@ struct KanbanCardView: View {
 
                 .buttonStyle(.plain)
                 .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+                }
 
                 Text(card.word)
                     .font(.headline)
@@ -4614,7 +4622,16 @@ struct KanbanCardView: View {
                     .layoutPriority(1)
             }
 
-            if presentation == .standard && !card.subtitle.isEmpty {
+            if presentation == .standard && card.presentation == .note {
+
+                if let body = card.descriptionOverride, !body.isEmpty {
+
+                    Text(body)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+            } else if presentation == .standard && !card.subtitle.isEmpty {
 
                 Text(card.subtitle)
                     .font(.subheadline)
@@ -4675,9 +4692,9 @@ struct KanbanCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
-        .alert("Rename Card", isPresented: $isRenaming) {
+        .alert("Rename \(card.presentation.title)", isPresented: $isRenaming) {
             
-            TextField("Card title", text: $renameDraft)
+            TextField("\(card.presentation.title) title", text: $renameDraft)
                 .textInputAutocapitalization(.never)
             
             Button("Cancel", role: .cancel) {}
@@ -4687,12 +4704,12 @@ struct KanbanCardView: View {
             
         } message: {
             
-            Text("Enter a new title for this card.")
+            Text("Enter a new title for this \(card.presentation.title.lowercased()).")
         }
 
         .confirmationDialog("Delete \(card.word)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             
-            Button("Delete Card", role: .destructive, action: onDeleteCard)
+            Button("Delete \(card.presentation.title)", role: .destructive, action: onDeleteCard)
             Button("Cancel", role: .cancel) {}
         }
 
@@ -4715,6 +4732,16 @@ struct KanbanCardView: View {
     ///
     private var cardActions: some View {
         Menu {
+            Button(
+                card.presentation == .note ? "Make into Card" : "Make into Note",
+                systemImage: card.presentation == .note ? "rectangle.stack" : "note.text"
+            ) {
+                var updated = card
+
+                updated.presentation = card.presentation == .note ? .card : .note
+                onUpdateCard(updated)
+            }
+
             if card.coverAttachmentID != nil {
 
                 Button("Remove Cover", systemImage: "photo.badge.minus") {
@@ -4726,24 +4753,24 @@ struct KanbanCardView: View {
             }
 
             Button(action: onArchiveCard) {
-                Label("Archive Card", systemImage: "archivebox")
+                Label("Archive \(card.presentation.title)", systemImage: "archivebox")
             }
 
             Button(role: .destructive) {
                 isConfirmingDelete = true
             } label: {
-                Label("Delete Card", systemImage: "trash")
+                Label("Delete \(card.presentation.title)", systemImage: "trash")
             }
             Button {
                 renameDraft = card.word
                 isRenaming = true
             } label: {
-                Label("Rename Card", systemImage: "pencil")
+                Label("Rename \(card.presentation.title)", systemImage: "pencil")
             }
             Button {
                 isEditingInfo = true
             } label: {
-                Label("Update Card Info", systemImage: "slider.horizontal.3")
+                Label("Update \(card.presentation.title) Info", systemImage: "slider.horizontal.3")
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -4753,7 +4780,7 @@ struct KanbanCardView: View {
         }
 
         .buttonStyle(.plain)
-        .accessibilityLabel("Card actions")
+        .accessibilityLabel("\(card.presentation.title) actions")
     }
 
     ///
@@ -4794,6 +4821,7 @@ struct KanbanCardView: View {
 private struct CardInfoEditorSheet: View {
 
     let onSave: (String, String, String) -> Void /* Callback receiving the edited card text */
+    let presentation: ItemPresentation
 
     @Environment(\.dismiss) private var dismiss     /* Dismiss action for the sheet         */
     @State private var title:       String          /* Draft text for the title field       */
@@ -4833,9 +4861,10 @@ private struct CardInfoEditorSheet: View {
     init(card: KanbanCard, onSave: @escaping (String, String, String) -> Void) {
 
         self.onSave  = onSave
+        self.presentation = card.presentation
         _title       = State(initialValue: card.word)
         _subtitle    = State(initialValue: card.subtitle)
-        _description = State(initialValue: card.funParagraph)
+        _description = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
     }
     
 
@@ -4870,7 +4899,7 @@ private struct CardInfoEditorSheet: View {
                 }
             }
 
-            .navigationTitle("Update Card Info")
+            .navigationTitle("Update \(presentation.title) Info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -5202,12 +5231,7 @@ struct TodayListDetailView: View {
 
         let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
         lists[listIndex].cards.append(
-            KanbanCard(
-                id: nextCardID,
-                word: title,
-                listTitle: lists[listIndex].title,
-                isDivider: KanbanCard.isDividerTitle(title)
-            )
+            lists[listIndex].makeItem(id: nextCardID, title: title)
         )
         newCardTitle = ""
     }

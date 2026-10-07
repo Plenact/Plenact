@@ -108,11 +108,20 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     }
 }
 
+/// Selects an item's interface without changing its identity or retained content.
+enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
+    case card
+    case note
+
+    var id: String { rawValue }
+    var title: String { self == .note ? "Note" : "Card" }
+}
+
 ///
 /// Represents one card displayed on a kanban list
 ///
 /// @section    Purpose
-///     Keep the card's identity, displayed word, list membership, and derived detail content together
+///     Keep one item's identity and content together across Card and Note presentations
 ///
 /// @note   Derived values are deterministic so the board and previews remain reproducible
 ///
@@ -137,6 +146,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var coverAttachmentID:    UUID?              /* Explicitly chosen photo; nil disables this card's cover */
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
+    private var itemPresentation: ItemPresentation?
+
+    /// Missing presentation remains a Card; the default needs no new persisted key.
+    var presentation: ItemPresentation {
+        get { itemPresentation ?? .card }
+        set { itemPresentation = newValue == .card ? nil : newValue }
+    }
 
     ///
     /// @fcn        KanbanCard.coverAttachment
@@ -294,13 +310,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  dismissedActivityIDs  Generated activity entries dismissed by the user
     /// @param[in]  descriptionOverride   Optional user-edited description
     /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
+    /// @param[in]  presentation          Card or writing-first Note interface
     ///
     /// @return     (KanbanCard) configured card instance
     ///
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -317,6 +334,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.dismissedActivityIDs = dismissedActivityIDs    /* Set of activity IDs that were dismissed by user    */
         self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
         self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
+        self.itemPresentation     = presentation == .card ? nil : presentation
         self.checklists           = checklists ?? [
             KanbanChecklist(title: "Focus",   items: ["Gather the important bits",   "Make it look intentional", "Celebrate the surprisingly good result"], completed: id % 4),
             KanbanChecklist(title: "Plan",    items: ["Choose the next useful step", "Stop building",            "Start producing"],                        completed: 1),
@@ -367,7 +385,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             coverAttachmentID:    try container.decodeIfPresent(UUID.self, forKey: .coverAttachmentID),
             dismissedActivityIDs: try container.decodeIfPresent(Set<String>.self, forKey: .dismissedActivityIDs) ?? [],
             descriptionOverride:  try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
-            subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
+            subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride),
+            presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card
         )
     }
 
@@ -395,6 +414,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case dismissedActivityIDs
         case descriptionOverride
         case subtitleOverride
+        case itemPresentation
     }
 
 
@@ -590,6 +610,36 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
+    private var defaultItemPresentation: ItemPresentation?
+
+    /// Applies only at creation; changing this preference never converts retained items.
+    var newItemPresentation: ItemPresentation {
+        get { defaultItemPresentation ?? .card }
+        set { defaultItemPresentation = newValue == .card ? nil : newValue }
+    }
+
+    ///
+    /// @fcn        KanbanList.makeItem(id:title:description:)
+    /// @brief      Create an item using this list's default interface
+    /// @details    Notes start with an empty body and no seeded checklists. Dividers remain Cards.
+    ///             Existing Card creation keeps its established checklist defaults
+    /// @param[in]  id           Caller-allocated stable identity
+    /// @param[in]  title        Validated item title
+    /// @param[in]  description  Optional supplied body
+    /// @return     (KanbanCard) new record without modifying the list
+    ///
+    func makeItem(id: Int, title: String, description: String? = nil) -> KanbanCard {
+
+        let isDivider = KanbanCard.isDividerTitle(title)
+        let presentation = isDivider ? ItemPresentation.card : newItemPresentation
+
+        return KanbanCard(
+            id: id, word: title, listTitle: self.title, isDivider: isDivider,
+            checklists: presentation == .note ? [] : nil,
+            descriptionOverride: presentation == .note ? (description ?? "") : description,
+            presentation: presentation
+        )
+    }
 
     ///
     /// @fcn        KanbanList.allCards
@@ -602,7 +652,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var allCards: [KanbanCard] { cards + archivedCards }
 
     ///
-    /// @fcn        KanbanList.init(id:title:cards:archivedCards:)
+    /// @fcn        KanbanList.init(id:title:cards:archivedCards:newItemPresentation:)
     /// @brief      Initialize a board list and its retained cards
     /// @details    Creates the list with active cards and an optional archived-card snapshot
     ///
@@ -610,16 +660,18 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  title         Displayed list title
     /// @param[in]  cards         Active cards in the list
     /// @param[in]  archivedCards Cards retained in this list's archive
+    /// @param[in]  newItemPresentation Interface for newly created items only
     ///
     /// @return     (KanbanList) configured board list
     /// @post       The list is active; archive status defaults to false
     ///
-    init(id: Int, title: String, cards: [KanbanCard], archivedCards: [KanbanCard] = []) {
+    init(id: Int, title: String, cards: [KanbanCard], archivedCards: [KanbanCard] = [], newItemPresentation: ItemPresentation = .card) {
 
         self.id = id
         self.title = title
         self.cards = cards
         self.archivedCards = archivedCards
+        self.defaultItemPresentation = newItemPresentation == .card ? nil : newItemPresentation
     }
 
 
@@ -630,7 +682,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///     Preserve backward-compatible decoding when archived fields are absent
     ///
     private enum CodingKeys: String, CodingKey {
-        case id, title, cards, archivedCards, isArchived
+        case id, title, cards, archivedCards, isArchived, defaultItemPresentation
     }
 
 
@@ -654,6 +706,11 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         cards         = try container.decode([KanbanCard].self, forKey: .cards)
         archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
         isArchived    = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+        defaultItemPresentation = try container.decodeIfPresent(ItemPresentation.self, forKey: .defaultItemPresentation)
+        if defaultItemPresentation == .card {
+
+            defaultItemPresentation = nil
+        }
     }
 
 
@@ -675,6 +732,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
         try container.encode(cards, forKey: .cards)
+        try container.encodeIfPresent(defaultItemPresentation, forKey: .defaultItemPresentation)
 
         if !archivedCards.isEmpty {
 
@@ -1892,7 +1950,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
             archivedCards[index].listTitle = title
         }
-        lists[0] = KanbanList(id: column.id, title: title, cards: cards, archivedCards: archivedCards)
+        lists[0] = KanbanList(id: column.id, title: title, cards: cards, archivedCards: archivedCards, newItemPresentation: column.newItemPresentation)
         lists[0].isArchived = column.isArchived
     }
 

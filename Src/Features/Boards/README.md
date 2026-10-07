@@ -112,13 +112,15 @@ The app root shares the personal-collection state between Library and Saved and 
 | Content | Active entry points | Retained-content entry points |
 | --- | --- | --- |
 | Card | Board/Today row actions and detail; Search, label results, Calendar, and Saved bookmarks through context actions | Archived-card rows/details; cards within archived lists and Saved archived collections |
-| List | Board List Actions; Week directory, Today picker, and Search row context actions | View Archived Lists rows and retained-list detail; lists inside archived collections |
+| List | Board List Actions; Today picker and Search row context actions | View Archived Lists rows and retained-list detail; lists inside archived collections |
 | Personal Board/list collection | Collection menu and Library row context/swipe actions | Saved Archived Collections rows and contents menu |
-| Week Board | Board menu and Library Week row: Archive Board or **Delete Week contents** | Its separate archived copy has normal collection deletion in Saved |
+| Week Board | Week Board menu: Archive Board or **Delete Week contents** | Its separate archived copy has normal collection deletion in Saved |
 
 Deleting a list includes its active and archived cards. Deleting a collection includes every retained list/card and that collection's bookmarks. Deleting a card removes only its owning Board's bookmark; equal numeric IDs in other collections are unrelated. Section dividers have Delete controls but are not individually archivable.
 
 The Week workspace/tab is permanent. **Delete Week contents** clears its active and archived lists/cards/bookmarks without removing Week or replacing/deleting separate personal or archived copies. Load Example's previously retained undo snapshot is also separate and remains protected.
+
+Library contains only personal lists and Boards, including separately restored Week archives. The current Week Board is accessed through the dedicated Week tab, not a duplicate Library section. Library search matches personal collections only. Week records still protect shared attachment references when editing personal collections; hiding Week from Library never removes or migrates its data.
 
 Production deletion persists the complete remaining snapshot before publishing removal. A failed checked save reports an error and retains the canonical content. Card detail keeps the editor/drafts open if deletion fails; successful deletion suppresses delayed editor synchronization and photo imports so stale details cannot recreate content. Archive inspectors are read-only and do not synchronize stale card snapshots.
 

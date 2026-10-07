@@ -808,6 +808,90 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek()
+    /// @brief      Verify Library renders only active personal collection rows
+    /// @details    Hosts the real Library with synthetic Week and archived content, then checks
+    ///             native List item counts and unchanged snapshots, including a restored Week copy
+    ///
+    /// @return     (Void) records assertion failures for extra rows or changed content
+    ///
+    /// @throws     Scene or hosted collection-view unwrap failures and task cancellation
+    ///
+    @MainActor
+    func testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek() async throws {
+
+        let week = SampleData.lists
+        var archived = PersonalCollection(title: "Archived fixture", kind: .board)
+
+        archived.isArchived = true
+
+        let restored    = PersonalCollection(title: "Week Board (Restored)", kind: .board)
+        let personal    = PersonalCollection(title: "Personal fixture", kind: .list)
+        let collections = [personal, restored, archived]
+        let scene       = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous    = scene.windows.first(where: \.isKeyWindow)
+        let window      = UIWindow(windowScene: scene)
+
+        defer {
+
+            window.isHidden           = true
+            window.rootViewController = nil
+
+            previous?.makeKey()
+        }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek.collectionView(in:)
+        /// @brief      Locate the native List collection in the hosted Library
+        /// @details    Recursively searches subviews without changing the view hierarchy
+        ///
+        /// @param[in]  view  Root view to inspect
+        ///
+        /// @return     (UICollectionView?) first collection found, or nil when absent
+        ///
+        func collectionView(in view: UIView) -> UICollectionView? {
+
+            if let collection = view as? UICollectionView {
+
+                return collection
+            }
+
+            return view.subviews.compactMap { collectionView(in: $0) }.first
+        }
+
+        for fixtures in [[personal], collections, []] {
+
+            var current    = fixtures
+
+            let controller = UIHostingController(rootView: BoardListsView(
+                retainedWeekLists: week,
+                collections: Binding(get: { current }, set: { current = $0 })
+            ))
+
+            window.frame             = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = controller
+
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+
+            try await Task.sleep(for: .milliseconds(100))
+
+            let list = try XCTUnwrap(collectionView(in: controller.view))
+
+            let count = (0..<list.numberOfSections).reduce(0) {
+
+                $0 + list.numberOfItems(inSection: $1)
+            }
+
+            XCTAssertEqual(count, max(1, fixtures.filter(\.isActive).count), "Library must contain only personal rows or its empty-state row, never a Week shortcut")
+            XCTAssertEqual(current, fixtures)
+            XCTAssertEqual(week, SampleData.lists)
+        }
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testLibraryRowsFitLongTitlesAndAccessibilityText()
     /// @brief      Verify Library entries fit their content across viewport and text sizes
     /// @details    Hosts synthetic collection rows at portrait/landscape widths; accessibility text

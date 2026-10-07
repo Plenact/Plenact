@@ -480,9 +480,7 @@ private struct AppRootView: View {
                 .toolbar(.hidden, for: .tabBar)
 
             BoardListsView(
-                lists: lists, onOpenBoardList: openBoardList, collections: $collections,
-                onArchiveWeek: archiveWeekBoard, onDeleteWeek: deleteWeekContents,
-                onArchiveList: archiveWeekList, onDeleteList: deleteWeekList
+                retainedWeekLists: lists, collections: $collections
             )
                 .tabItem {
                     Label("Library", systemImage: "books.vertical")
@@ -2994,24 +2992,17 @@ struct LibraryCollectionRow: View {
 
 
 ///
-/// Presents Week and personal collections in the Library
+/// Presents personal collections in the Library
 ///
 /// @section    Purpose
-///     Offer recognizable organizing spaces while preserving Week and collection ownership
+///     Browse personal organizing spaces independently from the dedicated Week destination
 ///
-private struct BoardListsView: View {
+struct BoardListsView: View {
 
-    let lists: [KanbanList]                                    /* Complete current Week snapshot              */
-    let onOpenBoardList: (Int) -> Void                         /* Route to a Week list by ID                  */
+    let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
-    let onArchiveWeek: () -> Void /* Root retains the complete Week snapshot */
-    let onDeleteWeek: () -> Void /* Root clears confirmed Week contents */
-    let onArchiveList: (Int) -> Void /* Root archives a Week list */
-    let onDeleteList: (Int) -> Bool /* Root reports confirmed Week list removal */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
-    @State private var confirmsArchiveWeek = false /* External Week archive confirmation */
-    @State private var confirmsDeleteWeek = false /* External Week clearing confirmation */
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -3030,26 +3021,6 @@ private struct BoardListsView: View {
     ///
     private var filteredCollections: [PersonalCollection] {
         collections.filter { $0.isActive && $0.matches(searchText) }
-    }
-
-
-    ///
-    /// @fcn        BoardListsView.showsWeek
-    /// @brief      Determine whether the Week directory row matches the query
-    /// @details    Accepts blank input, the Week Board name, or an active Week list/card title;
-    ///             section dividers and archived lists do not provide card-title matches
-    ///
-    /// @return     (Bool) whether to show the Week row
-    /// @post       Search and Board contents remain unchanged
-    ///
-    private var showsWeek: Bool {
-        let term = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return term.isEmpty || "Week Board".localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
-            list.title.localizedStandardContains(term) || list.cards.contains {
-                !$0.isSectionDivider && $0.word.localizedStandardContains(term)
-            }
-        }
     }
 
 
@@ -3184,7 +3155,7 @@ private struct BoardListsView: View {
 
     ///
     /// @fcn        BoardListsView.body
-    /// @brief      Present Week access and the personal-collection directory
+    /// @brief      Present the personal-collection directory without duplicate Week access
     /// @details    Supports search, create/edit, confirmed deletion, and unfiltered active-collection
     ///             reordering. Presented boards retain attachment references from other boards and undo state
     ///
@@ -3197,38 +3168,6 @@ private struct BoardListsView: View {
         NavigationStack {
 
             List {
-
-                if showsWeek {
-
-                    Section("Weekly planning") {
-
-                        NavigationLink {
-                            WeekListsDirectoryView(
-                                lists: lists.filter { !$0.isArchived }, onOpenBoardList: onOpenBoardList,
-                                onArchiveList: onArchiveList, onDeleteList: onDeleteList
-                            )
-                        } label: {
-                            row(
-                                title: "Week Board", subtitle: "\(lists.filter { !$0.isArchived }.count) lists",
-                                icon: "rectangle.3.group", color: .blue,
-                                count: lists.filter { !$0.isArchived }.reduce(0) { $0 + $1.cards.filter { !$0.isSectionDivider }.count }
-                            )
-                        }
-                        .contextMenu {
-                            Button("Archive Board", systemImage: "archivebox") { confirmsArchiveWeek = true }
-                            Button("Delete Week contents", systemImage: "trash", role: .destructive) { confirmsDeleteWeek = true }
-                        }
-                        .accessibilityActions {
-                            Button("Archive Board") { confirmsArchiveWeek = true }
-                            Button("Delete Week contents") { confirmsDeleteWeek = true }
-                        }
-
-                        .swipeActions(allowsFullSwipe: false) {
-                            Button("Delete", role: .destructive) { confirmsDeleteWeek = true }
-                            Button("Archive") { confirmsArchiveWeek = true }
-                        }
-                    }
-                }
 
                 Section {
 
@@ -3349,7 +3288,7 @@ private struct BoardListsView: View {
             .fullScreenCover(item: $openedCollection) { collection in
                 PersonalCollectionBoardView(
                     collection: collectionBinding(for: collection),
-                    retainedLists: lists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
+                    retainedLists: retainedWeekLists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
                         + (ExampleLoadUndoStore.load()?.lists ?? []),
                     onArchive: {
                         collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
@@ -3422,19 +3361,6 @@ private struct BoardListsView: View {
                 Text("Keeps all content on this device. Restore it from Saved.")
             }
 
-            .confirmationDialog("Archive Week Board?", isPresented: $confirmsArchiveWeek, titleVisibility: .visible) {
-                Button("Archive Board", action: onArchiveWeek)
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Retains a complete copy in Saved and leaves an empty Week workspace.")
-            }
-
-            .confirmationDialog("Delete Week contents?", isPresented: $confirmsDeleteWeek, titleVisibility: .visible) {
-                Button("Delete Week contents", role: .destructive, action: onDeleteWeek)
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Permanently deletes Week's active and archived lists, cards, and bookmarks. This cannot be undone. Separate personal and archived Boards are unchanged.")
-            }
         }
     }
 
@@ -3762,198 +3688,6 @@ extension PersonalCollectionIcon {
             case .home: "Home"
             case .heart: "Heart"
             case .upcoming: "Upcoming"
-        }
-    }
-}
-
-
-///
-/// Presents a searchable directory of active Week lists
-///
-/// @section    Purpose
-///     Find existing lists and cards, then open the containing Week list
-///
-private struct WeekListsDirectoryView: View {
-
-    let lists: [KanbanList]                 /* Active Week lists available for browsing */
-    let onOpenBoardList: (Int) -> Void      /* Route to a selected Week list */
-    let onArchiveList: (Int) -> Void /* Retain a Week list */
-    let onDeleteList: (Int) -> Bool /* Report confirmed Week list removal */
-    @State private var archivingList: KanbanList? /* List awaiting archive confirmation */
-    @State private var deletingList: KanbanList? /* List awaiting permanent deletion */
-    @State private var removedListIDs: Set<Int> = [] /* Hide mutated snapshot entries until parent refresh */
-
-    @State private var searchText = ""      /* List and card-title query */
-
-    ///
-    /// @fcn        WeekListsDirectoryView.filteredLists
-    /// @brief      Filter the supplied Week list directory
-    /// @details    Trims the query and matches list titles/subtitles or non-divider card titles
-    ///             using localized-standard containment; blank input returns all supplied lists
-    ///
-    /// @return     ([KanbanList]) matching lists in original order
-    /// @pre        The caller supplies the intended active-list partition
-    /// @post       No list content or search text is changed
-    ///
-    private var filteredLists: [KanbanList] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let available = lists.filter { !removedListIDs.contains($0.id) }
-
-        guard !query.isEmpty else {
-
-            return available
-        }
-
-        return available.filter { list in
-            list.title.localizedStandardContains(query)
-                || list.subtitle.localizedStandardContains(query)
-                || list.cards.contains { !$0.isSectionDivider && $0.word.localizedStandardContains(query) }
-        }
-    }
-
-
-    ///
-    /// @fcn        WeekListsDirectoryView.body
-    /// @brief      Present a searchable directory of Week lists
-    /// @details    Displays list subtitles and non-divider card counts, with distinct empty
-    ///             and no-match explanations; rows delegate navigation to the existing Week Board
-    ///
-    /// @return     (some View) paper-backed list directory
-    /// @post       Selecting a row calls onOpenBoardList without modifying the list
-    ///
-    var body: some View {
-        ZStack {
-            TodayPaperBackground()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Week Board")
-                            .font(.largeTitle.weight(.bold))
-                        Text("All lists in your Week board")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.secondary)
-                        TextField("Find a list or card", text: $searchText)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 46)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-
-                    if filteredLists.isEmpty {
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(lists.isEmpty ? "No lists yet" : "No matching lists")
-                                .font(.headline)
-                            Text(lists.isEmpty ? "Add a list from Week to get started." : "Try another list or card name.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .modifier(TodayPanelSurface())
-                    } else {
-                        ForEach(filteredLists) { list in
-                            Button {
-                                onOpenBoardList(list.id)
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "rectangle.3.group")
-                                        .font(.title3)
-                                        .foregroundStyle(.tint)
-                                        .frame(width: 36, height: 40)
-
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(list.title)
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
-                                        Text(list.subtitle)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer(minLength: 8)
-
-                                    Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
-                                        .font(.subheadline.monospacedDigit())
-                                        .foregroundStyle(.secondary)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.tertiary)
-                                }
-
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-
-                            .buttonStyle(.plain)
-                            .modifier(TodayPanelSurface())
-                            .contextMenu {
-                                Button("Archive List", systemImage: "archivebox") { archivingList = list }
-                                Button("Delete List", systemImage: "trash", role: .destructive) { deletingList = list }
-                            }
-                            .accessibilityActions {
-                                Button("Archive List") { archivingList = list }
-                                Button("Delete List") { deletingList = list }
-                            }
-
-                            .accessibilityLabel("\(list.title), \(list.cards.filter { !$0.isSectionDivider }.count) cards")
-                            .accessibilityHint("Open this list in Week.")
-                        }
-                    }
-                }
-
-                .padding(20)
-                .frame(maxWidth: 560, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
-
-            .scrollIndicators(.hidden)
-        }
-
-        .confirmationDialog("Archive \(archivingList?.title ?? "list")?", isPresented: Binding(
-            get: { archivingList != nil }, set: { if !$0 { archivingList = nil } }
-        ), titleVisibility: .visible) {
-            Button("Archive List") {
-                if let archivingList {
-
-                    onArchiveList(archivingList.id)
-                    removedListIDs.insert(archivingList.id)
-                }
-
-                archivingList = nil
-            }
-
-            Button("Cancel", role: .cancel) { archivingList = nil }
-        } message: {
-            Text("Keeps the list and all its cards in Week's Archived Lists.")
-        }
-
-        .confirmationDialog("Delete \(deletingList?.title ?? "list")?", isPresented: Binding(
-            get: { deletingList != nil }, set: { if !$0 { deletingList = nil } }
-        ), titleVisibility: .visible) {
-            Button("Delete List", role: .destructive) {
-                if let deletingList, onDeleteList(deletingList.id) {
-
-                    removedListIDs.insert(deletingList.id)
-                }
-
-                deletingList = nil
-            }
-
-            Button("Cancel", role: .cancel) { deletingList = nil }
-        } message: {
-            Text("Permanently deletes this list, active and archived cards, and their bookmarks. This cannot be undone.")
         }
     }
 }

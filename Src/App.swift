@@ -116,6 +116,34 @@ private enum TodayListPickerMode: String, Identifiable {
 enum TodayListSelection {
 
     ///
+    /// @fcn        TodayListSelection.currentDayList(in:date:calendar:)
+    /// @brief      Resolve the active Week list for the supplied local day
+    /// @details    Matches canonical weekday titles without consulting manual Today preferences.
+    ///             Missing, archived, renamed, or ambiguous weekday lists produce no focus.
+    ///
+    /// @param[in]  lists     Canonical Week list records
+    /// @param[in]  date      Date whose local weekday is resolved
+    /// @param[in]  calendar  Calendar and time zone used to determine the weekday
+    ///
+    /// @return     (KanbanList?) unique active weekday list, or nil when unavailable
+    ///
+    static func currentDayList(in lists: [KanbanList], date: Date, calendar: Calendar = .current) -> KanbanList? {
+
+        let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        let title    = weekdays[calendar.component(.weekday, from: date) - 1]
+        
+        let matches  = lists.filter {
+
+            !$0.isArchived && $0.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+                .caseInsensitiveCompare(title) == .orderedSame
+        }
+
+        return matches.count == 1 ? matches.first : nil
+    }
+
+
+    ///
     /// @fcn        TodayListSelection.initialListID(savedListID:profileDefaultListID:lists:)
     /// @brief      Resolve the initial Today list from available choices
     /// @details    Prefers a valid date-specific selection, then a valid profile default, then a
@@ -1193,6 +1221,7 @@ private struct TodayHomeView: View {
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @State private var showsTodayList = false               /* Focused single-list presentation         */
+    @State private var focusedListID: Int?                  /* Current-day list selected when opening Focus */
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
     @State private var showsSearch          = false         /* Local Board search presentation          */
@@ -1222,32 +1251,6 @@ private struct TodayHomeView: View {
         }                                            /* No saved or default list selection */
 
         return lists.first { $0.id == resolvedListID }
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.selectedTodayCards
-    /// @brief      Collect actionable cards from today's selected list
-    /// @details    Excludes section dividers and returns an empty collection when no list resolves
-    ///
-    /// @return     ([KanbanCard]) active cards in list order
-    /// @post       Archived-card collections and list content remain unchanged
-    ///
-    private var selectedTodayCards: [KanbanCard] {
-        selectedTodayList?.cards.filter { !$0.isSectionDivider } ?? []
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.openTodayCards
-    /// @brief      Select the first three incomplete Today cards
-    /// @details    Filters title-completion state while preserving the selected list's ordering
-    ///
-    /// @return     ([KanbanCard]) up to three cards for the focus preview
-    /// @post       Card completion flags are unchanged
-    ///
-    private var openTodayCards: [KanbanCard] {
-        Array(selectedTodayCards.filter { !$0.isTitleChecked }.prefix(3))
     }
 
 
@@ -1817,22 +1820,26 @@ private struct TodayHomeView: View {
                     quickCaptureSection
                         .modifier(TodayPanelSurface())
 
-                    TodayFocusSection(
-                        list:         selectedTodayList,
-                        cards:        selectedTodayCards,
-                        openCards:    openTodayCards,
-                        onChooseList: { listPickerMode = .chooseToday },
-                        onToggleCard: { cardID in
-                            guard let selectedTodayList else {
+                    TimelineView(.everyMinute) { context in
+                        let focus = TodayListSelection.currentDayList(in: lists, date: context.date)
+                        let cards = focus?.cards.filter { !$0.isSectionDivider } ?? []
 
-                                return
+                        TodayFocusSection(
+                            list: focus,
+                            cards: cards,
+                            openCards: Array(cards.filter { !$0.isTitleChecked }.prefix(3)),
+                            onToggleCard: { cardID in
+                                if let focus {
+
+                                    onToggleCardCompletion(focus.id, cardID)
+                                }
+                            },
+                            onOpenTodayList: {
+                                focusedListID = focus?.id
+                                showsTodayList = focus != nil
                             }
-                            onToggleCardCompletion(selectedTodayList.id, cardID)
-                        },
-                        onOpenTodayList: {
-                            showsTodayList = true
-                        }
-                    )
+                        )
+                    }
 
                     yourLabelsSection
                     browseListsAction
@@ -1913,21 +1920,21 @@ private struct TodayHomeView: View {
             }
 
             .fullScreenCover(isPresented: $showsTodayList) {
-                if let selectedTodayList {
+                if let focusedList = lists.first(where: { $0.id == focusedListID }) {
 
                     TodayListDetailView(
                         lists: $lists,
                         reservedLists: archivedLists,
                         labelLibrary: $labelLibrary,
                         savedCardIDs: $savedCardIDs,
-                        listID: selectedTodayList.id,
+                        listID: focusedList.id,
                         currentUserName: profile?.displayName ?? "Justin Reina",
                         onClose: {
                             showsTodayList = false
                         },
                         onOpenWeek: {
                             showsTodayList = false
-                            onOpenBoardList(selectedTodayList.id)
+                            onOpenBoardList(focusedList.id)
                         },
                         onPermanentDelete: onDeleteCard
                     )
@@ -4445,49 +4452,40 @@ private struct ArchivedCollectionContentsView: View {
 
 
 ///
-/// Shows the selected Today list's progress and next open cards
+/// Shows the current weekday list's progress and next open cards
 ///
 /// @section    Purpose
 ///     Summarize the current focus and expose completion and list-navigation actions
 ///
 private struct TodayFocusSection: View {
 
-    let list: KanbanList? /* List selected as the current Today focus */
+    let list: KanbanList? /* Canonical Week list matching the current local weekday */
     let cards: [KanbanCard] /* Non-divider cards on that list */
     let openCards: [KanbanCard] /* First three incomplete cards */
-    let onChooseList: () -> Void /* Select another list for Today */
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
 
     ///
     /// @fcn        TodayFocusSection.body
-    /// @brief      Summarize the chosen Today list and preview unfinished cards
+    /// @brief      Summarize the current weekday list and preview unfinished cards
     /// @details    Displays title-completion progress, distinct empty/all-complete states,
-    ///             quick completion controls, and actions to choose or open today's list
+    ///             quick completion controls, and an action to open today's list
     ///
     /// @return     (some View) raised Today focus panel
     /// @pre        cards and openCards describe the supplied list and exclude section dividers
-    /// @post       Completion, list choice, and navigation are delegated to supplied callbacks
+    /// @post       Completion and navigation are delegated to supplied callbacks
     ///
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Today's Focus")
-                    .font(.title2.weight(.semibold))
-                Spacer()
-                Button("Change", action: onChooseList)
-                    .font(.subheadline.weight(.medium))
-                    .buttonStyle(.plain)
-            }
+            Text("Today's Focus")
+                .font(.title2.weight(.semibold))
 
-            if let list {
+            if list != nil {
 
                 let completedCount = cards.filter(\.isTitleChecked).count
 
                 HStack {
-                    Text(list.title)
-                        .font(.headline)
                     Spacer()
                     Text("\(completedCount) of \(cards.count) complete")
                         .font(.caption)
@@ -4563,11 +4561,9 @@ private struct TodayFocusSection: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.tint)
             } else {
-                Text("Choose a Board list to focus on today.")
+                Text("No list for today.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Button("Choose list", systemImage: "list.bullet", action: onChooseList)
-                    .buttonStyle(.bordered)
             }
         }
 

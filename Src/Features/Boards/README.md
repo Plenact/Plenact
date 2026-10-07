@@ -105,6 +105,12 @@ The app root shares the personal-collection state between Library and Saved and 
 
 ## Product Boundary
 
+### Today's Focus
+
+Today's Focus automatically resolves the active Week list whose title matches the current local weekday (Sunday through Saturday, ignoring case and surrounding whitespace). It has no Change control or redundant weekday title. The minute-based timeline refreshes across midnight; it projects canonical Week records rather than maintaining another card store. Opening or completing a preview card acts on that day's list.
+
+If the day's list is missing, renamed, archived, or ambiguous, the panel shows **No list for today.** with no card checkboxes, completion count, progress bar, or list-opening action. It never substitutes another weekday. Quick Capture and its existing destination preferences remain independent and unchanged.
+
 ### Archive and permanent deletion
 
 **Archive retains content; Delete permanently removes it.** Archives are not backups. Every new permanent-deletion entry point asks for confirmation and describes the affected content. Deletion has no undo guarantee and never deletes an independent retained Board/collection copy.

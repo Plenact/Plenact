@@ -3032,6 +3032,77 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayFocusFollowsEveryLocalWeekdayWithoutChangingRecords()
+    /// @brief      Resolve each day's canonical Week list independently of display order
+    /// @details    Uses a fixed Gregorian calendar and synthetic dates, including midnight
+    ///             rollover and a time-zone change, with unchanged card records
+    ///
+    /// @return     (Void) records assertion failures for wrong-day selection or mutations
+    ///
+    /// @throws     Calendar fixture construction failures
+    ///
+    func testTodayFocusFollowsEveryLocalWeekdayWithoutChangingRecords() throws {
+
+        var calendar = Calendar(identifier: .gregorian)
+
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+
+        let lists = Array(SampleData.lists.reversed())
+        let original = lists
+        let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+        for (offset, name) in names.enumerated() {
+
+            let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 5 + offset)))
+
+            XCTAssertEqual(TodayListSelection.currentDayList(in: lists, date: date, calendar: calendar)?.title, name)
+        }
+
+        let midnight = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))
+
+        XCTAssertEqual(TodayListSelection.currentDayList(in: lists, date: midnight.addingTimeInterval(-1), calendar: calendar)?.title, "Monday")
+        XCTAssertEqual(TodayListSelection.currentDayList(in: lists, date: midnight, calendar: calendar)?.title, "Tuesday")
+
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: -3600))
+
+        XCTAssertEqual(TodayListSelection.currentDayList(in: lists, date: midnight, calendar: calendar)?.title, "Monday")
+        XCTAssertEqual(lists, original)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayFocusHasNoFallbackForUnavailableOrAmbiguousDay()
+    /// @brief      Reject missing, renamed, archived, and duplicate current-day lists
+    /// @details    Resolves a fixed Tuesday against synthetic snapshots without substituting Monday
+    ///             or consulting manual selection preferences
+    ///
+    /// @return     (Void) records assertion failures for unintended fallback behavior
+    ///
+    /// @throws     Calendar fixture construction failures
+    ///
+    func testTodayFocusHasNoFallbackForUnavailableOrAmbiguousDay() throws {
+
+        var calendar = Calendar(identifier: .gregorian)
+
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+
+        let date     = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))
+        let monday   = KanbanList(id: 1, title: "Monday", cards: [])
+        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: [])
+        var archived = tuesday
+
+        archived.isArchived = true
+
+        XCTAssertNil(TodayListSelection.currentDayList(in: [], date: date, calendar: calendar))
+        XCTAssertNil(TodayListSelection.currentDayList(in: [monday], date: date, calendar: calendar))
+        XCTAssertNil(TodayListSelection.currentDayList(in: [monday, archived], date: date, calendar: calendar))
+        XCTAssertNil(TodayListSelection.currentDayList(in: [monday, KanbanList(id: 2, title: "Renamed", cards: [])], date: date, calendar: calendar))
+        XCTAssertNil(TodayListSelection.currentDayList(in: [tuesday, KanbanList(id: 3, title: "Tuesday", cards: [])], date: date, calendar: calendar))
+        XCTAssertEqual(TodayListSelection.currentDayList(in: [monday, KanbanList(id: 2, title: " tUeSdAy ", cards: [])], date: date, calendar: calendar)?.id, 2)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testTodayDefaultsToMondayAfterSavedAndProfileChoices()
     /// @brief      Verify initial Today selection priority
     /// @details    Checks valid saved/profile choices before the named-Monday fallback

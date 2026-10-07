@@ -4,6 +4,8 @@ This directory contains the active unit-test target for Plenact
 
 ## Current Coverage
 
+Today Focus regressions cover all seven weekdays, reordered lists, local midnight rollover, time-zone changes, case/whitespace matching, and missing/renamed/archived/ambiguous day lists without fallback or record changes. Existing manual-selection tests apply to Quick Capture's independent destination. Device acceptance should verify the Focus panel has no Change button or weekday title, opens/toggles the current day's canonical cards, and shows no checkboxes/count/progress when that day's list is unavailable. Also check midnight/resume and large text.
+
 `ChecklistMigrationTests.swift` verifies revision 0 string and card-member migration, stable registered-user assignee round trips, repeatable migration IDs, rich action round trips, the Monday-through-Sunday starter-board contract, and linked-card/Action Detail coverage for every seeded activity card
 
 `LocalProfileStoreTests.swift` verifies isolated local profile persistence, removal, personalization, and avatar initials without reading production preferences

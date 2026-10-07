@@ -134,13 +134,14 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
     ///
     /// @param[in]  viewportWidth      Available viewport width in points
     /// @param[in]  accessibilitySize  Whether the current text size is an accessibility size
+    /// @param[in]  fillsAvailableWidth  Whether a Standard single-list collection uses all usable width
     ///
     /// @return     (CGFloat) column width in points
     ///
     /// @pre        Widths at or below the horizontal inset are treated as invalid
     /// @post       No Board state is modified
     ///
-    func columnWidth(viewportWidth: CGFloat, accessibilitySize: Bool) -> CGFloat {
+    func columnWidth(viewportWidth: CGFloat, accessibilitySize: Bool, fillsAvailableWidth: Bool = false) -> CGFloat {
 
         guard viewportWidth.isFinite, viewportWidth > 28 else {
 
@@ -149,7 +150,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
 
         let available = viewportWidth - 28
 
-        if accessibilitySize {
+        if accessibilitySize || (self == .standard && fillsAvailableWidth) {
 
             return available
         }
@@ -939,6 +940,8 @@ struct ContentView: View {
     let boardSubtitle: String
     /// Whether the board header offers the Add list action.
     let allowsAddingLists: Bool
+    /// Lets a single-list personal collection fill the Standard viewport without changing Overview.
+    let fillsAvailableListWidth: Bool
     /// Optional action that returns to the parent collection view.
     let onClose: (() -> Void)?
     /// Optional parent-owned action for archiving the complete board.
@@ -1007,6 +1010,7 @@ struct ContentView: View {
     /// @param[in]  boardTitle               Header title
     /// @param[in]  boardSubtitle            Header supporting text
     /// @param[in]  allowsAddingLists        Whether the header normally offers list creation
+    /// @param[in]  fillsAvailableListWidth  Whether Standard list panels fill the usable viewport
     /// @param[in]  onClose                  Optional action returning to the collection directory
     /// @param[in]  onArchiveBoard           Optional parent-owned full-board archive action
     /// @param[in]  onListsChanged           Main-actor callback receiving active-list changes
@@ -1030,6 +1034,7 @@ struct ContentView: View {
         boardTitle: String                    = "Plenact",
         boardSubtitle: String                 = "Work Week Board",
         allowsAddingLists: Bool               = true,
+        fillsAvailableListWidth: Bool         = false,
         onClose: (() -> Void)?                = nil,
         onArchiveBoard: (() -> Void)?         = nil,
         onDeleteBoard: (() -> Void)?          = nil,
@@ -1052,6 +1057,7 @@ struct ContentView: View {
         self.boardTitle              = boardTitle
         self.boardSubtitle           = boardSubtitle
         self.allowsAddingLists       = allowsAddingLists
+        self.fillsAvailableListWidth = fillsAvailableListWidth
         self.onClose                 = onClose
         self.onArchiveBoard          = onArchiveBoard
         self.onDeleteBoard           = onDeleteBoard
@@ -2236,14 +2242,14 @@ struct ContentView: View {
                                             onMoveCardToList: { cardID, listID in moveCard(cardID, toListID: listID) }
                                         )
                                         .frame(
-                                            width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize)
+                                            width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
                                         )
                                         .scaleEffect(draggedListID == list.id && !reducesMotion ? 1.025 : 1)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
                                         }
 
-                                        .frame(width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize))
+                                        .frame(width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth))
                                         .background {
                                             GeometryReader { geometry in
                                                 Color.clear.preference(

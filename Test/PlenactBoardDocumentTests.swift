@@ -809,7 +809,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek()
-    /// @brief      Verify Library renders only active personal collection rows
+    /// @brief      Verify Library renders personal collections and one canonical Saved shortcut
     /// @details    Hosts the real Library with synthetic Week and archived content, then checks
     ///             native List item counts and unchanged snapshots, including a restored Week copy
     ///
@@ -866,7 +866,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             let controller = UIHostingController(rootView: BoardListsView(
                 retainedWeekLists: week,
-                collections: Binding(get: { current }, set: { current = $0 })
+                collections: Binding(get: { current }, set: { current = $0 }),
+                onOpenSaved: { XCTFail("Rendering must not navigate to Saved") }
             ))
 
             window.frame             = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -884,7 +885,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 $0 + list.numberOfItems(inSection: $1)
             }
 
-            XCTAssertEqual(count, max(1, fixtures.filter(\.isActive).count), "Library must contain only personal rows or its empty-state row, never a Week shortcut")
+            XCTAssertEqual(count, 1 + max(1, fixtures.filter(\.isActive).count),
+                           "Library must contain one Saved shortcut and personal rows or its empty state, never a Week shortcut")
             XCTAssertEqual(current, fixtures)
             XCTAssertEqual(week, SampleData.lists)
         }
@@ -949,6 +951,141 @@ final class PlenactBoardDocumentTests: XCTestCase {
             for width: CGFloat in [0, 28, -1, .nan, .infinity] {
 
                 XCTAssertEqual(preset.columnWidth(viewportWidth: width, accessibilitySize: false), 1)
+            }
+        }
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSingleListCollectionUsesAvailableStandardWidthWithoutChangingOverview()
+    /// @brief      Verify Standard personal-list width fills the viewport without changing Board presets
+    /// @details    Checks portrait, landscape, narrow, invalid, and accessibility widths against
+    ///             exact usable-width values; default Week and multi-list behavior retains its cap
+    ///
+    /// @return     (Void) records assertion failures for incorrect column widths
+    ///
+    func testSingleListCollectionUsesAvailableStandardWidthWithoutChangingOverview() {
+
+        for width: CGFloat in [320, 393, 852] {
+
+            XCTAssertEqual(BoardPresentation.standard.columnWidth(
+                viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
+            ), width - 28)
+
+            XCTAssertEqual(BoardPresentation.standard.columnWidth(
+                viewportWidth: width, accessibilitySize: false
+            ), min(width - 28, 360))
+
+            XCTAssertEqual(BoardPresentation.overview.columnWidth(
+                viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
+            ), min(width - 28, 240))
+
+            XCTAssertEqual(BoardPresentation.overview.columnWidth(
+                viewportWidth: width, accessibilitySize: true, fillsAvailableWidth: true
+            ), width - 28)
+        }
+
+        for width: CGFloat in [0, 28, -1, .nan, .infinity] {
+
+            XCTAssertEqual(BoardPresentation.standard.columnWidth(
+                viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
+            ), 1)
+        }
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionListWidthReachesTheHostedCardContainer()
+    /// @brief      Verify the real personal collection adapter widens Standard list and card containers
+    /// @details    Hosts List and Board collections with isolated presentation preferences and
+    ///             compares native card-container widths in portrait and landscape without mutations
+    ///
+    /// @return     (Void) records assertion failures for container width or content changes
+    ///
+    /// @throws     Fixture or hosted-view unwrap failures and task cancellation
+    ///
+    @MainActor
+    func testPersonalCollectionListWidthReachesTheHostedCardContainer() async throws {
+
+        let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window   = UIWindow(windowScene: scene)
+
+        defer {
+
+            window.isHidden           = true
+            window.rootViewController = nil
+            
+            previous?.makeKey()
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionListWidthReachesTheHostedCardContainer.collectionView(in:)
+        /// @brief      Locate the rendered list's native card collection
+        /// @details    Recursively searches hosted subviews without modifying the hierarchy
+        ///
+        /// @param[in]  view  Root view to inspect
+        ///
+        /// @return     (UICollectionView?) first collection found, or nil when absent
+        ///
+        func collectionView(in view: UIView) -> UICollectionView? {
+
+            if let collection = view as? UICollectionView {
+
+                return collection
+            }
+
+            return view.subviews.compactMap { collectionView(in: $0) }.first
+        }
+
+        for width: CGFloat in [393, 852] {
+
+            for preset in BoardPresentation.allCases {
+
+                defaults.set(preset.rawValue, forKey: BoardPresentation.storageKey)
+
+                var measured: [PersonalCollectionKind: CGFloat] = [:]
+
+                for kind in [PersonalCollectionKind.list, .board] {
+
+                    var fixture = PersonalCollection(title: "Synthetic collection", kind: kind)
+
+                    fixture.lists = [SampleData.lists[0]]
+
+                    let original   = fixture
+
+                    let controller = UIHostingController(rootView: PersonalCollectionBoardView(
+                        collection: Binding(get: { fixture }, set: { fixture = $0 }),
+                        retainedLists: [],
+                        onArchive: { XCTFail("Layout must not archive") },
+                        onDelete: { XCTFail("Layout must not delete") },
+                        onCommitDeletion: { _ in XCTFail("Layout must not commit deletion") }
+                    ).defaultAppStorage(defaults))
+
+                    window.frame              = CGRect(x: 0, y: 0, width: width, height: 852)
+                    window.rootViewController = controller
+
+                    window.makeKeyAndVisible()
+                    controller.view.layoutIfNeeded()
+
+                    try await Task.sleep(for: .milliseconds(100))
+
+                    let cards = try XCTUnwrap(collectionView(in: controller.view))
+
+                    measured[kind] = cards.bounds.width
+
+                    XCTAssertGreaterThan(cards.bounds.width, 0)
+                    XCTAssertEqual(fixture, original)
+                }
+
+                let listWidth          = try XCTUnwrap(measured[.list])
+                let boardWidth         = try XCTUnwrap(measured[.board])
+                let expectedDifference = preset == .standard ? max(0, width - 28 - 360) : 0
+
+                XCTAssertEqual(listWidth - boardWidth, expectedDifference, accuracy: 1)
             }
         }
     }

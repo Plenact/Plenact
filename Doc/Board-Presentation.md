@@ -29,6 +29,7 @@ The lower navigation bar keeps its controls within their fixed-height layout whi
 | --- | --- | --- |
 | List width at ordinary text sizes | Up to 360 points | Up to 240 points |
 | Narrow viewport | Fits within the viewport with 28 points reserved for horizontal margins | Same margin constraint |
+| Personal List-kind collection | Fills usable viewport width, retaining the same 28-point horizontal margins | Keeps the compact 240-point cap |
 | Card minimum height at default text size | 112 points | 80 points |
 | Title summary | Up to three lines | Up to two lines |
 | Supporting subtitle and label summary | Shown | Omitted from the summary only |
@@ -37,6 +38,8 @@ The lower navigation bar keeps its controls within their fixed-height layout whi
 | Completion and card actions | Available | Available |
 
 Cards grow to fit their displayed content; these heights are minimums, not clipping bounds. A card with long text or labels can be taller than a neighboring card. Measured row heights contribute to list-panel sizing, and long lists remain vertically scrollable with the Add card action retained.
+
+Single-list personal collections use the full available Standard width rather than leaving space for a neighboring column that does not exist. Week and Board-kind collections retain the normal Standard cap. This is presentation-only and does not change collection kind, cards, or persistence.
 
 List titles and counts occupy their own header row, separate from reordering and list actions. Overview omits the list subtitle as well as the card subtitle. Card actions appear beside the badges below the title rather than consuming title width. Summaries explicitly fit their vertical content so a tall list does not stretch each card. Badge counts remain visible alongside their icons even inside a navigation link.
 

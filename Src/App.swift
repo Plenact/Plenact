@@ -485,7 +485,8 @@ private struct AppRootView: View {
                 .toolbar(.hidden, for: .tabBar)
 
             BoardListsView(
-                retainedWeekLists: lists, collections: $collections
+                retainedWeekLists: lists, collections: $collections,
+                onOpenSaved: { selectedDestination = .saved }
             )
                 .tabItem {
                     Label("Library", systemImage: "books.vertical")
@@ -3015,6 +3016,7 @@ struct BoardListsView: View {
     let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
+    let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
@@ -3181,6 +3183,37 @@ struct BoardListsView: View {
         NavigationStack {
 
             List {
+
+                Section {
+                    Button(action: onOpenSaved) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "bookmark.fill")
+                                .foregroundStyle(Color.accentColor)
+                                .accessibilityHidden(true)
+
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Saved")
+                                    .font(.headline)
+                                Text("Bookmarked cards and archived collections")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer(minLength: 8)
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.vertical, 10)
+                        .frame(minHeight: 68)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("library.openSaved")
+                    .accessibilityHint("Switches to the Saved tab")
+                }
 
                 Section {
 
@@ -3479,7 +3512,7 @@ private struct PersonalListExamplesView: View {
 /// @section    Purpose
 ///     Reuse Board behavior while binding edits and archive actions to the collection
 ///
-private struct PersonalCollectionBoardView: View {
+struct PersonalCollectionBoardView: View {
 
     @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
     let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
@@ -3492,7 +3525,8 @@ private struct PersonalCollectionBoardView: View {
     /// @fcn        PersonalCollectionBoardView.body
     /// @brief      Adapt a personal collection to the shared Board surface
     /// @details    Supplies active/archive list bindings, collection bookmarks, and retained attachment
-    ///             references. Full boards allow list creation and archive; single-list collections do not
+    ///             references. Full boards allow list creation; single-list collections fill the
+    ///             Standard viewport while Overview retains the shared compact column width
     ///
     /// @return     (some View) collection-backed Board with database activity feedback
     /// @post       Successful archive dismisses after onArchive returns; failure reports an error
@@ -3506,6 +3540,7 @@ private struct PersonalCollectionBoardView: View {
             boardTitle: collection.title,
             boardSubtitle: collection.kind.rawValue,
             allowsAddingLists: collection.kind == .board,
+            fillsAvailableListWidth: collection.kind == .list,
             onClose: { dismiss() },
             onArchiveBoard: {
                 do {

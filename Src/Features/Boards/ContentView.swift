@@ -928,6 +928,8 @@ struct ContentView: View {
     @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
     /// Optional card identity to open after navigating to its containing list.
     @Binding private var boardTargetCardID: Int?
+    /// Explicit parent requests to return from Card Detail to this Board's root.
+    let boardRootRequest: Int
     @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
     /// Reports which list is nearest the center of the visible board.
     let onListViewed: (Int) -> Void
@@ -999,6 +1001,7 @@ struct ContentView: View {
     /// @param[in]  archivedLists            Binding to archived Board lists
     /// @param[in]  boardTargetListID        Pending active list ID to reveal
     /// @param[in]  boardTargetCardID        Pending card ID to open within the target list
+    /// @param[in]  boardRootRequest         Changing request value returns navigation to the Board root
     /// @param[in]  savedCardIDs             Binding to this Board's bookmarked card identities
     /// @param[in]  onListViewed             Callback reporting the nearest visible list
     /// @param[in]  boardTitle               Header title
@@ -1018,40 +1021,43 @@ struct ContentView: View {
     ///
     init(
         lists: Binding<[KanbanList]>,
-        archivedLists: Binding<[KanbanList]> = .constant([]),
-        boardTargetListID: Binding<Int?> = .constant(nil),
-        boardTargetCardID: Binding<Int?> = .constant(nil),
-        savedCardIDs: Binding<Set<Int>> = .constant([]),
+        archivedLists: Binding<[KanbanList]>  = .constant([]),
+        boardTargetListID: Binding<Int?>      = .constant(nil),
+        boardTargetCardID: Binding<Int?>      = .constant(nil),
+        boardRootRequest: Int                 = 0,
+        savedCardIDs: Binding<Set<Int>>       = .constant([]),
         onListViewed: @escaping (Int) -> Void = { _ in },
-        boardTitle: String = "Plenact",
-        boardSubtitle: String = "Work Week Board",
-        allowsAddingLists: Bool = true,
-        onClose: (() -> Void)? = nil,
-        onArchiveBoard: (() -> Void)? = nil,
-        onDeleteBoard: (() -> Void)? = nil,
-        deleteBoardTitle: String = "Delete Board",
+        boardTitle: String                    = "Plenact",
+        boardSubtitle: String                 = "Work Week Board",
+        allowsAddingLists: Bool               = true,
+        onClose: (() -> Void)?                = nil,
+        onArchiveBoard: (() -> Void)?         = nil,
+        onDeleteBoard: (() -> Void)?          = nil,
+        deleteBoardTitle: String              = "Delete Board",
+
         onCommitDeletion: (([KanbanList], Set<Int>) throws -> Void)? = nil,
         onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
-        retainedAttachmentLists: @escaping () -> [KanbanList] = {
 
-            PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
-        }
+        retainedAttachmentLists: @escaping () -> [KanbanList] = {
+                                                                    PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
+                                                                }
     ) {
-        _lists = lists
-        _archivedLists = archivedLists
-        _boardTargetListID = boardTargetListID
-        _boardTargetCardID = boardTargetCardID
-        _savedCardIDs = savedCardIDs
-        self.onListViewed = onListViewed
-        self.boardTitle = boardTitle
-        self.boardSubtitle = boardSubtitle
-        self.allowsAddingLists = allowsAddingLists
-        self.onClose = onClose
-        self.onArchiveBoard = onArchiveBoard
-        self.onDeleteBoard = onDeleteBoard
-        self.deleteBoardTitle = deleteBoardTitle
-        self.onCommitDeletion = onCommitDeletion
-        self.onListsChanged = onListsChanged
+        _lists                       = lists
+        _archivedLists               = archivedLists
+        _boardTargetListID           = boardTargetListID
+        _boardTargetCardID           = boardTargetCardID
+        self.boardRootRequest        = boardRootRequest
+        _savedCardIDs                = savedCardIDs
+        self.onListViewed            = onListViewed
+        self.boardTitle              = boardTitle
+        self.boardSubtitle           = boardSubtitle
+        self.allowsAddingLists       = allowsAddingLists
+        self.onClose                 = onClose
+        self.onArchiveBoard          = onArchiveBoard
+        self.onDeleteBoard           = onDeleteBoard
+        self.deleteBoardTitle        = deleteBoardTitle
+        self.onCommitDeletion        = onCommitDeletion
+        self.onListsChanged          = onListsChanged
         self.retainedAttachmentLists = retainedAttachmentLists
     }
 
@@ -2452,6 +2458,9 @@ struct ContentView: View {
             }
 
             .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: boardRootRequest) { _, _ in
+                navigationPath = NavigationPath()
+            }
             .navigationDestination(for: KanbanCard.self) { card in
                 CardDetailView(
                     card:           card,

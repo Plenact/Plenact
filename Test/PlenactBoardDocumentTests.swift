@@ -1175,6 +1175,104 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekRootRequestPopsCardDetailWithoutChangingContent()
+    /// @brief      Return from a hosted Card Detail to the Week Board without changing records
+    /// @details    Opens a synthetic card through canonical routing, then changes the explicit
+    ///             root request and checks the real navigation controller stack and retained data
+    ///
+    /// @return     (Void) records assertion failures for navigation or content regressions
+    ///
+    /// @throws     Fixture or navigation-controller unwrap failures and task cancellation
+    ///
+    @MainActor
+    func testWeekRootRequestPopsCardDetailWithoutChangingContent() async throws {
+
+        var lists            = SampleData.lists
+        let original         = lists
+        let card             = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider })
+        var targetList: Int? = lists[0].id
+        var targetCard: Int? = card.id
+        var saved: Set<Int>  = [card.id]
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testWeekRootRequestPopsCardDetailWithoutChangingContent.board(_:)
+        /// @brief      Construct the same Board identity with a new root request
+        /// @details    Reuses fixture bindings so hosting updates preserve navigation state
+        ///
+        /// @param[in]  request  Explicit Board-root request value
+        ///
+        /// @return     (ContentView) synthetic Board with canonical navigation bindings
+        ///
+        func board(_ request: Int) -> ContentView {
+
+            ContentView(
+                lists: Binding(get: { lists }, set: { lists = $0 }),
+                boardTargetListID: Binding(get: { targetList }, set: { targetList = $0 }),
+                boardTargetCardID: Binding(get: { targetCard }, set: { targetCard = $0 }),
+                boardRootRequest: request,
+                savedCardIDs: Binding(get: { saved }, set: { saved = $0 }),
+                onListsChanged: { _ in XCTFail("Returning to Week must not save or edit records") },
+                retainedAttachmentLists: { [] }
+            )
+        }
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testWeekRootRequestPopsCardDetailWithoutChangingContent.navigation(in:)
+        /// @brief      Locate the hosted Board's native navigation controller
+        /// @details    Recursively searches child controllers without altering their hierarchy
+        ///
+        /// @param[in]  controller  Root controller to inspect
+        ///
+        /// @return     (UINavigationController?) first navigation controller found
+        ///
+        func navigation(in controller: UIViewController) -> UINavigationController? {
+
+            if let navigation = controller as? UINavigationController {
+
+                return navigation
+            }
+
+            return controller.children.compactMap { navigation(in: $0) }.first
+        }
+
+        let controller = UIHostingController(rootView: board(0))
+        let scene      = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous   = scene.windows.first(where: \.isKeyWindow)
+        let window     = UIWindow(windowScene: scene)
+
+        defer {
+
+            window.isHidden           = true
+            window.rootViewController = nil
+
+            previous?.makeKey()
+        }
+
+        window.frame              = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = controller
+        
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+
+        try await Task.sleep(for: .milliseconds(600))
+
+        let stack = try XCTUnwrap(navigation(in: controller))
+
+        XCTAssertEqual(stack.viewControllers.count, 2, "The fixture must actually open Card Detail")
+
+        controller.rootView = board(1)
+
+        try await Task.sleep(for: .milliseconds(600))
+
+        XCTAssertEqual(stack.viewControllers.count, 1, "An explicit Week tap must pop Card Detail")
+        XCTAssertEqual(lists, original)
+        XCTAssertEqual(saved, [card.id])
+        XCTAssertNil(targetList)
+        XCTAssertNil(targetCard)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent()
     /// @brief      Retain the requested list and content through Board re-layout
     /// @details    Varies viewport/preset and compares active lists, archives, bookmarks, and

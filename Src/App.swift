@@ -61,10 +61,10 @@ struct Plenact: App {
 /// @note   Add cases only when the corresponding application view is implemented
 ///
 private enum AppDestination: Hashable {
-    case today       /* Today's planning entry point   */
-    case board       /* Complete kanban workspace      */
+    case today       /* Today's planning entry point             */
+    case board       /* Complete kanban workspace                */
     case lists       /* Library of Week and personal collections */
-    case saved       /* Device-local saved cards       */
+    case saved       /* Device-local saved cards                 */
 }
 
 
@@ -367,19 +367,20 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 private struct AppRootView: View {
 
-    @State private var lists: [KanbanList] = []                              /* Complete in-memory Week snapshot */
-    @State private var collections = PersonalCollectionStore.load()          /* Device-local personal collections */
-    @State private var hasLoadedBoard = false                         /* Whether the initial Week snapshot has loaded */
-    @State private var profile = LocalProfileStore.load()                     /* Optional local identity and settings                    */
-    @State private var selectedDestination: AppDestination = .today           /* Currently selected primary destination                  */
-    @State private var boardTargetListID: Int?                                /* List requested by a Today-to-Board navigation           */
-    @State private var boardTargetCardID: Int?                                /* Card requested by a Today-to-Board navigation           */
-    @State private var savedCardIDs = SavedCardPersistence.load()              /* Device-local saved cards                              */
-    @State private var quickCreateRequest = 0                                  /* Center-bar quick-create request                       */
-    @State private var showsCenterNewCardSheet = false                         /* Destination picker for New outside Today              */
-    @State private var isWeekListRequestArmed = false                         /* Whether New's long press will create a Week list       */
-    @State private var weekListShakeTrigger = 0                               /* Trigger for long-press confirmation animation         */
-    @Environment(\.verticalSizeClass) private var verticalSizeClass           /* Layout size class used to compact the landscape bar    */
+    @State private var lists: [KanbanList]                 = []                                 /* Complete in-memory Week snapshot                    */
+    @State private var collections                         = PersonalCollectionStore.load()     /* Device-local personal collections                   */
+    @State private var hasLoadedBoard                      = false                              /* Whether the initial Week snapshot has loaded        */
+    @State private var profile                             = LocalProfileStore.load()           /* Optional local identity and settings                */
+    @State private var selectedDestination: AppDestination = .today                             /* Currently selected primary destination              */
+    @State private var boardTargetListID: Int?                                                  /* List requested by a Today-to-Board navigation       */
+    @State private var boardTargetCardID: Int?                                                  /* Card requested by a Today-to-Board navigation       */
+    @State private var weekRootRequest         = 0                                              /* Explicit Week toolbar taps return to the Board root */
+    @State private var savedCardIDs            = SavedCardPersistence.load()                    /* Device-local saved cards                            */
+    @State private var quickCreateRequest      = 0                                              /* Center-bar quick-create request                     */
+    @State private var showsCenterNewCardSheet = false                                          /* Destination picker for New outside Today            */
+    @State private var isWeekListRequestArmed  = false                                          /* Whether New's long press will create a Week list    */
+    @State private var weekListShakeTrigger    = 0                                              /* Trigger for long-press confirmation animation       */
+    @Environment(\.verticalSizeClass) private var verticalSizeClass                             /* Layout size class used to compact the landscape bar */
 
 
     ///
@@ -391,7 +392,8 @@ private struct AppRootView: View {
     /// @return     (some View) loading surface or configured app navigation
     /// @post       The task assigns the loaded snapshot and marks initial loading complete
     ///
-    var body: some View { /* Primary Today and Board navigation shell */
+    var body: some View {           /* Primary Today and Board navigation shell */
+
         Group {
             if hasLoadedBoard {
 
@@ -421,10 +423,12 @@ private struct AppRootView: View {
     ///             bookmarks, and navigation targets; saves complete snapshots when state changes
     ///
     /// @return     (some View) tab shell, custom navigation bar, and new-card sheet
+    /// 
     /// @pre        Initial Week loading has completed
     /// @post       User edits flow through shared bindings; collection-save errors reach the activity banner
     ///
     private var navigationContent: some View {
+
         TabView(selection: $selectedDestination) {
 
             TodayHomeView(
@@ -460,17 +464,18 @@ private struct AppRootView: View {
             .toolbar(.hidden, for: .tabBar)
 
             ContentView(
-                lists: $lists.activeLists,
-                archivedLists: $lists.archivedLists,
+                lists:             $lists.activeLists,
+                archivedLists:     $lists.archivedLists,
                 boardTargetListID: $boardTargetListID,
                 boardTargetCardID: $boardTargetCardID,
-                savedCardIDs: $savedCardIDs,
-                onListViewed: rememberLastViewedList,
-                onArchiveBoard: archiveWeekBoard,
-                onDeleteBoard: deleteWeekContents,
-                deleteBoardTitle: "Delete Week contents",
-                onCommitDeletion: commitWeekDeletion,
-                onListsChanged: { _ in }
+                boardRootRequest:  weekRootRequest,
+                savedCardIDs:      $savedCardIDs,
+                onListViewed:      rememberLastViewedList,
+                onArchiveBoard:    archiveWeekBoard,
+                onDeleteBoard:     deleteWeekContents,
+                deleteBoardTitle:  "Delete Week contents",
+                onCommitDeletion:  commitWeekDeletion,
+                onListsChanged:    { _ in }
             )
                 .tabItem {
                     Label("Board", systemImage: "rectangle.3.group")
@@ -676,13 +681,21 @@ private struct AppRootView: View {
     ///
     /// @return     (some View) configured destination button
     ///
-    /// @post       Tapping sets selectedDestination without changing Board content
+    /// @post       Tapping selects the destination; Week also returns its stack to the Board root
+    ///             without changing card content or the current list position
     ///
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
         let isSelected = selectedDestination == destination /* Current tab selection */
 
         return Button {
+
+            if destination == .board {
+
+                boardTargetListID = nil
+                boardTargetCardID = nil
+                weekRootRequest += 1
+            }
 
             selectedDestination = destination
 

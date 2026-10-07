@@ -122,6 +122,8 @@ The Week workspace/tab is permanent. **Delete Week contents** clears its active 
 
 Library contains only personal lists and Boards, including separately restored Week archives. The current Week Board is accessed through the dedicated Week tab, not a duplicate Library section. Library search matches personal collections only. Week records still protect shared attachment references when editing personal collections; hiding Week from Library never removes or migrates its data.
 
+Tapping the lower toolbar's **Week** destination returns to the Week Board root even when Card Detail is already open in that tab. It preserves the current list position and canonical card edits; ordinary card/list navigation requests continue to open their specific destinations.
+
 Production deletion persists the complete remaining snapshot before publishing removal. A failed checked save reports an error and retains the canonical content. Card detail keeps the editor/drafts open if deletion fails; successful deletion suppresses delayed editor synchronization and photo imports so stale details cannot recreate content. Archive inspectors are read-only and do not synchronize stale card snapshots.
 
 Media cleanup considers only filenames referenced by the removed content, and runs after a successful save. Current and persisted Week/collections, nested archives, and Load Example undo references protect shared files. Unrelated files are not scanned or removed. Unreadable retained snapshots block cleanup and produce a notice; file removal errors are reported. This is reference-aware local cleanup, not secure erasure, a complete orphan sweep, or a backup/recovery system.

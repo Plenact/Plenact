@@ -560,8 +560,10 @@ private struct AppRootView: View {
     /// @fcn        AppRootView.bottomNavigationBar
     /// @brief      Build the custom destination bar and central New control
     /// @details    Honors navigation-label preferences and remains anchored at the screen bottom
-    ///             while the keyboard overlays it; New requests a Today composer or a destination
-    ///             picker, while a long press arms Week-list creation and shake feedback
+    ///             while the keyboard overlays it. The decorative background extends through the
+    ///             bottom safe area independently of the fixed-height controls.
+    ///             New requests a Today composer or a destination picker, while a long press arms
+    ///             Week-list creation and shake feedback
     ///
     /// @return     (some View) paper-backed navigation controls
     /// @post       Button and gesture callbacks update navigation and creation-request state
@@ -659,8 +661,6 @@ private struct AppRootView: View {
                 }
             }
 
-            .frame(height: isCompact ? 52 : 85)
-            .frame(maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
             .allowsHitTesting(false)
         }

@@ -23,6 +23,8 @@ No pinch gesture or continuous zoom slider is implemented. These presets adjust 
 
 ## Layout contract
 
+The lower navigation bar keeps its controls within their fixed-height layout while its paper/tint background extends to the screen edge through the bottom safe area. Check the home-indicator region in portrait and both landscape directions; keyboard presentation must retain the existing bottom-anchored toolbar behavior.
+
 | Behavior | Standard | Overview |
 | --- | --- | --- |
 | List width at ordinary text sizes | Up to 360 points | Up to 240 points |

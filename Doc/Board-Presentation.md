@@ -23,7 +23,7 @@ No pinch gesture or continuous zoom slider is implemented. These presets adjust 
 
 ## Layout contract
 
-The lower navigation bar keeps its controls within their fixed-height layout while its paper/tint background extends to the screen edge through the bottom safe area. Check the home-indicator region in portrait and both landscape directions; keyboard presentation must retain the existing bottom-anchored toolbar behavior.
+The lower navigation bar keeps its existing control positions and fixed-height layout while its paper/tint background extends to the screen edge through the bottom safe area. In portrait, only the background's top edge is inset 20 points: the New circle retains its 14-point offset and overlaps that edge by 6 points. Compact-height landscape keeps the full-height background. Check the overlap and home-indicator region in portrait and both landscape directions; keyboard presentation must retain the existing bottom-anchored toolbar behavior.
 
 | Behavior | Standard | Overview |
 | --- | --- | --- |

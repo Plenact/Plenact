@@ -590,7 +590,8 @@ private struct AppRootView: View {
     /// @brief      Build the custom destination bar and central New control
     /// @details    Honors navigation-label preferences and remains anchored at the screen bottom
     ///             while the keyboard overlays it. The decorative background extends through the
-    ///             bottom safe area independently of the fixed-height controls.
+    ///             bottom safe area independently of the fixed-height controls. In portrait,
+    ///             its top edge is inset 20 points so New overlaps it without moving any controls.
     ///             New requests a Today composer or a destination picker, while a long press arms
     ///             Week-list creation and shake feedback
     ///
@@ -690,6 +691,7 @@ private struct AppRootView: View {
                 }
             }
 
+            .padding(.top, isCompact ? 0 : 20)
             .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
             .allowsHitTesting(false)
         }

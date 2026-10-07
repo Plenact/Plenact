@@ -1119,7 +1119,7 @@ struct ContentView: View {
     ///
     private func requestBoundaryJump(_ boundary: BoardListReordering.BoardListBoundary) {
 
-        boardBoundaryJumpTarget.  = boundary
+        boardBoundaryJumpTarget   = boundary
         boardBoundaryJumpRequest += 1
     }
 

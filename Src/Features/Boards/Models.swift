@@ -1399,6 +1399,58 @@ enum BoardCardMovement {
 enum BoardListReordering {
 
     ///
+    /// @fcn        BoardListReordering.boundaryListID(_:in:)
+    /// @brief      Resolve the first or last active list identity
+    /// @details    Uses the current ordered list snapshot without changing list or card content
+    ///
+    /// @param[in]  boundary  Board edge to navigate to
+    /// @param[in]  lists     Current active lists in display order
+    ///
+    /// @return     (Int?) boundary list identity, or nil when the Board has no active lists
+    ///
+    static func boundaryListID(_ boundary: BoardListBoundary, in lists: [KanbanList]) -> Int? {
+
+        switch boundary {
+
+            case .first:
+                return lists.first?.id
+
+            case .last:
+                return lists.last?.id
+        }
+    }
+
+
+    ///
+    /// @fcn        BoardListReordering.boundary(forHorizontalSwipe:minimumDistance:)
+    /// @brief      Resolve a deliberate horizontal title-area swipe to a Board edge
+    /// @details    Rejects nonfinite, short, or predominantly vertical gestures. A leftward
+    ///             swipe selects the last list; a rightward swipe selects the first,
+    ///             matching the content movement of ordinary horizontal scrolling.
+    ///
+    /// @param[in]  translation      Completed drag translation in points
+    /// @param[in]  minimumDistance  Minimum horizontal travel required to trigger a jump
+    ///
+    /// @return     (BoardListBoundary?) requested edge, or nil when the gesture is not a swipe
+    ///
+    static func boundary(
+        forHorizontalSwipe translation: CGSize,
+        minimumDistance: CGFloat = 48
+    ) -> BoardListBoundary? {
+
+        guard translation.width.isFinite, translation.height.isFinite,
+              minimumDistance.isFinite, minimumDistance > 0,
+              abs(translation.width) >= minimumDistance,
+              abs(translation.width) > abs(translation.height) * 1.4 else {
+
+            return nil
+        }
+
+        return translation.width < 0 ? .last : .first
+    }
+
+
+    ///
     /// @fcn        BoardListReordering.move(_:to:in:)
     /// @brief      Move a list to a destination index
     /// @details    Removes the identified list and inserts it at the requested position
@@ -1425,6 +1477,13 @@ enum BoardListReordering {
         lists.insert(list, at: destination)
 
         return true
+    }
+
+
+    /// Identifies a horizontal Board edge for direct list navigation.
+    enum BoardListBoundary {
+        case first
+        case last
     }
 
 

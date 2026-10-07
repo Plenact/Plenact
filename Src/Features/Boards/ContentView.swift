@@ -962,6 +962,8 @@ struct ContentView: View {
     @State private var showsArchivedLists = false
     /// Navigation stack path for card-detail destinations.
     @State private var navigationPath = NavigationPath()
+    @State private var boardBoundaryJumpRequest = 0
+    @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary?
     /// Last visible list identity sent through `onListViewed`.
     @State private var lastReportedVisibleListID: Int?
     /// Currently centered list identity.
@@ -1102,6 +1104,23 @@ struct ContentView: View {
 
         boardTargetListID = nil
         boardTargetCardID = nil
+    }
+
+
+    ///
+    /// @fcn        ContentView.requestBoundaryJump(_:)
+    /// @brief      Request an animated jump to one end of the active Board
+    /// @details    Stores the requested edge and increments a revision so repeated taps to the
+    ///             same edge trigger a fresh scroll request
+    ///
+    /// @param[in]  boundary  First or last active list to reveal
+    ///
+    /// @return     (Void) schedules a Board viewport scroll without changing list order
+    ///
+    private func requestBoundaryJump(_ boundary: BoardListReordering.BoardListBoundary) {
+
+        boardBoundaryJumpTarget.  = boundary
+        boardBoundaryJumpRequest += 1
     }
 
 
@@ -2152,23 +2171,25 @@ struct ContentView: View {
                     VStack(spacing: 0) {
 
                         BoardHeader(
-                            settings:         $displaySettings,
-                            presentation:     $presentation,
-                            activeMembers:    activeMembers,
-                            memberColors:     memberColors,
-                            onRenameMember:   renameMember,
-                            onDeleteMember:   removeMember,
-                            onSetMemberColor: setMemberColor,
-                            onOpenCalendar:   { showsCalendar = true },
-                            title: boardTitle,
-                            subtitle: boardSubtitle,
-                            allowsAddingLists: allowsAddingLists || lists.isEmpty,
-                            onClose: onClose,
+                            settings:            $displaySettings,
+                            presentation:        $presentation,
+                            activeMembers:       activeMembers,
+                            memberColors:        memberColors,
+                            onRenameMember:      renameMember,
+                            onDeleteMember:      removeMember,
+                            onSetMemberColor:    setMemberColor,
+                            onOpenCalendar:      { showsCalendar = true },
+                            title:               boardTitle,
+                            subtitle:            boardSubtitle,
+                            allowsAddingLists:   allowsAddingLists || lists.isEmpty,
+                            onClose:             onClose,
                             onViewArchivedLists: { showsArchivedLists = true },
-                            onArchiveBoard: onArchiveBoard,
-                            onDeleteBoard: onDeleteBoard,
-                            deleteBoardTitle: deleteBoardTitle,
-                            onAddList:        addList
+                            onArchiveBoard:      onArchiveBoard,
+                            onDeleteBoard:       onDeleteBoard,
+                            deleteBoardTitle:    deleteBoardTitle,
+                            onJumpToFirstList:   lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
+                            onJumpToLastList:    lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
+                            onAddList:           addList
                         )
 
                         GeometryReader { listArea in
@@ -2353,6 +2374,21 @@ struct ContentView: View {
                                     openPendingBoardTarget(using: listProxy)
                                 }
                             }
+
+                            .onChange(of: boardBoundaryJumpRequest) { _, _ in
+
+                                guard let target = boardBoundaryJumpTarget,
+                                      let listID = BoardListReordering.boundaryListID(target, in: lists) else {
+
+                                    return
+                                }
+
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    listProxy.scrollTo(listID, anchor: .leading)
+                                    visibleListID = listID
+                                }
+                            }
+
                             .onAppear {
                                 if visibleListID == nil {
 
@@ -2560,6 +2596,10 @@ struct BoardHeader: View {
     let onArchiveBoard: (() -> Void)?
     let onDeleteBoard: (() -> Void)? /* Confirmed parent-owned Board removal */
     let deleteBoardTitle: String /* Week content clearing or personal Board deletion label */
+    /// Navigates to the first active list when more than one list exists.
+    let onJumpToFirstList: (() -> Void)?
+    /// Navigates to the last active list when more than one list exists.
+    let onJumpToLastList: (() -> Void)?
 
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
@@ -2567,6 +2607,51 @@ struct BoardHeader: View {
     /// Controls confirmation before archiving the complete board.
     @State private var confirmsArchiveBoard = false
     @State private var confirmsDeleteBoard = false /* Permanent Board deletion confirmation */
+
+
+    ///
+    /// @fcn        BoardHeader.titleSwipeArea
+    /// @brief      Fill the available header space with the Board identity and swipe target
+    /// @details    Includes empty space beside short titles without covering adjacent controls.
+    ///             Deliberate horizontal swipes invoke the same actions as Board options
+    ///
+    /// @return     (some View) leading-aligned title region with a minimum 44-point touch height
+    ///
+    var titleSwipeArea: some View {
+
+        VStack(alignment: .leading, spacing: 2) {
+
+            Text(title)
+                .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .contentShape(Rectangle())
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                
+                    guard let boundary = BoardListReordering.boundary(forHorizontalSwipe: value.translation),
+                          let action = boundary == .first ? onJumpToFirstList : onJumpToLastList else {
+
+                        return
+                    }
+
+                    action()
+                }
+        )
+        .accessibilityHint(
+            onJumpToFirstList == nil
+                ? ""
+                : "Swipe left to jump to the last list, or right to the first list. Board options also has these actions."
+        )
+    }
 
 
     ///
@@ -2594,20 +2679,7 @@ struct BoardHeader: View {
                 .accessibilityLabel("Back to Library")
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-
-                Text(title)
-                    .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-
-            Spacer()
+            titleSwipeArea
 
             Button(action: onOpenCalendar) {
                 Image(systemName: "calendar")
@@ -2640,6 +2712,16 @@ struct BoardHeader: View {
                     ForEach(BoardPresentation.allCases) { option in
                         Text(option.title).tag(option)
                     }
+                }
+
+                if let onJumpToFirstList {
+
+                    Button("Jump to First List", systemImage: "arrow.left.to.line", action: onJumpToFirstList)
+                }
+
+                if let onJumpToLastList {
+
+                    Button("Jump to Last List", systemImage: "arrow.right.to.line", action: onJumpToLastList)
                 }
 
                 Button("Board Settings", systemImage: "gearshape") { showingSettings = true }

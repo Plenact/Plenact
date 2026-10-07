@@ -1507,6 +1507,98 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardBoundaryNavigationTargetsFirstAndLastActiveLists()
+    /// @brief      Resolve direct Board jumps using the current ordered list snapshot
+    /// @details    Checks first/last identity, a single-list Board, an empty Board, and unchanged
+    ///             list/card records
+    ///
+    /// @return     (Void) records assertion failures for incorrect edge targets or mutations
+    ///
+    func testBoardBoundaryNavigationTargetsFirstAndLastActiveLists() {
+
+        let lists = SampleData.lists
+        let original = lists
+
+        XCTAssertEqual(BoardListReordering.boundaryListID(.first, in: lists), lists.first?.id)
+        XCTAssertEqual(BoardListReordering.boundaryListID(.last, in: lists), lists.last?.id)
+        XCTAssertEqual(BoardListReordering.boundaryListID(.first, in: Array(lists.prefix(1))), lists.first?.id)
+        XCTAssertEqual(BoardListReordering.boundaryListID(.last, in: Array(lists.prefix(1))), lists.first?.id)
+        XCTAssertNil(BoardListReordering.boundaryListID(.first, in: []))
+        XCTAssertNil(BoardListReordering.boundaryListID(.last, in: []))
+        XCTAssertEqual(lists, original)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardHeaderSwipeAreaFillsAvailableWidth()
+    /// @brief      Keep short Board titles from shrinking the header swipe target
+    /// @details    Measures the actual header title region at several available widths, with
+    ///             and without a Library back action, and checks its minimum touch height
+    ///
+    /// @return     (Void) records assertion failures for a narrow swipe target
+    ///
+    @MainActor
+    func testBoardHeaderSwipeAreaFillsAvailableWidth() {
+
+        for hasBackAction in [false, true] {
+
+            let header = BoardHeader(
+                settings:           .constant(BoardDisplaySettings()),
+                presentation:       .constant(.standard),
+                activeMembers:      [],
+                memberColors:       [:],
+                onRenameMember:      { _, _ in },
+                onDeleteMember:      { _ in },
+                onSetMemberColor:    { _, _ in },
+                onOpenCalendar:      {},
+                title:               "Week",
+                subtitle:            "Plan",
+                allowsAddingLists:   true,
+                onClose:             hasBackAction ? {} : nil,
+                onViewArchivedLists: {},
+                onArchiveBoard:      nil,
+                onDeleteBoard:       nil,
+                deleteBoardTitle:    "Delete Board",
+                onJumpToFirstList:   { XCTFail("Layout must not navigate") },
+                onJumpToLastList:    { XCTFail("Layout must not navigate") },
+                onAddList:           {}
+            )
+            let controller = UIHostingController(rootView: header.titleSwipeArea)
+
+            for width in [CGFloat(180), 280, 600] {
+
+                let size = controller.sizeThatFits(in: CGSize(width: width, height: 200))
+
+                XCTAssertEqual(size.width, width, accuracy: 0.5, "Blank header space must belong to the swipe area")
+                XCTAssertGreaterThanOrEqual(size.height, 44)
+            }
+        }
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardHeaderSwipeMapsDeliberateHorizontalGesturesToBoundaries()
+    /// @brief      Recognize intentional horizontal header swipes without capturing vertical movement
+    /// @details    Checks left/right direction, minimum travel, vertical-dominant drags, and
+    ///             nonfinite gesture values
+    ///
+    /// @return     (Void) records assertion failures for swipe classification
+    ///
+    func testBoardHeaderSwipeMapsDeliberateHorizontalGesturesToBoundaries() {
+
+        XCTAssertEqual(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: -60, height: 8)), .last)
+        XCTAssertEqual(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: 60, height: -8)), .first)
+        XCTAssertNil(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: -47, height: 0)))
+        XCTAssertNil(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: 70, height: 55)))
+        XCTAssertNil(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: CGFloat.infinity, height: 0)))
+        XCTAssertNil(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: 70, height: CGFloat.nan)))
+        XCTAssertNil(BoardListReordering.boundary(
+            forHorizontalSwipe: CGSize(width: 100, height: 0), minimumDistance: CGFloat.infinity
+        ))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testListReorderingMovesRestoredMondayToFirstWithoutChangingContent()
     /// @brief      Move an existing list without replacing its records
     /// @details    Checks moves to both ends and JSON round-trip equality of the resulting order

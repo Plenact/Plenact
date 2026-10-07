@@ -16,6 +16,10 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 - Calendar Idea
 
+### Upcoming
+
+- Unsplash cover images & Backgrounds & Custom Backgrounds
+
 ### Carryover
 
 - aNote note / Trello card view sharing, overlap and use considerations for data organization and presentation in Plenact

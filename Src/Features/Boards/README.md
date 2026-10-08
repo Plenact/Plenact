@@ -47,6 +47,8 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 **List Actions → Add card** closes the actions sheet before presenting the new-card form for that same list. The form's Add action creates the card; Cancel leaves the list unchanged. The direct **+ Add card** row uses the same form.
 
+Today's Quick capture square-plus opens an offline Card/Note template gallery. Its six optional starting points and Blank Card/Note choices create only editor drafts until Add is tapped. Card actions are editable; Notes contain writing prompts without action checklists. Template presentation applies to the new record regardless of the destination List's default, without changing that default or any existing records. New records and checklist actions receive fresh identities; no dates, assignments, attachments, or network calls are supplied by templates.
+
 ## Optional Card Covers
 
 Open the card or Note's upper **actions (ellipsis) → Card Cover** settings:

@@ -52,6 +52,7 @@ struct Plenact: App {
             AppRootView()
         }
     }
+
 }
 
 
@@ -134,8 +135,7 @@ enum TodayListSelection {
     ///
     static func currentDayList(in lists: [KanbanList], date: Date, calendar: Calendar = .current) -> KanbanList? {
 
-        let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] /* Calendar-indexed day names */
-        let title    = weekdays[calendar.component(.weekday, from: date) - 1] /* List title matching the requested day */
+        let title = weekdayTitle(for: date, calendar: calendar) /* List title matching the requested day */
         
         let matches  = lists.filter { /* Active lists matching the weekday */
 
@@ -149,41 +149,53 @@ enum TodayListSelection {
 
 
     ///
-    /// @fcn        TodayListSelection.initialListID(savedListID:profileDefaultListID:lists:)
-    /// @brief      Resolve the initial Today list from available choices
-    /// @details    Prefers a valid date-specific selection, then a valid profile default, then a
-    ///             case-insensitive Monday title, and finally the first supplied list
+    /// @fcn        TodayListSelection.ensureCurrentDayList(in:date:calendar:)
+    /// @brief      Find today's active Week list or append a new blank weekday list
+    /// @details    Preserves every supplied active and archived list, reserving a fresh ID across
+    ///             both partitions when the real-world weekday has no active matching title
     ///
-    /// @param[in]  savedListID           Previously chosen date-specific list ID
-    /// @param[in]  profileDefaultListID  Profile preference used when the saved choice is absent
-    /// @param[in]  lists                 Available lists in display order
+    /// @param[in]  lists     Active and archived Week lists
+    /// @param[in]  date      Date whose local weekday is required
+    /// @param[in]  calendar  Calendar and time zone used to determine the weekday
     ///
-    /// @return     (Int?) resolved ID, or nil when no lists are available
+    /// @return     Updated complete list snapshot and the active weekday list
     ///
-    /// @post       No preferences or Board content are read from storage or modified
+    /// @post       Existing list and card records remain unchanged
     ///
-    static func initialListID(
-        savedListID: Int?,
-        profileDefaultListID: Int?,
-        lists: [KanbanList]
-    ) -> Int? {
+    static func ensureCurrentDayList(
+        lists: [KanbanList],
+        date: Date = .now,
+        calendar: Calendar = .current
+    ) -> (lists: [KanbanList], dayList: KanbanList) {
 
-        if let savedListID, lists.contains(where: { /* Previously selected list identity */
+        let title = weekdayTitle(for: date, calendar: calendar) /* Required weekday list title */
 
-            $0.id == savedListID
+        if let existing = lists.first(where: {
+            !$0.isArchived && $0.title.trimmingCharacters(in: .whitespacesAndNewlines).caseInsensitiveCompare(title) == .orderedSame
         }) {
-            return savedListID
+
+            return (lists, existing)
         }
 
-        if let profileDefaultListID, lists.contains(where: { /* Preferred initial list identity */
+        let nextID = (lists.map(\.id).max() ?? -1) + 1 /* Fresh ID reserved across active and archived lists */
+        let dayList = KanbanList(id: nextID, title: title, cards: []) /* New empty list for the actual weekday */
 
-            $0.id == profileDefaultListID
-        }) {
-            return profileDefaultListID
-        }
+        return (lists + [dayList], dayList)
+    }
 
-        return lists.first(where: { $0.title.caseInsensitiveCompare("Monday") == .orderedSame })?.id
-            ?? lists.first?.id
+
+    ///
+    /// @fcn        TodayListSelection.weekdayTitle(for:calendar:)
+    /// @brief      Resolve the canonical weekday title for a local calendar date
+    /// @details    Uses Calendar's weekday component so local time zone and midnight determine the day
+    /// @param[in]  date      Date whose weekday title is needed
+    /// @param[in]  calendar  Calendar and time zone used to determine the weekday
+    /// @return     (String) canonical weekday list title
+    ///
+    private static func weekdayTitle(for date: Date, calendar: Calendar) -> String {
+
+        let weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] /* Calendar-indexed weekday names */
+        return weekdays[calendar.component(.weekday, from: date) - 1]
     }
 }
 
@@ -1313,7 +1325,7 @@ private struct TodayHomeView: View {
     ///
     private var selectedTodayList: KanbanList? {                                                /* Board list selected for the current date */
 
-        let resolvedListID = selectedTodayListID ?? profile?.preferences.defaultListID          /* Effective list ID */
+        let resolvedListID = selectedTodayListID                                                /* Calendar-derived or explicitly chosen Today list */
 
         guard let resolvedListID else { /* Available Week destination for new content */
 
@@ -1556,40 +1568,7 @@ private struct TodayHomeView: View {
         self.onDeleteList = onDeleteList
         self.quickCreateRequest = quickCreateRequest
 
-        let storageKey = Self.todayListStorageKey(for: .now) /* Date-specific Today selection preference key */
-        let savedListID = UserDefaults.standard.object(forKey: storageKey) as? Int /* Persisted date-specific selection */
-        let profileDefaultListID = profile?.preferences.defaultListID /* Profile's preferred Today list */
-        let initialListID = TodayListSelection.initialListID( /* Resolved starting list for Today */
-            savedListID:          savedListID,
-            profileDefaultListID: profileDefaultListID,
-            lists:                lists.wrappedValue
-        )
-        _selectedTodayListID = State(initialValue: initialListID)
-
-        if savedListID == nil, profileDefaultListID == nil, let initialListID { /* Resolved default selection to remember */
-
-            UserDefaults.standard.set(initialListID, forKey: storageKey)
-        }
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.todayListStorageKey(for:)
-    /// @brief      Create the local preference key for a calendar date
-    /// @details    Uses the user's current calendar to scope the selected list to one day
-    ///
-    /// @param[in]  date  Calendar date whose Today selection is being stored
-    ///
-    /// @return     (String) date-specific UserDefaults key
-    ///
-    /// @pre        date is a valid Foundation date value
-    /// @post       No persistent data is read or modified
-    ///
-    private static func todayListStorageKey(for date: Date) -> String {
-
-        let components = Calendar.current.dateComponents([.year, .month, .day], from: date) /* Local calendar date components */
-
-        return "Plenact.Today.List.\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
+        _selectedTodayListID = State(initialValue: TodayListSelection.currentDayList(in: lists.wrappedValue, date: .now)?.id)
     }
 
 
@@ -1857,8 +1836,6 @@ private struct TodayHomeView: View {
 
         selectedTodayListID = list.id
 
-        UserDefaults.standard.set(list.id, forKey: Self.todayListStorageKey(for: .now))
-
         let shouldPresentComposer = presentComposerAfterListChoice /* Deferred New-button action */
 
         presentComposerAfterListChoice = false
@@ -1871,6 +1848,36 @@ private struct TodayHomeView: View {
                 presentQuickNoteEditor()
             }
         }
+    }
+
+
+    ///
+    /// @fcn        TodayHomeView.ensureCurrentWeekdayList()
+    /// @brief      Ensure Quick capture targets an active list for the real local weekday
+    /// @details    Recreates a missing or renamed weekday list as a new blank list, retaining all
+    ///             existing active and archived records and reserving IDs across both partitions
+    ///
+    /// @return     (Void) updates Today selection and the shared Week snapshots when necessary
+    ///
+    /// @post       No existing list or card is replaced or removed
+    ///
+    private func ensureCurrentWeekdayList() {
+
+        let result = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
+        let activeLists = result.lists.filter { !$0.isArchived } /* Updated active Week lists */
+        let retainedLists = result.lists.filter(\.isArchived) /* Preserved archived Week lists */
+
+        if activeLists != lists {
+
+            lists = activeLists
+        }
+
+        if retainedLists != archivedLists {
+
+            archivedLists = retainedLists
+        }
+
+        selectedTodayListID = result.dayList.id
     }
 
 
@@ -1925,6 +1932,9 @@ private struct TodayHomeView: View {
                                 showsTodayList = focus != nil
                             }
                         )
+                        .onChange(of: Calendar.current.startOfDay(for: context.date)) { _, _ in
+                            ensureCurrentWeekdayList()
+                        }
                     }
 
                     yourLabelsSection
@@ -1992,13 +2002,7 @@ private struct TodayHomeView: View {
                         }
                         archivedLists = snapshot.lists.filter(\.isArchived)
                         lists = snapshot.lists.filter { !$0.isArchived }
-                        if let todayListID = snapshot.todayListID, /* Previous Today selection identity */
-                           let todayList = snapshot.lists.first(where: { $0.id == todayListID && !$0.isArchived }) { /* Restored active Today list */
-                            selectTodayList(todayList)
-                        } else {
-                            selectedTodayListID = nil
-                            UserDefaults.standard.removeObject(forKey: Self.todayListStorageKey(for: .now))
-                        }
+                        ensureCurrentWeekdayList()
                         ExampleLoadUndoStore.clear()
                         return true
                     }
@@ -2040,7 +2044,7 @@ private struct TodayHomeView: View {
 
                     QuickNoteComposer(
                         lists:         $lists,
-                        initialListID: LastViewedListStore.resolve(in: lists, fallback: selectedTodayList.id),
+                        initialListID: selectedTodayList.id,
                         initialTitle:  quickComposerInitialTitle
                     ) { listID, title, description in
                         onAddCard(listID, title, description)
@@ -2069,6 +2073,7 @@ private struct TodayHomeView: View {
             }
             .onAppear {
                 labelLibrary = LabelLibraryStore.load()
+                ensureCurrentWeekdayList()
 
                 if !usedLabelCategories.contains(where: {
 
@@ -2082,6 +2087,10 @@ private struct TodayHomeView: View {
 
             .onChange(of: quickCreateRequest) { _, _ in
                 openQuickNoteEditor()
+            }
+
+            .onChange(of: lists) { _, _ in
+                ensureCurrentWeekdayList()
             }
 
             .onChange(of: labelLibrary) { _, updatedLibrary in
@@ -2173,7 +2182,7 @@ private struct TodayHomeView: View {
             Text("Quick capture")
                 .font(.title2.weight(.semibold))
 
-            HStack(spacing: -4) {
+            HStack(spacing: 8) {
 
                 Image(systemName: "plus.square")
                     .foregroundStyle(.secondary)
@@ -2183,27 +2192,32 @@ private struct TodayHomeView: View {
                     .onSubmit(addQuickCard)
                     .accessibilityLabel("Quick capture card title")
 
-                Button(action: addQuickCard) {
+                HStack(spacing: 0) {
 
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .frame(width: 12, height: 44)
-                        .contentShape(Rectangle())
+                    Button(action: addQuickCard) {
+
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel("Add card to today's list")
+
+                    Button(action: openQuickNoteEditor) {
+
+                        Image(systemName: "arrow.up.right")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open full card editor")
                 }
-
-                .buttonStyle(.plain)
-                .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel("Add card to today's list")
-
-                Button(action: openQuickNoteEditor) {
-
-                    Image(systemName: "arrow.up.right")
-                        .frame(width: 36, height: 44, alignment: .trailing)
-                        .contentShape(Rectangle())
-                }
-
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open full card editor")
             }
 
             .padding(.horizontal, 12)

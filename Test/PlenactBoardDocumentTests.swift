@@ -4312,23 +4312,42 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testTodayDefaultsToMondayAfterSavedAndProfileChoices()
-    /// @brief      Verify initial Today selection priority
-    /// @details    Checks valid saved/profile choices before the named-Monday fallback
+    /// @fcn        PlenactBoardDocumentTests.testQuickCaptureCreatesMissingCurrentWeekdayList()
+    /// @brief      Recreate a missing weekday list without replacing retained Week work
+    /// @details    Reserves IDs across active and archived lists and returns an existing
+    ///             current-weekday list unchanged when it is already available
     ///
     /// @return     (Void) records assertion failures for the behavior described above
     ///
-    func testTodayDefaultsToMondayAfterSavedAndProfileChoices() {
+    func testQuickCaptureCreatesMissingCurrentWeekdayList() throws {
 
-        let lists = [ /* Board lists under verification */
-            KanbanList(id: 3, title: "Tuesday", cards: []),
-            KanbanList(id: 7, title: "Monday",  cards: [])
-        ]
+        let renamed = KanbanList(id: 7, title: "Renamed Thursday", cards: [
+            KanbanCard(id: 14, word: "Keep this card", listTitle: "Renamed Thursday", checklists: [])
+        ]) /* Previously renamed weekday list retained without modification */
+        var archivedThursday = KanbanList(id: 20, title: "Thursday", cards: []) /* Archived weekday list reserves its old ID */
+        archivedThursday.isArchived = true
+        let lists = [renamed, archivedThursday] /* Complete Week fixture */
+        var calendar = Calendar(identifier: .gregorian) /* Fixed calendar for deterministic weekday selection */
 
-        XCTAssertEqual(TodayListSelection.initialListID(savedListID: nil, profileDefaultListID: nil, lists: lists), 7)
-        XCTAssertEqual(TodayListSelection.initialListID(savedListID: nil, profileDefaultListID: 3,   lists: lists),   3)
-        XCTAssertEqual(TodayListSelection.initialListID(savedListID: 7,   profileDefaultListID: 3,   lists: lists),     7)
-        XCTAssertEqual(TodayListSelection.initialListID(savedListID: 99,  profileDefaultListID: nil, lists: lists),  7)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+
+        let thursday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 8))) /* Thursday selection date */
+        let result = TodayListSelection.ensureCurrentDayList(lists: lists, date: thursday, calendar: calendar) /* Recreated active weekday destination */
+
+        XCTAssertEqual(result.dayList.id, 21)
+        XCTAssertEqual(result.dayList.title, "Thursday")
+        XCTAssertTrue(result.dayList.cards.isEmpty)
+        XCTAssertEqual(result.lists, lists + [result.dayList])
+        XCTAssertEqual(result.lists.first(where: { $0.id == renamed.id })?.cards.first?.word, "Keep this card")
+
+        let existingResult = TodayListSelection.ensureCurrentDayList(
+            lists: result.lists,
+            date: thursday,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(existingResult.dayList.id, result.dayList.id)
+        XCTAssertEqual(existingResult.lists, result.lists)
     }
 
 

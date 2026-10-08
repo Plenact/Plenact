@@ -107,6 +107,7 @@ struct CardDetailView: View {
         case labels                                 /* Card label library and assignment picker            */
         case attachmentSources                      /* Attachment source chooser                           */
         case noteAttachments
+        case coverSettings
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
@@ -129,6 +130,7 @@ struct CardDetailView: View {
                 case .labels:                            "labels"
                 case .attachmentSources:                 "attachment-sources"
                 case .noteAttachments:                   "note-attachments"
+                case .coverSettings:                     "cover-settings"
                 case .addLink:                           "add-link"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
                 case .actionDetail(let checklistID, let itemID): /* Owning checklist and action IDs */
@@ -420,7 +422,7 @@ struct CardDetailView: View {
     /// @brief      Offer explicit photo selection, replacement, and non-destructive cover removal
     /// @details    Photo-library selection attaches one new photo; existing photos reuse their IDs.
     ///             Removing a cover preserves all attachments and never auto-selects another image
-    /// @return     (some View) visible cover controls and optional preview
+    /// @return     (some View) cover settings shown only on explicit request
     ///
     private var coverControls: some View {
         DetailSection(title: "Card Cover") {
@@ -462,18 +464,6 @@ struct CardDetailView: View {
             Text("Covers are optional. Removing a cover keeps its photo attached. Choose an attached photo here or use Set as Cover on a photo's menu.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        }
-
-        .onChange(of: selectedCoverPhoto) { _, photoItem in
-            guard let photoItem else {
-
-                return
-            }
-
-            let requestID = UUID()
-
-            coverImportID = requestID
-            Task { await importPhotos(from: [photoItem], coverRequestID: requestID) }
         }
 
         .sheet(isPresented: $showsCoverPicker) {
@@ -2189,9 +2179,12 @@ struct CardDetailView: View {
                         }
                     }
 
-                    if !card.isSectionDivider {
-
-                        coverControls
+                    if let cover = attachments.first(where: {
+                        $0.id == coverAttachmentID && $0.kind == .photo
+                    }) {
+                        CardCoverPreview(attachment: cover)
+                            .padding(16)
+                            .accessibilityIdentifier("card.selectedCoverPreview")
                     }
 
                     if presentation == .card && !attachments.isEmpty {
@@ -2490,6 +2483,11 @@ struct CardDetailView: View {
                     }
 
                     Menu {
+                        Button("Card Cover", systemImage: "photo") {
+                            focusedField = nil
+                            activeSheet = .coverSettings
+                        }
+
                         Button(
                             presentation == .note ? "Make into Card" : "Make into Note",
                             systemImage: presentation == .note ? "rectangle.stack" : "note.text"
@@ -2580,6 +2578,13 @@ struct CardDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .onChange(of: selectedCoverPhoto) { _, photoItem in
+            guard let photoItem else { return }
+
+            let requestID = UUID()
+            coverImportID = requestID
+            Task { await importPhotos(from: [photoItem], coverRequestID: requestID) }
+        }
         .onChange(of: selectedPhotoItems) { _, photoItems in
             guard !photoItems.isEmpty else {
 
@@ -2668,6 +2673,22 @@ struct CardDetailView: View {
                 case .noteAttachments:
                     noteAttachmentsSheet
                         .databaseActivityOverlay()
+
+                case .coverSettings:
+                    NavigationStack {
+                        ScrollView {
+                            coverControls
+                        }
+                        .navigationTitle("Card Cover")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { activeSheet = nil }
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium, .large])
+                    .databaseActivityOverlay()
 
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)

@@ -49,13 +49,13 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 ## Optional Card Covers
 
-Open a card's **Card Cover** section:
+Open the card or Note's upper **actions (ellipsis) → Card Cover** settings:
 
 - **Browse Cover Library** offers all 48 bundled illustrations or six category filters with eight choices each. Tap an illustration to select it; Cancel leaves the card unchanged. Earlier photos and illustration attachments remain available.
 - **Add Photo as Cover** imports one explicitly chosen photo through the system picker and attaches/selects it.
 - **Choose Attached Photo / Change Cover** opens a visual chooser of that card's existing photos. Cancel changes nothing. The attachment gallery also offers **Set as Cover** and **Remove Cover**, including accessibility actions.
 - **Remove Cover** disables this card's preview without removing its photo. It is also available in the Board/Today card-row menu. No replacement image is selected automatically.
-- **Board Settings → Show card covers** hides all Board/Today row covers on this installation without changing selections or attachment records. Card details retain their preview and controls for editing.
+- **Board Settings → Show card covers** hides all Board/Today row covers on this installation without changing selections or attachment records. Card details retain a selected cover's preview; cover setup controls and explanation live only in the actions-menu settings sheet. Uncovered cards show no cover section, empty preview, or setup prompt. Notes keep cover setup out of their writing area and Details; attached thumbnails remain available.
 
 Standard and focused Today rows use a 128-point decorative cover; Overview uses 72 points. Titles, completion, badges, and menus remain available. Media is downsampled off the main actor to at most 960 pixels on its longest edge. Missing/invalid images show **Cover unavailable**, not another photo or a network fallback.
 

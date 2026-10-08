@@ -342,6 +342,44 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    @MainActor
+    func testHostedCardCoverSetupLayoutPreservesCoveredAndUncoveredRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+
+        let photo = KanbanAttachment(exampleImage: .garden)
+        var card = KanbanCard(id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: [])
+        card.attachments = [photo]
+        var covered = card
+        covered.coverAttachmentID = photo.id
+        for fixture in [card, covered] {
+            var emitted: [KanbanCard] = []
+            let controller = UIHostingController(rootView: NavigationStack {
+                CardDetailView(card: fixture, onTitleToggle: { emitted.append($0) })
+            })
+            let size = CGSize(width: 393, height: 852)
+            window.frame = CGRect(origin: .zero, size: size)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            XCTAssertTrue(emitted.isEmpty, "Relocating cover setup must not modify cover or attachments")
+            let image = UIGraphicsImageRenderer(size: size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let snapshot = XCTAttachment(image: image)
+            snapshot.name = fixture.coverAttachmentID == nil ? "Card-without-cover-setup" : "Card-with-selected-cover"
+            snapshot.lifetime = .keepAlways
+            add(snapshot)
+        }
+    }
+
     func testNoteSharingIncludesOnlyWrittenTextAndAttachedWebLinks() throws {
 
         var note = SampleData.lists[0].cards[0]

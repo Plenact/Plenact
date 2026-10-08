@@ -31,6 +31,7 @@ struct PlenactRemoteUser: Codable, Equatable, Identifiable {
     ///
     var id: String { userID } /* Stable identity for SwiftUI lists */
 
+
     ///
     /// Maps approved remote-user fields to the directory JSON names
     ///
@@ -57,6 +58,7 @@ struct PlenactRemoteSession: Codable, Equatable {
     let accessToken:  String                /* Access token for the session    */
     let expiresAtUTC: String                /* Expiration timestamp in UTC     */
     let user:         PlenactRemoteUser     /* Associated remote user          */
+
 
     ///
     /// Maps remote-session fields to the authentication JSON names
@@ -131,6 +133,7 @@ private struct PlenactCreateMemberRequest: Encodable {
     let displayName: String /* New member's directory name */
     let password:    String /* Temporary member password */
 
+
     ///
     /// Maps member provisioning fields to the API request names
     ///
@@ -156,6 +159,7 @@ struct PlenactBoardWriteRequest: Encodable {
     let expectedRevision: Int64                /* Revision read before editing */
     let document:         PlenactBoardDocument /* Complete snapshot payload */
     let seedKind:         String?              /* Explicit first-seed marker */
+
 
     ///
     /// Maps Board write fields to the snapshot API request names
@@ -184,6 +188,7 @@ private struct PlenactAssignmentRequest: Encodable {
     let action:           String   /* Assign or unassign operation */
     let userID:           String?  /* Editor-selected target; omitted for members */
 
+
     ///
     /// Maps registered assignment mutation fields to the API request names
     ///
@@ -209,6 +214,7 @@ private struct PlenactAPIErrorResponse: Decodable {
 
     let error:           String  /* Stable server error code */
     let currentRevision: Int64? /* Current revision included with conflicts */
+
 
     ///
     /// Maps stable API error fields to their JSON response names
@@ -264,9 +270,9 @@ enum PlenactAPIError: LocalizedError {
                 return "The shared demo Board has not been initialized yet."
             case .revisionConflict(let revision): /* Current server revision, when available */
 
-                if let revision {
+                if let revision { /* Current server revision for the conflict */
 
-                    /* Revision value used in the conflict message */ return "The shared Board changed. Its current revision is \(revision). Refresh before retrying."
+                    return "The shared Board changed. Its current revision is \(revision). Refresh before retrying."
                 }
 
                 return "The shared Board changed. Refresh before retrying."
@@ -287,6 +293,7 @@ enum PlenactSessionStore {
 
     private static let account = "shared-demo-session" /* Keychain account key */
     private static let service = Bundle.main.bundleIdentifier.map { "\($0).remote-session" } ?? "Plenact.remote-session" /* App-specific Keychain service */
+
 
     ///
     /// @fcn        PlenactSessionStore.load()
@@ -317,6 +324,7 @@ enum PlenactSessionStore {
         return try? JSONDecoder().decode(PlenactRemoteSession.self, from: data)
     }
 
+
     ///
     /// @fcn        PlenactSessionStore.save(_:)
     /// @brief      Save the remote bearer session with device-only accessibility
@@ -332,10 +340,10 @@ enum PlenactSessionStore {
     @discardableResult
     static func save(_ session: PlenactRemoteSession) -> Bool {
 
-        guard let data = try? JSONEncoder().encode(session) else {
+        guard let data = try? JSONEncoder().encode(session) else { /* Encoded remote session payload */
 
             return false
-        } /* Encoded session payload */
+        }
 
         let query: [String: Any] = [ /* Keychain item identity */
             kSecClass as String: kSecClassGenericPassword,
@@ -360,6 +368,7 @@ enum PlenactSessionStore {
 
         return updateStatus == errSecSuccess
     }
+
 
     ///
     /// @fcn        PlenactSessionStore.remove()
@@ -393,6 +402,7 @@ struct PlenactAPIClient {
 
     static let maximumJSONBodyBytes = 1_048_576 /* Maximum UTF-8 JSON HTTP body size */
 
+
     ///
     /// @fcn        PlenactAPIClient.isJSONBodyWithinLimit(_:)
     /// @brief      Check whether JSON bytes fit within the client size limit
@@ -409,6 +419,7 @@ struct PlenactAPIClient {
 
     private let baseURL: URL       /* Validated HTTPS API base URL */
     private let session: URLSession /* Transport used for API requests */
+
 
     ///
     /// @fcn        PlenactAPIClient.init(baseURL:session:)
@@ -443,10 +454,10 @@ struct PlenactAPIClient {
             configuredURL = nil /* No endpoint configured for this build */
         }
 
-        guard let configuredURL else {
+        guard let configuredURL else { /* Configured API endpoint */
 
             throw PlenactAPIError.endpointNotConfigured
-        } /* Required API endpoint */
+        }
 
         guard configuredURL.scheme?.lowercased() == "https",
               configuredURL.host != nil,
@@ -463,14 +474,15 @@ struct PlenactAPIClient {
             components?.path.append("/")
         }
 
-        guard let normalizedURL = components?.url else {
+        guard let normalizedURL = components?.url else { /* Normalized HTTPS endpoint URL */
 
             throw PlenactAPIError.invalidEndpoint
-        } /* Normalized endpoint URL */
+        }
 
         self.baseURL = normalizedURL /* Store validated endpoint */
         self.session = session       /* Store request transport */
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.login(username:password:)
@@ -490,10 +502,10 @@ struct PlenactAPIClient {
     ///
     func login(username: String, password: String) async throws -> PlenactRemoteSession {
 
-        let response: PlenactRemoteSession = try await send( /* Authenticated session response */
-            path: "auth.php",
+        let response: PlenactRemoteSession = try await send(                   /* Authenticated session response */
+            path:   "auth.php",
             method: "POST",
-            body: PlenactLoginRequest(username: username, password: password)
+            body:   PlenactLoginRequest(username: username, password: password)
         )
         guard PlenactSessionStore.save(response) else {
 
@@ -503,6 +515,7 @@ struct PlenactAPIClient {
 
         return response
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.logout(_:)
@@ -519,14 +532,15 @@ struct PlenactAPIClient {
     func logout(_ remoteSession: PlenactRemoteSession) async {
 
         _ = try? await send(
-            path: "auth.php",
+            path:   "auth.php",
             method: "POST",
-            token: remoteSession.accessToken,
-            body: PlenactLogoutRequest()
+            token:  remoteSession.accessToken,
+            body:   PlenactLogoutRequest()
         ) as EmptyResponse
 
         PlenactSessionStore.remove()
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.directory(token:)
@@ -544,13 +558,14 @@ struct PlenactAPIClient {
     ///
     func directory(token: String) async throws -> [PlenactRemoteUser] {
 
-        let response: PlenactUserDirectoryResponse = try await send( /* Safe directory response */
-            path: "users.php",
+        let response: PlenactUserDirectoryResponse = try await send(           /* Safe directory response */
+            path:   "users.php",
             method: "GET",
-            token: token
+            token:  token
         )
         return response.users
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.createMember(token:username:displayName:password:)
@@ -573,19 +588,20 @@ struct PlenactAPIClient {
     ///
     func createMember(token: String, username: String, displayName: String, password: String) async throws -> PlenactRemoteUser {
 
-        let response: PlenactCreatedUserResponse = try await send( /* Safe new-member response */
-            path: "users.php",
+        let response: PlenactCreatedUserResponse = try await send(             /* Safe new-member response */
+            path:   "users.php",
             method: "POST",
-            token: token,
-            body: PlenactCreateMemberRequest(
-                username: username,
+            token:  token,
+            body:   PlenactCreateMemberRequest(
+                username:    username,
                 displayName: displayName,
-                password: password
+                password:    password
             )
         )
 
         return response.user
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.board(token:)
@@ -605,6 +621,7 @@ struct PlenactAPIClient {
 
         try await send(path: "board.php", method: "GET", token: token)
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.saveBoard(token:document:expectedRevision:)
@@ -631,12 +648,13 @@ struct PlenactAPIClient {
         }
 
         return try await writeBoard(
-            token: token,
-            document: document,
+            token:            token,
+            document:         document,
             expectedRevision: expectedRevision,
-            seedKind: nil
+            seedKind:         nil
         )
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.sampleDataDocument(for:)
@@ -673,9 +691,9 @@ struct PlenactAPIClient {
                     }
 
                     return CardAssignee(
-                        id: assignee.id,
-                        kind: .registeredUser,
-                        userID: user.userID,
+                        id:          assignee.id,
+                        kind:        .registeredUser,
+                        userID:      user.userID,
                         displayName: user.displayName
                     )
                 }
@@ -684,6 +702,7 @@ struct PlenactAPIClient {
 
         return PlenactBoardDocument(lists: sampleLists, labelLibrary: .starter)
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.publishSampleData(token:user:expectedRevision:)
@@ -717,12 +736,13 @@ struct PlenactAPIClient {
         }
 
         return try await writeBoard(
-            token: token,
-            document: document,
+            token:            token,
+            document:         document,
             expectedRevision: expectedRevision,
-            seedKind: "sample_data_v1"
+            seedKind:         "sample_data_v1"
         )
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.changeAssignment(token:expectedRevision:cardID:action:userID:)
@@ -746,17 +766,18 @@ struct PlenactAPIClient {
     func changeAssignment(token: String, expectedRevision: Int64, cardID: Int, action: String, userID: String? = nil) async throws -> PlenactAssignmentResponse {
 
         try await send(
-            path: "assignments.php",
+            path:   "assignments.php",
             method: "POST",
-            token: token,
-            body: PlenactAssignmentRequest(
+            token:  token,
+            body:   PlenactAssignmentRequest(
                 expectedRevision: expectedRevision,
-                cardID: cardID,
-                action: action,
-                userID: userID
+                cardID:           cardID,
+                action:           action,
+                userID:           userID
             )
         )
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.writeBoard(token:document:expectedRevision:seedKind:)
@@ -778,16 +799,17 @@ struct PlenactAPIClient {
     private func writeBoard(token: String, document: PlenactBoardDocument, expectedRevision: Int64, seedKind: String?) async throws -> PlenactBoardWriteResponse {
 
         try await send(
-            path: "board.php",
+            path:   "board.php",
             method: "PUT",
-            token: token,
-            body: PlenactBoardWriteRequest(
+            token:  token,
+            body:   PlenactBoardWriteRequest(
                 expectedRevision: expectedRevision,
-                document: document,
-                seedKind: seedKind
+                document:         document,
+                seedKind:         seedKind
             )
         )
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.send(path:method:token:body:)
@@ -824,6 +846,7 @@ struct PlenactAPIClient {
         return try await send(path: path, method: method, token: token, bodyData: encodedBody)
     }
 
+
     ///
     /// @fcn        PlenactAPIClient.send(path:method:token:)
     /// @brief      Send a request without a body and decode its response
@@ -847,6 +870,7 @@ struct PlenactAPIClient {
 
         try await send(path: path, method: method, token: token, bodyData: nil)
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.send(path:method:token:bodyData:)
@@ -872,21 +896,24 @@ struct PlenactAPIClient {
         token: String?,
         bodyData: Data?
     ) async throws -> Response {
-        let operation = await DatabaseActivity.shared.begin("Synchronizing shared database...")
+
+        let operation = await DatabaseActivity.shared.begin("Synchronizing shared database...") /* Activity token for this request */
 
         do {
 
-            let response: Response = try await executeRequest(
+            let response: Response = try await executeRequest(                 /* Decoded response from the API */
                 path: path, method: method, token: token, bodyData: bodyData
             )
             await DatabaseActivity.shared.end(operation)
 
             return response
         } catch {
+
             await DatabaseActivity.shared.end(operation)
             throw error
         }
     }
+
 
     ///
     /// @fcn        PlenactAPIClient.executeRequest(path:method:token:bodyData:)
@@ -960,9 +987,11 @@ struct PlenactAPIClient {
             return try JSONDecoder().decode(Response.self, from: data)
 
         } catch {
+
             throw PlenactAPIError.invalidResponse
         }
     }
+
 
     ///
     /// Represents an empty successful API response body shape

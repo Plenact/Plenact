@@ -6,6 +6,7 @@
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
+
 ///
 /// Tracks active shared-database operations and a dismissible error message
 ///
@@ -15,13 +16,13 @@ import SwiftUI
 @MainActor
 final class DatabaseActivity: ObservableObject {
     /// Process-wide activity state observed by database-backed views.
-    static let shared = DatabaseActivity()
+    static let shared = DatabaseActivity() /* Process-wide activity state observed by database-backed views */
 
     /// Active operation identifiers paired with their visible progress messages.
-    @Published private(set) var operations: [(id: UUID, message: String)] = []
+    @Published private(set) var operations: [(id: UUID, message: String)] = [] /* Active operation identifiers and visible progress messages */
 
     /// Latest error message awaiting dismissal.
-    @Published private(set) var errorMessage: String?
+    @Published private(set) var errorMessage: String? /* Latest database error awaiting dismissal */
 
     ///
     /// @fcn        DatabaseActivity.isWorking
@@ -30,7 +31,7 @@ final class DatabaseActivity: ObservableObject {
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    var isWorking: Bool { !operations.isEmpty }
+    var isWorking: Bool { !operations.isEmpty } /* Whether database work is active */
 
     ///
     /// @fcn        DatabaseActivity.message
@@ -39,7 +40,8 @@ final class DatabaseActivity: ObservableObject {
     ///
     /// @return     (String?) active message, or nil when no operation is active
     ///
-    var message: String? { operations.first?.message }
+    var message: String? { operations.first?.message } /* Earliest active operation message */
+
 
     ///
     /// @fcn        DatabaseActivity.begin(_:)
@@ -53,7 +55,7 @@ final class DatabaseActivity: ObservableObject {
     @discardableResult
     func begin(_ message: String) -> UUID {
 
-        let id = UUID()
+        let id = UUID() /* Identifier for this active operation */
 
         operations.append((id, message))
 
@@ -114,7 +116,8 @@ final class DatabaseActivity: ObservableObject {
 private struct DatabaseActivityOverlay: ViewModifier {
 
     /// Shared database activity observed by this modifier.
-    @ObservedObject private var activity = DatabaseActivity.shared
+    @ObservedObject private var activity = DatabaseActivity.shared /* Shared activity source rendered by this overlay */
+
 
     ///
     /// @fcn        DatabaseActivityOverlay.body(content:)
@@ -133,7 +136,7 @@ private struct DatabaseActivityOverlay: ViewModifier {
 
                 VStack(alignment: .leading, spacing: 8) {
 
-                    if let message = activity.message {
+                    if let message = activity.message { /* Active operation progress text */
 
                         HStack(spacing: 12) {
 
@@ -151,7 +154,7 @@ private struct DatabaseActivityOverlay: ViewModifier {
                         .allowsHitTesting(false)
                     }
 
-                    if let errorMessage = activity.errorMessage {
+                    if let errorMessage = activity.errorMessage { /* Reported database error text */
 
                         HStack(alignment: .top, spacing: 12) {
                             Text(errorMessage).font(.subheadline)
@@ -183,6 +186,8 @@ private struct DatabaseActivityOverlay: ViewModifier {
 ///     Keep activity presentation attachment concise at view call sites
 ///
 extension View {
+
+
     ///
     /// @fcn        View.databaseActivityOverlay()
     /// @brief      Attach the shared database activity overlay
@@ -195,4 +200,3 @@ extension View {
         modifier(DatabaseActivityOverlay())
     }
 }
-

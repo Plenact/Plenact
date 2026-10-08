@@ -13,6 +13,7 @@ import SwiftUI
 
 // -------------------------------------- MARK: - Label Color ---------------------------------- //
 
+
 ///
 /// Defines the fixed palette of colors available to reusable kanban labels
 ///
@@ -81,6 +82,7 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
 
 // -------------------------------------- MARK: - Label Category ------------------------------- //
 
+
 ///
 /// Represents a named group in the reusable label library
 ///
@@ -96,6 +98,7 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable {
 
 
 // -------------------------------------- MARK: - Label Model ---------------------------------- //
+
 
 ///
 /// Represents one reusable label in the shared catalog
@@ -114,6 +117,7 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 
 
 // -------------------------------------- MARK: - Label Library -------------------------------- //
+
 
 ///
 /// Owns the reusable label definitions and their categories
@@ -140,7 +144,7 @@ struct LabelLibrary: Hashable, Codable {
     ]
 
     /// Initial categories and reusable labels available on a fresh installation
-    static let starter = LabelLibrary( /* Initial categorized label catalog */
+    static let starter = LabelLibrary(                                         /* Initial categorized label catalog */
         categories: [
             KanbanLabelCategory(id: "work", name: "Work"),
             KanbanLabelCategory(id: "home", name: "Home"),
@@ -149,7 +153,7 @@ struct LabelLibrary: Hashable, Codable {
             KanbanLabelCategory(id: "leisure", name: "Leisure"),
             KanbanLabelCategory(id: "casual", name: "Casual")
         ],
-        labels: [
+        labels:     [
             KanbanLabel(id: "work-scheduled", name: "Scheduled", categoryID: "work", color: .blue),
             KanbanLabel(id: "work-deliverable", name: "Deliverable", categoryID: "work", color: .orange),
             KanbanLabel(id: "work-onsite", name: "Onsite", categoryID: "work", color: .purple),
@@ -170,6 +174,7 @@ struct LabelLibrary: Hashable, Codable {
 
 // -------------------------------------- MARK: - Label Persistence ---------------------------- //
 
+
 ///
 /// Loads and saves the shared label library on the current installation
 ///
@@ -181,6 +186,7 @@ struct LabelLibrary: Hashable, Codable {
 enum LabelLibraryStore {
 
     private static let storageKey = "Plenact.LabelLibrary.v1" /* Versioned local catalog key */
+
 
     ///
     /// @fcn        LabelLibraryStore.load()
@@ -203,6 +209,7 @@ enum LabelLibraryStore {
         return library
     }
 
+
     ///
     /// @fcn        LabelLibraryStore.save(_:)
     /// @brief      Save the current label catalog
@@ -218,10 +225,10 @@ enum LabelLibraryStore {
     ///
     static func save(_ library: LabelLibrary) {
 
-        guard let data = try? JSONEncoder().encode(library) else {
+        guard let data = try? JSONEncoder().encode(library) else { /* Encoded label catalog snapshot */
 
             return
-        } /* Encoded catalog snapshot */
+        }
 
         UserDefaults.standard.set(data, forKey: storageKey)
     }
@@ -229,6 +236,7 @@ enum LabelLibraryStore {
 
 
 // -------------------------------------- MARK: - Label Chip ----------------------------------- //
+
 
 ///
 /// Displays one compact colored label chip

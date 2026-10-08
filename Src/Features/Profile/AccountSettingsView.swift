@@ -53,7 +53,7 @@ extension ProfileColor {
     /// @pre        The color stores RGB component values
     /// @post       The stored color remains unchanged
     ///
-    var hexString: String {
+    var hexString: String { /* Six-digit RGB hexadecimal value */
         String(
             format: "#%02X%02X%02X",
             Int(min(max(red, 0), 1) * 255),
@@ -79,7 +79,7 @@ extension ProfileAvatarIcon {
     ///
     /// @return     (String) display title for this icon
     ///
-    var title: String {
+    var title: String { /* User-facing avatar icon title */
         switch self {
 
             case .initials:     "Initials"
@@ -105,7 +105,7 @@ extension ProfileAvatarIcon {
     ///
     /// @return     (String?) SF Symbol name, or nil for initials
     ///
-    var symbolName: String? {
+    var symbolName: String? { /* SF Symbol for this icon choice */
         switch self {
 
             case .initials:     nil
@@ -125,6 +125,7 @@ extension ProfileAvatarIcon {
 }
 
 // -------------------------------------- MARK: - Profile Avatar ------------------------------- //
+
 
 ///
 /// Displays a discreet local profile identity or signed-out-style placeholder
@@ -155,19 +156,21 @@ struct ProfileAvatarView: View {
             Circle()
                 .fill(profile?.avatarColor.color ?? Color.secondary.opacity(0.16))
 
-            if let profile {
+            if let profile { /* Available local profile */
 
-                if let symbolName = profile.avatarIcon.symbolName {
+                if let symbolName = profile.avatarIcon.symbolName { /* Chosen icon's SF Symbol */
 
                     Image(systemName: symbolName)
                         .font(.system(size: size * 0.4, weight: .semibold))
                         .foregroundStyle(profile.avatarForegroundColor.color)
                 } else {
+
                     Text(profile.initials)
                         .font(.system(size: size * 0.36, weight: .semibold))
                         .foregroundStyle(profile.avatarForegroundColor.color)
                 }
             } else {
+
                 Image(systemName: "person.crop.circle")
                     .font(.system(size: size * 0.58))
                     .foregroundStyle(.secondary)
@@ -176,8 +179,8 @@ struct ProfileAvatarView: View {
 
         .frame(width: size, height: size)
         .overlay {
-            if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName),
-               let image = UIImage(data: data) {
+            if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName), /* Selected or saved avatar bytes */
+               let image = UIImage(data: data) { /* Decoded avatar photo */
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -192,6 +195,7 @@ struct ProfileAvatarView: View {
 
 
 // -------------------------------------- MARK: - Account Settings ----------------------------- //
+
 
 ///
 /// Presents local identity, planning, accessibility, privacy, and profile controls
@@ -316,36 +320,38 @@ struct AccountSettingsView: View {
     ///
     private func saveProfile() {
 
-        let photoFileName: String?
+        let photoFileName: String? /* Stored filename for the new avatar photo */
 
         do {
 
-            if let avatarPhotoData {
+            if let avatarPhotoData { /* Newly selected avatar-photo bytes */
 
                 photoFileName = try ProfileAvatarPhotoStore.save(avatarPhotoData)
             } else {
+
                 photoFileName = nil
             }
         } catch {
+
             photoSaveError = error.localizedDescription
 
             return
         }
 
-        let updatedProfile = LocalProfile(   /* Completed profile */
-            id:          profileID,
-            createdAt:   createdAt,
-            displayName: trimmedDisplayName,
-            email:       email.trimmingCharacters(in:   .whitespacesAndNewlines),
-            context:     context.trimmingCharacters(in: .whitespacesAndNewlines),
-            avatarColor: avatarColor,
-            avatarIcon:  avatarIcon,
+        let updatedProfile = LocalProfile(                                     /* Completed profile */
+            id:                    profileID,
+            createdAt:             createdAt,
+            displayName:           trimmedDisplayName,
+            email:                 email.trimmingCharacters(in:   .whitespacesAndNewlines),
+            context:               context.trimmingCharacters(in: .whitespacesAndNewlines),
+            avatarColor:           avatarColor,
+            avatarIcon:            avatarIcon,
             avatarForegroundColor: avatarForegroundColor,
-            avatarPhotoFileName: photoFileName,
-            preferences: LocalProfilePreferences(
-                defaultListID:      defaultListID,
-                usesReducedContent: usesReducedContent,
-                usesLargeControls:  usesLargeControls,
+            avatarPhotoFileName:   photoFileName,
+            preferences:           LocalProfilePreferences(
+                defaultListID:         defaultListID,
+                usesReducedContent:    usesReducedContent,
+                usesLargeControls:     usesLargeControls,
                 showsNavigationLabels: showsNavigationLabels
             )
         )
@@ -376,11 +382,11 @@ struct AccountSettingsView: View {
                     Section("Profile") {
                         NavigationLink {
                             ProfileAvatarIconPicker(
-                                selection: $avatarIcon,
-                                avatarColor: $avatarColor,
+                                selection:       $avatarIcon,
+                                avatarColor:     $avatarColor,
                                 foregroundColor: $avatarForegroundColor,
-                                photoData: $avatarPhotoData,
-                                displayName: trimmedDisplayName
+                                photoData:       $avatarPhotoData,
+                                displayName:     trimmedDisplayName
                             )
                             .onAppear {
                                 isChoosingAvatarIcon = true
@@ -393,15 +399,15 @@ struct AccountSettingsView: View {
                         } label: {
                             HStack(spacing: 14) {
                                 ProfileAvatarView(
-                                    profile: LocalProfile(
-                                        id:          profileID,
-                                        createdAt:   createdAt,
-                                        displayName: trimmedDisplayName,
-                                        avatarColor: avatarColor,
-                                        avatarIcon:  avatarIcon,
+                                    profile:   LocalProfile(
+                                        id:                    profileID,
+                                        createdAt:             createdAt,
+                                        displayName:           trimmedDisplayName,
+                                        avatarColor:           avatarColor,
+                                        avatarIcon:            avatarIcon,
                                         avatarForegroundColor: avatarForegroundColor
                                     ),
-                                    size: 52,
+                                    size:      52,
                                     photoData: avatarPhotoData
                                 )
 
@@ -461,7 +467,7 @@ struct AccountSettingsView: View {
                         Text(exampleOperationError ?? "")
                     }
 
-                    if let profile {
+                    if let profile { /* Existing profile being edited */
 
                         Section {
                             LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
@@ -541,7 +547,7 @@ struct AccountSettingsView: View {
 
             .confirmationDialog(
                 "Remove local profile?",
-                isPresented: $confirmsRemoval,
+                isPresented:     $confirmsRemoval,
                 titleVisibility: .visible
             ) {
                 Button("Remove profile", role: .destructive) {
@@ -557,7 +563,7 @@ struct AccountSettingsView: View {
 
             .confirmationDialog(
                 "Replace this board with the example?",
-                isPresented: $confirmsLoadExample,
+                isPresented:     $confirmsLoadExample,
                 titleVisibility: .visible
             ) {
                 Button("Load Example", role: .destructive) {
@@ -565,6 +571,7 @@ struct AccountSettingsView: View {
 
                         hasUndoableExample = true
                     } else {
+
                         exampleOperationError = "A backup could not be saved, so the example was not loaded."
                     }
                 }
@@ -576,7 +583,7 @@ struct AccountSettingsView: View {
 
             .confirmationDialog(
                 "Restore the board from before the example was loaded?",
-                isPresented: $confirmsUndoExample,
+                isPresented:     $confirmsUndoExample,
                 titleVisibility: .visible
             ) {
                 Button("Undo Load Example", role: .destructive) {
@@ -584,6 +591,7 @@ struct AccountSettingsView: View {
 
                         hasUndoableExample = false
                     } else {
+
                         exampleOperationError = "The saved board snapshot could not be restored."
                     }
                 }
@@ -635,6 +643,7 @@ private struct ProfileAvatarIconPicker: View {
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)] /* Adaptive icon-grid layout */
 
+
     ///
     /// @fcn        ProfileAvatarIconPicker.init(selection:avatarColor:foregroundColor:photoData:displayName:)
     /// @brief      Initialize the avatar editor from parent bindings
@@ -675,7 +684,7 @@ private struct ProfileAvatarIconPicker: View {
     ///
     /// @return     (String) one or two uppercase initials, or the profile fallback
     ///
-    private var initials: String {
+    private var initials: String { /* Preview initials for the current display name */
         LocalProfile(displayName: displayName).initials
     }
 
@@ -707,14 +716,14 @@ private struct ProfileAvatarIconPicker: View {
     ///
     /// @return     (some View) avatar preview and profile name
     ///
-    private var previewHeader: some View {
+    private var previewHeader: some View { /* Draft avatar preview and display name */
         HStack(spacing: 14) {
             ProfileAvatarView(
-                profile: LocalProfile(
+                profile:   LocalProfile(
                     displayName: displayName, avatarColor: draftAvatarColor,
                     avatarIcon: draftIcon, avatarForegroundColor: draftForegroundColor
                 ),
-                size: 60,
+                size:      60,
                 photoData: draftPhotoData
             )
 
@@ -742,14 +751,14 @@ private struct ProfileAvatarIconPicker: View {
     ///
     /// @return     (some View) navigation links for the two avatar colors
     ///
-    private var colorControls: some View {
+    private var colorControls: some View { /* Profile avatar color controls */
         VStack(alignment: .leading, spacing: 10) {
             NavigationLink {
                 ProfileColorMapPicker(
-                    title: "Avatar color",
-                    selection: $draftAvatarColor,
+                    title:        "Avatar color",
+                    selection:    $draftAvatarColor,
                     defaultColor: .teal,
-                    presets: [
+                    presets:      [
                         .init(name: "Teal", color: .teal),
                         .init(name: "Blue", color: .blue),
                         .init(name: "Green", color: .green),
@@ -768,10 +777,10 @@ private struct ProfileAvatarIconPicker: View {
 
             NavigationLink {
                 ProfileColorMapPicker(
-                    title: "Icon and initials",
-                    selection: $draftForegroundColor,
+                    title:        "Icon and initials",
+                    selection:    $draftForegroundColor,
                     defaultColor: .white,
-                    presets: [
+                    presets:      [
                         .init(name: "White", color: .white),
                         .init(name: "Charcoal", color: .charcoal),
                         .init(name: "Lemon", color: .lemon),
@@ -800,7 +809,7 @@ private struct ProfileAvatarIconPicker: View {
     ///
     /// @return     (some View) selectable grid of supported avatar icons
     ///
-    private var iconGrid: some View {
+    private var iconGrid: some View { /* Selectable avatar icon grid */
         VStack(alignment: .leading, spacing: 10) {
             Text("Choose an icon")
                 .font(.headline)
@@ -860,7 +869,7 @@ private struct ProfileAvatarIconPicker: View {
     ///
     /// @return     (some View) avatar editor with photo selection and Save/Cancel actions
     ///
-    var body: some View {
+    var body: some View { /* Avatar icon and photo picker */
         VStack(spacing: 0) {
             previewHeader
 
@@ -881,6 +890,7 @@ private struct ProfileAvatarIconPicker: View {
 
                         Button("Remove Photo", role: .destructive) { draftPhotoData = nil }
                     } else {
+
                         colorControls
                     }
                 }
@@ -901,7 +911,7 @@ private struct ProfileAvatarIconPicker: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .task(id: selectedPhoto) {
-            guard let selectedPhoto else {
+            guard let selectedPhoto else { /* Chosen Photos picker item */
 
                 return
             }
@@ -915,8 +925,8 @@ private struct ProfileAvatarIconPicker: View {
 
             do {
 
-                guard let data = try await selectedPhoto.loadTransferable(type: Data.self),
-                      let image = AvatarPhotoCrop.image(from: data) else {
+                guard let data = try await selectedPhoto.loadTransferable(type: Data.self), /* Transferred photo bytes */
+                      let image = AvatarPhotoCrop.image(from: data) else { /* Decoded photo for cropping */
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
@@ -927,6 +937,7 @@ private struct ProfileAvatarIconPicker: View {
 
                 cropImage = AvatarCropImage(image: image)
             } catch {
+
                 if !Task.isCancelled {
 
                     photoError = error.localizedDescription
@@ -1022,12 +1033,13 @@ private struct ProfileAvatarIconPicker: View {
                 .fill(background.color)
                 .frame(width: size, height: size)
 
-            if let symbolName = icon.symbolName {
+            if let symbolName = icon.symbolName { /* SF Symbol for the selected icon */
 
                 Image(systemName: symbolName)
                     .font(.system(size: size * 0.4, weight: .semibold))
                     .foregroundStyle(foreground.color)
             } else {
+
                 Text(initials)
                     .font(.system(size: size * 0.36, weight: .semibold))
                     .foregroundStyle(foreground.color)
@@ -1059,6 +1071,7 @@ private struct AvatarCropImage: Identifiable {
 ///
 enum AvatarPhotoCrop {
 
+
     ///
     /// @fcn        AvatarPhotoCrop.image(from:)
     /// @brief      Decode image data into a transformed thumbnail
@@ -1073,12 +1086,12 @@ enum AvatarPhotoCrop {
     ///
     static func image(from data: Data) -> UIImage? {
 
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil), /* ImageIO source for the selected photo */
               let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
                 kCGImageSourceThumbnailMaxPixelSize: 2048
-              ] as CFDictionary) else { return nil }
+              ] as CFDictionary) /* Orientation-correct downsampled photo */ else { return nil }
         return UIImage(cgImage: thumbnail)
     }
 
@@ -1098,12 +1111,12 @@ enum AvatarPhotoCrop {
     ///
     static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize {
 
-        let scale = max(side / imageSize.width, side / imageSize.height) * zoom
-        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)
-        let verticalLimit = max(0, (imageSize.height * scale - side) / 2)
+        let scale = max(side / imageSize.width, side / imageSize.height) * zoom /* Aspect-fill crop scale */
+        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2) /* Maximum horizontal crop movement */
+        let verticalLimit = max(0, (imageSize.height * scale - side) / 2) /* Maximum vertical crop movement */
 
         return CGSize(
-            width: min(max(offset.width, -horizontalLimit), horizontalLimit),
+            width:  min(max(offset.width, -horizontalLimit), horizontalLimit),
             height: min(max(offset.height, -verticalLimit), verticalLimit)
         )
     }
@@ -1131,21 +1144,21 @@ enum AvatarPhotoCrop {
             return nil
         }
 
-        let scale = max(side / image.size.width, side / image.size.height) * zoom
-        let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)
-        let outputScale = 512 / side
-        let format = UIGraphicsImageRendererFormat()
+        let scale = max(side / image.size.width, side / image.size.height) * zoom /* Aspect-fill crop scale */
+        let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom) /* Bounded crop translation */
+        let outputScale = 512 / side /* Convert viewport points to output pixels */
+        let format = UIGraphicsImageRendererFormat() /* Square JPEG renderer settings */
 
         format.scale = 1
         format.opaque = true
 
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 512, height: 512), format: format)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 512, height: 512), format: format) /* 512-pixel crop renderer */
 
         return renderer.image { _ in
             image.draw(in: CGRect(
-                x: ((side - image.size.width * scale) / 2 + offset.width) * outputScale,
-                y: ((side - image.size.height * scale) / 2 + offset.height) * outputScale,
-                width: image.size.width * scale * outputScale,
+                x:      ((side - image.size.width * scale) / 2 + offset.width) * outputScale,
+                y:      ((side - image.size.height * scale) / 2 + offset.height) * outputScale,
+                width:  image.size.width * scale * outputScale,
                 height: image.size.height * scale * outputScale
             ))
         }.jpegData(compressionQuality: 0.9)
@@ -1187,12 +1200,12 @@ private struct AvatarPhotoCropView: View {
     ///
     private func stage(side: CGFloat) -> some View {
 
-        let currentZoom = min(max(zoom * magnification, 1), 6)
-        let currentOffset = AvatarPhotoCrop.constrainedOffset(
+        let currentZoom = min(max(zoom * magnification, 1), 6) /* Zoom including the in-progress pinch */
+        let currentOffset = AvatarPhotoCrop.constrainedOffset(                 /* Drag-adjusted, bounded crop position */
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
             imageSize: image.size, side: side, zoom: currentZoom
         )
-        let scale = max(side / image.size.width, side / image.size.height) * currentZoom
+        let scale = max(side / image.size.width, side / image.size.height) * currentZoom /* Aspect-fill display scale */
 
         return ZStack {
             Image(uiImage: image)
@@ -1253,10 +1266,10 @@ private struct AvatarPhotoCropView: View {
     /// @pre        image and crop callback are configured
     /// @post       Use Photo returns cropped data only when rendering succeeds
     ///
-    var body: some View {
+    var body: some View { /* Interactive avatar crop screen */
         NavigationStack {
             GeometryReader { geometry in
-                let side = max(1, min(geometry.size.width - 32, geometry.size.height - 160, 360))
+                let side = max(1, min(geometry.size.width - 32, geometry.size.height - 160, 360)) /* Available square crop viewport */
 
                 VStack(spacing: 16) {
                     stage(side: side)
@@ -1298,11 +1311,12 @@ private struct AvatarPhotoCropView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Use Photo") {
-                        if let data = AvatarPhotoCrop.jpeg(image: image, side: cropSide, zoom: zoom, offset: offset) {
+                        if let data = AvatarPhotoCrop.jpeg(image: image, side: cropSide, zoom: zoom, offset: offset) { /* Successfully rendered crop JPEG */
 
                             onUsePhoto(data)
                             dismiss()
                         } else {
+
                             cropFailed = true
                         }
                     }
@@ -1337,7 +1351,7 @@ private struct ProfileColorPreset: Identifiable {
     ///
     /// @return     (String) preset name
     ///
-    var id: String { name }
+    var id: String { name } /* Stable preset identity */
 }
 
 
@@ -1387,7 +1401,7 @@ private struct ProfileColorMapPicker: View {
         _selection = selection
         initialColor = selection.wrappedValue
 
-        let components = selection.wrappedValue.hueSaturationBrightness
+        let components = selection.wrappedValue.hueSaturationBrightness /* Initial selection's HSB components */
 
         _hue = State(initialValue: components.hue)
         _saturation = State(initialValue: components.saturation)
@@ -1402,7 +1416,7 @@ private struct ProfileColorMapPicker: View {
     ///
     /// @return     (ProfileColor) color represented by the current draft
     ///
-    private var selectedColor: ProfileColor {
+    private var selectedColor: ProfileColor { /* Profile color represented by the HSB draft */
         ProfileColor(hue: hue, saturation: saturation, brightness: brightness)
     }
 
@@ -1458,7 +1472,7 @@ private struct ProfileColorMapPicker: View {
     ///
     private func setColor(_ color: ProfileColor) {
 
-        let components = color.hueSaturationBrightness
+        let components = color.hueSaturationBrightness /* Converted HSB components */
 
         hue = components.hue
         saturation = components.saturation
@@ -1473,7 +1487,7 @@ private struct ProfileColorMapPicker: View {
     ///
     /// @return     (some View) navigation link for entering RGB values
     ///
-    private var hexEditorLink: some View {
+    private var hexEditorLink: some View { /* Link to direct RGB editing */
         NavigationLink {
             ProfileRGBColorEditor(color: selectedColor) { updatedColor in
                 setColor(updatedColor)
@@ -1521,7 +1535,7 @@ private struct ProfileColorMapPicker: View {
     /// @pre        The parent selection and color presets are initialized
     /// @post       The parent value changes only when Save is selected
     ///
-    var body: some View {
+    var body: some View { /* Interactive profile color picker */
         VStack(alignment: .leading, spacing: 20) {
             hexEditorLink
 
@@ -1643,7 +1657,7 @@ private struct ProfileRGBColorEditor: View {
     ///
     /// @return     (ProfileColor) color represented by the current channel values
     ///
-    private var editedColor: ProfileColor {
+    private var editedColor: ProfileColor { /* RGB draft converted to a profile color */
         ProfileColor(red: red / 255, green: green / 255, blue: blue / 255)
     }
 
@@ -1672,7 +1686,7 @@ private struct ProfileRGBColorEditor: View {
     /// @pre        The editor has initial channel values and a save callback
     /// @post       The parent color is updated only when Save is selected
     ///
-    var body: some View {
+    var body: some View { /* Direct RGB channel editor */
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 12) {
                 Circle()
@@ -1767,7 +1781,7 @@ private struct RGBChannelControl: View {
     ///
     /// @return     (some View) labeled RGB channel control
     ///
-    var body: some View {
+    var body: some View { /* Slider and hexadecimal input for one RGB channel */
         HStack(spacing: 10) {
             Text(title)
                 .frame(width: 48, alignment: .leading)
@@ -1790,8 +1804,8 @@ private struct RGBChannelControl: View {
                 }
 
                 .onChange(of: hexValue) { _, newValue in
-                    let validCharacters = Set("0123456789ABCDEF")
-                    let normalized = String(newValue.uppercased().filter { validCharacters.contains($0) }.prefix(2))
+                    let validCharacters = Set("0123456789ABCDEF") /* Accepted hexadecimal digits */
+                    let normalized = String(newValue.uppercased().filter { validCharacters.contains($0) }.prefix(2)) /* Uppercase two-digit input */
 
                     if normalized != newValue {
 
@@ -1833,7 +1847,7 @@ private struct ProfileColorMapSurface: View {
     ///
     /// @return     ([Color]) gradient stops spanning red through the hue spectrum
     ///
-    private var spectrum: [Color] {
+    private var spectrum: [Color] { /* Full-saturation hue-gradient stops */
         [
             Color(hue: 0, saturation: 1, brightness: 1, opacity: 1),
             Color(hue: 1.0 / 6, saturation: 1, brightness: 1, opacity: 1),
@@ -1857,10 +1871,10 @@ private struct ProfileColorMapSurface: View {
     /// @pre        Hue, saturation, and brightness describe the current draft color
     /// @post       User input updates only the bound hue and saturation values
     ///
-    var body: some View {
+    var body: some View { /* Interactive hue and saturation surface */
         GeometryReader { geometry in
-            let width = max(geometry.size.width, 1)
-            let height = max(geometry.size.height, 1)
+            let width = max(geometry.size.width, 1) /* Safe color-map width */
+            let height = max(geometry.size.height, 1) /* Safe color-map height */
 
             ZStack {
                 LinearGradient(colors: spectrum, startPoint: .leading, endPoint: .trailing)

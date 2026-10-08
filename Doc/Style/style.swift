@@ -16,8 +16,13 @@ import Foundation
 //             Keep @author, @created, and @last rev header tags only in App.swift
 //             Function headers use @fcn, @brief, @details, and @return, plus @param for each input
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
+//             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
+//             Place those blank lines before doc-comment blocks so comments remain attached
 //             Use blank lines after function/control-flow openings and between logical steps
+//             Separate fixture setup, operation, and assertion groups with blank lines
 //             Keep related declarations and assertions together; expand dense one-line bodies
+//             Align named argument values to a common column in multiline calls, preserving indentation
 //
 // @section    Opens
 //      none current
@@ -29,6 +34,7 @@ import Foundation
 
 
 // -------------------------------------- MARK: - Metadata ------------------------------------- //
+
 
 ///
 /// Application metadata used for project ownership and traceability
@@ -43,15 +49,16 @@ import Foundation
 ///
 enum AppMetadata {
 
-    static let projectName  = "ProjectName" 
-    static let organization = "Company Name"
-    static let author       = "Justin Reina"
-    static let created      = "2026-09-24"
-    static let lastRevision = "2026-09-24"
+    static let projectName  = "ProjectName" /* Example project name */
+    static let organization = "Company Name" /* Example owning organization */
+    static let author       = "Justin Reina" /* Example project author */
+    static let created      = "2026-09-24" /* Example creation date */
+    static let lastRevision = "2026-09-24" /* Example revision date */
 }
 
 
 // -------------------------------------- MARK: - Errors ---------------------------------------- //
+
 
 ///
 /// Centralized domain errors for app-level operations
@@ -62,7 +69,7 @@ enum AppMetadata {
 /// @note   Keep the error set small and explicit to preserve clarity and supportability
 ///
 enum AppError: LocalizedError, Sendable {
-    
+
     case missingConfiguration           /* Missing required configuration          */
     case invalidInput(String)           /* Invalid input with associated message   */
     case networkFailure(String)         /* Network failure with associated message */
@@ -80,17 +87,17 @@ enum AppError: LocalizedError, Sendable {
     ///
     /// @note   Keep output concise and actionable for support/debug workflows
     ///
-    var errorDescription: String? {
+    var errorDescription: String? { /* Example localized error description */
 
         switch self {
 
             case .missingConfiguration:
                 return "Missing required configuration."
 
-            case .invalidInput(let message):
+            case .invalidInput(let message): /* Example input-validation message */
                 return "Invalid input: \(message)"
 
-            case .networkFailure(let message):
+            case .networkFailure(let message): /* Example network-failure message */
                 return "Network request failed: \(message)"
 
             case .unknown:
@@ -102,6 +109,7 @@ enum AppError: LocalizedError, Sendable {
 
 // -------------------------------------- MARK: - Models ---------------------------------------- //
 
+
 ///
 /// Simple, value-based model used throughout the app
 ///
@@ -112,10 +120,10 @@ enum AppError: LocalizedError, Sendable {
 ///
 struct Item: Identifiable, Codable, Sendable {
 
-    let id:        UUID             /* Unique identifier for the item      */
-    let title:     String           /* Display title                       */
-    let detail:    String?          /* Optional secondary content          */
-    let createdAt: Date             /* Timestamp for creation or retrieval */
+    let id:        UUID             /* Example item identity */
+    let title:     String           /* Example display title */
+    let detail:    String?          /* Example optional secondary content */
+    let createdAt: Date             /* Example creation or retrieval timestamp */
 
 
     ///
@@ -143,6 +151,7 @@ struct Item: Identifiable, Codable, Sendable {
 
 // -------------------------------------- MARK: - Protocols ------------------------------------- //
 
+
 ///
 /// Abstract boundary for data retrieval
 ///
@@ -150,6 +159,7 @@ struct Item: Identifiable, Codable, Sendable {
 ///     Permit dependency injection and keep data access abstract from the UI layer
 ///
 protocol ItemServiceProtocol: Sendable {
+
 
     ///
     /// @fcn        ItemServiceProtocol.fetchItems()
@@ -166,6 +176,7 @@ protocol ItemServiceProtocol: Sendable {
 
 // -------------------------------------- MARK: - Services -------------------------------------- //
 
+
 ///
 /// Concrete implementation of the data-access layer
 ///
@@ -173,6 +184,7 @@ protocol ItemServiceProtocol: Sendable {
 ///     Provide the concrete dependency behind the abstract repository/service contract
 ///
 final class ItemService: ItemServiceProtocol {
+
 
     ///
     /// @fcn        ItemService.fetchItems()
@@ -185,7 +197,7 @@ final class ItemService: ItemServiceProtocol {
     ///
     func fetchItems() async throws -> [Item] {
 
-        let now = Date()              /* Capture the current timestamp for item creation */ 
+        let now = Date()              /* Example shared item-creation timestamp */
 
         return [
             Item(title: "Example Item", detail: "Sample content", createdAt: now),
@@ -197,6 +209,7 @@ final class ItemService: ItemServiceProtocol {
 
 // -------------------------------------- MARK: - View Model ----------------------------------- //
 
+
 ///
 /// Presentation state for a screen or feature
 ///
@@ -206,12 +219,13 @@ final class ItemService: ItemServiceProtocol {
 @MainActor
 final class ItemListViewModel: ObservableObject {
 
-    @Published private(set) var items: [Item] = []          /* Current collection of items   */
-    @Published private(set) var isLoading     = false       /* Loading state indicator       */
+    @Published private(set) var items: [Item] = []          /* Example current item collection */
+    @Published private(set) var isLoading     = false       /* Example loading-state indicator */
 
-    @Published private(set) var errorMessage: String?       /* Current error message, if any */
+    @Published private(set) var errorMessage: String?       /* Example current error message */
 
-    private let service: any ItemServiceProtocol            /* Concrete service dependency for data access */
+    private let service: any ItemServiceProtocol            /* Example injected data-access dependency */
+
 
     ///
     /// @fcn        ItemListViewModel.init
@@ -248,12 +262,12 @@ final class ItemListViewModel: ObservableObject {
 
             //Fetch attempt
             items = try await service.fetchItems()
-        
-        } catch let error as AppError {
+
+        } catch let error as AppError { /* Example recognized application error */
 
             //Handle known application errors
             errorMessage = error.localizedDescription
-        
+
         } catch {
 
             //Handle unexpected errors
@@ -268,6 +282,7 @@ final class ItemListViewModel: ObservableObject {
 
 // -------------------------------------- MARK: - Utility -------------------------------------- //
 
+
 ///
 /// @fcn        formatDate(_:style:)
 /// @brief      Format a date using the requested date style and a short time
@@ -280,18 +295,19 @@ final class ItemListViewModel: ObservableObject {
 /// @return     (String) formatted date and short time
 ///
 func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
-    
-    let formatter = DateFormatter()     /* Initialize a new date formatter instance */
 
-    
+    let formatter = DateFormatter()     /* Example date-and-time formatter */
+
+
     formatter.dateStyle = style         /* Set the desired date style */
-    formatter.timeStyle = .short        /* Set the desired time style */  
+    formatter.timeStyle = .short        /* Set the desired time style */
 
     return formatter.string(from: date)
 }
 
 
 // -------------------------------------- MARK: - Entry Point ---------------------------------- //
+
 
 ///
 /// Example app entry used when integrated into a larger app target
@@ -303,6 +319,7 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
 ///
 enum AppEntry {
 
+
     ///
     /// @fcn        AppEntry.run()
     /// @brief      Launch the sample flow for the template
@@ -312,13 +329,13 @@ enum AppEntry {
     ///
     static func run() async {
 
-        let viewModel = await ItemListViewModel(service: ItemService())
+        let viewModel = await ItemListViewModel(service: ItemService()) /* Example item-list presentation state */
 
         // Load items from the service
         await viewModel.loadItems()
 
         // Retrieve the loaded items from the view model
-        let items = await viewModel.items
+        let items = await viewModel.items /* Example loaded item collection */
 
         // Iterate over the retrieved items and print their details
         for item in items {
@@ -327,11 +344,9 @@ enum AppEntry {
         }
 
         // Check for any error messages and print them if present
-        if let errorMessage = await viewModel.errorMessage {
+        if let errorMessage = await viewModel.errorMessage { /* Example reported loading error */
 
             print("Error: \(errorMessage)")
         }
     }
 }
-
-

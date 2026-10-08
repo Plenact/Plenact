@@ -20,6 +20,7 @@ import XCTest
 ///
 final class ChecklistMigrationTests: XCTestCase {
 
+
     ///
     /// @fcn        ChecklistMigrationTests.testLegacyBoardSnapshotDecodesChecklistItems()
     /// @brief      Decode checklist actions from a complete revision 0 board snapshot
@@ -65,7 +66,7 @@ final class ChecklistMigrationTests: XCTestCase {
         let lists     = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8)) /* Migrated board */
         let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)                /* Nested checklist */
 
-        XCTAssertEqual(checklist.items.map(\.title), ["Sort clothes", "Start washer", "Fold clothes"])
+        XCTAssertEqual(checklist.items.map(\.title),   ["Sort clothes", "Start washer", "Fold clothes"])
         XCTAssertEqual(checklist.completedItemIndices, [1])
         XCTAssertFalse(checklist.items[0].isCompleted)
         XCTAssertTrue(checklist.items[1].isCompleted)
@@ -114,6 +115,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
         let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!   /* First action ID  */
         let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!   /* Second action ID */
+
         let items = [                                                               /* Source actions   */
             KanbanChecklistItem(id: firstID,  title: "First",  isCompleted: true),
             KanbanChecklistItem(id: secondID, title: "Second", isCompleted: false)
@@ -125,7 +127,7 @@ final class ChecklistMigrationTests: XCTestCase {
             completedItemIndices: [1]
         )
 
-        XCTAssertEqual(checklist.items.map(\.id), [firstID, secondID])
+        XCTAssertEqual(checklist.items.map(\.id),      [firstID, secondID])
         XCTAssertEqual(checklist.completedItemIndices, [1])
         XCTAssertFalse(checklist.items[0].isCompleted)
         XCTAssertTrue(checklist.items[1].isCompleted)
@@ -189,7 +191,7 @@ final class ChecklistMigrationTests: XCTestCase {
 
         let item = try JSONDecoder().decode(KanbanChecklistItem.self, from: Data(earlierItemJSON.utf8)) /* Decoded action */
 
-        XCTAssertEqual(item.title, "Existing action")
+        XCTAssertEqual(item.title,   "Existing action")
         XCTAssertEqual(item.content, .standard)
       }
 
@@ -210,6 +212,7 @@ final class ChecklistMigrationTests: XCTestCase {
           checklists:  [KanbanChecklist(title: "Steps", items: ["Sort clothes"])],
           comments:    [KanbanComment(author: "Plenact Demo", body: "Ready to begin.")]
         )
+
         let checklist = KanbanChecklist(             /* Rich action checklist */
           title: "Actions",
           items: [
@@ -248,38 +251,40 @@ final class ChecklistMigrationTests: XCTestCase {
             continue
           }
 
-          let actions = card.checklists.flatMap(\.items)   /* Card checklist actions */
-          let linkedCardIDs = actions.compactMap { item -> Int? in /* Resolved linked-card target IDs */
-            guard case .linkedCard(let cardID) = item.content else {
+          let actions = card.checklists.flatMap(\.items)                /* Card checklist actions          */
+          let linkedCardIDs = actions.compactMap { item -> Int? in      /* Resolved linked-card target IDs */
+
+            guard case .linkedCard(let cardID /* Linked card ID */) = item.content else {
 
                 return nil
-            } /* Linked card ID */
+            }
 
             return cardID
           }
 
-          let detailCount = actions.filter { item in /* Count reduced Action Details */
+          let detailCount = actions.filter { item in                  /* Count reduced Action Details     */
             guard case .actionDetail = item.content else {
 
                 return false
             }
 
             return true
+
           }.count
 
           XCTAssertEqual(linkedCardIDs.count, 1, "\(card.word) should demonstrate one card link")
-          XCTAssertEqual(detailCount, 2, "\(card.word) should demonstrate two Action Details")
+          XCTAssertEqual(detailCount,         2, "\(card.word) should demonstrate two Action Details")
 
-          if let linkedCardID = linkedCardIDs.first { /* First seeded linked-card target */
+          if let linkedCardID = linkedCardIDs.first {               /* First seeded linked-card target */
 
-            let linkedCard = cardsByID[linkedCardID]   /* Resolved sample target */
+            let linkedCard = cardsByID[linkedCardID]                /* Resolved sample target          */
 
             XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
             XCTAssertNotEqual(linkedCard?.listTitle, card.listTitle, "\(card.word) should link across lists")
           }
         }
       }
-      
+
 
       ///
       /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists()
@@ -291,7 +296,7 @@ final class ChecklistMigrationTests: XCTestCase {
       ///
       func testStarterBoardUsesWeekdayPlanningLists() {
 
-        let expectedTitles = [   /* Ordered weekday titles */
+        let expectedTitles = [                                                              /* Ordered weekday titles */
           "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
         ]
 
@@ -299,11 +304,12 @@ final class ChecklistMigrationTests: XCTestCase {
 
         for list in SampleData.lists {
 
-          let activityCards = list.cards.filter { !$0.isSectionDivider }   /* Daily activity cards */
-          let dividerCards  = list.cards.filter(\.isSectionDivider)        /* Daily dividers       */
+          let activityCards = list.cards.filter { !$0.isSectionDivider }                    /* Daily activity cards   */
+          let dividerCards  = list.cards.filter(\.isSectionDivider)                         /* Daily dividers         */
 
           XCTAssertEqual(activityCards.count, 6, "\(list.title) should begin with six activities")
-          XCTAssertEqual(dividerCards.count, 1, "\(list.title) should contain one divider")
+          XCTAssertEqual(dividerCards.count,  1, "\(list.title) should contain one divider")
+
           XCTAssertTrue(activityCards.allSatisfy { $0.listTitle == list.title })
         }
 
@@ -352,8 +358,8 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     func testRegisteredCardAssigneeRoundTripsStableUserID() throws {
 
-        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"   /* Stable demo user ID */
-        let card = KanbanCard(   /* Card with directory assignment */
+        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"     /* Stable demo user ID            */
+        let card   = KanbanCard(                                /* Card with directory assignment */
             id:        10,
             word:      "Prepare the week",
             listTitle: "Monday",
@@ -363,9 +369,9 @@ final class ChecklistMigrationTests: XCTestCase {
         let encoded = try JSONEncoder().encode(card)   /* Encoded card */
         let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)   /* Round-trip card */
 
-        XCTAssertEqual(decoded.members.count, 1)
-        XCTAssertEqual(decoded.members[0].kind, .registeredUser)
-        XCTAssertEqual(decoded.members[0].userID, userID)
+        XCTAssertEqual(decoded.members.count,          1)
+        XCTAssertEqual(decoded.members[0].kind,        .registeredUser)
+        XCTAssertEqual(decoded.members[0].userID,      userID)
         XCTAssertEqual(decoded.members[0].displayName, "Jim")
     }
 }

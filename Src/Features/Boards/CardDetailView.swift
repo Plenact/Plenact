@@ -39,6 +39,7 @@ enum ChecklistMoveDirection {
 
 // -------------------------------------- MARK: - Card Detail View ------------------------------ //
 
+
 ///
 /// Presents the complete detail view for a selected kanban card
 ///
@@ -50,6 +51,7 @@ enum ChecklistMoveDirection {
 struct CardDetailView: View {
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
+
 
     /// Identifies the date field currently edited by the date picker
     ///
@@ -161,6 +163,7 @@ struct CardDetailView: View {
         ///
         var id: String { rawValue } /* Stable generated-activity identity */
 
+
         ///
         /// @fcn        CardDetailView.GeneratedActivity.text(for:actorName:)
         /// @brief      Generate the display text for an activity entry
@@ -222,6 +225,7 @@ struct CardDetailView: View {
         ///
         var title: String { /* User-facing activity-filter label */
             switch self {
+
             case .all:          "All Activity"
             case .comments:     "Comments"
             case .cardActivity: "Card Activity"
@@ -250,15 +254,15 @@ struct CardDetailView: View {
     @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
-    let personalCollectionID: UUID?
-    let availablePersonalLists: [PersonalCollection]
-    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?
-    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?
-    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?
-    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?
-    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?
+    let personalCollectionID: UUID? /* Original personal collection owning this detail session */
+    let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note movement destinations */
+    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves the Note and returns its destination-local record */
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? /* Persists edits after the Note changes collections */
+    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? /* Archives the Note in its current collection */
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? /* Persists the relocated Note's saved state */
     /// Optional callback that archives the latest synchronized card snapshot.
-    let onArchive: (() -> Void)?
+    let onArchive: (() -> Void)? /* Archives the record through its original owner */
     /// Optional callback permanently deleting this card and its caller-owned content.
     let onDelete: (() -> Bool)? /* Save-first removal; false keeps the editor and drafts open */
 
@@ -291,13 +295,13 @@ struct CardDetailView: View {
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
     @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
     @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
-    @State private var presentation: ItemPresentation
-    @State private var showsNoteDetails = false
-    @State private var hasEditedDescription = false
-    @State private var recordID: Int
-    @State private var currentListTitle: String
-    @State private var currentPersonalCollectionID: UUID?
-    @State private var movedNoteIsSaved: Bool?
+    @State private var presentation: ItemPresentation /* Current Card or Note rendering mode */
+    @State private var showsNoteDetails = false /* Visibility of supplementary Note fields */
+    @State private var hasEditedDescription = false /* Whether the body draft should replace the stored value */
+    @State private var recordID: Int /* Current identity after any collection-local reassignment */
+    @State private var currentListTitle: String /* Owning list name updated after Note movement */
+    @State private var currentPersonalCollectionID: UUID? /* Current personal collection after Note movement */
+    @State private var movedNoteIsSaved: Bool? /* Saved-state override for a relocated Note */
 
 
     ///
@@ -424,7 +428,7 @@ struct CardDetailView: View {
     ///             Removing a cover preserves all attachments and never auto-selects another image
     /// @return     (some View) cover settings shown only on explicit request
     ///
-    private var coverControls: some View {
+    private var coverControls: some View { /* Featured-media selection and removal controls */
         DetailSection(title: "Card Cover") {
             Button("Browse Cover Library", systemImage: "photo.on.rectangle.angled") {
                 showsCoverLibrary = true
@@ -432,7 +436,7 @@ struct CardDetailView: View {
 
             .frame(minHeight: 44)
 
-            if let cover = attachments.first(where: {
+            if let cover = attachments.first(where: { /* Attachment currently selected as the cover */
 
                 $0.id == coverAttachmentID && $0.kind == .photo
             }) {
@@ -468,19 +472,20 @@ struct CardDetailView: View {
 
         .sheet(isPresented: $showsCoverPicker) {
             CardCoverPicker(
-                photos: attachments.filter { $0.kind == .photo },
+                photos:     attachments.filter { $0.kind == .photo },
                 selectedID: coverAttachmentID,
-                onSelect: { setCover($0) }
+                onSelect:   { setCover($0) }
             )
         }
 
         .sheet(isPresented: $showsCoverLibrary) {
             CardCoverLibrary(
                 selectedImage: attachments.first { $0.id == coverAttachmentID }?.exampleImage,
-                onSelect: useLibraryCover
+                onSelect:      useLibraryCover
             )
         }
     }
+
 
     ///
     /// @fcn        CardDetailView.setCover(_:)
@@ -494,7 +499,7 @@ struct CardDetailView: View {
     ///
     private func setCover(_ id: UUID?) {
 
-        var updated = card.replacingLocation(id: recordID, listTitle: currentListTitle)
+        var updated = card.replacingLocation(id: recordID, listTitle: currentListTitle) /* Edited record retaining its current location identity */
 
         updated.attachments = attachments
 
@@ -506,9 +511,11 @@ struct CardDetailView: View {
             coverAttachmentID = updated.coverAttachmentID
             syncCardState()
         } catch {
+
             DatabaseActivity.shared.report("Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
         }
     }
+
 
     ///
     /// @fcn        CardDetailView.useLibraryCover(_:)
@@ -526,7 +533,7 @@ struct CardDetailView: View {
             return false
         }
 
-        var updated = card
+        var updated = card /* Card snapshot receiving the cover change */
 
         updated.attachments = attachments
 
@@ -541,11 +548,13 @@ struct CardDetailView: View {
 
             return true
         } catch {
+
             DatabaseActivity.shared.report("Could not select this cover: \(error.localizedDescription)")
 
             return false
         }
     }
+
 
     ///
     /// @fcn        CardDetailView.attachmentContent(for:)
@@ -623,10 +632,21 @@ struct CardDetailView: View {
     /// @details    Keeps the gallery's view-builder expression separate from the full card editor
     /// @return     (some View) adaptive attachment grid
     ///
-    private var attachmentGallery: some View {
+    private var attachmentGallery: some View { /* Attached media displayed with editing actions */
         attachmentGallery(attachments)
     }
 
+
+    ///
+    /// @fcn        CardDetailView.attachmentGallery(_:)
+    /// @brief      Build the attachment grid for the supplied visible records
+    /// @details    Renders each attachment using the gallery item view and leaves cover filtering
+    ///             to the caller's visible-attachment selection
+    ///
+    /// @param[in]  visibleAttachments  Attachments to display in this gallery
+    ///
+    /// @return     (some View) titled, adaptive attachment grid
+    ///
     private func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View {
         DetailSection(title: "Attachments") {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
@@ -679,7 +699,7 @@ struct CardDetailView: View {
             return
         }
 
-        if let coverRequestID, coverImportID != coverRequestID {
+        if let coverRequestID, coverImportID != coverRequestID { /* Cover request checked against the latest import */
 
             return
         }
@@ -701,7 +721,7 @@ struct CardDetailView: View {
                     return
                 }
 
-                if let coverRequestID, coverImportID != coverRequestID {
+                if let coverRequestID, coverImportID != coverRequestID { /* Cover request checked before importing media */
 
                     return
                 }
@@ -714,7 +734,7 @@ struct CardDetailView: View {
                 let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category */
                 let fileExtension = contentType?.preferredFilenameExtension ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
 
-                let attachment = try CardAttachmentStore.saveMedia(mediaData, kind: mediaKind, fileExtension: fileExtension)
+                let attachment = try CardAttachmentStore.saveMedia(mediaData, kind: mediaKind, fileExtension: fileExtension) /* Persisted media record ready to attach */
 
                 attachments.append(attachment)
 
@@ -723,11 +743,12 @@ struct CardDetailView: View {
                     coverAttachmentID = attachment.id
                 }
             } catch {
+
                 importFailed = true
             }
         }
 
-        if let coverRequestID, coverImportID != coverRequestID {
+        if let coverRequestID, coverImportID != coverRequestID { /* Cover request checked before publishing saved media */
 
             return
         }
@@ -737,6 +758,7 @@ struct CardDetailView: View {
             coverImportID = nil
             selectedCoverPhoto = nil
         } else {
+
             selectedPhotoItems = []
             activeSheet = nil
         }
@@ -836,8 +858,8 @@ struct CardDetailView: View {
     ///
     private func removeAttachment(_ attachment: KanbanAttachment) {
 
-        let removesCover = coverAttachmentID == attachment.id
-        var updated = card
+        let removesCover = coverAttachmentID == attachment.id /* Whether removing this attachment also clears the cover */
+        var updated = card /* Card snapshot excluding the removed attachment */
 
         updated.attachments = attachments
         updated.coverAttachmentID = coverAttachmentID
@@ -902,41 +924,43 @@ struct CardDetailView: View {
             return
         }
 
-        var updatedCard = workingCardSnapshot
+        var updatedCard = workingCardSnapshot /* Complete working record receiving submitted field changes */
 
-        if let title {
+        if let title { /* Submitted replacement title */
 
             updatedCard.word = title
         }
-        if let subtitle {
+        if let subtitle { /* Submitted replacement subtitle */
 
             updatedCard.subtitleOverride = subtitle
         }
-        if let members {
+        if let members { /* Submitted replacement assignees */
 
             updatedCard.members = members
         }
-        if let labelIDs {
+        if let labelIDs { /* Submitted replacement label assignments */
 
             updatedCard.labelIDs = labelIDs
         }
-        if let attachments {
+        if let attachments { /* Submitted replacement attachment collection */
 
             updatedCard.attachments = attachments
         }
-        if let titleChecked {
+        if let titleChecked { /* Submitted title completion state */
 
             updatedCard.isTitleChecked = titleChecked
         }
         updatedCard.startDate = clearStartDate ? nil : (startDate ?? self.startDate)
         updatedCard.dueDate = clearDueDate ? nil : (dueDate ?? self.dueDate)
 
-        if let currentPersonalCollectionID,
+        if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
            currentPersonalCollectionID != personalCollectionID {
             guard onUpdateMovedNote?(currentPersonalCollectionID, updatedCard) == true else {
+
                 return
             }
         } else {
+
             onTitleToggle?(updatedCard)
         }
     }
@@ -947,9 +971,9 @@ struct CardDetailView: View {
     /// @details    Keeps nil body/attachment values until edited and preserves future model fields
     /// @return     (KanbanCard) complete current record without submitting or saving it
     ///
-    private var workingCardSnapshot: KanbanCard {
+    private var workingCardSnapshot: KanbanCard { /* Original record overlaid with all current editor fields */
 
-        var updated = card
+        var updated = card /* Complete record assembled from working editor state */
 
         updated.word = titleText
         updated.subtitleOverride = card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText
@@ -985,18 +1009,19 @@ struct CardDetailView: View {
     ///
     private func deleteCard() {
 
-        guard let onDelete, !hasDeletedCard else {
+        guard let onDelete, !hasDeletedCard else { /* Original-owner deletion callback available for this record */
 
             return
         }
 
         hasDeletedCard = true
 
-        let deleted: Bool
-        if let currentPersonalCollectionID,
+        let deleted: Bool /* Whether the owning collection accepted permanent deletion */
+        if let currentPersonalCollectionID, /* Current owner used to route relocated Note deletion */
            currentPersonalCollectionID != personalCollectionID {
             deleted = onDeleteMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true
         } else {
+
             deleted = onDelete()
         }
 
@@ -1043,9 +1068,9 @@ struct CardDetailView: View {
     ///
     private func toggleSavedCard() {
 
-        let isSaved = isCurrentRecordSaved
+        let isSaved = isCurrentRecordSaved /* Bookmark state before toggling */
 
-        if let currentPersonalCollectionID,
+        if let currentPersonalCollectionID, /* Current owner used to route relocated Note bookmarking */
            currentPersonalCollectionID != personalCollectionID {
             guard onToggleMovedNoteBookmark?(currentPersonalCollectionID, recordID, !isSaved) == true else {
 
@@ -1057,6 +1082,7 @@ struct CardDetailView: View {
             savedCardIDs.remove(recordID)
             movedNoteIsSaved = nil
         } else {
+
             savedCardIDs.insert(recordID)
             movedNoteIsSaved = nil
         }
@@ -1238,11 +1264,24 @@ struct CardDetailView: View {
     }
 
 
+    ///
+    /// @fcn        CardDetailView.moveNote(to:)
+    /// @brief      Move the current Note to another personal List
+    /// @details    Calls the supplied move operation with the latest card snapshot and updates the
+    ///             editor's location and record identity only when that operation succeeds
+    ///
+    /// @param[in]  collectionID  Identity of the destination personal List
+    ///
+    /// @return     (Void) keeps the existing location when the move cannot be completed
+    ///
+    /// @post       Successful moves update the editor's collection identity and List title
+    ///
     private func moveNote(to collectionID: UUID) {
 
-        guard let onMoveNoteToPersonalList,
-              let sourceID = currentPersonalCollectionID,
-              let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID) else {
+        guard let onMoveNoteToPersonalList, /* Callback handling checked movement between personal Lists */
+              let sourceID = currentPersonalCollectionID, /* Collection currently owning the Note */
+              let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID) else { /* Persisted Note with its destination-local identity */
+
             return
         }
 
@@ -1253,7 +1292,7 @@ struct CardDetailView: View {
     }
 
 
-    private var noteLocationLabel: some View {
+    private var noteLocationLabel: some View { /* Current personal List displayed in the Note header */
 
         Text(currentListTitle)
             .font(.caption)
@@ -1264,14 +1303,14 @@ struct CardDetailView: View {
     }
 
 
-    private var isCurrentRecordSaved: Bool {
+    private var isCurrentRecordSaved: Bool { /* Bookmark state resolved for the record's current owner */
 
         movedNoteIsSaved ?? savedCardIDs.contains(recordID)
     }
 
 
     @ViewBuilder
-    private var locationControl: some View {
+    private var locationControl: some View { /* List-location picker adapted to Card or Note movement */
 
         if presentation == .note, onMoveNoteToPersonalList != nil {
 
@@ -1284,6 +1323,16 @@ struct CardDetailView: View {
     }
 
 
+    ///
+    /// @fcn        CardDetailView.personalListDestinationButton(_:)
+    /// @brief      Build a menu action for moving a Note to one personal List
+    /// @details    Shows the destination name, marks the current List, and disables selection of
+    ///             the already active destination
+    ///
+    /// @param[in]  collection  Candidate personal List destination
+    ///
+    /// @return     (some View) destination button with current-location state
+    ///
     private func personalListDestinationButton(_ collection: PersonalCollection) -> some View {
 
         Button {
@@ -1298,6 +1347,16 @@ struct CardDetailView: View {
     }
 
 
+    ///
+    /// @fcn        CardDetailView.personalListMenu(label:)
+    /// @brief      Build a menu for moving a Note between available personal Lists
+    /// @details    Uses the supplied label as the menu trigger, provides one action per active
+    ///             destination, and disables movement when no destination or callback is available
+    ///
+    /// @param[in]  label  View-builder closure that renders the menu trigger
+    ///
+    /// @return     (some View) List destination menu
+    ///
     @ViewBuilder
     private func personalListMenu<Label: View>(@ViewBuilder label: () -> Label) -> some View {
         Menu {
@@ -1356,7 +1415,7 @@ struct CardDetailView: View {
         if currentDate != nil {
             
             ActivitySwipeRow(
-                onDelete: { resetDate(for: field) },
+                onDelete:                   { resetDate(for: field) },
                 deletionAccessibilityLabel: "Remove \(fieldName)"
             ) {
                 row
@@ -1416,6 +1475,7 @@ struct CardDetailView: View {
         syncCardState()
     }
 
+
     ///
     /// @fcn        CardDetailView.renameChecklist(with:to:)
     /// @brief      Rename a checklist on the current card
@@ -1432,12 +1492,13 @@ struct CardDetailView: View {
     ///
     private func renameChecklist(with checklistID: UUID, to title: String) {
         
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Position of the checklist to rename */
 
             $0.id == checklistID
         }) else {
+
             return
-        } /* Checklist position */
+        }
         
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized checklist title */
         
@@ -1473,12 +1534,13 @@ struct CardDetailView: View {
     ///
     private func toggleAllItems(in checklistID: UUID) {
 
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Checklist whose action completion states are toggled together */
 
             $0.id == checklistID
         }) else {
+
             return
-        } /* Checklist position */
+        }
 
         let checklist            = checklists[checklistIndex]                                                                   /* Current checklist snapshot       */
         let allItemsAreCompleted = !checklist.items.isEmpty && checklist.completedItemIndices.count == checklist.items.count    /* Whether all items are complete    */
@@ -1512,11 +1574,12 @@ struct CardDetailView: View {
     private func moveChecklist(with checklistID: UUID, direction: ChecklistMoveDirection) {
 
         // Ensure the checklist exists and there is more than one checklist to move
-        guard let sourceIndex = checklists.firstIndex(where: {
+        guard let sourceIndex = checklists.firstIndex(where: { /* Checklist position before reordering */
 
             $0.id == checklistID
         }), /* Current checklist position */
               checklists.count > 1 else {
+
             return
         }
 
@@ -1561,10 +1624,11 @@ struct CardDetailView: View {
     private func addItem(to checklistID: UUID) {
 
         // Find the index of the checklist to which the new item will be added
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Checklist receiving the new action */
 
             $0.id == checklistID
         }) else { /* Target checklist position */
+
             return
         }
 
@@ -1597,10 +1661,11 @@ struct CardDetailView: View {
     private func toggleItem(in checklistID: UUID, at itemIndex: Int) {
 
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Checklist containing the action to toggle */
 
             $0.id == checklistID
         }) else { /* Checklist being toggled */
+
             return
         }
 
@@ -1612,15 +1677,16 @@ struct CardDetailView: View {
 
             completedItemIndices.remove(itemIndex)
         } else {
+
             completedItemIndices.insert(itemIndex)
         }
 
         // Update the checklist with the new set of completed item indices
         checklists[checklistIndex] = KanbanChecklist(
-            id:                    checklist.id,
-            title:                 checklist.title,
-            items:                 checklist.items,
-            completedItemIndices:  completedItemIndices
+            id:                   checklist.id,
+            title:                checklist.title,
+            items:                checklist.items,
+            completedItemIndices: completedItemIndices
         )
         syncCardState()
     }
@@ -1644,10 +1710,11 @@ struct CardDetailView: View {
     private func updateItem(in checklistID: UUID, at itemIndex: Int, with text: String) {
         
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Checklist containing the action to replace */
 
             $0.id == checklistID
         }) else { /* Checklist being edited */
+
             return
         }
 
@@ -1661,14 +1728,15 @@ struct CardDetailView: View {
         }
 
         var items = checklist.items       /* Mutable checklist actions */
+
         items[itemIndex].title = text     /* Update the text while preserving stable item identity       */
 
         // Update the checklist with the modified items array
         checklists[checklistIndex] = KanbanChecklist(
-            id:                    checklist.id,
-            title:                 checklist.title,
-            items:                 items,
-            completedItemIndices:  checklist.completedItemIndices
+            id:                   checklist.id,
+            title:                checklist.title,
+            items:                items,
+            completedItemIndices: checklist.completedItemIndices
         )
         syncCardState()
     }
@@ -1690,10 +1758,11 @@ struct CardDetailView: View {
     private func deleteItem(in checklistID: UUID, at itemIndex: Int) {
 
         // Find the index of the checklist being updated
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Checklist containing the action to delete */
 
             $0.id == checklistID
         }) else { /* Checklist being edited */
+
             return
         }
 
@@ -1727,13 +1796,14 @@ struct CardDetailView: View {
 
         // Update the checklist with the recalculated completed item indices
         checklists[checklistIndex] = KanbanChecklist(
-            id:                    checklist.id,
-            title:                 checklist.title,
-            items:                 items,
-            completedItemIndices:  completedItemIndices
+            id:                   checklist.id,
+            title:                checklist.title,
+            items:                items,
+            completedItemIndices: completedItemIndices
         )
         syncCardState()
     }
+
 
     ///
     /// @fcn        CardDetailView.updateActionDetail(checklistID:itemID:detail:)
@@ -1752,23 +1822,26 @@ struct CardDetailView: View {
     ///
     private func updateActionDetail(checklistID: UUID, itemID: UUID, detail: KanbanChecklistActionDetail) {
 
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Position of the checklist containing the requested action */
 
             $0.id == checklistID
         }) else {
+
             return
-        } /* Target checklist position */
+        }
 
         let checklist = checklists[checklistIndex] /* Owning checklist */
 
-        guard let itemIndex = checklist.items.firstIndex(where: {
+        guard let itemIndex = checklist.items.firstIndex(where: { /* Position of the requested checklist action */
 
             $0.id == itemID
         }) else {
+
             return
-        } /* Target action position */
+        }
 
         var items = checklist.items /* Mutable checklist actions */
+
         items[itemIndex].content = .actionDetail(detail)
 
         checklists[checklistIndex] = KanbanChecklist(
@@ -1779,6 +1852,7 @@ struct CardDetailView: View {
 
         syncCardState()
     }
+
 
     ///
     /// @fcn        CardDetailView.checklistBlock(for:)
@@ -1800,39 +1874,39 @@ struct CardDetailView: View {
         let checklistIndex = checklists.firstIndex(where: { $0.id == checklist.id }) ?? 0 /* Current checklist position */
 
         ChecklistBlock(
-            checklist: checklist,
-            linkedCardsByID: linkedCardsByID,
-            onDelete: {
+            checklist:          checklist,
+            linkedCardsByID:    linkedCardsByID,
+            onDelete:           {
 
                 deleteChecklist(with: checklist.id)
             },
-            onAddItem: {
+            onAddItem:          {
                 addItem(to: checklist.id)
             },
-            onToggleItem: { itemIndex in
+            onToggleItem:       { itemIndex in
                 toggleItem(in: checklist.id, at: itemIndex)
             },
-            onUpdateItem: { itemIndex, text in
+            onUpdateItem:       { itemIndex, text in
                 updateItem(in: checklist.id, at: itemIndex, with: text)
             },
-            onDeleteItem: { itemIndex in
+            onDeleteItem:       { itemIndex in
                 deleteItem(in: checklist.id, at: itemIndex)
             },
             onOpenActionDetail: { itemID in
                 activeSheet = .actionDetail(checklist.id, itemID)
             },
-            onRename: { title in
+            onRename:           { title in
                 renameChecklist(with: checklist.id, to: title)
             },
-            onToggleAllItems: {
+            onToggleAllItems:   {
                 toggleAllItems(in: checklist.id)
             },
-            onMove: { direction in
+            onMove:             { direction in
                 moveChecklist(with: checklist.id, direction: direction)
             },
-            canMoveUp:      checklistIndex > 0,
-            canMoveDown:    checklistIndex < checklists.count - 1,
-            focusFirstItem: checklist.id == checklistToFocus,
+            canMoveUp:          checklistIndex > 0,
+            canMoveDown:        checklistIndex < checklists.count - 1,
+            focusFirstItem:     checklist.id == checklistToFocus,
             onFirstItemFocused: {
                 checklistToFocus = nil
             }
@@ -1868,7 +1942,7 @@ struct CardDetailView: View {
     /// @details    Interface changes do not mark the body as edited
     /// @return     (Binding<String>) body editor binding
     ///
-    private var descriptionEditingBinding: Binding<String> {
+    private var descriptionEditingBinding: Binding<String> { /* Body draft binding that records explicit edits */
         Binding(
             get: { descriptionText },
             set: {
@@ -1884,7 +1958,7 @@ struct CardDetailView: View {
     /// @details    Keeps title/body editing immediate and exposes retained metadata through Details
     /// @return     (some View) accessible Note editor without a task-completion checkbox
     ///
-    private var noteEditor: some View {
+    private var noteEditor: some View { /* Inline Note title and body editor */
 
         VStack(alignment: .leading, spacing: 18) {
 
@@ -1899,7 +1973,7 @@ struct CardDetailView: View {
                     syncCardState(title: newValue)
                 }
 
-            if let createdAt = card.createdAt {
+            if let createdAt = card.createdAt { /* Original Note creation timestamp displayed below its body */
                 NoteCreationDateLabel(createdAt: createdAt)
                     .accessibilityIdentifier("note.creationDate")
             }
@@ -1935,6 +2009,17 @@ struct CardDetailView: View {
         .accessibilityIdentifier("plenact.noteEditor")
     }
 
+
+    ///
+    /// @fcn        CardDetailView.addMenu(using:)
+    /// @brief      Build the Note toolbar menu for adding structured details
+    /// @details    Offers checklist, start-date, due-date, and comment actions, revealing the
+    ///             Details section when checklist or comment entry is selected
+    ///
+    /// @param[in]  scrollProxy  Scroll proxy used by detail-entry actions
+    ///
+    /// @return     (some View) accessible Add menu for the current Note
+    ///
     private func addMenu(using scrollProxy: ScrollViewProxy) -> some View {
         Menu {
             Button {
@@ -1969,6 +2054,17 @@ struct CardDetailView: View {
         .accessibilityIdentifier("note.addMenu")
     }
 
+
+    ///
+    /// @fcn        CardDetailView.noteToolbar(using:)
+    /// @brief      Build the Note editor's persistent lower toolbar
+    /// @details    Provides Back, Details, Attachments, text sharing, and Add actions while
+    ///             retaining accessible labels and minimum touch targets
+    ///
+    /// @param[in]  scrollProxy  Scroll proxy used to reveal editor and Details content
+    ///
+    /// @return     (some View) accessible bottom toolbar for Note editing
+    ///
     private func noteToolbar(using scrollProxy: ScrollViewProxy) -> some View {
         HStack(spacing: 0) {
             Button {
@@ -1985,7 +2081,7 @@ struct CardDetailView: View {
             Button {
                 focusedField = nil
                 showsNoteDetails.toggle()
-                let target = showsNoteDetails ? "note.detailsStart" : "plenact.noteEditor"
+                let target = showsNoteDetails ? "note.detailsStart" : "plenact.noteEditor" /* Scroll anchor selected by Note detail visibility */
                 DispatchQueue.main.async {
                     withAnimation(.easeInOut) {
                         scrollProxy.scrollTo(target, anchor: .top)
@@ -2031,7 +2127,7 @@ struct CardDetailView: View {
         .accessibilityIdentifier("note.bottomToolbar")
     }
 
-    private var noteAttachmentsSheet: some View {
+    private var noteAttachmentsSheet: some View { /* Note attachment browser and import controls */
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -2183,7 +2279,7 @@ struct CardDetailView: View {
                         }
                     }
 
-                    if let cover = attachments.first(where: {
+                    if let cover = attachments.first(where: { /* Featured attachment rendered above the card fields */
                         $0.id == coverAttachmentID && $0.kind == .photo
                     }) {
                         CardCoverPreview(attachment: cover)
@@ -2192,7 +2288,7 @@ struct CardDetailView: View {
                     }
 
                     if presentation == .card {
-                        let visibleAttachments = workingCardSnapshot.attachmentsExcludingCover
+                        let visibleAttachments = workingCardSnapshot.attachmentsExcludingCover /* Gallery records excluding the featured cover */
                         if !visibleAttachments.isEmpty {
 
                             attachmentGallery(visibleAttachments)
@@ -2390,7 +2486,7 @@ struct CardDetailView: View {
 
                             ForEach(comments) { comment in
                                 CommentActivityRow(
-                                    comment: comment,
+                                    comment:     comment,
                                     memberColor: memberIconColor(for: comment.author)
                                 ) {
                                     deleteComment(with: comment.id)
@@ -2402,7 +2498,7 @@ struct CardDetailView: View {
 
                             ForEach(GeneratedActivity.allCases.filter { !dismissedActivityIDs.contains($0.id) }) { activity in
                                 ActivityRow(
-                                    text: activity.text(for: card, actorName: currentUserName),
+                                    text:       activity.text(for: card, actorName: currentUserName),
                                     actorColor: memberIconColor(for: currentUserName)
                                 ) {
                                     dismissGeneratedActivity(activity)
@@ -2524,11 +2620,11 @@ struct CardDetailView: View {
                             Label("Show all activity", systemImage: "clock.arrow.circlepath")
                         }
 
-                        if let onArchive, !card.isSectionDivider {
+                        if let onArchive, !card.isSectionDivider { /* Available archive callback for an actionable record */
 
                             Button {
                                 syncCardState()
-                                if let currentPersonalCollectionID,
+                                if let currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
                                    currentPersonalCollectionID != personalCollectionID {
                                     if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true {
 
@@ -2586,9 +2682,9 @@ struct CardDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .onChange(of: selectedCoverPhoto) { _, photoItem in
-            guard let photoItem else { return }
+            guard let photoItem else { return } /* Newly selected library media awaiting cover import */
 
-            let requestID = UUID()
+            let requestID = UUID() /* Identity used to reject superseded cover imports */
             coverImportID = requestID
             Task { await importPhotos(from: [photoItem], coverRequestID: requestID) }
         }
@@ -2622,7 +2718,7 @@ struct CardDetailView: View {
                     NavigationStack {
                         DatePicker(
                             field.title,
-                            selection: dateBinding(for: field),
+                            selection:           dateBinding(for: field),
                             displayedComponents: [.date]
                         )
                         .datePickerStyle(.graphical)
@@ -2670,10 +2766,10 @@ struct CardDetailView: View {
 
                 case .attachmentSources:
                     CardAttachmentSourceSheet(
-                        photoSelection: $selectedPhotoItems,
-                        onAddLink: { activeSheet = .addLink },
+                        photoSelection:   $selectedPhotoItems,
+                        onAddLink:        { activeSheet = .addLink },
                         onPasteClipboard: addClipboardLink,
-                        onComingSoon: showAttachmentSourceComingSoon
+                        onComingSoon:     showAttachmentSourceComingSoon
                     )
                     .databaseActivityOverlay()
 
@@ -2706,7 +2802,7 @@ struct CardDetailView: View {
                         .databaseActivityOverlay()
 
                 case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs */
-                    if let checklist = checklists.first(where: {
+                    if let checklist = checklists.first(where: { /* Checklist containing the selected action */
 
                         $0.id == checklistID
                     }), /* Owning checklist */
@@ -2740,10 +2836,17 @@ struct CardDetailView: View {
     }
 }
 
-struct NoteCreationDateLabel: View {
-    let createdAt: Date
 
-    var body: some View {
+///
+/// Displays a Note's creation date and time in a width-adaptive layout
+///
+/// @section    Purpose
+///     Keep creation metadata visible beneath the Note title without truncating date or time
+///
+struct NoteCreationDateLabel: View {
+    let createdAt: Date /* Original Note creation time shown in the metadata row */
+
+    var body: some View { /* Formatted Note creation metadata */
         ViewThatFits(in: .horizontal) {
             Text(createdAt, format: .dateTime.month(.abbreviated).day().year().hour().minute())
                 .fixedSize()
@@ -2761,7 +2864,26 @@ struct NoteCreationDateLabel: View {
     }
 }
 
+
+///
+/// Applies the Note toolbar's minimum hit area and pressed-state feedback
+///
+/// @section    Purpose
+///     Keep toolbar controls comfortably tappable and visibly responsive
+///
 private struct NoteToolbarButtonStyle: ButtonStyle {
+
+
+    ///
+    /// @fcn        NoteToolbarButtonStyle.makeBody(configuration:)
+    /// @brief      Apply accessible sizing and pressed-state styling to a toolbar button
+    /// @details    Preserves the label's shape as its content target and reduces opacity while
+    ///             the button is pressed
+    ///
+    /// @param[in]  configuration  Current button label and interaction state
+    ///
+    /// @return     (some View) button label with minimum touch dimensions and feedback
+    ///
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(minWidth: 44, minHeight: 44)
@@ -2773,6 +2895,7 @@ private struct NoteToolbarButtonStyle: ButtonStyle {
 
 
 // --------------------------------------- MARK: - Action Detail ------------------------------- //
+
 
 ///
 /// Presents reduced card-like context owned by one checklist action
@@ -2794,6 +2917,7 @@ private struct ChecklistActionDetailView: View {
     @State private var checklists:      [KanbanChecklist]       /* Nested actions      */
     @State private var comments:        [KanbanComment]         /* Detail comments     */
     @State private var commentDraft     = ""                    /* New comment draft   */
+
 
     ///
     /// @fcn        ChecklistActionDetailView.init(title:detail:currentUserName:onSave:)
@@ -2825,6 +2949,7 @@ private struct ChecklistActionDetailView: View {
         _comments        = State(initialValue: detail.comments)
     }
 
+
     ///
     /// @fcn        ChecklistActionDetailView.toggleItem(checklistID:itemID:)
     /// @brief      Toggle one nested standard action
@@ -2839,23 +2964,26 @@ private struct ChecklistActionDetailView: View {
     ///
     private func toggleItem(checklistID: UUID, itemID: UUID) {
 
-        guard let checklistIndex = checklists.firstIndex(where: {
+        guard let checklistIndex = checklists.firstIndex(where: { /* Nested checklist containing the action to toggle */
 
             $0.id == checklistID
         }) else {
+
             return
-        } /* Nested checklist position */
+        }
 
         let checklist = checklists[checklistIndex] /* Nested checklist snapshot */
 
-        guard let itemIndex = checklist.items.firstIndex(where: {
+        guard let itemIndex = checklist.items.firstIndex(where: { /* Nested action whose completion state is toggled */
 
             $0.id == itemID
         }) else {
+
             return
-        } /* Nested action position */
+        }
 
         var items = checklist.items /* Mutable nested actions */
+
         items[itemIndex].isCompleted.toggle()
 
         checklists[checklistIndex] = KanbanChecklist(
@@ -2864,6 +2992,7 @@ private struct ChecklistActionDetailView: View {
             items: items
         )
     }
+
 
     ///
     /// @fcn        ChecklistActionDetailView.postComment()
@@ -3070,6 +3199,7 @@ private struct CardMembersSheet: View {
         }
     }
 
+
     ///
     /// @fcn        CardMembersSheet.init(members:memberColors:onSave:)
     /// @brief      Seed an isolated card-assignment editing draft
@@ -3087,6 +3217,7 @@ private struct CardMembersSheet: View {
         self.memberColors = memberColors
         _members = State(initialValue: members)
     }
+
 
     ///
     /// @fcn        CardMembersSheet.addMember()
@@ -3212,6 +3343,7 @@ private struct CardMembersSheet: View {
 
 // --------------------------------------- MARK: - Detail Section ------------------------------- //
 
+
 ///
 /// Groups a detail subsection with an optional trailing symbol
 ///
@@ -3227,6 +3359,7 @@ struct DetailSection<Content: View>: View {
     var trailingAction: (() -> Void)?   /* The optional action for the trailing symbol        */
 
     @ViewBuilder let content: () -> Content /* Content rendered beneath the section heading */
+
 
     ///
     /// @fcn        DetailSection.init(title:trailing:trailingAction:content:)
@@ -3306,6 +3439,7 @@ struct DetailSection<Content: View>: View {
 
 // --------------------------------------- MARK: - Action Tile ---------------------------------- //
 
+
 ///
 /// Displays a labeled action tile in a card detail section
 ///
@@ -3346,6 +3480,7 @@ struct ActionTile: View {
 
 
 // --------------------------------------- MARK: - Detail Row ----------------------------------- //
+
 
 ///
 /// Displays one icon, label, and value row in the card metadata
@@ -3390,6 +3525,7 @@ struct DetailRow: View {
 
 
 // --------------------------------------- MARK: - Checklist ------------------------------------ //
+
 
 ///
 /// Displays a checklist group and its completion count
@@ -3456,6 +3592,7 @@ struct ChecklistBlock: View {
         }
     }
 
+
     ///
     /// @fcn        ChecklistBlock.actionRow(for:)
     /// @brief      Build the row behavior for one checklist action type
@@ -3478,37 +3615,37 @@ struct ChecklistBlock: View {
 
             case .standard:
                 ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { text in onUpdateItem(entry.offset, text) },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: focusFirstItem && entry.offset == 0,
+                    item:           entry.element.title,
+                    isCompleted:    checklist.completedItemIndices.contains(entry.offset),
+                    onToggle:       { onToggleItem(entry.offset) },
+                    onUpdate:       { text in onUpdateItem(entry.offset, text) },
+                    onDelete:       { onDeleteItem(entry.offset) },
+                    shouldFocus:    focusFirstItem && entry.offset == 0,
                     onFocusHandled: onFirstItemFocused
                 )
 
             case .linkedCard(let cardID): /* Stable target card identity */
                 ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    linkedCardID: cardID,
-                    linkedCard: linkedCardsByID[cardID],
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { _ in },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: false,
+                    item:           entry.element.title,
+                    isCompleted:    checklist.completedItemIndices.contains(entry.offset),
+                    linkedCardID:   cardID,
+                    linkedCard:     linkedCardsByID[cardID],
+                    onToggle:       { onToggleItem(entry.offset) },
+                    onUpdate:       { _ in },
+                    onDelete:       { onDeleteItem(entry.offset) },
+                    shouldFocus:    false,
                     onFocusHandled: {}
                 )
 
             case .actionDetail:
                 ChecklistItemRow(
-                    item: entry.element.title,
-                    isCompleted: checklist.completedItemIndices.contains(entry.offset),
-                    onOpenDetail: { onOpenActionDetail(entry.element.id) },
-                    onToggle: { onToggleItem(entry.offset) },
-                    onUpdate: { _ in },
-                    onDelete: { onDeleteItem(entry.offset) },
-                    shouldFocus: false,
+                    item:           entry.element.title,
+                    isCompleted:    checklist.completedItemIndices.contains(entry.offset),
+                    onOpenDetail:   { onOpenActionDetail(entry.element.id) },
+                    onToggle:       { onToggleItem(entry.offset) },
+                    onUpdate:       { _ in },
+                    onDelete:       { onDeleteItem(entry.offset) },
+                    shouldFocus:    false,
                     onFocusHandled: {}
                 )
         }
@@ -3659,6 +3796,7 @@ struct ChecklistBlock: View {
 
 // --------------------------------------- MARK: - Checklist Item Row --------------------------- //
 
+
 ///
 /// Displays one touch-friendly checklist item with a custom swipe-to-delete interaction
 ///
@@ -3680,6 +3818,7 @@ struct ChecklistItemRow: View {
 
     @State private var horizontalOffset: CGFloat = 0 /* Current swipe translation */
     @FocusState private var isTextFocused: Bool /* Text-editor focus state */
+
 
     ///
     /// @fcn        ChecklistItemRow.init(item:isCompleted:linkedCardID:linkedCard:onOpenDetail:onToggle:onUpdate:onDelete:shouldFocus:onFocusHandled:)
@@ -3857,6 +3996,7 @@ struct ChecklistItemRow: View {
 
 // --------------------------------------- MARK: - Activity ------------------------------------- //
 
+
 ///
 /// Displays one activity event associated with the card
 ///
@@ -3949,6 +4089,7 @@ struct CommentActivityRow: View {
 
 // -------------------------------------- MARK: - Previews -------------------------------------- //
 
+
 ///
 /// Adds a trailing delete action revealed by swiping an activity row
 ///
@@ -3961,6 +4102,7 @@ struct ActivitySwipeRow<Content: View>: View {
         let deletionAccessibilityLabel: String              /* Accessibility label for the swipe action       */
         @ViewBuilder let content: () -> Content             /* The content view rendered inside the swipe row */
         @State private var horizontalOffset: CGFloat = 0    /* The current horizontal offset of the swipe row */
+
 
         ///
         /// @fcn        ActivitySwipeRow.init(onDelete:deletionAccessibilityLabel:content:)

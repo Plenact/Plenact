@@ -80,6 +80,7 @@ struct CardLabelsSheet: View {
         return library.categories.contains(where: { $0.id == categorySelection })
     }
 
+
     ///
     /// @fcn        CardLabelsSheet.init(library:selectedLabelIDs:onSave:)
     /// @brief      Initialize the card label editor
@@ -103,6 +104,7 @@ struct CardLabelsSheet: View {
         _categorySelection = State(initialValue: library.categories.first?.id ?? "__new_category__")
     }
 
+
     ///
     /// @fcn        CardLabelsSheet.toggleLabel(_:)
     /// @brief      Toggle one label's assignment to the current card
@@ -121,9 +123,11 @@ struct CardLabelsSheet: View {
 
             selectedLabelIDs.removeAll { $0 == labelID }
         } else {
+
             selectedLabelIDs.append(labelID)
         }
     }
+
 
     ///
     /// @fcn        CardLabelsSheet.createLabel()
@@ -153,21 +157,23 @@ struct CardLabelsSheet: View {
             if let existingCategory = library.categories.first(where: {
 
                 $0.name.lowercased() == normalizedName
-            }) { /* Reuse a matching category */
+            }) { /* Reuse the category matching the normalized name */
                 categoryID = existingCategory.id
             } else {
+
                 categoryID = UUID().uuidString
                 library.categories.append(KanbanLabelCategory(id: categoryID, name: trimmedCategoryName))
             }
         } else {
+
             categoryID = categorySelection
         }
 
-        let label = KanbanLabel( /* New reusable label definition */
-            id: UUID().uuidString,
-            name: trimmedLabelName,
+        let label = KanbanLabel(                                               /* New reusable label definition */
+            id:         UUID().uuidString,
+            name:       trimmedLabelName,
             categoryID: categoryID,
-            color: selectedColor
+            color:      selectedColor
         )
         library.labels.append(label)
         selectedLabelIDs.append(label.id)

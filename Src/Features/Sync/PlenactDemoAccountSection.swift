@@ -42,7 +42,7 @@ struct PlenactDemoAccountSection: View {
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    private var isWorking: Bool { activeOperationCount > 0 }
+    private var isWorking: Bool { activeOperationCount > 0 } /* Whether a demo operation is active */
     @State private var needsConflictReload = false /* Stale-draft reload requirement */
     @State private var alertMessage        = "" /* Current alert text */
     @State private var showsAlert          = false /* Shared-demo alert presentation state */
@@ -209,6 +209,7 @@ struct PlenactDemoAccountSection: View {
                         ProgressView()
 
                     } else {
+
                         Text("Sign in to shared demo")
                     }
                 }
@@ -225,7 +226,7 @@ struct PlenactDemoAccountSection: View {
 
         .confirmationDialog(
             "Initialize the shared Board?",
-            isPresented: $confirmsSeed,
+            isPresented:     $confirmsSeed,
             titleVisibility: .visible
         ) {
             Button("Publish SampleData", role: .destructive) {
@@ -248,6 +249,7 @@ struct PlenactDemoAccountSection: View {
             Text(alertMessage)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.signIn()
@@ -286,6 +288,7 @@ struct PlenactDemoAccountSection: View {
         }
     }
 
+
     ///
     /// @fcn        PlenactDemoAccountSection.refreshRemoteState()
     /// @brief      Fetch the latest shared-demo directory and Board snapshot
@@ -299,10 +302,10 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func refreshRemoteState() async {
 
-        guard let remoteSession else {
+        guard let remoteSession else { /* Authenticated shared-demo session */
 
             return
-        }                 /* Require an authenticated session */
+        }
 
         activeOperationCount += 1
 
@@ -342,9 +345,11 @@ struct PlenactDemoAccountSection: View {
             present(PlenactAPIError.unauthorized)
 
         } catch {
+
             present(error)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.initializeSampleBoard()
@@ -360,10 +365,11 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func initializeSampleBoard() async {
 
-        guard let remoteSession, canInitializeSampleBoard else {
+        guard let remoteSession, /* Authenticated editor session */
+              canInitializeSampleBoard else { /* Eligible unseeded editor state */
 
             return
-        } /* Require the editor seed state */
+        }
 
         activeOperationCount += 1
 
@@ -375,9 +381,9 @@ struct PlenactDemoAccountSection: View {
         do {
 
             let client   = try PlenactAPIClient() /* Configured HTTPS API client */
-            let response = try await client.publishSampleData( /* Initial SampleData response */
-                token: remoteSession.accessToken,
-                user: remoteSession.user,
+            let response = try await client.publishSampleData(                 /* Initial SampleData response */
+                token:            remoteSession.accessToken,
+                user:             remoteSession.user,
                 expectedRevision: 0
             )
 
@@ -388,11 +394,13 @@ struct PlenactDemoAccountSection: View {
             present("SampleData is now the shared Board at revision \(response.revision). Local data was not changed.")
 
         } catch {
+
             await refreshRemoteState()
 
             present(error)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.signOut(_:)
@@ -421,6 +429,7 @@ struct PlenactDemoAccountSection: View {
             await client.logout(session)
 
         } else {
+
             PlenactSessionStore.remove()
         }
 
@@ -430,6 +439,7 @@ struct PlenactDemoAccountSection: View {
         remoteDraft     = nil
         currentRevision = nil
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.sharedListContent(_:session:revision:)
@@ -456,6 +466,7 @@ struct PlenactDemoAccountSection: View {
             }
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.sharedCardContent(_:session:revision:)
@@ -490,6 +501,7 @@ struct PlenactDemoAccountSection: View {
                     Toggle("Complete", isOn: cardBinding.isTitleChecked)
                         .font(.caption)
                 } else {
+
                     Text(card.word)
                 }
 
@@ -547,8 +559,8 @@ struct PlenactDemoAccountSection: View {
                         Button(assigned ? "Remove \(user.displayName)" : "Assign \(user.displayName)") {
                             Task {
                                 await changeOwnAssignment(
-                                    cardID: card.id,
-                                    action: assigned ? "unassign" : "assign",
+                                    cardID:       card.id,
+                                    action:       assigned ? "unassign" : "assign",
                                     targetUserID: user.userID
                                 )
                             }
@@ -561,6 +573,7 @@ struct PlenactDemoAccountSection: View {
                 .accessibilityLabel("Manage card assignments")
                 .disabled(isWorking || revision != currentRevision || hasUnsavedRemoteEdits)
             } else {
+
                 Button(isAssigned ? "Remove me" : "Assign me") {
                     Task { await changeOwnAssignment(cardID: card.id, action: isAssigned ? "unassign" : "assign") }
                 }
@@ -570,6 +583,7 @@ struct PlenactDemoAccountSection: View {
             }
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.changeOwnAssignment(cardID:action:targetUserID:)
@@ -588,10 +602,11 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func changeOwnAssignment(cardID: Int, action: String, targetUserID: String? = nil) async {
 
-        guard let remoteSession, let currentRevision else {
+        guard let remoteSession, /* Authenticated shared-demo session */
+              let currentRevision else { /* Fetched Board revision */
 
             return
-        } /* Require current session and revision */
+        }
 
         activeOperationCount += 1
 
@@ -605,19 +620,21 @@ struct PlenactDemoAccountSection: View {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */
 
             _ = try await client.changeAssignment(
-                token: remoteSession.accessToken,
+                token:            remoteSession.accessToken,
                 expectedRevision: currentRevision,
-                cardID: cardID,
-                action: action,
-                userID: targetUserID
+                cardID:           cardID,
+                action:           action,
+                userID:           targetUserID
             )
             await refreshRemoteState()
             needsConflictReload = false
         } catch {
+
             await refreshRemoteState()
             present(error)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.cardBinding(cardID:)
@@ -644,15 +661,16 @@ struct PlenactDemoAccountSection: View {
         return Binding(
             get: { remoteDraft?.lists[listIndex].cards[cardIndex] ?? originalCard },
             set: { updatedCard in
-                guard var updatedDocument = remoteDraft else {
+                guard var updatedDocument = remoteDraft else { /* Mutable copy of the remote draft */
 
                     return
-                } /* Mutable copy of the remote draft */
+                }
                 updatedDocument.lists[listIndex].cards[cardIndex] = updatedCard
                 remoteDraft = updatedDocument
             }
         )
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.addManualAssignee(cardID:)
@@ -670,14 +688,16 @@ struct PlenactDemoAccountSection: View {
 
         let displayName = manualAssigneeDrafts[cardID, default: ""].trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized manual name */
 
-        guard !displayName.isEmpty, let binding = cardBinding(cardID: cardID) else {
+        guard !displayName.isEmpty,
+              let binding = cardBinding(cardID: cardID) else { /* Matching remote draft card */
 
             return
-        } /* Require text and matching card */
+        }
 
         binding.wrappedValue.members.append(.manual(displayName))
         manualAssigneeDrafts[cardID] = ""
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.removeManualAssignee(cardID:assigneeID:)
@@ -694,12 +714,13 @@ struct PlenactDemoAccountSection: View {
     ///
     private func removeManualAssignee(cardID: Int, assigneeID: UUID) {
 
-        guard let binding = cardBinding(cardID: cardID) else {
+        guard let binding = cardBinding(cardID: cardID) else { /* Matching remote draft card */
 
             return
-        } /* Require a matching remote card */
+        }
         binding.wrappedValue.members.removeAll { $0.kind == .manual && $0.id == assigneeID }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.saveSharedBoard()
@@ -728,19 +749,22 @@ struct PlenactDemoAccountSection: View {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */
 
             _ = try await client.saveBoard(
-                token: remoteSession.accessToken,
-                document: remoteDraft,
+                token:            remoteSession.accessToken,
+                document:         remoteDraft,
                 expectedRevision: remoteSnapshot.revision
             )
             await refreshRemoteState()
             needsConflictReload = false
         } catch PlenactAPIError.revisionConflict {
+
             needsConflictReload = true
             present(PlenactAPIError.revisionConflict(nil))
         } catch {
+
             present(error)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.createMember()
@@ -755,7 +779,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func createMember() async {
 
-        guard let remoteSession, remoteSession.user.accountRole == "board_editor" else {
+        guard let remoteSession, /* Authenticated shared-demo session */
+              remoteSession.user.accountRole == "board_editor" else {
 
             return
         } /* Require Board-editor access */
@@ -772,10 +797,10 @@ struct PlenactDemoAccountSection: View {
             let client = try PlenactAPIClient() /* Configured HTTPS API client */
 
             _ = try await client.createMember(
-                token: remoteSession.accessToken,
-                username: newMemberUsername,
+                token:       remoteSession.accessToken,
+                username:    newMemberUsername,
                 displayName: newMemberDisplayName,
-                password: newMemberPassword
+                password:    newMemberPassword
             )
             newMemberUsername = ""
             newMemberDisplayName = ""
@@ -783,10 +808,12 @@ struct PlenactDemoAccountSection: View {
             directory = try await client.directory(token: remoteSession.accessToken)
             present("Member account created. Share its temporary credentials privately.")
         } catch {
+
             newMemberPassword = ""
             present(error)
         }
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.present(_:)
@@ -805,6 +832,7 @@ struct PlenactDemoAccountSection: View {
 
         present(error.localizedDescription)
     }
+
 
     ///
     /// @fcn        PlenactDemoAccountSection.present(_:)

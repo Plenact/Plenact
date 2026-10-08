@@ -10,6 +10,7 @@ import Foundation
 
 // -------------------------------------- MARK: - Board Document ------------------------------- //
 
+
 ///
 /// Complete Plenact Board payload for one immutable server snapshot
 ///
@@ -20,12 +21,13 @@ import Foundation
 ///
 struct PlenactBoardDocument: Codable, Equatable {
 
-    static let currentSchemaVersion = 1   /* Supported document shape */
+    static let currentSchemaVersion = 1   /* Current supported Board document shape */
 
     var schemaVersion: Int          /* Board JSON schema version */
     var boardKey:      String       /* Stable shared Board key   */
     var lists:         [KanbanList] /* Ordered lists and cards   */
     var labelLibrary:  LabelLibrary /* Reusable label catalog   */
+
 
     ///
     /// Maps Board document properties to the shared-demo JSON contract
@@ -39,6 +41,7 @@ struct PlenactBoardDocument: Codable, Equatable {
         case lists
         case labelLibrary  = "label_library"
     }
+
 
     ///
     /// @fcn        PlenactBoardDocument.init(boardKey:lists:labelLibrary:)
@@ -148,6 +151,7 @@ struct PlenactBoardDocument: Codable, Equatable {
 
 // -------------------------------------- MARK: - Snapshot Response ---------------------------- //
 
+
 ///
 /// Carries one Board document with server-maintained revision provenance
 ///
@@ -161,6 +165,7 @@ struct PlenactBoardSnapshotResponse: Decodable {
     let storedAtUTC:  String               /* Server storage timestamp     */
     let storedByUserID: String             /* Verified storage actor       */
     let storageOrigin: String              /* Controlled write origin      */
+
 
     ///
     /// Maps snapshot provenance fields to the server response names

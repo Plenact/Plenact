@@ -31,6 +31,7 @@ enum KanbanAttachmentKind: String, Codable, Sendable {
     case link
 }
 
+
 ///
 /// Categories for the offline illustration library
 ///
@@ -50,7 +51,7 @@ enum CoverCategory: String, CaseIterable, Identifiable {
     /// @brief      Identify a category filter
     /// @return     (String) stable category label
     ///
-    var id: String { rawValue }
+    var id: String { rawValue } /* Stable category identity */
 
     ///
     /// @fcn        CoverCategory.images
@@ -58,7 +59,7 @@ enum CoverCategory: String, CaseIterable, Identifiable {
     /// @details    Categories describe artwork only, not card ownership or semantics
     /// @return     ([ExampleCoverImage]) explicit curated category membership
     ///
-    var images: [ExampleCoverImage] {
+    var images: [ExampleCoverImage] { /* Curated artwork for this category */
         switch self {
 
             case .home: [.readingCorner, .tidyHome, .laundryDay, .homeRepairs, .cozySofa, .cleanKitchen, .petCare, .deskLamp]
@@ -70,6 +71,7 @@ enum CoverCategory: String, CaseIterable, Identifiable {
         }
     }
 }
+
 
 ///
 /// Original bundled illustrations for examples and explicit user cover choices
@@ -97,7 +99,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
     /// @brief      Provide a readable artwork label without embedded image text
     /// @return     (String) human-readable name
     ///
-    var title: String { rawValue.replacingOccurrences(of: "-", with: " ").capitalized }
+    var title: String { rawValue.replacingOccurrences(of: "-", with: " ").capitalized } /* Readable artwork name */
 
     ///
     /// @fcn        ExampleCoverImage.url
@@ -105,10 +107,11 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
     /// @details    Only known resource names can be resolved; no remote downloads occur
     /// @return     (URL?) bundled PNG location
     ///
-    var url: URL? {
+    var url: URL? { /* Bundled artwork resource URL */
         Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
     }
 }
+
 
 ///
 /// Offline visual library with category filters and explicit cover selection
@@ -129,7 +132,7 @@ struct CardCoverLibrary: View {
     /// @details    No selection or attachment is created until a person taps an illustration
     /// @return     (some View) adaptive offline library
     ///
-    var body: some View {
+    var body: some View { /* Offline cover library interface */
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -145,7 +148,7 @@ struct CardCoverLibrary: View {
                     Text("Choose an illustration to use as this card's cover. Your existing photos stay attached.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    LazyVGrid(columns: textSize.isAccessibilitySize
+                    LazyVGrid(columns:                                        textSize.isAccessibilitySize
                               ? [GridItem(.flexible())]
                               : [GridItem(.adaptive(minimum: 150))], spacing: 16) {
                         ForEach(category?.images ?? CoverCategory.allCases.flatMap(\.images), id: \.self) { image in
@@ -158,7 +161,7 @@ struct CardCoverLibrary: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     CardCoverPreview(attachment: KanbanAttachment(
                                         mediaKind: .photo, exampleImage: image
-                                    ), height: 96)
+                                    ), height:                   96)
                                     Label(image.title, systemImage: selectedImage == image ? "checkmark.circle.fill" : "photo")
                                         .font(.subheadline)
                                         .foregroundStyle(.primary)
@@ -188,6 +191,7 @@ struct CardCoverLibrary: View {
     }
 }
 
+
 ///
 /// Decorative, bounded preview shared by card rows and cover controls
 ///
@@ -206,17 +210,19 @@ struct CardCoverPreview: View {
     /// @details    Task identity/cancellation prevents a previous image from replacing a changed cover
     /// @return     (some View) decorative cropped image or visible unavailable notice
     ///
-    var body: some View {
+    var body: some View { /* Loaded cover preview or fallback */
         GeometryReader { geometry in
             Group {
-                if let image {
+                if let image { /* Successfully decoded cover thumbnail */
 
                     Image(uiImage: image).resizable().scaledToFill()
                 } else if unavailable {
+
                     Label("Cover unavailable", systemImage: "photo")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
+
                     Color.secondary.opacity(0.08)
                 }
             }
@@ -232,7 +238,7 @@ struct CardCoverPreview: View {
             image = nil
             unavailable = false
 
-            let result = await Task.detached(priority: .utility) {
+            let result = await Task.detached(priority: .utility) { /* Background thumbnail decode result */
                 Result { try CardAttachmentStore.coverThumbnail(for: attachment) }
             }.value
             guard !Task.isCancelled else {
@@ -242,12 +248,13 @@ struct CardCoverPreview: View {
 
             switch result {
 
-                case .success(let thumbnail): image = thumbnail
+                case .success(let thumbnail): image = thumbnail /* Decoded cover thumbnail */
                 case .failure: unavailable = true
             }
         }
     }
 }
+
 
 ///
 /// Visual chooser for photos already attached to a card
@@ -267,7 +274,7 @@ struct CardCoverPicker: View {
     /// @details    Cancel does not mutate a card; choosing a row reuses its existing attachment
     /// @return     (some View) navigable cover-photo chooser
     ///
-    var body: some View {
+    var body: some View { /* Attached-photo cover choices */
         NavigationStack {
             List {
                 ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
@@ -328,6 +335,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
         mediaKind ?? (url == nil ? .photo : .link)
     }
 
+
     ///
     /// @fcn        KanbanAttachment.init(id:fileName:url:mediaKind:addedAt:)
     /// @brief      Create attachment metadata for local media or a remote link
@@ -369,6 +377,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 ///
 enum CardAttachmentStore {
 
+
     ///
     /// @fcn        CardAttachmentStore.coverThumbnail(for:)
     /// @brief      Decode a bounded, orientation-correct cover image
@@ -382,19 +391,20 @@ enum CardAttachmentStore {
     ///
     static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage {
 
-        guard let url = imageURL(for: attachment),
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+        guard let url = imageURL(for: attachment), /* Resolved attachment image URL */
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil), /* ImageIO source for the attachment */
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
                 kCGImageSourceThumbnailMaxPixelSize: 960,
                 kCGImageSourceShouldCacheImmediately: true
-              ] as CFDictionary) else {
+              ] as CFDictionary) /* Orientation-correct bounded thumbnail */ else {
             throw CocoaError(.fileReadCorruptFile)
         }
 
         return UIImage(cgImage: image)
     }
+
 
     ///
     /// @fcn        CardAttachmentStore.fileNames(in:)
@@ -409,6 +419,7 @@ enum CardAttachmentStore {
 
         Set(lists.flatMap(\.allCards).flatMap { $0.attachments ?? [] }.compactMap(\.fileName))
     }
+
 
     ///
     /// @fcn        CardAttachmentStore.removeDeletedFiles(_:keeping:)
@@ -432,9 +443,9 @@ enum CardAttachmentStore {
                 throw CocoaError(.fileWriteInvalidFileName)
             }
 
-            let attachment = KanbanAttachment(fileName: name)
+            let attachment = KanbanAttachment(fileName: name) /* Metadata for the stored media file */
 
-            guard let url = fileURL(for: attachment) else {
+            guard let url = fileURL(for: attachment) else { /* Local destination for the attachment */
 
                 throw CocoaError(.fileNoSuchFile)
             }
@@ -447,6 +458,7 @@ enum CardAttachmentStore {
     }
 
     private static let directoryName = "CardAttachments" /* Local media folder name */
+
 
     ///
     /// @fcn        CardAttachmentStore.saveMedia(_:kind:fileExtension:)
@@ -497,7 +509,7 @@ enum CardAttachmentStore {
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL? {
 
-        if let exampleImage = attachment.exampleImage {
+        if let exampleImage = attachment.exampleImage { /* Explicit bundled cover selection */
 
             return exampleImage.url
         }
@@ -782,6 +794,7 @@ struct CardAttachmentSourceSheet: View {
                         }
 
                     } else {
+
                         Button {
                             select(source)
                         } label: {
@@ -896,7 +909,7 @@ struct CardLinkAttachmentSheet: View {
     ///
     private func saveLink() {
 
-        guard let validatedURL else {
+        guard let validatedURL else { /* Validated attachment URL */
 
             return
         } /* Require a valid web address */
@@ -968,6 +981,7 @@ struct CardAttachmentThumbnail: View {
                     .scaledToFill()
                 
             } else {
+
                 Image(systemName: "photo")
                     .font(.title2)
                     .foregroundStyle(.secondary)
@@ -1027,6 +1041,7 @@ struct CardAttachmentPreview: View {
                         .scaledToFit()
                     
                 } else {
+
                     ContentUnavailableView("Photo unavailable", systemImage: "photo")
                 }
             }

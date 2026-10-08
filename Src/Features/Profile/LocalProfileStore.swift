@@ -22,6 +22,7 @@ enum LocalProfileStore {
 
     private static let storageKey = "Plenact.LocalProfile.v1"   /* Versioned profile key */
 
+
     ///
     /// @fcn        LocalProfileStore.load(from:)
     /// @brief      Load the locally saved profile
@@ -36,10 +37,10 @@ enum LocalProfileStore {
     ///
     static func load(from defaults: UserDefaults = .standard) -> LocalProfile? {
 
-        guard let data = defaults.data(forKey: storageKey) else {
+        guard let data = defaults.data(forKey: storageKey) else { /* Saved profile bytes */
 
             return nil
-        } /* Stored profile bytes */
+        }
 
         return try? JSONDecoder().decode(LocalProfile.self, from: data)
     }
@@ -60,10 +61,10 @@ enum LocalProfileStore {
     ///
     static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard) {
 
-        guard let data = try? JSONEncoder().encode(profile) else {
+        guard let data = try? JSONEncoder().encode(profile) else { /* Encoded profile snapshot */
 
             return
-        } /* Encoded profile snapshot */
+        }
 
         defaults.set(data, forKey: storageKey)
     }
@@ -95,6 +96,7 @@ enum LocalProfileStore {
 ///
 enum ProfileAvatarPhotoStore {
 
+
     ///
     /// @fcn        ProfileAvatarPhotoStore.directory()
     /// @brief      Resolve and create the local avatar-photo directory
@@ -106,10 +108,10 @@ enum ProfileAvatarPhotoStore {
     ///
     private static func directory() throws -> URL {
 
-        let documents = try FileManager.default.url(
+        let documents = try FileManager.default.url(                           /* App Documents directory lookup */
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
-        let directory = documents.appendingPathComponent("ProfileAvatars", isDirectory: true)
+        let directory = documents.appendingPathComponent("ProfileAvatars", isDirectory: true) /* Local avatar-photo subdirectory */
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -130,7 +132,7 @@ enum ProfileAvatarPhotoStore {
     ///
     static func save(_ data: Data) throws -> String {
 
-        let fileName = "\(UUID().uuidString).jpg"
+        let fileName = "\(UUID().uuidString).jpg" /* Unique JPEG filename for the saved avatar */
 
         try data.write(to: directory().appendingPathComponent(fileName), options: .atomic)
 
@@ -153,9 +155,10 @@ enum ProfileAvatarPhotoStore {
     ///
     static func load(_ fileName: String?) -> Data? {
 
-        guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-              let directory = try? directory() else { return nil }
-        return try? Data(contentsOf: directory.appendingPathComponent(fileName))
+        guard let fileName, /* Stored avatar filename */
+              fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+              let directory = try? directory() /* Avatar-photo directory, when available */ else { return nil }
+        return try? Data(contentsOf: directory.appendingPathComponent(fileName)) /* Stored avatar bytes, when readable */
     }
 
 
@@ -173,9 +176,9 @@ enum ProfileAvatarPhotoStore {
     ///
     static func remove(_ fileName: String?) {
 
-        guard let fileName, fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-              let directory = try? directory() else { return }
+        guard let fileName, /* Stored avatar filename */
+              fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+              let directory = try? directory() /* Avatar-photo directory, when available */ else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
     }
 }
-

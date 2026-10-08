@@ -16,6 +16,7 @@ import Foundation
 
 // -------------------------------------- MARK: - Card Model ------------------------------------ //
 
+
 ///
 /// Represents one card displayed on a kanban list
 ///
@@ -58,6 +59,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
     var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
         isDivider || Self.isDividerTitle(word)
     }
+
 
     ///
     /// @fcn        KanbanCard.isDividerTitle(_:)
@@ -317,6 +319,7 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 
 // -------------------------------------- MARK: - List Model ------------------------------------ //
 
+
 ///
 /// Represents one horizontally navigable kanban list
 ///
@@ -348,6 +351,7 @@ struct KanbanList: Identifiable, Hashable, Codable {
 
 // -------------------------------------- MARK: - Checklist Item Model ------------------------- //
 
+
 ///
 /// Represents one stable action within a card checklist
 ///
@@ -362,6 +366,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     let id:        UUID      /* Stable checklist action ID */
     var title:     String    /* User-facing action text    */
     var isCompleted: Bool    /* Current completion state   */
+
 
     ///
     /// @fcn        KanbanChecklistItem.init(id:title:isCompleted:)
@@ -381,6 +386,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         self.isCompleted = isCompleted
     }
 
+
     ///
     /// @fcn        KanbanChecklistItem.init(stringLiteral:)
     /// @brief      Create a standard action from a string literal
@@ -398,6 +404,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
 
 
 // -------------------------------------- MARK: - Checklist Model ------------------------------ //
+
 
 ///
 /// Represents a checklist shown within a kanban card
@@ -479,6 +486,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         self.items = normalizedItems
     }
 
+
     ///
     /// @fcn        KanbanChecklist.init(from:)
     /// @brief      Decode current checklist items or migrate revision 0 string items
@@ -528,6 +536,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         self.init(id: id, title: title, items: migratedItems)
     }
 
+
     ///
     /// @fcn        KanbanChecklist.encode(to:)
     /// @brief      Encode the stable checklist-item representation
@@ -549,6 +558,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         try container.encode(items, forKey: .items)
     }
 
+
     ///
     /// Identifies persisted checklist fields across current and revision 0 snapshots
     ///
@@ -561,6 +571,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
         case items                  /* Current or legacy actions */
         case completedItemIndices   /* Revision 0 completion     */
     }
+
 
     ///
     /// @fcn        KanbanChecklist.migratedItemID(checklistID:itemIndex:)
@@ -595,6 +606,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
 
 // -------------------------------------- MARK: - Card Comment ------------------------------- //
 
+
 ///
 /// Represents a comment posted to a kanban card's activity feed
 ///
@@ -607,6 +619,7 @@ struct KanbanComment: Identifiable, Hashable, Codable {
     let author:    String       /* Author of the comment                             */
     let body:      String       /* Body text of the comment                          */
     let createdAt: Date         /* Timestamp indicating when the comment was created */
+
 
     ///
     /// @fcn        KanbanComment.init(id:author:body:createdAt:)
@@ -646,6 +659,7 @@ struct KanbanComment: Identifiable, Hashable, Codable {
 enum KanbanBoardPersistence {
 
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
+
 
     ///
     /// @fcn        KanbanBoardPersistence.loadLists()
@@ -687,10 +701,10 @@ enum KanbanBoardPersistence {
     ///
     static func saveLists(_ lists: [KanbanList]) {
 
-        guard let data = try? JSONEncoder().encode(lists) else {
+        guard let data = try? JSONEncoder().encode(lists) else { /* Encoded Board snapshot */
 
             return
-        } /* Encoded Board snapshot */
+        }
 
         UserDefaults.standard.set(data, forKey: storageKey)
     }
@@ -698,6 +712,7 @@ enum KanbanBoardPersistence {
 
 
 // -------------------------------------- MARK: - Sample Data ----------------------------------- //
+
 
 ///
 /// Provides deterministic sample content used by the board and previews
@@ -734,7 +749,7 @@ enum SampleData {
 
             let cards = (0..<10).map { _ -> KanbanCard in /* Seed ten cards in the current list */
 
-                let card = KanbanCard(                                          /* Construct one synthetic card */
+                let card = KanbanCard(                                         /* Construct one synthetic card */
                     id:             globalIndex,
                     word:           words[globalIndex % words.count],
                     listTitle:      title,

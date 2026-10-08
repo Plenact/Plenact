@@ -1636,26 +1636,11 @@ struct ContentView: View {
 
         var cards = lists[listIndex].cards /* Mutable card-order copy */
 
-        guard let sourceIndex = cards.firstIndex(where: { /* Card position before reordering within the list */
-
-            $0.id == cardID
-        }), !cards.isEmpty else {
+        guard BoardCardReordering.move(cardID, to: destinationIndex, in: &cards) else {
 
             return
         }
 
-        let safeDestinationIndex = min(max(destinationIndex, 0), cards.count - 1) /* Clamped insertion position */
-
-        guard sourceIndex != safeDestinationIndex else {
-
-            return
-        }
-
-        let movedCard = cards.remove(at: sourceIndex) /* Card removed before reinsertion */
-
-        cards.insert(movedCard, at: safeDestinationIndex)
-
-        // Update the list with the reordered cards, animating the change for a smooth user experience
         withAnimation(.easeInOut(duration: 0.2)) {
             lists[listIndex].cards = cards
         }
@@ -5142,6 +5127,7 @@ struct TodayListDetailView: View {
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
     @State private var newCardTitle = "" /* Inline card-creation draft */
+    @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
 
 
     ///
@@ -5171,75 +5157,104 @@ struct TodayListDetailView: View {
     var body: some View { /* Focused-list Board surface and card-detail navigation */
 
         NavigationStack {
-            GeometryReader { geometry in
-                ZStack {
-                    Color(.systemGray6).ignoresSafeArea()
+            ZStack {
+                Color(.systemGray6).ignoresSafeArea()
 
-                    if let focusedList { /* Selected list available for rendering */
+                if let focusedList { /* Selected list available for rendering */
 
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(focusedList.subtitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 4)
+                    List {
 
-                                ForEach(focusedList.cards) { card in
-                                    if card.isSectionDivider {
+                        Text(focusedList.subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
 
-                                        Rectangle()
-                                            .fill(Color.secondary.opacity(0.45))
-                                            .modifier(ContentLifecycleActions(
-                                                title: "Divider", kind: "Card", onArchive: nil,
-                                                onDelete: { deleteCard(card.id) }
-                                            ))
-                                            .frame(height: 2)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 10)
-                                    } else {
-                                        NavigationLink(value: card) {
-                                            KanbanCardView(
-                                                card:            card,
-                                                height:          BoardPresentation.standard.minimumCardHeight,
-                                                displaySettings: BoardDisplaySettings(),
-                                                labelLibrary:    labelLibrary,
-                                                onUpdateCard:    updateCard,
-                                                onDeleteCard:    { deleteCard(card.id) },
-                                                onArchiveCard:   { archiveCard(card.id) }
-                                            ) {
-                                                toggleCard(card.id)
-                                            }
-                                        }
+                        ForEach(focusedList.cards) { card in
 
-                                        .buttonStyle(.plain)
+                            if card.isSectionDivider {
+
+                                Rectangle()
+                                    .fill(Color.secondary.opacity(0.45))
+                                    .modifier(ContentLifecycleActions(
+                                        title: "Divider", kind: "Card", onArchive: nil,
+                                        onDelete: { deleteCard(card.id) }
+                                    ))
+                                    .frame(height: 2)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity)
+                                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                                    .listRowSeparator(.hidden)
+                                    .listRowBackground(Color.clear)
+                            } else {
+
+                                NavigationLink(value: card) {
+                                    KanbanCardView(
+                                        card:            card,
+                                        height:          BoardPresentation.standard.minimumCardHeight,
+                                        displaySettings: BoardDisplaySettings(),
+                                        labelLibrary:    labelLibrary,
+                                        onUpdateCard:    updateCard,
+                                        onDeleteCard:    { deleteCard(card.id) },
+                                        onArchiveCard:   { archiveCard(card.id) }
+                                    ) {
+                                        toggleCard(card.id)
                                     }
                                 }
 
-                                HStack(spacing: 10) {
-                                    TextField("Add a card to \(focusedList.title)…", text: $newCardTitle)
-                                        .submitLabel(.done)
-                                        .onSubmit(addCard)
-
-                                    Button(action: addCard) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.title2)
-                                    }
-
-                                    .disabled(newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                    .accessibilityLabel("Add card to \(focusedList.title)")
-                                }
-
-                                .padding(12)
-                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                .buttonStyle(.plain)
+                                .modifier(HideNavigationLinkIndicator())
+                                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
                             }
-
-                            .padding(16)
                         }
 
-                        .background(.clear)
-                    } else {
-                        ContentUnavailableView("List unavailable", systemImage: "list.bullet")
+                        .onMove { sourceOffsets, destinationOffset in
+
+                            guard editMode == .active,
+                                  let sourceIndex = sourceOffsets.first,
+                                  focusedList.cards.indices.contains(sourceIndex) else {
+
+                                return
+                            }
+
+                            let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset /* Destination after source removal */
+
+                            moveCard(focusedList.cards[sourceIndex].id, toIndex: finalIndex)
+                        }
+
+                        .moveDisabled(editMode != .active)
+
+                        HStack(spacing: 10) {
+                            TextField("Add a card to \(focusedList.title)…", text: $newCardTitle)
+                                .submitLabel(.done)
+                                .onSubmit(addCard)
+
+                            Button(action: addCard) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                            }
+
+                            .disabled(newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityLabel("Add card to \(focusedList.title)")
+                        }
+
+                        .padding(12)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
+
+                    .listStyle(.plain)
+                    .environment(\.editMode, $editMode)
+                    .scrollContentBackground(.hidden)
+                    .background(.clear)
+                } else {
+                    ContentUnavailableView("List unavailable", systemImage: "list.bullet")
                 }
             }
 
@@ -5248,6 +5263,19 @@ struct TodayListDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Today", systemImage: "chevron.left", action: onClose)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            editMode = editMode == .active ? .inactive : .active
+                        }
+                    } label: {
+                        Image(systemName: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle")
+                    }
+
+                    .accessibilityLabel(editMode == .active ? "Done reordering cards" : "Reorder cards")
+                    .accessibilityHint("Shows drag handles for cards and section dividers")
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -5305,6 +5333,41 @@ struct TodayListDetailView: View {
         }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { return } /* Position of the requested card within the focused list */
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
+    }
+
+
+    ///
+    /// @fcn        TodayListDetailView.moveCard(_:toIndex:)
+    /// @brief      Reorder one focused-list record without changing its content
+    /// @details    Uses the shared bounded card-order operation on the canonical Week binding
+    ///
+    /// @param[in]  cardID            Stable identity of the record being moved
+    /// @param[in]  destinationIndex  Requested zero-based destination position
+    ///
+    /// @return     (Void) updates only the focused list's card order
+    ///
+    /// @post       Missing lists, IDs, or no-op destinations leave shared state unchanged
+    ///
+    private func moveCard(_ cardID: Int, toIndex destinationIndex: Int) {
+
+        guard let listIndex = lists.firstIndex(where: { /* Position of the focused list to reorder */
+
+            $0.id == listID
+        }) else {
+
+            return
+        }
+
+        var cards = lists[listIndex].cards /* Mutable focused-list card order */
+
+        guard BoardCardReordering.move(cardID, to: destinationIndex, in: &cards) else {
+
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            lists[listIndex].cards = cards
+        }
     }
 
 

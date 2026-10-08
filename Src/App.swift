@@ -8,7 +8,7 @@
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   10/06/26
+// @last rev   10/8/26
 //
 // @notes      Archived lists remain in the complete Week snapshot but are excluded from active
 //             view bindings. Restored Week archives become separate personal boards.
@@ -16,8 +16,10 @@
 //             not publish local Board, profile, bookmark, or archive data to the shared API
 //
 // @section    Opens
-//     Consider extracting navigation, Today search, collection, and calendar surfaces into
-//     focused files while preserving their shared state and persistence ownership
+//     - Consider re-modularizing source into shorter files
+//     - Consider extracting navigation, Today search, collection, and calendar surfaces into
+//       focused files while preserving their shared state and persistence ownership
+//     - Consider making re-order lists button more intuitive to find
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI

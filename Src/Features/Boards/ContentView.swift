@@ -1572,7 +1572,8 @@ struct ContentView: View {
                 dismissedActivityIDs: card.dismissedActivityIDs,
                 descriptionOverride:  card.descriptionOverride,
                 subtitleOverride:     card.subtitleOverride,
-                presentation:         card.presentation
+                presentation:         card.presentation,
+                createdAt:            card.createdAt
             )
 
             nextCardID += 1
@@ -4565,7 +4566,8 @@ struct KanbanCardView: View {
             dismissedActivityIDs: card.dismissedActivityIDs,
             descriptionOverride:  description,
             subtitleOverride:     subtitle,
-            presentation:         card.presentation
+            presentation:         card.presentation,
+            createdAt:            card.createdAt
         )
     }
 

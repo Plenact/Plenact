@@ -931,6 +931,7 @@ struct CardAttachmentThumbnail: View {
     ///
     var body: some View { /* Local image, remote link, or media fallback */
 
+        GeometryReader { geometry in
         Group {
 
             if let url = attachment.url { /* Remote link URL */
@@ -973,6 +974,9 @@ struct CardAttachmentThumbnail: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.secondarySystemGroupedBackground))
             }
+        }
+        .frame(width: geometry.size.width, height: geometry.size.height)
+        .clipped()
         }
 
         .aspectRatio(1, contentMode: .fit)

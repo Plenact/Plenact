@@ -44,12 +44,45 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(json["defaultItemPresentation"])
         XCTAssertNil(cards[0]["itemPresentation"])
         XCTAssertNil(list.cards[0].descriptionOverride)
+        XCTAssertNil(list.cards[0].createdAt)
+        XCTAssertNil(cards[0]["createdAt"])
 
         let invalidCard = Data(#"{"id":2,"word":"Invalid","listTitle":"Legacy","itemPresentation":"unsupported"}"#.utf8)
         let invalidList = Data(#"{"id":1,"title":"Invalid","cards":[],"defaultItemPresentation":"unsupported"}"#.utf8)
 
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalidCard))
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanList.self, from: invalidList))
+    }
+
+    func testCreationTimestampRoundTripsAndRejectsMalformedDates() throws {
+
+        let timestamp = Date(timeIntervalSince1970: 1_791_422_000)
+        var list = KanbanList(id: 1, title: "Synthetic", cards: [])
+        list.newItemPresentation = .note
+        let note = list.makeItem(id: 2, title: "Dated Note", createdAt: timestamp)
+        XCTAssertEqual(note.createdAt, timestamp)
+
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(note))
+        XCTAssertEqual(decoded, note)
+        XCTAssertEqual(decoded.createdAt, timestamp)
+
+        var card = decoded
+        card.presentation = .card
+        card.word = "Edited title"
+        card.descriptionOverride = "Edited body"
+        XCTAssertEqual(card.createdAt, timestamp)
+        card.presentation = .note
+        XCTAssertEqual(card.replacingLocation(id: 8, listTitle: "Moved").createdAt, timestamp)
+
+        let before = Date.now
+        let newCard = list.makeItem(id: 3, title: "Created now")
+        let after = Date.now
+        let actual = try XCTUnwrap(newCard.createdAt)
+        XCTAssertGreaterThanOrEqual(actual, before)
+        XCTAssertLessThanOrEqual(actual, after)
+
+        let invalid = Data(#"{"id":2,"word":"Invalid","listTitle":"Synthetic","createdAt":"not-a-date"}"#.utf8)
+        XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalid))
     }
 
 
@@ -179,6 +212,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(week))
 
         XCTAssertEqual(decoded.lists[0], restored)
+        XCTAssertEqual(restored.cards[0].createdAt, note.createdAt)
+        XCTAssertNotNil(restored.cards[0].createdAt)
     }
 
 
@@ -206,7 +241,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertEqual(collection, original, "Cancel/invalid Save must not mutate stored content")
         }
 
-        try collection.addNote(title: "  Beach idea  ", body: "First line\n\nSecond line  ")
+        let createdAt = Date(timeIntervalSince1970: 1_791_422_000)
+        try collection.addNote(title: "  Beach idea  ", body: "First line\n\nSecond line  ", createdAt: createdAt)
 
         XCTAssertEqual(collection.lists[0].cards, [
             existing,
@@ -214,7 +250,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 id: 13, word: "Beach idea", listTitle: collection.title,
                 checklists:          [],
                 descriptionOverride: "First line\n\nSecond line  ",
-                presentation:        .note
+                presentation:        .note,
+                createdAt:           createdAt
             )
         ])
 
@@ -234,6 +271,209 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    @MainActor
+    func testAttachmentThumbnailsFitTheirSquareGridProposal() throws {
+
+        let link = try XCTUnwrap(URL(string: "https://example.com/synthetic"))
+        let attachments = [
+            KanbanAttachment(exampleImage: .garden),
+            KanbanAttachment(url: link),
+            KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video),
+            KanbanAttachment(fileName: "synthetic-missing-photo.jpg")
+        ]
+        for attachment in attachments {
+            let controller = UIHostingController(rootView: CardAttachmentThumbnail(attachment: attachment))
+            for width: CGFloat in [92, 128, 260] {
+                let size = controller.sizeThatFits(in: CGSize(width: width, height: 1000))
+                XCTAssertEqual(size.width, width, accuracy: 1)
+                XCTAssertEqual(size.height, width, accuracy: 1)
+            }
+        }
+    }
+
+
+    @MainActor
+    func testHostedNoteToolbarLayoutPreservesContent() async throws {
+
+        var note = KanbanCard(
+            id: 93, word: "Synthetic toolbar Note", listTitle: "Synthetic ideas",
+            descriptionOverride: "A calm writing area with attachments below.",
+            presentation: .note,
+            createdAt: Date(timeIntervalSince1970: 1_791_422_000)
+        )
+        note.attachments = [KanbanAttachment(exampleImage: .garden)]
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+
+        let layouts: [(String, CGSize, DynamicTypeSize)] = [
+            ("portrait", CGSize(width: 393, height: 852), .large),
+            ("landscape", CGSize(width: 852, height: 393), .large),
+            ("large-text", CGSize(width: 393, height: 852), .accessibility3)
+        ]
+
+        for (name, size, textSize) in layouts {
+            var emitted: [KanbanCard] = []
+            let controller = UIHostingController(rootView: NavigationStack {
+                CardDetailView(card: note, onTitleToggle: { emitted.append($0) })
+                    .environment(\.dynamicTypeSize, textSize)
+            })
+            window.frame = CGRect(origin: .zero, size: size)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+
+            XCTAssertTrue(emitted.isEmpty, "Toolbar/gallery layout must not rewrite the Note")
+            let image = UIGraphicsImageRenderer(size: size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Note-toolbar-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
+
+    func testNoteSharingIncludesOnlyWrittenTextAndAttachedWebLinks() throws {
+
+        var note = SampleData.lists[0].cards[0]
+        note.word = "Synthetic shared note"
+        note.presentation = .note
+        note.descriptionOverride = "First line\n\nSecond line  "
+        let link = try XCTUnwrap(URL(string: "https://example.com/synthetic-note"))
+        note.attachments = [
+            KanbanAttachment(fileName: "synthetic-private-photo.jpg", mediaKind: .photo),
+            KanbanAttachment(fileName: "synthetic-private-video.mov", mediaKind: .video),
+            KanbanAttachment(url: link),
+            KanbanAttachment(exampleImage: .garden)
+        ]
+        let original = note
+
+        XCTAssertEqual(
+            NoteTextSharing.text(for: note),
+            "Synthetic shared note\n\nFirst line\n\nSecond line  \n\nhttps://example.com/synthetic-note"
+        )
+        XCTAssertEqual(note, original, "Preparing a share must not change the saved record")
+    }
+
+
+    func testNoteSharingDoesNotFillEmptyBodyWithGeneratedDescription() {
+
+        var note = KanbanCard(id: 92, word: "Empty synthetic Note", listTitle: "Private list", presentation: .note)
+        XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note")
+        note.descriptionOverride = ""
+        XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note")
+        note.descriptionOverride = " \n "
+        XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note\n\n \n ")
+    }
+
+
+    func testNewPersonalNoteDraftSavesOnlyToSelectedList() throws {
+
+        let initial = PersonalCollection(title: "Initial ideas", kind: .list)
+        let selected = PersonalCollection(title: "Selected ideas", kind: .list)
+        var collections = [initial, selected]
+        var draft = PersonalListNoteDraft(destinationID: initial.id)
+        let originalCreationDate = draft.createdAt
+
+        draft.title = "  New idea  "
+        draft.body = "First line\n\nSecond line  "
+        draft.destinationID = selected.id
+
+        XCTAssertEqual(collections, [initial, selected], "Selecting a List must not create or move content")
+        XCTAssertEqual(draft.destination(in: collections), selected)
+
+        var saves = 0
+        try draft.save(in: collections) { destinationID, title, body, createdAt in
+            saves += 1
+            XCTAssertEqual(createdAt, originalCreationDate)
+            let index = try XCTUnwrap(collections.firstIndex { $0.id == destinationID })
+            try collections[index].addNote(title: title, body: body, createdAt: createdAt)
+        }
+
+        XCTAssertEqual(saves, 1)
+        XCTAssertEqual(collections[0], initial)
+        XCTAssertEqual(collections[1].lists[0].cards.count, 1)
+        let note = try XCTUnwrap(collections[1].lists[0].cards.first)
+        XCTAssertEqual(note.word, "New idea")
+        XCTAssertEqual(note.descriptionOverride, draft.body)
+        XCTAssertEqual(note.listTitle, selected.title)
+        XCTAssertEqual(note.presentation, .note)
+        XCTAssertEqual(note.createdAt, originalCreationDate)
+    }
+
+
+    func testNewPersonalNoteDraftRejectsUnavailableDestinationsAndBlankTitle() {
+
+        let active = PersonalCollection(title: "Active ideas", kind: .list)
+        let board = PersonalCollection(title: "Projects", kind: .board)
+        var archived = PersonalCollection(title: "Archived ideas", kind: .list)
+        archived.isArchived = true
+        var empty = PersonalCollection(title: "No active list", kind: .list)
+        empty.lists[0].isArchived = true
+        let collections = [active, board, archived, empty]
+
+        XCTAssertEqual(PersonalListNoteDraft.destinations(in: collections), [active])
+
+        for id in [board.id, archived.id, empty.id, UUID()] {
+            let draft = PersonalListNoteDraft(destinationID: id, title: "Idea", body: "Unsaved body")
+            XCTAssertFalse(draft.canSave(in: collections))
+            XCTAssertThrowsError(try draft.save(in: collections) { _, _, _, _ in
+                XCTFail("An unavailable destination must not reach persistence")
+            })
+        }
+
+        let blank = PersonalListNoteDraft(destinationID: active.id, title: " \n ", body: "Unsaved body")
+        XCTAssertFalse(blank.canSave(in: collections))
+        XCTAssertThrowsError(try blank.save(in: collections) { _, _, _, _ in
+            XCTFail("A blank title must not reach persistence")
+        })
+    }
+
+
+    func testNewPersonalNoteDraftPreservesSelectionAndTextAfterFailedSave() throws {
+
+        let initial = PersonalCollection(title: "Initial ideas", kind: .list)
+        let selected = PersonalCollection(title: "Selected ideas", kind: .list)
+        let collections = [initial, selected]
+        var draft = PersonalListNoteDraft(destinationID: initial.id)
+        let originalCreationDate = draft.createdAt
+        draft.title = "  Retry idea  "
+        draft.body = "Retained body\n  "
+        draft.destinationID = selected.id
+
+        XCTAssertThrowsError(try draft.save(in: collections) { id, title, body, createdAt in
+            XCTAssertEqual(createdAt, originalCreationDate)
+            XCTAssertEqual(id, selected.id)
+            XCTAssertEqual(title, "Retry idea")
+            XCTAssertEqual(body, draft.body)
+            throw CocoaError(.fileWriteNoPermission)
+        })
+
+        XCTAssertEqual(draft.destinationID, selected.id)
+        XCTAssertEqual(draft.title, "  Retry idea  ")
+        XCTAssertEqual(draft.body, "Retained body\n  ")
+        XCTAssertEqual(collections, [initial, selected])
+        XCTAssertTrue(draft.canSave(in: collections))
+
+        var saves = 0
+        try draft.save(in: collections) { id, _, _, createdAt in
+            XCTAssertEqual(id, selected.id)
+            XCTAssertEqual(createdAt, originalCreationDate)
+            saves += 1
+        }
+        XCTAssertEqual(saves, 1)
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision()
     /// @brief      Move a Note across personal Lists without losing content or bookmarks
@@ -249,7 +489,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             id: 4, word: "Beach idea", listTitle: "Ideas",
             checklists: [KanbanChecklist(title: "Keep", items: ["Discuss"])],
             descriptionOverride: "First paragraph\n\nSecond paragraph",
-            presentation: .note
+            presentation: .note,
+            createdAt: Date(timeIntervalSince1970: 1_791_422_000)
         )
         note.attachments = [attachment]
         note.coverAttachmentID = attachment.id
@@ -277,6 +518,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let expected = note.replacingLocation(id: 10, listTitle: destination.title)
 
         XCTAssertEqual(moved, expected)
+        XCTAssertEqual(moved.createdAt, note.createdAt)
+        XCTAssertNotNil(moved.createdAt)
         XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
         XCTAssertFalse(collections[0].savedCardIDs.contains(note.id))
         XCTAssertEqual(collections[1].lists[0].cards, [
@@ -473,7 +716,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
 
 
-        let emptyNote = KanbanCard(id: 91, word: "Empty", listTitle: "Synthetic", checklists: [], presentation: .note)
+        let emptyNote = KanbanCard(
+            id: 91, word: "Empty", listTitle: "Synthetic", checklists: [], presentation: .note,
+            createdAt: Date(timeIntervalSince1970: 1_791_422_000)
+        )
 
         for fixture in [note, emptyNote] {
 
@@ -1566,7 +1812,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                         onArchive: { XCTFail("Layout must not archive") },
                         onDelete: { XCTFail("Layout must not delete") },
                         onCommitDeletion: { _ in XCTFail("Layout must not commit deletion") },
-                        onCreateNote: { _, _ in XCTFail("Layout must not create a Note") },
+                        onCreateNote: { _, _, _, _ in XCTFail("Layout must not create a Note") },
                         onMoveNote: { _, _, _ in throw CocoaError(.validationMissingMandatoryProperty) },
                         onUpdateMovedNote: { _, _ in XCTFail("Layout must not update a moved Note"); return false },
                         onArchiveMovedNote: { _, _ in XCTFail("Layout must not archive a moved Note"); return false },

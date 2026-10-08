@@ -106,6 +106,7 @@ struct CardDetailView: View {
         case members                                /* Card member management sheet                        */
         case labels                                 /* Card label library and assignment picker            */
         case attachmentSources                      /* Attachment source chooser                           */
+        case noteAttachments
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
@@ -127,6 +128,7 @@ struct CardDetailView: View {
                 case .members:                           "members"
                 case .labels:                            "labels"
                 case .attachmentSources:                 "attachment-sources"
+                case .noteAttachments:                   "note-attachments"
                 case .addLink:                           "add-link"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
                 case .actionDetail(let checklistID, let itemID): /* Owning checklist and action IDs */
@@ -1892,9 +1894,8 @@ struct CardDetailView: View {
 
         VStack(alignment: .leading, spacing: 18) {
 
-            Text(card.listTitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            locationControl
+                .accessibilityIdentifier("note.locationPicker")
 
             TextField("Note title", text: $titleText, axis: .vertical)
                 .font(.largeTitle.weight(.bold))
@@ -1903,6 +1904,11 @@ struct CardDetailView: View {
                 .onChange(of: titleText) { _, newValue in
                     syncCardState(title: newValue)
                 }
+
+            if let createdAt = card.createdAt {
+                NoteCreationDateLabel(createdAt: createdAt)
+                    .accessibilityIdentifier("note.creationDate")
+            }
 
             TextField("Start writing...", text: descriptionEditingBinding, axis: .vertical)
                 .font(.body)
@@ -1928,18 +1934,135 @@ struct CardDetailView: View {
                 attachmentGallery
             }
 
-            Button(showsNoteDetails ? "Hide Details" : "Show Details", systemImage: "info.circle") {
-                showsNoteDetails.toggle()
-            }
-            .frame(minHeight: 44)
-
-            Text("Dates, checklists, labels, members, and activity are retained in Details.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .id("plenact.noteEditor")
         .accessibilityIdentifier("plenact.noteEditor")
+    }
+
+    private func addMenu(using scrollProxy: ScrollViewProxy) -> some View {
+        Menu {
+            Button {
+                showsNoteDetails = true
+                addChecklist(using: scrollProxy)
+            } label: {
+                Label("Add checklist", systemImage: "checklist")
+            }
+            Button {
+                activeSheet = .date(.start)
+            } label: {
+                Label(startDate == nil ? "Add start date" : "Edit start date", systemImage: "calendar")
+            }
+            Button {
+                activeSheet = .date(.due)
+            } label: {
+                Label(dueDate == nil ? "Add due date" : "Edit due date", systemImage: "calendar.badge.clock")
+            }
+            Button {
+                showsNoteDetails = true
+                focusedField = .comment
+            } label: {
+                Label("Add comment", systemImage: "text.bubble")
+            }
+        } label: {
+            Image(systemName: "plus.circle")
+                .font(.title2)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Add to \(presentation.title.lowercased())")
+        .accessibilityIdentifier("note.addMenu")
+    }
+
+    private func noteToolbar(using scrollProxy: ScrollViewProxy) -> some View {
+        HStack(spacing: 0) {
+            Button {
+                focusedField = nil
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .accessibilityLabel("Back to previous view")
+            .accessibilityIdentifier("note.back")
+
+            Spacer(minLength: 0)
+
+            Button {
+                focusedField = nil
+                showsNoteDetails.toggle()
+                let target = showsNoteDetails ? "note.detailsStart" : "plenact.noteEditor"
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut) {
+                        scrollProxy.scrollTo(target, anchor: .top)
+                    }
+                }
+            } label: {
+                Image(systemName: showsNoteDetails ? "info.circle.fill" : "info.circle")
+            }
+            .accessibilityLabel(showsNoteDetails ? "Hide Note details" : "Show Note details")
+            .accessibilityIdentifier("note.details")
+
+            Spacer(minLength: 0)
+
+            Button {
+                focusedField = nil
+                activeSheet = .noteAttachments
+            } label: {
+                Image(systemName: "paperclip")
+            }
+            .accessibilityLabel("Note attachments")
+            .accessibilityValue("\(attachments.count) attachments")
+            .accessibilityIdentifier("note.attachments")
+
+            Spacer(minLength: 0)
+
+            ShareLink(item: NoteTextSharing.text(for: workingCardSnapshot), subject: Text(titleText)) {
+                Image(systemName: "square.and.arrow.up")
+            }
+            .accessibilityLabel("Share Note text")
+            .accessibilityHint("Shares the title, body, and attached web links. Does not include photos, videos, or Details.")
+            .accessibilityIdentifier("note.share")
+
+            Spacer(minLength: 0)
+
+            addMenu(using: scrollProxy)
+        }
+        .font(.title2)
+        .buttonStyle(NoteToolbarButtonStyle())
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+        .accessibilityIdentifier("note.bottomToolbar")
+    }
+
+    private var noteAttachmentsSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if attachments.isEmpty {
+                        ContentUnavailableView("No attachments", systemImage: "paperclip")
+                    } else {
+                        attachmentGallery
+                    }
+
+                    Button("Add attachment", systemImage: "plus") {
+                        activeSheet = .attachmentSources
+                    }
+                    .frame(minHeight: 44)
+                }
+                .padding(16)
+            }
+            .navigationTitle("Note attachments")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { activeSheet = nil }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     ///
@@ -1983,6 +2106,10 @@ struct CardDetailView: View {
                     }
 
                     if presentation == .card || showsNoteDetails {
+
+                    Color.clear
+                        .frame(height: 0)
+                        .id("note.detailsStart")
 
                     if presentation == .card {
 
@@ -2325,20 +2452,22 @@ struct CardDetailView: View {
 
             HStack(spacing: 12) {
 
-                Button {
-                    dismiss()
+                if presentation != .note || card.isSectionDivider {
+                    Button {
+                        dismiss()
 
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(Color(.systemGray5), in: Circle())
-                        .contentShape(Circle())
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .background(Color(.systemGray5), in: Circle())
+                            .contentShape(Circle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Back")
                 }
-
-                .buttonStyle(.plain)
-                .accessibilityLabel("Back")
 
                 Spacer()
 
@@ -2355,38 +2484,10 @@ struct CardDetailView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(isCurrentRecordSaved ? "Remove from Saved" : "Save \(presentation.title.lowercased())")
 
-                    Menu {
-                        Button {
-                            showsNoteDetails = true
-                            addChecklist(using: scrollProxy)
-                        } label: {
-                            Label("Add checklist", systemImage: "checklist")
-                        }
-                        Button {
-                            activeSheet = .date(.start)
-                        } label: {
-                            Label(startDate == nil ? "Add start date" : "Edit start date", systemImage: "calendar")
-                        }
-                        Button {
-                            activeSheet = .date(.due)
-                        } label: {
-                            Label(dueDate == nil ? "Add due date" : "Edit due date", systemImage: "calendar.badge.clock")
-                        }
-                        Button {
-                            showsNoteDetails = true
-                            focusedField = .comment
-                        } label: {
-                            Label("Add comment", systemImage: "text.bubble")
-                        }
-                    } label: {
-                        Image(systemName: "plus.circle")
-                            .font(.title2)
+                    if presentation == .card {
+                        addMenu(using: scrollProxy)
                             .foregroundStyle(.primary)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
                     }
-
-                    .accessibilityLabel("Add to \(presentation.title.lowercased())")
 
                     Menu {
                         Button(
@@ -2471,6 +2572,11 @@ struct CardDetailView: View {
             .background(Color(.systemGroupedBackground))
         }
 
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if presentation == .note && !card.isSectionDivider {
+                noteToolbar(using: scrollProxy)
+            }
+        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -2559,6 +2665,10 @@ struct CardDetailView: View {
                     )
                     .databaseActivityOverlay()
 
+                case .noteAttachments:
+                    noteAttachmentsSheet
+                        .databaseActivityOverlay()
+
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)
                         .databaseActivityOverlay()
@@ -2599,6 +2709,37 @@ struct CardDetailView: View {
             }
         }
         }
+    }
+}
+
+struct NoteCreationDateLabel: View {
+    let createdAt: Date
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            Text(createdAt, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                .fixedSize()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(createdAt, format: .dateTime.month(.abbreviated).day().year())
+                Text(createdAt, format: .dateTime.hour().minute())
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Created")
+        .accessibilityValue(createdAt.formatted(date: .complete, time: .shortened))
+    }
+}
+
+private struct NoteToolbarButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .foregroundStyle(Color.accentColor)
+            .opacity(configuration.isPressed ? 0.5 : 1)
     }
 }
 

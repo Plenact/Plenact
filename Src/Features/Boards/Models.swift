@@ -137,6 +137,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     var startDate:            Date?               /* Optional start date for the card                   */
     var dueDate:              Date?               /* Optional due date for the card                     */
+    let createdAt:            Date?               /* Unknown for records created before timestamp support */
     var descriptionOverride:  String?             /* Optional user-edited description                   */
     var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
 
@@ -181,7 +182,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             dismissedActivityIDs: dismissedActivityIDs,
             descriptionOverride: descriptionOverride,
             subtitleOverride: subtitleOverride,
-            presentation: presentation
+            presentation: presentation,
+            createdAt: createdAt
         )
     }
 
@@ -342,13 +344,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  descriptionOverride   Optional user-edited description
     /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
     /// @param[in]  presentation          Card or writing-first Note interface
+    /// @param[in]  createdAt             Known creation time; nil preserves unknown legacy dates
     ///
     /// @return     (KanbanCard) configured card instance
     ///
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -357,6 +360,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.isTitleChecked       = isTitleChecked          /* Whether the card's main title checkbox is selected */
         self.startDate            = startDate               /* Optional start date for the card                   */
         self.dueDate              = dueDate                 /* Optional due date for the card                     */
+        self.createdAt            = createdAt
         self.comments             = comments                /* Array of comments associated with the card         */
         self.members              = members                 /* Names of users assigned to the card                */
         self.labelIDs             = labelIDs                /* Stable IDs of labels assigned to the card          */
@@ -417,7 +421,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             dismissedActivityIDs: try container.decodeIfPresent(Set<String>.self, forKey: .dismissedActivityIDs) ?? [],
             descriptionOverride:  try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
             subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride),
-            presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card
+            presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card,
+            createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt)
         )
     }
 
@@ -436,6 +441,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case isTitleChecked
         case startDate
         case dueDate
+        case createdAt
         case checklists
         case comments
         case members
@@ -657,9 +663,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  id           Caller-allocated stable identity
     /// @param[in]  title        Validated item title
     /// @param[in]  description  Optional supplied body
+    /// @param[in]  createdAt    Creation time captured once for this new item
     /// @return     (KanbanCard) new record without modifying the list
     ///
-    func makeItem(id: Int, title: String, description: String? = nil) -> KanbanCard {
+    func makeItem(id: Int, title: String, description: String? = nil, createdAt: Date = .now) -> KanbanCard {
 
         let isDivider = KanbanCard.isDividerTitle(title)
         let presentation = isDivider ? ItemPresentation.card : newItemPresentation
@@ -668,7 +675,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
             id: id, word: title, listTitle: self.title, isDivider: isDivider,
             checklists: presentation == .note ? [] : nil,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
-            presentation: presentation
+            presentation: presentation,
+            createdAt: createdAt
         )
     }
 
@@ -1623,6 +1631,61 @@ enum PersonalCollectionKind: String, CaseIterable, Codable {
     case board = "Board"
 }
 
+enum NoteTextSharing {
+    static func text(for note: KanbanCard) -> String {
+        var sections = [note.word]
+        if let body = note.descriptionOverride, !body.isEmpty {
+            sections.append(body)
+        }
+        let links = (note.attachments ?? []).compactMap { attachment -> String? in
+            guard attachment.kind == .link, let url = attachment.url else {
+                return nil
+            }
+            return url.absoluteString
+        }
+        if !links.isEmpty {
+            sections.append(links.joined(separator: "\n\n"))
+        }
+        return sections.joined(separator: "\n\n")
+    }
+}
+
+struct PersonalListNoteDraft {
+    var destinationID: UUID
+    var title = ""
+    var body = ""
+    let createdAt: Date = .now
+
+    var normalizedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    static func destinations(in collections: [PersonalCollection]) -> [PersonalCollection] {
+        collections.filter {
+            $0.kind == .list && $0.isActive && $0.lists.contains(where: { !$0.isArchived })
+        }
+    }
+
+    func destination(in collections: [PersonalCollection]) -> PersonalCollection? {
+        Self.destinations(in: collections).first { $0.id == destinationID }
+    }
+
+    func canSave(in collections: [PersonalCollection]) -> Bool {
+        !normalizedTitle.isEmpty && destination(in: collections) != nil
+    }
+
+    func save(
+        in collections: [PersonalCollection],
+        onSave: (UUID, String, String, Date) throws -> Void
+    ) throws {
+        guard canSave(in: collections) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        try onSave(destinationID, normalizedTitle, body, createdAt)
+    }
+}
+
 
 ///
 /// Moves a Note between active personal collections without copying its content
@@ -2077,10 +2140,11 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     ///             non-List collections, and collections without an active destination
     /// @param[in]  title  User-entered Note title
     /// @param[in]  body   Note body preserved exactly
+    /// @param[in]  createdAt  Creation time retained from the draft, or captured at creation
     /// @return     (Void) appends one Note while preserving every existing record
     /// @throws     CocoaError when the destination or title is invalid
     ///
-    mutating func addNote(title: String, body: String) throws {
+    mutating func addNote(title: String, body: String, createdAt: Date = .now) throws {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -2091,7 +2155,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
         let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
         var destination = lists[listIndex]
-        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body)
+        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt)
 
         note.presentation = .note
         note.checklists = []

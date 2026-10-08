@@ -2295,34 +2295,43 @@ private struct QuickNoteComposer: View {
 
 
 ///
-/// Creates a Note draft for the currently open personal List
+/// Creates a Note draft with a selectable personal List destination
 ///
 /// @section    Purpose
 ///     Offer a roomy, writing-first draft that is committed only after explicit Save
 ///
 private struct NewPersonalNoteComposer: View {
 
-    let collectionTitle: String
-    let onSave: (String, String) throws -> Void
+    let availablePersonalLists: [PersonalCollection]
+    let onSave: (UUID, String, String, Date) throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
-    @State private var title = ""
-    @State private var noteBody = ""
+    @State private var draft: PersonalListNoteDraft
+
+    init(
+        initialCollectionID: UUID,
+        availablePersonalLists: [PersonalCollection],
+        onSave: @escaping (UUID, String, String, Date) throws -> Void
+    ) {
+        _draft = State(initialValue: PersonalListNoteDraft(destinationID: initialCollectionID))
+        self.availablePersonalLists = availablePersonalLists
+        self.onSave = onSave
+    }
 
     private enum Field {
         case title
         case body
     }
 
-    private var normalizedTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var destinations: [PersonalCollection] {
+        PersonalListNoteDraft.destinations(in: availablePersonalLists)
     }
 
     private func save() {
 
         do {
-            try onSave(normalizedTitle, noteBody)
+            try draft.save(in: availablePersonalLists, onSave: onSave)
             dismiss()
         } catch {
             DatabaseActivity.shared.report("Could not save the Note: \(error.localizedDescription) The draft remains open.")
@@ -2332,17 +2341,42 @@ private struct NewPersonalNoteComposer: View {
     var body: some View {
 
         NavigationStack {
+            ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text(collectionTitle)
+                Menu {
+                    ForEach(destinations) { collection in
+                        Button {
+                            draft.destinationID = collection.id
+                        } label: {
+                            Label(
+                                collection.title,
+                                systemImage: draft.destinationID == collection.id ? "checkmark" : "folder"
+                            )
+                        }
+                    }
+                } label: {
+                    Label(
+                        draft.destination(in: availablePersonalLists)?.title ?? "List unavailable",
+                        systemImage: "chevron.down"
+                    )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                }
+                .disabled(destinations.isEmpty)
+                .accessibilityLabel("Note destination List")
+                .accessibilityValue(draft.destination(in: availablePersonalLists)?.title ?? "List unavailable")
+                .accessibilityHint("Choose the personal List where this Note will be saved")
+                .accessibilityIdentifier("library.newNoteLocationPicker")
 
-                TextField("Note title", text: $title, axis: .vertical)
+                TextField("Note title", text: $draft.title, axis: .vertical)
                     .font(.largeTitle.weight(.bold))
                     .focused($focusedField, equals: .title)
                     .accessibilityLabel("Note title")
 
-                TextField("Start writing...", text: $noteBody, axis: .vertical)
+                NoteCreationDateLabel(createdAt: draft.createdAt)
+                    .accessibilityIdentifier("library.newNoteCreationDate")
+
+                TextField("Start writing...", text: $draft.body, axis: .vertical)
                     .font(.body)
                     .lineSpacing(6)
                     .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
@@ -2353,6 +2387,7 @@ private struct NewPersonalNoteComposer: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
             .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -2360,7 +2395,7 @@ private struct NewPersonalNoteComposer: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(normalizedTitle.isEmpty)
+                        .disabled(!draft.canSave(in: availablePersonalLists))
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     if focusedField != nil {
@@ -3314,10 +3349,11 @@ struct BoardListsView: View {
     /// @param[in]  collectionID  Active personal List identity
     /// @param[in]  title         Validated Note title
     /// @param[in]  body          Note body preserved as entered
+    /// @param[in]  createdAt     Creation time retained from the unsaved draft
     /// @return     (Void) saves and publishes one new Note record
     /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
     ///
-    private func createNote(in collectionID: UUID, title: String, body: String) throws {
+    private func createNote(in collectionID: UUID, title: String, body: String, createdAt: Date) throws {
 
         guard let collectionIndex = collections.firstIndex(where: {
 
@@ -3327,7 +3363,7 @@ struct BoardListsView: View {
         }
 
         var updated = collections[collectionIndex]
-        try updated.addNote(title: title, body: body)
+        try updated.addNote(title: title, body: body, createdAt: createdAt)
 
         var snapshot = collections
         snapshot[collectionIndex] = updated
@@ -3510,8 +3546,8 @@ struct BoardListsView: View {
                 try PersonalCollectionStore.saveChecked(snapshot)
                 collections = snapshot
             },
-            onCreateNote: { title, body in
-                try createNote(in: collection.id, title: title, body: body)
+            onCreateNote: { destinationID, title, body, createdAt in
+                try createNote(in: destinationID, title: title, body: body, createdAt: createdAt)
             },
             onMoveNote: { note, sourceID, destinationID in
                 try moveNote(note.id, from: sourceID, to: destinationID)
@@ -3765,8 +3801,11 @@ struct BoardListsView: View {
             }
 
             .sheet(item: $newNoteDraftDestination) { collection in
-                NewPersonalNoteComposer(collectionTitle: collection.title) { title, body in
-                    try createNote(in: collection.id, title: title, body: body)
+                NewPersonalNoteComposer(
+                    initialCollectionID: collection.id,
+                    availablePersonalLists: collections
+                ) { destinationID, title, body, createdAt in
+                    try createNote(in: destinationID, title: title, body: body, createdAt: createdAt)
                 }
                 .databaseActivityOverlay()
             }
@@ -3937,7 +3976,7 @@ struct PersonalCollectionBoardView: View {
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
-    let onCreateNote: (String, String) throws -> Void
+    let onCreateNote: (UUID, String, String, Date) throws -> Void
     let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard
     let onUpdateMovedNote: (UUID, KanbanCard) -> Bool
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool
@@ -4021,9 +4060,11 @@ struct PersonalCollectionBoardView: View {
             registerNewNote(nil)
         }
         .sheet(isPresented: $showsNewNoteComposer) {
-            NewPersonalNoteComposer(collectionTitle: collection.title) { title, body in
-                try onCreateNote(title, body)
-            }
+            NewPersonalNoteComposer(
+                initialCollectionID: collection.id,
+                availablePersonalLists: availablePersonalLists,
+                onSave: onCreateNote
+            )
             .databaseActivityOverlay()
         }
     }

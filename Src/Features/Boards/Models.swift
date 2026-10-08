@@ -2315,6 +2315,41 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
 
     ///
+    /// @fcn        PersonalCollection.bookmarkedCards
+    /// @brief      Resolve this active collection's bookmarks to active non-divider records
+    /// @details    Preserves collection/list/card order and excludes stale IDs and archived lists
+    ///
+    /// @return     ([PersonalCollectionBookmarkedCard]) bookmark rows with collection/list context
+    ///
+    /// @post       Collection content and bookmark membership remain unchanged
+    ///
+    var bookmarkedCards: [PersonalCollectionBookmarkedCard] { /* Current bookmarked personal items with navigation context */
+
+        guard isActive else {
+
+            return []
+        }
+
+        return lists.filter { !$0.isArchived }.flatMap { list in
+            list.cards.compactMap { card in
+                guard savedCardIDs.contains(card.id), !card.isSectionDivider else {
+
+                    return nil
+                }
+
+                return PersonalCollectionBookmarkedCard(
+                    collectionID:    id,
+                    collectionTitle: title,
+                    listID:          list.id,
+                    listTitle:       list.title,
+                    card:            card
+                )
+            }
+        }
+    }
+
+
+    ///
     /// @fcn        PersonalCollection.rename(to:)
     /// @brief      Rename a collection and synchronize a single-list title
     /// @details    For list collections, updates the title on both active and archived cards
@@ -2477,6 +2512,31 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
         return candidate
     }
+}
+
+
+///
+/// Identifies a bookmarked record in a personal collection
+///
+/// @section    Purpose
+///     Keep collection-local record IDs distinct in the combined Saved destination
+///
+struct PersonalCollectionBookmarkedCard: Identifiable, Hashable {
+
+    let collectionID: UUID /* Owning personal collection identity */
+    let collectionTitle: String /* Collection name shown in Saved */
+    let listID: Int /* Containing collection-local list identity */
+    let listTitle: String /* Containing list name shown in Saved */
+    let card: KanbanCard /* Complete bookmarked record */
+
+    ///
+    /// @fcn        PersonalCollectionBookmarkedCard.id
+    /// @brief      Build a stable Saved-row identity across collections
+    /// @details    Combines the collection UUID with its local card ID to avoid collisions
+    ///
+    /// @return     (String) composite row identity
+    ///
+    var id: String { "\(collectionID.uuidString):\(card.id)" } /* Collection-scoped row identity */
 }
 
 

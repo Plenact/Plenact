@@ -1956,6 +1956,36 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
 
     ///
+    /// @fcn        PersonalCollection.addNote(title:body:)
+    /// @brief      Append one writing-first item to an active personal List
+    /// @details    Allocates across active and archived collection records; rejects blank titles,
+    ///             non-List collections, and collections without an active destination
+    /// @param[in]  title  User-entered Note title
+    /// @param[in]  body   Note body preserved exactly
+    /// @return     (Void) appends one Note while preserving every existing record
+    /// @throws     CocoaError when the destination or title is invalid
+    ///
+    mutating func addNote(title: String, body: String) throws {
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard kind == .list, isActive, !trimmedTitle.isEmpty,
+              let listIndex = lists.firstIndex(where: { !$0.isArchived }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
+        var destination = lists[listIndex]
+        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body)
+
+        note.presentation = .note
+        note.checklists = []
+        destination.cards.append(note)
+        lists[listIndex] = destination
+    }
+
+
+    ///
     /// @fcn        PersonalCollection.matches(_:)
     /// @brief      Search the collection title, active lists, and active cards
     /// @details    Uses localized-standard matching and ignores section dividers

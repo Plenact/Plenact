@@ -395,20 +395,23 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 private struct AppRootView: View {
 
-    @State private var lists: [KanbanList]                 = []                                 /* Complete in-memory Week snapshot                    */
-    @State private var collections                         = PersonalCollectionStore.load()     /* Device-local personal collections                   */
-    @State private var hasLoadedBoard                      = false                              /* Whether the initial Week snapshot has loaded        */
-    @State private var profile                             = LocalProfileStore.load()           /* Optional local identity and settings                */
-    @State private var selectedDestination: AppDestination = .today                             /* Currently selected primary destination              */
-    @State private var boardTargetListID: Int?                                                  /* List requested by a Today-to-Board navigation       */
-    @State private var boardTargetCardID: Int?                                                  /* Card requested by a Today-to-Board navigation       */
-    @State private var weekRootRequest         = 0                                              /* Explicit Week toolbar taps return to the Board root */
-    @State private var savedCardIDs            = SavedCardPersistence.load()                    /* Device-local saved cards                            */
-    @State private var quickCreateRequest      = 0                                              /* Center-bar quick-create request                     */
-    @State private var showsCenterNewCardSheet = false                                          /* Destination picker for New outside Today            */
-    @State private var isWeekListRequestArmed  = false                                          /* Whether New's long press will create a Week list    */
-    @State private var weekListShakeTrigger    = 0                                              /* Trigger for long-press confirmation animation       */
-    @Environment(\.verticalSizeClass) private var verticalSizeClass                             /* Layout size class used to compact the landscape bar */
+    @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
+    @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
+    @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
+    @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
+    @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
+    @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
+    @State private var savedCardIDs                        = SavedCardPersistence.load()    /* Device-local saved cards                            */
+    @State private var quickCreateRequest                  = 0                              /* Center-bar quick-create request                     */
+    @State private var showsCenterNewCardSheet             = false                          /* Destination picker for New outside Today            */
+    @State private var isWeekListRequestArmed              = false                          /* Whether New's long press will create a Week list    */
+    @State private var weekListShakeTrigger                = 0                              /* Trigger for long-press confirmation animation       */
+
+    @State private var boardTargetListID:                  Int?                             /* List requested by a Today-to-Board navigation       */
+    @State private var boardTargetCardID:                  Int?                             /* Card requested by a Today-to-Board navigation       */
+    @State private var activePersonalListNewNote:          (() -> Void)?					/* Callback to create a new note in active pers list   */
+
+    @Environment(\.verticalSizeClass) private var verticalSizeClass                         /* Layout size class used to compact the landscape bar */
 
 
     ///
@@ -512,16 +515,7 @@ private struct AppRootView: View {
                 .tag(AppDestination.board)
                 .toolbar(.hidden, for: .tabBar)
 
-            BoardListsView(
-                retainedWeekLists: lists, collections: $collections,
-                onOpenSaved: { selectedDestination = .saved }
-            )
-                .tabItem {
-                    Label("Library", systemImage: "books.vertical")
-                }
-
-                .tag(AppDestination.lists)
-                .toolbar(.hidden, for: .tabBar)
+            libraryTab
 
             SavedCardsView(
                 lists: lists.filter { !$0.isArchived },
@@ -585,6 +579,22 @@ private struct AppRootView: View {
     }
 
 
+    private var libraryTab: some View {
+
+        BoardListsView(
+            retainedWeekLists: lists,
+            collections: $collections,
+            registerListNewNote: registerPersonalListNewNote,
+            onOpenSaved: openSavedDestination
+        )
+        .tabItem {
+            Label("Library", systemImage: "books.vertical")
+        }
+        .tag(AppDestination.lists)
+        .toolbar(.hidden, for: .tabBar)
+    }
+
+
     ///
     /// @fcn        AppRootView.bottomNavigationBar
     /// @brief      Build the custom destination bar and central New control
@@ -592,8 +602,8 @@ private struct AppRootView: View {
     ///             while the keyboard overlays it. The decorative background extends through the
     ///             bottom safe area independently of the fixed-height controls. In portrait,
     ///             its top edge is inset 20 points so New overlaps it without moving any controls.
-    ///             New requests a Today composer or a destination picker, while a long press arms
-    ///             Week-list creation and shake feedback
+    ///             New requests Today capture, a Library Note, or a Week-card destination picker;
+    ///             a long press arms Week-list creation and shake feedback
     ///
     /// @return     (some View) paper-backed navigation controls
     /// @post       Button and gesture callbacks update navigation and creation-request state
@@ -631,6 +641,8 @@ private struct AppRootView: View {
                         addWeekList()
                     } else if selectedDestination == .today {
                         quickCreateRequest += 1
+                    } else if selectedDestination == .lists, let activePersonalListNewNote {
+                        activePersonalListNewNote()
                     } else {
                         showsCenterNewCardSheet = true
                     }
@@ -659,8 +671,12 @@ private struct AppRootView: View {
                     .easeInOut(duration: 0.07)
                 }
 
-                .accessibilityLabel("Create a new card")
-                .accessibilityHint("Tap to create a card. Touch and hold until New shakes, then release to add a Week list.")
+                .accessibilityLabel(activePersonalListNewNote == nil ? "Create a new card" : "Create a new Note")
+                .accessibilityHint(
+                    activePersonalListNewNote == nil
+                        ? "Tap to create a card. Touch and hold until New shakes, then release to add a Week list."
+                        : "Creates a Note in the open personal List, or the most recently opened personal List from Library. Touch and hold until New shakes, then release to add a Week list."
+                )
 
                     if profile?.preferences.showsNavigationLabels ?? true {
 
@@ -777,6 +793,30 @@ private struct AppRootView: View {
         boardTargetCardID = nil
         boardTargetListID   = listID
         selectedDestination = .board
+    }
+
+
+    ///
+    /// @fcn        AppRootView.registerPersonalListNewNote(_:)
+    /// @brief      Register the New action supplied by an open personal List
+    /// @details    The Library directory and personal Boards register nil and retain Week creation
+    /// @param[in]  action  Optional List-scoped New Note presentation action
+    /// @return     (Void) updates the current toolbar route only
+    ///
+    private func registerPersonalListNewNote(_ action: (() -> Void)?) {
+
+        activePersonalListNewNote = action
+    }
+
+
+    ///
+    /// @fcn        AppRootView.openSavedDestination()
+    /// @brief      Select the existing Saved tab from Library
+    /// @return     (Void) changes navigation destination without duplicating Saved content
+    ///
+    private func openSavedDestination() {
+
+        selectedDestination = .saved
     }
 
 
@@ -2255,6 +2295,91 @@ private struct QuickNoteComposer: View {
 
 
 ///
+/// Creates a Note draft for the currently open personal List
+///
+/// @section    Purpose
+///     Offer a roomy, writing-first draft that is committed only after explicit Save
+///
+private struct NewPersonalNoteComposer: View {
+
+    let collectionTitle: String
+    let onSave: (String, String) throws -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: Field?
+    @State private var title = ""
+    @State private var noteBody = ""
+
+    private enum Field {
+        case title
+        case body
+    }
+
+    private var normalizedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func save() {
+
+        do {
+            try onSave(normalizedTitle, noteBody)
+            dismiss()
+        } catch {
+            DatabaseActivity.shared.report("Could not save the Note: \(error.localizedDescription) The draft remains open.")
+        }
+    }
+
+    var body: some View {
+
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 18) {
+                Text(collectionTitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                TextField("Note title", text: $title, axis: .vertical)
+                    .font(.largeTitle.weight(.bold))
+                    .focused($focusedField, equals: .title)
+                    .accessibilityLabel("Note title")
+
+                TextField("Start writing...", text: $noteBody, axis: .vertical)
+                    .font(.body)
+                    .lineSpacing(6)
+                    .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
+                    .focused($focusedField, equals: .body)
+                    .accessibilityLabel("Note body")
+
+                Spacer(minLength: 0)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Color(.systemGroupedBackground))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save", action: save)
+                        .disabled(normalizedTitle.isEmpty)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    if focusedField != nil {
+
+                        Spacer()
+                        Button("Done") { focusedField = nil }
+                    }
+                }
+            }
+            .navigationTitle("New Note")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.large])
+        .accessibilityIdentifier("library.newNoteComposer")
+    }
+}
+
+
+///
 /// Represents a local search match with navigation provenance
 ///
 /// @section    Purpose
@@ -3022,12 +3147,15 @@ struct BoardListsView: View {
     let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
+    let registerListNewNote: ((() -> Void)?) -> Void
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
     @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
+    @State private var newNoteDraftDestination: PersonalCollection?
+    @State private var mostRecentlyOpenedListID: UUID?
     @State private var showsExamples = false                   /* Present the synthetic list chooser          */
     @State private var pendingExample: PersonalCollection?     /* Unsaved draft waiting for chooser dismissal */
 
@@ -3042,6 +3170,114 @@ struct BoardListsView: View {
     ///
     private var filteredCollections: [PersonalCollection] {
         collections.filter { $0.isActive && $0.matches(searchText) }
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.collectionEntry(_:)
+    /// @brief      Build one personal-collection row and its existing lifecycle actions
+    /// @details    Keeps the Library directory view builder small as navigation callbacks grow
+    /// @param[in]  collection  Active directory collection
+    /// @return     (some View) collection entry with edit/archive/delete affordances
+    ///
+    private func collectionEntry(_ collection: PersonalCollection) -> some View {
+
+        let collectionSubtitle = collection.kind == .board
+            ? "Board · \(collection.lists.filter { !$0.isArchived }.count) lists"
+            : "List"
+
+        return Button {
+            if collection.kind == .list {
+
+                mostRecentlyOpenedListID = collection.id
+            }
+
+            openedCollection = collection
+        } label: {
+            row(
+                title: collection.title,
+                subtitle: collectionSubtitle,
+                icon: collection.icon.rawValue,
+                color: collection.color.color,
+                count: collection.cardCount
+            )
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(collection.color.color.opacity(0.08))
+        .accessibilityHint("Opens this personal collection")
+        .contextMenu {
+            Button("Edit", systemImage: "pencil") { editingCollection = collection }
+            Button("Archive", systemImage: "archivebox") { archivingCollection = collection }
+            Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
+        }
+        .accessibilityActions {
+            Button("Edit Collection") { editingCollection = collection }
+            Button("Archive Collection") { archivingCollection = collection }
+            Button("Delete Collection") { deletingCollection = collection }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Delete", role: .destructive) { deletingCollection = collection }
+            Button("Archive") { archivingCollection = collection }
+            Button("Edit") { editingCollection = collection }
+                .tint(.blue)
+        }
+    }
+
+
+    private var directoryNoteDestination: PersonalCollection? {
+
+        Self.resolveNoteDestination(
+            mostRecentlyOpenedListID: mostRecentlyOpenedListID,
+            collections:              collections,
+            visibleCollections:       filteredCollections
+        )
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.resolveNoteDestination(mostRecentlyOpenedListID:collections:visibleCollections:)
+    /// @brief      Select the active personal List for directory-level Note creation
+    /// @details    Prefer the most recently opened active List; otherwise use the first visible List
+    /// 
+    /// @param[in]  mostRecentlyOpenedListID  Last opened personal List identity, if still active
+    /// @param[in]  collections               Complete local collection snapshot
+    /// @param[in]  visibleCollections        Active collections currently shown by Library search
+    /// 
+    /// @return     (PersonalCollection?) destination List, or nil when none is available
+    ///
+    static func resolveNoteDestination(
+        mostRecentlyOpenedListID: UUID?,
+        collections:             [PersonalCollection],
+        visibleCollections:      [PersonalCollection]
+    ) -> PersonalCollection? {
+
+        if let mostRecentlyOpenedListID,
+           let recentList = collections.first(where: {
+               $0.id == mostRecentlyOpenedListID && $0.kind == .list && $0.isActive
+           }) {
+            return recentList
+        }
+
+        return visibleCollections.first(where: { $0.kind == .list && $0.isActive })
+    }
+
+
+    private func openDirectoryNewNote() {
+
+        guard let destination = directoryNoteDestination else {
+
+            DatabaseActivity.shared.report("Create a personal List before adding a Note from Library.")
+
+            return
+        }
+
+        newNoteDraftDestination = destination
+    }
+
+
+    private func registerDirectoryNewNote() {
+
+        registerListNewNote { openDirectoryNewNote() }
     }
 
 
@@ -3067,6 +3303,81 @@ struct BoardListsView: View {
         } else {
             collections.append(collection)
         }
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.createNote(in:title:body:)
+    /// @brief      Save a new Note into an active personal List before publishing it
+    /// @details    Resolves the current collection by stable identity, allocates within that
+    ///             collection's retained records, and leaves all content unchanged on save failure
+    /// @param[in]  collectionID  Active personal List identity
+    /// @param[in]  title         Validated Note title
+    /// @param[in]  body          Note body preserved as entered
+    /// @return     (Void) saves and publishes one new Note record
+    /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
+    ///
+    private func createNote(in collectionID: UUID, title: String, body: String) throws {
+
+        guard let collectionIndex = collections.firstIndex(where: {
+
+            $0.id == collectionID && $0.kind == .list && $0.isActive
+        }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        var updated = collections[collectionIndex]
+        try updated.addNote(title: title, body: body)
+
+        var snapshot = collections
+        snapshot[collectionIndex] = updated
+        try PersonalCollectionStore.saveChecked(snapshot)
+        collections = snapshot
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.presentedCollectionBoard(_:)
+    /// @brief      Wire a personal collection to its live directory records
+    /// @details    Supplies retained-attachment protection, save-before-delete/note callbacks,
+    ///             and the scoped bottom-toolbar Note action
+    /// @param[in]  collection  Full-screen collection snapshot selected from the Library
+    /// @return     (some View) collection Board wired to canonical collection persistence
+    ///
+    private func presentedCollectionBoard(_ collection: PersonalCollection) -> some View {
+
+        let otherCollectionLists = collections
+            .filter { $0.id != collection.id }
+            .flatMap(\.lists)
+        let retainedLists = retainedWeekLists
+            + otherCollectionLists
+            + (ExampleLoadUndoStore.load()?.lists ?? [])
+
+        return PersonalCollectionBoardView(
+            collection: collectionBinding(for: collection),
+            retainedLists: retainedLists,
+            onArchive: {
+                collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
+            },
+            onDelete: {
+                let updated = collections.filter { $0.id != collection.id }
+                try PersonalCollectionStore.saveChecked(updated)
+                collections = updated
+            },
+            onCommitDeletion: { updated in
+                guard let index = collections.firstIndex(where: { $0.id == updated.id }) else {
+                    throw CocoaError(.validationMissingMandatoryProperty)
+                }
+                var snapshot = collections
+                snapshot[index] = updated
+                try PersonalCollectionStore.saveChecked(snapshot)
+                collections = snapshot
+            },
+            onCreateNote: { title, body in
+                try createNote(in: collection.id, title: title, body: body)
+            },
+            registerNewNote: registerListNewNote
+        )
     }
 
 
@@ -3225,37 +3536,7 @@ struct BoardListsView: View {
 
                     ForEach(filteredCollections) { collection in
 
-                        Button {
-                            openedCollection = collection
-                        } label: {
-                            row(
-                                title: collection.title,
-                                subtitle: collection.kind == .board ? "Board · \(collection.lists.filter { !$0.isArchived }.count) lists" : "List",
-                                icon: collection.icon.rawValue, color: collection.color.color,
-                                count: collection.cardCount
-                            )
-                        }
-
-                        .buttonStyle(.plain)
-                        .listRowBackground(collection.color.color.opacity(0.08))
-                        .accessibilityHint("Opens this personal collection")
-                        .contextMenu {
-                            Button("Edit", systemImage: "pencil") { editingCollection = collection }
-                            Button("Archive", systemImage: "archivebox") { archivingCollection = collection }
-                            Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
-                        }
-                        .accessibilityActions {
-                            Button("Edit Collection") { editingCollection = collection }
-                            Button("Archive Collection") { archivingCollection = collection }
-                            Button("Delete Collection") { deletingCollection = collection }
-                        }
-
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button("Delete", role: .destructive) { deletingCollection = collection }
-                            Button("Archive") { archivingCollection = collection }
-                            Button("Edit") { editingCollection = collection }
-                                .tint(.blue)
-                        }
+                        collectionEntry(collection)
                     }
                     .onMove { source, destination in
                         guard searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -3337,32 +3618,15 @@ struct BoardListsView: View {
                 }
             }
 
-            .fullScreenCover(item: $openedCollection) { collection in
-                PersonalCollectionBoardView(
-                    collection: collectionBinding(for: collection),
-                    retainedLists: retainedWeekLists + collections.filter { $0.id != collection.id }.flatMap(\.lists)
-                        + (ExampleLoadUndoStore.load()?.lists ?? []),
-                    onArchive: {
-                        collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
-                    },
-                    onDelete: {
-                        let updated = collections.filter { $0.id != collection.id }
-                        try PersonalCollectionStore.saveChecked(updated)
-                        collections = updated
-                    },
-                    onCommitDeletion: { updated in
-                        guard let index = collections.firstIndex(where: {
+            .sheet(item: $newNoteDraftDestination) { collection in
+                NewPersonalNoteComposer(collectionTitle: collection.title) { title, body in
+                    try createNote(in: collection.id, title: title, body: body)
+                }
+                .databaseActivityOverlay()
+            }
 
-                            $0.id == updated.id
-                        }) else {
-                            throw CocoaError(.validationMissingMandatoryProperty)
-                        }
-                        var snapshot = collections
-                        snapshot[index] = updated
-                        try PersonalCollectionStore.saveChecked(snapshot)
-                        collections = snapshot
-                    }
-                )
+            .fullScreenCover(item: $openedCollection, onDismiss: registerDirectoryNewNote) { collection in
+                presentedCollectionBoard(collection)
             }
 
             .alert("Delete collection?", isPresented: Binding(
@@ -3414,6 +3678,7 @@ struct BoardListsView: View {
             }
 
         }
+        .onAppear(perform: registerDirectoryNewNote)
     }
 
 
@@ -3525,7 +3790,10 @@ struct PersonalCollectionBoardView: View {
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
+    let onCreateNote: (String, String) throws -> Void
+    let registerNewNote: ((() -> Void)?) -> Void
     @Environment(\.dismiss) private var dismiss     /* Close the collection board */
+    @State private var showsNewNoteComposer = false
 
     ///
     /// @fcn        PersonalCollectionBoardView.body
@@ -3577,6 +3845,21 @@ struct PersonalCollectionBoardView: View {
             retainedAttachmentLists: { retainedLists }
         )
         .databaseActivityOverlay()
+        .onAppear {
+            if collection.kind == .list {
+
+                registerNewNote { showsNewNoteComposer = true }
+            }
+        }
+        .onDisappear {
+            registerNewNote(nil)
+        }
+        .sheet(isPresented: $showsNewNoteComposer) {
+            NewPersonalNoteComposer(collectionTitle: collection.title) { title, body in
+                try onCreateNote(title, body)
+            }
+            .databaseActivityOverlay()
+        }
     }
 }
 

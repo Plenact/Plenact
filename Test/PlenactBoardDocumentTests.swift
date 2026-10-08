@@ -236,6 +236,38 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalListsDefaultNewItemsToNotesWithoutConvertingExistingRecords()
+    /// @brief      Use Note defaults for personal Lists while retaining existing content
+    /// @details    Covers new and legacy List defaults, preserved Card records, and unchanged
+    ///             personal Board defaults
+    ///
+    /// @return     (Void) records assertion failures for defaults and retained content
+    ///
+    func testPersonalListsDefaultNewItemsToNotesWithoutConvertingExistingRecords() {
+
+        var collection = PersonalCollection(title: "Synthetic ideas", kind: .list) /* Personal List receiving its default */
+        let existingCard = KanbanCard(id: 20, word: "Keep this Card", listTitle: collection.title) /* Existing Card content that must remain unchanged */
+
+        XCTAssertEqual(collection.lists[0].newItemPresentation, .note)
+
+        collection.lists[0].cards = [existingCard]
+        collection.lists[0].newItemPresentation = .card
+        collection.useNoteDefaultsForPersonalLists()
+
+        XCTAssertEqual(collection.lists[0].newItemPresentation, .note)
+        XCTAssertEqual(collection.lists[0].cards, [existingCard])
+        XCTAssertEqual(collection.lists[0].makeItem(id: 21, title: "New thought").presentation, .note)
+
+        var board = PersonalCollection(title: "Synthetic board", kind: .board) /* Multi-list collection preserving configurable defaults */
+
+        board.lists[0].newItemPresentation = .card
+        board.useNoteDefaultsForPersonalLists()
+
+        XCTAssertEqual(board.lists[0].newItemPresentation, .card)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody()
     /// @brief      Create a Note in the active personal List without replacing retained content
     /// @details    Reserves archived IDs, preserves body whitespace, and rejects invalid targets

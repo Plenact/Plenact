@@ -2265,8 +2265,39 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
         let columns = kind == .list ? [title] : ["Ideas", "In progress", "Done"] /* Initial column headings selected by collection kind */
 
-        lists = columns.enumerated().map { KanbanList(id: $0.offset, title: $0.element, cards: []) }
+        lists = columns.enumerated().map {
+            KanbanList(
+                id: $0.offset,
+                title: $0.element,
+                cards: [],
+                newItemPresentation: kind == .list ? .note : .card
+            )
+        }
         savedCardIDs = []
+    }
+
+
+    ///
+    /// @fcn        PersonalCollection.useNoteDefaultsForPersonalLists()
+    /// @brief      Make new items in a personal List use the Note interface
+    /// @details    Applies only to personal List collections and changes creation defaults
+    ///             without converting or replacing active or archived records
+    ///
+    /// @return     (Void) updates each contained list's new-item presentation
+    ///
+    /// @post       Boards and all retained card content remain unchanged
+    ///
+    mutating func useNoteDefaultsForPersonalLists() {
+
+        guard kind == .list else {
+
+            return
+        }
+
+        for index in lists.indices {
+
+            lists[index].newItemPresentation = .note
+        }
     }
 
 

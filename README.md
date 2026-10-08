@@ -6,6 +6,10 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 ## Development Work
 
+- Gallery view in a card
+
+- Ability to reset and load a full template week in from Examples Menu
+
 - Lists/Notes Interface Idea
 
 - Kanban Look & Feel Idea
@@ -19,6 +23,10 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 ### Upcoming
 
 - Unsplash cover images & Backgrounds & Custom Backgrounds
+
+- Consider the value and interest, or utility of having the users be able to place notes, images and cards into the same lists
+
+- Ability to also add Card banners, if the	y want
 
 ### Carryover
 

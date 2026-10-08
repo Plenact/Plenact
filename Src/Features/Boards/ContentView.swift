@@ -5160,16 +5160,44 @@ struct TodayListDetailView: View {
             ZStack {
                 Color(.systemGray6).ignoresSafeArea()
 
+                VStack(spacing: 0) {
+                    ZStack {
+                        LinearGradient(
+                            stops: [
+                                .init(color: Color(red: 0.23, green: 0.34, blue: 0.32), location: 0),
+                                .init(color: Color(red: 0.23, green: 0.34, blue: 0.32), location: 0.64),
+                                .init(color: .clear, location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint:   .bottom
+                        )
+
+                        Image("TodayPaper")
+                            .resizable()
+                            .scaledToFill()
+                            .opacity(0.14)
+                            .blendMode(.softLight)
+                    }
+
+                    .frame(height: 129)
+                    .clipped()
+
+                    Spacer(minLength: 0)
+                }
+
+                .ignoresSafeArea()
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                        .frame(height: 2)
+                        .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+
                 if let focusedList { /* Selected list available for rendering */
 
                     List {
-
-                        Text(focusedList.subtitle)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
 
                         ForEach(focusedList.cards) { card in
 
@@ -5252,34 +5280,81 @@ struct TodayListDetailView: View {
                     .listStyle(.plain)
                     .environment(\.editMode, $editMode)
                     .scrollContentBackground(.hidden)
+                    .contentMargins(.top, 26, for: .scrollContent)
                     .background(.clear)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                            .frame(height: 4)
+                            .offset(y: 12)
+                            .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 } else {
                     ContentUnavailableView("List unavailable", systemImage: "list.bullet")
                 }
             }
 
-            .navigationTitle(focusedList?.title ?? "Today")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Today", systemImage: "chevron.left", action: onClose)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .frame(width: 40, height: 44)
+                            .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Back to Today")
+                }
+
+                ToolbarItem(placement: .principal) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(focusedList?.title ?? "Today")
+                            .font(.title2.weight(.bold))
+                            .lineLimit(1)
+                            .foregroundStyle(.white)
+
+                        if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
+
+                            Text(subtitle)
+                                .font(.subheadline)
+                                .lineLimit(1)
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
+                    }
+
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            editMode = editMode == .active ? .inactive : .active
+                    Menu {
+                        Button(
+                            editMode == .active ? "Done reordering cards" : "Reorder cards",
+                            systemImage: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle"
+                        ) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                editMode = editMode == .active ? .inactive : .active
+                            }
                         }
+
+                        Button("Open in Week", systemImage: "rectangle.split.3x1", action: onOpenWeek)
                     } label: {
-                        Image(systemName: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle")
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .frame(width: 40, height: 44)
+                            .contentShape(Rectangle())
                     }
 
-                    .accessibilityLabel(editMode == .active ? "Done reordering cards" : "Reorder cards")
-                    .accessibilityHint("Shows drag handles for cards and section dividers")
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Open in Week", action: onOpenWeek)
+                    .accessibilityLabel("Day options")
                 }
             }
 

@@ -155,6 +155,37 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     }
 
     ///
+    /// @fcn        KanbanCard.replacingLocation(id:listTitle:)
+    /// @brief      Rebuild the same complete card under a destination-local identity and List title
+    /// @details    Retains all supporting fields and the selected Card/Note presentation
+    /// @param[in]  id        Identity allocated by the destination collection
+    /// @param[in]  listTitle Name of the destination List
+    /// @return     (KanbanCard) complete record with only its location identity changed
+    ///
+    func replacingLocation(id: Int, listTitle: String) -> KanbanCard {
+
+        KanbanCard(
+            id: id,
+            word: word,
+            listTitle: listTitle,
+            isDivider: isDivider,
+            isTitleChecked: isTitleChecked,
+            startDate: startDate,
+            dueDate: dueDate,
+            checklists: checklists,
+            comments: comments,
+            members: members,
+            labelIDs: labelIDs,
+            attachments: attachments,
+            coverAttachmentID: coverAttachmentID,
+            dismissedActivityIDs: dismissedActivityIDs,
+            descriptionOverride: descriptionOverride,
+            subtitleOverride: subtitleOverride,
+            presentation: presentation
+        )
+    }
+
+    ///
     /// @fcn        KanbanCard.coverAttachment
     /// @brief      Resolve the explicitly selected photo without automatic fallback
     /// @details    Missing attachments, nonphotos, and dividers do not produce a cover
@@ -1591,6 +1622,90 @@ enum PersonalCollectionKind: String, CaseIterable, Codable {
     case list  = "List"
     case board = "Board"
 }
+
+
+///
+/// Moves a Note between active personal collections without copying its content
+///
+/// @section    Purpose
+///     Keep cross-collection location changes atomic and preserve collection-local identity rules
+///
+enum PersonalCollectionNoteMovement {
+
+    ///
+    /// @fcn        PersonalCollectionNoteMovement.move(noteID:from:to:in:)
+    /// @brief      Move one active Note to an active personal List
+    /// @details    Preserves all Note fields and bookmarks. Card IDs are collection-local; an ID
+    ///             collision in the destination receives a fresh destination-local ID
+    /// @param[in]     noteID        Active source Note ID
+    /// @param[in]     sourceID      Owning collection identity
+    /// @param[in]     destinationID Target active personal List identity
+    /// @param[in,out] collections   Complete local collection snapshot
+    /// @return     (KanbanCard) moved Note with its destination-local identity and title
+    /// @throws     CocoaError when the source, Note, or destination is invalid or ambiguous
+    ///
+    static func move(
+        noteID: Int,
+        from sourceID: UUID,
+        to destinationID: UUID,
+        in collections: inout [PersonalCollection]
+    ) throws -> KanbanCard {
+
+        guard sourceID != destinationID,
+              let sourceIndex = collections.firstIndex(where: { $0.id == sourceID && $0.isActive }),
+              let destinationIndex = collections.firstIndex(where: {
+                  $0.id == destinationID && $0.kind == .list && $0.isActive
+              }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        var source = collections[sourceIndex]
+        var destination = collections[destinationIndex]
+        let sourceMatches = source.lists.indices.flatMap { listIndex in
+            source.lists[listIndex].cards.indices.compactMap { cardIndex in
+                !source.lists[listIndex].isArchived && source.lists[listIndex].cards[cardIndex].id == noteID
+                    ? (listIndex, cardIndex)
+                    : nil
+            }
+        }
+
+        guard sourceMatches.count == 1,
+              let (sourceListIndex, cardIndex) = sourceMatches.first,
+              source.lists[sourceListIndex].cards[cardIndex].presentation == .note,
+              !source.lists[sourceListIndex].cards[cardIndex].isSectionDivider,
+              let destinationListIndex = destination.lists.firstIndex(where: { !$0.isArchived }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        var moved = source.lists[sourceListIndex].cards.remove(at: cardIndex)
+        let destinationIDs = Set(destination.lists.flatMap(\.allCards).map(\.id))
+
+        var destinationCardID = moved.id
+        if destinationIDs.contains(moved.id) {
+
+            let (nextID, overflow) = (destinationIDs.max() ?? -1).addingReportingOverflow(1)
+            guard !overflow else {
+                throw CocoaError(.validationNumberTooLarge)
+            }
+            destinationCardID = nextID
+        }
+
+        moved = moved.replacingLocation(id: destinationCardID, listTitle: destination.title)
+
+        let wasSaved = source.savedCardIDs.remove(noteID) != nil
+        if wasSaved {
+
+            destination.savedCardIDs.insert(moved.id)
+        }
+
+        destination.lists[destinationListIndex].cards.append(moved)
+        collections[sourceIndex] = source
+        collections[destinationIndex] = destination
+
+        return moved
+    }
+}
+
 
 ///
 /// Applies permanent removal to a complete Board snapshot

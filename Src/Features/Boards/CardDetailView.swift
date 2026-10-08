@@ -246,6 +246,13 @@ struct CardDetailView: View {
     @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
+    let personalCollectionID: UUID?
+    let availablePersonalLists: [PersonalCollection]
+    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?
     /// Optional callback that archives the latest synchronized card snapshot.
     let onArchive: (() -> Void)?
     /// Optional callback permanently deleting this card and its caller-owned content.
@@ -283,6 +290,10 @@ struct CardDetailView: View {
     @State private var presentation: ItemPresentation
     @State private var showsNoteDetails = false
     @State private var hasEditedDescription = false
+    @State private var recordID: Int
+    @State private var currentListTitle: String
+    @State private var currentPersonalCollectionID: UUID?
+    @State private var movedNoteIsSaved: Bool?
 
 
     ///
@@ -314,6 +325,9 @@ struct CardDetailView: View {
     /// @param[in]  savedCardIDs   Binding to this Board's device-local bookmarks
     /// @param[in]  onTitleToggle  Optional callback receiving every complete edited card snapshot
     /// @param[in]  onMoveToList   Optional callback receiving a destination list ID
+    /// @param[in]  personalCollectionID  Current local collection for cross-collection Note moves
+    /// @param[in]  availablePersonalLists Active personal Lists offered as Note destinations
+    /// @param[in]  onMoveNoteToPersonalList Save-first Note movement callback
     /// @param[in]  onArchive      Optional callback archiving the latest synchronized card
     /// @param[in]  onDelete       Optional save-first deletion callback; false retains the editor and drafts
     ///
@@ -330,6 +344,13 @@ struct CardDetailView: View {
         savedCardIDs: Binding<Set<Int>>        = .constant([]),
         onTitleToggle: ((KanbanCard) -> Void)? = nil,       /* Callback invoked when the card title checkbox is toggled     */
         onMoveToList: ((Int) -> Void)?         = nil,       /* Callback invoked when the card is moved                      */
+        personalCollectionID: UUID?            = nil,
+        availablePersonalLists: [PersonalCollection] = [],
+        onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
+        onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
         onArchive: (() -> Void)? = nil,
         onDelete: (() -> Bool)? = nil
     ) {
@@ -342,6 +363,13 @@ struct CardDetailView: View {
         self._savedCardIDs  = savedCardIDs                                      /* Local saved-card identities                                        */
         self.onTitleToggle  = onTitleToggle                                     /* Callback invoked when the card title checkbox is toggled             */
         self.onMoveToList   = onMoveToList                                      /* Callback invoked when the card is moved                              */
+        self.personalCollectionID = personalCollectionID
+        self.availablePersonalLists = availablePersonalLists
+        self.onMoveNoteToPersonalList = onMoveNoteToPersonalList
+        self.onUpdateMovedNote = onUpdateMovedNote
+        self.onArchiveMovedNote = onArchiveMovedNote
+        self.onDeleteMovedNote = onDeleteMovedNote
+        self.onToggleMovedNoteBookmark = onToggleMovedNoteBookmark
         self.onArchive = onArchive
         self.onDelete = onDelete
 
@@ -352,6 +380,9 @@ struct CardDetailView: View {
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
         _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
         _presentation         = State(initialValue: card.presentation)
+        _recordID = State(initialValue: card.id)
+        _currentListTitle = State(initialValue: card.listTitle)
+        _currentPersonalCollectionID = State(initialValue: personalCollectionID)
         _comments             = State(initialValue: card.comments)              /* Initialize comments from the selected card                           */
         _members              = State(initialValue: card.members)               /* Initialize assigned members from the selected card                   */
         _selectedLabelIDs     = State(initialValue: card.labelIDs)              /* Initialize selected labels from the card                             */
@@ -471,7 +502,7 @@ struct CardDetailView: View {
     ///
     private func setCover(_ id: UUID?) {
 
-        var updated = card
+        var updated = card.replacingLocation(id: recordID, listTitle: currentListTitle)
 
         updated.attachments = attachments
 
@@ -904,7 +935,14 @@ struct CardDetailView: View {
         updatedCard.startDate = clearStartDate ? nil : (startDate ?? self.startDate)
         updatedCard.dueDate = clearDueDate ? nil : (dueDate ?? self.dueDate)
 
-        onTitleToggle?(updatedCard)
+        if let currentPersonalCollectionID,
+           currentPersonalCollectionID != personalCollectionID {
+            guard onUpdateMovedNote?(currentPersonalCollectionID, updatedCard) == true else {
+                return
+            }
+        } else {
+            onTitleToggle?(updatedCard)
+        }
     }
 
     ///
@@ -931,7 +969,6 @@ struct CardDetailView: View {
         updated.dismissedActivityIDs = dismissedActivityIDs
         updated.descriptionOverride = hasEditedDescription ? descriptionText : card.descriptionOverride
         updated.presentation = presentation
-
         return updated
     }
 
@@ -959,7 +996,15 @@ struct CardDetailView: View {
 
         hasDeletedCard = true
 
-        guard onDelete() else {
+        let deleted: Bool
+        if let currentPersonalCollectionID,
+           currentPersonalCollectionID != personalCollectionID {
+            deleted = onDeleteMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true
+        } else {
+            deleted = onDelete()
+        }
+
+        guard deleted else {
 
             hasDeletedCard = false
 
@@ -1002,11 +1047,22 @@ struct CardDetailView: View {
     ///
     private func toggleSavedCard() {
 
-        if savedCardIDs.contains(card.id) {
+        let isSaved = isCurrentRecordSaved
 
-            savedCardIDs.remove(card.id)
+        if let currentPersonalCollectionID,
+           currentPersonalCollectionID != personalCollectionID {
+            guard onToggleMovedNoteBookmark?(currentPersonalCollectionID, recordID, !isSaved) == true else {
+
+                return
+            }
+            movedNoteIsSaved = !isSaved
+        } else if isSaved {
+
+            savedCardIDs.remove(recordID)
+            movedNoteIsSaved = nil
         } else {
-            savedCardIDs.insert(card.id)
+            savedCardIDs.insert(recordID)
+            movedNoteIsSaved = nil
         }
     }
     
@@ -1183,6 +1239,79 @@ struct CardDetailView: View {
         }
 
         .disabled(availableLists.isEmpty)
+    }
+
+
+    private func moveNote(to collectionID: UUID) {
+
+        guard let onMoveNoteToPersonalList,
+              let sourceID = currentPersonalCollectionID,
+              let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID) else {
+            return
+        }
+
+        movedNoteIsSaved = movedNoteIsSaved ?? savedCardIDs.contains(recordID)
+        recordID = moved.id
+        currentListTitle = moved.listTitle
+        self.currentPersonalCollectionID = collectionID
+    }
+
+
+    private var noteLocationLabel: some View {
+
+        Text(currentListTitle)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .italic()
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+
+    private var isCurrentRecordSaved: Bool {
+
+        movedNoteIsSaved ?? savedCardIDs.contains(recordID)
+    }
+
+
+    @ViewBuilder
+    private var locationControl: some View {
+
+        if presentation == .note, onMoveNoteToPersonalList != nil {
+
+            personalListMenu { noteLocationLabel }
+                .accessibilityLabel("Move Note from \(currentListTitle)")
+        } else {
+            moveCardMenu { noteLocationLabel }
+                .accessibilityLabel("Move \(presentation.title.lowercased()) from \(currentListTitle)")
+        }
+    }
+
+
+    private func personalListDestinationButton(_ collection: PersonalCollection) -> some View {
+
+        Button {
+            moveNote(to: collection.id)
+        } label: {
+            Label(
+                collection.title,
+                systemImage: currentPersonalCollectionID == collection.id ? "checkmark" : "folder"
+            )
+        }
+        .disabled(currentPersonalCollectionID == collection.id)
+    }
+
+
+    @ViewBuilder
+    private func personalListMenu<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        Menu {
+            ForEach(availablePersonalLists) { collection in
+                personalListDestinationButton(collection)
+            }
+        } label: {
+            label()
+        }
+        .disabled(availablePersonalLists.isEmpty || onMoveNoteToPersonalList == nil)
     }
 
 
@@ -1881,17 +2010,9 @@ struct CardDetailView: View {
                                         syncCardState(title: newValue)
                                     }
 
-                                moveCardMenu {
-                                    Text(card.listTitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .italic()
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                }
+                                locationControl
 
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("Move card from \(card.listTitle)")
                                 }
 
                             TextField("Card subtitle", text: $subtitleText)
@@ -2224,15 +2345,15 @@ struct CardDetailView: View {
                 if !card.isSectionDivider {
 
                     Button(action: toggleSavedCard) {
-                        Image(systemName: savedCardIDs.contains(card.id) ? "bookmark.fill" : "bookmark")
+                        Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
                             .font(.title2)
-                            .foregroundStyle(savedCardIDs.contains(card.id) ? .orange : .primary)
+                            .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
 
                     .buttonStyle(.plain)
-                    .accessibilityLabel(savedCardIDs.contains(card.id) ? "Remove from Saved" : "Save \(presentation.title.lowercased())")
+                    .accessibilityLabel(isCurrentRecordSaved ? "Remove from Saved" : "Save \(presentation.title.lowercased())")
 
                     Menu {
                         Button {
@@ -2301,8 +2422,16 @@ struct CardDetailView: View {
 
                             Button {
                                 syncCardState()
-                                onArchive()
-                                dismiss()
+                                if let currentPersonalCollectionID,
+                                   currentPersonalCollectionID != personalCollectionID {
+                                    if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true {
+
+                                        dismiss()
+                                    }
+                                } else {
+                                    onArchive()
+                                    dismiss()
+                                }
                             } label: {
                                 Label("Archive \(presentation.title)", systemImage: "archivebox")
                             }

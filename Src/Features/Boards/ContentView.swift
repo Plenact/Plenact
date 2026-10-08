@@ -956,6 +956,13 @@ struct ContentView: View {
     let onListsChanged: @MainActor ([KanbanList]) -> Void
     /// Supplies other retained snapshots whose attachment files must not be pruned.
     let retainedAttachmentLists: () -> [KanbanList]
+    let personalCollectionID: UUID?
+    let availablePersonalLists: [PersonalCollection]
+    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?
+    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?
     /// Controls presentation of the calendar sheet.
     @State private var showsCalendar = false
     /// Controls presentation of archived lists.
@@ -1047,7 +1054,14 @@ struct ContentView: View {
 
         retainedAttachmentLists: @escaping () -> [KanbanList] = {
                                                                     PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
-                                                                }
+                                                                },
+        personalCollectionID: UUID? = nil,
+        availablePersonalLists: [PersonalCollection] = [],
+        onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
+        onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil
     ) {
         _lists                       = lists
         _archivedLists               = archivedLists
@@ -1067,6 +1081,13 @@ struct ContentView: View {
         self.onCommitDeletion        = onCommitDeletion
         self.onListsChanged          = onListsChanged
         self.retainedAttachmentLists = retainedAttachmentLists
+        self.personalCollectionID = personalCollectionID
+        self.availablePersonalLists = availablePersonalLists
+        self.onMoveNoteToPersonalList = onMoveNoteToPersonalList
+        self.onUpdateMovedNote = onUpdateMovedNote
+        self.onArchiveMovedNote = onArchiveMovedNote
+        self.onDeleteMovedNote = onDeleteMovedNote
+        self.onToggleMovedNoteBookmark = onToggleMovedNoteBookmark
     }
 
 
@@ -2514,6 +2535,13 @@ struct ContentView: View {
                     onMoveToList:    { destinationListID in
                         moveCard(card.id, toListID: destinationListID)
                     },
+                    personalCollectionID: personalCollectionID,
+                    availablePersonalLists: availablePersonalLists,
+                    onMoveNoteToPersonalList: onMoveNoteToPersonalList,
+                    onUpdateMovedNote: onUpdateMovedNote,
+                    onArchiveMovedNote: onArchiveMovedNote,
+                    onDeleteMovedNote: onDeleteMovedNote,
+                    onToggleMovedNoteBookmark: onToggleMovedNoteBookmark,
                     onArchive: {
                         archiveCard(card.id)
                     },

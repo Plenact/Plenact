@@ -3336,6 +3336,141 @@ struct BoardListsView: View {
     }
 
 
+    private func moveNote(_ noteID: Int, from sourceID: UUID, to destinationID: UUID) throws -> KanbanCard {
+
+        var snapshot = collections
+        let moved = try PersonalCollectionNoteMovement.move(
+            noteID: noteID, from: sourceID, to: destinationID, in: &snapshot
+        )
+        try PersonalCollectionStore.saveChecked(snapshot)
+        collections = snapshot
+
+        return moved
+    }
+
+
+    private func persistMovedNoteCollection(
+        _ updated: PersonalCollection,
+        failureMessage: String
+    ) -> Bool {
+
+        guard let index = collections.firstIndex(where: { $0.id == updated.id }) else {
+            DatabaseActivity.shared.report("\(failureMessage) The collection is no longer available.")
+            return false
+        }
+
+        var snapshot = collections
+        snapshot[index] = updated
+
+        do {
+            try PersonalCollectionStore.saveChecked(snapshot)
+            collections = snapshot
+            return true
+        } catch {
+            DatabaseActivity.shared.report("\(failureMessage) \(error.localizedDescription)")
+            return false
+        }
+    }
+
+
+    private func updateMovedNote(_ note: KanbanCard, in collectionID: UUID) -> Bool {
+
+        guard let index = collections.firstIndex(where: { $0.id == collectionID && $0.isActive }) else {
+            DatabaseActivity.shared.report("Could not save the Note edit. Its destination List is unavailable.")
+            return false
+        }
+
+        var updated = collections[index]
+        guard let listIndex = updated.lists.firstIndex(where: {
+            !$0.isArchived && $0.cards.contains(where: { $0.id == note.id && !$0.isSectionDivider })
+        }), let cardIndex = updated.lists[listIndex].cards.firstIndex(where: {
+            $0.id == note.id && !$0.isSectionDivider
+        }) else {
+            DatabaseActivity.shared.report("Could not save the item edit. It is no longer in its destination List.")
+            return false
+        }
+
+        updated.lists[listIndex].cards[cardIndex] = note
+        return persistMovedNoteCollection(updated, failureMessage: "Could not save the Note edit.")
+    }
+
+
+    private func archiveMovedNote(_ note: KanbanCard, in collectionID: UUID) -> Bool {
+
+        guard let index = collections.firstIndex(where: { $0.id == collectionID && $0.isActive }) else {
+            DatabaseActivity.shared.report("Could not archive the Note. Its destination List is unavailable.")
+            return false
+        }
+
+        var updated = collections[index]
+        guard let listIndex = updated.lists.firstIndex(where: {
+            !$0.isArchived && $0.cards.contains(where: { $0.id == note.id && !$0.isSectionDivider })
+        }) else {
+            DatabaseActivity.shared.report("Could not archive the item. It is no longer in its destination List.")
+            return false
+        }
+
+        updated.lists[listIndex].archiveCard(id: note.id)
+        return persistMovedNoteCollection(updated, failureMessage: "Could not archive the Note.")
+    }
+
+
+    private func deleteMovedNote(_ note: KanbanCard, in collectionID: UUID) -> Bool {
+
+        guard let index = collections.firstIndex(where: { $0.id == collectionID && $0.isActive }) else {
+            DatabaseActivity.shared.report("Could not delete the Note. Its destination List is unavailable.")
+            return false
+        }
+
+        var updated = collections[index]
+        guard let listIndex = updated.lists.firstIndex(where: {
+            !$0.isArchived && $0.cards.contains(where: { $0.id == note.id && !$0.isSectionDivider })
+        }) else {
+            DatabaseActivity.shared.report("Could not delete the item. It is no longer in its destination List.")
+            return false
+        }
+
+        updated.lists[listIndex].cards.removeAll { $0.id == note.id }
+        updated.savedCardIDs.remove(note.id)
+        guard persistMovedNoteCollection(updated, failureMessage: "Could not delete the Note.") else {
+
+            return false
+        }
+
+        let retainedLists = collections.flatMap(\.lists)
+            + retainedWeekLists
+            + (ExampleLoadUndoStore.load()?.lists ?? [])
+        let retainedFileNames = Set(retainedLists.flatMap(\.allCards)
+            .flatMap { $0.attachments ?? [] }
+            .compactMap(\.fileName))
+        CardAttachmentStore.removeUnreferencedFiles(keeping: retainedFileNames)
+
+        return true
+    }
+
+
+    private func setMovedNoteBookmark(_ noteID: Int, in collectionID: UUID, isSaved: Bool) -> Bool {
+
+        guard let index = collections.firstIndex(where: { $0.id == collectionID && $0.isActive }),
+              collections[index].lists.contains(where: {
+                  !$0.isArchived && $0.cards.contains(where: { $0.id == noteID && !$0.isSectionDivider })
+              }) else {
+            DatabaseActivity.shared.report("Could not update the item bookmark. The item is no longer available.")
+            return false
+        }
+
+        var updated = collections[index]
+        if isSaved {
+
+            updated.savedCardIDs.insert(noteID)
+        } else {
+            updated.savedCardIDs.remove(noteID)
+        }
+
+        return persistMovedNoteCollection(updated, failureMessage: "Could not update the Note bookmark.")
+    }
+
+
     ///
     /// @fcn        BoardListsView.presentedCollectionBoard(_:)
     /// @brief      Wire a personal collection to its live directory records
@@ -3352,10 +3487,12 @@ struct BoardListsView: View {
         let retainedLists = retainedWeekLists
             + otherCollectionLists
             + (ExampleLoadUndoStore.load()?.lists ?? [])
+        let activePersonalLists = collections.filter { $0.kind == .list && $0.isActive }
 
         return PersonalCollectionBoardView(
             collection: collectionBinding(for: collection),
             retainedLists: retainedLists,
+            availablePersonalLists: activePersonalLists,
             onArchive: {
                 collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
             },
@@ -3375,6 +3512,15 @@ struct BoardListsView: View {
             },
             onCreateNote: { title, body in
                 try createNote(in: collection.id, title: title, body: body)
+            },
+            onMoveNote: { note, sourceID, destinationID in
+                try moveNote(note.id, from: sourceID, to: destinationID)
+            },
+            onUpdateMovedNote: { id, note in updateMovedNote(note, in: id) },
+            onArchiveMovedNote: { id, note in archiveMovedNote(note, in: id) },
+            onDeleteMovedNote: { id, note in deleteMovedNote(note, in: id) },
+            onToggleMovedNoteBookmark: { id, noteID, isSaved in
+                setMovedNoteBookmark(noteID, in: id, isSaved: isSaved)
             },
             registerNewNote: registerListNewNote
         )
@@ -3787,10 +3933,16 @@ struct PersonalCollectionBoardView: View {
 
     @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
     let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
+    let availablePersonalLists: [PersonalCollection]
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
     let onCreateNote: (String, String) throws -> Void
+    let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard
+    let onUpdateMovedNote: (UUID, KanbanCard) -> Bool
+    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool
+    let onDeleteMovedNote: (UUID, KanbanCard) -> Bool
+    let onToggleMovedNoteBookmark: (UUID, Int, Bool) -> Bool
     let registerNewNote: ((() -> Void)?) -> Void
     @Environment(\.dismiss) private var dismiss     /* Close the collection board */
     @State private var showsNewNoteComposer = false
@@ -3842,7 +3994,21 @@ struct PersonalCollectionBoardView: View {
                 try onCommitDeletion(updated)
             },
             onListsChanged: { _ in },
-            retainedAttachmentLists: { retainedLists }
+            retainedAttachmentLists: { retainedLists },
+            personalCollectionID: collection.id,
+            availablePersonalLists: availablePersonalLists,
+            onMoveNoteToPersonalList: { note, sourceID, destinationID in
+                do {
+                    return try onMoveNote(note, sourceID, destinationID)
+                } catch {
+                    DatabaseActivity.shared.report("Could not move the Note: \(error.localizedDescription) Its content remains in the current List.")
+                    return nil
+                }
+            },
+            onUpdateMovedNote: onUpdateMovedNote,
+            onArchiveMovedNote: onArchiveMovedNote,
+            onDeleteMovedNote: onDeleteMovedNote,
+            onToggleMovedNoteBookmark: onToggleMovedNoteBookmark
         )
         .databaseActivityOverlay()
         .onAppear {

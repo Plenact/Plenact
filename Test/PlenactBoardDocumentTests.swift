@@ -235,6 +235,103 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision()
+    /// @brief      Move a Note across personal Lists without losing content or bookmarks
+    /// @details    Reassigns only a colliding destination-local ID and leaves unrelated/archived
+    ///             destination records and invalid move snapshots unchanged
+    ///
+    /// @return     (Void) records cross-collection move assertions
+    ///
+    func testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision() throws {
+
+        let attachment = KanbanAttachment(fileName: "synthetic-moved-note.jpg", mediaKind: .photo)
+        var note = KanbanCard(
+            id: 4, word: "Beach idea", listTitle: "Ideas",
+            checklists: [KanbanChecklist(title: "Keep", items: ["Discuss"])],
+            descriptionOverride: "First paragraph\n\nSecond paragraph",
+            presentation: .note
+        )
+        note.attachments = [attachment]
+        note.coverAttachmentID = attachment.id
+        note.labelIDs = ["keep-this-label"]
+        note.comments = [KanbanComment(author: "Synthetic", body: "Keep this comment")]
+
+        var source = PersonalCollection(title: "Ideas", kind: .list)
+        source.lists[0].cards = [note]
+        source.savedCardIDs = [note.id]
+
+        var destination = PersonalCollection(title: "Someday", kind: .list)
+        destination.lists[0].cards = [
+            KanbanCard(id: 4, word: "ID collision", listTitle: "Someday", checklists: [])
+        ]
+        destination.lists[0].archivedCards = [
+            KanbanCard(id: 9, word: "Archived ID", listTitle: "Someday", checklists: [])
+        ]
+        destination.savedCardIDs = [4]
+
+        var collections = [source, destination]
+        let moved = try PersonalCollectionNoteMovement.move(
+            noteID: note.id, from: source.id, to: destination.id, in: &collections
+        )
+
+        let expected = note.replacingLocation(id: 10, listTitle: destination.title)
+
+        XCTAssertEqual(moved, expected)
+        XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
+        XCTAssertFalse(collections[0].savedCardIDs.contains(note.id))
+        XCTAssertEqual(collections[1].lists[0].cards, [
+            destination.lists[0].cards[0], expected
+        ])
+        XCTAssertEqual(collections[1].lists[0].archivedCards, destination.lists[0].archivedCards)
+        XCTAssertEqual(collections[1].savedCardIDs, [4, expected.id])
+
+        let beforeInvalidMove = collections
+        XCTAssertThrowsError(try PersonalCollectionNoteMovement.move(
+            noteID: expected.id, from: source.id, to: UUID(), in: &collections
+        ))
+        XCTAssertEqual(collections, beforeInvalidMove)
+
+        let board = PersonalCollection(title: "Not a destination List", kind: .board)
+        var boardMove = [source, board]
+        let beforeBoardMove = boardMove
+
+        XCTAssertThrowsError(try PersonalCollectionNoteMovement.move(
+            noteID: note.id, from: source.id, to: board.id, in: &boardMove
+        ))
+        XCTAssertEqual(boardMove, beforeBoardMove)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalNoteMovePreservesNonconflictingID()
+    /// @brief      Keep the Note's local ID when its destination has no collision
+    /// @details    Moves the original Note record and updates only its containing List title
+    ///
+    /// @return     (Void) records stable-ID and source-removal assertions
+    ///
+    func testPersonalNoteMovePreservesNonconflictingID() throws {
+
+        var source = PersonalCollection(title: "Ideas", kind: .list)
+        var note = KanbanCard(id: 14, word: "Read later", listTitle: "Ideas", checklists: [], presentation: .note)
+        note.descriptionOverride = "Synthetic body"
+        source.lists[0].cards = [note]
+
+        let destination = PersonalCollection(title: "Someday", kind: .list)
+        var collections = [source, destination]
+
+        let moved = try PersonalCollectionNoteMovement.move(
+            noteID: note.id, from: source.id, to: destination.id, in: &collections
+        )
+
+        XCTAssertEqual(moved.id, note.id)
+        XCTAssertEqual(moved.listTitle, destination.title)
+        XCTAssertEqual(moved.descriptionOverride, note.descriptionOverride)
+        XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
+        XCTAssertEqual(collections[1].lists[0].cards, [moved])
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testLibraryDirectoryNoteDestinationPrefersMostRecentlyOpenedList()
     /// @brief      Resolve the Library New Note target without moving or changing collections
     /// @details    Prefer a retained recent List, fall back to the first visible active List,
@@ -1465,10 +1562,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
                     let controller = UIHostingController(rootView: PersonalCollectionBoardView(
                         collection: Binding(get: { fixture }, set: { fixture = $0 }),
                         retainedLists: [],
+                        availablePersonalLists: [],
                         onArchive: { XCTFail("Layout must not archive") },
                         onDelete: { XCTFail("Layout must not delete") },
                         onCommitDeletion: { _ in XCTFail("Layout must not commit deletion") },
                         onCreateNote: { _, _ in XCTFail("Layout must not create a Note") },
+                        onMoveNote: { _, _, _ in throw CocoaError(.validationMissingMandatoryProperty) },
+                        onUpdateMovedNote: { _, _ in XCTFail("Layout must not update a moved Note"); return false },
+                        onArchiveMovedNote: { _, _ in XCTFail("Layout must not archive a moved Note"); return false },
+                        onDeleteMovedNote: { _, _ in XCTFail("Layout must not delete a moved Note"); return false },
+                        onToggleMovedNoteBookmark: { _, _, _ in XCTFail("Layout must not change a moved Note bookmark"); return false },
                         registerNewNote: { _ in }
                     ).defaultAppStorage(defaults))
 

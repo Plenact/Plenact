@@ -1292,6 +1292,7 @@ private struct TodayHomeView: View {
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var focusedListID: Int?                  /* Current-day list selected when opening Focus */
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
+    @State private var quickComposerInitialTitle = ""       /* Quick-capture title handed to full editor */
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
@@ -1819,6 +1820,22 @@ private struct TodayHomeView: View {
             return
         }
 
+        presentQuickNoteEditor()
+    }
+
+
+    ///
+    /// @fcn        TodayHomeView.presentQuickNoteEditor()
+    /// @brief      Move the inline draft into the full card composer
+    /// @details    Clears inline capture while the composer owns the draft; an unsubmitted title
+    ///             is restored when that composer is dismissed
+    ///
+    /// @return     (Void) opens the full editor with the current quick-capture title
+    ///
+    private func presentQuickNoteEditor() {
+
+        quickComposerInitialTitle = quickCaptureTitle
+        quickCaptureTitle = ""
         showsQuickNoteEditor = true
     }
 
@@ -1851,7 +1868,7 @@ private struct TodayHomeView: View {
 
             Task { @MainActor in
                 await Task.yield()
-                showsQuickNoteEditor = true
+                presentQuickNoteEditor()
             }
         }
     }
@@ -2010,15 +2027,24 @@ private struct TodayHomeView: View {
                 }
             }
 
-            .sheet(isPresented: $showsQuickNoteEditor) {
+            .sheet(isPresented: $showsQuickNoteEditor, onDismiss: {
+                if !quickComposerInitialTitle.isEmpty && quickCaptureTitle.isEmpty {
+
+                    quickCaptureTitle = quickComposerInitialTitle
+                }
+
+                quickComposerInitialTitle = ""
+            }) {
 
                 if let selectedTodayList { /* Current list receiving the Today edit */
 
                     QuickNoteComposer(
                         lists:         $lists,
-                        initialListID: LastViewedListStore.resolve(in: lists, fallback: selectedTodayList.id)
+                        initialListID: LastViewedListStore.resolve(in: lists, fallback: selectedTodayList.id),
+                        initialTitle:  quickComposerInitialTitle
                     ) { listID, title, description in
                         onAddCard(listID, title, description)
+                        quickComposerInitialTitle = ""
                     }
 
                     .databaseActivityOverlay()
@@ -2147,7 +2173,7 @@ private struct TodayHomeView: View {
             Text("Quick capture")
                 .font(.title2.weight(.semibold))
 
-            HStack(spacing: 8) {
+            HStack(spacing: -4) {
 
                 Image(systemName: "plus.square")
                     .foregroundStyle(.secondary)
@@ -2157,27 +2183,27 @@ private struct TodayHomeView: View {
                     .onSubmit(addQuickCard)
                     .accessibilityLabel("Quick capture card title")
 
-                Button(action: openQuickNoteEditor) {
-
-                    Image(systemName: "arrow.up.right")
-                        .frame(width: 36, height: 44)
-                        .contentShape(Rectangle())
-                }
-
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open full card editor")
-
                 Button(action: addQuickCard) {
 
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .frame(width: 36, height: 44)
+                        .frame(width: 12, height: 44)
                         .contentShape(Rectangle())
                 }
 
                 .buttonStyle(.plain)
                 .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .accessibilityLabel("Add card to today's list")
+
+                Button(action: openQuickNoteEditor) {
+
+                    Image(systemName: "arrow.up.right")
+                        .frame(width: 36, height: 44, alignment: .trailing)
+                        .contentShape(Rectangle())
+                }
+
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open full card editor")
             }
 
             .padding(.horizontal, 12)
@@ -2227,19 +2253,26 @@ private struct QuickNoteComposer: View {
 
 
     ///
-    /// @fcn        QuickNoteComposer.init(lists:initialListID:onSave:)
+    /// @fcn        QuickNoteComposer.init(lists:initialListID:initialTitle:onSave:)
     /// @brief      Configure the card composer with destinations and a submission callback
     /// @details    Seeds the optional destination without mutating lists; the form validates
     ///             that the selected identity still exists before permitting Add
     ///
     /// @param[in]  lists          Binding to available destination lists
     /// @param[in]  initialListID  Optional initially selected destination identity
+    /// @param[in]  initialTitle   Existing inline title transferred into the composer
     /// @param[in]  onSave         Callback receiving list ID, trimmed title, and body text
     /// @return     (QuickNoteComposer) initialized composer with empty text drafts
     ///
-    init(lists: Binding<[KanbanList]>, initialListID: Int?, onSave: @escaping (Int, String, String) -> Void) {
+    init(
+        lists: Binding<[KanbanList]>,
+        initialListID: Int?,
+        initialTitle: String = "",
+        onSave: @escaping (Int, String, String) -> Void
+    ) {
 
         _lists = lists
+        _title = State(initialValue: initialTitle)
         _selectedListID = State(initialValue: initialListID)
         self.onSave = onSave
     }

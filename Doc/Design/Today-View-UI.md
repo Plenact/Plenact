@@ -52,6 +52,7 @@ A future weekly review may offer a deliberate way to revisit plans, but it shoul
 - Add task, if included in the first increment, creates a card in an explicitly selected existing list.
 - If the selected list was removed or cannot be resolved, ask the person to choose another list; do not silently pick the first list.
 - When Quick capture is focused, the custom lower navigation toolbar stays anchored at the screen bottom and the keyboard covers it; the toolbar must not rise above the keyboard.
+- In Quick capture, the **+** button immediately adds the entered title to today's selected list; the trailing arrow opens the full card editor. Opening the editor transfers the inline title into its Title field. Canceling or dismissing the editor restores an unsubmitted title to Quick capture; adding from the editor creates the card once and clears the draft.
 - Avoid reminders, calendar permissions, or background scheduling in this first screen proposal.
 
 ## Accessibility and Cognitive Load

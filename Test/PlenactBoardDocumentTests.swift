@@ -2075,6 +2075,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
                     let controller = UIHostingController(rootView: PersonalCollectionBoardView( /* Hosted controller for layout assertions */
                         collection: Binding(get: { fixture }, set: { fixture = $0 }),
+                        boardTargetListID:         .constant(nil),
+                        boardTargetCardID:         .constant(nil),
                         retainedLists:             [],
                         availablePersonalLists:    [],
                         onArchive:                 { XCTFail("Layout must not archive") },
@@ -4327,6 +4329,45 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayListSelection.initialListID(savedListID: nil, profileDefaultListID: 3,   lists: lists),   3)
         XCTAssertEqual(TodayListSelection.initialListID(savedListID: 7,   profileDefaultListID: 3,   lists: lists),     7)
         XCTAssertEqual(TodayListSelection.initialListID(savedListID: 99,  profileDefaultListID: nil, lists: lists),  7)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionBookmarksResolveActiveRecordsWithScopedIdentity()
+    /// @brief      Resolve personal bookmarks without crossing collection-local identity boundaries
+    /// @details    Excludes stale IDs, dividers, archived lists, and archived collections
+    ///
+    /// @return     (Void) records assertion failures for personal Saved-row resolution
+    ///
+    func testPersonalCollectionBookmarksResolveActiveRecordsWithScopedIdentity() {
+
+        var first = PersonalCollection(title: "First", kind: .list) /* First independent collection */
+        let firstCard = KanbanCard(id: 1, word: "First item", listTitle: "First", checklists: []) /* Active bookmark */
+        let divider = KanbanCard(id: 2, word: "—", listTitle: "First", isDivider: true, checklists: []) /* Non-bookmarkable separator */
+        first.lists[0].cards = [firstCard, divider]
+
+        var archivedList = KanbanList(id: 1, title: "Archived", cards: [
+            KanbanCard(id: 3, word: "Archived item", listTitle: "Archived", checklists: [])
+        ])
+        archivedList.isArchived = true
+        first.lists.append(archivedList)
+        first.savedCardIDs = [1, 2, 3, 99]
+
+        var second = PersonalCollection(title: "Second", kind: .list) /* Another collection may reuse card ID */
+        second.lists[0].cards = [KanbanCard(id: 1, word: "Second item", listTitle: "Second", checklists: [])]
+        second.savedCardIDs = [1]
+
+        let firstResult = first.bookmarkedCards
+        let secondResult = second.bookmarkedCards
+
+        XCTAssertEqual(firstResult.map(\.card.word), ["First item"])
+        XCTAssertEqual(firstResult.first?.collectionID, first.id)
+        XCTAssertEqual(firstResult.first?.listID, first.lists[0].id)
+        XCTAssertEqual(secondResult.map(\.card.word), ["Second item"])
+        XCTAssertNotEqual(firstResult.first?.id, secondResult.first?.id)
+
+        first.isArchived = true
+        XCTAssertTrue(first.bookmarkedCards.isEmpty)
     }
 
 

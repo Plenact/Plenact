@@ -407,6 +407,7 @@ private struct AppRootView: View {
     @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
     @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
     @State private var savedCardIDs                        = SavedCardPersistence.load()    /* Device-local saved cards                            */
+    @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                    /* Personal bookmark requested from Saved             */
     @State private var quickCreateRequest                  = 0                              /* Center-bar quick-create request                     */
     @State private var showsCenterNewCardSheet             = false                          /* Destination picker for New outside Today            */
     @State private var isWeekListRequestArmed              = false                          /* Whether New's long press will create a Week list    */
@@ -527,6 +528,10 @@ private struct AppRootView: View {
                 savedCardIDs:    savedCardIDs,
                 collections:     $collections,
                 onOpenBoardList: openBoardList,
+                onOpenPersonalCard: { target in
+                    savedPersonalCardTarget = target
+                    selectedDestination = .lists
+                },
                 onRestoreBoard:  restoreBoard,
                 onDeleteBoard:   deletePersonalBoard,
                 onArchiveCard:   archiveWeekCard,
@@ -590,7 +595,9 @@ private struct AppRootView: View {
             retainedWeekLists:   lists,
             collections:         $collections,
             registerListNewNote: registerPersonalListNewNote,
-            onOpenSaved:         openSavedDestination
+            onOpenSaved:         openSavedDestination,
+            savedPersonalCardTarget: savedPersonalCardTarget,
+            onClearSavedPersonalCardTarget: { savedPersonalCardTarget = nil }
         )
         .tabItem {
             Label("Library", systemImage: "books.vertical")
@@ -3246,10 +3253,14 @@ struct BoardListsView: View {
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
     let registerListNewNote: ((() -> Void)?) -> Void /* Registers the directory's scoped Note action */
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
+    var savedPersonalCardTarget: PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation */
+    var onClearSavedPersonalCardTarget: () -> Void = {} /* Acknowledge a handled or invalid Saved request */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
+    @State private var boardTargetListID: Int?                 /* Exact collection list requested from Saved    */
+    @State private var boardTargetCardID: Int?                 /* Exact collection card requested from Saved    */
     @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
     @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
@@ -3706,6 +3717,8 @@ struct BoardListsView: View {
 
         return PersonalCollectionBoardView(
             collection:                collectionBinding(for: collection),
+            boardTargetListID:         $boardTargetListID,
+            boardTargetCardID:         $boardTargetCardID,
             retainedLists:             retainedLists,
             availablePersonalLists:    activePersonalLists,
             onArchive:                 {
@@ -3873,7 +3886,7 @@ struct BoardListsView: View {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("Saved")
                                     .font(.headline)
-                                Text("Bookmarked cards and archived collections")
+                                Text("Bookmarked items and archived collections")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -4043,7 +4056,51 @@ struct BoardListsView: View {
             }
 
         }
-        .onAppear(perform: registerDirectoryNewNote)
+        .onAppear {
+            registerDirectoryNewNote()
+            if let savedPersonalCardTarget {
+
+                openSavedPersonalCard(savedPersonalCardTarget)
+            }
+        }
+        .onChange(of: savedPersonalCardTarget) { _, target in
+            guard let target else {
+
+                return
+            }
+
+            openSavedPersonalCard(target)
+        }
+    }
+
+
+    ///
+    /// @fcn        BoardListsView.openSavedPersonalCard(_:)
+    /// @brief      Open a bookmarked personal record in its canonical collection
+    /// @details    Resolves against current active collection/list/card data and forwards the
+    ///             collection-local Board targets before presenting the full-screen Board
+    ///
+    /// @param[in]  target  Collection/list/card identity selected from Saved
+    /// @return     (Void) presents the owning collection and consumes the Saved request
+    ///
+    /// @post       No record is copied, moved, or unbookmarked
+    ///
+    private func openSavedPersonalCard(_ target: PersonalSavedCardTarget) {
+
+        guard let collection = collections.first(where: { $0.id == target.collectionID && $0.isActive }),
+              let list = collection.lists.first(where: { $0.id == target.listID && !$0.isArchived }),
+              list.cards.contains(where: { $0.id == target.cardID && !$0.isSectionDivider }) else {
+
+            onClearSavedPersonalCardTarget()
+            DatabaseActivity.shared.report("This saved item is no longer available in its collection.")
+            return
+        }
+
+        boardTargetListID = target.listID
+        boardTargetCardID = target.cardID
+        mostRecentlyOpenedListID = collection.kind == .list ? collection.id : nil
+        openedCollection = collection
+        onClearSavedPersonalCardTarget()
     }
 
 
@@ -4151,6 +4208,8 @@ private struct PersonalListExamplesView: View {
 struct PersonalCollectionBoardView: View {
 
     @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
+    @Binding var boardTargetListID: Int? /* Collection-local list requested from Saved */
+    @Binding var boardTargetCardID: Int? /* Collection-local card requested from Saved */
     let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
     let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note destinations */
     let onArchive: () throws -> Void                /* Persist archival of this collection */
@@ -4181,6 +4240,8 @@ struct PersonalCollectionBoardView: View {
         ContentView(
             lists:                     $collection.lists.activeLists,
             archivedLists:             $collection.lists.archivedLists,
+            boardTargetListID:         $boardTargetListID,
+            boardTargetCardID:         $boardTargetCardID,
             savedCardIDs:              $collection.savedCardIDs,
             boardTitle:                collection.title,
             boardSubtitle:             collection.kind.rawValue,
@@ -4778,6 +4839,14 @@ struct TodayCalendarView: View {
 /// @section    Purpose
 ///     Preserve navigation context for Saved card rows
 ///
+struct PersonalSavedCardTarget: Equatable {
+
+    let collectionID: UUID /* Owning personal collection */
+    let listID: Int /* Containing collection-local list */
+    let cardID: Int /* Collection-local bookmarked record */
+}
+
+
 private struct SavedCardResult: Identifiable {
 
     let card: KanbanCard /* Saved card data */
@@ -4810,6 +4879,7 @@ private struct SavedCardsView: View {
     let savedCardIDs: Set<Int> /* Local bookmark set */
     @Binding var collections: [PersonalCollection] /* Collections whose archived boards can be restored */
     let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
+    let onOpenPersonalCard: (PersonalSavedCardTarget) -> Void /* Navigate to a bookmarked personal record */
     let onRestoreBoard: (UUID) -> Void /* Restore a saved board by identity */
     let onDeleteBoard: (UUID) -> Bool /* Save permanent collection removal and report success */
     let onArchiveCard: (Int) -> Void /* Archive a Week bookmark's canonical card */
@@ -4841,6 +4911,18 @@ private struct SavedCardsView: View {
         }
     }
 
+    ///
+    /// @fcn        SavedCardsView.personalSavedCards
+    /// @brief      Resolve active personal bookmarks without merging their local ID spaces
+    /// @details    PersonalCollection supplies collection/list provenance and filters archived or
+    ///             divider content before these results are rendered
+    ///
+    /// @return     ([PersonalCollectionBookmarkedCard]) available personal bookmark rows
+    ///
+    private var personalSavedCards: [PersonalCollectionBookmarkedCard] { /* Active personal bookmarks for Saved */
+        collections.filter(\.isActive).flatMap(\.bookmarkedCards)
+    }
+
 
     ///
     /// @fcn        SavedCardsView.body
@@ -4870,48 +4952,91 @@ private struct SavedCardsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        if savedCards.isEmpty {
+                        if savedCards.isEmpty && personalSavedCards.isEmpty {
 
-                            Label("No saved cards yet", systemImage: "bookmark")
+                            Label("No saved items yet", systemImage: "bookmark")
                                 .font(.headline)
                             Text("Open a card and tap the bookmark to keep it here.")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         } else {
-                            ForEach(savedCards) { result in
-                                Button {
-                                    onOpenBoardList(result.listID)
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "bookmark.fill")
-                                            .foregroundStyle(.orange)
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(result.card.word)
-                                                .foregroundStyle(.primary)
-                                            Text(result.listTitle)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                            if !savedCards.isEmpty {
+                                Text("Week")
+                                    .font(.headline)
+                                ForEach(savedCards) { result in
+                                    Button {
+                                        onOpenBoardList(result.listID)
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "bookmark.fill")
+                                                .foregroundStyle(.orange)
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(result.card.word)
+                                                    .foregroundStyle(.primary)
+                                                Text(result.listTitle)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(.tertiary)
                                         }
 
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
+                                        .padding(12)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                                     }
 
-                                    .padding(12)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        Button("Archive Card", systemImage: "archivebox") { onArchiveCard(result.card.id) }
+                                        Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = result.card }
+                                    }
+                                    .accessibilityActions {
+                                        Button("Archive Card") { onArchiveCard(result.card.id) }
+                                        Button("Delete Card") { deletingCard = result.card }
+                                    }
                                 }
+                            }
 
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button("Archive Card", systemImage: "archivebox") { onArchiveCard(result.card.id) }
-                                    Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = result.card }
-                                }
-                                .accessibilityActions {
-                                    Button("Archive Card") { onArchiveCard(result.card.id) }
-                                    Button("Delete Card") { deletingCard = result.card }
+                            if !personalSavedCards.isEmpty {
+                                Text("Library")
+                                    .font(.headline)
+                                ForEach(personalSavedCards) { result in
+                                    Button {
+                                        onOpenPersonalCard(PersonalSavedCardTarget(
+                                            collectionID: result.collectionID,
+                                            listID: result.listID,
+                                            cardID: result.card.id
+                                        ))
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "bookmark.fill")
+                                                .foregroundStyle(.orange)
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(result.card.word)
+                                                    .foregroundStyle(.primary)
+                                                Text("\(result.collectionTitle) · \(result.listTitle)")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(2)
+                                            }
+
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(.tertiary)
+                                        }
+
+                                        .padding(12)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                    }
+
+                                    .buttonStyle(.plain)
+                                    .accessibilityHint("Opens this item in \(result.collectionTitle), \(result.listTitle).")
                                 }
                             }
                         }

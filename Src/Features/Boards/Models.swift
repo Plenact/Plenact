@@ -1531,6 +1531,56 @@ enum BoardCardMovement {
 
 
 ///
+/// Reorders complete card records within one list
+///
+/// @section    Purpose
+///     Share bounded in-list ordering behavior between Board and Today surfaces
+///
+enum BoardCardReordering {
+
+
+    ///
+    /// @fcn        BoardCardReordering.move(_:to:in:)
+    /// @brief      Move a card to a valid position without changing its content
+    /// @details    Clamps the destination to the existing card range and moves the complete
+    ///             record, allowing section dividers to participate like other rows
+    ///
+    /// @param[in]     cardID            Stable identity of the card being moved
+    /// @param[in]     destinationIndex  Requested insertion position before movement
+    /// @param[in,out] cards             Ordered records in the owning list
+    ///
+    /// @return     (Bool) whether the card order changed
+    ///
+    /// @post       Missing IDs and same-position moves leave cards unchanged
+    ///
+    @discardableResult
+    static func move(_ cardID: Int, to destinationIndex: Int, in cards: inout [KanbanCard]) -> Bool {
+
+        guard let sourceIndex = cards.firstIndex(where: { /* Current position of the card being moved */
+
+            $0.id == cardID
+        }), !cards.isEmpty else {
+
+            return false
+        }
+
+        let safeDestinationIndex = min(max(destinationIndex, 0), cards.count - 1) /* Valid insertion position within the existing records */
+
+        guard sourceIndex != safeDestinationIndex else {
+
+            return false
+        }
+
+        let movedCard = cards.remove(at: sourceIndex) /* Complete record temporarily removed for reinsertion */
+
+        cards.insert(movedCard, at: safeDestinationIndex)
+
+        return true
+    }
+}
+
+
+///
 /// Provides list-ordering and drag-edge calculations for the Board
 ///
 /// @section    Purpose

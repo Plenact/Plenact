@@ -2641,6 +2641,58 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCardReorderingMovesDividersAndPreservesCompleteRecords()
+    /// @brief      Reorder Today and Board rows without altering their retained card content
+    /// @details    Moves a section divider between cards and verifies complete records retain
+    ///             their stable identities and values
+    ///
+    /// @return     (Void) records assertion failures for order or content changes
+    ///
+    func testCardReorderingMovesDividersAndPreservesCompleteRecords() {
+
+        let first = KanbanCard(id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this") /* First retained card fixture */
+        let divider = KanbanCard(id: 2, word: "", listTitle: "Synthetic", isDivider: true) /* Movable divider fixture */
+        let last = KanbanCard(id: 3, word: "Last", listTitle: "Synthetic", isTitleChecked: true) /* Last retained card fixture */
+        var cards = [first, divider, last] /* Ordered focused-list records */
+
+        XCTAssertTrue(BoardCardReordering.move(divider.id, to: 2, in: &cards))
+        XCTAssertEqual(cards, [first, last, divider])
+        XCTAssertEqual(cards.map(\.id), [1, 3, 2])
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardReorderingClampsDestinationsAndRejectsMissingOrNoOpMoves()
+    /// @brief      Keep card reorder behavior bounded and unchanged for invalid requests
+    /// @details    Verifies clamped insertion at the first position, missing identity rejection,
+    ///             and unchanged-order rejection without losing any records
+    ///
+    /// @return     (Void) records assertion failures for invalid reorder requests
+    ///
+    func testCardReorderingClampsDestinationsAndRejectsMissingOrNoOpMoves() {
+
+        let cardsBeforeMove = SampleData.lists[0].cards /* Original complete card sequence */
+        var cards = cardsBeforeMove /* Mutable card-order copy */
+
+        guard let lastCardID = cards.last?.id else { /* Stable identity moved to the first position */
+
+            XCTFail("Expected a sample card for reorder coverage")
+            return
+        }
+
+        XCTAssertTrue(BoardCardReordering.move(lastCardID, to: -10, in: &cards))
+        XCTAssertEqual(cards.first?.id, lastCardID)
+
+        let reorderedCards = cards /* Expected unchanged value for rejected operations */
+
+        XCTAssertFalse(BoardCardReordering.move(999_999, to: 0, in: &cards))
+        XCTAssertFalse(BoardCardReordering.move(lastCardID, to: 0, in: &cards))
+        XCTAssertEqual(cards, reorderedCards)
+        XCTAssertNotEqual(cards, cardsBeforeMove)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testCardMovementPreservesCompleteRecordAndRetainedArchives()
     /// @brief      Transfer the complete card while keeping bookmarks and archived records intact
     /// @details    Checks insertion and a Codable round trip with synthetic media and dates

@@ -121,6 +121,75 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
 }
 
 
+/// Local starting points; choosing one never creates a stored record.
+enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
+    case usefulStep, smallPlan, errands, idea, reference, reflection
+    case blankCard, blankNote
+
+    var id: String { rawValue }
+
+    var presentation: ItemPresentation {
+        switch self {
+        case .idea, .reference, .reflection, .blankNote: .note
+        default: .card
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .usefulStep: "One useful step"
+        case .smallPlan: "A small plan"
+        case .errands: "Out and about"
+        case .idea: "An idea to explore"
+        case .reference: "Something to remember"
+        case .reflection: "Looking back"
+        case .blankCard: "Blank Card"
+        case .blankNote: "Blank Note"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .usefulStep: "Name an activity and choose a manageable next step."
+        case .smallPlan: "Describe a goal, prepare, and take the next steps."
+        case .errands: "Keep a few errands together in an editable checklist."
+        case .idea: "Explore a thought without committing to a plan."
+        case .reference: "Keep useful information, context, and links."
+        case .reflection: "Notice what happened and what you want to take forward."
+        case .blankCard, .blankNote: "Start with space for your own words."
+        }
+    }
+
+    var body: String {
+        switch self {
+        case .usefulStep: "What matters about this activity?"
+        case .smallPlan: "The goal\n\nWhat would a useful result look like?"
+        case .errands: "Places to visit and anything to bring"
+        case .idea: "The idea\n\nWhy it interests me\n\nSomething to try"
+        case .reference: "Useful information\n\nContext\n\nLinks"
+        case .reflection: "What happened\n\nWhat I noticed\n\nWhat comes next"
+        case .blankCard, .blankNote: ""
+        }
+    }
+
+    var actions: [String] {
+        switch self {
+        case .usefulStep: ["Choose one next step"]
+        case .smallPlan: ["Prepare what I need", "Take the first step"]
+        case .errands: ["An errand to do", "Something to bring"]
+        default: []
+        }
+    }
+
+    func draftTitle(capturedTitle: String) -> String {
+        if !capturedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return capturedTitle
+        }
+        return self == .blankCard || self == .blankNote ? "" : title
+    }
+}
+
+
 ///
 /// Represents one card displayed on a kanban list
 ///
@@ -682,16 +751,21 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  title        Validated item title
     /// @param[in]  description  Optional supplied body
     /// @param[in]  createdAt    Creation time captured once for this new item
+    /// @param[in]  presentationOverride  Explicit template kind; nil preserves the List default
+    /// @param[in]  actions      Template actions; nil preserves ordinary Card checklist defaults
     /// @return     (KanbanCard) new record without modifying the list
     ///
-    func makeItem(id: Int, title: String, description: String? = nil, createdAt: Date = .now) -> KanbanCard {
+    func makeItem(id: Int, title: String, description: String? = nil, createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil) -> KanbanCard {
 
         let isDivider = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
-        let presentation = isDivider ? ItemPresentation.card : newItemPresentation /* Item kind selected for the new record */
+        let presentation = isDivider ? ItemPresentation.card : (presentationOverride ?? newItemPresentation) /* Item kind selected for the new record */
+        let checklists: [KanbanChecklist]? = presentation == .note ? [] : actions.map { titles in
+            titles.isEmpty ? [] : [KanbanChecklist(title: "Actions", items: titles.map { KanbanChecklistItem(title: $0) })]
+        }
 
         return KanbanCard(
             id: id, word: title, listTitle: self.title, isDivider: isDivider,
-            checklists:          presentation == .note ? [] : nil,
+            checklists:          checklists,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
             presentation:        presentation,
             createdAt:           createdAt

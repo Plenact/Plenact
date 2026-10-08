@@ -493,8 +493,8 @@ private struct AppRootView: View {
                     profile = nil
                     LocalProfileStore.remove()
                 },
-                onAddCard:              { listID, title, description in
-                    addCard(to: listID, title: title, description: description)
+                onAddCard:              { listID, title, description, presentation, actions in
+                    addCard(to: listID, title: title, description: description, presentation: presentation, actions: actions)
                 },
                 onToggleCardCompletion: toggleCardCompletion,
                 onOpenBoardList:        openBoardList,
@@ -592,8 +592,8 @@ private struct AppRootView: View {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
                 initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: profile?.preferences.defaultListID)
-            ) { listID, title, description in
-                addCard(to: listID, title: title, description: description)
+            ) { listID, title, description, presentation, actions in
+                addCard(to: listID, title: title, description: description, presentation: presentation, actions: actions)
             }
 
             .databaseActivityOverlay()
@@ -752,8 +752,8 @@ private struct AppRootView: View {
     ///
     /// @return     (some View) configured destination button
     ///
-    /// @post       Tapping selects the destination; Week also returns its stack to the Board root
-    ///             without changing card content or the current list position
+    /// @post       Week returns to the Board root at the actual local weekday list,
+    ///             creating a blank weekday list if missing without replacing existing content
     ///
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
@@ -763,8 +763,12 @@ private struct AppRootView: View {
 
             if destination == .board {
 
-                boardTargetListID = nil
+                let result = TodayListSelection.ensureCurrentDayList(lists: lists)
+                if result.lists != lists {
+                    lists = result.lists
+                }
                 boardTargetCardID = nil
+                boardTargetListID = result.dayList.id
                 weekRootRequest += 1
             }
 
@@ -1249,7 +1253,7 @@ private struct AppRootView: View {
         /// @pre        The caller has validated and trimmed the title
         /// @post       An absent list leaves the snapshot unchanged
         ///
-        private func addCard(to listID: Int, title: String, description: String) {
+        private func addCard(to listID: Int, title: String, description: String, presentation: ItemPresentation? = nil, actions: [String]? = nil) {
 
             guard let listIndex = lists.firstIndex(where: { /* Destination list index */
 
@@ -1262,9 +1266,11 @@ private struct AppRootView: View {
             let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
             var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
-            updatedList.cards.append(
-                updatedList.makeItem(id: nextCardID, title: title, description: description.isEmpty ? nil : description)
+            let item = updatedList.makeItem(
+                id: nextCardID, title: title, description: description.isEmpty ? nil : description,
+                presentationOverride: presentation, actions: actions
             )
+            updatedList.cards.append(item)
 
             lists[listIndex] = updatedList
 
@@ -1288,7 +1294,7 @@ private struct TodayHomeView: View {
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
     let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
-    let onAddCard:          (Int, String, String) -> Void   /* Add a card to an existing Board list               */
+    let onAddCard: (Int, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records */
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
     let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
@@ -1306,6 +1312,9 @@ private struct TodayHomeView: View {
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var quickComposerInitialTitle = ""       /* Quick-capture title handed to full editor */
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
+    @State private var showsTemplates = false
+    @State private var pendingTemplate: QuickCaptureTemplate?
+    @State private var composerTemplate: QuickCaptureTemplate?
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
     @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
@@ -1541,7 +1550,7 @@ private struct TodayHomeView: View {
         profile:         LocalProfile?,
         onSaveProfile:   @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
-        onAddCard:       @escaping (Int, String, String) -> Void,
+        onAddCard: @escaping (Int, String, String, ItemPresentation?, [String]?) -> Void,
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
         onOpenBoardCard: @escaping (Int, Int) -> Void,
@@ -1774,7 +1783,7 @@ private struct TodayHomeView: View {
             return
         }
 
-        onAddCard(selectedTodayList.id, title, "")
+        onAddCard(selectedTodayList.id, title, "", nil, nil)
         quickCaptureTitle = ""
     }
 
@@ -1791,6 +1800,7 @@ private struct TodayHomeView: View {
     ///
     private func openQuickNoteEditor() {
 
+        composerTemplate = nil
         guard selectedTodayList != nil else {
 
             presentComposerAfterListChoice = true
@@ -2038,6 +2048,7 @@ private struct TodayHomeView: View {
                 }
 
                 quickComposerInitialTitle = ""
+                composerTemplate = nil
             }) {
 
                 if let selectedTodayList { /* Current list receiving the Today edit */
@@ -2045,13 +2056,27 @@ private struct TodayHomeView: View {
                     QuickNoteComposer(
                         lists:         $lists,
                         initialListID: selectedTodayList.id,
-                        initialTitle:  quickComposerInitialTitle
-                    ) { listID, title, description in
-                        onAddCard(listID, title, description)
+                        initialTitle:  quickComposerInitialTitle,
+                        template:      composerTemplate
+                    ) { listID, title, description, presentation, actions in
+                        onAddCard(listID, title, description, presentation, actions)
                         quickComposerInitialTitle = ""
                     }
 
                     .databaseActivityOverlay()
+                }
+            }
+
+            .sheet(isPresented: $showsTemplates, onDismiss: {
+                guard let template = pendingTemplate else { return }
+                pendingTemplate = nil
+                ensureCurrentWeekdayList()
+                composerTemplate = template
+                presentQuickNoteEditor()
+            }) {
+                QuickCaptureTemplatesView { template in
+                    pendingTemplate = template
+                    showsTemplates = false
                 }
             }
 
@@ -2184,8 +2209,16 @@ private struct TodayHomeView: View {
 
             HStack(spacing: 8) {
 
-                Image(systemName: "plus.square")
-                    .foregroundStyle(.secondary)
+                Button {
+                    showsTemplates = true
+                } label: {
+                    Image(systemName: "plus.square")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Browse templates")
 
                 TextField("Add a card to today…", text: $quickCaptureTitle)
                     .submitLabel(.done)
@@ -2249,25 +2282,109 @@ private struct TodayHomeView: View {
 }
 
 
+/// Offers local starting points without creating or replacing stored content.
+struct QuickCaptureTemplatesView: View {
+    let onSelect: (QuickCaptureTemplate) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var filter: ItemPresentation?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Choose a starting point. Make it your own.")
+                        .foregroundStyle(.secondary)
+                    Picker("Template type", selection: $filter) {
+                        Text("All").tag(nil as ItemPresentation?)
+                        Text("Cards").tag(Optional(ItemPresentation.card))
+                        Text("Notes").tag(Optional(ItemPresentation.note))
+                    }
+                    .pickerStyle(.segmented)
+
+                    ForEach(QuickCaptureTemplate.allCases.filter {
+                        $0 != .blankCard && $0 != .blankNote && (filter == nil || $0.presentation == filter)
+                    }) { template in
+                        templateButton(template)
+                    }
+
+                    Text("Or start with a blank page")
+                        .font(.headline)
+                    ForEach([QuickCaptureTemplate.blankCard, .blankNote].filter {
+                        filter == nil || $0.presentation == filter
+                    }) { template in
+                        templateButton(template)
+                    }
+                    Text("Templates stay on this device. Nothing is added until you review the draft and tap Add.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(20)
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity)
+            }
+            .background { TodayPaperBackground() }
+            .navigationTitle("Start from a template")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func templateButton(_ template: QuickCaptureTemplate) -> some View {
+        Button {
+            onSelect(template)
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Label(template.title, systemImage: template.presentation == .note ? "note.text" : "rectangle")
+                    .font(.headline)
+                Text(template.presentation.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(template.summary)
+                    .font(.subheadline)
+                if !template.body.isEmpty {
+                    Text(([template.body] + template.actions).joined(separator: "\n"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(16)
+            .modifier(TodayPanelSurface())
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens an editable draft. Does not add an item yet.")
+    }
+}
+
+
 /// Creates a card with optional supporting detail in a chosen board list.
 ///
 /// @section    Purpose
 ///     Collect card text and destination before submitting through the parent callback
 ///
-private struct QuickNoteComposer: View {
+struct QuickNoteComposer: View {
 
     @Binding var lists: [KanbanList]                         /* Current destination lists */
-    let onSave: (Int, String, String) -> Void                /* Submit list ID, title, and detail */
+    let onSave: (Int, String, String, ItemPresentation?, [String]?) -> Void
+    let template: QuickCaptureTemplate?
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
     @State private var title = ""               /* New card title */
     @State private var description = ""         /* Optional card detail */
     @State private var selectedListID: Int?      /* Destination selected in the form */
+    @State private var actions: [KanbanChecklistItem]
 
 
     ///
-    /// @fcn        QuickNoteComposer.init(lists:initialListID:initialTitle:onSave:)
+    /// @fcn        QuickNoteComposer.init(lists:initialListID:initialTitle:template:onSave:)
     /// @brief      Configure the card composer with destinations and a submission callback
     /// @details    Seeds the optional destination without mutating lists; the form validates
     ///             that the selected identity still exists before permitting Add
@@ -2275,19 +2392,24 @@ private struct QuickNoteComposer: View {
     /// @param[in]  lists          Binding to available destination lists
     /// @param[in]  initialListID  Optional initially selected destination identity
     /// @param[in]  initialTitle   Existing inline title transferred into the composer
-    /// @param[in]  onSave         Callback receiving list ID, trimmed title, and body text
-    /// @return     (QuickNoteComposer) initialized composer with empty text drafts
+    /// @param[in]  template       Optional local starting point with explicit Card/Note presentation
+    /// @param[in]  onSave         Callback receiving destination, text, and optional template presentation/actions
+    /// @return     (QuickNoteComposer) initialized unsaved composer
     ///
     init(
         lists: Binding<[KanbanList]>,
         initialListID: Int?,
         initialTitle: String = "",
-        onSave: @escaping (Int, String, String) -> Void
+        template: QuickCaptureTemplate? = nil,
+        onSave: @escaping (Int, String, String, ItemPresentation?, [String]?) -> Void
     ) {
 
         _lists = lists
-        _title = State(initialValue: initialTitle)
+        _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? initialTitle)
+        _description = State(initialValue: template?.body ?? "")
+        _actions = State(initialValue: (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
         _selectedListID = State(initialValue: initialListID)
+        self.template = template
         self.onSave = onSave
     }
 
@@ -2317,7 +2439,7 @@ private struct QuickNoteComposer: View {
     ///
     var body: some View { /* New-card form and destination controls */
 
-        let presentation = lists.first(where: { $0.id == selectedListID })?.newItemPresentation ?? .card /* Item kind inherited from the selected list */
+        let presentation = template?.presentation ?? lists.first(where: { $0.id == selectedListID })?.newItemPresentation ?? .card
 
         NavigationStack {
             Form {
@@ -2325,6 +2447,18 @@ private struct QuickNoteComposer: View {
                     TextField("Title", text: $title)
                     TextField("Details (optional)", text: $description, axis: .vertical)
                         .lineLimit(4...8)
+                }
+
+                if template != nil && presentation == .card {
+                    Section("Actions") {
+                        ForEach($actions) { $action in
+                            TextField("Action", text: $action.title)
+                        }
+                        .onDelete { actions.remove(atOffsets: $0) }
+                        Button("Add action", systemImage: "plus") {
+                            actions.append(KanbanChecklistItem(title: ""))
+                        }
+                    }
                 }
 
                 Section("Add to") {
@@ -2360,7 +2494,8 @@ private struct QuickNoteComposer: View {
                     Button("Add") {
                         guard let selectedListID, /* Chosen Week destination identity */
                               lists.contains(where: { $0.id == selectedListID }) else { return }
-                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        let editedActions = actions.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), template?.presentation, template == nil ? nil : editedActions)
                         dismiss()
                     }
 

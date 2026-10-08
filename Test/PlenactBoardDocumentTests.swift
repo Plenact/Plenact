@@ -22,6 +22,67 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords() throws {
+        let list = KanbanList(id: 4, title: "Thursday", cards: [])
+        for template in QuickCaptureTemplate.allCases {
+            XCTAssertEqual(template.draftTitle(capturedTitle: "My own title"), "My own title")
+            let first = list.makeItem(
+                id: 10, title: template.draftTitle(capturedTitle: ""),
+                description: template.body, presentationOverride: template.presentation,
+                actions: template.actions
+            )
+            let second = list.makeItem(
+                id: 11, title: first.word, description: template.body,
+                presentationOverride: template.presentation, actions: template.actions
+            )
+            XCTAssertEqual(first.presentation, template.presentation)
+            XCTAssertEqual(first.descriptionOverride, template.body)
+            XCTAssertNil(first.startDate)
+            XCTAssertNil(first.dueDate)
+            XCTAssertNil(first.attachments)
+            XCTAssertEqual(first.checklists.flatMap(\.items).map(\.title), template.actions)
+            XCTAssertTrue(Set(first.checklists.flatMap(\.items).map(\.id))
+                .isDisjoint(with: second.checklists.flatMap(\.items).map(\.id)))
+            XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(first)), first)
+        }
+        var noteList = list
+        noteList.newItemPresentation = .note
+        XCTAssertEqual(noteList.makeItem(id: 12, title: "Card", presentationOverride: .card, actions: []).presentation, .card)
+        XCTAssertEqual(list.makeItem(id: 13, title: "Note", presentationOverride: .note, actions: []).presentation, .note)
+        XCTAssertTrue(list.cards.isEmpty)
+        XCTAssertEqual(QuickCaptureTemplate.blankCard.draftTitle(capturedTitle: ""), "")
+        XCTAssertEqual(QuickCaptureTemplate.blankNote.draftTitle(capturedTitle: ""), "")
+    }
+
+    @MainActor
+    func testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        func fields(in view: UIView) -> [UITextField] {
+            (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
+        }
+        for template in [QuickCaptureTemplate.smallPlan, .idea] {
+            let controller = UIHostingController(rootView: QuickNoteComposer(
+                lists: .constant([KanbanList(id: 4, title: "Thursday", cards: [])]),
+                initialListID: 4, initialTitle: "Captured thought", template: template
+            ) { _, _, _, _, _ in
+                XCTFail("Reviewing a template must not create a record")
+            })
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+            XCTAssertTrue(fields(in: controller.view).contains { $0.text == "Captured thought" })
+        }
+    }
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testLegacyItemsRemainCardsAndRejectInvalidPresentations()

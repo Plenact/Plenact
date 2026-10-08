@@ -624,9 +624,13 @@ struct CardDetailView: View {
     /// @return     (some View) adaptive attachment grid
     ///
     private var attachmentGallery: some View {
+        attachmentGallery(attachments)
+    }
+
+    private func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View {
         DetailSection(title: "Attachments") {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
-                ForEach(attachments) { attachment in
+                ForEach(visibleAttachments) { attachment in
                     attachmentGalleryItem(attachment)
                 }
             }
@@ -2187,9 +2191,12 @@ struct CardDetailView: View {
                             .accessibilityIdentifier("card.selectedCoverPreview")
                     }
 
-                    if presentation == .card && !attachments.isEmpty {
+                    if presentation == .card {
+                        let visibleAttachments = workingCardSnapshot.attachmentsExcludingCover
+                        if !visibleAttachments.isEmpty {
 
-                        attachmentGallery
+                            attachmentGallery(visibleAttachments)
+                        }
                     }
 
                     //****************************************************************************//

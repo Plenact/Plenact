@@ -202,6 +202,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return attachments?.first { $0.id == coverAttachmentID && $0.kind == .photo }
     }
 
+    var attachmentsExcludingCover: [KanbanAttachment] {
+        let displayedCoverID = coverAttachment?.id
+        return (attachments ?? []).filter { $0.id != displayedCoverID }
+    }
+
     ///
     /// @fcn        KanbanCard.setCover(_:)
     /// @brief      Select an attached photo or disable the cover without removing media

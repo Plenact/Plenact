@@ -51,6 +51,8 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 Open the card or Note's upper **actions (ellipsis) → Card Cover** settings:
 
+In the main Card detail view, the selected cover is shown once as the cover preview, not repeated in the Attachments gallery. Other attachments remain visible; if the cover is the only attachment, the gallery section is omitted. This is display-only filtering: the cover remains attached, available in cover settings, and retained in saved content. Removing or changing the cover returns the former cover photo to the gallery. Note attachment galleries remain unchanged.
+
 - **Browse Cover Library** offers all 48 bundled illustrations or six category filters with eight choices each. Tap an illustration to select it; Cancel leaves the card unchanged. Earlier photos and illustration attachments remain available.
 - **Add Photo as Cover** imports one explicitly chosen photo through the system picker and attaches/selects it.
 - **Choose Attached Photo / Change Cover** opens a visual chooser of that card's existing photos. Cancel changes nothing. The attachment gallery also offers **Set as Cover** and **Remove Cover**, including accessibility actions.

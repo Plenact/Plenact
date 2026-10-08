@@ -380,6 +380,37 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testCardAttachmentGalleryExcludesOnlyTheDisplayedCover() throws {
+        let cover = KanbanAttachment(exampleImage: .garden)
+        let otherPhoto = KanbanAttachment(exampleImage: .mountains)
+        let link = KanbanAttachment(url: try XCTUnwrap(URL(string: "https://example.com/synthetic")))
+        let video = KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video)
+        var card = KanbanCard(
+            id: 95, word: "Synthetic", listTitle: "Synthetic", checklists: [],
+            attachments: [cover, otherPhoto, link, video], coverAttachmentID: cover.id
+        )
+        let original = card
+        XCTAssertEqual(card.attachmentsExcludingCover, [otherPhoto, link, video])
+        XCTAssertEqual(card, original, "Filtering the gallery must not mutate attachments")
+
+        try card.setCover(otherPhoto.id)
+        XCTAssertEqual(card.attachmentsExcludingCover, [cover, link, video])
+        try card.setCover(nil)
+        XCTAssertEqual(card.attachmentsExcludingCover, original.attachments)
+
+        card.coverAttachmentID = link.id
+        XCTAssertEqual(card.attachmentsExcludingCover, original.attachments)
+        card.coverAttachmentID = UUID()
+        XCTAssertEqual(card.attachmentsExcludingCover, original.attachments)
+
+        card.attachments = [cover]
+        try card.setCover(cover.id)
+        XCTAssertTrue(card.attachmentsExcludingCover.isEmpty)
+        XCTAssertEqual(card.attachments, [cover])
+        try card.setCover(nil)
+        XCTAssertEqual(card.attachmentsExcludingCover, [cover])
+    }
+
     func testNoteSharingIncludesOnlyWrittenTextAndAttachedWebLinks() throws {
 
         var note = SampleData.lists[0].cards[0]

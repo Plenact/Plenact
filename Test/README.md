@@ -58,6 +58,8 @@ Library device acceptance: open Browse Cover Library from Week and personal card
 
 Historical artwork-only validation on October 5, 2026 passed two focused bundle/demo tests before the chooser was implemented. That initial 27-image payload was 591,408 bytes; the completed 48-image payload is 978,105 bytes. Neither figure represents App Store download size.
 
+Cover gallery acceptance: select a cover with other photo/link/video attachments present and verify only the selected cover's thumbnail is omitted from the main Card gallery. With only a cover attached, verify no empty Attachments section appears. Change/remove the cover and verify the old photo returns to the gallery, all attachment references survive relaunch/archive/restore, and Note galleries remain unchanged. Invalid or missing cover references must not hide unrelated attachments.
+
 Completed Cover Library validation on October 5, 2026: the focused run with `-only-testing:PlenactTests/PlenactBoardDocumentTests` passed **62 tests, 0 failures**, and the full command below passed **81 tests, 0 failures**. App/test targets built, the 48-image contact sheet was visually reviewed, editor diagnostics reported no errors in changed Swift files, and `git diff --check` passed. This local feature did not access a live service; PHP checks were not rerun. New chooser interactions and VoiceOver still require device acceptance.
 
 ## Running Tests

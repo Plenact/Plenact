@@ -87,7 +87,7 @@ For Boards with more than one active list, **Board options** offers **Jump to Fi
 
 ## Notes and Cards: One Record, Two Interfaces
 
-Each item has its own **Card** or **Note** presentation. A Note is the same local `KanbanCard` record, not a separate Notes store. Opening it through existing item navigation uses a writing-first title/body editor; **Show Details** exposes its retained dates, labels, members, checklists, covers, and activity. Attachments remain available in the Note view. Text changes use the existing complete-record update callback and caller-owned local persistence.
+Each item has its own **Card** or **Note** presentation. A Note is the same local `KanbanCard` record, not a separate Notes store. Opening it through existing item navigation uses a writing-first title/body editor; its List label begins 20 points closer to the top controls than the original uniform 20-point inset, while retaining horizontal and bottom padding. **Show Details** exposes its retained dates, labels, members, checklists, covers, and activity. Attachments remain available in the Note view. Text changes use the existing complete-record update callback and caller-owned local persistence.
 
 Use the item's row menu or detail **actions** menu to select **Make into Note** or **Make into Card**. This changes only its interface, in place: identity, title, body, completion, dates, checklists, comments, assignments, labels, bookmark IDs, covers, and attachment filenames remain intact. Note rows show a note icon instead of a completion checkbox. Converting an existing Card with no written description does not turn its generated display copy into a Note body.
 

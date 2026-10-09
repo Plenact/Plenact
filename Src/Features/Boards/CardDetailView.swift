@@ -2003,7 +2003,8 @@ struct CardDetailView: View {
             }
 
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .id("plenact.noteEditor")
         .accessibilityIdentifier("plenact.noteEditor")

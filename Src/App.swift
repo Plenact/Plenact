@@ -4184,7 +4184,7 @@ struct BoardListsView: View {
                 }
             }
 
-            .sheet(item: $newNoteDraftDestination) { collection in
+            .fullScreenCover(item: $newNoteDraftDestination) { collection in
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
                     availablePersonalLists: collections

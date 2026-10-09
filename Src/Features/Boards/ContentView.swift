@@ -3930,6 +3930,15 @@ struct KanbanListView: View {
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
                         .accessibilityLabel("Open section divider")
+                        .background {
+                            if editMode != .active {
+                                BoardCardDragSource(token: cardDragToken,
+                                                    onBegan: { onCardDragBegan(card.id, $0) },
+                                                    onChanged: { onCardDragChanged(card.id, $0) },
+                                                    onEnded: { onCardDragEnded(card.id, false, nil) })
+                            }
+                        }
+                        .opacity(draggedCardID == card.id ? 0.45 : 1)
                         .overlay(alignment: .top) { cardInsertionMarker(before: card.id) }
                         .background {
                             GeometryReader { geometry in
@@ -5169,6 +5178,27 @@ struct TodayListDetailView: View {
         cardDragLocation = nil
     }
 
+    private func cardDragSource(for cardID: Int) -> some View {
+        Group {
+            if editMode != .active {
+                BoardCardDragSource(
+                    token: cardDragToken,
+                    onBegan: { point in
+                        guard draggedCardID == nil else { return }
+                        draggedCardID = cardID
+                        cardDragLocation = point
+                    },
+                    onChanged: { point in
+                        if draggedCardID == cardID { cardDragLocation = point }
+                    },
+                    onEnded: {
+                        if draggedCardID == cardID { clearCardDrag() }
+                    }
+                )
+            }
+        }
+    }
+
     private func finishCardDrag(at point: CGPoint) -> Bool {
         defer { clearCardDrag() }
         guard let cardID = draggedCardID, let focusedList else { return false }
@@ -5268,6 +5298,9 @@ struct TodayListDetailView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 10)
                                     .frame(maxWidth: .infinity)
+                                    .contentShape(Rectangle())
+                                    .background { cardDragSource(for: card.id) }
+                                    .opacity(draggedCardID == card.id ? 0.45 : 1)
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
@@ -5297,24 +5330,7 @@ struct TodayListDetailView: View {
 
                                 .buttonStyle(.plain)
                                 .modifier(HideNavigationLinkIndicator())
-                                .background {
-                                    if editMode != .active {
-                                        BoardCardDragSource(
-                                            token: cardDragToken,
-                                            onBegan: { point in
-                                                guard draggedCardID == nil else { return }
-                                                draggedCardID = card.id
-                                                cardDragLocation = point
-                                            },
-                                            onChanged: { point in
-                                                if draggedCardID == card.id { cardDragLocation = point }
-                                            },
-                                            onEnded: {
-                                                if draggedCardID == card.id { clearCardDrag() }
-                                            }
-                                        )
-                                    }
-                                }
+                                .background { cardDragSource(for: card.id) }
                                 .opacity(draggedCardID == card.id ? 0.45 : 1)
                                 .background {
                                     GeometryReader { geometry in

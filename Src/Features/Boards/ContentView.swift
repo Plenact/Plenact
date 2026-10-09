@@ -5128,6 +5128,61 @@ struct TodayListDetailView: View {
 
     @State private var newCardTitle = "" /* Inline card-creation draft */
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
+    @State private var cardDragToken = UUID().uuidString
+    @State private var draggedCardID: Int?
+    @State private var cardDragLocation: CGPoint?
+    @State private var cardFrames: [Int: CGRect] = [:]
+    @State private var cardViewport: CGRect = .zero
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var cardDropTarget: BoardCardDropTarget? {
+        guard let cardID = draggedCardID, let point = cardDragLocation, let focusedList else { return nil }
+        return BoardCardMovement.target(
+            for: cardID, at: point, viewport: cardViewport,
+            lists: [focusedList], listFrames: [listID: cardViewport], cardFrames: cardFrames
+        )
+    }
+
+    private var cardDropSurface: some View {
+        BoardCardDropSurface(
+            token: cardDragToken, isEnabled: editMode != .active,
+            onChanged: { cardDragLocation = $0 },
+            onDrop: { point in finishCardDrag(at: point) }
+        )
+    }
+
+    private func insertionMarker(before cardID: Int?) -> some View {
+        Group {
+            if let target = cardDropTarget, target.beforeCardID == cardID {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.accentColor)
+                    .frame(height: 4)
+                    .padding(.horizontal, 8)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func clearCardDrag() {
+        draggedCardID = nil
+        cardDragLocation = nil
+    }
+
+    private func finishCardDrag(at point: CGPoint) -> Bool {
+        defer { clearCardDrag() }
+        guard let cardID = draggedCardID, let focusedList else { return false }
+        guard let target = BoardCardMovement.target(
+            for: cardID, at: point, viewport: cardViewport,
+            lists: [focusedList], listFrames: [listID: cardViewport], cardFrames: cardFrames
+        ) else { return false }
+        do {
+            return try BoardCardMovement.move(cardID, to: listID, before: target.beforeCardID, in: &lists)
+        } catch {
+            DatabaseActivity.shared.report("Could not move this card: \(error.localizedDescription) Its content has been retained.")
+            return false
+        }
+    }
 
 
     ///
@@ -5216,6 +5271,14 @@ struct TodayListDetailView: View {
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
+                                    .background {
+                                        GeometryReader { geometry in
+                                            Color.clear.preference(key: BoardCardFramePreferenceKey.self,
+                                                                   value: [card.id: geometry.frame(in: .global)])
+                                        }
+                                    }
+                                    .background { cardDropSurface }
+                                    .overlay(alignment: .top) { insertionMarker(before: card.id) }
                             } else {
 
                                 NavigationLink(value: card) {
@@ -5234,6 +5297,33 @@ struct TodayListDetailView: View {
 
                                 .buttonStyle(.plain)
                                 .modifier(HideNavigationLinkIndicator())
+                                .background {
+                                    if editMode != .active {
+                                        BoardCardDragSource(
+                                            token: cardDragToken,
+                                            onBegan: { point in
+                                                guard draggedCardID == nil else { return }
+                                                draggedCardID = card.id
+                                                cardDragLocation = point
+                                            },
+                                            onChanged: { point in
+                                                if draggedCardID == card.id { cardDragLocation = point }
+                                            },
+                                            onEnded: {
+                                                if draggedCardID == card.id { clearCardDrag() }
+                                            }
+                                        )
+                                    }
+                                }
+                                .opacity(draggedCardID == card.id ? 0.45 : 1)
+                                .background {
+                                    GeometryReader { geometry in
+                                        Color.clear.preference(key: BoardCardFramePreferenceKey.self,
+                                                               value: [card.id: geometry.frame(in: .global)])
+                                    }
+                                }
+                                .background { cardDropSurface }
+                                .overlay(alignment: .top) { insertionMarker(before: card.id) }
                                 .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
@@ -5272,6 +5362,8 @@ struct TodayListDetailView: View {
 
                         .padding(12)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .background { cardDropSurface }
+                        .overlay(alignment: .top) { insertionMarker(before: nil) }
                         .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -5282,6 +5374,23 @@ struct TodayListDetailView: View {
                     .scrollContentBackground(.hidden)
                     .contentMargins(.top, 26, for: .scrollContent)
                     .background(.clear)
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: BoardListFramePreferenceKey.self,
+                                                   value: [listID: geometry.frame(in: .global)])
+                        }
+                    }
+                    .onPreferenceChange(BoardListFramePreferenceKey.self) { frames in
+                        cardViewport = frames[listID] ?? .zero
+                    }
+                    .onPreferenceChange(BoardCardFramePreferenceKey.self) { frames in
+                        cardFrames = frames
+                    }
+                    .onDisappear { clearCardDrag() }
+                    .onChange(of: scenePhase) { _, phase in
+                        if phase != .active { clearCardDrag() }
+                    }
+                    .onChange(of: editMode) { _, _ in clearCardDrag() }
                     .overlay(alignment: .top) {
                         Rectangle()
                             .fill(Color(red: 0.82, green: 0.68, blue: 0.40))

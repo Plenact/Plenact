@@ -3043,6 +3043,95 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags()
+    /// @brief      Exercise the focused Day view's actual native drag and drop callbacks
+    /// @details    Checks append, divider boundaries, cancellation, and outside drops against
+    ///             the canonical binding without changing record content.
+    ///
+    /// @return     (Void) records assertion failures for interaction installation or row layout
+    ///
+    /// @throws     Propagates fixture setup, unwrap, or operation errors to XCTest
+    ///
+    @MainActor
+    func testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags() async throws {
+        let note = KanbanCard(id: 10, word: "Synthetic Note", listTitle: "Thursday",
+                              checklists: [], descriptionOverride: "Retained body", presentation: .note)
+        let divider = KanbanCard(id: 11, word: "--", listTitle: "Thursday", isDivider: true, checklists: [])
+        let card = KanbanCard(id: 12, word: "Synthetic Card", listTitle: "Thursday", checklists: [])
+        var lists = [KanbanList(id: 4, title: "Thursday", cards: [note, divider, card])]
+        let original = lists
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        func collectionView(in view: UIView) -> UICollectionView? {
+            if let collection = view as? UICollectionView { return collection }
+            return view.subviews.compactMap { collectionView(in: $0) }.first
+        }
+        let controller = UIHostingController(rootView: TodayListDetailView(
+            lists: Binding(get: { lists }, set: { lists = $0 }), reservedLists: [],
+            labelLibrary: .constant(.starter), savedCardIDs: .constant([note.id]),
+            listID: 4, currentUserName: "Synthetic", onClose: {}, onOpenWeek: {},
+            onPermanentDelete: { _ in XCTFail("Dragging must not delete"); return false }
+        ))
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+
+        let collection = try XCTUnwrap(collectionView(in: controller.view))
+        let noteCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 0, section: 0)))
+        let source = try XCTUnwrap(noteCell.contentView.interactions.compactMap {
+            ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
+        }.first)
+        XCTAssertEqual(collection.numberOfItems(inSection: 0), 4)
+        let receiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
+        let item = UIDragItem(itemProvider: source.begin(at: noteCell.convert(CGPoint(x: 30, y: 30), to: window)))
+        item.localObject = source
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(receiver.accepts([item]))
+        XCTAssertFalse(receiver.perform([item], at: CGPoint(x: -100, y: -100)))
+        source.finish()
+        XCTAssertEqual(lists, original, "An outside drop must not mutate canonical records")
+
+        let secondItem = UIDragItem(itemProvider: source.begin(at: noteCell.convert(CGPoint(x: 30, y: 30), to: window)))
+        secondItem.localObject = source
+        try await Task.sleep(for: .milliseconds(100))
+        let addCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 3, section: 0)))
+        let endPoint = addCell.convert(CGPoint(x: 30, y: addCell.bounds.midY), to: window)
+        XCTAssertTrue(receiver.perform([secondItem], at: endPoint))
+        source.finish()
+        XCTAssertEqual(lists[0].cards, [divider, card, note])
+        XCTAssertEqual(Set(lists[0].cards.map(\.id)), Set(original[0].cards.map(\.id)))
+
+        try await Task.sleep(for: .milliseconds(150))
+        let currentCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 2, section: 0)))
+        let currentSource = try XCTUnwrap(currentCell.contentView.interactions.compactMap {
+            ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
+        }.first)
+        _ = currentSource.begin(at: currentCell.convert(CGPoint(x: 30, y: 30), to: window))
+        currentSource.finish()
+        XCTAssertEqual(lists[0].cards, [divider, card, note], "Cancelled drags retain order and content")
+
+        let returnItem = UIDragItem(itemProvider: currentSource.begin(
+            at: currentCell.convert(CGPoint(x: 30, y: 30), to: window)
+        ))
+        returnItem.localObject = currentSource
+        try await Task.sleep(for: .milliseconds(100))
+        let dividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 0, section: 0)))
+        let firstPoint = dividerCell.convert(CGPoint(x: 30, y: 1), to: window)
+        let currentReceiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
+        XCTAssertTrue(currentReceiver.perform([returnItem], at: firstPoint))
+        currentSource.finish()
+        XCTAssertEqual(lists, original, "Dragging before a divider must restore the original complete records")
+    }
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout()
     /// @brief      Verify hosted card rows install native drag and one shared list receiver
     /// @details    Checks row count, enabled drag sources, receiver identity, collection

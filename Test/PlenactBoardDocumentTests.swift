@@ -2132,11 +2132,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testBoardPresentationWidthsInPortraitLandscapeAndAccessibility() {
 
-        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 319)
+        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 329)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 393, accessibilitySize: false), 240)
         XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 852, accessibilitySize: false), 360)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 852, accessibilitySize: false), 240)
-        XCTAssertLessThanOrEqual(2 * 360 + 12 + 28, 852)
+        XCTAssertLessThanOrEqual(2 * 360 + 17 + 28, 852)
         XCTAssertLessThanOrEqual(3 * 240 + 24 + 28, 852)
 
         for preset in BoardPresentation.allCases {
@@ -2170,7 +2170,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             XCTAssertEqual(BoardPresentation.standard.columnWidth(
                 viewportWidth: width, accessibilitySize: false
-            ), min(width - 28, 360, max(172, width - 74)))
+            ), min(width - 28, 360, max(172, width - 64)))
 
             XCTAssertEqual(BoardPresentation.overview.columnWidth(
                 viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
@@ -2189,13 +2189,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
-        func testStandardBoardHasEqualTwentyFivePointNeighborPreviews() {
+        func testStandardBoardHasEqualFifteenPointNeighborPreviews() {
 
-            for viewport: CGFloat in [320, 360, 393, 414, 430] {
+            for viewport: CGFloat in [320, 360, 393, 414, 424] {
                 let width = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
                 let sideInset = (viewport - width) / 2
-                XCTAssertEqual(sideInset - 12, 25, accuracy: 0.001,
-                               "Each side must show 25 points of its neighbor after the 12-point gap")
+                XCTAssertEqual(sideInset - 17, 15, accuracy: 0.001,
+                               "Each side must show 15 points of its neighbor after the 17-point gap")
                 XCTAssertEqual(width + 2 * sideInset, viewport, accuracy: 0.001)
             }
         }
@@ -2237,11 +2237,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }.sorted { $0.minX < $1.minX }
             XCTAssertEqual(frames.count, 3)
             let center = try XCTUnwrap(frames.first { abs($0.midX - 196.5) < 2 })
-            XCTAssertEqual(center.width, 319, accuracy: 1)
-            XCTAssertEqual(center.minX, 37, accuracy: 1)
-            XCTAssertEqual(393 - center.maxX, 37, accuracy: 1)
-            XCTAssertEqual(try XCTUnwrap(frames.first).maxX, 25, accuracy: 1)
-            XCTAssertEqual(393 - (try XCTUnwrap(frames.last).minX), 25, accuracy: 1)
+            XCTAssertEqual(center.width, 329, accuracy: 1)
+            XCTAssertEqual(center.minX, 32, accuracy: 1)
+            XCTAssertEqual(393 - center.maxX, 32, accuracy: 1)
+            XCTAssertEqual(try XCTUnwrap(frames.first).maxX, 15, accuracy: 1)
+            XCTAssertEqual(393 - (try XCTUnwrap(frames.last).minX), 15, accuracy: 1)
+            XCTAssertEqual(center.minX - (try XCTUnwrap(frames.first).maxX), 17, accuracy: 1)
+            XCTAssertEqual((try XCTUnwrap(frames.last).minX) - center.maxX, 17, accuracy: 1)
             XCTAssertNil(targetListID)
         }
 

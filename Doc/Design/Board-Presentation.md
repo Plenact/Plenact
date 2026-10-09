@@ -27,7 +27,7 @@ The lower navigation bar keeps its existing control positions and fixed-height l
 
 | Behavior | Standard | Overview |
 | --- | --- | --- |
-| List width at ordinary text sizes | Up to 360 points; phone widths reserve 25-point neighbor previews and 12-point gaps on each side | Up to 240 points |
+| List width at ordinary text sizes | Up to 360 points; phone widths reserve 15-point neighbor previews and 17-point gaps on each side | Up to 240 points |
 | Narrow viewport | Fits within the viewport with 28 points reserved for horizontal margins | Same margin constraint |
 | Personal List-kind collection | Fills usable viewport width, retaining the same 28-point horizontal margins | Keeps the compact 240-point cap |
 | Card minimum height at default text size | 112 points | 80 points |
@@ -43,7 +43,7 @@ Single-list personal collections use the full available Standard width rather th
 
 List titles and counts occupy their own header row, separate from reordering and list actions. Overview omits the list subtitle as well as the card subtitle. Card actions appear beside the badges below the title rather than consuming title width. Summaries explicitly fit their vertical content so a tall list does not stretch each card. Badge counts remain visible alongside their icons even inside a navigation link.
 
-In a 393-point-wide portrait viewport, Standard centers a 319-point List with equal 25-point neighbor previews beyond the 12-point gaps. Standard snapping, explicit List/Card navigation, boundary jumps, and drag-edge scrolling all use centered alignment. Symmetric scroll-content margins allow the first and last Lists to center too; their missing-neighbor side remains empty rather than wrapping. Wider viewports retain the 360-point column cap and show more adjacent content. Overview retains its compact widths and leading alignment. Counts depend on actual safe-area width and text settings, not on a hardcoded device orientation.
+In a 393-point-wide portrait viewport, Standard centers a 329-point List with equal 15-point neighbor previews beyond the 17-point gaps. Standard snapping, explicit List/Card navigation, boundary jumps, and drag-edge scrolling all use centered alignment. Symmetric scroll-content margins allow the first and last Lists to center too; their missing-neighbor side remains empty rather than wrapping. Wider viewports retain the 360-point column cap and show more adjacent content. Overview retains its compact widths, 12-point gaps, and leading alignment. Counts depend on actual safe-area width and text settings, not on a hardcoded device orientation.
 
 Dynamic Type continues to control text size. At accessibility text sizes, both presets use the available column width, titles are not line-limited, and badges stack vertically. Label summaries fall back to a count if individual chips do not fit. Completion and card-menu controls retain 44-point targets.
 

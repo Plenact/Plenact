@@ -159,8 +159,8 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
         }
 
         if self == .standard {
-            // Reserve a 25-point neighbor preview and the 12-point gap on each side.
-            return min(available, 360, max(172, viewportWidth - 74))
+            // Reserve a 15-point neighbor preview and the 17-point gap on each side.
+            return min(available, 360, max(172, viewportWidth - 64))
         }
 
         return min(available, 240)
@@ -2371,7 +2371,7 @@ struct ContentView: View {
 
                             ScrollView(.horizontal, showsIndicators: false) {
 
-                                HStack(alignment: .top, spacing: 12) {
+                                HStack(alignment: .top, spacing: presentation == .standard ? 17 : 12) {
 
                                     ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 

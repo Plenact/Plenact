@@ -133,7 +133,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
     /// @fcn        BoardPresentation.columnWidth(viewportWidth:accessibilitySize:)
     /// @brief      Calculate the column width for this presentation
     /// @details    Accessibility text sizing receives all usable width; other sizes use a
-    ///             layout-specific maximum while retaining horizontal margins
+    ///             layout-specific maximum. Standard reserves equal neighboring-list previews
     ///
     /// @param[in]  viewportWidth      Available viewport width in points
     /// @param[in]  accessibilitySize  Whether the current text size is an accessibility size
@@ -158,7 +158,12 @@ enum BoardPresentation: String, CaseIterable, Identifiable {
             return available
         }
 
-        return min(available, self == .standard ? 360 : 240)
+        if self == .standard {
+            // Reserve a 25-point neighbor preview and the 12-point gap on each side.
+            return min(available, 360, max(172, viewportWidth - 74))
+        }
+
+        return min(available, 240)
     }
 }
 
@@ -1246,7 +1251,7 @@ struct ContentView: View {
         }
 
         visibleListID = targetListID
-        listProxy.scrollTo(targetListID, anchor: .leading)
+        listProxy.scrollTo(targetListID, anchor: presentation == .standard ? .center : .leading)
 
         if let targetCardID = boardTargetCardID, /* Requested card identity to open */
            let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) { /* Requested record resolved in its containing list */
@@ -2354,6 +2359,14 @@ struct ContentView: View {
                         )
 
                         GeometryReader { listArea in
+                        let columnWidth = presentation.columnWidth(
+                            viewportWidth: listArea.size.width,
+                            accessibilitySize: dynamicTypeSize.isAccessibilitySize,
+                            fillsAvailableWidth: fillsAvailableListWidth
+                        )
+                        let horizontalInset = presentation == .standard
+                            ? max(14, (listArea.size.width - columnWidth) / 2)
+                            : 14
                         ScrollViewReader { listProxy in
 
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -2453,11 +2466,11 @@ struct ContentView: View {
 
                                 .frame(maxHeight: .infinity, alignment: .top)
                                 .scrollTargetLayout()
-                                .padding(.horizontal, 14)
                             }
 
+                            .contentMargins(.horizontal, horizontalInset, for: .scrollContent)
                             .scrollTargetBehavior(.viewAligned)
-                            .scrollPosition(id: $visibleListID, anchor: .leading)
+                            .scrollPosition(id: $visibleListID, anchor: presentation == .standard ? .center : .leading)
                             .scrollDisabled(draggedListID != nil)
                             .coordinateSpace(name: "WeekListsViewport")
                             .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
@@ -2548,7 +2561,7 @@ struct ContentView: View {
                                 }
 
                                 withAnimation(.easeInOut(duration: 0.25)) {
-                                    listProxy.scrollTo(listID, anchor: .leading)
+                                    listProxy.scrollTo(listID, anchor: presentation == .standard ? .center : .leading)
                                     visibleListID = listID
                                 }
                             }
@@ -2634,7 +2647,7 @@ struct ContentView: View {
                                         let nextID = lists[current + direction].id /* Adjacent list identity to reveal during the card drag */
 
                                         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
-                                            listProxy.scrollTo(nextID, anchor: .leading)
+                                            listProxy.scrollTo(nextID, anchor: presentation == .standard ? .center : .leading)
                                             visibleListID = nextID
                                         }
                                     }

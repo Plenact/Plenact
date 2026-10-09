@@ -2132,7 +2132,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testBoardPresentationWidthsInPortraitLandscapeAndAccessibility() {
 
-        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 360)
+        XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 319)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 393, accessibilitySize: false), 240)
         XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 852, accessibilitySize: false), 360)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 852, accessibilitySize: false), 240)
@@ -2170,7 +2170,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             XCTAssertEqual(BoardPresentation.standard.columnWidth(
                 viewportWidth: width, accessibilitySize: false
-            ), min(width - 28, 360))
+            ), min(width - 28, 360, max(172, width - 74)))
 
             XCTAssertEqual(BoardPresentation.overview.columnWidth(
                 viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
@@ -2189,6 +2189,61 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+        func testStandardBoardHasEqualTwentyFivePointNeighborPreviews() {
+
+            for viewport: CGFloat in [320, 360, 393, 414, 430] {
+                let width = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+                let sideInset = (viewport - width) / 2
+                XCTAssertEqual(sideInset - 12, 25, accuracy: 0.001,
+                               "Each side must show 25 points of its neighbor after the 12-point gap")
+                XCTAssertEqual(width + 2 * sideInset, viewport, accuracy: 0.001)
+            }
+        }
+
+        @MainActor
+        func testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews() async throws {
+
+            let suite = "Plenact.CenteredBoard.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defaults.set(BoardPresentation.standard.rawValue, forKey: BoardPresentation.storageKey)
+            let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let previous = scene.windows.first(where: \.isKeyWindow)
+            let window = UIWindow(windowScene: scene)
+            defer {
+                window.isHidden = true
+                window.rootViewController = nil
+                previous?.makeKey()
+                defaults.removePersistentDomain(forName: suite)
+            }
+            func collections(in view: UIView) -> [UICollectionView] {
+                if let collection = view as? UICollectionView { return [collection] }
+                return view.subviews.flatMap { collections(in: $0) }
+            }
+            let lists = (1...3).map { KanbanList(id: $0, title: "Synthetic \($0)", cards: []) }
+            var targetListID: Int? = 2
+            let controller = UIHostingController(rootView: ContentView(
+                lists: .constant(lists),
+                boardTargetListID: Binding(get: { targetListID }, set: { targetListID = $0 }),
+                onListsChanged: { _ in XCTFail("Layout must not change records") }
+            ).defaultAppStorage(defaults))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(400))
+            // The native card collection is inset four points inside each List panel.
+            let frames = collections(in: controller.view).map {
+                $0.convert($0.bounds, to: window).insetBy(dx: -4, dy: 0)
+            }.sorted { $0.minX < $1.minX }
+            XCTAssertEqual(frames.count, 3)
+            let center = try XCTUnwrap(frames.first { abs($0.midX - 196.5) < 2 })
+            XCTAssertEqual(center.width, 319, accuracy: 1)
+            XCTAssertEqual(center.minX, 37, accuracy: 1)
+            XCTAssertEqual(393 - center.maxX, 37, accuracy: 1)
+            XCTAssertEqual(try XCTUnwrap(frames.first).maxX, 25, accuracy: 1)
+            XCTAssertEqual(393 - (try XCTUnwrap(frames.last).minX), 25, accuracy: 1)
+            XCTAssertNil(targetListID)
+        }
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionListWidthReachesTheHostedCardContainer()

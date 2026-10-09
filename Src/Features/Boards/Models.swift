@@ -729,7 +729,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
     let id:        Int              /* Unique identifier for the kanban list */
-    let title:     String           /* Title of the kanban list              */
+    private(set) var title: String  /* Title updated with retained card context */
+    var subtitleOverride: String? = nil /* nil preserves legacy generated copy; empty hides it */
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
@@ -814,7 +815,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///     Preserve backward-compatible decoding when archived fields are absent
     ///
     private enum CodingKeys: String, CodingKey {
-        case id, title, cards, archivedCards, isArchived, defaultItemPresentation
+        case id, title, cards, archivedCards, isArchived, defaultItemPresentation, subtitleOverride
     }
 
 
@@ -835,6 +836,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
         id            = try container.decode(Int.self, forKey: .id)
         title         = try container.decode(String.self, forKey: .title)
+        subtitleOverride = try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
         cards         = try container.decode([KanbanCard].self, forKey: .cards)
         archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
         isArchived    = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
@@ -863,6 +865,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(subtitleOverride, forKey: .subtitleOverride)
         try container.encode(cards, forKey: .cards)
         try container.encodeIfPresent(defaultItemPresentation, forKey: .defaultItemPresentation)
 
@@ -947,15 +950,37 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///
     /// @fcn        KanbanList.subtitle
     /// @brief      Provide supporting copy for the list header
-    /// @details    Selects a deterministic subtitle using the list identity
+    /// @details    Uses saved supporting copy, falling back to the legacy identity-based subtitle
     ///
     /// @return     (String) supporting text shown beneath the list title
     /// @post       No list state is modified
     ///
     var subtitle: String { /* Supporting text for the list header */
+        if let subtitleOverride {
+            return subtitleOverride
+        }
         let subtitles = ["Ideas taking shape", "Ready for a little momentum", "Currently in progress", "Nearly across the finish line", "Done, or at least confidently presented"] /* List subtitle options */
 
         return subtitles[id % subtitles.count]
+    }
+
+
+    /// Updates display metadata without replacing retained records or changing their identities.
+    mutating func edit(title proposedTitle: String, subtitle: String?) throws {
+
+        let trimmedTitle = proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        title = trimmedTitle
+        subtitleOverride = subtitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        for index in cards.indices {
+            cards[index].listTitle = title
+        }
+        for index in archivedCards.indices {
+            archivedCards[index].listTitle = title
+        }
     }
 }
 
@@ -2457,6 +2482,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         }
         lists[0] = KanbanList(id: column.id, title: title, cards: cards, archivedCards: archivedCards, newItemPresentation: column.newItemPresentation)
         lists[0].isArchived = column.isArchived
+        lists[0].subtitleOverride = column.subtitleOverride
     }
 
 

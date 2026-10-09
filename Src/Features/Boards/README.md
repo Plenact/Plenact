@@ -105,6 +105,14 @@ Newly created items record an optional `createdAt` timestamp, displayed beneath 
 
 **Deferred:** relocation between personal collections and the Week Board is not implemented. The existing Move action still targets lists within the owning Board; the Note location menu targets only personal Lists. Conversion does not copy, delete, upload, or move the item.
 
+## Editing List Titles and Subtitles
+
+Use **List actions → Edit list** in Week or Library, or **Day options → Edit list** in the focused Day view. The form edits a draft; Cancel/dismiss does not save. Save requires a nonblank title and permits an empty subtitle to hide supporting copy. Changes use the existing local persistence paths and retain IDs, active/archived cards, dividers, bookmarks, attachments, and creation defaults. A single-list Library collection's directory title follows its edited List title; multi-list Board titles remain independent.
+
+List `subtitleOverride` is an optional Codable field. Older snapshots without it retain generated subtitles and omit the field on save until the subtitle changes; an explicit empty string hides the subtitle. No destructive migration, storage reset, or media operation is needed. List copies and collection renames preserve the override.
+
+Weekday routing remains title-based by product choice: renaming “Thursday” to “My plans” makes it an ordinary List. Today recreates a blank Thursday List when needed, preserving the renamed List and its work.
+
 ## Dragging Cards Between Lists
 
 In Week or a personal Board, **hold the Card, Note, or divider itself**, then drag it to another list or another position in its current list. iOS provides a native row preview; the destination list is outlined and a line marks the insertion boundary. Drop on an empty list to add its first record. There is no separate drag handle. The focused Day list supports the same long-press reordering within that list.

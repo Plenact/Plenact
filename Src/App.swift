@@ -4455,7 +4455,11 @@ struct PersonalCollectionBoardView: View {
                 updated.savedCardIDs = bookmarks
                 try onCommitDeletion(updated)
             },
-            onListsChanged:            { _ in },
+            onListsChanged:            { updatedLists in
+                if collection.kind == .list, let list = updatedLists.first {
+                    collection.title = list.title
+                }
+            },
             retainedAttachmentLists:   { retainedLists },
             personalCollectionID:      collection.id,
             availablePersonalLists:    availablePersonalLists,

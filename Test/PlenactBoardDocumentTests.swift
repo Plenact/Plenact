@@ -2866,9 +2866,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testCardMovementRejectsStaleArchivedDividerAndAmbiguousSourcesAtomically()
+    /// @fcn        PlenactBoardDocumentTests.testCardMovementRejectsStaleArchivedAndAmbiguousSourcesAtomically()
     /// @brief      Verify invalid card movements leave every list unchanged
-    /// @details    Exercises missing identities, stale boundaries, dividers, archived content, and
+    /// @details    Exercises missing identities, stale boundaries, archived content, and
     ///             duplicate source cards; compares the complete snapshot after each rejected
     ///             operation.
     ///
@@ -2876,7 +2876,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     /// @throws     Propagates fixture setup, unwrap, or operation errors to XCTest
     ///
-    func testCardMovementRejectsStaleArchivedDividerAndAmbiguousSourcesAtomically() throws {
+    func testCardMovementRejectsStaleArchivedAndAmbiguousSourcesAtomically() throws {
 
         let card = KanbanCard(id: 1, word: "Card", listTitle: "A") /* Card value under verification */
         let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true) /* Section-divider fixture */
@@ -2885,7 +2885,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                      KanbanList(id: 20, title: "B", cards: [])]
         let original = lists /* Pre-operation value for preservation checks */
 
-        for (id, destination, before) in [(999, 20, nil), (1, 999, nil), (1, 20, 999), (2, 20, nil), (3, 20, nil)] as [(Int, Int, Int?)] {
+        for (id, destination, before) in [(999, 20, nil), (1, 999, nil), (1, 20, 999), (3, 20, nil)] as [(Int, Int, Int?)] {
 
             XCTAssertThrowsError(try BoardCardMovement.move(id, to: destination, before: before, in: &lists))
             XCTAssertEqual(lists, original)
@@ -2916,6 +2916,24 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         XCTAssertThrowsError(try BoardCardMovement.move(1, to: 20, in: &lists))
         XCTAssertEqual(lists, sameListDuplicate)
+    }
+
+    func testDividerMovementPreservesRecordsWithinAndBetweenLists() throws {
+        let divider = KanbanCard(id: 2, word: "---", listTitle: "A", isDivider: true, checklists: [])
+        let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "A", checklists: [])
+        var lists = [KanbanList(id: 10, title: "A", cards: [divider, card]),
+                     KanbanList(id: 20, title: "B", cards: [])]
+        XCTAssertTrue(try BoardCardMovement.move(divider.id, to: 10, in: &lists))
+        XCTAssertEqual(lists[0].cards, [card, divider])
+        XCTAssertFalse(try BoardCardMovement.move(divider.id, to: 10, in: &lists))
+        let beforeInvalidMove = lists
+        XCTAssertThrowsError(try BoardCardMovement.move(divider.id, to: 20, before: 999, in: &lists))
+        XCTAssertEqual(lists, beforeInvalidMove)
+        XCTAssertTrue(try BoardCardMovement.move(divider.id, to: 20, in: &lists))
+        var relocated = divider
+        relocated.listTitle = "B"
+        XCTAssertEqual(lists[0].cards, [card])
+        XCTAssertEqual(lists[1].cards, [relocated])
     }
 
 
@@ -3129,6 +3147,24 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(currentReceiver.perform([returnItem], at: firstPoint))
         currentSource.finish()
         XCTAssertEqual(lists, original, "Dragging before a divider must restore the original complete records")
+
+        try await Task.sleep(for: .milliseconds(150))
+        let movableDividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 1, section: 0)))
+        let dividerSource = try XCTUnwrap(movableDividerCell.contentView.interactions.compactMap {
+            ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
+        }.first)
+        let dividerItem = UIDragItem(itemProvider: dividerSource.begin(
+            at: movableDividerCell.convert(CGPoint(x: 30, y: 10), to: window)
+        ))
+        dividerItem.localObject = dividerSource
+        try await Task.sleep(for: .milliseconds(100))
+        let dividerReceiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
+        let tailCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 3, section: 0)))
+        XCTAssertTrue(dividerReceiver.perform([dividerItem], at: tailCell.convert(
+            CGPoint(x: 30, y: tailCell.bounds.midY), to: window
+        )))
+        dividerSource.finish()
+        XCTAssertEqual(lists[0].cards, [note, card, divider])
     }
 
     ///
@@ -3224,6 +3260,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }
 
             XCTAssertFalse(dragSources.isEmpty, "Visible card bodies must have a native drag source")
+            let dividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 1, section: 0)))
+            XCTAssertTrue(dividerCell.contentView.interactions.contains {
+                ($0 as? UIDragInteraction)?.delegate is BoardCardDragSource.Coordinator
+            }, "Divider rows must support the same native drag as Cards and Notes")
             XCTAssertTrue(dragSources.allSatisfy(\.isEnabled))
             XCTAssertEqual(collection.interactions.filter {
                 ($0 as? UIDropInteraction)?.delegate is BoardCardDropSurface.Coordinator

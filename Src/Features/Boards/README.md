@@ -107,7 +107,7 @@ Newly created items record an optional `createdAt` timestamp, displayed beneath 
 
 ## Dragging Cards Between Lists
 
-In Week or a personal Board, **hold the card itself**, then drag it to another list or another position in its current list. iOS provides a native card preview; the destination list is outlined and a line marks the insertion boundary. Drop on an empty list to add its first card. There is no separate drag handle.
+In Week or a personal Board, **hold the Card, Note, or divider itself**, then drag it to another list or another position in its current list. iOS provides a native row preview; the destination list is outlined and a line marks the insertion boundary. Drop on an empty list to add its first record. There is no separate drag handle. The focused Day list supports the same long-press reordering within that list.
 
 Hold near either horizontal screen edge to scroll to neighboring lists every 550 ms. This scrolls the viewport; it does not reorder lists. Scrolling the source list offscreen does not cancel the active drag. Release on the highlighted destination to move the original card. Hovering never edits or saves content. Releasing outside the Board, losing the gesture, leaving the Board, backgrounding, rotation, or a presentation change cancels without moving it.
 
@@ -115,7 +115,7 @@ The row has a native `UIDragInteraction`; each list's underlying collection view
 
 The drag item contains only a random local Board token, not card content or attachment filenames. Its representation is restricted to this process and the native session is restricted to this app. The drop receiver validates the native item's local source coordinator, active session, and matching Board token before invoking canonical movement. The correctly registered `dragInteraction(_:session:didEndWith:)` callback cleans up cancellation or release outside a valid target. A retained local coordinator lets a session finish if its source row leaves the viewport.
 
-Drop detection compares the finger, Board viewport, list panels, and card rows in the same global screen-coordinate space, and validates the final release point before moving the canonical record. Movement preserves card IDs, covers, attachments/filenames, descriptions, dates, completion, assignments, labels, checklists, comments, and Board-local bookmarks. Only position and the destination list title change. The existing Week/personal persistence path saves the result; no new format or media operation is introduced. Archives are not draggable, dividers stay in their lists, and dragging never moves content between separate Boards or sends it to a service.
+Drop detection compares the finger, Board viewport, list panels, and card rows in the same global screen-coordinate space, and validates the final release point before moving the canonical record. Movement preserves card IDs, covers, attachments/filenames, descriptions, dates, completion, assignments, labels, checklists, comments, and Board-local bookmarks. Only position and the destination list title change. The existing Week/personal persistence path saves the result; no new format or media operation is introduced. Archives are not draggable, and dragging never moves content between separate Boards or sends it to a service.
 
 Automated model, persistence, geometry, and hosted-layout checks are documented in [Tests](../../../Test/README.md). Touch gestures, edge scrolling, cancellation, and VoiceOver still require hands-on acceptance.
 

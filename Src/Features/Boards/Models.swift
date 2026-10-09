@@ -1474,8 +1474,8 @@ enum BoardCardMovement {
     ///
     /// @fcn        BoardCardMovement.move(_:to:before:in:)
     /// @brief      Move the complete canonical card to a validated insertion boundary
-    /// @details    Requires unambiguous active source and destination records and rejects dividers
-    ///             or stale boundaries. Validates a copied list array before committing; a nil
+    /// @details    Requires unambiguous active source and destination records and rejects
+    ///             stale boundaries. Validates a copied list array before committing; a nil
     ///             boundary appends and only the card list title and position change.
     ///
     /// @param[in]     cardID        Board-local identity of the card being dragged or moved
@@ -1503,8 +1503,7 @@ enum BoardCardMovement {
 
               let destination = lists.firstIndex(where: { $0.id == listID && !$0.isArchived }), /* Active destination list position */
               !lists[source].isArchived,
-              let index = lists[source].cards.firstIndex(where: { $0.id == cardID }), /* Card position within the source list */
-              !lists[source].cards[index].isSectionDivider else {
+              let index = lists[source].cards.firstIndex(where: { $0.id == cardID }) else { /* Card position within the source list */
 
             throw CocoaError(.validationMissingMandatoryProperty)
         }

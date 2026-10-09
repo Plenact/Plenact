@@ -1093,6 +1093,7 @@ struct ContentView: View {
     let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state */
     /// Controls presentation of the calendar sheet.
     @State private var showsCalendar = false /* Calendar sheet presentation state */
+    @State private var calendarCardTarget: (listID: Int, cardID: Int)? /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists.
     @State private var showsArchivedLists = false /* Archived-list browser presentation state */
     /// Navigation stack path for card-detail destinations.
@@ -2698,15 +2699,25 @@ struct ContentView: View {
                 )
             }
 
-            .sheet(isPresented: $showsCalendar) {
+            .sheet(isPresented: $showsCalendar, onDismiss: {
+                guard let target = calendarCardTarget else { return }
+                calendarCardTarget = nil
+                guard let list = lists.first(where: { $0.id == target.listID && !$0.isArchived }),
+                      let card = list.cards.first(where: { $0.id == target.cardID && !$0.isSectionDivider }) else {
+                    DatabaseActivity.shared.report("Could not open this Calendar card because it is no longer in the active list. Its retained content has not been changed.")
+                    return
+                }
+                visibleListID = list.id
+                navigationPath = NavigationPath()
+                navigationPath.append(card)
+            }) {
                 TodayCalendarView(
                     lists:         lists,
                     onArchiveCard: archiveCard,
                     onDeleteCard:  { deleteCard($0) }
-                ) { listID in
+                ) { listID, cardID in
+                    calendarCardTarget = (listID: listID, cardID: cardID)
                     showsCalendar = false
-                    boardTargetCardID = nil
-                    boardTargetListID = listID
                 }
 
                 .presentationDetents([.large])

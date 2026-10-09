@@ -105,6 +105,10 @@ Newly created items record an optional `createdAt` timestamp, displayed beneath 
 
 **Deferred:** relocation between personal collections and the Week Board is not implemented. The existing Move action still targets lists within the owning Board; the Note location menu targets only personal Lists. Conversion does not copy, delete, upload, or move the item.
 
+## Calendar Navigation
+
+Calendar result taps open the exact selected Card or Note after the Calendar sheet dismisses, rather than merely revealing its containing List. Navigation resolves the current record by both List and Card ID within the displayed Week or personal Board. If the record is no longer active in that List, an error is shown without opening a different record or changing content. Device acceptance: select start-date and due-date results in different Lists, including multiple results on one day; confirm the correct detail opens and Back returns to its containing List. Repeat in a personal Board.
+
 ## Editing List Titles and Subtitles
 
 Use **List actions → Edit list** in Week or Library, or **Day options → Edit list** in the focused Day view. The form edits a draft; Cancel/dismiss does not save. Save requires a nonblank title and permits an empty subtitle to hide supporting copy. Changes use the existing local persistence paths and retain IDs, active/archived cards, dividers, bookmarks, attachments, and creation defaults. A single-list Library collection's directory title follows its edited List title; multi-list Board titles remain independent.

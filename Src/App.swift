@@ -4709,14 +4709,14 @@ extension PersonalCollectionIcon {
 /// Browses card start and due dates using the user's local calendar
 ///
 /// @section    Purpose
-///     Show dated cards by month and route selections to their Week lists
+///     Show dated cards by month and route selections to their exact Board records
 ///
 struct TodayCalendarView: View {
 
     let lists: [KanbanList] /* Current Board snapshot */
     let onArchiveCard: (Int) -> Void /* Canonical archive callback */
     let onDeleteCard: (Int) -> Bool /* Confirmed deletion result */
-    let onOpenBoardList: (Int) -> Void /* Navigate to the card's list */
+    let onOpenBoardCard: (Int, Int) -> Void /* Navigate using containing list and card identities */
 
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now /* Visible month */
     @State private var selectedDate = Calendar.current.startOfDay(for: .now) /* Selected local day */
@@ -4866,7 +4866,7 @@ struct TodayCalendarView: View {
                         } else {
                             ForEach(selectedDayCards) { result in
                                 Button {
-                                    onOpenBoardList(result.listID)
+                                    onOpenBoardCard(result.listID, result.cardID)
                                 } label: {
                                     HStack(alignment: .top, spacing: 12) {
                                         Image(systemName: "calendar")

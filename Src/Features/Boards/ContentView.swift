@@ -1705,7 +1705,9 @@ struct ContentView: View {
             return copy
         }
 
-        lists.insert(KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards, newItemPresentation: source.newItemPresentation), at: sourceIndex + 1)
+        var copiedList = KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards, newItemPresentation: source.newItemPresentation)
+        copiedList.subtitleOverride = source.subtitleOverride
+        lists.insert(copiedList, at: sourceIndex + 1)
     }
 
 
@@ -2418,7 +2420,10 @@ struct ContentView: View {
                                                 return endCardDrag(cardID, commit: true, location: point)
                                             },
                                             cardMoveDestinations:  lists.filter { $0.id != list.id },
-                                            onMoveCardToList:      { cardID, listID in moveCard(cardID, toListID: listID) }
+                                            onMoveCardToList:      { cardID, listID in moveCard(cardID, toListID: listID) },
+                                            onEditList: { title, subtitle in
+                                                editBoardList(list.id, title: title, subtitle: subtitle, in: &lists)
+                                            }
                                         )
                                         .frame(
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
@@ -3667,6 +3672,7 @@ struct KanbanListView: View {
     var onCardDrop: (CGPoint) -> Bool = { _ in false } /* Commits a native drop at its global pointer position */
     var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
+    var onEditList: ((String, String) -> Bool)? = nil
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
@@ -4124,7 +4130,8 @@ struct KanbanListView: View {
                     onRestoreArchivedCard: onRestoreArchivedCard,
                     onDeleteArchivedCard:  onDeleteArchivedCard,
                     onArchiveList:         onArchiveList,
-                    onDeleteList:          onDeleteList
+                    onDeleteList:          onDeleteList,
+                    onEditList:            onEditList
                 )
                 .databaseActivityOverlay()
             case .newCard:
@@ -4360,6 +4367,8 @@ private struct KanbanListActionsSheet: View {
     let onDeleteArchivedCard: (Int) -> Void /* Permanently remove a confirmed archived card */
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
     let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
+    var onEditList: ((String, String) -> Bool)? = nil
+    @State private var isEditingList = false
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
     @State private var confirmingArchive = false /* Archive confirmation presentation state */
@@ -4384,6 +4393,12 @@ private struct KanbanListActionsSheet: View {
             List {
 
                 Section {
+
+                    if onEditList != nil {
+                        Button("Edit list", systemImage: "pencil") {
+                            isEditingList = true
+                        }
+                    }
 
                     Button {
                         onAddCard()
@@ -4520,11 +4535,90 @@ private struct KanbanListActionsSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
+        .sheet(isPresented: $isEditingList) {
+            if let onEditList {
+                ListInfoEditorSheet(list: list, onSave: onEditList)
+                    .databaseActivityOverlay()
+            }
+        }
     }
 }
 
 
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
+
+
+/// Saves metadata into the current canonical record, not the editor's older snapshot.
+@MainActor
+@discardableResult
+func editBoardList(_ listID: Int, title: String, subtitle: String, in lists: inout [KanbanList]) -> Bool {
+
+    do {
+        guard lists.filter({ $0.id == listID && !$0.isArchived }).count == 1,
+              let index = lists.firstIndex(where: { $0.id == listID && !$0.isArchived }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let subtitleOverride = subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
+        try lists[index].edit(title: title, subtitle: subtitleOverride)
+        return true
+    } catch {
+        DatabaseActivity.shared.report("Could not edit this list: \(error.localizedDescription) Its content has been retained.")
+        return false
+    }
+}
+
+
+/// Edits List display text without saving until the owner accepts the draft.
+struct ListInfoEditorSheet: View {
+
+    let onSave: (String, String) -> Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var title: String
+    @State private var subtitle: String
+
+    init(list: KanbanList, onSave: @escaping (String, String) -> Bool) {
+
+        self.onSave = onSave
+        _title = State(initialValue: list.title)
+        _subtitle = State(initialValue: list.subtitle)
+    }
+
+    var body: some View {
+
+        NavigationStack {
+            Form {
+                Section("Title") {
+                    TextField("List title", text: $title)
+                        .accessibilityIdentifier("list-editor-title")
+                }
+                Section {
+                    TextField("Subtitle", text: $subtitle, axis: .vertical)
+                        .lineLimit(2...5)
+                        .accessibilityIdentifier("list-editor-subtitle")
+                } header: {
+                    Text("Subtitle")
+                } footer: {
+                    Text("Leave empty to hide the subtitle. Renaming a weekday list makes it an ordinary list; Today creates a new weekday list when needed.")
+                }
+            }
+            .navigationTitle("Edit list")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if onSave(title.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                            dismiss()
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+}
 
 
 ///
@@ -5135,6 +5229,7 @@ struct TodayListDetailView: View {
     let onOpenWeek: () -> Void /* Open this list in the Week workspace */
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
+    @State private var isEditingList = false
     @State private var newCardTitle = "" /* Inline card-creation draft */
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken = UUID().uuidString
@@ -5461,6 +5556,9 @@ struct TodayListDetailView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button("Edit list", systemImage: "pencil") {
+                            isEditingList = true
+                        }
                         Button(
                             editMode == .active ? "Done reordering cards" : "Reorder cards",
                             systemImage: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle"
@@ -5508,6 +5606,14 @@ struct TodayListDetailView: View {
             }
         }
 
+        .sheet(isPresented: $isEditingList) {
+            if let focusedList {
+                ListInfoEditorSheet(list: focusedList) { title, subtitle in
+                    editBoardList(listID, title: title, subtitle: subtitle, in: &lists)
+                }
+                .databaseActivityOverlay()
+            }
+        }
         .databaseActivityOverlay()
     }
 

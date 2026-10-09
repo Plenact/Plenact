@@ -22,6 +22,126 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle() throws {
+
+        let card = KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
+        let divider = KanbanCard(id: 11, word: "---", listTitle: "Thursday", isDivider: true, checklists: [])
+        let archive = KanbanCard(id: 12, word: "Retained archive", listTitle: "Thursday", presentation: .note)
+        var list = KanbanList(id: 4, title: "Thursday", cards: [card, divider], archivedCards: [archive], newItemPresentation: .note)
+        let original = list
+
+        XCTAssertThrowsError(try list.edit(title: " \n ", subtitle: "Do not save"))
+        XCTAssertEqual(list, original)
+        try list.edit(title: "  My plans  ", subtitle: "  A calm place to begin  ")
+        var expectedCard = card
+        var expectedDivider = divider
+        var expectedArchive = archive
+        expectedCard.listTitle = "My plans"
+        expectedDivider.listTitle = "My plans"
+        expectedArchive.listTitle = "My plans"
+        XCTAssertEqual(list.cards, [expectedCard, expectedDivider])
+        XCTAssertEqual(list.archivedCards, [expectedArchive])
+        XCTAssertEqual(list.id, original.id)
+        XCTAssertEqual(list.newItemPresentation, .note)
+        XCTAssertEqual(list.subtitle, "A calm place to begin")
+        XCTAssertEqual(try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list)), list)
+
+        try list.edit(title: list.title, subtitle: "")
+        XCTAssertEqual(list.subtitle, "")
+        XCTAssertEqual(try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list)).subtitle, "")
+        var collection = PersonalCollection(title: "Synthetic", kind: .list)
+        collection.lists = [list]
+        collection.rename(to: "Library plans")
+        XCTAssertEqual(collection.lists[0].subtitleOverride, "")
+        XCTAssertEqual(collection.lists[0].archivedCards[0].id, archive.id)
+    }
+
+    @MainActor
+    func testCanonicalListEditorSaveRetainsLatestRecordsAndWeekdayRecreation() throws {
+
+        var lists = [KanbanList(id: 4, title: "Thursday", cards: [])]
+        let defaultSubtitle = lists[0].subtitle
+        let note = lists[0].makeItem(id: 10, title: "Retain this", presentationOverride: .note)
+        lists[0].cards.append(note)
+        XCTAssertTrue(editBoardList(4, title: "My plans", subtitle: defaultSubtitle, in: &lists))
+        XCTAssertNil(lists[0].subtitleOverride, "Unchanged generated text must keep the legacy optional-field shape")
+        XCTAssertEqual(lists[0].cards[0].id, note.id)
+        XCTAssertEqual(lists[0].cards[0].listTitle, "My plans")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let thursday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 8)))
+        let recreated = TodayListSelection.ensureCurrentDayList(lists: lists, date: thursday, calendar: calendar)
+        XCTAssertEqual(recreated.lists.first, lists.first)
+        XCTAssertEqual(recreated.dayList.title, "Thursday")
+        XCTAssertTrue(recreated.dayList.cards.isEmpty)
+        XCTAssertNotEqual(recreated.dayList.id, lists[0].id)
+
+        let retained = lists
+        XCTAssertFalse(editBoardList(999, title: "Missing", subtitle: "", in: &lists))
+        XCTAssertFalse(editBoardList(4, title: " \n ", subtitle: "", in: &lists))
+        XCTAssertEqual(lists, retained)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(lists[0])) as? [String: Any])
+        XCTAssertNil(json["subtitleOverride"])
+    }
+
+    @MainActor
+    func testEditedListMetadataPersistsInIndependentLocalStores() async throws {
+
+        let suite = "PlenactTests.ListMetadata.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var week = KanbanList(id: 4, title: "Thursday", cards: [])
+        try week.edit(title: "My Week plans", subtitle: "One step at a time")
+        try KanbanBoardPersistence.saveListsChecked([week], suiteName: suite)
+        let restoredWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restoredWeek, [week])
+
+        var collection = PersonalCollection(title: "Synthetic collection", kind: .board)
+        let originalID = collection.lists[0].id
+        try collection.lists[0].edit(title: "Library ideas", subtitle: "Room to explore")
+        collection.savedCardIDs = []
+        try PersonalCollectionStore.saveChecked([collection], to: defaults)
+        let restoredCollection = try XCTUnwrap(PersonalCollectionStore.load(from: defaults).first)
+        XCTAssertEqual(restoredCollection, collection)
+        XCTAssertEqual(restoredCollection.lists[0].id, originalID)
+        XCTAssertEqual(restoredCollection.lists[0].subtitle, "Room to explore")
+        let unchangedWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(unchangedWeek, [week], "Editing Library metadata must not alter the Week store")
+    }
+
+    @MainActor
+    func testHostedListEditorPrefillsWithoutMutatingRecords() async throws {
+
+        var list = KanbanList(id: 4, title: "Synthetic plans", cards: [])
+        list.subtitleOverride = "A synthetic subtitle"
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        func fields(in view: UIView) -> [UITextField] {
+            (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
+        }
+        func textViews(in view: UIView) -> [UITextView] {
+            (view as? UITextView).map { [$0] } ?? view.subviews.flatMap { textViews(in: $0) }
+        }
+        let controller = UIHostingController(rootView: ListInfoEditorSheet(list: list) { _, _ in
+            XCTFail("Opening or dismissing an editor must not save")
+            return false
+        })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertTrue(fields(in: controller.view).contains { $0.text == list.title })
+        XCTAssertTrue(textViews(in: controller.view).contains { $0.text == list.subtitle }
+                      || fields(in: controller.view).contains { $0.text == list.subtitle })
+    }
+
     func testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords() throws {
         let list = KanbanList(id: 4, title: "Thursday", cards: [])
         for template in QuickCaptureTemplate.allCases {

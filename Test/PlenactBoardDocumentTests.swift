@@ -2086,8 +2086,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 $0 + list.numberOfItems(inSection: $1)
             }
 
-            XCTAssertEqual(count, 1 + max(1, fixtures.filter(\.isActive).count),
-                           "Library must contain one Saved shortcut and personal rows or its empty state, never a Week shortcut")
+            XCTAssertEqual(count, max(1, fixtures.filter(\.isActive).count),
+                           "Saved navigation must not occupy a full-width Library row")
             XCTAssertEqual(current, fixtures)
             XCTAssertEqual(week,    SampleData.lists)
         }

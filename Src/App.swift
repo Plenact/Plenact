@@ -4068,37 +4068,6 @@ struct BoardListsView: View {
             List {
 
                 Section {
-                    Button(action: onOpenSaved) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "bookmark.fill")
-                                .foregroundStyle(Color.accentColor)
-                                .accessibilityHidden(true)
-
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Saved")
-                                    .font(.headline)
-                                Text("Bookmarked items and archived collections")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer(minLength: 8)
-
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                                .accessibilityHidden(true)
-                        }
-                        .padding(.vertical, 10)
-                        .frame(minHeight: 68)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("library.openSaved")
-                    .accessibilityHint("Switches to the Saved tab")
-                }
-
-                Section {
 
                     ForEach(filteredCollections) { collection in
 
@@ -4158,6 +4127,20 @@ struct BoardListsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     EditButton().disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: onOpenSaved) {
+                        Image(systemName: "bookmark")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Saved Items")
+                    .accessibilityHint("Opens your bookmarked content and archived collections")
+                    .accessibilityIdentifier("library.openSaved")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) { createMenu }

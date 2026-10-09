@@ -558,8 +558,17 @@ private struct AppRootView: View {
         }
 
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            bottomNavigationBar
-                .ignoresSafeArea(.keyboard, edges: .bottom)
+            Color.clear
+                .frame(height: verticalSizeClass == .compact ? 52 : 74)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .overlay {
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                bottomNavigationBar
+            }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
         }
 
         .onChange(of: savedCardIDs) { _, updatedIDs in

@@ -1087,6 +1087,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
             controller.presentedViewController,
             "The Library New action must present its writing-first Note composer"
         )
+        XCTAssertTrue(
+            [UIModalPresentationStyle.fullScreen, .overFullScreen]
+                .contains(controller.presentedViewController?.modalPresentationStyle ?? .automatic),
+            "The Library-directory New action must retain the immersive full-screen composer"
+        )
     }
 
 

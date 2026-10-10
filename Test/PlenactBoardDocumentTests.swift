@@ -22,6 +22,25 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts() throws {
+        for template in MixedListTemplate.allCases {
+            let draft = template.makeCollection(existingTitles: [template.rawValue])
+            let second = template.makeCollection(existingTitles: [])
+            XCTAssertNotEqual(draft.id, second.id)
+            XCTAssertNotEqual(draft.title, template.rawValue)
+            XCTAssertEqual(draft.lists.count, 1)
+            let cards = draft.lists[0].cards
+            XCTAssertEqual(Set(cards.map(\.displayFormat)), Set(ItemDisplayFormat.allCases))
+            XCTAssertEqual(Set(cards.map(\.id)).count, cards.count)
+            XCTAssertTrue(cards.allSatisfy { $0.listTitle == draft.title && $0.startDate == nil && $0.dueDate == nil })
+            XCTAssertTrue(cards.filter { $0.displayFormat == .note }.allSatisfy { $0.presentation == .note })
+            let picture = try XCTUnwrap(cards.first { $0.displayFormat == .picture })
+            XCTAssertEqual(picture.coverAttachment?.exampleImage, template.illustration)
+            XCTAssertTrue(CardAttachmentStore.fileNames(in: draft.lists).isEmpty)
+            XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(draft)), draft)
+        }
+    }
+
     @MainActor
     func testPlanningHostedCalendarLayoutDoesNotPersistBrowsing() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

@@ -2252,7 +2252,9 @@ private struct TodayHomeView: View {
                             onOpenBoardList(focusedList.id)
                         },
                         onPermanentDelete: onDeleteCard,
-                        focusesFirstUncheckedTask: true
+                        focusesFirstUncheckedTask: true,
+                        representedDate: .now,
+                        includesDateInTitle: false
                     )
                 }
             }

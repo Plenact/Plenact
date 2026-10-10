@@ -4278,7 +4278,7 @@ struct BoardListsView: View {
 
     private var createMenu: some View { /* Directory actions for creating Lists and Boards */
         Menu {
-            Menu("Mixed list templates", systemImage: "square.stack.3d.up") {
+            Menu("Templates", systemImage: "square.stack.3d.up") {
                 ForEach(MixedListTemplate.allCases) { template in
                     Button(template.rawValue) {
                         editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
@@ -4633,7 +4633,7 @@ struct PersonalListExamplesView: View {
                 }
 
                 if let onSelectMixedTemplate {
-                    Section("Mixed list templates") {
+                    Section("Templates") {
                         ForEach(MixedListTemplate.allCases) { template in
                             DisclosureGroup(template.rawValue) {
                                 Text(template.summary).foregroundStyle(.secondary)

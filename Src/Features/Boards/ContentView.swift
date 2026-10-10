@@ -5049,7 +5049,17 @@ struct KanbanCardView: View {
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: 9) {
-            if card.displayFormat == .picture {
+            if card.displayFormat == .title || card.displayFormat == .text {
+                HStack(alignment: .top, spacing: 8) {
+                    Text(card.word)
+                        .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
+                    cardActions
+                }
+            } else if card.displayFormat == .picture {
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
             } else {
 
@@ -5158,17 +5168,19 @@ struct KanbanCardView: View {
         .fixedSize(horizontal: false, vertical: true)
         .padding(card.displayFormat == .picture ? 0 : (presentation == .overview ? 8 : 12))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: card.displayFormat == .picture ? 0 : height, alignment: .top)
+        .frame(minHeight: [.picture, .title, .text].contains(card.displayFormat) ? 0 : height, alignment: .top)
         .background {
             ZStack {
-                Color(.systemBackground)
-                if card.displayFormat != .picture, let cardBackground, cardBackground != .neutral {
+                if card.displayFormat != .title && card.displayFormat != .text {
+                    Color(.systemBackground)
+                }
+                if ![.picture, .title, .text].contains(card.displayFormat), let cardBackground, cardBackground != .neutral {
                     cardBackground.color
                 }
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
+        .shadow(color: .black.opacity(card.displayFormat == .title || card.displayFormat == .text ? 0 : 0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
         .alert("Rename \(card.displayFormat.title)", isPresented: $isRenaming) {
             

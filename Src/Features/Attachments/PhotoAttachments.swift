@@ -1004,23 +1004,119 @@ extension View {
     }
 }
 
+/// Shows the complete selected image at its natural aspect ratio, using the existing thumbnail loader.
+struct ItemPicturePreview: View {
+    let attachment: KanbanAttachment?
+    var title: String? = nil
+
+    private var accessibleDescription: String {
+        let text = [title, attachment?.caption]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+        return text.isEmpty ? "Picture" : text
+    }
+    @State private var image: UIImage?
+    @State private var unavailable = false
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(image.size.width / max(image.size.height, 1), contentMode: .fit)
+            } else {
+                Label(attachment == nil ? "Choose picture" : (unavailable ? "Picture unavailable" : "Loading picture…"), systemImage: "photo")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 120)
+                    .background(Color.secondary.opacity(0.08))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibleDescription)
+        .accessibilityValue(attachment == nil ? "Choose picture" : (unavailable ? "Picture unavailable" : ""))
+        .accessibilityAddTraits(.isImage)
+        .task(id: attachment) {
+            image = nil
+            unavailable = false
+            guard let attachment else { return }
+            let result = await Task.detached(priority: .utility) {
+                Result { try CardAttachmentStore.coverThumbnail(for: attachment) }
+            }.value
+            guard !Task.isCancelled else { return }
+            switch result {
+            case .success(let thumbnail): image = thumbnail
+            case .failure: unavailable = true
+            }
+        }
+    }
+}
+
+/// Shared row menu; changes only the canonical record's display metadata.
+struct ItemDisplayFormatMenu: View {
+    let card: KanbanCard
+    let onUpdate: (KanbanCard) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(ItemDisplayFormat.allCases) { format in
+                Button {
+                    var updated = card
+                    updated.displayFormat = format
+                    onUpdate(updated)
+                } label: {
+                    Label(format.title, systemImage: card.displayFormat == format ? "checkmark" : format.symbol)
+                }
+            }
+        } label: {
+            Label("Display as", systemImage: "rectangle.on.rectangle")
+        }
+    }
+}
+
 struct ItemAppearanceSheet: View {
     let title: String
     let onSave: (ItemAppearance?) -> Bool
     let onOpenCover: (() -> Void)?
+    let onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
+    @State private var draftDisplay: ItemDisplayFormat?
     @State private var draft: ItemAppearance
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
+    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
         self.title = title
         self.onSave = onSave
         self.onOpenCover = onOpenCover
+        self.onSaveDisplay = onSaveDisplay
+        _draftDisplay = State(initialValue: displayFormat)
         _draft = State(initialValue: appearance ?? ItemAppearance())
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if draftDisplay != nil {
+                    Section("Display as") {
+                        Picker("Format", selection: Binding(
+                            get: { draftDisplay ?? .card }, set: { draftDisplay = $0 }
+                        )) {
+                            ForEach(ItemDisplayFormat.allCases) { format in
+                                Label(format.title, systemImage: format.symbol).tag(format)
+                            }
+                        }
+                        .accessibilityIdentifier("appearance.displayFormat")
+                        Text("Changes how this item is displayed. Its writing, actions, dates, and photos are retained.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if draftDisplay == .picture {
+                            Text("Picture uses the selected Card Cover. Save this format, then choose a picture in Card Cover if needed.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 Section("Preview") {
                     HStack {
                         ItemAppearanceMark(appearance: draft)
@@ -1073,7 +1169,14 @@ struct ItemAppearanceSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if onSave(draft.isEmpty ? nil : draft) { dismiss() }
+                        let appearance = draft.isEmpty ? nil : draft
+                        let saved: Bool
+                        if let draftDisplay, let onSaveDisplay {
+                            saved = onSaveDisplay(appearance, draftDisplay)
+                        } else {
+                            saved = onSave(appearance)
+                        }
+                        if saved { dismiss() }
                     }
                     .accessibilityIdentifier("appearance.save")
                 }

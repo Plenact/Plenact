@@ -121,6 +121,22 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
 }
 
 
+/// Per-item list rendering; Card/Note creation defaults remain independent.
+enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable {
+    case card, note, divider, picture
+
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .card: "rectangle.stack"
+        case .note: "note.text"
+        case .divider: "minus"
+        case .picture: "photo"
+        }
+    }
+}
+
 /// Local starting points; choosing one never creates a stored record.
 enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
     case usefulStep, smallPlan, errands, idea, reference, reflection
@@ -233,12 +249,32 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var appearance: ItemAppearance? = nil
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
+    var listDisplayFormat: ItemDisplayFormat? = nil /* Explicit override; nil preserves legacy rendering */
     private var itemPresentation: ItemPresentation? /* Optional persisted item kind for legacy compatibility */
 
     /// Missing presentation remains a Card; the default needs no new persisted key.
     var presentation: ItemPresentation { /* Effective item kind with the legacy Card fallback */
         get { itemPresentation ?? .card }
-        set { itemPresentation = newValue == .card ? nil : newValue }
+        set {
+            itemPresentation = newValue == .card ? nil : newValue
+            if listDisplayFormat == .card || listDisplayFormat == .note {
+                listDisplayFormat = newValue == .note ? .note : .card
+            }
+        }
+    }
+
+
+    /// Explicit choices override historical dash titles without modifying retained content.
+    var displayFormat: ItemDisplayFormat {
+        get {
+            listDisplayFormat ?? ((isDivider || Self.isDividerTitle(word)) ? .divider : (presentation == .note ? .note : .card))
+        }
+        set {
+            if newValue == .card || newValue == .note {
+                presentation = newValue == .note ? .note : .card
+            }
+            listDisplayFormat = newValue
+        }
     }
 
 
@@ -271,7 +307,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             subtitleOverride:     subtitleOverride,
             presentation:         presentation,
             createdAt:            createdAt,
-            appearance:           appearance
+            appearance:           appearance,
+            listDisplayFormat:    listDisplayFormat
         )
     }
 
@@ -416,13 +453,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     ///
     /// @fcn        KanbanCard.isSectionDivider
     /// @brief      Determine whether this card represents a section divider
-    /// @details    Combines the explicit divider flag with recognition of the displayed marker
+    /// @details    Explicit display format overrides the legacy divider flag and dash title
     ///
     /// @return     (Bool) whether the card should render and behave as a divider
     /// @post       Card state remains unchanged
     ///
-    var isSectionDivider: Bool { /* Combined divider flag and recognized marker */
-        isDivider || Self.isDividerTitle(word)
+    var isSectionDivider: Bool { /* Effective separator display, including legacy records */
+        displayFormat == .divider
     }
 
 
@@ -482,7 +519,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -500,8 +537,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.dismissedActivityIDs = dismissedActivityIDs    /* Set of activity IDs that were dismissed by user    */
         self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
         self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
-        self.itemPresentation     = presentation == .card ? nil : presentation
+        let retainedPresentation = listDisplayFormat == .note ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
+        self.itemPresentation     = retainedPresentation == .card ? nil : retainedPresentation
         self.appearance           = appearance?.isEmpty == true ? nil : appearance
+        self.listDisplayFormat    = listDisplayFormat
         self.checklists           = checklists ?? [
             KanbanChecklist(title: "Focus",   items: ["Gather the important bits",   "Make it look intentional", "Celebrate the surprisingly good result"], completed: id % 4),
             KanbanChecklist(title: "Plan",    items: ["Choose the next useful step", "Stop building",            "Start producing"],                        completed: 1),
@@ -556,7 +595,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride),
             presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card,
             createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt),
-            appearance:           try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance)
+            appearance:           try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance),
+            listDisplayFormat:    try container.decodeIfPresent(ItemDisplayFormat.self, forKey: .listDisplayFormat)
         )
     }
 
@@ -586,6 +626,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case descriptionOverride
         case subtitleOverride
         case itemPresentation
+        case listDisplayFormat
         case appearance
     }
 
@@ -3379,6 +3420,21 @@ enum SampleData {
                     card.attachments = (card.attachments ?? []) + gallery.map { image, caption in
                         KanbanAttachment(mediaKind: .photo, exampleImage: image, caption: caption)
                     }
+                }
+
+                // A few local Picture rows demonstrate mixed Lists without replacing activity content.
+                let picture: ExampleCoverImage?
+                switch (listIndex, cardTitle) {
+                case (1, "Capture a new idea"): picture = .writingNotes
+                case (2, "Take a walk"): picture = .forestPath
+                case (6, "Capture notes and ideas"): picture = .flowerBouquet
+                default: picture = nil
+                }
+                if let picture {
+                    let photo = KanbanAttachment(mediaKind: .photo, exampleImage: picture)
+                    card.attachments = (card.attachments ?? []) + [photo]
+                    card.coverAttachmentID = photo.id
+                    card.displayFormat = .picture
                 }
 
                 globalIndex += 1

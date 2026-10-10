@@ -70,3 +70,7 @@ Do not present private-container storage as guaranteed secure sharing or backup.
 - Legacy broad orphan-pruning paths still ignore cleanup errors; confirmed deletion uses candidate-only cleanup and reports failures.
 
 Developers changing attachment Codable fields or paths must preserve existing metadata and file references.
+
+### Picture display
+
+**Appearance → Display as → Picture → Save** displays the existing selected Card Cover as the item’s image in Board/focused Today rows. Picture rows show the full image at its natural proportions using the same background thumbnail decoder. A missing selection shows **Choose picture**; missing image bytes show **Picture unavailable**. The image fills the rounded List row with no internal padding, visible title/footer, or ellipsis. The stored title and caption identify it to VoiceOver, and tapping opens the same record for editing. In detail, tap the picture/placeholder to open Appearance and Card Cover. Switching formats retains all photo identities, captions, filenames, cover selection, and other content. Save a Divider’s new Picture format before choosing a cover. Cover selection remains immediate and separate from the cancelable format/icon/background draft.

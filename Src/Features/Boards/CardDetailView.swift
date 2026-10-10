@@ -297,6 +297,7 @@ struct CardDetailView: View {
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
     @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
     @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
+    @State private var displayFormat: ItemDisplayFormat
     @State private var presentation: ItemPresentation /* Current Card or Note rendering mode */
     @State private var showsNoteDetails = false /* Visibility of supplementary Note fields */
     @State private var hasEditedDescription = false /* Whether the body draft should replace the stored value */
@@ -390,7 +391,8 @@ struct CardDetailView: View {
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
         _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
-        _presentation         = State(initialValue: card.presentation)
+        _presentation         = State(initialValue: card.displayFormat == .note ? .note : .card)
+        _displayFormat        = State(initialValue: card.displayFormat)
         _recordID = State(initialValue: card.id)
         _currentListTitle = State(initialValue: card.listTitle)
         _currentPersonalCollectionID = State(initialValue: personalCollectionID)
@@ -1048,7 +1050,12 @@ struct CardDetailView: View {
         updated.comments = comments
         updated.dismissedActivityIDs = dismissedActivityIDs
         updated.descriptionOverride = hasEditedDescription ? descriptionText : card.descriptionOverride
-        updated.presentation = presentation
+        if displayFormat == .card || displayFormat == .note {
+            updated.presentation = presentation
+        }
+        if displayFormat != card.displayFormat || card.listDisplayFormat != nil {
+            updated.displayFormat = displayFormat
+        }
         return updated
     }
 
@@ -1378,7 +1385,7 @@ struct CardDetailView: View {
                 .accessibilityLabel("Move Note from \(currentListTitle)")
         } else {
             moveCardMenu { noteLocationLabel }
-                .accessibilityLabel("Move \(presentation.title.lowercased()) from \(currentListTitle)")
+                .accessibilityLabel("Move \(displayFormat.title.lowercased()) from \(currentListTitle)")
         }
     }
 
@@ -1976,25 +1983,36 @@ struct CardDetailView: View {
 
 
     ///
-    /// @fcn        CardDetailView.changePresentation(to:)
-    /// @brief      Switch interfaces while preserving the working record and unsaved text
-    /// @details    Only changes presentation; generated Card copy is not inserted into a Note body
-    /// @param[in]  next  Requested interface
-    /// @return     (Void) synchronizes the same item without moving or duplicating it
+    /// @fcn        CardDetailView.saveDisplayAppearance(_:format:)
+    /// @brief      Save display and decoration together while retaining the complete record
+    /// @details    Rejected updates restore the local draft and keep Appearance open
+    /// @return     (Bool) whether the canonical update accepted the snapshot
     ///
-    private func changePresentation(to next: ItemPresentation) {
-
+    private func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool {
+        let previousAppearance = appearance
+        let previousFormat = displayFormat
+        let previousPresentation = presentation
+        let previousDescription = descriptionText
+        let previousDetails = showsNoteDetails
         focusedField = nil
-        presentation = next
+        appearance = updated
+        displayFormat = format
+        presentation = format == .note ? .note : .card
         showsNoteDetails = false
-
         if !hasEditedDescription {
-
-            descriptionText = next == .note ? (card.descriptionOverride ?? "") : card.funParagraph
+            descriptionText = presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph
         }
-
-        syncCardState()
+        guard syncCardState() else {
+            appearance = previousAppearance
+            displayFormat = previousFormat
+            presentation = previousPresentation
+            descriptionText = previousDescription
+            showsNoteDetails = previousDetails
+            return false
+        }
+        return true
     }
+
 
     ///
     /// @fcn        CardDetailView.descriptionEditingBinding
@@ -2124,7 +2142,7 @@ struct CardDetailView: View {
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
         }
-        .accessibilityLabel("Add to \(presentation.title.lowercased())")
+        .accessibilityLabel("Add to \(displayFormat.title.lowercased())")
         .accessibilityIdentifier("note.addMenu")
     }
 
@@ -2248,11 +2266,11 @@ struct CardDetailView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            if card.isSectionDivider {
+            if displayFormat == .divider {
 
                 VStack(alignment: .leading) {
 
-                    Text("---")
+                    Text(titleText)
                         .font(.title2.weight(.bold))
 
                     Spacer(minLength: 0)
@@ -2267,6 +2285,19 @@ struct CardDetailView: View {
 
                 VStack(alignment: .leading, spacing: 0) {
 
+                    if displayFormat == .picture {
+                        Button {
+                            focusedField = nil
+                            activeSheet = .appearance
+                            showsAppearanceCover = true
+                        } label: {
+                            ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(workingCardSnapshot.coverAttachment == nil ? "Choose picture" : "Change picture")
+                        .disabled(onTitleToggle == nil)
+                        .padding(16)
+                    }
                     if presentation == .note {
 
                         noteEditor
@@ -2358,7 +2389,7 @@ struct CardDetailView: View {
                         }
                     }
 
-                    if presentation == .card, let cover = workingCardSnapshot.coverAttachment {
+                    if presentation == .card, displayFormat != .picture, let cover = workingCardSnapshot.coverAttachment {
                         selectedCoverPreview(cover)
                             .padding(16)
                             .accessibilityIdentifier("card.selectedCoverPreview")
@@ -2625,7 +2656,7 @@ struct CardDetailView: View {
 
             HStack(spacing: 12) {
 
-                if presentation != .note || card.isSectionDivider {
+                if presentation != .note || displayFormat == .divider {
                     Button {
                         dismiss()
 
@@ -2644,24 +2675,26 @@ struct CardDetailView: View {
 
                 Spacer()
 
-                if !card.isSectionDivider {
+                Group {
 
-                    Button(action: toggleSavedCard) {
-                        Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
-                            .font(.title2)
-                            .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
+                    if displayFormat != .divider {
+                        Button(action: toggleSavedCard) {
+                            Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
+                                .font(.title2)
+                                .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isCurrentRecordSaved ? "Remove from Saved" : "Save \(displayFormat.title.lowercased())")
+
+                        if presentation == .card {
+                            addMenu(using: scrollProxy)
+                                .foregroundStyle(.primary)
+                        }
+
                     }
-
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(isCurrentRecordSaved ? "Remove from Saved" : "Save \(presentation.title.lowercased())")
-
-                    if presentation == .card {
-                        addMenu(using: scrollProxy)
-                            .foregroundStyle(.primary)
-                    }
-
                     Menu {
                         Button("Appearance", systemImage: "paintpalette") {
                             focusedField = nil
@@ -2669,30 +2702,25 @@ struct CardDetailView: View {
                         }
                         .disabled(onTitleToggle == nil)
 
-                        Button(
-                            presentation == .note ? "Make into Card" : "Make into Note",
-                            systemImage: presentation == .note ? "rectangle.stack" : "note.text"
-                        ) {
-                            changePresentation(to: presentation == .note ? .card : .note)
-                        }
-                        .disabled(onTitleToggle == nil)
+                        if displayFormat != .divider {
+                            Button {
+                                focusedField = .description
+                            } label: {
+                                Label("Edit description", systemImage: "text.alignleft")
+                            }
+                            moveCardMenu {
+                                Label("Move \(displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
+                            }
+                            Button {
+                                showsNoteDetails = true
+                                activityFilter = .all
+                            } label: {
+                                Label("Show all activity", systemImage: "clock.arrow.circlepath")
+                            }
 
-                        Button {
-                            focusedField = .description
-                        } label: {
-                            Label("Edit description", systemImage: "text.alignleft")
-                        }
-                        moveCardMenu {
-                            Label("Move \(presentation.title.lowercased())", systemImage: "arrowshape.turn.up.right")
-                        }
-                        Button {
-                            showsNoteDetails = true
-                            activityFilter = .all
-                        } label: {
-                            Label("Show all activity", systemImage: "clock.arrow.circlepath")
                         }
 
-                        if let onArchive, !card.isSectionDivider { /* Available archive callback for an actionable record */
+                        if let onArchive, displayFormat != .divider { /* Available archive callback for an actionable record */
 
                             Button {
                                 syncCardState()
@@ -2707,16 +2735,16 @@ struct CardDetailView: View {
                                     dismiss()
                                 }
                             } label: {
-                                Label("Archive \(presentation.title)", systemImage: "archivebox")
+                                Label("Archive \(displayFormat.title)", systemImage: "archivebox")
                             }
                         }
 
-                        if onDelete != nil, !card.isSectionDivider {
+                        if onDelete != nil {
 
                             Button(role: .destructive) {
                                 showingDeleteConfirmation = true
                             } label: {
-                                Label("Delete \(presentation.title)", systemImage: "trash")
+                                Label("Delete \(displayFormat.title)", systemImage: "trash")
                             }
                         }
                     } label: {
@@ -2727,17 +2755,9 @@ struct CardDetailView: View {
                             .contentShape(Rectangle())
                     }
 
-                    .accessibilityLabel("\(presentation.title) actions")
+                    .accessibilityLabel("\(displayFormat.title) actions")
                 }
 
-                if card.isSectionDivider, onDelete != nil {
-
-                    Button("Delete Divider", systemImage: "trash", role: .destructive) {
-                        showingDeleteConfirmation = true
-                    }
-
-                    .frame(minWidth: 44, minHeight: 44)
-                }
             }
 
             .padding(.horizontal, 16)
@@ -2747,7 +2767,7 @@ struct CardDetailView: View {
         }
 
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if presentation == .note && !card.isSectionDivider {
+            if presentation == .note && displayFormat != .divider {
                 noteToolbar(using: scrollProxy)
             }
         }
@@ -2778,11 +2798,11 @@ struct CardDetailView: View {
             Text(attachmentNoticeMessage)
         }
 
-        .alert("Permanently delete this \(presentation.title.lowercased())?", isPresented: $showingDeleteConfirmation) {
-            Button("Delete \(presentation.title)", role: .destructive, action: deleteCard)
+        .alert("Permanently delete this \(displayFormat.title.lowercased())?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete \(displayFormat.title)", role: .destructive, action: deleteCard)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This permanently deletes this \(presentation.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
+            Text("This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
         }
 
         .sheet(item: $activeSheet) { sheet in
@@ -2855,15 +2875,11 @@ struct CardDetailView: View {
                     ItemAppearanceSheet(
                         title: titleText,
                         appearance: appearance,
-                        onOpenCover: { showsAppearanceCover = true }
+                        onOpenCover: displayFormat == .divider ? nil : { showsAppearanceCover = true },
+                        displayFormat: displayFormat,
+                        onSaveDisplay: saveDisplayAppearance
                     ) { updated in
-                        let previous = appearance
-                        appearance = updated
-                        guard syncCardState() else {
-                            appearance = previous
-                            return false
-                        }
-                        return true
+                        saveDisplayAppearance(updated, format: displayFormat)
                     }
                     .sheet(isPresented: $showsAppearanceCover) {
                         NavigationStack {

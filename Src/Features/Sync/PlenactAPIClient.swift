@@ -682,6 +682,8 @@ struct PlenactAPIClient {
                 // Covers and bundled illustrations belong to the local example, not the demo schema.
                 sampleLists[listIndex].cards[cardIndex].coverAttachmentID = nil
                 sampleLists[listIndex].cards[cardIndex].attachments = nil
+                // Picture display depends on local artwork, which is excluded from the demo seed.
+                sampleLists[listIndex].cards[cardIndex].listDisplayFormat = nil
 
                 sampleLists[listIndex].cards[cardIndex].members = card.members.map { assignee /* Existing seed assignment */ in
 

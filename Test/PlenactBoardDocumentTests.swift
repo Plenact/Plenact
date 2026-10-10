@@ -198,6 +198,150 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(CardAttachmentStore.fileNames(in: [decoded]), ["appearance-example.jpg"])
     }
 
+    func testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent() throws {
+        let legacy = KanbanCard(id: 71, word: "---", listTitle: "Ideas", isDivider: true)
+        XCTAssertEqual(legacy.displayFormat, .divider)
+        let legacyJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        XCTAssertNil(legacyJSON["listDisplayFormat"])
+        XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(legacy)).displayFormat, .divider)
+        let photo = KanbanAttachment(fileName: "display-example.jpg", caption: "Retained caption")
+        var original = legacy
+        original.attachments = [photo]
+        original.coverAttachmentID = photo.id
+        original.descriptionOverride = "Retained writing"
+        original.comments = [KanbanComment(author: "Example", body: "Retained comment")]
+        original.members = [.manual("Example")]
+        original.labelIDs = ["example"]
+        original.isTitleChecked = true
+        original.startDate = Date(timeIntervalSince1970: 1200)
+        original.dueDate = Date(timeIntervalSince1970: 2400)
+        original.appearance = ItemAppearance(icon: .heart, background: .rose)
+        for format in ItemDisplayFormat.allCases {
+            var changed = original
+            changed.displayFormat = format
+            let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(changed))
+            XCTAssertEqual(decoded, changed)
+            XCTAssertEqual(decoded.displayFormat, format)
+            XCTAssertEqual(decoded.isSectionDivider, format == .divider)
+            XCTAssertEqual(decoded.coverAttachment?.id, format == .divider ? nil : photo.id)
+            var restored = decoded
+            restored.listDisplayFormat = original.listDisplayFormat
+            restored.presentation = original.presentation
+            XCTAssertEqual(restored, original, "Changing display must retain every content field")
+            let relocated = decoded.replacingLocation(id: 72, listTitle: "Next")
+            XCTAssertEqual(relocated.displayFormat, format)
+            XCTAssertEqual(relocated.attachments, original.attachments)
+            XCTAssertEqual(relocated.checklists, original.checklists)
+        }
+        let explicitNote = KanbanCard(id: 75, word: "---", listTitle: "Ideas", listDisplayFormat: .note)
+        XCTAssertEqual(explicitNote.presentation, .note)
+        XCTAssertFalse(explicitNote.isSectionDivider)
+        let explicitCard = KanbanCard(id: 76, word: "---", listTitle: "Ideas", presentation: .note, listDisplayFormat: .card)
+        XCTAssertEqual(explicitCard.presentation, .card)
+        XCTAssertFalse(explicitCard.isSectionDivider)
+        let invalid = Data(#"{"id":1,"word":"Example","listTitle":"Ideas","listDisplayFormat":"unsupported"}"#.utf8)
+        XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalid))
+    }
+
+    @MainActor
+    func testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults() async throws {
+        let suite = "PlenactTests.DisplayFormats.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let photo = KanbanAttachment(fileName: "mixed-display-example.jpg")
+        let cards = ItemDisplayFormat.allCases.enumerated().map { index, format in
+            var card = KanbanCard(id: index + 1, word: "Example \(format.title)", listTitle: "Ideas",
+                                  attachments: [photo], coverAttachmentID: photo.id, descriptionOverride: "Retained body")
+            card.displayFormat = format
+            return card
+        }
+        var lists = [KanbanList(id: 1, title: "Ideas", cards: cards), KanbanList(id: 2, title: "Next", cards: [])]
+        XCTAssertTrue(editBoardList(1, title: "Ideas", subtitle: "", newItemPresentation: .note, in: &lists))
+        XCTAssertEqual(lists[0].cards, cards)
+        XCTAssertEqual(lists[0].makeItem(id: 10, title: "New writing").displayFormat, .note)
+        let picture = try XCTUnwrap(cards.first { $0.displayFormat == .picture })
+        try BoardCardMovement.move(picture.id, to: 2, before: nil, in: &lists)
+        XCTAssertEqual(lists[1].cards.first?.displayFormat, .picture)
+        lists[1].archiveCard(id: picture.id)
+        var collection = PersonalCollection(title: "Ideas", kind: .list)
+        collection.lists = lists
+        collection.rename(to: "Plans")
+        collection.lists[0].newItemPresentation = .card
+        try PersonalCollectionStore.saveChecked([collection], to: defaults)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [collection])
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults)[0].lists[0].newItemPresentation, .card)
+        try KanbanBoardPersistence.saveListsChecked(collection.lists, suiteName: suite)
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, collection.lists)
+        var archivedList = try XCTUnwrap(restored.last)
+        archivedList.restoreArchivedCard(id: picture.id)
+        XCTAssertEqual(archivedList.cards.first?.displayFormat, .picture)
+        XCTAssertEqual(archivedList.cards.first?.attachments, [photo])
+        XCTAssertEqual(CardAttachmentStore.fileNames(in: collection.lists), ["mixed-display-example.jpg"])
+    }
+
+    @MainActor
+    func testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        for textSize in [DynamicTypeSize.large, .accessibility3] {
+            for format in ItemDisplayFormat.allCases {
+                var item = KanbanCard(id: 73, word: "A long example title for a mixed List", listTitle: "Ideas", descriptionOverride: "Retained writing")
+                item.displayFormat = format
+                let original = item
+                let sheet = ItemAppearanceSheet(title: item.word, appearance: nil, displayFormat: format,
+                    onSaveDisplay: { _, _ in XCTFail("Layout must not save display"); return false }
+                ) { _ in XCTFail("Layout must not save decoration"); return false }
+                let controller = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, textSize))
+                window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+                controller.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(150))
+                let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "Display-\(format.rawValue)-\(textSize)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                let detail = UIHostingController(rootView: NavigationStack {
+                    CardDetailView(card: item, onTitleToggle: { _ in XCTFail("Layout must not edit this item") })
+                        .environment(\.dynamicTypeSize, textSize)
+                })
+                window.rootViewController = detail
+                detail.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(150))
+                XCTAssertEqual(item, original)
+            }
+        }
+        for cover in [nil, ExampleCoverImage.garden] {
+            let photo = cover.map { KanbanAttachment(mediaKind: .photo, exampleImage: $0) }
+            var picture = KanbanCard(id: 74, word: "Example picture", listTitle: "Ideas", attachments: photo.map { [$0] }, coverAttachmentID: photo?.id)
+            picture.displayFormat = .picture
+            let row = KanbanCardView(card: picture, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
+                onUpdateCard: { _ in XCTFail("Layout must not edit picture") }, onDeleteCard: { XCTFail("Layout must not delete") },
+                onArchiveCard: { XCTFail("Layout must not archive") }, onToggle: { XCTFail("Layout must not complete") })
+            let host = UIHostingController(rootView: row)
+            window.rootViewController = host
+            host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = cover == nil ? "Picture-placeholder" : "Picture-natural-aspect"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
     @MainActor
     func testAppearanceSheetAndDecoratedNoteLayoutDoNotModifyRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -284,6 +428,77 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testStarterAndExampleWeekPictureRowsUseExplicitBundledCoversAndRetainActivities() throws {
+        let lists = SampleData.lists
+        let pictures = lists.flatMap(\.cards).filter { $0.displayFormat == .picture }
+        XCTAssertEqual(pictures.map(\.word), ["Capture a new idea", "Take a walk", "Capture notes and ideas"])
+        XCTAssertEqual(pictures.map(\.listTitle), ["Tuesday", "Wednesday", "Sunday"])
+        XCTAssertEqual(pictures.compactMap { $0.coverAttachment?.exampleImage }, [.writingNotes, .forestPath, .flowerBouquet])
+        XCTAssertEqual(Set(lists.flatMap(\.cards).map(\.id)).count, lists.flatMap(\.cards).count)
+        for picture in pictures {
+            XCTAssertFalse(picture.isSectionDivider)
+            XCTAssertEqual(picture.attachments?.count, 1)
+            XCTAssertTrue(picture.galleryPhotos.isEmpty)
+            XCTAssertFalse(picture.checklists.isEmpty)
+            XCTAssertFalse(picture.subtitle.isEmpty)
+            XCTAssertNoThrow(try CardAttachmentStore.coverThumbnail(for: XCTUnwrap(picture.coverAttachment)))
+            var card = picture
+            card.displayFormat = .card
+            XCTAssertEqual(card.attachments, picture.attachments)
+            XCTAssertEqual(card.checklists, picture.checklists)
+            XCTAssertEqual(card.word, picture.word)
+        }
+        XCTAssertTrue(CardAttachmentStore.fileNames(in: lists).isEmpty)
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists)), lists)
+    }
+
+    @MainActor
+    func testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .flowerBouquet, caption: "Flowers in the garden")
+        let thumbnail = try CardAttachmentStore.coverThumbnail(for: photo)
+        let ratio = thumbnail.size.width / thumbnail.size.height
+        for density in BoardPresentation.allCases {
+            for title in ["", "A long retained title that must not add a footer to this Picture row"] {
+                var card = KanbanCard(id: 81, word: title, listTitle: "Ideas", attachments: [photo], coverAttachmentID: photo.id)
+                card.displayFormat = .picture
+                let original = card
+                let row = KanbanCardView(card: card, height: density.minimumCardHeight, displaySettings: BoardDisplaySettings(),
+                    presentation: density, labelLibrary: .starter, onUpdateCard: { _ in XCTFail("Layout must not edit") },
+                    onDeleteCard: { XCTFail("Layout must not delete") }, onArchiveCard: { XCTFail("Layout must not archive") },
+                    onToggle: { XCTFail("Layout must not complete") })
+                    .environment(\.dynamicTypeSize, .accessibility3)
+                let host = UIHostingController(rootView: row)
+                host.safeAreaRegions = [] // Measure the row itself, without window safe-area insets.
+                window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                host.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(300))
+                for width: CGFloat in [320, 430] {
+                    let size = host.sizeThatFits(in: CGSize(width: width, height: 10_000))
+                    XCTAssertEqual(size.width, width, accuracy: 1)
+                    XCTAssertEqual(size.height, (width - 8) / ratio, accuracy: 1, "Only the image and existing outer row margins should determine Picture size")
+                }
+                let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "Picture-full-row-\(density.rawValue)-\(title.isEmpty ? "blank" : "retained-title")"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                XCTAssertEqual(card, original)
+            }
+        }
+    }
+
     func testExampleWeekGalleriesUseBundledPhotosAndPreserveCoverAndContent() throws {
         let lists = SampleData.lists
         let cards = lists.flatMap(\.cards)
@@ -300,7 +515,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(galleryCards.flatMap(\.galleryPhotos).compactMap(\.caption).count, 8)
         XCTAssertNil(galleryCards.last?.galleryPhotos.last?.caption)
         XCTAssertEqual(galleryCards.first?.coverAttachment?.exampleImage, .garden)
-        XCTAssertEqual(cards.compactMap(\.coverAttachment).count, 3)
+        XCTAssertEqual(cards.compactMap(\.coverAttachment).count, 6)
         XCTAssertTrue(CardAttachmentStore.fileNames(in: lists).isEmpty)
         let photos = cards.flatMap { $0.attachments ?? [] }
         XCTAssertEqual(Set(photos.map(\.id)).count, photos.count)
@@ -1956,7 +2171,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
 
         XCTAssertThrowsError(try CardAttachmentStore.coverThumbnail(for: KanbanAttachment(fileName: "missing-\(UUID()).jpg")))
-        XCTAssertEqual(SampleData.lists.flatMap(\.allCards).compactMap(\.coverAttachment).count, 3)
+        XCTAssertEqual(SampleData.lists.flatMap(\.allCards).compactMap(\.coverAttachment).count, 6)
 
         let drafts = PersonalListExample.allCases.map { $0.makeCollection(existingTitles: []) } /* Uncommitted Note drafts */
 
@@ -5399,7 +5614,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.labelLibrary,       .starter)
         XCTAssertTrue(document.lists.flatMap(\.allCards).allSatisfy {
 
-            $0.coverAttachmentID == nil && $0.attachments == nil
+            $0.coverAttachmentID == nil && $0.attachments == nil && $0.listDisplayFormat == nil
         })
 
         XCTAssertEqual(seededAssignments.count, SampleData.lists.flatMap(\.cards).flatMap(\.members).count)

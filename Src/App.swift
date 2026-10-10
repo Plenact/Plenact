@@ -551,7 +551,7 @@ private struct AppRootView: View {
                 boardRootRequest:  weekRootRequest,
                 savedCardIDs:      $savedCardIDs,
                 onListViewed:      rememberLastViewedList,
-                boardSubtitle: "This week · " + (calendarDocument?.weeks.first { $0.startKey == calendarDocument?.currentWeekKey }?.rangeTitle ?? ""),
+                boardSubtitle: "This Week • " + (calendarDocument?.weeks.first { $0.startKey == calendarDocument?.currentWeekKey }?.compactRangeTitle ?? ""),
                 onArchiveBoard:    archiveWeekBoard,
                 onDeleteBoard:     deleteWeekContents,
                 deleteBoardTitle:  "Delete Week contents",

@@ -39,6 +39,23 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable {
         guard let first = days.first, let last = days.last else { return startKey }
         return "\(first.formatted(.dateTime.month(.abbreviated).day())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
     }
+    var compactRangeTitle: String {
+        let days = PlanningDate.days(in: startKey)
+        guard let first = days.first, let last = days.last else { return startKey }
+        let calendar = Calendar.current
+        let firstYear = calendar.component(.year, from: first)
+        let lastYear = calendar.component(.year, from: last)
+        let firstLabel = first.formatted(.dateTime.month(.abbreviated).day())
+        let lastLabel = last.formatted(.dateTime.month(.abbreviated).day())
+        let yearSuffix = String(format: "%02d", lastYear % 100)
+        if firstYear != lastYear {
+            return "\(firstLabel) '\(String(format: "%02d", firstYear % 100))-\(lastLabel) '\(yearSuffix)"
+        }
+        if calendar.component(.month, from: first) == calendar.component(.month, from: last) {
+            return "\(firstLabel)-\(calendar.component(.day, from: last)) '\(yearSuffix)"
+        }
+        return "\(firstLabel)-\(lastLabel) '\(yearSuffix)"
+    }
     func list(on date: Date) -> KanbanList? {
         guard let id = dayListIDs[PlanningDate.key(date)] else { return nil }
         return collection.lists.first { $0.id == id && !$0.isArchived }
@@ -403,7 +420,7 @@ private struct PlanningCalendarWeekView: View {
             lists: $week.collection.lists.activeLists, archivedLists: $week.collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID,
             savedCardIDs: $week.collection.savedCardIDs,
-            boardTitle: isCurrent ? "This week" : "Week", boardSubtitle: week.rangeTitle,
+            boardTitle: isCurrent ? "This Week" : "Week", boardSubtitle: week.compactRangeTitle,
             allowsAddingLists: false, onClose: { dismiss() },
             onCommitDeletion: { lists, saved in
                 var next = week; next.collection.lists = lists; next.collection.savedCardIDs = saved

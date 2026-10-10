@@ -1071,8 +1071,8 @@ struct ContentView: View {
     let boardTitle: String /* Primary heading displayed above the Board */
     /// Supporting text displayed beneath the board title.
     let boardSubtitle: String /* Supporting text displayed beneath the Board heading */
-    /// Whether the board header offers the Add list action.
-    let allowsAddingLists: Bool /* Whether the header offers list creation */
+    /// Whether the board offers list creation.
+    let allowsAddingLists: Bool /* Whether the board offers list creation */
     /// Lets a single-list personal collection fill the Standard viewport without changing Overview.
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
     /// Optional action that returns to the parent collection view.
@@ -1538,6 +1538,8 @@ struct ContentView: View {
         }
 
         lists.append(KanbanList(id: nextListID, title: newTitle, cards: []))
+        visibleListID = nextListID
+        boardTargetListID = nextListID
     }
 
 
@@ -2517,6 +2519,21 @@ struct ContentView: View {
                                         .id(list.id)
                                         .zIndex(draggedListID == list.id ? 1 : 0)
                                     }
+
+                                    if allowsAddingLists || lists.isEmpty {
+                                        Button(action: addList) {
+                                            Label("Add list", systemImage: "plus")
+                                                .font(.headline)
+                                                .foregroundStyle(.white)
+                                                .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                                                .padding(.horizontal, 20)
+                                                .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+                                        }
+                                        .buttonStyle(.plain)
+                                        .frame(width: columnWidth)
+                                        .accessibilityIdentifier("board.addList")
+                                        .id(Int.min)
+                                    }
                                 }
 
                                 .frame(maxHeight: .infinity, alignment: .top)
@@ -2874,7 +2891,7 @@ struct BoardHeader: View {
     /// Supporting board description shown in the header.
     let subtitle: String /* Supporting Board header text */
     /// Whether to expose list creation in the header.
-    let allowsAddingLists: Bool /* Whether list creation is offered in the header */
+    let allowsAddingLists: Bool /* Whether list creation is offered on the board */
     /// Optional action returning to the owning collection.
     let onClose: (() -> Void)? /* Optional return action to the collection directory */
     /// Opens the archived-list browser.
@@ -2989,22 +3006,11 @@ struct BoardHeader: View {
             .buttonStyle(.plain)
             .accessibilityLabel(calendarAccessibilityTitle)
 
-            if allowsAddingLists {
             Menu {
-                
-                Button("Add blank list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
-                
-            } label: {
-                
-                Image(systemName: "plus.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-            }
+                if allowsAddingLists {
+                    Button("Add list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
+                }
 
-            .accessibilityLabel("Add list")
-            }
-
-            Menu {
                 Picker("Board presentation", selection: $presentation) {
                     ForEach(BoardPresentation.allCases) { option in
                         Text(option.title).tag(option)

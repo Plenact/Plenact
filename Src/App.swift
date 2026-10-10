@@ -414,6 +414,8 @@ private struct AppRootView: View {
 
     @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
     @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
+    @State private var calendarDocument: PlanningCalendarDocument?
+    @Environment(\.scenePhase) private var scenePhase
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
     @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
@@ -453,13 +455,42 @@ private struct AppRootView: View {
         }
 
         .databaseActivityOverlay()
+        .onChange(of: scenePhase) { _, phase in if phase == .active { advancePlanningWeekIfNeeded() } }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            advancePlanningWeekIfNeeded()
+        }
         .task {
             guard !hasLoadedBoard else {
 
                 return
             }
 
-            lists = await KanbanBoardPersistence.loadListsInBackground()
+            let legacy = await KanbanBoardPersistence.loadListsInBackground()
+            do {
+                if var document = try PlanningCalendarStore.load() {
+                    let previous = document.weeks.first { $0.startKey == document.currentWeekKey }!
+                    let current = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs)
+                    try PlanningCalendarStore.save(document)
+                    lists = current.collection.lists
+                    savedCardIDs = current.collection.savedCardIDs
+                    calendarDocument = document
+                    try KanbanBoardPersistence.saveListsChecked(lists)
+                } else {
+                    if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
+                        _ = try JSONDecoder().decode([KanbanList].self, from: data)
+                    }
+                    let current = DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs)
+                    let document = PlanningCalendarDocument(currentWeekKey: current.startKey, weeks: [current])
+                    try PlanningCalendarStore.save(document)
+                    calendarDocument = document
+                    lists = current.collection.lists
+                    try KanbanBoardPersistence.saveListsChecked(lists)
+                }
+            } catch {
+                lists = legacy
+                DatabaseActivity.shared.report("Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained.")
+            }
+            SavedCardPersistence.save(savedCardIDs)
             hasLoadedBoard = true
         }
     }
@@ -520,6 +551,7 @@ private struct AppRootView: View {
                 boardRootRequest:  weekRootRequest,
                 savedCardIDs:      $savedCardIDs,
                 onListViewed:      rememberLastViewedList,
+                boardSubtitle: "This week · " + (calendarDocument?.weeks.first { $0.startKey == calendarDocument?.currentWeekKey }?.rangeTitle ?? ""),
                 onArchiveBoard:    archiveWeekBoard,
                 onDeleteBoard:     deleteWeekContents,
                 deleteBoardTitle:  "Delete Week contents",
@@ -572,9 +604,11 @@ private struct AppRootView: View {
         }
 
         .environment(\.cardMovementAccess, cardMovementAccess)
+        .environment(\.planningCalendarAccess, planningCalendarAccess)
 
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
+            persistCurrentPlanningWeek()
         }
 
         .onChange(of: lists) { old, updated in
@@ -585,6 +619,7 @@ private struct AppRootView: View {
 
             let candidates = CardAttachmentStore.fileNames(in: old).subtracting(CardAttachmentStore.fileNames(in: updated)) /* Media removed by the collection update */
 
+            persistCurrentPlanningWeek()
             KanbanBoardPersistence.enqueueSave(updated, onSuccess: { cleanDeletedMedia(candidates) })
         }
 
@@ -612,9 +647,82 @@ private struct AppRootView: View {
     }
 
 
+    private var planningCalendarAccess: PlanningCalendarAccess? {
+        guard let document = calendarDocument else { return nil }
+        return PlanningCalendarAccess(document: document, library: collections, saveWeek: savePlanningWeek,
+            openCurrentWeek: {
+                selectedDestination = .board
+                weekRootRequest += 1
+                boardTargetListID = nil; boardTargetCardID = nil
+            }, openToday: { selectedDestination = .today },
+            openLibraryCard: { target in savedPersonalCardTarget = target; selectedDestination = .lists },
+            saveLibrary: { collection in
+                guard let index = collections.firstIndex(where: { $0.id == collection.id }) else { return false }
+                var snapshot = collections; snapshot[index] = collection
+                do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
+                catch { DatabaseActivity.shared.report("Could not save this Library collection: \(error.localizedDescription)"); return false }
+            })
+    }
+
+    private func persistCurrentPlanningWeek() {
+        guard hasLoadedBoard, var document = calendarDocument,
+              var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { return }
+        current.collection.lists = lists
+        current.collection.savedCardIDs = savedCardIDs
+        // If a weekday was archived/deleted, its replacement receives the date association.
+        for date in PlanningDate.days(in: current.startKey) where current.list(on: date) == nil {
+            if let replacement = TodayListSelection.currentDayList(in: lists, date: date) {
+                current.dayListIDs[PlanningDate.key(date)] = replacement.id
+            }
+        }
+        document.upsert(current)
+        guard document != calendarDocument else { return }
+        do { try PlanningCalendarStore.save(document); calendarDocument = document }
+        catch { DatabaseActivity.shared.report("Could not save calendar weeks: \(error.localizedDescription)") }
+    }
+
+    private func advancePlanningWeekIfNeeded() {
+        guard hasLoadedBoard, var document = calendarDocument,
+              document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar) else { return }
+        let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs)
+        do {
+            try PlanningCalendarStore.save(document)
+            try KanbanBoardPersistence.saveListsChecked(next.collection.lists)
+            calendarDocument = document
+            lists = next.collection.lists; savedCardIDs = next.collection.savedCardIDs
+            boardTargetListID = nil; boardTargetCardID = nil
+            weekRootRequest += 1
+        } catch { DatabaseActivity.shared.report("Could not advance this week: \(error.localizedDescription)") }
+    }
+
+    private func savePlanningWeek(_ week: DatedPlanningWeek) -> Bool {
+        guard var document = calendarDocument else { return false }
+        if let existing = document.weeks.first(where: { $0.startKey == week.startKey }), existing.id != week.id { return false }
+        document.upsert(week)
+        if document == calendarDocument { return true }
+        do {
+            try PlanningCalendarStore.save(document)
+            if week.startKey == document.currentWeekKey { try KanbanBoardPersistence.saveListsChecked(week.collection.lists) }
+            calendarDocument = document
+            if week.startKey == document.currentWeekKey {
+                lists = week.collection.lists; savedCardIDs = week.collection.savedCardIDs
+            }
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not save this week: \(error.localizedDescription) Your content has been retained.")
+            return false
+        }
+    }
+
     private var cardMovementAccess: CardMovementAccess {
+        let currentID = calendarDocument?.weeks.first { $0.startKey == calendarDocument?.currentWeekKey }?.id
         let weekDestinations = lists.filter { !$0.isArchived }.map {
             CardMoveDestination(collectionID: nil, listID: $0.id, title: $0.title, group: "Week")
+        }
+        let calendarDestinations = (calendarDocument?.weeks ?? []).filter { $0.id != currentID }.flatMap { week in
+            week.collection.lists.filter { !$0.isArchived }.map {
+                CardMoveDestination(collectionID: week.id, listID: $0.id, title: "\(week.rangeTitle) / \($0.title)", group: "Calendar", columnTitle: $0.title)
+            }
         }
         let libraryDestinations = collections.filter(\.isActive).flatMap { collection in
             collection.lists.filter { !$0.isArchived }.map {
@@ -622,43 +730,67 @@ private struct AppRootView: View {
                     title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)", group: "Library", columnTitle: $0.title)
             }
         }
-        return CardMovementAccess(destinations: weekDestinations + libraryDestinations, move: { card, source, destination in
-            do {
-                var updatedWeek = lists
-                var updatedCollections = collections
-                var updatedSaved = savedCardIDs
-                try CrossBoardCardMovement.move(card, from: source, to: destination,
-                    week: &updatedWeek, collections: &updatedCollections, saved: &updatedSaved)
-                // Encode both documents before the first write; publishing happens after checked saves.
-                _ = try JSONEncoder().encode(updatedWeek)
-                _ = try JSONEncoder().encode(updatedCollections)
-                let changesWeek = source == nil || destination.collectionID == nil
-                let changesLibrary = source != nil || destination.collectionID != nil
-                // Refuse to replace an unreadable retained document with fallback state.
-                if changesWeek, let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
-                    _ = try JSONDecoder().decode([KanbanList].self, from: data)
+        return CardMovementAccess(destinations: weekDestinations + calendarDestinations + libraryDestinations,
+            move: { card, source, destination in
+                movePlanningCard(card, source: source, destination: destination)
+            }, moveToDate: { card, source, date in
+                guard var document = calendarDocument else { return false }
+                var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+                let listID = week.prepareDay(date)
+                guard let list = week.collection.lists.first(where: { $0.id == listID }) else { return false }
+                document.upsert(week)
+                return movePlanningCard(card, source: source,
+                    destination: CardMoveDestination(collectionID: week.id, listID: list.id, title: list.title, group: "Calendar"),
+                    documentOverride: document)
+            })
+    }
+
+    private func movePlanningCard(_ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
+                                  documentOverride: PlanningCalendarDocument? = nil) -> Bool {
+        do {
+            var document = documentOverride ?? calendarDocument
+            let currentID = document?.weeks.first { $0.startKey == document?.currentWeekKey }?.id
+            let normalizedSource = source == currentID ? nil : source
+            let normalizedDestination = CardMoveDestination(collectionID: destination.collectionID == currentID ? nil : destination.collectionID,
+                listID: destination.listID, title: destination.title, group: destination.group)
+            var updatedWeek = lists
+            var updatedSaved = savedCardIDs
+            let dated = (document?.weeks ?? []).filter { $0.id != currentID }
+            var combined = collections + dated.map(\.collection)
+            try CrossBoardCardMovement.move(card, from: normalizedSource, to: normalizedDestination,
+                week: &updatedWeek, collections: &combined, saved: &updatedSaved)
+            let libraryIDs = Set(collections.map(\.id))
+            let updatedLibrary = combined.filter { libraryIDs.contains($0.id) }
+            if var next = document {
+                for var week in next.weeks {
+                    if week.id == currentID { week.collection.lists = updatedWeek; week.collection.savedCardIDs = updatedSaved }
+                    else if let collection = combined.first(where: { $0.id == week.id }) { week.collection = collection }
+                    next.upsert(week)
                 }
-                if changesLibrary, let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") {
-                    _ = try JSONDecoder().decode([PersonalCollection].self, from: data)
-                }
-                if changesWeek { try KanbanBoardPersistence.saveListsChecked(updatedWeek) }
-                if changesLibrary { try PersonalCollectionStore.saveChecked(updatedCollections) }
-                if changesWeek { SavedCardPersistence.save(updatedSaved) }
-                lists = updatedWeek
-                collections = updatedCollections
-                savedCardIDs = updatedSaved
-                return true
-            } catch {
-                DatabaseActivity.shared.report("Could not move this item: \(error.localizedDescription) Its content has been retained.")
-                return false
+                document = next
             }
-        })
+            _ = try JSONEncoder().encode(updatedWeek)
+            _ = try JSONEncoder().encode(updatedLibrary)
+            if let document { _ = try JSONEncoder().encode(document); _ = try PlanningCalendarStore.load() }
+            if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") { _ = try JSONDecoder().decode([KanbanList].self, from: data) }
+            if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") { _ = try JSONDecoder().decode([PersonalCollection].self, from: data) }
+            if let document { try PlanningCalendarStore.save(document) }
+            try KanbanBoardPersistence.saveListsChecked(updatedWeek)
+            try PersonalCollectionStore.saveChecked(updatedLibrary)
+            SavedCardPersistence.save(updatedSaved)
+            calendarDocument = document
+            lists = updatedWeek; collections = updatedLibrary; savedCardIDs = updatedSaved
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not move this item: \(error.localizedDescription) Its content has been retained.")
+            return false
+        }
     }
 
     private var libraryTab: some View { /* Personal collection directory and creation actions */
 
         BoardListsView(
-            retainedWeekLists:   lists,
+            retainedWeekLists:   lists + (calendarDocument?.weeks.flatMap { $0.collection.lists } ?? []),
             collections:         $collections,
             registerListNewNote: registerPersonalListNewNote,
             onOpenSaved:         openSavedDestination,
@@ -995,7 +1127,8 @@ private struct AppRootView: View {
                 .map { try JSONDecoder().decode([PersonalCollection].self, from: $0) } ?? []
             let undo = try UserDefaults.standard.data(forKey: "Plenact.ExampleLoadUndo.v1") /* Stored example-load recovery snapshot */
                 .map { try JSONDecoder().decode(ExampleLoadUndoSnapshot.self, from: $0) }
-            let retained = lists + collections.flatMap(\.lists) + persistedWeek /* All snapshots whose media must remain available */
+            let calendarLists = try PlanningCalendarStore.load()?.weeks.flatMap { $0.collection.lists } ?? []
+            let retained = calendarLists + lists + collections.flatMap(\.lists) + persistedWeek /* All snapshots whose media must remain available */
                 + persistedCollections.flatMap(\.lists) + (undo?.lists ?? [])
 
             try CardAttachmentStore.removeDeletedFiles(candidates, keeping: CardAttachmentStore.fileNames(in: retained))
@@ -1043,6 +1176,13 @@ private struct AppRootView: View {
 
         let candidates = CardAttachmentStore.fileNames(in: lists).subtracting(CardAttachmentStore.fileNames(in: snapshot)) /* Media removed by clearing Week content */
 
+        if var document = calendarDocument,
+           var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) {
+            current.collection.lists = snapshot; current.collection.savedCardIDs = bookmarks
+            document.upsert(current)
+            try PlanningCalendarStore.save(document)
+            calendarDocument = document
+        }
         try KanbanBoardPersistence.saveListsChecked(snapshot)
         lists = snapshot
         savedCardIDs = bookmarks
@@ -1375,6 +1515,13 @@ private struct AppRootView: View {
 /// @note   The selected list is stored locally for the current calendar date
 ///
 private struct TodayHomeView: View {
+    @Environment(\.planningCalendarAccess) private var planningCalendarAccess
+    private func calendarDayList(_ date: Date) -> KanbanList? {
+        if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
+           let list = lists.first(where: { $0.id == id && !$0.isArchived }) { return list }
+        return TodayListSelection.currentDayList(in: lists, date: date)
+    }
+
 
     @Binding var lists:     [KanbanList]                    /* Shared local Board lists                           */
     @Binding var archivedLists: [KanbanList]                   /* Archived Week lists retained for example-load undo */
@@ -1960,7 +2107,7 @@ private struct TodayHomeView: View {
     /// @post       No existing list or card is replaced or removed
     ///
     private func ensureCurrentWeekdayList() {
-
+        if let current = calendarDayList(.now) { selectedTodayListID = current.id; return }
         let result = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
         let activeLists = result.lists.filter { !$0.isArchived } /* Updated active Week lists */
         let retainedLists = result.lists.filter(\.isArchived) /* Preserved archived Week lists */
@@ -2012,7 +2159,7 @@ private struct TodayHomeView: View {
                         .modifier(TodayPanelSurface())
 
                     TimelineView(.everyMinute) { context in
-                        let focus = TodayListSelection.currentDayList(in: lists, date: context.date) /* Active list matching the current weekday */
+                        let focus = calendarDayList(context.date) /* Active list matching the current weekday */
                         let cards = focus?.cards.filter { !$0.isSectionDivider } ?? [] /* Actionable records in the weekday list */
 
                         TodayFocusSection(
@@ -2144,15 +2291,7 @@ private struct TodayHomeView: View {
                 }
             }
 
-            .sheet(isPresented: $showsSearch) {
-                TodaySearchView(
-                    lists:           lists,
-                    onOpenBoardList: onOpenBoardList,
-                    onOpenBoardCard: onOpenBoardCard,
-                    onArchiveCard: onArchiveCard, onDeleteCard: onDeleteCard,
-                    onArchiveList: onArchiveList, onDeleteList: onDeleteList
-                )
-            }
+            .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch))
 
             .sheet(item: $selectedLabel) { label in
                 TodayLabelCardsView(
@@ -2180,6 +2319,11 @@ private struct TodayHomeView: View {
 
             .onChange(of: lists) { _, _ in
                 ensureCurrentWeekdayList()
+                if showsTodayList { focusedListID = calendarDayList(.now)?.id }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+                ensureCurrentWeekdayList()
+                if showsTodayList { focusedListID = calendarDayList(.now)?.id }
             }
 
             .onChange(of: labelLibrary) { _, updatedLibrary in
@@ -2742,6 +2886,9 @@ struct TodaySearchResult: Identifiable {
     let cardTitle: String /* Matching card title */
     let listTitle: String /* Containing list title */
     let detail: String /* Supporting detail shown under the title */
+    var ownerID: UUID? = nil
+    var weekKey: String? = nil
+    var ownerTitle: String? = nil
 
     ///
     /// @fcn        TodaySearchResult.id
@@ -2751,7 +2898,7 @@ struct TodaySearchResult: Identifiable {
     /// @return     (String) composite result identity
     /// @post       Result contents remain unchanged
     ///
-    var id: String { "\(listID):\(cardID.map(String.init) ?? "list")" } /* Composite search-result identity */
+    var id: String { "\(ownerID?.uuidString ?? "week"):\(listID):\(cardID.map(String.init) ?? "list")" } /* Composite search-result identity */
 }
 
 
@@ -2970,7 +3117,7 @@ enum TodaySearchIndex {
 /// @section    Purpose
 ///     Keep query, filter, recent-history, and result navigation state in one sheet
 ///
-private struct TodaySearchView: View {
+struct TodaySearchView: View {
 
     let lists: [KanbanList] /* Current locally stored Board snapshot */
     let onOpenBoardList: (Int) -> Void /* Navigate to a result's containing list */
@@ -2979,6 +3126,9 @@ private struct TodaySearchView: View {
     let onDeleteCard: (Int) -> Bool /* Confirmed canonical Week deletion result */
     let onArchiveList: (Int) -> Void /* Canonical Week list archive */
     let onDeleteList: (Int) -> Bool /* Confirmed canonical list deletion result */
+
+    var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = nil
+    var onSelectResult: ((TodaySearchResult) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss /* Close the search sheet */
     @FocusState private var searchFieldFocused: Bool /* Search field focus state */
@@ -2997,7 +3147,8 @@ private struct TodaySearchView: View {
     /// @post       Search history and Board state are unchanged
     ///
     private var results: [TodaySearchResult] { /* Matches for the current query and scope */
-        TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
+        resultProvider?(query, scope, labelLibrary)
+            ?? TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
     }
 
 
@@ -3086,7 +3237,7 @@ private struct TodaySearchView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.search)
-                        .accessibilityLabel("Search local Board")
+                        .accessibilityLabel("Search Plenact")
                         .onSubmit {
                             rememberSearch()
                             searchFieldFocused = false
@@ -3137,7 +3288,8 @@ private struct TodaySearchView: View {
                         Button {
                             rememberSearch()
 
-                            if let cardID = result.cardID { /* Matching card identity for direct navigation */
+                            if let onSelectResult { onSelectResult(result) }
+                            else if let cardID = result.cardID { /* Matching card identity for direct navigation */
 
                                 onOpenBoardCard(result.listID, cardID)
                             } else {
@@ -3151,7 +3303,7 @@ private struct TodaySearchView: View {
                                     .font(.headline)
                                     .foregroundStyle(.primary)
 
-                                Text(result.detail.isEmpty ? result.listTitle : "\(result.listTitle) · \(result.detail)")
+                                Text([result.ownerTitle, result.listTitle, result.detail.isEmpty ? nil : result.detail].compactMap { $0 }.joined(separator: " · "))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(2)
@@ -3164,7 +3316,8 @@ private struct TodaySearchView: View {
 
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
-                        .modifier(ContentLifecycleActions(
+                        .modifier(SharedSearchLifecycleActions(
+                            enabled: resultProvider == nil,
                             title: result.cardTitle, kind: result.cardID == nil ? "List" : "Card",
                             onArchive: {
                                 if let id = result.cardID { /* Card identity targeted by the search action */
@@ -3174,7 +3327,7 @@ private struct TodaySearchView: View {
                                     onArchiveList(result.listID)
                                 }
                             },
-                            onDelete:  {
+                            onDelete: {
                                 if let id = result.cardID { /* Card identity targeted by the search action */
 
                                     return onDeleteCard(id)
@@ -3495,6 +3648,8 @@ struct LibraryCollectionRow: View {
 ///     Browse personal organizing spaces independently from the dedicated Week destination
 ///
 struct BoardListsView: View {
+
+    @State private var showsSharedSearch = false
 
     let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
 
@@ -4185,6 +4340,19 @@ struct BoardListsView: View {
             .searchable(text: $searchText, prompt: "Find a collection or card")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { showsSharedSearch = true } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Search Plenact")
+                    .accessibilityIdentifier("library.openSearch")
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
                     EditButton().disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
 
@@ -4204,6 +4372,7 @@ struct BoardListsView: View {
 
                 ToolbarItem(placement: .topBarTrailing) { createMenu }
             }
+            .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 
             .sheet(item: $editingCollection) { collection in
                 PersonalCollectionSettingsView(

@@ -22,6 +22,193 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    @MainActor
+    func testPlanningHostedCalendarLayoutDoesNotPersistBrowsing() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        let week = DatedPlanningWeek.make(for: .now, lists: SampleData.lists)
+        let original = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        var saveCount = 0
+        let access = PlanningCalendarAccess(document: original, library: [], saveWeek: { _ in saveCount += 1; return true },
+            openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in saveCount += 1; return true })
+        for size in [DynamicTypeSize.large, .accessibility3] {
+            let controller = UIHostingController(rootView: PlanningCalendarView().environment(\.planningCalendarAccess, access)
+                .environment(\.dynamicTypeSize, size))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Planning-Calendar-\(size)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertEqual(saveCount, 0, "Opening and laying out the Calendar must never save a week")
+            XCTAssertEqual(access.document, original)
+        }
+    }
+
+    private func planningTestCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        calendar.firstWeekday = 1
+        return calendar
+    }
+
+    func testPlanningMigrationPreservesExistingContentAndAssociatesSevenDates() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
+        let original = SampleData.lists
+        let saved: Set<Int> = [original[0].cards[0].id]
+        let week = DatedPlanningWeek.make(for: date, lists: original, saved: saved, calendar: calendar)
+        XCTAssertEqual(week.startKey, "2026-10-04")
+        XCTAssertEqual(week.collection.lists, original)
+        XCTAssertEqual(week.collection.savedCardIDs, saved)
+        XCTAssertEqual(week.dayListIDs.count, 7)
+        XCTAssertEqual(week.list(on: date)?.title, "Saturday")
+        XCTAssertEqual(Set(week.dayListIDs.values).count, 7)
+    }
+
+    func testPlanningDateAssociationSurvivesRenamingAndDoesNotOverwriteArchivedDay() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let id = try XCTUnwrap(week.dayListIDs["2026-10-10"])
+        let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == id })
+        try week.collection.lists[index].edit(title: "Family plans", subtitle: nil)
+        XCTAssertEqual(week.list(on: date)?.title, "Family plans")
+        week.collection.lists[index].isArchived = true
+        let retained = week.collection.lists[index]
+        let replacement = week.prepareDay(date)
+        XCTAssertNotEqual(replacement, id)
+        XCTAssertEqual(week.collection.lists[index], retained)
+        XCTAssertEqual(week.list(on: date)?.id, replacement)
+    }
+
+    func testPlanningRolloverPreservesPreviousWeekAndReusesFuturePlans() throws {
+        let calendar = planningTestCalendar()
+        let today = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
+        let nextDate = try XCTUnwrap(PlanningDate.date("2026-10-11", calendar: calendar))
+        let current = DatedPlanningWeek.make(for: today, lists: SampleData.lists, saved: [SampleData.lists[0].cards[0].id], calendar: calendar)
+        var future = DatedPlanningWeek.make(for: nextDate, calendar: calendar)
+        let dayID = try XCTUnwrap(future.list(on: nextDate)?.id)
+        let index = try XCTUnwrap(future.collection.lists.firstIndex { $0.id == dayID })
+        let card = SampleData.lists[0].cards[0].replacingLocation(id: 90, listTitle: "Sunday")
+        future.collection.lists[index].cards = [card]
+        future.collection.savedCardIDs = [90]
+        var document = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: 1, weeks: [current, future])
+        let next = document.rollForward(to: nextDate, currentLists: current.collection.lists, saved: current.collection.savedCardIDs, calendar: calendar)
+        XCTAssertEqual(next.id, future.id)
+        XCTAssertEqual(next.collection, future.collection)
+        XCTAssertEqual(document.weeks.count, 2)
+        XCTAssertEqual(document.weeks.first { $0.startKey == current.startKey }, current)
+        XCTAssertEqual(document.currentWeekKey, "2026-10-11")
+        let repeated = document.rollForward(to: nextDate, currentLists: next.collection.lists, saved: next.collection.savedCardIDs, calendar: calendar)
+        XCTAssertEqual(repeated.id, next.id)
+        XCTAssertEqual(document.weeks.count, 2)
+    }
+
+    func testPlanningEmptyBrowsingDoesNotPersistAndExplicitSaveRoundTrips() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
+        let futureDate = try XCTUnwrap(PlanningDate.date("2026-12-25", calendar: calendar))
+        let current = DatedPlanningWeek.make(for: date, calendar: calendar)
+        var document = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: 1, weeks: [current])
+        let suite = "Plenact.PlanningTests.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        try PlanningCalendarStore.save(document, to: defaults)
+        let bytes = defaults.data(forKey: PlanningCalendarStore.key)
+        XCTAssertNil(document.week(for: futureDate, calendar: calendar))
+        var preview = DatedPlanningWeek.make(for: futureDate, calendar: calendar)
+        XCTAssertFalse(preview.hasContent)
+        XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), bytes)
+        preview.explicitlySaved = true
+        document.upsert(preview)
+        try PlanningCalendarStore.save(document, to: defaults)
+        XCTAssertEqual(try PlanningCalendarStore.load(from: defaults), document)
+        XCTAssertEqual(document.currentWeekKey, current.startKey)
+    }
+
+    func testPlanningPersistenceRetainsCorruptDocumentWithoutOverwrite() throws {
+        let suite = "Plenact.PlanningCorruption.\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let bytes = Data("retained unreadable calendar".utf8)
+        defaults.set(bytes, forKey: PlanningCalendarStore.key)
+        let week = DatedPlanningWeek.make(for: .now)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        XCTAssertThrowsError(try PlanningCalendarStore.save(document, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), bytes)
+    }
+
+    func testPlanningDateKeysAcrossDSTAndYearBoundary() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-01", calendar: calendar))
+        let days = PlanningDate.days(in: PlanningDate.weekKey(date, calendar: calendar), calendar: calendar)
+        XCTAssertEqual(days.map { PlanningDate.key($0, calendar: calendar) },
+                       ["2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07"])
+        let yearEnd = try XCTUnwrap(PlanningDate.date("2026-12-31", calendar: calendar))
+        XCTAssertEqual(PlanningDate.weekKey(yearEnd, calendar: calendar), "2026-12-27")
+        XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map { PlanningDate.key($0, calendar: calendar) }, "2027-01-02")
+    }
+
+    func testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        var library = PersonalCollection(title: "Research", kind: .list)
+        let card = SampleData.lists[0].cards[0]
+        week.collection.lists[0].cards = [card]
+        library.lists[0].cards = [card]
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]),
+            library: [library], saveWeek: { _ in true }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in true })
+        let results = PlanningSharedSearchIndex.results(query: card.word, scope: .all, access: access, labels: LabelLibraryStore.load())
+        XCTAssertEqual(results.count, 2)
+        XCTAssertNotEqual(results[0].id, results[1].id)
+        XCTAssertEqual(Set(results.compactMap(\.ownerID)), [week.id, library.id])
+        XCTAssertEqual(results.filter { $0.weekKey != nil }.count, 1)
+        let boardResults = PlanningSharedSearchIndex.results(query: library.lists[0].title, scope: .boards, access: access, labels: LabelLibraryStore.load())
+        XCTAssertTrue(boardResults.contains { $0.ownerID == library.id && $0.cardID == nil })
+    }
+
+    func testPlanningCardsMoveBetweenDatedWeekLibraryAndCurrentWeek() throws {
+        let calendar = planningTestCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-12-25", calendar: calendar))
+        var future = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let original = SampleData.lists[0].cards[0]
+        var current = [KanbanList(id: 1, title: "Monday", cards: [original])]
+        var library = PersonalCollection(title: "Research", kind: .list)
+        library.lists[0].cards = []
+        var owners = [future.collection, library]
+        var saved: Set<Int> = [original.id]
+        let destination = try XCTUnwrap(future.list(on: date))
+        try CrossBoardCardMovement.move(original, from: nil,
+            to: CardMoveDestination(collectionID: future.id, listID: destination.id, title: destination.title, group: "Calendar"),
+            week: &current, collections: &owners, saved: &saved)
+        future.collection = owners[0]
+        let moved = try XCTUnwrap(future.list(on: date)?.cards.first)
+        XCTAssertEqual(moved, original.replacingLocation(id: original.id, listTitle: destination.title))
+        XCTAssertTrue(current[0].cards.isEmpty)
+        XCTAssertTrue(future.collection.savedCardIDs.contains(moved.id))
+        try CrossBoardCardMovement.move(moved, from: future.id,
+            to: CardMoveDestination(collectionID: library.id, listID: library.lists[0].id, title: library.title, group: "Library"),
+            week: &current, collections: &owners, saved: &saved)
+        let inLibrary = try XCTUnwrap(owners[1].lists[0].cards.first)
+        try CrossBoardCardMovement.move(inLibrary, from: library.id,
+            to: CardMoveDestination(collectionID: nil, listID: 1, title: "Monday", group: "Week"),
+            week: &current, collections: &owners, saved: &saved)
+        XCTAssertEqual(current[0].cards.first, original.replacingLocation(id: original.id, listTitle: "Monday"))
+        XCTAssertEqual(saved, [original.id])
+        XCTAssertTrue(owners[1].lists[0].cards.isEmpty)
+    }
+
+
 
     func testCrossBoardMoveSupportsNotesAndKeepsWithinBoardIdentity() throws {
         var note = SampleData.lists[0].cards[0]

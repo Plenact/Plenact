@@ -49,9 +49,23 @@ Older saved lists default to an empty archive, and empty archives are omitted fr
 
 Today's Quick capture square-plus opens an offline Card/Note template gallery. Its six optional starting points and Blank Card/Note choices create only editor drafts until Add is tapped. Card actions are editable; Notes contain writing prompts without action checklists. Template presentation applies to the new record regardless of the destination List's default, without changing that default or any existing records. New records and checklist actions receive fresh identities; no dates, assignments, attachments, or network calls are supplied by templates.
 
+## Optional Title Appearance
+
+Cards, Notes, and Lists can optionally have a full-width header background and a leading icon. Open **Card/Note actions (ellipsis) → Appearance**, **List actions → Appearance**, or **Today day options → Appearance**. The shared chooser previews the current title and offers six named background colors and the existing eight collection symbols. **None** is the default for each choice, and background/icon work independently. **Reset appearance** clears the draft; **Save** applies it, while **Cancel** discards it. The former vertical title-accent bar and its picker have been removed.
+
+**Banner background → Background color** fills the full Card header (including completion, subtitle, and location), Note header (location, title, and creation date), and Board List header (title, count, subtitle, and controls). Card/Note upper navigation bars use the same tint. The Appearance preview title and compact Board/Today Card/Note rows retain their normal backgrounds; optional leading icons remain visible. The focused Today day view colors its entire upper bar with a darker version of the chosen color to retain white-title contrast. Background-only choices need no icon. Other text retains its existing foreground colors; increased-contrast mode reduces soft tints. Default title layout is unchanged when no background is selected. Reset clears all appearance metadata only when saved. The optional `appearance.background` enum is additive: earlier appearance objects decode without it, and nil backgrounds omit the key. Photo and texture backgrounds remain deferred.
+
+Appearance is shown in Card/Note editors, standard/Overview Board rows, focused Today rows, Today Focus, and Board/day List headers. It does not change checkboxes, Card/Note presentation, covers, or Galleries. Decorative symbols are hidden from VoiceOver; titles and the named picker options remain accessible. The existing temporary List panel tint is separate from this persisted header background. Personal collections retain their existing directory color/icon settings; their internal Lists can have independent header appearance.
+
+An optional `appearance` object contains optional typed `icon`/`background` values; the earlier `accent` field remains decodable and retained but is no longer rendered or offered in the chooser. Legacy records decode without appearance and default records omit its JSON key. No storage key, stable identity, media filename, or attachment reference changes. Record edits, Card/Note switches, relocation, List copying/renaming, archives, and both local stores preserve it. No appearance is applied automatically to existing content or inherited by new Cards. Image and texture banners are deferred; existing selected photo covers remain available.
+
 ## Optional Card Covers
 
-Open the card or Note's upper **actions (ellipsis) → Card Cover** settings:
+Card/Note editors use their existing custom upper action row, with the native navigation bar hidden for both colored and uncolored headers. Choosing a background must not insert an empty navigation bar, add vertical space above the buttons, or shift the controls.
+
+Open the card or Note's upper **actions (ellipsis) → Appearance → Card Cover** settings. The upper actions menu no longer has a separate cover entry or Mark complete/incomplete action; the Card header checkbox remains available.
+
+Cover settings retain immediate-save behavior. **Done** returns to Appearance; canceling the Appearance icon/background draft does not undo cover changes. Personal List appearance offers only icon/background options, not Card covers.
 
 In Card and Note editors, the selected cover is shown once as a separate preview, not repeated in the horizontal photo Gallery. Tap it to open its full-photo preview. Other photos remain in the Gallery; videos and links remain in the Attachments grid. If the cover is the only attachment, the Gallery is omitted. This is display-only filtering: the cover remains attached, available in cover settings, and retained in saved content. Removing or changing the cover returns the former cover photo to the Gallery. The Note paperclip browser uses the same separation.
 

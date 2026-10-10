@@ -23,6 +23,232 @@ import SwiftUI
 final class PlenactBoardDocumentTests: XCTestCase {
 
     @MainActor
+    func testEditorBannerDoesNotInsertNativeNavigationBar() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+
+        func navigationController(in controller: UIViewController) -> UINavigationController? {
+            if let navigation = controller as? UINavigationController {
+                return navigation
+            }
+            return controller.children.compactMap { navigationController(in: $0) }.first
+        }
+
+        for isNote in [false, true] {
+            for background in [nil, ItemAccent.orange] {
+                let card = KanbanCard(
+                    id: 94, word: "Synthetic banner", listTitle: "Friday",
+                    presentation: isNote ? .note : .card,
+                    appearance: background.map { ItemAppearance(background: $0) }
+                )
+                var emitted: [KanbanCard] = []
+                let controller = UIHostingController(rootView: NavigationStack {
+                    CardDetailView(card: card, onTitleToggle: { emitted.append($0) })
+                })
+                window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+                controller.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(200))
+
+                let navigation = try XCTUnwrap(navigationController(in: controller))
+                XCTAssertTrue(navigation.isNavigationBarHidden, "The custom editor controls must not gain an empty native bar")
+                XCTAssertTrue(emitted.isEmpty, "Banner layout must not change the record")
+                let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                }
+                let snapshot = XCTAttachment(image: image)
+                snapshot.name = "Editor-banner-\(isNote ? "Note" : "Card")-\(background?.rawValue ?? "none")"
+                snapshot.lifetime = .keepAlways
+                add(snapshot)
+            }
+        }
+    }
+
+    @MainActor
+    func testBannerBackgroundFillsProposedWidthWithoutLegacyAccentDecoration() {
+        let background = ItemAppearance(background: .green)
+        for scheme in [ColorScheme.light, .dark] {
+            let controller = UIHostingController(rootView:
+                HStack { Text("Plan") }
+                    .itemBannerBackground(background)
+                    .environment(\.colorScheme, scheme)
+            )
+            let size = controller.sizeThatFits(in: CGSize(width: 320, height: 200))
+            XCTAssertEqual(size.width, 320, accuracy: 1)
+            XCTAssertLessThan(size.height, 100)
+        }
+        let mark = UIHostingController(rootView: ItemAppearanceMark(appearance: ItemAppearance(accent: .green)))
+        let size = mark.sizeThatFits(in: CGSize(width: 320, height: 200))
+        XCTAssertEqual(size.width, 0, accuracy: 1)
+        XCTAssertEqual(size.height, 0, accuracy: 1)
+    }
+
+    func testBannerBackgroundIsIndependentAndBackwardCompatible() throws {
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"accent":"teal","icon":"heart"}"#.utf8))
+        XCTAssertEqual(legacy, ItemAppearance(accent: .teal, icon: .heart))
+        XCTAssertNil(legacy.background)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        XCTAssertNil(json["background"])
+        for color in ItemAccent.allCases {
+            let backgroundOnly = ItemAppearance(background: color)
+            XCTAssertFalse(backgroundOnly.isEmpty)
+            let card = KanbanCard(id: 41, word: "A plan", listTitle: "Ideas", appearance: backgroundOnly)
+            XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)), card)
+            XCTAssertEqual(card.replacingLocation(id: 42, listTitle: "Next").appearance, backgroundOnly)
+        }
+        XCTAssertThrowsError(try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"background":"invalid"}"#.utf8)))
+        var combined = ItemAppearance(accent: .blue, icon: .notes, background: .rose)
+        combined.background = nil
+        XCTAssertEqual(combined, ItemAppearance(accent: .blue, icon: .notes))
+        combined = ItemAppearance()
+        XCTAssertTrue(combined.isEmpty)
+    }
+
+    func testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues() throws {
+        let card = try JSONDecoder().decode(KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","checklists":[]}"#.utf8))
+        let list = try JSONDecoder().decode(KanbanList.self, from: Data(#"{"id":0,"title":"Monday","cards":[]}"#.utf8))
+        XCTAssertNil(card.appearance)
+        XCTAssertNil(list.appearance)
+        for data in [try JSONEncoder().encode(card), try JSONEncoder().encode(list)] {
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            XCTAssertNil(json["appearance"])
+        }
+        let empty = KanbanCard(id: 2, word: "Plan", listTitle: "Monday", appearance: ItemAppearance())
+        XCTAssertNil(empty.appearance)
+        XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","appearance":{"accent":"invalid"}}"#.utf8)))
+        XCTAssertThrowsError(try JSONDecoder().decode(KanbanList.self, from: Data(#"{"id":0,"title":"Monday","cards":[],"appearance":{"icon":"invalid"}}"#.utf8)))
+        for accent in ItemAccent.allCases {
+            let value = ItemAppearance(accent: accent, icon: nil)
+            XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(value)), value)
+        }
+        for icon in PersonalCollectionIcon.allCases {
+            let value = ItemAppearance(accent: nil, icon: icon)
+            XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(value)), value)
+        }
+    }
+
+    @MainActor
+    func testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil() throws {
+        let photo = KanbanAttachment(exampleImage: .camping, caption: "A day outdoors")
+        let card = KanbanCard(id: 1, word: "Walk", listTitle: "Monday", attachments: [photo], coverAttachmentID: photo.id)
+        let archivedCard = card.replacingLocation(id: 2, listTitle: "Monday")
+        var lists = [KanbanList(id: 0, title: "Monday", cards: [card], archivedCards: [archivedCard])]
+        let original = lists
+        let appearance = ItemAppearance(accent: .teal, icon: .home, background: .blue)
+        XCTAssertTrue(setListAppearance(0, appearance: appearance, in: &lists))
+        var expected = original
+        expected[0].appearance = appearance
+        XCTAssertEqual(lists, expected)
+        XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists)), lists)
+        try lists[0].edit(title: "My plans", subtitle: "Next steps")
+        XCTAssertEqual(lists[0].appearance, appearance)
+        XCTAssertTrue(setListAppearance(0, appearance: ItemAppearance(), in: &lists))
+        XCTAssertNil(lists[0].appearance)
+        let retained = lists
+        DatabaseActivity.shared.dismissError()
+        defer { DatabaseActivity.shared.dismissError() }
+        XCTAssertFalse(setListAppearance(99, appearance: appearance, in: &lists))
+        XCTAssertEqual(lists, retained)
+        var archived = retained[0]
+        archived.isArchived = true
+        lists = [archived]
+        XCTAssertFalse(setListAppearance(0, appearance: appearance, in: &lists))
+        XCTAssertEqual(lists, [archived])
+        lists = [retained[0], retained[0]]
+        let duplicated = lists
+        XCTAssertFalse(setListAppearance(0, appearance: appearance, in: &lists))
+        XCTAssertEqual(lists, duplicated)
+    }
+
+    func testAppearanceRetainsCardNoteCopiesArchivesAndBothLocalStores() async throws {
+        let suite = "PlenactTests.Appearance.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let photo = KanbanAttachment(fileName: "appearance-example.jpg", caption: "Keep this caption")
+        let appearance = ItemAppearance(accent: .purple, icon: .project, background: .rose)
+        var card = KanbanCard(id: 1, word: "My plan", listTitle: "Plans", attachments: [photo],
+                              coverAttachmentID: photo.id, descriptionOverride: "Keep this body", appearance: appearance)
+        let copy = card.replacingLocation(id: 2, listTitle: "Plans")
+        XCTAssertEqual(copy.appearance, appearance)
+        XCTAssertEqual(copy.attachments, card.attachments)
+        card.presentation = .note
+        var list = KanbanList(id: 0, title: "Plans", cards: [card, copy])
+        list.appearance = ItemAppearance(accent: .blue, icon: .upcoming, background: .green)
+        list.archiveCard(id: card.id)
+        var collection = PersonalCollection(title: "Plans", kind: .list)
+        collection.lists = [list]
+        collection.rename(to: "Next steps")
+        XCTAssertEqual(collection.lists[0].appearance, list.appearance)
+        XCTAssertEqual(collection.lists[0].archivedCards[0].appearance, appearance)
+        try PersonalCollectionStore.saveChecked([collection], to: defaults)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [collection])
+        try KanbanBoardPersistence.saveListsChecked([list], suiteName: suite)
+        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restored, [list])
+        var decoded = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        decoded.restoreArchivedCard(id: card.id)
+        XCTAssertEqual(decoded.cards.first(where: { $0.id == card.id }), card)
+        XCTAssertEqual(CardAttachmentStore.fileNames(in: [decoded]), ["appearance-example.jpg"])
+    }
+
+    @MainActor
+    func testAppearanceSheetAndDecoratedNoteLayoutDoNotModifyRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        for textSize in [DynamicTypeSize.large, .accessibility3] {
+            for appearance in [nil, ItemAppearance(accent: .teal, icon: nil),
+                               ItemAppearance(accent: nil, icon: .heart),
+                               ItemAppearance(accent: .purple, icon: .project, background: .rose),
+                               ItemAppearance(background: .green)] {
+                let sheet = ItemAppearanceSheet(
+                    title: "A long title for my next creative project",
+                    appearance: appearance,
+                    onOpenCover: { XCTFail("Presentation must not open cover settings") }
+                ) { _ in
+                    XCTFail("Presentation must not save appearance")
+                    return false
+                }
+                let controller = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, textSize))
+                let size = CGSize(width: 393, height: 852)
+                window.frame = CGRect(origin: .zero, size: size)
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+                controller.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(150))
+                let image = UIGraphicsImageRenderer(size: size).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "Appearance-\(appearance?.accent?.rawValue ?? "none")-\(appearance?.icon?.rawValue ?? "none")-\(textSize)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+            let note = KanbanCard(id: 61, word: "A long title for my next creative project", listTitle: "Ideas",
+                                  presentation: .note, appearance: ItemAppearance(accent: .teal, icon: .notes, background: .blue))
+            let controller = UIHostingController(rootView: NavigationStack {
+                CardDetailView(card: note, onTitleToggle: { _ in XCTFail("Layout must not modify this Note") })
+                    .environment(\.dynamicTypeSize, textSize)
+            })
+            window.rootViewController = controller
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+        }
+    }
+
+    @MainActor
     func testLibraryExamplesLayoutDoesNotLoadOrRestoreWeekOnPresentation() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -752,7 +978,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             id: 93, word: "Synthetic toolbar Note", listTitle: "Synthetic ideas",
             descriptionOverride: "A calm writing area with attachments below.",
             presentation:        .note,
-            createdAt:           Date(timeIntervalSince1970: 1_791_422_000)
+            createdAt:           Date(timeIntervalSince1970: 1_791_422_000),
+            appearance:          ItemAppearance(accent: .teal, icon: .notes, background: .green)
         )
         let cover = KanbanAttachment(exampleImage: .garden)
         note.attachments = [
@@ -828,6 +1055,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         let photo = KanbanAttachment(exampleImage: .garden) /* Synthetic photo fixture */
         var card = KanbanCard(id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: []) /* Card value under verification */
+        card.appearance = ItemAppearance(icon: .project, background: .blue)
         card.attachments = [
             photo,
             KanbanAttachment(exampleImage: .camping, caption: "Our next adventure"),
@@ -1317,6 +1545,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     func testHostedNoteBodyEditsEmitCompleteRetainedSnapshots() async throws {
 
         var note = SampleData.lists[0].cards[0] /* Note value under verification */
+        note.appearance = ItemAppearance(accent: .blue, icon: .heart, background: .rose)
         note.presentation        = .note
         note.descriptionOverride = "Synthetic note body"
         note.isTitleChecked     = true
@@ -1806,7 +2035,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture */
         let card = KanbanCard(id: 1, word: "Garden", listTitle: "Local", checklists: [], /* Card value under verification */
-                              attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "")
+                              attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "",
+                              appearance: ItemAppearance(accent: .green, icon: .home, background: .teal))
 
 
         ///

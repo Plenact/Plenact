@@ -924,6 +924,165 @@ struct CardLinkAttachmentSheet: View {
 }
 
 
+extension ItemAccent {
+    var color: Color {
+        switch self {
+            case .teal: .teal
+            case .blue: .blue
+            case .purple: .purple
+            case .rose: .pink
+            case .orange: .orange
+            case .green: .green
+        }
+    }
+
+    var darkHeaderColor: Color {
+        switch self {
+            case .teal: Color(red: 0.08, green: 0.28, blue: 0.28)
+            case .blue: Color(red: 0.08, green: 0.20, blue: 0.36)
+            case .purple: Color(red: 0.24, green: 0.12, blue: 0.32)
+            case .rose: Color(red: 0.34, green: 0.12, blue: 0.22)
+            case .orange: Color(red: 0.34, green: 0.20, blue: 0.08)
+            case .green: Color(red: 0.12, green: 0.28, blue: 0.14)
+        }
+    }
+
+    func bannerColor(increasedContrast: Bool) -> Color {
+        Color(uiColor: UIColor { traits in
+            let tint = UIColor(self.color).resolvedColor(with: traits)
+            let base = UIColor.systemBackground.resolvedColor(with: traits)
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            var baseRed: CGFloat = 0
+            var baseGreen: CGFloat = 0
+            var baseBlue: CGFloat = 0
+            tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            base.getRed(&baseRed, green: &baseGreen, blue: &baseBlue, alpha: &alpha)
+            let amount: CGFloat = increasedContrast ? 0.10 : 0.16
+            return UIColor(
+                red: baseRed * (1 - amount) + red * amount,
+                green: baseGreen * (1 - amount) + green * amount,
+                blue: baseBlue * (1 - amount) + blue * amount,
+                alpha: 1
+            )
+        })
+    }
+}
+
+struct ItemAppearanceMark: View {
+    let appearance: ItemAppearance?
+
+    var body: some View {
+        if let icon = appearance?.icon {
+            Image(systemName: icon.rawValue)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+private struct ItemBannerBackground: ViewModifier {
+    let appearance: ItemAppearance?
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        if let background = appearance?.background {
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(background.bannerColor(increasedContrast: contrast == .increased))
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func itemBannerBackground(_ appearance: ItemAppearance?) -> some View {
+        modifier(ItemBannerBackground(appearance: appearance))
+    }
+}
+
+struct ItemAppearanceSheet: View {
+    let title: String
+    let onSave: (ItemAppearance?) -> Bool
+    let onOpenCover: (() -> Void)?
+    @State private var draft: ItemAppearance
+    @Environment(\.dismiss) private var dismiss
+
+    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
+        self.title = title
+        self.onSave = onSave
+        self.onOpenCover = onOpenCover
+        _draft = State(initialValue: appearance ?? ItemAppearance())
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Preview") {
+                    HStack {
+                        ItemAppearanceMark(appearance: draft)
+                        Text(title).font(.headline)
+                    }
+                }
+                Section("Leading icon") {
+                    Picker("Icon", selection: $draft.icon) {
+                        Text("None").tag(Optional<PersonalCollectionIcon>.none)
+                        ForEach(PersonalCollectionIcon.allCases, id: \.self) { icon in
+                            Label(icon.title, systemImage: icon.rawValue).tag(Optional(icon))
+                        }
+                    }
+                    .accessibilityIdentifier("appearance.icon")
+                }
+                Section("Banner background") {
+                    Picker("Background color", selection: $draft.background) {
+                        Text("None").tag(Optional<ItemAccent>.none)
+                        ForEach(ItemAccent.allCases, id: \.self) { color in
+                            Text(color.rawValue.capitalized).tag(Optional(color))
+                        }
+                    }
+                    .accessibilityIdentifier("appearance.background")
+                    Text("A soft color across the full header and upper bar, independent of the icon.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let onOpenCover {
+                    Section("Card Cover") {
+                        Button("Card Cover", systemImage: "photo", action: onOpenCover)
+                            .accessibilityIdentifier("appearance.cover")
+                        Text("Choose or remove a cover. Cover changes apply immediately and are separate from saving or canceling the icon and background draft.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Section {
+                    Button("Reset appearance") { draft = ItemAppearance() }
+                        .accessibilityIdentifier("appearance.reset")
+                    Text("Icon and background are optional and independent. Titles, covers, photos, and other content stay unchanged. Save applies your choices; Cancel discards them.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Appearance")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if onSave(draft.isEmpty ? nil : draft) { dismiss() }
+                    }
+                    .accessibilityIdentifier("appearance.save")
+                }
+            }
+        }
+        .databaseActivityOverlay()
+    }
+}
+
 struct CardPhotoGallery: View {
     let photos: [KanbanAttachment]
     @Binding var photoSelection: [PhotosPickerItem]

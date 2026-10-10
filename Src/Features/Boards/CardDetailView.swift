@@ -628,33 +628,87 @@ struct CardDetailView: View {
 
     ///
     /// @fcn        CardDetailView.attachmentGallery
-    /// @brief      Present current attachments with per-photo cover controls
+    /// @brief      Present gallery photos separately from the cover and other attachments
     /// @details    Keeps the gallery's view-builder expression separate from the full card editor
-    /// @return     (some View) adaptive attachment grid
+    /// @return     (some View) horizontal photo gallery and remaining media
     ///
     private var attachmentGallery: some View { /* Attached media displayed with editing actions */
-        attachmentGallery(attachments)
+        attachmentGallery(workingCardSnapshot.attachmentsExcludingCover)
     }
 
 
     ///
     /// @fcn        CardDetailView.attachmentGallery(_:)
-    /// @brief      Build the attachment grid for the supplied visible records
+    /// @brief      Build a photo Gallery and a grid of nonphoto attachments
     /// @details    Renders each attachment using the gallery item view and leaves cover filtering
     ///             to the caller's visible-attachment selection
     ///
     /// @param[in]  visibleAttachments  Attachments to display in this gallery
     ///
-    /// @return     (some View) titled, adaptive attachment grid
+    /// @return     (some View) editable photo Gallery and nonphoto attachment grid
     ///
     private func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View {
-        DetailSection(title: "Attachments") {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
-                ForEach(visibleAttachments) { attachment in
-                    attachmentGalleryItem(attachment)
+        let photos = visibleAttachments.filter { $0.kind == .photo }
+        let otherMedia = visibleAttachments.filter { $0.kind != .photo }
+        return VStack(alignment: .leading, spacing: 16) {
+            if !photos.isEmpty {
+                CardPhotoGallery(
+                    photos: photos,
+                    photoSelection: $selectedPhotoItems,
+                    onOpen: { activeSheet = .attachmentPreview($0) },
+                    onCaption: updatePhotoCaption,
+                    onReorder: reorderGalleryPhotos,
+                    onRemove: removeAttachment,
+                    onSetCover: { setCover($0) }
+                )
+                .padding(16)
+                .background(Color(.secondarySystemGroupedBackground))
+            }
+            if !otherMedia.isEmpty {
+                DetailSection(title: "Attachments") {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8) {
+                        ForEach(otherMedia) { attachment in
+                            attachmentGalleryItem(attachment)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private func updatePhotoCaption(_ id: UUID, _ caption: String) -> Bool {
+        var updated = workingCardSnapshot
+        do {
+            try updated.setPhotoCaption(caption, for: id)
+            guard syncCardState(attachments: updated.attachments ?? []) else { return false }
+            attachments = updated.attachments ?? []
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not save this photo caption: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func reorderGalleryPhotos(_ ids: [UUID]) -> Bool {
+        var updated = workingCardSnapshot
+        do {
+            try updated.reorderGalleryPhotos(ids)
+            guard syncCardState(attachments: updated.attachments ?? []) else { return false }
+            attachments = updated.attachments ?? []
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not arrange these photos: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func selectedCoverPreview(_ cover: KanbanAttachment) -> some View {
+        Button { activeSheet = .attachmentPreview(cover) } label: {
+            CardCoverPreview(attachment: cover)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open selected cover")
+        .accessibilityValue(cover.caption ?? "No caption")
     }
 
     ///
@@ -897,7 +951,7 @@ struct CardDetailView: View {
     /// @param[in]  clearStartDate  Whether to remove the card's start date
     /// @param[in]  clearDueDate    Whether to remove the card's due date
     ///
-    /// @return     (Void) invokes the optional snapshot callback
+    /// @return     (Bool) false when deletion or a rejected relocated-Note update prevents submission
     ///
     /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent
     ///             update. Confirmed deletion suppresses all snapshots, including dismissal and
@@ -906,6 +960,7 @@ struct CardDetailView: View {
     ///             values. The unchanged generated subtitle remains nil when no original override
     ///             existed
     ///
+    @discardableResult
     private func syncCardState(
         title:          String?             = nil,          /* Updated card title               */
         subtitle:       String?             = nil,          /* Updated card subtitle            */
@@ -917,11 +972,11 @@ struct CardDetailView: View {
         dueDate:        Date?               = nil,          /* Updated card due date            */
         clearStartDate: Bool                = false,        /* Whether to clear the start date  */
         clearDueDate:   Bool                = false         /* Whether to clear the due date    */
-    ) {
+    ) -> Bool {
 
         guard !hasDeletedCard else {
 
-            return
+            return false
         }
 
         var updatedCard = workingCardSnapshot /* Complete working record receiving submitted field changes */
@@ -957,12 +1012,13 @@ struct CardDetailView: View {
            currentPersonalCollectionID != personalCollectionID {
             guard onUpdateMovedNote?(currentPersonalCollectionID, updatedCard) == true else {
 
-                return
+                return false
             }
         } else {
 
             onTitleToggle?(updatedCard)
         }
+        return true
     }
 
     ///
@@ -1997,7 +2053,11 @@ struct CardDetailView: View {
                     }
                 }
 
-            if !attachments.isEmpty {
+            if let cover = workingCardSnapshot.coverAttachment {
+                selectedCoverPreview(cover)
+                    .accessibilityIdentifier("note.selectedCoverPreview")
+            }
+            if !workingCardSnapshot.attachmentsExcludingCover.isEmpty {
 
                 attachmentGallery
             }
@@ -2135,6 +2195,9 @@ struct CardDetailView: View {
                     if attachments.isEmpty {
                         ContentUnavailableView("No attachments", systemImage: "paperclip")
                     } else {
+                        if let cover = workingCardSnapshot.coverAttachment {
+                            selectedCoverPreview(cover)
+                        }
                         attachmentGallery
                     }
 
@@ -2280,10 +2343,8 @@ struct CardDetailView: View {
                         }
                     }
 
-                    if let cover = attachments.first(where: { /* Featured attachment rendered above the card fields */
-                        $0.id == coverAttachmentID && $0.kind == .photo
-                    }) {
-                        CardCoverPreview(attachment: cover)
+                    if presentation == .card, let cover = workingCardSnapshot.coverAttachment {
+                        selectedCoverPreview(cover)
                             .padding(16)
                             .accessibilityIdentifier("card.selectedCoverPreview")
                     }

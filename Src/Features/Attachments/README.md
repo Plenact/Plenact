@@ -2,7 +2,17 @@ Plenact cards can hold local photos, local videos, and web links. Attachment con
 
 ## User Experience
 
-Users can choose supported media through the system photo picker, add a valid `http` or `https` link, and view attachments associated with a card. Removing a card or attachment may remove local media after it is no longer referenced anywhere on the board.
+Users can choose supported media through the system photo picker, add a valid `http` or `https` link, and view attachments associated with a Card or Note. Removal uses the existing save-first, retained-reference cleanup; media retained by Week, personal collections, archives, or undo snapshots must not be deleted.
+
+### Photo Gallery
+
+Cards and Notes share a horizontal **Gallery** of their existing photo attachments. The selected cover is shown separately, once; videos and links retain their own **Attachments** grid. Use the existing Add Attachment entry for the first photo, then **Add photos** in the Gallery for more.
+
+Each photo's options menu offers **Add/Edit caption**, **Move earlier/later**, **Set as Cover**, and confirmed **Remove photo**. Drag a photo onto another Gallery photo to reorder it, or use **Arrange** and the native reorder handles. Menu movement is an alternative to drag gestures. Removal can be canceled and removes only the current item's reference; it does not directly delete image bytes.
+
+Captions are optional text over the bottom of each photo. The overlay shows up to three lines; the full caption is available to VoiceOver, in its editor, and in the scrollable full-photo preview (also when the image is unavailable). Caption **Cancel** preserves the record; **Save** trims surrounding whitespace, and clearing the field removes the caption.
+
+The optional `KanbanAttachment.caption` field is additive Codable metadata: older records without it still decode and nil captions omit the key. Gallery order reuses the canonical attachment array, rearranging only non-cover photo slots while preserving cover, video, and link positions. Photo UUIDs, filenames, added dates, bundled references, and captions stay together. No second photo store, file renaming, destructive migration, upload, or synchronization is introduced.
 
 ### Card covers
 
@@ -42,7 +52,7 @@ Existing demo selections, attachment formats, storage keys, and user covers rema
 - `KanbanAttachment` and `KanbanAttachmentKind` metadata models.
 - `CardAttachmentStore` for local media files and link validation.
 - Photo/video picker transfer handling.
-- Attachment gallery, preview, and source-selection UI.
+- Shared Card/Note photo Gallery, caption/arrangement sheets, preview, and source-selection UI.
 
 Board JSON stores lightweight attachment metadata. Imported media bytes are written atomically under unique filenames in the app's private `Documents/CardAttachments` directory.
 

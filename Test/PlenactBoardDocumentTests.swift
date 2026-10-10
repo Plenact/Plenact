@@ -22,6 +22,205 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    @MainActor
+    func testLibraryExamplesLayoutDoesNotLoadOrRestoreWeekOnPresentation() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        for hasUndo in [false, true] {
+            for textSize in [DynamicTypeSize.large, .accessibility3] {
+                let chooser = PersonalListExamplesView(
+                    onLoadExampleWeek: { XCTFail("Opening examples must not replace Week"); return false },
+                    onUndoExampleWeek: { XCTFail("Opening examples must not restore Week"); return false },
+                    hasUndoableWeek: hasUndo,
+                    onSelect: { _ in XCTFail("Opening examples must not create a personal List") }
+                )
+                let controller = UIHostingController(rootView: chooser.environment(\.dynamicTypeSize, textSize))
+                let size = CGSize(width: 393, height: 852)
+                window.frame = CGRect(origin: .zero, size: size)
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+                controller.view.layoutIfNeeded()
+                try await Task.sleep(for: .milliseconds(200))
+                let image = UIGraphicsImageRenderer(size: size).image { _ in
+                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                }
+                let attachment = XCTAttachment(image: image)
+                attachment.name = "Library-Examples-undo-\(hasUndo)-\(textSize)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
+    func testExampleWeekGalleriesUseBundledPhotosAndPreserveCoverAndContent() throws {
+        let lists = SampleData.lists
+        let cards = lists.flatMap(\.cards)
+        let galleryCards = cards.filter { !$0.galleryPhotos.isEmpty }
+        XCTAssertEqual(galleryCards.map(\.word), [
+            "Review the week ahead", "Plan the weekend", "Spend time outdoors"
+        ])
+        XCTAssertEqual(galleryCards.map { $0.galleryPhotos.count }, [3, 3, 3])
+        XCTAssertEqual(galleryCards.map { $0.galleryPhotos.compactMap(\.exampleImage) }, [
+            [.calendarPlan, .projectPlanning, .workspace],
+            [.camping, .travelBag, .picnic],
+            [.forestPath, .coastalWalk, .mountains]
+        ])
+        XCTAssertEqual(galleryCards.flatMap(\.galleryPhotos).compactMap(\.caption).count, 8)
+        XCTAssertNil(galleryCards.last?.galleryPhotos.last?.caption)
+        XCTAssertEqual(galleryCards.first?.coverAttachment?.exampleImage, .garden)
+        XCTAssertEqual(cards.compactMap(\.coverAttachment).count, 3)
+        XCTAssertTrue(CardAttachmentStore.fileNames(in: lists).isEmpty)
+        let photos = cards.flatMap { $0.attachments ?? [] }
+        XCTAssertEqual(Set(photos.map(\.id)).count, photos.count)
+        for photo in photos {
+            XCTAssertEqual(photo.kind, .photo)
+            XCTAssertNil(photo.fileName)
+            XCTAssertNil(photo.url)
+            XCTAssertNotNil(photo.exampleImage?.url)
+            XCTAssertNoThrow(try CardAttachmentStore.coverThumbnail(for: photo))
+        }
+        let restored = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists))
+        XCTAssertEqual(restored, lists)
+        var edited = try XCTUnwrap(galleryCards.first)
+        let original = edited
+        try edited.reorderGalleryPhotos(edited.galleryPhotos.reversed().map(\.id))
+        try edited.setPhotoCaption("My own plans", for: edited.galleryPhotos[0].id)
+        edited.removeAttachment(edited.galleryPhotos[1].id)
+        XCTAssertEqual(edited.coverAttachment, original.coverAttachment)
+        XCTAssertEqual(edited.checklists, original.checklists)
+        XCTAssertEqual(SampleData.lists, lists)
+    }
+
+    func testPhotoCaptionsDecodeLegacyAttachmentsAndPreserveMetadata() throws {
+        let photo = KanbanAttachment(fileName: "gallery-legacy.jpg", mediaKind: .photo)
+        let legacyData = try JSONEncoder().encode(photo)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: legacyData) as? [String: Any])
+        XCTAssertNil(json["caption"])
+        XCTAssertEqual(try JSONDecoder().decode(KanbanAttachment.self, from: legacyData), photo)
+
+        let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
+        var card = KanbanCard(id: 31, word: "Gallery", listTitle: "Local", checklists: [], attachments: [photo, link])
+        try card.setPhotoCaption("  A quiet afternoon\nby the lake  ", for: photo.id)
+        var expected = photo
+        expected.caption = "A quiet afternoon\nby the lake"
+        XCTAssertEqual(card.attachments, [expected, link])
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(restored, card)
+        let original = card
+        for id in [link.id, UUID()] {
+            XCTAssertThrowsError(try card.setPhotoCaption("Do not save", for: id))
+            XCTAssertEqual(card, original)
+        }
+        try card.setPhotoCaption(" \n ", for: photo.id)
+        XCTAssertEqual(card.attachments, [photo, link])
+    }
+
+    func testPhotoGalleryReorderKeepsCoverAndNonphotoSlotsAndRejectsInvalidOrders() throws {
+        let cover = KanbanAttachment(exampleImage: .camping, caption: "Cover caption")
+        let first = KanbanAttachment(fileName: "first-gallery.jpg", caption: "First")
+        let second = KanbanAttachment(exampleImage: .mountains, caption: "Second")
+        let third = KanbanAttachment(exampleImage: .garden)
+        let video = KanbanAttachment(fileName: "gallery.mov", mediaKind: .video)
+        let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
+        var card = KanbanCard(id: 32, word: "Gallery", listTitle: "Local", checklists: [],
+                              attachments: [first, video, cover, second, link, third], coverAttachmentID: cover.id)
+        XCTAssertEqual(card.galleryPhotos, [first, second, third])
+        try card.reorderGalleryPhotos([third.id, first.id, second.id])
+        XCTAssertEqual(card.attachments, [third, video, cover, first, link, second])
+        XCTAssertEqual(card.coverAttachmentID, cover.id)
+        try card.reorderGalleryPhotos([first.id, second.id, third.id])
+        XCTAssertEqual(card.attachments, [first, video, cover, second, link, third])
+        let snapshot = card
+        for ids in [[first.id], [first.id, first.id, third.id], [cover.id, second.id, third.id],
+                    [UUID(), second.id, third.id], [link.id, second.id, third.id]] {
+            XCTAssertThrowsError(try card.reorderGalleryPhotos(ids))
+            XCTAssertEqual(card, snapshot)
+        }
+        try card.setCover(nil)
+        XCTAssertEqual(card.galleryPhotos, [first, cover, second, third])
+        card.removeAttachment(second.id)
+        XCTAssertEqual(card.attachments, [first, video, cover, link, third])
+        XCTAssertEqual(snapshot.attachments, [first, video, cover, second, link, third])
+    }
+
+    func testPhotoGalleryEditsPersistInBothStoresAndRetainArchivedCopies() async throws {
+        let suite = "PlenactTests.Gallery.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = KanbanAttachment(fileName: "retained-gallery.jpg", caption: "Original")
+        let second = KanbanAttachment(exampleImage: .camping)
+        var original = KanbanCard(id: 33, word: "Trip", listTitle: "Local", checklists: [], attachments: [first, second])
+        let archived = original
+        try original.setPhotoCaption("Edited", for: first.id)
+        try original.reorderGalleryPhotos([second.id, first.id])
+        let lists = [KanbanList(id: 0, title: "Local", cards: [original], archivedCards: [archived])]
+        try KanbanBoardPersistence.saveListsChecked(lists, suiteName: suite)
+        let restoredWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        XCTAssertEqual(restoredWeek, lists)
+        var personal = PersonalCollection(title: "Gallery", kind: .board)
+        personal.lists = lists
+        try PersonalCollectionStore.saveChecked([personal], to: defaults)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [personal])
+        var removed = original
+        removed.removeAttachment(first.id)
+        let retained = [KanbanList(id: 0, title: "Local", cards: [removed], archivedCards: [archived])]
+        XCTAssertEqual(CardAttachmentStore.fileNames(in: retained), ["retained-gallery.jpg"])
+        XCTAssertEqual(archived.attachments, [first, second])
+        XCTAssertEqual(original.attachments?.first, second)
+    }
+
+    @MainActor
+    func testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords() async throws {
+        let photos = [
+            KanbanAttachment(exampleImage: .camping, caption: "A place to explore"),
+            KanbanAttachment(exampleImage: .mountains),
+            KanbanAttachment(exampleImage: .garden, caption: "A longer caption that should remain readable at accessibility text sizes"),
+            KanbanAttachment(exampleImage: .workspace, caption: "Planning the next trip")
+        ]
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        func scrollViews(in view: UIView) -> [UIScrollView] {
+            let matches = (view as? UIScrollView).map { [$0] } ?? []
+            return matches + view.subviews.flatMap { scrollViews(in: $0) }
+        }
+        for (width, textSize) in [(CGFloat(320), DynamicTypeSize.large), (700, .large), (393, .accessibility3)] {
+            let gallery = CardPhotoGallery(
+                photos: photos, photoSelection: .constant([]),
+                onOpen: { _ in XCTFail("Rendering must not open a photo") },
+                onCaption: { _, _ in XCTFail("Rendering must not change a caption"); return false },
+                onReorder: { _ in XCTFail("Rendering must not reorder photos"); return false },
+                onRemove: { _ in XCTFail("Rendering must not remove a photo") },
+                onSetCover: { _ in XCTFail("Rendering must not select a cover") }
+            )
+            let controller = UIHostingController(rootView: gallery.environment(\.dynamicTypeSize, textSize))
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 900)
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            XCTAssertTrue(scrollViews(in: controller.view).contains { $0.contentSize.width > $0.bounds.width })
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let snapshot = XCTAttachment(image: image)
+            snapshot.name = "Photo-Gallery-\(Int(width))-\(textSize)"
+            snapshot.lifetime = .keepAlways
+            add(snapshot)
+        }
+    }
+
     func testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle() throws {
 
         let card = KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
@@ -555,7 +754,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
             presentation:        .note,
             createdAt:           Date(timeIntervalSince1970: 1_791_422_000)
         )
-        note.attachments = [KanbanAttachment(exampleImage: .garden)]
+        let cover = KanbanAttachment(exampleImage: .garden)
+        note.attachments = [
+            cover,
+            KanbanAttachment(exampleImage: .camping, caption: "Our next adventure"),
+            KanbanAttachment(exampleImage: .mountains, caption: "Room to explore")
+        ]
+        note.coverAttachmentID = cover.id
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
         let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
         let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
@@ -623,7 +828,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         let photo = KanbanAttachment(exampleImage: .garden) /* Synthetic photo fixture */
         var card = KanbanCard(id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: []) /* Card value under verification */
-        card.attachments = [photo]
+        card.attachments = [
+            photo,
+            KanbanAttachment(exampleImage: .camping, caption: "Our next adventure"),
+            KanbanAttachment(exampleImage: .mountains)
+        ]
         var covered = card /* Card with a selected cover */
         covered.coverAttachmentID = photo.id
         for fixture in [card, covered] {
@@ -4571,7 +4780,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let lists    = Array(SampleData.lists.prefix(2)) /* Board lists under verification */
+        var lists = Array(SampleData.lists.prefix(2))
+        var archived = KanbanList(id: 99, title: "Previous Week", cards: lists[1].cards)
+        archived.isArchived = true
+        lists.append(archived)
+        lists[0].archiveCard(id: lists[0].cards[0].id)
         let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: lists[1].id) /* Persisted snapshot under verification */
 
         XCTAssertTrue(ExampleLoadUndoStore.save(lists: lists, todayListID: lists[1].id, to: defaults))

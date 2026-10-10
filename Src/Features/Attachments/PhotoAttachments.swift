@@ -201,6 +201,7 @@ struct CardCoverLibrary: View {
 struct CardCoverPreview: View {
     let attachment: KanbanAttachment /* Explicitly selected photo */
     var height: CGFloat = 128 /* Fixed preview height, independent of source image dimensions */
+    var unavailableTitle = "Cover unavailable"
     @State private var image: UIImage? /* Downsampled image for this presentation */
     @State private var unavailable = false /* Explicit missing/invalid-image feedback */
 
@@ -218,7 +219,7 @@ struct CardCoverPreview: View {
                     Image(uiImage: image).resizable().scaledToFill()
                 } else if unavailable {
 
-                    Label("Cover unavailable", systemImage: "photo")
+                    Label(unavailableTitle, systemImage: "photo")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -319,6 +320,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
     let addedAt:   Date                     /* Attachment creation time       */
     let exampleImage: ExampleCoverImage?    /* Immutable original example illustration, never user media */
+    var caption: String?                   /* Optional photo text; absent in legacy attachment records */
 
     ///
     /// @fcn        KanbanAttachment.kind
@@ -353,7 +355,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied metadata describes the attachment location and content, when known
     /// @post       Stored fields match the provided values
     ///
-    init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil) {
+    init(id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil, addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil, caption: String? = nil) {
 
         self.id        = id
         self.fileName  = fileName
@@ -361,6 +363,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
         self.mediaKind = mediaKind
         self.addedAt   = addedAt
         self.exampleImage = exampleImage
+        self.caption   = caption
     }
 }
 
@@ -921,6 +924,235 @@ struct CardLinkAttachmentSheet: View {
 }
 
 
+struct CardPhotoGallery: View {
+    let photos: [KanbanAttachment]
+    @Binding var photoSelection: [PhotosPickerItem]
+    let onOpen: (KanbanAttachment) -> Void
+    let onCaption: (UUID, String) -> Bool
+    let onReorder: ([UUID]) -> Bool
+    let onRemove: (KanbanAttachment) -> Void
+    let onSetCover: (UUID) -> Void
+
+    @ScaledMetric(relativeTo: .body) private var photoWidth = 220
+    @ScaledMetric(relativeTo: .body) private var photoHeight = 180
+    @State private var captionPhoto: KanbanAttachment?
+    @State private var removalPhoto: KanbanAttachment?
+    @State private var showsArrangement = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Text("Gallery").font(.headline)
+                    Spacer()
+                    galleryControls
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Gallery").font(.headline)
+                    galleryControls
+                }
+            }
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 12) {
+                    ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                        photoTile(photo, index: index)
+                    }
+                }
+            }
+            .accessibilityIdentifier("photoGallery.row")
+        }
+        .accessibilityIdentifier("photoGallery")
+        .sheet(item: $captionPhoto) { photo in
+            CardPhotoCaptionSheet(photo: photo) { onCaption(photo.id, $0) }
+                .databaseActivityOverlay()
+        }
+        .sheet(isPresented: $showsArrangement) {
+            CardPhotoArrangementSheet(photos: photos, onReorder: onReorder)
+                .databaseActivityOverlay()
+        }
+        .confirmationDialog("Remove this photo?", isPresented: Binding(
+            get: { removalPhoto != nil },
+            set: { if !$0 { removalPhoto = nil } }
+        ), titleVisibility: .visible) {
+            if let photo = removalPhoto {
+                Button("Remove photo", role: .destructive) {
+                    onRemove(photo)
+                    removalPhoto = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { removalPhoto = nil }
+        } message: {
+            Text("Removes the photo and its caption from this item. Photos retained elsewhere are kept.")
+        }
+    }
+
+    private var galleryControls: some View {
+        HStack(spacing: 12) {
+            Button("Arrange", systemImage: "arrow.left.arrow.right") {
+                showsArrangement = true
+            }
+            .disabled(photos.count < 2)
+            .accessibilityLabel("Arrange gallery photos")
+            .accessibilityIdentifier("photoGallery.arrange")
+            PhotosPicker(selection: $photoSelection, maxSelectionCount: 12, matching: .images) {
+                Label("Add photos", systemImage: "photo.badge.plus")
+            }
+            .accessibilityIdentifier("photoGallery.add")
+        }
+        .font(.subheadline)
+        .frame(minHeight: 44)
+    }
+
+    private func photoTile(_ photo: KanbanAttachment, index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { onOpen(photo) } label: {
+                CardCoverPreview(attachment: photo, height: photoHeight, unavailableTitle: "Photo unavailable")
+                    .overlay(alignment: .bottomLeading) {
+                        if let caption = photo.caption, !caption.isEmpty {
+                            Text(caption)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.white)
+                                .lineLimit(3)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background {
+                                    LinearGradient(colors: [.black.opacity(0.7), .black.opacity(0.95)],
+                                                   startPoint: .top, endPoint: .bottom)
+                                }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Photo \(index + 1)")
+            .accessibilityValue(photo.caption ?? "No caption")
+            .accessibilityHint("Opens the full photo. Touch and hold to drag it to another gallery position.")
+            .accessibilityIdentifier("photoGallery.photo.\(photo.id)")
+            .draggable("plenact.gallery.\(photo.id.uuidString)")
+            .dropDestination(for: String.self) { items, _ in
+                guard items.count == 1,
+                      let token = items.first,
+                      token.hasPrefix("plenact.gallery."),
+                      let id = UUID(uuidString: String(token.dropFirst("plenact.gallery.".count))),
+                      let source = photos.firstIndex(where: { $0.id == id }),
+                      id != photo.id else { return false }
+                var ids = photos.map(\.id)
+                ids.remove(at: source)
+                ids.insert(id, at: index)
+                return onReorder(ids)
+            }
+            HStack {
+                Text("Photo \(index + 1)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    Button(photo.caption == nil ? "Add caption" : "Edit caption", systemImage: "text.bubble") {
+                        captionPhoto = photo
+                    }
+                    Button("Move earlier", systemImage: "arrow.left") { movePhoto(index, by: -1) }
+                        .disabled(index == 0)
+                    Button("Move later", systemImage: "arrow.right") { movePhoto(index, by: 1) }
+                        .disabled(index == photos.count - 1)
+                    Button("Set as Cover", systemImage: "photo") { onSetCover(photo.id) }
+                    Button("Remove photo", systemImage: "trash", role: .destructive) { removalPhoto = photo }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Options for photo \(index + 1)")
+                .accessibilityIdentifier("photoGallery.options.\(photo.id)")
+            }
+        }
+        .frame(width: photoWidth)
+    }
+
+    private func movePhoto(_ index: Int, by offset: Int) {
+        var ids = photos.map(\.id)
+        ids.swapAt(index, index + offset)
+        _ = onReorder(ids)
+    }
+}
+
+struct CardPhotoCaptionSheet: View {
+    let photo: KanbanAttachment
+    let onSave: (String) -> Bool
+    @State private var caption: String
+    @Environment(\.dismiss) private var dismiss
+
+    init(photo: KanbanAttachment, onSave: @escaping (String) -> Bool) {
+        self.photo = photo
+        self.onSave = onSave
+        _caption = State(initialValue: photo.caption ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    CardCoverPreview(attachment: photo, height: 180, unavailableTitle: "Photo unavailable")
+                }
+                Section("Caption") {
+                    TextField("Optional caption", text: $caption, axis: .vertical)
+                        .accessibilityIdentifier("photoGallery.captionField")
+                    Text("Shown over the bottom of the photo. Clear the text to remove its caption.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Photo caption")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { if onSave(caption) { dismiss() } }
+                        .accessibilityIdentifier("photoGallery.saveCaption")
+                }
+            }
+        }
+    }
+}
+
+struct CardPhotoArrangementSheet: View {
+    let photos: [KanbanAttachment]
+    let onReorder: ([UUID]) -> Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                        HStack(spacing: 12) {
+                            CardCoverPreview(attachment: photo, height: 64, unavailableTitle: "Photo unavailable")
+                                .frame(width: 80)
+                            Text(photo.caption ?? "Photo \(index + 1)")
+                        }
+                    }
+                    .onMove { source, destination in
+                        var ids = photos.map(\.id)
+                        ids.move(fromOffsets: source, toOffset: destination)
+                        _ = onReorder(ids)
+                    }
+                } footer: {
+                    Text("Drag the handles to arrange photos. The cover stays separate. Changes are saved as you move photos.")
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Arrange photos")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
 ///
 /// Displays a square thumbnail for an attached card item
 ///
@@ -1032,17 +1264,25 @@ struct CardAttachmentPreview: View {
                    let videoURL = CardAttachmentStore.fileURL(for: attachment) { /* Local video file URL */
                     VideoPlayer(player: AVPlayer(url: videoURL))
                     
-                } else if let imageURL = CardAttachmentStore.imageURL(for: attachment), /* Local photo file URL */
-                          
-                   let image = UIImage(contentsOfFile: imageURL.path) { /* Decoded local image */
-                    
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                    
                 } else {
-
-                    ContentUnavailableView("Photo unavailable", systemImage: "photo")
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            if let imageURL = CardAttachmentStore.imageURL(for: attachment),
+                               let image = UIImage(contentsOfFile: imageURL.path) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                            } else {
+                                ContentUnavailableView("Photo unavailable", systemImage: "photo")
+                            }
+                            if let caption = attachment.caption, !caption.isEmpty {
+                                Text(caption)
+                                    .font(.body)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal)
+                            }
+                        }
+                    }
                 }
             }
 

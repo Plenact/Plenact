@@ -281,6 +281,39 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return (attachments ?? []).filter { $0.id != displayedCoverID }
     }
 
+    var galleryPhotos: [KanbanAttachment] {
+        attachmentsExcludingCover.filter { $0.kind == .photo }
+    }
+
+    mutating func setPhotoCaption(_ caption: String, for id: UUID) throws {
+        guard var current = attachments,
+              let index = current.firstIndex(where: { $0.id == id && $0.kind == .photo }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let text = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+        current[index].caption = text.isEmpty ? nil : text
+        attachments = current
+    }
+
+    mutating func reorderGalleryPhotos(_ orderedIDs: [UUID]) throws {
+        let photos = galleryPhotos
+        guard orderedIDs.count == photos.count,
+              Set(orderedIDs).count == orderedIDs.count,
+              Set(orderedIDs) == Set(photos.map(\.id)),
+              var current = attachments else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let byID = Dictionary(uniqueKeysWithValues: photos.map { ($0.id, $0) })
+        let slots = current.indices.filter { current[$0].kind == .photo && current[$0].id != coverAttachment?.id }
+        for (slot, id) in zip(slots, orderedIDs) {
+            guard let photo = byID[id] else {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+            current[slot] = photo
+        }
+        attachments = current
+    }
+
 
     ///
     /// @fcn        KanbanCard.setCover(_:)
@@ -3295,6 +3328,35 @@ enum SampleData {
 
                     card.attachments = [attachment]
                     card.coverAttachmentID = attachment.id
+                }
+
+                let gallery: [(ExampleCoverImage, String?)]
+                switch cardTitle {
+                    case "Review the week ahead":
+                        gallery = [
+                            (.calendarPlan, "Make room for what matters"),
+                            (.projectPlanning, "A few clear priorities"),
+                            (.workspace, "A calm place to begin")
+                        ]
+                    case "Plan the weekend":
+                        gallery = [
+                            (.camping, "A little adventure together"),
+                            (.travelBag, "Bring only what we need"),
+                            (.picnic, "Time to pause and enjoy")
+                        ]
+                    case "Spend time outdoors":
+                        gallery = [
+                            (.forestPath, "Follow a quieter path"),
+                            (.coastalWalk, "Room to breathe"),
+                            (.mountains, nil)
+                        ]
+                    default:
+                        gallery = []
+                }
+                if !gallery.isEmpty {
+                    card.attachments = (card.attachments ?? []) + gallery.map { image, caption in
+                        KanbanAttachment(mediaKind: .photo, exampleImage: image, caption: caption)
+                    }
                 }
 
                 globalIndex += 1

@@ -5,10 +5,20 @@ Plenact is an iPhone planning and organization app being built around a calm, li
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
 
 ## Development Work
-
+ 
 - Gallery view in a card
 
 - Ability to reset and load a full template week in from Examples Menu
+
+- Ability to also add Card banners, if they want
+
+
+
+
+
+Now Alex, I am almost out of Credits for this month, and we still have two weeks left!! Can you help me with an extensive, detailed initialization prompt to carry this work over to my ChatGPT subscription and continue our work over there until my GitHub Copilot credits here reset nexxt month? :-)
+
+
 
 - Lists/Notes Interface Idea
 
@@ -26,7 +36,7 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 - Consider the value and interest, or utility of having the users be able to place notes, images and cards into the same lists
 
-- Ability to also add Card banners, if the	y want
+- Being able to place images in the list of full size
 
 ### Carryover
 

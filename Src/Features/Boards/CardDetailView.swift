@@ -109,7 +109,7 @@ struct CardDetailView: View {
         case labels                                 /* Card label library and assignment picker            */
         case attachmentSources                      /* Attachment source chooser                           */
         case noteAttachments
-        case coverSettings
+        case appearance
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
@@ -132,7 +132,7 @@ struct CardDetailView: View {
                 case .labels:                            "labels"
                 case .attachmentSources:                 "attachment-sources"
                 case .noteAttachments:                   "note-attachments"
-                case .coverSettings:                     "cover-settings"
+                case .appearance:                        "appearance"
                 case .addLink:                           "add-link"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
                 case .actionDetail(let checklistID, let itemID): /* Owning checklist and action IDs */
@@ -273,6 +273,8 @@ struct CardDetailView: View {
     @State private var checklistToFocus: UUID?               /* Newly added checklist whose first item should be focused     */
     @State private var titleChecked: Bool                    /* Whether the card title itself is checked                     */
     @State private var titleText: String                     /* Editable card title displayed in the detail header           */
+    @State private var appearance: ItemAppearance?
+    @State private var showsAppearanceCover = false
     @State private var subtitleText: String                  /* Editable card subtitle displayed in the detail header        */
     @State private var startDate: Date?                      /* Optional start date for the selected card                    */
     @State private var dueDate: Date?                        /* Optional due date for the selected card                      */
@@ -383,6 +385,7 @@ struct CardDetailView: View {
 
         _titleChecked         = State(initialValue: card.isTitleChecked)        /* Initialize the title checked state based on the card's current value */
         _titleText            = State(initialValue: card.word)                  /* Initialize the editable title from the card                          */
+        _appearance           = State(initialValue: card.appearance)
         _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
@@ -1032,6 +1035,7 @@ struct CardDetailView: View {
         var updated = card /* Complete record assembled from working editor state */
 
         updated.word = titleText
+        updated.appearance = appearance
         updated.subtitleOverride = card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText
         updated.isTitleChecked = titleChecked
         updated.startDate = startDate
@@ -2018,21 +2022,30 @@ struct CardDetailView: View {
 
         VStack(alignment: .leading, spacing: 18) {
 
-            locationControl
-                .accessibilityIdentifier("note.locationPicker")
+            VStack(alignment: .leading, spacing: 18) {
+                locationControl
+                    .accessibilityIdentifier("note.locationPicker")
 
-            TextField("Note title", text: $titleText, axis: .vertical)
-                .font(.largeTitle.weight(.bold))
-                .focused($focusedField, equals: .title)
-                .accessibilityLabel("Note title")
-                .onChange(of: titleText) { _, newValue in
-                    syncCardState(title: newValue)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    ItemAppearanceMark(appearance: appearance)
+                    TextField("Note title", text: $titleText, axis: .vertical)
+                        .font(.largeTitle.weight(.bold))
+                        .focused($focusedField, equals: .title)
+                        .accessibilityLabel("Note title")
+                        .onChange(of: titleText) { _, newValue in
+                            syncCardState(title: newValue)
+                        }
                 }
 
-            if let createdAt = card.createdAt { /* Original Note creation timestamp displayed below its body */
-                NoteCreationDateLabel(createdAt: createdAt)
-                    .accessibilityIdentifier("note.creationDate")
+                if let createdAt = card.createdAt { /* Original Note creation timestamp displayed below its body */
+                    NoteCreationDateLabel(createdAt: createdAt)
+                        .accessibilityIdentifier("note.creationDate")
+                }
             }
+            .padding(.horizontal, appearance?.background == nil ? 0 : 20)
+            .padding(.vertical, appearance?.background == nil ? 0 : 12)
+            .itemBannerBackground(appearance)
+            .padding(.horizontal, appearance?.background == nil ? 0 : -20)
 
             TextField("Start writing...", text: descriptionEditingBinding, axis: .vertical)
                 .font(.body)
@@ -2281,6 +2294,7 @@ struct CardDetailView: View {
 
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                ItemAppearanceMark(appearance: appearance)
                                 TextField("Card title", text: $titleText)
                                     .font(.title2.weight(.bold))
                                     .textInputAutocapitalization(.never)
@@ -2325,6 +2339,7 @@ struct CardDetailView: View {
                     }
 
                     .padding(16)
+                    .itemBannerBackground(appearance)
                     }
 
                     //****************************************************************************//
@@ -2648,10 +2663,11 @@ struct CardDetailView: View {
                     }
 
                     Menu {
-                        Button("Card Cover", systemImage: "photo") {
+                        Button("Appearance", systemImage: "paintpalette") {
                             focusedField = nil
-                            activeSheet = .coverSettings
+                            activeSheet = .appearance
                         }
+                        .disabled(onTitleToggle == nil)
 
                         Button(
                             presentation == .note ? "Make into Card" : "Make into Note",
@@ -2661,12 +2677,6 @@ struct CardDetailView: View {
                         }
                         .disabled(onTitleToggle == nil)
 
-                        Button(action: toggleCardTitle) {
-                            Label(
-                                titleChecked ? "Mark incomplete" : "Mark complete",
-                                systemImage: titleChecked ? "square" : "checkmark.square"
-                            )
-                        }
                         Button {
                             focusedField = .description
                         } label: {
@@ -2732,6 +2742,7 @@ struct CardDetailView: View {
 
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
+            .itemBannerBackground(appearance)
             .background(Color(.systemGroupedBackground))
         }
 
@@ -2741,6 +2752,7 @@ struct CardDetailView: View {
             }
         }
         .navigationTitle("")
+        .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .onChange(of: selectedCoverPhoto) { _, photoItem in
@@ -2839,21 +2851,34 @@ struct CardDetailView: View {
                     noteAttachmentsSheet
                         .databaseActivityOverlay()
 
-                case .coverSettings:
-                    NavigationStack {
-                        ScrollView {
-                            coverControls
+                case .appearance:
+                    ItemAppearanceSheet(
+                        title: titleText,
+                        appearance: appearance,
+                        onOpenCover: { showsAppearanceCover = true }
+                    ) { updated in
+                        let previous = appearance
+                        appearance = updated
+                        guard syncCardState() else {
+                            appearance = previous
+                            return false
                         }
-                        .navigationTitle("Card Cover")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") { activeSheet = nil }
-                            }
-                        }
+                        return true
                     }
-                    .presentationDetents([.medium, .large])
-                    .databaseActivityOverlay()
+                    .sheet(isPresented: $showsAppearanceCover) {
+                        NavigationStack {
+                            ScrollView { coverControls }
+                                .navigationTitle("Card Cover")
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbar {
+                                    ToolbarItem(placement: .confirmationAction) {
+                                        Button("Done") { showsAppearanceCover = false }
+                                    }
+                                }
+                        }
+                        .presentationDetents([.medium, .large])
+                        .databaseActivityOverlay()
+                    }
 
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)

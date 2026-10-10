@@ -5620,6 +5620,7 @@ private struct TodayFocusSection: View {
 
                                 Button(action: onOpenTodayList) {
                                     HStack {
+                                        ItemAppearanceMark(appearance: card.appearance)
                                         Text(card.word)
                                             .foregroundStyle(.primary)
                                             .lineLimit(1)

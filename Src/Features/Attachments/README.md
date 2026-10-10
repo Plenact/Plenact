@@ -16,7 +16,7 @@ The optional `KanbanAttachment.caption` field is additive Codable metadata: olde
 
 ### Card covers
 
-Card detail's **Card Cover** section provides a visual chooser for attached photos, **Add Photo as Cover**, and **Remove Cover**. Photo thumbnail menus also offer **Set as Cover**. Selection is explicit: attaching a photo normally never creates a cover. Removing a cover keeps the attachment and bytes; removing the selected attachment clears the cover without choosing a fallback.
+Open **Card/Note actions → Appearance → Card Cover**, in its own section below Banner background, for a visual chooser of attached photos, **Add Photo as Cover**, and **Remove Cover**. Cover changes apply immediately, separately from the Appearance icon/background draft; Done returns to Appearance. Photo thumbnail menus also offer **Set as Cover**. Selection is explicit: attaching a photo normally never creates a cover. Removing a cover keeps the attachment and bytes; removing the selected attachment clears the cover without choosing a fallback.
 
 Covers reuse the selected attachment UUID; no second image file is saved. Videos and links are not cover choices. The device-only **Board Settings → Show card covers** switch hides row previews without altering content. Original bundled example photos use an optional typed `exampleImage` reference instead of a Documents filename, so canceled example drafts create no files and cleanup never treats these app resources as user media.
 
@@ -24,7 +24,7 @@ Covers reuse the selected attachment UUID; no second image file is saved. Videos
 
 ### Offline Cover Library
 
-Open **Card detail → Card Cover → Browse Cover Library**. The chooser starts with **All Covers**, and its category menu offers six groups of eight illustrations. Tap a named preview to attach/select it; **Cancel** leaves the card unchanged. The current library cover is marked with a check and an accessible label. Accessibility text sizes use a single column, and labels wrap.
+Open **Card detail → Appearance → Card Cover → Browse Cover Library**. The chooser starts with **All Covers**, and its category menu offers six groups of eight illustrations. Tap a named preview to attach/select it; **Cancel** leaves the card unchanged. The current library cover is marked with a check and an accessible label. Accessibility text sizes use a single column, and labels wrap.
 
 The [bundled cover images](../../CardCoverImages/) now contain **48 original illustrations**, including all 27 previously prepared images unchanged and 21 additions. Each uses the same 960-by-480 canvas, muted palette, simple geometric shapes, and no embedded text.
 

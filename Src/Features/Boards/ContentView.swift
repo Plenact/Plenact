@@ -1703,7 +1703,8 @@ struct ContentView: View {
                 descriptionOverride:  card.descriptionOverride,
                 subtitleOverride:     card.subtitleOverride,
                 presentation:         card.presentation,
-                createdAt:            card.createdAt
+                createdAt:            card.createdAt,
+                appearance:           card.appearance
             )
 
             nextCardID += 1
@@ -1713,6 +1714,7 @@ struct ContentView: View {
 
         var copiedList = KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards, newItemPresentation: source.newItemPresentation)
         copiedList.subtitleOverride = source.subtitleOverride
+        copiedList.appearance = source.appearance
         lists.insert(copiedList, at: sourceIndex + 1)
     }
 
@@ -2437,6 +2439,9 @@ struct ContentView: View {
                                             onMoveCardToList:      { cardID, listID in moveCard(cardID, toListID: listID) },
                                             onEditList: { title, subtitle in
                                                 editBoardList(list.id, title: title, subtitle: subtitle, in: &lists)
+                                            },
+                                            onAppearance: { appearance in
+                                                setListAppearance(list.id, appearance: appearance, in: &lists)
                                             }
                                         )
                                         .frame(
@@ -3697,6 +3702,7 @@ struct KanbanListView: View {
     var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
     var onEditList: ((String, String) -> Bool)? = nil
+    var onAppearance: ((ItemAppearance?) -> Bool)? = nil
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
@@ -3841,6 +3847,7 @@ struct KanbanListView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    ItemAppearanceMark(appearance: list.appearance)
                     Text(list.title)
                         .font(.title3.weight(.bold))
                         .fixedSize(horizontal: false, vertical: true)
@@ -3850,7 +3857,6 @@ struct KanbanListView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
-
                 .contentShape(Rectangle())
                 .gesture(listReorderGesture)
                 .accessibilityElement(children: .combine)
@@ -3932,6 +3938,7 @@ struct KanbanListView: View {
             .padding(.horizontal, 14)
             .padding(.top, 10)
             .padding(.bottom, 4)
+            .itemBannerBackground(list.appearance)
             .background {
                 GeometryReader { header in
                     Color.clear
@@ -4155,7 +4162,8 @@ struct KanbanListView: View {
                     onDeleteArchivedCard:  onDeleteArchivedCard,
                     onArchiveList:         onArchiveList,
                     onDeleteList:          onDeleteList,
-                    onEditList:            onEditList
+                    onEditList:            onEditList,
+                    onAppearance:          onAppearance
                 )
                 .databaseActivityOverlay()
             case .newCard:
@@ -4392,6 +4400,8 @@ private struct KanbanListActionsSheet: View {
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
     let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
     var onEditList: ((String, String) -> Bool)? = nil
+    var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    @State private var isEditingAppearance = false
     @State private var isEditingList = false
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
@@ -4418,6 +4428,9 @@ private struct KanbanListActionsSheet: View {
 
                 Section {
 
+                    if onAppearance != nil {
+                        Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
+                    }
                     if onEditList != nil {
                         Button("Edit list", systemImage: "pencil") {
                             isEditingList = true
@@ -4565,12 +4578,29 @@ private struct KanbanListActionsSheet: View {
                     .databaseActivityOverlay()
             }
         }
+        .sheet(isPresented: $isEditingAppearance) {
+            if let onAppearance {
+                ItemAppearanceSheet(title: list.title, appearance: list.appearance, onSave: onAppearance)
+            }
+        }
     }
 }
 
 
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
 
+
+@MainActor
+@discardableResult
+func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: inout [KanbanList]) -> Bool {
+    guard lists.filter({ $0.id == listID && !$0.isArchived }).count == 1,
+          let index = lists.firstIndex(where: { $0.id == listID && !$0.isArchived }) else {
+        DatabaseActivity.shared.report("Could not change this List's appearance. Its content has been retained.")
+        return false
+    }
+    lists[index].appearance = appearance?.isEmpty == true ? nil : appearance
+    return true
+}
 
 /// Saves metadata into the current canonical record, not the editor's older snapshot.
 @MainActor
@@ -4845,7 +4875,8 @@ struct KanbanCardView: View {
             descriptionOverride:  description,
             subtitleOverride:     subtitle,
             presentation:         card.presentation,
-            createdAt:            card.createdAt
+            createdAt:            card.createdAt,
+            appearance:           card.appearance
         )
     }
 
@@ -4921,6 +4952,7 @@ struct KanbanCardView: View {
                 .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
                 }
 
+                ItemAppearanceMark(appearance: card.appearance)
                 Text(card.word)
                     .font(.headline)
                     .foregroundStyle(.primary)
@@ -5254,6 +5286,7 @@ struct TodayListDetailView: View {
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
     @State private var isEditingList = false
+    @State private var isEditingAppearance = false
     @State private var newCardTitle = "" /* Inline card-creation draft */
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken = UUID().uuidString
@@ -5346,6 +5379,10 @@ struct TodayListDetailView: View {
         lists.first { $0.id == listID }
     }
 
+    private var headerColor: Color {
+        focusedList?.appearance?.background?.darkHeaderColor
+            ?? Color(red: 0.23, green: 0.34, blue: 0.32)
+    }
 
     ///
     /// @fcn        TodayListDetailView.body
@@ -5368,8 +5405,8 @@ struct TodayListDetailView: View {
                     ZStack {
                         LinearGradient(
                             stops: [
-                                .init(color: Color(red: 0.23, green: 0.34, blue: 0.32), location: 0),
-                                .init(color: Color(red: 0.23, green: 0.34, blue: 0.32), location: 0.64),
+                                .init(color: headerColor, location: 0),
+                                .init(color: headerColor, location: 0.64),
                                 .init(color: .clear, location: 1)
                             ],
                             startPoint: .top,
@@ -5560,10 +5597,13 @@ struct TodayListDetailView: View {
 
                 ToolbarItem(placement: .principal) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(focusedList?.title ?? "Today")
-                            .font(.title2.weight(.bold))
-                            .lineLimit(1)
-                            .foregroundStyle(.white)
+                        HStack(spacing: 8) {
+                            ItemAppearanceMark(appearance: focusedList?.appearance)
+                            Text(focusedList?.title ?? "Today")
+                                .font(.title2.weight(.bold))
+                                .lineLimit(1)
+                                .foregroundStyle(.white)
+                        }
 
                         if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
 
@@ -5580,6 +5620,7 @@ struct TodayListDetailView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
                         Button("Edit list", systemImage: "pencil") {
                             isEditingList = true
                         }
@@ -5636,6 +5677,13 @@ struct TodayListDetailView: View {
                     editBoardList(listID, title: title, subtitle: subtitle, in: &lists)
                 }
                 .databaseActivityOverlay()
+            }
+        }
+        .sheet(isPresented: $isEditingAppearance) {
+            if let focusedList {
+                ItemAppearanceSheet(title: focusedList.title, appearance: focusedList.appearance) { appearance in
+                    setListAppearance(listID, appearance: appearance, in: &lists)
+                }
             }
         }
         .databaseActivityOverlay()

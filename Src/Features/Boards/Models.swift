@@ -190,6 +190,18 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
 }
 
 
+enum ItemAccent: String, CaseIterable, Codable, Sendable {
+    case teal, blue, purple, rose, orange, green
+}
+
+struct ItemAppearance: Hashable, Codable, Sendable {
+    var accent: ItemAccent?
+    var icon: PersonalCollectionIcon?
+    var background: ItemAccent? = nil
+
+    var isEmpty: Bool { accent == nil && icon == nil && background == nil }
+}
+
 ///
 /// Represents one card displayed on a kanban list
 ///
@@ -218,6 +230,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
     var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
     var coverAttachmentID:    UUID?              /* Explicitly chosen photo; nil disables this card's cover */
+    var appearance: ItemAppearance? = nil
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
     private var itemPresentation: ItemPresentation? /* Optional persisted item kind for legacy compatibility */
@@ -257,7 +270,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             descriptionOverride:  descriptionOverride,
             subtitleOverride:     subtitleOverride,
             presentation:         presentation,
-            createdAt:            createdAt
+            createdAt:            createdAt,
+            appearance:           appearance
         )
     }
 
@@ -468,7 +482,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -487,6 +501,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
         self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
         self.itemPresentation     = presentation == .card ? nil : presentation
+        self.appearance           = appearance?.isEmpty == true ? nil : appearance
         self.checklists           = checklists ?? [
             KanbanChecklist(title: "Focus",   items: ["Gather the important bits",   "Make it look intentional", "Celebrate the surprisingly good result"], completed: id % 4),
             KanbanChecklist(title: "Plan",    items: ["Choose the next useful step", "Stop building",            "Start producing"],                        completed: 1),
@@ -540,7 +555,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             descriptionOverride:  try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
             subtitleOverride:     try container.decodeIfPresent(String.self, forKey: .subtitleOverride),
             presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card,
-            createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt)
+            createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt),
+            appearance:           try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance)
         )
     }
 
@@ -570,6 +586,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case descriptionOverride
         case subtitleOverride
         case itemPresentation
+        case appearance
     }
 
 
@@ -767,6 +784,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
+    var appearance: ItemAppearance? = nil
     private var defaultItemPresentation: ItemPresentation? /* Optional persisted default kind for newly created records */
 
     /// Applies only at creation; changing this preference never converts retained items.
@@ -848,7 +866,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///     Preserve backward-compatible decoding when archived fields are absent
     ///
     private enum CodingKeys: String, CodingKey {
-        case id, title, cards, archivedCards, isArchived, defaultItemPresentation, subtitleOverride
+        case id, title, cards, archivedCards, isArchived, defaultItemPresentation, subtitleOverride, appearance
     }
 
 
@@ -870,6 +888,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         id            = try container.decode(Int.self, forKey: .id)
         title         = try container.decode(String.self, forKey: .title)
         subtitleOverride = try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
+        appearance = try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance)
+        if appearance?.isEmpty == true { appearance = nil }
         cards         = try container.decode([KanbanCard].self, forKey: .cards)
         archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
         isArchived    = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
@@ -899,6 +919,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
         try container.encodeIfPresent(subtitleOverride, forKey: .subtitleOverride)
+        try container.encodeIfPresent(appearance, forKey: .appearance)
         try container.encode(cards, forKey: .cards)
         try container.encodeIfPresent(defaultItemPresentation, forKey: .defaultItemPresentation)
 
@@ -2329,7 +2350,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
 /// @section    Purpose
 ///     Keep collection icon choices explicit and persistable
 ///
-enum PersonalCollectionIcon: String, CaseIterable, Codable {
+enum PersonalCollectionIcon: String, CaseIterable, Codable, Sendable {
     case notes = "note.text"
     case tasks = "checklist"
     case shopping = "cart"
@@ -2516,6 +2537,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         lists[0] = KanbanList(id: column.id, title: title, cards: cards, archivedCards: archivedCards, newItemPresentation: column.newItemPresentation)
         lists[0].isArchived = column.isArchived
         lists[0].subtitleOverride = column.subtitleOverride
+        lists[0].appearance = column.appearance
     }
 
 

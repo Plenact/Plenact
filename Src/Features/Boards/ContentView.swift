@@ -5364,6 +5364,8 @@ struct TodayListDetailView: View {
     var boardAppearance: BoardAppearance? = nil
     var returnDestinationTitle: String = "Today"
     var boardViewActionTitle: String = "Switch to Week View"
+    var focusesFirstUncheckedTask = false
+    @State private var didApplyInitialTaskFocus = false
 
 
     private var effectiveBoardAppearance: BoardAppearance {
@@ -5508,6 +5510,7 @@ struct TodayListDetailView: View {
 
                 if let focusedList { /* Selected list available for rendering */
 
+                    ScrollViewReader { scrollProxy in
                     List {
 
                         ForEach(focusedList.cards) { card in
@@ -5651,6 +5654,16 @@ struct TodayListDetailView: View {
                             .offset(y: 4)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
+                    }
+
+                    .task(id: listID) {
+                        guard focusesFirstUncheckedTask, !didApplyInitialTaskFocus else { return }
+                        didApplyInitialTaskFocus = true
+                        guard let target = focusedList.firstUncheckedTaskID else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled else { return }
+                        scrollProxy.scrollTo(target, anchor: .top)
+                    }
                     }
 
                 } else {

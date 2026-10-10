@@ -863,6 +863,12 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
+    /// Today focuses the first actionable Card in saved order without moving records.
+    var firstUncheckedTaskID: Int? {
+        guard !isArchived else { return nil }
+        return cards.first { $0.displayFormat == .card && !$0.isTitleChecked }?.id
+    }
+
     var appearance: ItemAppearance? = nil
     private var defaultItemPresentation: ItemPresentation? /* Optional persisted default kind for newly created records */
 

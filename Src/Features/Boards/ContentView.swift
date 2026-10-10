@@ -5397,7 +5397,7 @@ struct TodayListDetailView: View {
 
     private var headerColor: Color {
         focusedList?.appearance?.background?.darkHeaderColor
-            ?? Color(red: 0.23, green: 0.34, blue: 0.32)
+            ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255) // Muted blue (#6D8B98)
     }
 
     ///
@@ -5418,26 +5418,7 @@ struct TodayListDetailView: View {
                 Color(.systemGray6).ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    ZStack {
-                        LinearGradient(
-                            stops: [
-                                .init(color: headerColor, location: 0),
-                                .init(color: headerColor, location: 0.64),
-                                .init(color: .clear, location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint:   .bottom
-                        )
-
-                        Image("TodayPaper")
-                            .resizable()
-                            .scaledToFill()
-                            .opacity(0.14)
-                            .blendMode(.softLight)
-                    }
-
-                    .frame(height: 129)
-                    .clipped()
+                    Color.clear.frame(height: 129)
 
                     Spacer(minLength: 0)
                 }
@@ -5446,7 +5427,12 @@ struct TodayListDetailView: View {
                 .overlay(alignment: .bottom) {
                     Rectangle()
                         .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
-                        .frame(height: 2)
+                        .frame(height: 4)
+                        .background {
+                            // Match the Day banner below the gold edge through the home-indicator area.
+                            headerColor
+                                .ignoresSafeArea(edges: .bottom)
+                        }
                         .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
@@ -5489,7 +5475,7 @@ struct TodayListDetailView: View {
                                         }
                                     }
                                     .background { cardDropSurface }
-                                    .overlay(alignment: .top) { insertionMarker(before: card.id) }
+                    .overlay(alignment: .top) { insertionMarker(before: card.id) }
                             } else {
 
                                 NavigationLink(value: card) {
@@ -5555,7 +5541,6 @@ struct TodayListDetailView: View {
                         }
 
                         .padding(12)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                         .background { cardDropSurface }
                         .overlay(alignment: .top) { insertionMarker(before: nil) }
                         .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
@@ -5566,7 +5551,7 @@ struct TodayListDetailView: View {
                     .listStyle(.plain)
                     .environment(\.editMode, $editMode)
                     .scrollContentBackground(.hidden)
-                    .contentMargins(.top, 26, for: .scrollContent)
+                    .contentMargins(.top, 14, for: .scrollContent)
                     .background(.clear)
                     .background {
                         GeometryReader { geometry in
@@ -5587,13 +5572,18 @@ struct TodayListDetailView: View {
                     .onChange(of: editMode) { _, _ in clearCardDrag() }
                     .overlay(alignment: .top) {
                         Rectangle()
-                            .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
-                            .frame(height: 4)
-                            .offset(y: 12)
-                            .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                            .fill(Color(.systemGray3).opacity(0.65))
+                            .overlay(headerColor.opacity(0.20))
+                            .mask {
+                                LinearGradient(colors: [.black, .clear],
+                                               startPoint: .top, endPoint: .bottom)
+                            }
+                            .frame(height: 12)
+                            .offset(y: 4)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
+
                 } else {
                     ContentUnavailableView("List unavailable", systemImage: "list.bullet")
                 }
@@ -5601,10 +5591,10 @@ struct TodayListDetailView: View {
 
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
                     Button(action: onClose) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
@@ -5615,9 +5605,6 @@ struct TodayListDetailView: View {
 
                     .buttonStyle(.plain)
                     .accessibilityLabel("Back to Today")
-                }
-
-                ToolbarItem(placement: .principal) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 8) {
                             ItemAppearanceMark(appearance: focusedList?.appearance)
@@ -5638,9 +5625,6 @@ struct TodayListDetailView: View {
 
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
                         Button("Edit list", systemImage: "pencil") {
@@ -5665,6 +5649,26 @@ struct TodayListDetailView: View {
                     }
 
                     .accessibilityLabel("Day options")
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 44)
+
+                    Color.clear.frame(height: 12)
+                }
+                .background {
+                    Rectangle()
+                        .fill(headerColor.opacity(0.85))
+                        .background(.ultraThinMaterial)
+                        .ignoresSafeArea(edges: .top)
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                        .frame(height: 4)
+                        .offset(y: 4)
+                        .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
 

@@ -617,6 +617,8 @@ private struct AppRootView: View {
             collections:         $collections,
             registerListNewNote: registerPersonalListNewNote,
             onOpenSaved:         openSavedDestination,
+            onLoadExampleWeek:   loadExampleWeek,
+            onUndoExampleWeek:   undoExampleWeek,
             savedPersonalCardTarget: savedPersonalCardTarget,
             onClearSavedPersonalCardTarget: { savedPersonalCardTarget = nil }
         )
@@ -625,6 +627,38 @@ private struct AppRootView: View {
         }
         .tag(AppDestination.lists)
         .toolbar(.hidden, for: .tabBar)
+    }
+
+    private func loadExampleWeek() -> Bool {
+        let todayListID = TodayListSelection.currentDayList(in: lists.filter { !$0.isArchived }, date: .now)?.id
+        guard ExampleLoadUndoStore.save(lists: lists, todayListID: todayListID) else {
+            DatabaseActivity.shared.report("Could not save the previous Week Board, so the example was not loaded.")
+            return false
+        }
+        do {
+            try KanbanBoardPersistence.saveListsChecked(SampleData.lists)
+            lists = SampleData.lists
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not load the example Week Board: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func undoExampleWeek() -> Bool {
+        guard let snapshot = ExampleLoadUndoStore.load() else {
+            DatabaseActivity.shared.report("The saved Week Board snapshot could not be restored.")
+            return false
+        }
+        do {
+            try KanbanBoardPersistence.saveListsChecked(snapshot.lists)
+            lists = snapshot.lists
+            ExampleLoadUndoStore.clear()
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not restore the previous Week Board: \(error.localizedDescription)")
+            return false
+        }
     }
 
 
@@ -1999,32 +2033,7 @@ private struct TodayHomeView: View {
                     profile:           profile,
                     lists:             lists,
                     onSave:            onSaveProfile,
-                    onRemove:          onRemoveProfile,
-                    onLoadExample:     {
-                        guard ExampleLoadUndoStore.save(lists: lists + archivedLists, todayListID: selectedTodayListID) else {
-
-                            return false
-                        }
-                        let exampleLists = SampleData.lists /* Replacement Week content from the example set */
-                        archivedLists = []
-                        lists = exampleLists
-                        if let firstList = exampleLists.first { /* Initial Today selection after loading examples */
-
-                            selectTodayList(firstList)
-                        }
-                        return true
-                    },
-                    onUndoExampleLoad: {
-                        guard let snapshot = ExampleLoadUndoStore.load() else { /* Saved Week state preceding example loading */
-
-                            return false
-                        }
-                        archivedLists = snapshot.lists.filter(\.isArchived)
-                        lists = snapshot.lists.filter { !$0.isArchived }
-                        ensureCurrentWeekdayList()
-                        ExampleLoadUndoStore.clear()
-                        return true
-                    }
+                    onRemove:          onRemoveProfile
                 )
             }
 
@@ -3444,6 +3453,8 @@ struct BoardListsView: View {
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
     let registerListNewNote: ((() -> Void)?) -> Void /* Registers the directory's scoped Note action */
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
+    var onLoadExampleWeek: (() -> Bool)? = nil
+    var onUndoExampleWeek: (() -> Bool)? = nil
     var savedPersonalCardTarget: PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation */
     var onClearSavedPersonalCardTarget: () -> Void = {} /* Acknowledge a handled or invalid Saved request */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
@@ -4161,7 +4172,11 @@ struct BoardListsView: View {
                     self.pendingExample = nil
                 }
             }) {
-                PersonalListExamplesView { example in
+                PersonalListExamplesView(
+                    onLoadExampleWeek: onLoadExampleWeek,
+                    onUndoExampleWeek: onUndoExampleWeek,
+                    hasUndoableWeek: ExampleLoadUndoStore.load() != nil
+                ) { example in
                     pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
                     showsExamples = false
                 }
@@ -4308,10 +4323,28 @@ struct BoardListsView: View {
 /// @section    Purpose
 ///     Let people choose a draft without writing data or replacing their existing work
 ///
-private struct PersonalListExamplesView: View {
+struct PersonalListExamplesView: View {
 
+    var onLoadExampleWeek: (() -> Bool)? = nil
+    var onUndoExampleWeek: (() -> Bool)? = nil
     let onSelect: (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
+    @State private var confirmsLoadWeek = false
+    @State private var confirmsUndoWeek = false
+    @State private var hasUndoableWeek: Bool
+    @State private var operationError: String?
+
+    init(
+        onLoadExampleWeek: (() -> Bool)? = nil,
+        onUndoExampleWeek: (() -> Bool)? = nil,
+        hasUndoableWeek: Bool = false,
+        onSelect: @escaping (PersonalListExample) -> Void
+    ) {
+        self.onLoadExampleWeek = onLoadExampleWeek
+        self.onUndoExampleWeek = onUndoExampleWeek
+        self.onSelect = onSelect
+        _hasUndoableWeek = State(initialValue: hasUndoableWeek)
+    }
 
 
     ///
@@ -4324,8 +4357,26 @@ private struct PersonalListExamplesView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Synthetic examples to explore and make your own. Selecting one opens a draft; only Save adds a new personal list. Your Week Board and existing collections stay unchanged.")
+                    Text("Example Lists to explore and make your own. Selecting a List opens a draft; only Save adds a new personal List. Your Week Board and existing collections stay unchanged when adding a List.")
                         .foregroundStyle(.secondary)
+                }
+
+                if onLoadExampleWeek != nil {
+                    Section("Example Week View") {
+                        Button("Load Example Week View", systemImage: "square.and.arrow.down") {
+                            confirmsLoadWeek = true
+                        }
+                        .accessibilityIdentifier("library.examples.loadWeek")
+                        if hasUndoableWeek, onUndoExampleWeek != nil {
+                            Button("Undo Last Load", systemImage: "arrow.uturn.backward") {
+                                confirmsUndoWeek = true
+                            }
+                            .accessibilityIdentifier("library.examples.undoWeek")
+                        }
+                        Text("Loading replaces your current Week Board, including archived Week content. Your previous Week Board is retained on this device for Undo Last Load. Personal Lists and Boards stay unchanged. Nothing is uploaded.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 ForEach(PersonalListExample.allCases) { example in
@@ -4361,13 +4412,48 @@ private struct PersonalListExamplesView: View {
                 }
             }
 
-            .navigationTitle("Example Lists")
+            .navigationTitle("Examples")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
+        }
+        .databaseActivityOverlay()
+        .confirmationDialog("Replace the Week Board with the example?", isPresented: $confirmsLoadWeek, titleVisibility: .visible) {
+            Button("Load Example Week View", role: .destructive) {
+                if onLoadExampleWeek?() == true {
+                    hasUndoableWeek = true
+                    dismiss()
+                } else {
+                    operationError = "The example Week Board could not be loaded. Your current Week Board was not changed."
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This replaces the current active and archived Week lists and cards. Your previous Week Board is kept locally for undo. Personal collections stay unchanged.")
+        }
+        .confirmationDialog("Restore the previous Week Board?", isPresented: $confirmsUndoWeek, titleVisibility: .visible) {
+            Button("Undo Last Load", role: .destructive) {
+                if onUndoExampleWeek?() == true {
+                    hasUndoableWeek = false
+                    dismiss()
+                } else {
+                    operationError = "The saved Week Board snapshot could not be restored."
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This replaces the current Week Board, including edits made since loading the example, with the saved Week Board from before the last load.")
+        }
+        .alert("Could not update Week Board", isPresented: Binding(
+            get: { operationError != nil },
+            set: { if !$0 { operationError = nil } }
+        )) {
+            Button("OK", role: .cancel) { operationError = nil }
+        } message: {
+            Text(operationError ?? "")
         }
     }
 }

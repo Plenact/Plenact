@@ -8,6 +8,8 @@ This feature provides a local-only identity, Today avatar, Account & Settings sc
 - `LocalProfileStore.swift`: versioned local persistence isolated from Board data.
 - `AccountSettingsView.swift`: profile creation/editing, planning preferences, accessibility controls, privacy details, and profile removal.
 
+Week example loading is not a profile setting. Use **Library → + Examples → Load Example Week View**; **Undo Last Load** is in that same chooser. These confirmed Week-replacement actions retain their existing local undo format and do not change personal collections or profile data.
+
 ## Data Boundary
 
 The profile is stored in local `UserDefaults` under `Plenact.LocalProfile.v1`. Removing it does not remove Board cards, labels, Today selections, or attachment files. Email is optional local text and is not verified or transmitted.

@@ -1128,6 +1128,14 @@ struct ContentView: View {
     let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? /* Deletes a Note under its current collection owner */
     let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state */
     /// Controls presentation of the calendar sheet.
+    @Environment(\.planningCalendarAccess) private var planningCalendarAccess
+    @Environment(\.planningHomeExit) private var planningHomeExit
+    private var calendarOpeningDate: Date {
+        guard let week = planningCalendarAccess?.document.weeks.first(where: { $0.id == personalCollectionID }),
+              week.startKey != planningCalendarAccess?.document.currentWeekKey else { return .now }
+        return PlanningDate.date(week.startKey) ?? .now
+    }
+    @State private var showsSharedSearch = false
     @State private var showsCalendar = false /* Calendar sheet presentation state */
     @State private var calendarCardTarget: (listID: Int, cardID: Int)? /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists.
@@ -2187,8 +2195,10 @@ struct ContentView: View {
     ///
     private func pruneUnreferencedAttachments() {
         
+        do { _ = try PlanningCalendarStore.load() }
+        catch { DatabaseActivity.shared.report("Unused media was retained because calendar data could not be read."); return }
         let referencedFileNames = Set( /* Attachment files retained by current Board cards */
-            (lists + archivedLists + retainedAttachmentLists())
+            (lists + archivedLists + retainedAttachmentLists() + (planningCalendarAccess?.allRetainedLists ?? []))
                 .flatMap(\.allCards)
                 .flatMap { $0.attachments ?? [] }
                 .compactMap(\.fileName)
@@ -2392,6 +2402,8 @@ struct ContentView: View {
                             onJumpToFirstList:   lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
                             onAppearance:        { showsBoardAppearance = true },
+                            onSearch: { showsSharedSearch = true },
+                            calendarAccessibilityTitle: calendarOpeningDate.formatted(.dateTime.month(.wide)) + " calendar",
                             onAddList:           addList
                         )
 
@@ -2776,7 +2788,9 @@ struct ContentView: View {
                         onPermanentDelete: deleteCard,
                         boardAppearance: currentBoardAppearance,
                         returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
-                        boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View"
+                        boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View",
+                        representedDate: planningCalendarAccess?.document.weeks.first(where: { $0.id == personalCollectionID })?
+                            .dayListIDs.first(where: { $0.value == listID }).flatMap { PlanningDate.date($0.key) }
                     )
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
@@ -2784,6 +2798,7 @@ struct ContentView: View {
             .sheet(isPresented: $showsBoardAppearance) {
                 BoardAppearanceSheet(appearance: currentBoardAppearance, onSave: saveBoardAppearance)
             }
+            .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsCalendar, onDismiss: {
                 guard let target = calendarCardTarget else { return }
                 calendarCardTarget = nil
@@ -2796,6 +2811,10 @@ struct ContentView: View {
                 navigationPath = NavigationPath()
                 navigationPath.append(card)
             }) {
+                if planningCalendarAccess != nil {
+                    PlanningCalendarView(initialDate: calendarOpeningDate, onLeaveForHome: { showsCalendar = false; onClose?(); planningHomeExit?() })
+                        .presentationDetents([.large])
+                } else {
                 TodayCalendarView(
                     lists:         lists,
                     onArchiveCard: archiveCard,
@@ -2806,6 +2825,7 @@ struct ContentView: View {
                 }
 
                 .presentationDetents([.large])
+                }
             }
 
             .sheet(isPresented: $showsArchivedLists) {
@@ -2869,6 +2889,8 @@ struct BoardHeader: View {
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
     var onAppearance: (() -> Void)? = nil
+    var onSearch: (() -> Void)? = nil
+    var calendarAccessibilityTitle: String = "Open this month"
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
@@ -2949,6 +2971,13 @@ struct BoardHeader: View {
 
             titleSwipeArea
 
+            if let onSearch {
+                Button(action: onSearch) {
+                    Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.white)
+                        .frame(width: 40, height: 44).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Search Plenact")
+            }
             Button(action: onOpenCalendar) {
                 Image(systemName: "calendar")
                     .font(.title2)
@@ -2958,7 +2987,7 @@ struct BoardHeader: View {
             }
 
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Calendar")
+            .accessibilityLabel(calendarAccessibilityTitle)
 
             if allowsAddingLists {
             Menu {
@@ -5352,6 +5381,11 @@ private struct CardInfoEditorSheet: View {
 ///     Provide focused-list capture and card actions against the shared Board snapshot
 ///
 struct TodayListDetailView: View {
+    @Environment(\.cardMovementSource) private var dayMovementSource
+    @Environment(\.planningCalendarAccess) private var planningCalendarAccess
+    @Environment(\.planningHomeExit) private var planningHomeExit
+    @State private var showsDaySearch = false
+
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
     /// Archived lists and cards retained to reserve identities during creation.
@@ -5370,6 +5404,7 @@ struct TodayListDetailView: View {
     var returnDestinationTitle: String = "Today"
     var boardViewActionTitle: String = "Switch to Week View"
     var focusesFirstUncheckedTask = false
+    var representedDate: Date? = nil
     @State private var didApplyInitialTaskFocus = false
 
 
@@ -5701,7 +5736,10 @@ struct TodayListDetailView: View {
                                 .foregroundStyle(.white)
                         }
 
-                        if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
+                        if let representedDate {
+                            Text(representedDate.formatted(.dateTime.month(.abbreviated).day().year()))
+                                .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                        } else if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
 
                             Text(subtitle)
                                 .font(.subheadline)
@@ -5712,6 +5750,22 @@ struct TodayListDetailView: View {
 
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
+                    Button { showsDaySearch = true } label: {
+                        Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.white)
+                            .frame(width: 40, height: 44).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Search Plenact")
+                    Button {
+                        if let planningCalendarAccess,
+                           (dayMovementSource != nil && dayMovementSource != planningCalendarAccess.document.week(for: .now)?.id) ||
+                           (representedDate.map { PlanningDate.weekKey($0, calendar: planningCalendarAccess.document.calendar) != planningCalendarAccess.document.currentWeekKey } ?? false) {
+                            planningCalendarAccess.openCurrentWeek(); onClose(); planningHomeExit?()
+                        } else { onOpenWeek() }
+                    } label: {
+                        Image(systemName: "rectangle.split.3x1").font(.title2).foregroundStyle(.white)
+                            .frame(width: 40, height: 44).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Open this week")
                     Menu {
                         Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
                         Button("Edit list", systemImage: "pencil") {
@@ -5784,6 +5838,7 @@ struct TodayListDetailView: View {
             }
         }
 
+        .modifier(PlanningSharedSearchPresentation(isPresented: $showsDaySearch, onLeaveForHome: { onClose(); planningHomeExit?() }))
         .sheet(isPresented: $isEditingList) {
             if let focusedList {
                 ListInfoEditorSheet(list: focusedList) { title, subtitle, defaultPresentation in
@@ -6002,6 +6057,7 @@ struct TodayListDetailView: View {
 struct CardMovementAccess {
     var destinations: [CardMoveDestination] = []
     var move: ((KanbanCard, UUID?, CardMoveDestination) -> Bool)? = nil
+    var moveToDate: ((KanbanCard, UUID?, Date) -> Bool)? = nil
 }
 private struct CardMovementAccessKey: EnvironmentKey {
     static let defaultValue = CardMovementAccess()
@@ -6023,6 +6079,9 @@ struct CardDestinationMenu: View {
     let card: KanbanCard
     var onMoved: () -> Void = {}
     var locationTitle: String? = nil
+    @State private var showsDatePicker = false
+    @State private var selectedMoveDate = Date()
+
     @Environment(\.cardMovementAccess) private var access
     @Environment(\.cardMovementSource) private var source
     private var destinations: [CardMoveDestination] {
@@ -6031,7 +6090,7 @@ struct CardDestinationMenu: View {
     var body: some View {
         if access.move != nil {
             Menu {
-                ForEach(["Week", "Library"], id: \.self) { group in
+                ForEach(["Week", "Calendar", "Library"], id: \.self) { group in
                     Menu(group) {
                         ForEach(destinations.filter { $0.group == group }) { destination in
                             Button(destination.title) {
@@ -6042,11 +6101,31 @@ struct CardDestinationMenu: View {
                     }
                     .disabled(!destinations.contains { $0.group == group })
                 }
+                if access.moveToDate != nil {
+                    Button("Choose a date…", systemImage: "calendar") { showsDatePicker = true }
+                }
             } label: {
                 if let locationTitle {
                     Text(locationTitle).font(.caption).foregroundStyle(.secondary).italic()
                 } else {
                     Label("Move \(card.displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
+                }
+            }
+            .sheet(isPresented: $showsDatePicker) {
+                NavigationStack {
+                    Form { DatePicker("Move to", selection: $selectedMoveDate, displayedComponents: .date).datePickerStyle(.graphical) }
+                        .navigationTitle("Move to a day")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showsDatePicker = false } }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Move") {
+                                    if access.moveToDate?(card, source, selectedMoveDate) == true {
+                                        showsDatePicker = false; onMoved()
+                                    }
+                                }
+                            }
+                        }
                 }
             }
         }

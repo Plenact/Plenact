@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CADA20261010000000000001 /* CalendarPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADA20261010000000000002 /* CalendarPlanning.swift */; };
 		F30000000000000000000001 /* CardCoverImages in Resources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* CardCoverImages */; };
 		F20000000000000000000001 /* DatabaseActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* DatabaseActivity.swift */; };
 		290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D254D2B426422D8D5F0495 /* Models.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CADA20261010000000000002 /* CalendarPlanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPlanning.swift; sourceTree = "<group>"; };
 		F30000000000000000000002 /* CardCoverImages */ = {isa = PBXFileReference; lastKnownFileType = folder; path = CardCoverImages; sourceTree = "<group>"; };
 		F20000000000000000000002 /* DatabaseActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseActivity.swift; sourceTree = "<group>"; };
 		1DFF35304A1B4FA18AB05E4F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				1DFF35304A1B4FA18AB05E4F /* ContentView.swift */,
 				EEEDCC72BE49419DA31600DF /* CardDetailView.swift */,
 				88D254D2B426422D8D5F0495 /* Models.swift */,
+				CADA20261010000000000002 /* CalendarPlanning.swift */,
 			);
 			path = Boards;
 			sourceTree = "<group>";
@@ -283,6 +286,7 @@
 				E85FF9C540A4411BADE7A9AC /* ContentView.swift in Sources */,
 				D45892BF9775403B92A500E8 /* CardDetailView.swift in Sources */,
 				290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */,
+				CADA20261010000000000001 /* CalendarPlanning.swift in Sources */,
 				B1A8C54E2D7F4A31A9600001 /* LabelModels.swift in Sources */,
 				B1A8C54E2D7F4A31A9600002 /* CardLabelsSheet.swift in Sources */,
 				A21C9B4E7F714DC68A4E0001 /* PhotoAttachments.swift in Sources */,

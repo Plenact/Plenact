@@ -1090,6 +1090,36 @@ struct ContentView: View {
     /// Supplies other retained snapshots whose attachment files must not be pruned.
     let retainedAttachmentLists: () -> [KanbanList] /* Supplies external snapshots protecting referenced media */
     let personalCollectionID: UUID? /* Owning personal collection; nil for the Week workspace */
+    private let appearanceBinding: Binding<BoardAppearance?>?
+    @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
+    @State private var showsBoardAppearance = false
+
+    private var currentBoardAppearance: BoardAppearance {
+        if let appearanceBinding { return appearanceBinding.wrappedValue ?? BoardAppearance() }
+        guard personalCollectionID == nil else { return BoardAppearance() }
+        return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
+    }
+
+    private func saveBoardAppearance(_ appearance: BoardAppearance, applyToAll: Bool) -> Bool {
+        do {
+            if let appearanceBinding {
+                appearanceBinding.wrappedValue = appearance
+            } else {
+                guard personalCollectionID == nil else { return false }
+                _ = try BoardAppearance.decodeWeek(weekAppearanceData)
+                weekAppearanceData = try JSONEncoder().encode(appearance)
+            }
+            if applyToAll {
+                lists = BoardAppearance.inheritingLists(lists)
+                archivedLists = BoardAppearance.inheritingLists(archivedLists)
+            }
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not save Board Appearance: \(error.localizedDescription). Existing settings have been retained.")
+            return false
+        }
+    }
+
     let availablePersonalLists: [PersonalCollection] /* Personal Lists available for moving Notes */
     let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves a Note and returns its persisted destination record */
     let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? /* Persists edits to a Note after collection movement */
@@ -1195,7 +1225,8 @@ struct ContentView: View {
         onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
+        boardAppearance: Binding<BoardAppearance?>? = nil
     ) {
 
         _lists                       = lists
@@ -1216,6 +1247,7 @@ struct ContentView: View {
         self.onCommitDeletion        = onCommitDeletion
         self.onListsChanged          = onListsChanged
         self.retainedAttachmentLists = retainedAttachmentLists
+        self.appearanceBinding = boardAppearance
         self.personalCollectionID = personalCollectionID
         self.availablePersonalLists = availablePersonalLists
         self.onMoveNoteToPersonalList = onMoveNoteToPersonalList
@@ -2358,6 +2390,7 @@ struct ContentView: View {
                             deleteBoardTitle:    deleteBoardTitle,
                             onJumpToFirstList:   lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
+                            onAppearance:        { showsBoardAppearance = true },
                             onAddList:           addList
                         )
 
@@ -2441,6 +2474,7 @@ struct ContentView: View {
                                             onEditList: { title, subtitle, defaultPresentation in
                                                 editBoardList(list.id, title: title, subtitle: subtitle, newItemPresentation: defaultPresentation, in: &lists)
                                             },
+                                            boardAppearance: currentBoardAppearance,
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
                                             }
@@ -2718,6 +2752,9 @@ struct ContentView: View {
                 )
             }
 
+            .sheet(isPresented: $showsBoardAppearance) {
+                BoardAppearanceSheet(appearance: currentBoardAppearance, onSave: saveBoardAppearance)
+            }
             .sheet(isPresented: $showsCalendar, onDismiss: {
                 guard let target = calendarCardTarget else { return }
                 calendarCardTarget = nil
@@ -2802,6 +2839,7 @@ struct BoardHeader: View {
     /// Navigates to the last active list when more than one list exists.
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
+    var onAppearance: (() -> Void)? = nil
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
@@ -2925,6 +2963,7 @@ struct BoardHeader: View {
                     Button("Jump to Last List", systemImage: "arrow.right.to.line", action: onJumpToLastList)
                 }
 
+                if let onAppearance { Button("Appearance", systemImage: "paintpalette", action: onAppearance) }
                 Button("Board Settings", systemImage: "gearshape") { showingSettings = true }
                 Button("View Archived Lists", systemImage: "archivebox", action: onViewArchivedLists)
 
@@ -3703,13 +3742,15 @@ struct KanbanListView: View {
     var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
+    var boardAppearance: BoardAppearance = BoardAppearance()
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
     @State private var opensNewCardAfterDismissal = false /* Deferred creation request after another sheet closes */
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
-    private var listTint: KanbanListTint { list.appearance?.listBackground ?? .neutral }
+    private var effectiveAppearance: ItemAppearance { boardAppearance.resolved(list.appearance) }
+    private var listTint: KanbanListTint { effectiveAppearance.listBackground ?? .neutral }
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
     @State private var deletingCard: KanbanCard? /* Swipe deletion awaiting confirmation */
     /// Measured height of the list header used to size its card collection.
@@ -3923,7 +3964,7 @@ struct KanbanListView: View {
             .padding(.horizontal, 14)
             .padding(.top, 10)
             .padding(.bottom, 4)
-            .itemBannerBackground(list.appearance)
+            .itemBannerBackground(effectiveAppearance)
             .background {
                 GeometryReader { header in
                     Color.clear
@@ -3986,6 +4027,7 @@ struct KanbanListView: View {
                                     card:            card,
                                     height:          cardHeight,
                                     displaySettings: displaySettings,
+                                    cardBackground:  boardAppearance.cardBackground,
                                     presentation:    presentation,
                                     labelLibrary:    labelLibrary,
                                     onUpdateCard:    onUpdateCard,
@@ -4780,6 +4822,7 @@ struct KanbanCardView: View {
     let card: KanbanCard                            /* The kanban card being displayed                               */
     let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
+    var cardBackground: KanbanListTint? = nil /* Board-scoped tint, independent of item banner metadata */
     /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard /* Board layout controlling the card row's density */
     let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
@@ -5019,7 +5062,14 @@ struct KanbanCardView: View {
         .padding(card.displayFormat == .picture ? 0 : (presentation == .overview ? 8 : 12))
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: card.displayFormat == .picture ? 0 : height, alignment: .top)
-        .background(.background)
+        .background {
+            ZStack {
+                Color(.systemBackground)
+                if card.displayFormat != .picture, let cardBackground, cardBackground != .neutral {
+                    cardBackground.color
+                }
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
@@ -5268,6 +5318,7 @@ struct TodayListDetailView: View {
     let onOpenWeek: () -> Void /* Open this list in the Week workspace */
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
+    @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
     @State private var newCardTitle = "" /* Inline card-creation draft */
@@ -5363,7 +5414,8 @@ struct TodayListDetailView: View {
     }
 
     private var headerColor: Color {
-        focusedList?.appearance?.background?.darkHeaderColor
+        ((try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance())
+            .resolved(focusedList?.appearance).background?.darkHeaderColor
             ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255) // Muted blue (#6D8B98)
     }
 
@@ -5450,6 +5502,7 @@ struct TodayListDetailView: View {
                                         card:            card,
                                         height:          BoardPresentation.standard.minimumCardHeight,
                                         displaySettings: BoardDisplaySettings(),
+                                        cardBackground:  (try? BoardAppearance.decodeWeek(weekAppearanceData))?.cardBackground,
                                         labelLibrary:    labelLibrary,
                                         onUpdateCard:    updateCard,
                                         onDeleteCard:    { deleteCard(card.id) },

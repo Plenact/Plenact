@@ -4552,7 +4552,8 @@ struct PersonalCollectionBoardView: View {
             onUpdateMovedNote:         onUpdateMovedNote,
             onArchiveMovedNote:        onArchiveMovedNote,
             onDeleteMovedNote:         onDeleteMovedNote,
-            onToggleMovedNoteBookmark: onToggleMovedNoteBookmark
+            onToggleMovedNoteBookmark: onToggleMovedNoteBookmark,
+            boardAppearance:           $collection.boardAppearance
         )
         .databaseActivityOverlay()
         .onAppear {

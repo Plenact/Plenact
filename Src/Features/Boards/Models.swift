@@ -216,6 +216,37 @@ enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable {
     var title: String { self == .neutral ? "Default" : rawValue.capitalized }
 }
 
+/// Board defaults are separate from explicit per-List overrides.
+struct BoardAppearance: Hashable, Codable, Sendable {
+    static let weekStorageKey = "Plenact.WeekAppearance.v1"
+    var bannerBackground: ItemAccent? = nil
+    var listBackground: KanbanListTint? = nil
+    var cardBackground: KanbanListTint? = nil
+
+    func resolved(_ appearance: ItemAppearance?) -> ItemAppearance {
+        var result = appearance ?? ItemAppearance()
+        result.background = result.background ?? bannerBackground
+        result.listBackground = result.listBackground ?? listBackground
+        return result
+    }
+
+    static func inheritingLists(_ lists: [KanbanList]) -> [KanbanList] {
+        lists.map { list in
+            var updated = list
+            if var appearance = updated.appearance {
+                appearance.background = nil
+                appearance.listBackground = nil
+                updated.appearance = appearance.isEmpty ? nil : appearance
+            }
+            return updated
+        }
+    }
+
+    static func decodeWeek(_ data: Data) throws -> BoardAppearance {
+        data.isEmpty ? BoardAppearance() : try JSONDecoder().decode(BoardAppearance.self, from: data)
+    }
+}
+
 struct ItemAppearance: Hashable, Codable, Sendable {
     var accent: ItemAccent?
     var icon: PersonalCollectionIcon?
@@ -2425,6 +2456,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     var lists: [KanbanList]              /* Lists and cards owned by the collection */
     var savedCardIDs: Set<Int>           /* Bookmarked cards retained by the collection */
     var isArchived: Bool? = nil          /* Optional archive state for older saved data */
+    var boardAppearance: BoardAppearance? = nil /* Independent persisted List color defaults */
 
     ///
     /// @fcn        PersonalCollection.isActive

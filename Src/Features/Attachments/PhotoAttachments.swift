@@ -1600,17 +1600,36 @@ struct CardAttachmentPreview: View {
 struct BoardAppearanceSheet: View {
     @State private var draft: BoardAppearance
     @State private var applyToAll = false
+    @State private var draftPresentation: BoardPresentation
+    let onSavePresentation: ((BoardPresentation) -> Void)?
     let onSave: (BoardAppearance, Bool) -> Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(appearance: BoardAppearance, onSave: @escaping (BoardAppearance, Bool) -> Bool) {
+    init(appearance: BoardAppearance, presentation: BoardPresentation = .standard,
+         onSavePresentation: ((BoardPresentation) -> Void)? = nil,
+         onSave: @escaping (BoardAppearance, Bool) -> Bool) {
         _draft = State(initialValue: appearance)
+        _draftPresentation = State(initialValue: presentation)
+        self.onSavePresentation = onSavePresentation
         self.onSave = onSave
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if onSavePresentation != nil {
+                    Section("Display") {
+                        Picker("Board presentation", selection: $draftPresentation) {
+                            ForEach(BoardPresentation.allCases) { option in
+                                Text(option.title).tag(option)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("Standard shows supporting summaries. Overview shows narrower lists and concise cards. This preference applies to Week and personal boards on this device.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Section("List banner color") {
                     Picker("Banner background", selection: $draft.bannerBackground) {
                         Text("Default").tag(Optional<ItemAccent>.none)
@@ -1655,7 +1674,10 @@ struct BoardAppearanceSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if onSave(draft, applyToAll) { dismiss() }
+                        if onSave(draft, applyToAll) {
+                            onSavePresentation?(draftPresentation)
+                            dismiss()
+                        }
                     }
                 }
             }

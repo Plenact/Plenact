@@ -22,6 +22,35 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    @MainActor
+    func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        for size in [DynamicTypeSize.large, .accessibility3] {
+            let menu = BoardOptionsPopover(canJumpFirst: true, canJumpLast: true, hasAppearance: true,
+                canArchive: true, canDelete: true, deleteTitle: "Delete Board") { _ in
+                    XCTFail("Presenting options must not perform an action")
+                }
+            let host = UIHostingController(rootView: menu
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                .padding().environment(\.dynamicTypeSize, size))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let snapshot = XCTAttachment(image: image)
+            snapshot.name = "BoardOptions-\(size)"
+            snapshot.lifetime = .keepAlways
+            add(snapshot)
+        }
+    }
+
     func testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek() throws {
         let original = SampleData.lists
         let first = PersonalCollection.exampleWeek(existingTitles: ["Week View"])

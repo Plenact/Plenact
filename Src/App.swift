@@ -3714,34 +3714,35 @@ struct BoardListsView: View {
             ? "Board · \(collection.lists.filter { !$0.isArchived }.count) lists"
             : "List"
 
-        return Button {
-            if collection.kind == .list {
-
-                mostRecentlyOpenedListID = collection.id
+        return HStack(spacing: 8) {
+            Button {
+                if collection.kind == .list {
+                    mostRecentlyOpenedListID = collection.id
+                }
+                openedCollection = collection
+            } label: {
+                row(title: collection.title, subtitle: collectionSubtitle,
+                    icon: collection.icon.rawValue, color: collection.color.color, count: collection.cardCount)
             }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens this personal collection")
 
-            openedCollection = collection
-        } label: {
-            row(
-                title:    collection.title,
-                subtitle: collectionSubtitle,
-                icon:     collection.icon.rawValue,
-                color:    collection.color.color,
-                count:    collection.cardCount
-            )
+            Menu {
+                Button("Edit", systemImage: "pencil") { editingCollection = collection }
+                Button("Archive", systemImage: "archivebox") { archivingCollection = collection }
+                Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive) { deletingCollection = collection }
+            } label: {
+                WorkspaceHeaderIcon(systemName: "ellipsis")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(collection.title) actions")
         }
-        .buttonStyle(.plain)
         .listRowBackground(collection.color.color.opacity(0.08))
-        .accessibilityHint("Opens this personal collection")
-        .contextMenu {
-            Button("Edit", systemImage: "pencil") { editingCollection = collection }
-            Button("Archive", systemImage: "archivebox") { archivingCollection = collection }
-            Button("Delete", systemImage: "trash", role: .destructive) { deletingCollection = collection }
-        }
         .accessibilityActions {
             Button("Edit Collection") { editingCollection = collection }
             Button("Archive Collection") { archivingCollection = collection }
-            Button("Delete Collection") { deletingCollection = collection }
+            Button("Delete \(collection.kind.rawValue)") { deletingCollection = collection }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button("Delete", role: .destructive) { deletingCollection = collection }
@@ -4509,7 +4510,7 @@ struct BoardListsView: View {
                 presentedCollectionBoard(collection)
             }
 
-            .alert("Delete collection?", isPresented: Binding(
+            .alert("Delete \(deletingCollection?.kind.rawValue ?? "item")?", isPresented: Binding(
                 get: { deletingCollection != nil },
                 set: { if !$0 { deletingCollection = nil } }
             )) {
@@ -4866,7 +4867,7 @@ struct PersonalCollectionBoardView: View {
                     DatabaseActivity.shared.report("Could not delete the collection: \(error.localizedDescription) It has been retained.")
                 }
             },
-            deleteBoardTitle:          collection.kind == .board ? "Delete Board" : "Delete Collection",
+            deleteBoardTitle:          "Delete \(collection.kind.rawValue)",
             onCommitDeletion:          { lists, bookmarks in
                 var updated = collection /* Collection snapshot receiving Board removals */
                 updated.lists = lists
@@ -5682,7 +5683,7 @@ private struct SavedCardsView: View {
         .confirmationDialog("Delete \(deletingBoard?.title ?? "collection")?", isPresented: Binding(
             get: { deletingBoard != nil }, set: { if !$0 { deletingBoard = nil } }
         ), titleVisibility: .visible) {
-            Button("Delete Collection", role: .destructive) {
+            Button("Delete \(deletingBoard?.kind.rawValue ?? "item")", role: .destructive) {
                 if let deletingBoard { /* Archived collection awaiting permanent deletion */
 
                     _ = onDeleteBoard(deletingBoard.id)
@@ -5815,7 +5816,7 @@ private struct ArchivedCollectionContentsView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu("Collection actions", systemImage: "ellipsis.circle") {
                         Button("Restore") { onRestoreBoard(); dismiss() }
-                        Button("Delete Collection", systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
+                        Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
                     }
                 }
             }
@@ -5840,8 +5841,8 @@ private struct ArchivedCollectionContentsView: View {
                 Text("Permanently deletes this list, all retained cards, and bookmarks. This cannot be undone.")
             }
 
-            .confirmationDialog("Delete Collection?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible) {
-                Button("Delete Collection", role: .destructive) { if onDeleteBoard() { dismiss() } }
+            .confirmationDialog("Delete \(collection.kind.rawValue)?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible) {
+                Button("Delete \(collection.kind.rawValue)", role: .destructive) { if onDeleteBoard() { dismiss() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Permanently deletes all content in this retained collection. This cannot be undone.")

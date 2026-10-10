@@ -2823,7 +2823,8 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showsBoardAppearance) {
-                BoardAppearanceSheet(appearance: currentBoardAppearance, onSave: saveBoardAppearance)
+                BoardAppearanceSheet(appearance: currentBoardAppearance, presentation: presentation,
+                    onSavePresentation: { presentation = $0 }, onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsCalendar, onDismiss: {
@@ -2920,6 +2921,8 @@ struct BoardHeader: View {
     var calendarAccessibilityTitle: String = "Open this month"
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
+    @State private var showsBoardOptions = false
+    @State private var pendingBoardAction: BoardOptionsAction?
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
     /// Controls confirmation before archiving the complete board.
     @State private var confirmsArchiveBoard = false /* Whole-Board archive confirmation state */
@@ -2934,6 +2937,20 @@ struct BoardHeader: View {
     ///
     /// @return     (some View) leading-aligned title region with a minimum 44-point touch height
     ///
+    private func performPendingBoardAction() {
+        guard let action = pendingBoardAction else { return }
+        pendingBoardAction = nil
+        switch action {
+        case .first: onJumpToFirstList?()
+        case .last: onJumpToLastList?()
+        case .appearance: onAppearance?()
+        case .settings: showingSettings = true
+        case .archived: onViewArchivedLists()
+        case .archive: confirmsArchiveBoard = true
+        case .delete: confirmsDeleteBoard = true
+        }
+    }
+
     var titleSwipeArea: some View { /* Header heading surface accepting boundary-navigation swipes */
 
         VStack(alignment: .leading, spacing: 2) {
@@ -3011,45 +3028,23 @@ struct BoardHeader: View {
             .buttonStyle(.plain)
             .accessibilityLabel(calendarAccessibilityTitle)
 
-            Menu {
-                if allowsAddingLists {
-                    Button("Add list", systemImage: "rectangle.stack.badge.plus", action: onAddList)
-                }
-
-                Picker("Board presentation", selection: $presentation) {
-                    ForEach(BoardPresentation.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
-                }
-
-                if let onJumpToFirstList { /* Available shortcut to the first active list */
-
-                    Button("Jump to First List", systemImage: "arrow.left.to.line", action: onJumpToFirstList)
-                }
-
-                if let onJumpToLastList { /* Available shortcut to the last active list */
-
-                    Button("Jump to Last List", systemImage: "arrow.right.to.line", action: onJumpToLastList)
-                }
-
-                if let onAppearance { Button("Appearance", systemImage: "paintpalette", action: onAppearance) }
-                Button("Board Settings", systemImage: "gearshape") { showingSettings = true }
-                Button("View Archived Lists", systemImage: "archivebox", action: onViewArchivedLists)
-
-                if onArchiveBoard != nil {
-
-                    Button("Archive Board", systemImage: "archivebox") { confirmsArchiveBoard = true }
-                }
-
-                if onDeleteBoard != nil {
-
-                    Button(deleteBoardTitle, systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
-                }
-            } label: {
+            Button { showsBoardOptions = true } label: {
                 WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
             }
-
+            .buttonStyle(.plain)
             .accessibilityLabel("Board options")
+            .popover(isPresented: $showsBoardOptions, arrowEdge: .top) {
+                BoardOptionsPopover(canJumpFirst: onJumpToFirstList != nil,
+                    canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
+                    canArchive: onArchiveBoard != nil, canDelete: onDeleteBoard != nil,
+                    deleteTitle: deleteBoardTitle) { action in
+                        pendingBoardAction = action
+                        showsBoardOptions = false
+                    }
+                    .presentationCompactAdaptation(.popover)
+                    .onDisappear { performPendingBoardAction() }
+            }
+
         }
 
         .padding(.horizontal, 18)
@@ -3456,20 +3451,6 @@ private struct BoardSettingsView: View {
         NavigationStack {
 
             Form {
-
-                Section {
-                    Picker("Board presentation", selection: $presentation) {
-                        ForEach(BoardPresentation.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-
-                    .pickerStyle(.segmented)
-                } header: {
-                    Text("Presentation")
-                } footer: {
-                    Text("Standard shows supporting summaries. Overview shows narrower lists and concise cards. This preference applies to Week and personal boards on this device; it does not change your content.")
-                }
 
                 Section("Card badges") {
                     Toggle("Checklist progress", isOn: $settings.showChecklistProgress)
@@ -6170,5 +6151,83 @@ struct WorkspaceHeaderIcon: View {
             .font(.system(size: 20, weight: .medium))
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
+    }
+}
+
+enum BoardOptionsAction { case first, last, appearance, settings, archived, archive, delete }
+
+struct BoardOptionsPopover: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let canJumpFirst: Bool
+    let canJumpLast: Bool
+    let hasAppearance: Bool
+    let canArchive: Bool
+    let canDelete: Bool
+    let deleteTitle: String
+    let onAction: (BoardOptionsAction) -> Void
+
+    private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
+                      color: Color = .primary, enabled: Bool = true) -> some View {
+        Button { onAction(action) } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 20, weight: .regular))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .foregroundStyle(enabled ? color : Color.secondary.opacity(0.4))
+        }
+        .disabled(!enabled)
+        .accessibilityLabel(name)
+        .help(name)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                icon("backward.end", name: "Jump to First List", action: .first, enabled: canJumpFirst)
+                Spacer()
+                icon("forward.end", name: "Jump to Last List", action: .last, enabled: canJumpLast)
+            }
+            Divider()
+            if hasAppearance {
+                Button { onAction(.appearance) } label: {
+                    HStack(spacing: 12) {
+                            Image(systemName: "paintpalette")
+                                .font(.system(size: 20, weight: .regular))
+                                .frame(width: 24)
+                            Text("Appearance").lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
+                .padding(.horizontal, 8)
+            }
+            Button { onAction(.settings) } label: {
+                HStack(spacing: 12) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 20, weight: .regular))
+                            .frame(width: 24)
+                        Text("Board Settings").lineLimit(2).minimumScaleFactor(0.7)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }
+            .padding(.horizontal, 8)
+            Divider()
+            HStack(spacing: 8) {
+                icon("archivebox", name: "Archived Lists", action: .archived, color: .accentColor)
+                if canArchive {
+                    Spacer(minLength: 0)
+                    icon("archivebox", name: "Archive Board", action: .archive)
+                }
+                if canDelete {
+                    Spacer(minLength: 0)
+                    icon("trash", name: deleteTitle, action: .delete, color: .red)
+                }
+            }
+        }
+        .font(.body)
+        .foregroundStyle(.primary)
+        .buttonStyle(.plain)
+        .padding(12)
+        .frame(width: dynamicTypeSize.isAccessibilitySize ? 320 : nil)
+        .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
     }
 }

@@ -924,6 +924,18 @@ struct CardLinkAttachmentSheet: View {
 }
 
 
+extension KanbanListTint {
+    var color: Color {
+        switch self {
+        case .neutral: Color(.systemGray6)
+        case .blue: Color.blue.opacity(0.12)
+        case .green: Color.green.opacity(0.12)
+        case .orange: Color.orange.opacity(0.12)
+        case .red: Color.red.opacity(0.12)
+        }
+    }
+}
+
 extension ItemAccent {
     var color: Color {
         switch self {
@@ -1080,13 +1092,15 @@ struct ItemAppearanceSheet: View {
     let title: String
     let onSave: (ItemAppearance?) -> Bool
     let onOpenCover: (() -> Void)?
+    let showsListBackground: Bool
     let onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
     @State private var draftDisplay: ItemDisplayFormat?
     @State private var draft: ItemAppearance
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
+    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
         self.title = title
+        self.showsListBackground = showsListBackground
         self.onSave = onSave
         self.onOpenCover = onOpenCover
         self.onSaveDisplay = onSaveDisplay
@@ -1131,6 +1145,22 @@ struct ItemAppearanceSheet: View {
                         }
                     }
                     .accessibilityIdentifier("appearance.icon")
+                }
+                if showsListBackground {
+                    Section("List background") {
+                        Picker("Background color", selection: Binding(
+                            get: { draft.listBackground ?? .neutral },
+                            set: { draft.listBackground = $0 == .neutral ? nil : $0 }
+                        )) {
+                            ForEach(KanbanListTint.allCases) { tint in
+                                Text(tint.title).tag(tint)
+                            }
+                        }
+                        .accessibilityIdentifier("appearance.listBackground")
+                        Text("A subtle color behind the items in the Week list. Saved independently of the banner background.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Section("Banner background") {
                     Picker("Background color", selection: $draft.background) {

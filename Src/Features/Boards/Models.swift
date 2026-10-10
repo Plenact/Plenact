@@ -210,12 +210,19 @@ enum ItemAccent: String, CaseIterable, Codable, Sendable {
     case teal, blue, purple, rose, orange, green
 }
 
+enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable {
+    case neutral, blue, green, orange, red
+    var id: String { rawValue }
+    var title: String { self == .neutral ? "Default" : rawValue.capitalized }
+}
+
 struct ItemAppearance: Hashable, Codable, Sendable {
     var accent: ItemAccent?
     var icon: PersonalCollectionIcon?
     var background: ItemAccent? = nil
+    var listBackground: KanbanListTint? = nil
 
-    var isEmpty: Bool { accent == nil && icon == nil && background == nil }
+    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil }
 }
 
 ///

@@ -4558,15 +4558,6 @@ struct PersonalCollectionBoardView: View {
         .onAppear {
             if collection.kind == .list {
 
-                var noteCollection = collection /* Personal List receiving its Note-only creation default */
-
-                noteCollection.useNoteDefaultsForPersonalLists()
-
-                if noteCollection != collection {
-
-                    collection = noteCollection
-                }
-
                 registerNewNote { showsNewNoteComposer = true }
             }
         }
@@ -4688,25 +4679,17 @@ private struct PersonalCollectionSettingsView: View {
                 }
                 
                 Section("New item defaults") {
-                    if draft.kind == .list {
-
-                        Text("New items in personal Lists are Notes. Existing Cards and Notes keep their current presentation.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    } else {
-
-                        ForEach($draft.lists) { $list in
-                            Picker(list.title, selection: $list.newItemPresentation) {
-                                ForEach(ItemPresentation.allCases) { presentation in
-                                    Text(presentation.title).tag(presentation)
-                                }
+                    ForEach($draft.lists) { $list in
+                        Picker(list.title, selection: $list.newItemPresentation) {
+                            ForEach(ItemPresentation.allCases) { presentation in
+                                Text(presentation.title).tag(presentation)
                             }
                         }
-
-                        Text("Applies only to new items. Existing Notes and Cards keep their own presentation.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
+
+                    Text("Applies only to new items. Existing items keep their display format.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 if isNew && draft.cardCount > 0 {

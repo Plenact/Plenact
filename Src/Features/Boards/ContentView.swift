@@ -1689,7 +1689,7 @@ struct ContentView: View {
                 id:                   nextCardID,
                 word:                 card.word,
                 listTitle:            copiedTitle,
-                isDivider:            card.isSectionDivider,
+                isDivider:            card.isDivider,
                 isTitleChecked:       card.isTitleChecked,
                 startDate:            card.startDate,
                 dueDate:              card.dueDate,
@@ -1704,7 +1704,8 @@ struct ContentView: View {
                 subtitleOverride:     card.subtitleOverride,
                 presentation:         card.presentation,
                 createdAt:            card.createdAt,
-                appearance:           card.appearance
+                appearance:           card.appearance,
+                listDisplayFormat:    card.listDisplayFormat
             )
 
             nextCardID += 1
@@ -2437,8 +2438,8 @@ struct ContentView: View {
                                             },
                                             cardMoveDestinations:  lists.filter { $0.id != list.id },
                                             onMoveCardToList:      { cardID, listID in moveCard(cardID, toListID: listID) },
-                                            onEditList: { title, subtitle in
-                                                editBoardList(list.id, title: title, subtitle: subtitle, in: &lists)
+                                            onEditList: { title, subtitle, defaultPresentation in
+                                                editBoardList(list.id, title: title, subtitle: subtitle, newItemPresentation: defaultPresentation, in: &lists)
                                             },
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
@@ -3701,7 +3702,7 @@ struct KanbanListView: View {
     var onCardDrop: (CGPoint) -> Bool = { _ in false } /* Commits a native drop at its global pointer position */
     var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
-    var onEditList: ((String, String) -> Bool)? = nil
+    var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
@@ -3985,6 +3986,7 @@ struct KanbanListView: View {
                         }
                         .background { cardDropSurface }
                         .contextMenu {
+                            ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
                             Button("Delete Divider", systemImage: "trash", role: .destructive) { deletingCard = card }
                         }
 
@@ -4399,7 +4401,7 @@ private struct KanbanListActionsSheet: View {
     let onDeleteArchivedCard: (Int) -> Void /* Permanently remove a confirmed archived card */
     let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
     let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
-    var onEditList: ((String, String) -> Bool)? = nil
+    var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
     @State private var isEditingAppearance = false
     @State private var isEditingList = false
@@ -4605,7 +4607,7 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
 /// Saves metadata into the current canonical record, not the editor's older snapshot.
 @MainActor
 @discardableResult
-func editBoardList(_ listID: Int, title: String, subtitle: String, in lists: inout [KanbanList]) -> Bool {
+func editBoardList(_ listID: Int, title: String, subtitle: String, newItemPresentation: ItemPresentation? = nil, in lists: inout [KanbanList]) -> Bool {
 
     do {
         guard lists.filter({ $0.id == listID && !$0.isArchived }).count == 1,
@@ -4614,6 +4616,7 @@ func editBoardList(_ listID: Int, title: String, subtitle: String, in lists: ino
         }
         let subtitleOverride = subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
         try lists[index].edit(title: title, subtitle: subtitleOverride)
+        if let newItemPresentation { lists[index].newItemPresentation = newItemPresentation }
         return true
     } catch {
         DatabaseActivity.shared.report("Could not edit this list: \(error.localizedDescription) Its content has been retained.")
@@ -4625,13 +4628,18 @@ func editBoardList(_ listID: Int, title: String, subtitle: String, in lists: ino
 /// Edits List display text without saving until the owner accepts the draft.
 struct ListInfoEditorSheet: View {
 
-    let onSave: (String, String) -> Bool
+    let onSave: (String, String, ItemPresentation) -> Bool
+    @State private var defaultPresentation: ItemPresentation
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
     @State private var subtitle: String
 
     init(list: KanbanList, onSave: @escaping (String, String) -> Bool) {
+        self.init(list: list) { title, subtitle, _ in onSave(title, subtitle) }
+    }
 
+    init(list: KanbanList, onSave: @escaping (String, String, ItemPresentation) -> Bool) {
+        _defaultPresentation = State(initialValue: list.newItemPresentation)
         self.onSave = onSave
         _title = State(initialValue: list.title)
         _subtitle = State(initialValue: list.subtitle)
@@ -4654,6 +4662,17 @@ struct ListInfoEditorSheet: View {
                 } footer: {
                     Text("Leave empty to hide the subtitle. Renaming a weekday list makes it an ordinary list; Today creates a new weekday list when needed.")
                 }
+                Section("New item default") {
+                    Picker("Display as", selection: $defaultPresentation) {
+                        ForEach(ItemPresentation.allCases) { format in
+                            Text(format.title).tag(format)
+                        }
+                    }
+                    .accessibilityIdentifier("list-editor-default")
+                    Text("Applies only to new items. Existing items keep their display format.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Edit list")
             .navigationBarTitleDisplayMode(.inline)
@@ -4663,7 +4682,7 @@ struct ListInfoEditorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if onSave(title.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                        if onSave(title.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines), defaultPresentation) {
                             dismiss()
                         }
                     }
@@ -4876,7 +4895,8 @@ struct KanbanCardView: View {
             subtitleOverride:     subtitle,
             presentation:         card.presentation,
             createdAt:            card.createdAt,
-            appearance:           card.appearance
+            appearance:           card.appearance,
+            listDisplayFormat:    card.listDisplayFormat
         )
     }
 
@@ -4922,119 +4942,123 @@ struct KanbanCardView: View {
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: 9) {
+            if card.displayFormat == .picture {
+                ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
+            } else {
 
-            if showsCardCovers, let cover = card.coverAttachment { /* Featured attachment allowed by the current display settings */
+                if showsCardCovers, let cover = card.coverAttachment { /* Featured attachment allowed by the current display settings */
 
-                CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
-            }
-
-            HStack(alignment: .center, spacing: 8) {
-
-                if card.presentation == .note {
-
-                    Image(systemName: "note.text")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .accessibilityLabel("Note")
-                } else {
-
-                Button {
-                    onToggle()
-                } label: {
-                    Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
-                        .font(.headline)
-                        .foregroundStyle(card.isTitleChecked ? .green : .secondary)
-                        .frame(width: 44, height: 44)
+                    CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
                 }
 
-                .buttonStyle(.plain)
-                .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+                HStack(alignment: .center, spacing: 8) {
+
+                    if card.presentation == .note {
+
+                        Image(systemName: "note.text")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, height: 44)
+                            .accessibilityLabel("Note")
+                    } else {
+
+                    Button {
+                        onToggle()
+                    } label: {
+                        Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
+                            .font(.headline)
+                            .foregroundStyle(card.isTitleChecked ? .green : .secondary)
+                            .frame(width: 44, height: 44)
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+                    }
+
+                    ItemAppearanceMark(appearance: card.appearance)
+                    Text(card.word)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (presentation == .overview ? 2 : 3))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
                 }
 
-                ItemAppearanceMark(appearance: card.appearance)
-                Text(card.word)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (presentation == .overview ? 2 : 3))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .layoutPriority(1)
-            }
+                if presentation == .standard && card.presentation == .note {
 
-            if presentation == .standard && card.presentation == .note {
+                    if let body = card.descriptionOverride, !body.isEmpty { /* Nonempty stored description shown in the card preview */
 
-                if let body = card.descriptionOverride, !body.isEmpty { /* Nonempty stored description shown in the card preview */
+                        Text(body)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+                } else if presentation == .standard && !card.subtitle.isEmpty {
 
-                    Text(body)
+                    Text(card.subtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .lineLimit(3)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-            } else if presentation == .standard && !card.subtitle.isEmpty {
 
-                Text(card.subtitle)
-                    .font(.subheadline)
+                if presentation == .standard && !cardLabels.isEmpty {
+
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 5) {
+                            ForEach(cardLabels.prefix(3)) { label in
+                                KanbanLabelChip(label: label)
+                            }
+
+                            if cardLabels.count > 3 {
+
+                                Text("+\(cardLabels.count - 3)")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        .fixedSize(horizontal: true, vertical: false)
+                        Text("\(cardLabels.count) labels")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack(alignment: .center, spacing: 4) {
+                    ViewThatFits(in: .horizontal) {
+                        if !dynamicTypeSize.isAccessibilitySize {
+
+                            HStack(spacing: 10) { cardBadges }
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            cardBadges
+                        }
+                    }
+
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-
-            if presentation == .standard && !cardLabels.isEmpty {
-
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 5) {
-                        ForEach(cardLabels.prefix(3)) { label in
-                            KanbanLabelChip(label: label)
-                        }
-
-                        if cardLabels.count > 3 {
-
-                            Text("+\(cardLabels.count - 3)")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    .fixedSize(horizontal: true, vertical: false)
-                    Text("\(cardLabels.count) labels")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    cardActions
                 }
-            }
-
-            HStack(alignment: .center, spacing: 4) {
-                ViewThatFits(in: .horizontal) {
-                    if !dynamicTypeSize.isAccessibilitySize {
-
-                        HStack(spacing: 10) { cardBadges }
-                            .fixedSize(horizontal: true, vertical: false)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        cardBadges
-                    }
-                }
-
-                .labelStyle(.titleAndIcon)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                cardActions
             }
         }
 
         .fixedSize(horizontal: false, vertical: true)
-        .padding(presentation == .overview ? 8 : 12)
+        .padding(card.displayFormat == .picture ? 0 : (presentation == .overview ? 8 : 12))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: height, alignment: .top)
+        .frame(minHeight: card.displayFormat == .picture ? 0 : height, alignment: .top)
         .background(.background)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
         .padding(.horizontal, 4)
-        .alert("Rename \(card.presentation.title)", isPresented: $isRenaming) {
+        .alert("Rename \(card.displayFormat.title)", isPresented: $isRenaming) {
             
-            TextField("\(card.presentation.title) title", text: $renameDraft)
+            TextField("\(card.displayFormat.title) title", text: $renameDraft)
                 .textInputAutocapitalization(.never)
             
             Button("Cancel", role: .cancel) {}
@@ -5044,12 +5068,12 @@ struct KanbanCardView: View {
             
         } message: {
             
-            Text("Enter a new title for this \(card.presentation.title.lowercased()).")
+            Text("Enter a new title for this \(card.displayFormat.title.lowercased()).")
         }
 
         .confirmationDialog("Delete \(card.word)?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             
-            Button("Delete \(card.presentation.title)", role: .destructive, action: onDeleteCard)
+            Button("Delete \(card.displayFormat.title)", role: .destructive, action: onDeleteCard)
             Button("Cancel", role: .cancel) {}
         }
 
@@ -5072,15 +5096,7 @@ struct KanbanCardView: View {
     ///
     private var cardActions: some View { /* Item-kind, cover, archive, deletion, and editing menu */
         Menu {
-            Button(
-                card.presentation == .note ? "Make into Card" : "Make into Note",
-                systemImage: card.presentation == .note ? "rectangle.stack" : "note.text"
-            ) {
-                var updated = card /* Card snapshot toggling between Card and Note presentation */
-
-                updated.presentation = card.presentation == .note ? .card : .note
-                onUpdateCard(updated)
-            }
+            ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
 
             if card.coverAttachmentID != nil {
 
@@ -5093,24 +5109,24 @@ struct KanbanCardView: View {
             }
 
             Button(action: onArchiveCard) {
-                Label("Archive \(card.presentation.title)", systemImage: "archivebox")
+                Label("Archive \(card.displayFormat.title)", systemImage: "archivebox")
             }
 
             Button(role: .destructive) {
                 isConfirmingDelete = true
             } label: {
-                Label("Delete \(card.presentation.title)", systemImage: "trash")
+                Label("Delete \(card.displayFormat.title)", systemImage: "trash")
             }
             Button {
                 renameDraft = card.word
                 isRenaming = true
             } label: {
-                Label("Rename \(card.presentation.title)", systemImage: "pencil")
+                Label("Rename \(card.displayFormat.title)", systemImage: "pencil")
             }
             Button {
                 isEditingInfo = true
             } label: {
-                Label("Update \(card.presentation.title) Info", systemImage: "slider.horizontal.3")
+                Label("Update \(card.displayFormat.title) Info", systemImage: "slider.horizontal.3")
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -5120,7 +5136,7 @@ struct KanbanCardView: View {
         }
 
         .buttonStyle(.plain)
-        .accessibilityLabel("\(card.presentation.title) actions")
+        .accessibilityLabel("\(card.displayFormat.title) actions")
     }
 
     ///
@@ -5444,16 +5460,22 @@ struct TodayListDetailView: View {
 
                             if card.isSectionDivider {
 
-                                Rectangle()
-                                    .fill(Color.secondary.opacity(0.45))
+                                NavigationLink(value: card) {
+                                    Rectangle()
+                                        .fill(Color.secondary.opacity(0.45))
+                                        .frame(height: 2)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                    .buttonStyle(.plain)
+                                    .modifier(HideNavigationLinkIndicator())
+                                    .accessibilityLabel("Open section divider")
+                                    .contextMenu { ItemDisplayFormatMenu(card: card, onUpdate: updateCard) }
                                     .modifier(ContentLifecycleActions(
                                         title: "Divider", kind: "Card", onArchive: nil,
                                         onDelete: { deleteCard(card.id) }
                                     ))
-                                    .frame(height: 2)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 10)
-                                    .frame(maxWidth: .infinity)
                                     .contentShape(Rectangle())
                                     .background { cardDragSource(for: card.id) }
                                     .opacity(draggedCardID == card.id ? 0.45 : 1)
@@ -5673,8 +5695,8 @@ struct TodayListDetailView: View {
 
         .sheet(isPresented: $isEditingList) {
             if let focusedList {
-                ListInfoEditorSheet(list: focusedList) { title, subtitle in
-                    editBoardList(listID, title: title, subtitle: subtitle, in: &lists)
+                ListInfoEditorSheet(list: focusedList) { title, subtitle, defaultPresentation in
+                    editBoardList(listID, title: title, subtitle: subtitle, newItemPresentation: defaultPresentation, in: &lists)
                 }
                 .databaseActivityOverlay()
             }

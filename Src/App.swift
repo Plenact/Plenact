@@ -2236,6 +2236,7 @@ private struct TodayHomeView: View {
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
+                .offset(x: -16)
                 .buttonStyle(.plain)
                 .accessibilityLabel("Browse templates")
 
@@ -2243,6 +2244,7 @@ private struct TodayHomeView: View {
                     .submitLabel(.done)
                     .onSubmit(addQuickCard)
                     .accessibilityLabel("Quick capture card title")
+                    .offset(x: -31)
 
                 HStack(spacing: 0) {
 
@@ -2250,11 +2252,11 @@ private struct TodayHomeView: View {
 
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
 
+                    .offset(x: 35)
                     .buttonStyle(.plain)
                     .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityLabel("Add card to today's list")
@@ -2262,11 +2264,11 @@ private struct TodayHomeView: View {
                     Button(action: openQuickNoteEditor) {
 
                         Image(systemName: "arrow.up.right")
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
 
+                    .offset(x: 18)
                     .buttonStyle(.plain)
                     .accessibilityLabel("Open full card editor")
                 }

@@ -254,13 +254,6 @@ struct PlanningCalendarView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    HStack {
-                        Button("This week", systemImage: "rectangle.split.3x1") {
-                            access?.openCurrentWeek(); dismiss(); onLeaveForHome()
-                        }
-                        Spacer()
-                    }
-                    .buttonStyle(.bordered)
                     monthGrid.dynamicTypeSize(.large) // Seven columns stay legible; full dates are announced by VoiceOver.
                     daySummary
                 }
@@ -269,19 +262,8 @@ struct PlanningCalendarView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Calendar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Done") { dismiss() }.dynamicTypeSize(.large) }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { access?.openToday(); dismiss(); onLeaveForHome() } label: { Image(systemName: "sun.max").font(.system(size: 20)) }
-                        .accessibilityLabel("Open Today")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showsSearch = true } label: { Image(systemName: "magnifyingglass").font(.system(size: 20)) }
-                        .accessibilityLabel("Search calendar and Library")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) { calendarHeader }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch, onLeaveForHome: { dismiss(); onLeaveForHome() }))
             .fullScreenCover(item: $route) { route in
                 PlanningCalendarWeekView(week: route.week, initialDayID: route.dayID, initialCardID: route.cardID,
@@ -289,6 +271,51 @@ struct PlanningCalendarView: View {
             }
         }
     }
+    private var calendarHeader: some View {
+        HStack(spacing: 0) {
+            Button { dismiss() } label: {
+                WorkspaceHeaderIcon(systemName: "chevron.left")
+            }
+            .accessibilityLabel("Close Calendar")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Calendar")
+                    .font(.largeTitle.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text("Plans across time")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.75))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button { showsSearch = true } label: {
+                WorkspaceHeaderIcon(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel("Search Plenact")
+            Button { access?.openCurrentWeek(); dismiss(); onLeaveForHome() } label: {
+                WorkspaceHeaderIcon(systemName: "rectangle.split.3x1")
+            }
+            .accessibilityLabel("Open This Week")
+            Button { access?.openToday(); dismiss(); onLeaveForHome() } label: {
+                WorkspaceHeaderIcon(systemName: "sun.max")
+            }
+            .accessibilityLabel("Open Today")
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
+        .frame(maxWidth: 620)
+        .frame(maxWidth: .infinity)
+         .background {
+            LinearGradient(
+                colors: [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea(edges: .top)
+        }
+    }
+
     private var monthGrid: some View {
         VStack(spacing: 10) {
             HStack {
@@ -313,8 +340,12 @@ struct PlanningCalendarView: View {
                 HStack(spacing: 2) {
                     if let rowWeek {
                         Button { route = PlanningWeekRoute(week: rowWeek) } label: {
-                            Image(systemName: rowWeek.hasContent ? "rectangle.split.3x1.fill" : "rectangle.split.3x1")
-                                .foregroundStyle(rowWeek.hasContent || isCurrent ? Color.accentColor : Color.secondary.opacity(0.4))
+                            Image(systemName: rowWeek.hasContent || isCurrent ? "rectangle.split.3x1.fill" : "rectangle.split.3x1")
+                                .transformEffect(CGAffineTransform(a: 1, b: 0,
+                                    c: rowWeek.hasContent || isCurrent ? 0 : -0.22, d: 1, tx: 0, ty: 0))
+                                .foregroundStyle(isCurrent ? Color.accentColor : (rowWeek.hasContent
+                                    ? Color(red: 0.45, green: 0.72, blue: 0.95)
+                                    : Color.secondary.opacity(0.4)))
                                 .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel("Open \(isCurrent ? "this week" : rowWeek.rangeTitle)\(rowWeek.hasContent ? ", saved content" : ", empty week")")

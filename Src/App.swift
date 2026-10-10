@@ -1550,6 +1550,7 @@ private struct TodayHomeView: View {
     @State private var showsTemplates = false
     @State private var pendingTemplate: QuickCaptureTemplate?
     @State private var composerTemplate: QuickCaptureTemplate?
+    @State private var showsCalendar = false
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
     @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
@@ -1674,6 +1675,13 @@ private struct TodayHomeView: View {
 
             .buttonStyle(.plain)
             .accessibilityLabel("Search Plenact")
+
+            Button { showsCalendar = true } label: {
+                WorkspaceHeaderIcon(systemName: "calendar")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open This Month")
+            .accessibilityHint("Opens Calendar at the current month")
 
             Button {
                 showsAccountSettings = true
@@ -2289,6 +2297,11 @@ private struct TodayHomeView: View {
             }
 
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch))
+            .sheet(isPresented: $showsCalendar) {
+                PlanningCalendarView(initialDate: .now)
+                    .presentationDetents([.large])
+            }
+
 
             .sheet(item: $selectedLabel) { label in
                 TodayLabelCardsView(

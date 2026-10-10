@@ -111,6 +111,29 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(combined.isEmpty)
     }
 
+    func testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering() {
+        let cards = [
+            KanbanCard(id: 1, word: "Done", listTitle: "Plans", isTitleChecked: true),
+            KanbanCard(id: 2, word: "Note", listTitle: "Plans", presentation: .note),
+            KanbanCard(id: 3, word: "---", listTitle: "Plans"),
+            KanbanCard(id: 4, word: "Picture", listTitle: "Plans", listDisplayFormat: .picture),
+            KanbanCard(id: 5, word: "Next task", listTitle: "Plans"),
+            KanbanCard(id: 6, word: "Later task", listTitle: "Plans")
+        ]
+        var list = KanbanList(id: 0, title: "Plans", cards: cards)
+        XCTAssertEqual(list.firstUncheckedTaskID, 5)
+        XCTAssertEqual(list.cards, cards)
+        list.cards[4].isTitleChecked = true
+        XCTAssertEqual(list.firstUncheckedTaskID, 6)
+        list.cards[5].isTitleChecked = true
+        XCTAssertNil(list.firstUncheckedTaskID)
+        list.cards = []
+        XCTAssertNil(list.firstUncheckedTaskID)
+        list.cards = cards
+        list.isArchived = true
+        XCTAssertNil(list.firstUncheckedTaskID)
+    }
+
     func testBoardCardBackgroundIsOptionalAndIndependentOfItemAppearance() throws {
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data(#"{"bannerBackground":"blue","listBackground":"green"}"#.utf8))
         XCTAssertNil(legacy.cardBackground)

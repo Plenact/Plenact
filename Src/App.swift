@@ -2054,7 +2054,8 @@ private struct TodayHomeView: View {
                             showsTodayList = false
                             onOpenBoardList(focusedList.id)
                         },
-                        onPermanentDelete: onDeleteCard
+                        onPermanentDelete: onDeleteCard,
+                        focusesFirstUncheckedTask: true
                     )
                 }
             }

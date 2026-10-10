@@ -3709,7 +3709,7 @@ struct KanbanListView: View {
     /// Opens card creation after the active list-actions sheet has dismissed.
     @State private var opensNewCardAfterDismissal = false /* Deferred creation request after another sheet closes */
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
-    @State private var listTint: KanbanListTint = .neutral  /* The tint color applied to the list header and cards */
+    private var listTint: KanbanListTint { list.appearance?.listBackground ?? .neutral }
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
     @State private var deletingCard: KanbanCard? /* Swipe deletion awaiting confirmation */
     /// Measured height of the list header used to size its card collection.
@@ -3897,22 +3897,6 @@ struct KanbanListView: View {
                 }
 
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button {
-
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        editMode = editMode == .active ? .inactive : .active
-                    }
-                } label: {
-
-                    Image(systemName: editMode == .active ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle")
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-
-                .buttonStyle(.plain)
-                .accessibilityLabel(editMode == .active ? "Done reordering cards" : "Reorder cards")
 
                 if isWatching {
 
@@ -4150,7 +4134,6 @@ struct KanbanListView: View {
                     canMoveEarlier:        canMoveEarlier,
                     canMoveLater:          canMoveLater,
                     isWatching:            $isWatching,
-                    listTint:              $listTint,
                     onAddCard:             {
                         opensNewCardAfterDismissal = true
                         activeSheet = nil
@@ -4158,6 +4141,7 @@ struct KanbanListView: View {
                     onCopyList:            onCopyList,
                     onMoveList:            onMoveList,
                     onSortList:            onSortList,
+                    cardEditMode:          $editMode,
                     onArchiveCompleted:    onArchiveCompleted,
                     archivedCards:         $archivedCards,
                     onRestoreArchivedCard: onRestoreArchivedCard,
@@ -4319,61 +4303,7 @@ private struct NewKanbanCardSheet: View {
 ///
 /// @note       Case ordering controls the options presented by the list color picker
 ///
-private enum KanbanListTint: String, CaseIterable, Identifiable {
-    case neutral
-    case blue
-    case green
-    case orange
-    case red
 
-    ///
-    /// @fcn        KanbanListTint.id
-    /// @brief      Identify a selectable list tint
-    /// @details    Uses the raw enum value for consistent menu identity
-    ///
-    /// @return     (String) tint identity
-    /// @post       The selected tint is unchanged
-    ///
-    var id: String { rawValue } /* Stable tint identity */
-
-    ///
-    /// @fcn        KanbanListTint.title
-    /// @brief      Resolve the user-facing list tint label
-    /// @details    Names each color choice, with neutral displayed as Default
-    ///
-    /// @return     (String) tint menu label
-    /// @post       No view or model state is modified
-    ///
-    var title: String { /* User-facing tint label */
-        switch self {
-
-            case .neutral: "Default"
-            case .blue:    "Blue"
-            case .green:   "Green"
-            case .orange:  "Orange"
-            case .red:     "Red"
-        }
-    }
-
-    ///
-    /// @fcn        KanbanListTint.color
-    /// @brief      Resolve the subtle list-panel background color
-    /// @details    Uses system gray for neutral and twelve-percent opacity for named accent colors
-    ///
-    /// @return     (Color) panel background color
-    /// @post       The tint selection and list data remain unchanged
-    ///
-    var color: Color { /* Subtle list background color */
-        switch self {
-
-            case .neutral: Color(.systemGray6)
-            case .blue:    Color.blue.opacity(0.12)
-            case .green:   Color.green.opacity(0.12)
-            case .orange:  Color.orange.opacity(0.12)
-            case .red:     Color.red.opacity(0.12)
-        }
-    }
-}
 
 
 ///
@@ -4388,11 +4318,11 @@ private struct KanbanListActionsSheet: View {
     let canMoveEarlier: Bool               /* Indicates if the list can be moved earlier                                    */
     let canMoveLater: Bool                 /* Indicates if the list can be moved later                                      */
     @Binding var isWatching: Bool          /* Indicates if the user is watching the list                                    */
-    @Binding var listTint: KanbanListTint  /* The current tint color of the list                                            */
     let onAddCard: () -> Void              /* Action to perform when adding a card                                          */
     let onCopyList: () -> Void             /* Action to perform when copying the list                                       */
     let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
     let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
+    @Binding var cardEditMode: EditMode /* Manual card ordering in the owning List */
     let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
     /// Archived cards available to restore to the active list.
     @Binding var archivedCards: [KanbanCard] /* Shared retained records in this list's archive */
@@ -4406,7 +4336,10 @@ private struct KanbanListActionsSheet: View {
     @State private var isEditingAppearance = false
     @State private var isEditingList = false
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var sheetHeight: PresentationDetent = .height(580)
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
+    @State private var showsArchivedCards = false /* Archive browser opened from the compact footer */
     @State private var confirmingArchive = false /* Archive confirmation presentation state */
     @State private var confirmingDelete = false /* Permanent list deletion confirmation */
 
@@ -4420,29 +4353,63 @@ private struct KanbanListActionsSheet: View {
     /// @return     (some View) list-actions navigation sheet
     /// @post       Mutation callbacks belong to the parent. Add card delegates sheet handoff without
     ///             calling dismiss here; copy/move/sort/archive actions dismiss after invoking callbacks
-    /// @note       Tint/watch controls update their bindings immediately and do not persist Board metadata
+    /// @note       Appearance is persisted on Save; Watch remains a temporary view preference
     ///
     var body: some View { /* List operation menu */
-        
+
         NavigationStack {
 
             List {
 
-                Section {
+                Section("List") {
 
-                    if onAppearance != nil {
-                        Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
+                    Button {
+                        onAddCard()
+                    } label: {
+                        Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
                     }
+
                     if onEditList != nil {
                         Button("Edit list", systemImage: "pencil") {
                             isEditingList = true
                         }
                     }
 
+                    if onAppearance != nil {
+                        Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
+                    }
                     Button {
-                        onAddCard()
+                        isWatching.toggle()
+
                     } label: {
-                        Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
+                        Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
+                    }
+                }
+
+                Section("Organize") {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            cardEditMode = cardEditMode == .active ? .inactive : .active
+                        }
+                        dismiss()
+                    } label: {
+                        Label(cardEditMode == .active ? "Done reordering cards" : "Reorder cards",
+                              systemImage: cardEditMode == .active ? "checkmark.circle" : "arrow.up.arrow.down")
+                    }
+
+                    Menu {
+                        Button("Title A to Z") {
+                            onSortList(true)
+                            dismiss()
+                        }
+
+                        Button("Title Z to A") {
+                            onSortList(false)
+                            dismiss()
+                        }
+                    } label: {
+                        Label("Sort Alphabetically", systemImage: "arrow.up.arrow.down")
+                            .foregroundStyle(.primary)
                     }
 
                     Button {
@@ -4466,81 +4433,56 @@ private struct KanbanListActionsSheet: View {
                         }
 
                         .disabled(!canMoveLater)
-                        
+
                     } label: {
-                        
+
                         Label("Move list", systemImage: "arrow.left.arrow.right")
                             .foregroundStyle(.primary)
                     }
 
-                    Menu {
-                        Button("Title A to Z") {
-                            onSortList(true)
-                            dismiss()
-                        }
-
-                        Button("Title Z to A") {
-                            onSortList(false)
-                            dismiss()
-                        }
-                    } label: {
-                        Label("Sort list", systemImage: "arrow.up.arrow.down")
-                            .foregroundStyle(.primary)
-                    }
-
-                    Menu {
-                        ForEach(KanbanListTint.allCases) { tint in
-                            Button {
-                                listTint = tint
-                            } label: {
-                                Label(tint.title, systemImage: listTint == tint ? "checkmark.circle.fill" : "circle.fill")
-                            }
-                        }
-                    } label: {
-                        Label("Change list color", systemImage: "paintpalette")
-                            .foregroundStyle(.primary)
-                    }
-
-                    Button {
-                        isWatching.toggle()
-                        
-                    } label: {
-                        Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
-                    }
                 }
 
                 Section {
-                    NavigationLink {
-                        ArchivedCardsView(
-                            listTitle: list.title,
-                            cards:     $archivedCards,
-                            onRestore: onRestoreArchivedCard,
-                            onDelete:  onDeleteArchivedCard
-                        )
-                    } label: {
-                        Label("View Archived Cards", systemImage: "archivebox")
-                    }
+                    HStack(alignment: .top, spacing: 8) {
+                        Button { showsArchivedCards = true } label: {
+                            footerActionLabel("Archived", symbol: "archivebox")
+                        }
+                        .accessibilityLabel("View Archived Cards")
+                        .help("View Archived Cards")
 
-                    Button {
-                        onArchiveCompleted()
-                        dismiss()
-                        
-                    } label: {
-                        Label("Archive completed cards", systemImage: "archivebox")
-                    }
+                        Button {
+                            onArchiveCompleted()
+                            dismiss()
+                        } label: {
+                            footerActionLabel("Completed", symbol: "checkmark.circle")
+                        }
+                        .accessibilityLabel("Archive completed cards")
+                        .help("Archive completed cards")
 
-                    Button(role: .destructive) {
-                        confirmingArchive = true
-                        
-                    } label: {
-                        Label("Archive list", systemImage: "archivebox")
-                    }
+                        Button { confirmingArchive = true } label: {
+                            footerActionLabel("Archive list", symbol: "archivebox.fill")
+                        }
+                        .accessibilityLabel("Archive list")
+                        .help("Archive list")
 
-                    Button("Delete List", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+                        Button(role: .destructive) { confirmingDelete = true } label: {
+                            footerActionLabel("Delete", symbol: "trash")
+                                .foregroundStyle(.red)
+                        }
+                        .accessibilityLabel("Delete List")
+                        .help("Delete List")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.vertical, 4)
+                    .listRowBackground(Color.clear)
                 }
+
             }
 
             .listStyle(.insetGrouped)
+            .listSectionSpacing(12)
+            .contentMargins(.top, 12, for: .scrollContent)
             .navigationTitle("List actions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -4551,27 +4493,37 @@ private struct KanbanListActionsSheet: View {
                 }
             }
 
+            .navigationDestination(isPresented: $showsArchivedCards) {
+                ArchivedCardsView(
+                    listTitle: list.title,
+                    cards: $archivedCards,
+                    onRestore: onRestoreArchivedCard,
+                    onDelete: onDeleteArchivedCard
+                )
+            }
             .confirmationDialog("Archive \(list.title)?", isPresented: $confirmingArchive, titleVisibility: .visible) {
-
                 Button("Archive list", role: .destructive) {
                     onArchiveList()
                     dismiss()
                 }
-
-                .confirmationDialog("Delete \(list.title)?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-                    Button("Delete List", role: .destructive) {
-                        onDeleteList()
-                        dismiss()
-                    }
-
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone.")
-                }
             }
+            .confirmationDialog("Delete \(list.title)?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("Delete List", role: .destructive) {
+                    onDeleteList()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone.")
+            }
+
         }
 
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.height(580), .large], selection: $sheetHeight)
+        .onAppear { sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(580) }
+        .onChange(of: dynamicTypeSize) { _, size in
+            if size.isAccessibilitySize { sheetHeight = .large }
+        }
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .sheet(isPresented: $isEditingList) {
@@ -4582,10 +4534,25 @@ private struct KanbanListActionsSheet: View {
         }
         .sheet(isPresented: $isEditingAppearance) {
             if let onAppearance {
-                ItemAppearanceSheet(title: list.title, appearance: list.appearance, onSave: onAppearance)
+                ItemAppearanceSheet(title: list.title, appearance: list.appearance, showsListBackground: true, onSave: onAppearance)
             }
         }
     }
+
+    private func footerActionLabel(_ title: String, symbol: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.caption2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 60, alignment: .top)
+        .contentShape(Rectangle())
+    }
+
 }
 
 
@@ -5707,7 +5674,7 @@ struct TodayListDetailView: View {
         }
         .sheet(isPresented: $isEditingAppearance) {
             if let focusedList {
-                ItemAppearanceSheet(title: focusedList.title, appearance: focusedList.appearance) { appearance in
+                ItemAppearanceSheet(title: focusedList.title, appearance: focusedList.appearance, showsListBackground: true) { appearance in
                     setListAppearance(listID, appearance: appearance, in: &lists)
                 }
             }

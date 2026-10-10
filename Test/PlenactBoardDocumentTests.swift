@@ -111,6 +111,27 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(combined.isEmpty)
     }
 
+    func testListBackgroundTintRoundTripsAndKeepsLegacyDefaults() throws {
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"background":"blue"}"#.utf8))
+        XCTAssertNil(legacy.listBackground)
+        for tint in KanbanListTint.allCases where tint != .neutral {
+            let appearance = ItemAppearance(background: .purple, listBackground: tint)
+            XCTAssertFalse(appearance.isEmpty)
+            var list = KanbanList(id: 4, title: "Plans", cards: [])
+            list.appearance = appearance
+            list.isArchived = true
+            var reopened = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+            XCTAssertEqual(reopened.appearance, appearance)
+            reopened.isArchived = false
+            XCTAssertEqual(reopened.appearance?.listBackground, tint)
+            var resetTint = appearance
+            resetTint.listBackground = nil
+            XCTAssertEqual(resetTint.background, .purple)
+        }
+        XCTAssertFalse(ItemAppearance(listBackground: .blue).isEmpty)
+        XCTAssertThrowsError(try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"listBackground":"invalid"}"#.utf8)))
+    }
+
     func testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues() throws {
         let card = try JSONDecoder().decode(KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","checklists":[]}"#.utf8))
         let list = try JSONDecoder().decode(KanbanList.self, from: Data(#"{"id":0,"title":"Monday","cards":[]}"#.utf8))
@@ -141,7 +162,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let archivedCard = card.replacingLocation(id: 2, listTitle: "Monday")
         var lists = [KanbanList(id: 0, title: "Monday", cards: [card], archivedCards: [archivedCard])]
         let original = lists
-        let appearance = ItemAppearance(accent: .teal, icon: .home, background: .blue)
+        let appearance = ItemAppearance(accent: .teal, icon: .home, background: .blue, listBackground: .green)
         XCTAssertTrue(setListAppearance(0, appearance: appearance, in: &lists))
         var expected = original
         expected[0].appearance = appearance

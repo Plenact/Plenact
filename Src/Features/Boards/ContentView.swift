@@ -1093,6 +1093,7 @@ struct ContentView: View {
     private let appearanceBinding: Binding<BoardAppearance?>?
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
     @State private var showsBoardAppearance = false
+    @State private var focusedDayListID: Int?
 
     private var currentBoardAppearance: BoardAppearance {
         if let appearanceBinding { return appearanceBinding.wrappedValue ?? BoardAppearance() }
@@ -2474,6 +2475,7 @@ struct ContentView: View {
                                             onEditList: { title, subtitle, defaultPresentation in
                                                 editBoardList(list.id, title: title, subtitle: subtitle, newItemPresentation: defaultPresentation, in: &lists)
                                             },
+                                            onOpenDayView: { focusedDayListID = list.id },
                                             boardAppearance: currentBoardAppearance,
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
@@ -2752,6 +2754,30 @@ struct ContentView: View {
                 )
             }
 
+            .fullScreenCover(isPresented: Binding(
+                get: { focusedDayListID != nil },
+                set: { if !$0 { focusedDayListID = nil } }
+            )) {
+                if let listID = focusedDayListID {
+                    TodayListDetailView(
+                        lists: $lists,
+                        reservedLists: archivedLists,
+                        labelLibrary: $labelLibrary,
+                        savedCardIDs: $savedCardIDs,
+                        listID: listID,
+                        currentUserName: currentUserName,
+                        onClose: { focusedDayListID = nil },
+                        onOpenWeek: {
+                            boardTargetListID = listID
+                            focusedDayListID = nil
+                        },
+                        onPermanentDelete: deleteCard,
+                        boardAppearance: currentBoardAppearance,
+                        returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
+                        boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View"
+                    )
+                }
+            }
             .sheet(isPresented: $showsBoardAppearance) {
                 BoardAppearanceSheet(appearance: currentBoardAppearance, onSave: saveBoardAppearance)
             }
@@ -3742,6 +3768,8 @@ struct KanbanListView: View {
     var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
+    var onOpenDayView: (() -> Void)? = nil
+    @State private var opensDayAfterDismissal = false
     var boardAppearance: BoardAppearance = BoardAppearance()
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
 
@@ -4162,6 +4190,11 @@ struct KanbanListView: View {
         }
 
         .sheet(item: $activeSheet, onDismiss: {
+            if opensDayAfterDismissal {
+                opensDayAfterDismissal = false
+                onOpenDayView?()
+                return
+            }
             guard opensNewCardAfterDismissal else {
 
                 return
@@ -4191,7 +4224,11 @@ struct KanbanListView: View {
                     onArchiveList:         onArchiveList,
                     onDeleteList:          onDeleteList,
                     onEditList:            onEditList,
-                    onAppearance:          onAppearance
+                    onAppearance:          onAppearance,
+                    onOpenDayView: onOpenDayView == nil ? nil : {
+                        opensDayAfterDismissal = true
+                        activeSheet = nil
+                    }
                 )
                 .databaseActivityOverlay()
             case .newCard:
@@ -4375,11 +4412,12 @@ private struct KanbanListActionsSheet: View {
     let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    var onOpenDayView: (() -> Void)? = nil
     @State private var isEditingAppearance = false
     @State private var isEditingList = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var sheetHeight: PresentationDetent = .height(580)
+    @State private var sheetHeight: PresentationDetent = .height(624)
     @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
     @State private var showsArchivedCards = false /* Archive browser opened from the compact footer */
     @State private var confirmingArchive = false /* Archive confirmation presentation state */
@@ -4404,6 +4442,10 @@ private struct KanbanListActionsSheet: View {
             List {
 
                 Section("List") {
+                    if let onOpenDayView {
+                        Button("Switch to Day View", systemImage: "rectangle.portrait", action: onOpenDayView)
+                    }
+
 
                     Button {
                         onAddCard()
@@ -4561,8 +4603,8 @@ private struct KanbanListActionsSheet: View {
 
         }
 
-        .presentationDetents([.height(580), .large], selection: $sheetHeight)
-        .onAppear { sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(580) }
+        .presentationDetents([.height(624), .large], selection: $sheetHeight)
+        .onAppear { sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(624) }
         .onChange(of: dynamicTypeSize) { _, size in
             if size.isAccessibilitySize { sheetHeight = .large }
         }
@@ -5319,6 +5361,14 @@ struct TodayListDetailView: View {
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
+    var boardAppearance: BoardAppearance? = nil
+    var returnDestinationTitle: String = "Today"
+    var boardViewActionTitle: String = "Switch to Week View"
+
+
+    private var effectiveBoardAppearance: BoardAppearance {
+        boardAppearance ?? ((try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance())
+    }
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
     @State private var newCardTitle = "" /* Inline card-creation draft */
@@ -5414,8 +5464,7 @@ struct TodayListDetailView: View {
     }
 
     private var headerColor: Color {
-        ((try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance())
-            .resolved(focusedList?.appearance).background?.darkHeaderColor
+        effectiveBoardAppearance.resolved(focusedList?.appearance).background?.darkHeaderColor
             ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255) // Muted blue (#6D8B98)
     }
 
@@ -5502,7 +5551,7 @@ struct TodayListDetailView: View {
                                         card:            card,
                                         height:          BoardPresentation.standard.minimumCardHeight,
                                         displaySettings: BoardDisplaySettings(),
-                                        cardBackground:  (try? BoardAppearance.decodeWeek(weekAppearanceData))?.cardBackground,
+                                        cardBackground:  effectiveBoardAppearance.cardBackground,
                                         labelLibrary:    labelLibrary,
                                         onUpdateCard:    updateCard,
                                         onDeleteCard:    { deleteCard(card.id) },
@@ -5624,7 +5673,7 @@ struct TodayListDetailView: View {
                     }
 
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Back to Today")
+                    .accessibilityLabel("Back to \(returnDestinationTitle)")
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 8) {
                             ItemAppearanceMark(appearance: focusedList?.appearance)
@@ -5659,7 +5708,7 @@ struct TodayListDetailView: View {
                             }
                         }
 
-                        Button("Open in Week", systemImage: "rectangle.split.3x1", action: onOpenWeek)
+                        Button(boardViewActionTitle, systemImage: "rectangle.split.3x1", action: onOpenWeek)
                     } label: {
                         Image(systemName: "ellipsis.circle.fill")
                             .font(.title2)

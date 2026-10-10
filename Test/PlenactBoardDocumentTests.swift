@@ -22,6 +22,90 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+
+    func testCrossBoardMoveSupportsNotesAndKeepsWithinBoardIdentity() throws {
+        var note = SampleData.lists[0].cards[0]
+        note.displayFormat = .note
+        var library = PersonalCollection(title: "Projects", kind: .board)
+        library.lists = [KanbanList(id: 20, title: "Ideas", cards: [note]),
+                         KanbanList(id: 21, title: "Ready", cards: [])]
+        library.savedCardIDs = [note.id]
+        var collections = [library]
+        var week = [KanbanList(id: 10, title: "Monday", cards: [])]
+        var saved = Set<Int>()
+        try CrossBoardCardMovement.move(note, from: library.id,
+            to: CardMoveDestination(collectionID: library.id, listID: 21, title: "Ready", group: "Library"),
+            week: &week, collections: &collections, saved: &saved)
+        let moved = try XCTUnwrap(collections[0].lists[1].cards.first)
+        XCTAssertEqual(moved, note.replacingLocation(id: note.id, listTitle: "Ready"))
+        XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
+        XCTAssertEqual(collections[0].savedCardIDs, [note.id])
+        try CrossBoardCardMovement.move(moved, from: library.id,
+            to: CardMoveDestination(collectionID: nil, listID: 10, title: "Monday", group: "Week"),
+            week: &week, collections: &collections, saved: &saved)
+        XCTAssertEqual(week[0].cards[0].displayFormat, .note)
+        XCTAssertEqual(saved, [note.id])
+    }
+
+    func testCrossBoardCardMoveRoundTripPreservesContentAndBookmark() throws {
+        let original = SampleData.lists[0].cards[0]
+        var week = [KanbanList(id: 10, title: "Monday", cards: [original])]
+        var library = PersonalCollection(title: "Ideas", kind: .list)
+        library.lists = [KanbanList(id: 20, title: "Ideas", cards: [])]
+        var collections = [library]
+        var saved: Set<Int> = [original.id]
+        try CrossBoardCardMovement.move(original, from: nil,
+            to: CardMoveDestination(collectionID: library.id, listID: 20, title: "Ideas", group: "Library"),
+            week: &week, collections: &collections, saved: &saved)
+        let moved = try XCTUnwrap(collections[0].lists[0].cards.first)
+        XCTAssertEqual(moved, original.replacingLocation(id: original.id, listTitle: "Ideas"))
+        XCTAssertTrue(week[0].cards.isEmpty)
+        XCTAssertTrue(saved.isEmpty)
+        XCTAssertTrue(collections[0].savedCardIDs.contains(moved.id))
+        try CrossBoardCardMovement.move(moved, from: library.id,
+            to: CardMoveDestination(collectionID: nil, listID: 10, title: "Monday", group: "Week"),
+            week: &week, collections: &collections, saved: &saved)
+        XCTAssertEqual(week[0].cards.first, original.replacingLocation(id: original.id, listTitle: "Monday"))
+        XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
+        XCTAssertTrue(collections[0].savedCardIDs.isEmpty)
+        XCTAssertTrue(saved.contains(original.id))
+    }
+
+    func testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat() throws {
+        var original = SampleData.lists[0].cards[0]
+        original.displayFormat = .picture
+        var week = [KanbanList(id: 10, title: "Monday", cards: [])]
+        week[0].archivedCards = [original]
+        var library = PersonalCollection(title: "Ideas", kind: .list)
+        library.lists = [KanbanList(id: 20, title: "Ideas", cards: [original])]
+        library.savedCardIDs = [original.id]
+        var collections = [library]
+        var saved = Set<Int>()
+        try CrossBoardCardMovement.move(original, from: library.id,
+            to: CardMoveDestination(collectionID: nil, listID: 10, title: "Monday", group: "Week"),
+            week: &week, collections: &collections, saved: &saved)
+        let moved = try XCTUnwrap(week[0].cards.first)
+        XCTAssertNotEqual(moved.id, original.id)
+        XCTAssertEqual(moved, original.replacingLocation(id: moved.id, listTitle: "Monday"))
+        XCTAssertEqual(week[0].archivedCards, [original])
+        XCTAssertTrue(saved.contains(moved.id))
+    }
+
+    func testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation() throws {
+        let card = SampleData.lists[0].cards[0]
+        var week = [KanbanList(id: 10, title: "Monday", cards: [card])]
+        let before = week
+        var collections = [PersonalCollection]()
+        var saved: Set<Int> = [card.id]
+        XCTAssertThrowsError(try CrossBoardCardMovement.move(card, from: nil,
+            to: CardMoveDestination(collectionID: UUID(), listID: 20, title: "Missing", group: "Library"),
+            week: &week, collections: &collections, saved: &saved))
+        XCTAssertEqual(week, before)
+        XCTAssertEqual(saved, [card.id])
+        XCTAssertTrue(collections.isEmpty)
+    }
+
+
     @MainActor
     func testEditorBannerDoesNotInsertNativeNavigationBar() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

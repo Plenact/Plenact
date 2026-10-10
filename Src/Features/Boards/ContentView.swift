@@ -2484,6 +2484,7 @@ struct ContentView: View {
                                         .frame(
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
                                         )
+                                        .environment(\.cardMovementSource, personalCollectionID)
                                         .scaleEffect(draggedListID == list.id && !reducesMotion ? 1.025 : 1)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
@@ -2752,6 +2753,7 @@ struct ContentView: View {
                         deleteCard(card.id)
                     }
                 )
+                .environment(\.cardMovementSource, personalCollectionID)
             }
 
             .fullScreenCover(isPresented: Binding(
@@ -2776,6 +2778,7 @@ struct ContentView: View {
                         returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
                         boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View"
                     )
+                    .environment(\.cardMovementSource, personalCollectionID)
                 }
             }
             .sheet(isPresented: $showsBoardAppearance) {
@@ -4040,6 +4043,7 @@ struct KanbanListView: View {
                         .background { cardDropSurface }
                         .contextMenu {
                             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
+            CardDestinationMenu(card: card)
                             Button("Delete Divider", systemImage: "trash", role: .destructive) { deletingCard = card }
                         }
 
@@ -5156,6 +5160,7 @@ struct KanbanCardView: View {
     private var cardActions: some View { /* Item-kind, cover, archive, deletion, and editing menu */
         Menu {
             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
+            CardDestinationMenu(card: card)
 
             if card.coverAttachmentID != nil {
 
@@ -5991,4 +5996,59 @@ struct TodayListDetailView: View {
 /// Preview the complete board presentation with deterministic sample data
 #Preview {
     ContentView(lists: .constant(SampleData.lists))
+}
+
+
+struct CardMovementAccess {
+    var destinations: [CardMoveDestination] = []
+    var move: ((KanbanCard, UUID?, CardMoveDestination) -> Bool)? = nil
+}
+private struct CardMovementAccessKey: EnvironmentKey {
+    static let defaultValue = CardMovementAccess()
+}
+private struct CardMovementSourceKey: EnvironmentKey {
+    static let defaultValue: UUID? = nil
+}
+extension EnvironmentValues {
+    var cardMovementAccess: CardMovementAccess {
+        get { self[CardMovementAccessKey.self] }
+        set { self[CardMovementAccessKey.self] = newValue }
+    }
+    var cardMovementSource: UUID? {
+        get { self[CardMovementSourceKey.self] }
+        set { self[CardMovementSourceKey.self] = newValue }
+    }
+}
+struct CardDestinationMenu: View {
+    let card: KanbanCard
+    var onMoved: () -> Void = {}
+    var locationTitle: String? = nil
+    @Environment(\.cardMovementAccess) private var access
+    @Environment(\.cardMovementSource) private var source
+    private var destinations: [CardMoveDestination] {
+        access.destinations
+    }
+    var body: some View {
+        if access.move != nil {
+            Menu {
+                ForEach(["Week", "Library"], id: \.self) { group in
+                    Menu(group) {
+                        ForEach(destinations.filter { $0.group == group }) { destination in
+                            Button(destination.title) {
+                                if access.move?(card, source, destination) == true { onMoved() }
+                            }
+                            .disabled(destination.collectionID == source && (destination.columnTitle ?? destination.title) == card.listTitle)
+                        }
+                    }
+                    .disabled(!destinations.contains { $0.group == group })
+                }
+            } label: {
+                if let locationTitle {
+                    Text(locationTitle).font(.caption).foregroundStyle(.secondary).italic()
+                } else {
+                    Label("Move \(card.displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
+                }
+            }
+        }
+    }
 }

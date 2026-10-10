@@ -22,6 +22,19 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek() throws {
+        let original = SampleData.lists
+        let first = PersonalCollection.exampleWeek(existingTitles: ["Week View"])
+        let second = PersonalCollection.exampleWeek(existingTitles: [])
+        XCTAssertEqual(first.kind, .board)
+        XCTAssertEqual(first.lists, original)
+        XCTAssertEqual(first.lists.count, 7)
+        XCTAssertNotEqual(first.title, "Week View")
+        XCTAssertNotEqual(first.id, second.id)
+        XCTAssertEqual(SampleData.lists, original)
+        XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(first)), first)
+    }
+
     func testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts() throws {
         for template in MixedListTemplate.allCases {
             let draft = template.makeCollection(existingTitles: [template.rawValue])
@@ -2965,7 +2978,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     func testPersonalListExamplesContainSafeIndependentCards() throws {
 
         XCTAssertEqual(PersonalListExample.allCases.map(\.rawValue), [
-            "On the Table", "In the Queue", "Scheduled", "Shopping", "Up for Brew", "Misc."
+            "On the Table", "In the Queue", "Scheduled", "Shopping", "Up for Brew", "Misc"
         ])
 
         for example in PersonalListExample.allCases {

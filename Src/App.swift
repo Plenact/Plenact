@@ -3684,6 +3684,7 @@ struct BoardListsView: View {
     @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
     @State private var showsExamples = false                   /* Present the synthetic list chooser          */
+    @State private var examplePreview: LibraryExamplePreview?
     @State private var pendingExample: PersonalCollection?     /* Unsaved draft waiting for chooser dismissal */
 
 
@@ -4276,54 +4277,112 @@ struct BoardListsView: View {
         .background { TodayPaperBackground() }
     }
 
-    private var createMenu: some View { /* Directory actions for creating Lists and Boards */
+    private var createMenu: some View {
         Menu {
-            Menu("Templates", systemImage: "square.stack.3d.up") {
-                ForEach(MixedListTemplate.allCases) { template in
-                    Button(template.rawValue) {
-                        editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
-                    }
-                }
-            }
-
-            Button("New List", systemImage: "list.bullet") {
-                editingCollection = PersonalCollection(title: "", kind: .list)
-            }
-
-            Button("New Board", systemImage: "rectangle.3.group") {
-                editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
-            }
-
-            Button("Examples", systemImage: "plus") {
-                showsExamples = true
-            }
-
-            Menu("Starter Lists") {
-                ForEach(["On the table", "In the queue", "Upcoming", "Shopping", "Reminders"], id: \.self) { title in
-                    Button(title) {
-                        editingCollection = PersonalCollection(
-                            title: title, kind: .list,
-                            icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks)
-                        )
-                    }
-                }
-            }
-
-            Menu("Starter Boards") {
-                ForEach(["General Notes", "Girlfriend Important Details", "New Project Notes"], id: \.self) { title in
-                    Button(title) {
-                        editingCollection = PersonalCollection(
-                            title: title, kind: .board,
-                            icon: title == "Girlfriend Important Details" ? .heart : .notes
-                        )
-                    }
-                }
-            }
+            listCreationMenu
+            boardCreationMenu
+            weekExamplesMenu
+            suggestedMenu
+            templatesMenu
         } label: {
             WorkspaceHeaderIcon(systemName: "plus.circle.fill")
         }
+        .accessibilityLabel("Library creation and examples")
+    }
 
-        .accessibilityLabel("Create list or board")
+    private var listCreationMenu: some View {
+        Menu("Lists", systemImage: "list.bullet") {
+            Button("New List", systemImage: "plus") {
+                editingCollection = PersonalCollection(title: "", kind: .list)
+            }
+            Menu("Starter Lists") {
+                ForEach(["On the table", "In the queue", "Upcoming", "Shopping", "Reminders"], id: \.self) { title in
+                    Button(title) {
+                        editingCollection = PersonalCollection(title: title, kind: .list,
+                            icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks))
+                    }
+                }
+            }
+        }
+    }
+
+    private var boardCreationMenu: some View {
+        Menu("Boards", systemImage: "rectangle.3.group") {
+            Button("New Board", systemImage: "plus") {
+                editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
+            }
+            Menu("Starter Boards") {
+                ForEach(["General Notes", "Girlfriend Important Details", "New Project Notes"], id: \.self) { title in
+                    Button(title) {
+                        editingCollection = PersonalCollection(title: title, kind: .board,
+                            icon: title == "Girlfriend Important Details" ? .heart : .notes)
+                    }
+                }
+            }
+        }
+    }
+
+    private var weekExamplesMenu: some View {
+        Menu("Examples", systemImage: "sparkles") {
+            Button("Use Week View", systemImage: "plus") {
+                editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title))
+            }
+            Menu("Week View example boards") {
+                Button("Work Week Board") {
+                    examplePreview = LibraryExamplePreview(title: "Work Week Board", summary: "A separate seven-list Week View example.", lists: SampleData.lists)
+                }
+            }
+            Menu("Week View example cards") {
+                ForEach(SampleData.lists) { list in
+                    Menu(list.title) {
+                        ForEach(list.cards.filter { !$0.isSectionDivider }) { card in
+                            Button(card.word) {
+                                examplePreview = LibraryExamplePreview(title: card.word, summary: list.title,
+                                    lists: [KanbanList(id: list.id, title: list.title, cards: [card])])
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var suggestedMenu: some View {
+        Menu("Suggested", systemImage: "lightbulb") {
+            ForEach(PersonalListExample.allCases) { example in
+                suggestedExampleMenu(example)
+            }
+        }
+    }
+
+    private func suggestedExampleMenu(_ example: PersonalListExample) -> some View {
+        let draft = example.makeCollection(existingTitles: [])
+        return Menu(example.rawValue) {
+            Button("\(example.rawValue) example list") {
+                examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
+            }
+            Menu("\(example.rawValue) example cards") {
+                ForEach(draft.lists[0].cards) { card in
+                    Button(card.word) {
+                        examplePreview = LibraryExamplePreview(title: card.word, summary: example.summary,
+                            lists: [KanbanList(id: 0, title: example.rawValue, cards: [card])])
+                    }
+                }
+            }
+            Button("Use \(example.rawValue)", systemImage: "plus") {
+                editingCollection = example.makeCollection(existingTitles: collections.map(\.title))
+            }
+        }
+    }
+
+    private var templatesMenu: some View {
+        Menu("Templates", systemImage: "square.stack.3d.up") {
+            ForEach(MixedListTemplate.allCases) { template in
+                Button(template.rawValue) {
+                    editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
+                }
+            }
+        }
     }
 
 
@@ -4402,6 +4461,10 @@ struct BoardListsView: View {
             .safeAreaInset(edge: .top, spacing: 0) { libraryHeader }
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
+
+            .sheet(item: $examplePreview) { preview in
+                LibraryExamplePreviewView(preview: preview)
+            }
 
             .sheet(item: $editingCollection) { collection in
                 PersonalCollectionSettingsView(
@@ -5998,5 +6061,47 @@ private struct TodayPanelSurface: ViewModifier {
             }
 
             .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 5)
+    }
+}
+
+private struct LibraryExamplePreview: Identifiable {
+    var id = UUID()
+    let title: String
+    let summary: String
+    let lists: [KanbanList]
+}
+
+private struct LibraryExamplePreviewView: View {
+    let preview: LibraryExamplePreview
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(preview.summary).foregroundStyle(.secondary)
+                    ForEach(preview.lists) { list in
+                        VStack(alignment: .leading, spacing: 12) {
+                            if preview.lists.count > 1 { Text(list.title).font(.title2.bold()) }
+                            ForEach(list.cards) { card in
+                                if card.isSectionDivider {
+                                    Divider().padding(.vertical, 6)
+                                } else {
+                                    KanbanCardView(card: card, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
+                                        onUpdateCard: { _ in }, onDeleteCard: {}, onArchiveCard: {}, onToggle: {})
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .frame(maxWidth: 620)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(preview.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+        }
     }
 }

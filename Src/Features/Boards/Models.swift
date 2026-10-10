@@ -2259,7 +2259,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
     case scheduled     = "Scheduled"
     case shopping      = "Shopping"
     case upForBrew     = "Up for Brew"
-    case miscellaneous = "Misc."
+    case miscellaneous = "Misc"
 
     ///
     /// @fcn        PersonalListExample.id
@@ -2295,12 +2295,12 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
 
         switch self {
 
-            case .onTheTable:   "Things you would like to accomplish today."
-            case .inTheQueue:    "Things to get to soon, perhaps this week."
-            case .scheduled:     "Plans ahead, without automatic dates or reminders."
+            case .onTheTable:   "Things you would like to get to today."
+            case .inTheQueue:    "Things you got started with this week but weren’t able to finish yet."
+            case .scheduled:     "Something with an assigned date to complete. Add the date that applies to your plan."
             case .shopping:      "Groceries, supplies, and purchases to consider."
-            case .upForBrew:     "Ideas taking shape, with no commitment required."
-            case .miscellaneous: "Useful reference details and thoughts to keep."
+            case .upForBrew:     "Things that were in other lists but got put off, but are still of interest."
+            case .miscellaneous: "Miscellaneous content you just want to keep track of."
         }
     }
 
@@ -3681,5 +3681,14 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
             return card
         }
         return collection
+    }
+}
+
+extension PersonalCollection {
+    static func exampleWeek(existingTitles: [String]) -> PersonalCollection {
+        let title = uniqueTitle("Week View", existingTitles: existingTitles)
+        var draft = PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)
+        draft.lists = SampleData.lists
+        return draft
     }
 }

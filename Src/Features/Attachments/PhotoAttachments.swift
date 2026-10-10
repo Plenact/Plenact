@@ -1148,23 +1148,21 @@ struct ItemAppearanceSheet: View {
                 }
                 if showsListBackground {
                     Section("List background") {
-                        Picker("Background color", selection: Binding(
-                            get: { draft.listBackground ?? .neutral },
-                            set: { draft.listBackground = $0 == .neutral ? nil : $0 }
-                        )) {
+                        Picker("Background color", selection: $draft.listBackground) {
+                            Text("Use Board default").tag(Optional<KanbanListTint>.none)
                             ForEach(KanbanListTint.allCases) { tint in
-                                Text(tint.title).tag(tint)
+                                Text(tint.title).tag(Optional(tint))
                             }
                         }
                         .accessibilityIdentifier("appearance.listBackground")
-                        Text("A subtle color behind the items in the Week list. Saved independently of the banner background.")
+                        Text("A subtle color behind the items in this Board’s list. Use Board default inherits the Board’s choice; Default keeps a neutral background.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
                 Section("Banner background") {
                     Picker("Background color", selection: $draft.background) {
-                        Text("None").tag(Optional<ItemAccent>.none)
+                        Text(showsListBackground ? "Use Board default" : "None").tag(Optional<ItemAccent>.none)
                         ForEach(ItemAccent.allCases, id: \.self) { color in
                             Text(color.rawValue.capitalized).tag(Optional(color))
                         }
@@ -1594,5 +1592,74 @@ struct CardAttachmentPreview: View {
         }
 
         .presentationDetents([.large])
+    }
+}
+
+
+// Board colors are a draft until Save; applying to all clears only List color overrides.
+struct BoardAppearanceSheet: View {
+    @State private var draft: BoardAppearance
+    @State private var applyToAll = false
+    let onSave: (BoardAppearance, Bool) -> Bool
+    @Environment(\.dismiss) private var dismiss
+
+    init(appearance: BoardAppearance, onSave: @escaping (BoardAppearance, Bool) -> Bool) {
+        _draft = State(initialValue: appearance)
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("List banner color") {
+                    Picker("Banner background", selection: $draft.bannerBackground) {
+                        Text("Default").tag(Optional<ItemAccent>.none)
+                        ForEach(ItemAccent.allCases, id: \.self) { color in
+                            Text(color.rawValue.capitalized).tag(Optional(color))
+                        }
+                    }
+                }
+                Section("List background color") {
+                    Picker("List background", selection: $draft.listBackground) {
+                        Text("Default").tag(Optional<KanbanListTint>.none)
+                        ForEach(KanbanListTint.allCases.filter { $0 != .neutral }) { tint in
+                            Text(tint.title).tag(Optional(tint))
+                        }
+                    }
+                }
+                Section("Card background color") {
+                    Picker("Card background", selection: $draft.cardBackground) {
+                        Text("Default").tag(Optional<KanbanListTint>.none)
+                        ForEach(KanbanListTint.allCases.filter { $0 != .neutral }) { tint in
+                            Text(tint.title).tag(Optional(tint))
+                        }
+                    }
+                    Text("A soft tint for Card and Note rows on this Board. Pictures, Dividers, and individual item banner colors are retained.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Section {
+                    Toggle("Apply to all Lists", isOn: $applyToAll)
+                    Text(applyToAll
+                         ? "Save replaces color overrides in active and archived Lists. Icons and content are retained."
+                         : "New Lists and Lists using Board defaults inherit these colors. Individually chosen List colors are retained.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Board Appearance")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if onSave(draft, applyToAll) { dismiss() }
+                    }
+                }
+            }
+        }
+        .databaseActivityOverlay()
     }
 }

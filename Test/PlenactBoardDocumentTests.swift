@@ -111,6 +111,72 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(combined.isEmpty)
     }
 
+    func testBoardCardBackgroundIsOptionalAndIndependentOfItemAppearance() throws {
+        let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data(#"{"bannerBackground":"blue","listBackground":"green"}"#.utf8))
+        XCTAssertNil(legacy.cardBackground)
+        for tint in KanbanListTint.allCases {
+            let theme = BoardAppearance(cardBackground: tint)
+            XCTAssertEqual(try BoardAppearance.decodeWeek(JSONEncoder().encode(theme)), theme)
+            let itemAppearance = ItemAppearance(icon: .home, background: .rose)
+            XCTAssertEqual(theme.resolved(itemAppearance), itemAppearance)
+        }
+        XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data(#"{"cardBackground":"invalid"}"#.utf8)))
+    }
+
+    func testBoardAppearanceInheritanceAndApplyingAllPreserveContent() throws {
+        let theme = BoardAppearance(bannerBackground: .blue, listBackground: .green)
+        XCTAssertEqual(theme.resolved(nil).background, .blue)
+        XCTAssertEqual(theme.resolved(nil).listBackground, .green)
+        let override = ItemAppearance(icon: .home, background: .rose, listBackground: .neutral)
+        XCTAssertEqual(theme.resolved(override), override)
+        let partial = ItemAppearance(icon: .home, background: .purple)
+        XCTAssertEqual(theme.resolved(partial).listBackground, .green)
+        XCTAssertEqual(theme.resolved(partial).background, .purple)
+        let card = KanbanCard(id: 7, word: "Retained plan", listTitle: "Plans",
+                              descriptionOverride: "Keep my writing")
+        var list = KanbanList(id: 3, title: "Plans", cards: [card], archivedCards: [card.replacingLocation(id: 8, listTitle: "Plans")])
+        list.appearance = override
+        list.newItemPresentation = .note
+        var archived = list
+        archived.isArchived = true
+        let inherited = BoardAppearance.inheritingLists([list, archived])
+        XCTAssertEqual(inherited[0].appearance, ItemAppearance(icon: .home))
+        XCTAssertEqual(inherited[1].appearance, ItemAppearance(icon: .home))
+        XCTAssertTrue(inherited[1].isArchived)
+        XCTAssertEqual(inherited[0].cards, list.cards)
+        XCTAssertEqual(inherited[0].archivedCards, list.archivedCards)
+        XCTAssertEqual(inherited[0].newItemPresentation, .note)
+        XCTAssertEqual(theme.resolved(inherited[0].appearance).background, .blue)
+        let fresh = KanbanList(id: 99, title: "New list", cards: [])
+        XCTAssertEqual(theme.resolved(fresh.appearance).listBackground, .green)
+        XCTAssertEqual(BoardAppearance.inheritingLists(inherited), inherited)
+    }
+
+    func testIndependentBoardAppearancePersistsAndAcceptsLegacyCollections() throws {
+        let suite = "PlenactTests.BoardAppearance.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let week = BoardAppearance(bannerBackground: .blue, listBackground: .orange, cardBackground: .green)
+        defaults.set(try JSONEncoder().encode(week), forKey: BoardAppearance.weekStorageKey)
+        XCTAssertEqual(try BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))), week)
+        XCTAssertEqual(try BoardAppearance.decodeWeek(Data()), BoardAppearance())
+        XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data("invalid".utf8)))
+        XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data(#"{"bannerBackground":"invalid"}"#.utf8)))
+        var first = PersonalCollection(title: "First", kind: .board)
+        first.boardAppearance = BoardAppearance(bannerBackground: .purple, listBackground: .red, cardBackground: .orange)
+        var second = PersonalCollection(title: "Second", kind: .board)
+        second.boardAppearance = BoardAppearance(bannerBackground: .green, listBackground: .blue, cardBackground: .red)
+        second.isArchived = true
+        try PersonalCollectionStore.saveChecked([first, second], to: defaults)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [first, second])
+        XCTAssertEqual(try BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))), week)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Any])
+        legacy.removeValue(forKey: "boardAppearance")
+        let reopened = try JSONDecoder().decode(PersonalCollection.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(reopened.boardAppearance)
+        XCTAssertEqual(reopened.lists, first.lists)
+    }
+
     func testListBackgroundTintRoundTripsAndKeepsLegacyDefaults() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"background":"blue"}"#.utf8))
         XCTAssertNil(legacy.listBackground)

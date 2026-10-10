@@ -3607,3 +3607,71 @@ enum CrossBoardCardMovement {
         }
     }
 }
+
+/// Offline, mixed-format starters that remain drafts until explicitly saved.
+enum MixedListTemplate: String, CaseIterable, Identifiable {
+    case planDay = "Plan a day"
+    case exploreIdea = "Explore an idea"
+    case startProject = "Start a project"
+    var id: String { rawValue }
+    var summary: String {
+        switch self {
+        case .planDay: "Make room for what matters, then choose a few useful next steps."
+        case .exploreIdea: "Collect inspiration, ask questions, and try one small experiment."
+        case .startProject: "Define the outcome, gather context, and turn it into action."
+        }
+    }
+    var illustration: ExampleCoverImage {
+        switch self { case .planDay: .garden; case .exploreIdea: .mountains; case .startProject: .workspace }
+    }
+    var items: [(String, String, ItemDisplayFormat)] {
+        switch self {
+        case .planDay: [
+            ("A little inspiration", "Replace this picture with something that sets the tone for your day.", .picture),
+            ("What matters today?", "Write one thing you want to make room for today.", .note),
+            ("Take action", "Your next steps.", .divider),
+            ("Choose your first small step", "Make it something you can begin without extra preparation.", .card),
+            ("Make time for a pause", "Choose a moment to rest, walk, or reconnect.", .card),
+            ("Reflect", "A place to look back.", .divider),
+            ("What went well?", "Capture a small win or a moment you enjoyed.", .note),
+            ("Carry forward", "Leave yourself one useful thought for tomorrow.", .note)
+        ]
+        case .exploreIdea: [
+            ("Gather inspiration", "Replace this picture with an image that sparks your idea.", .picture),
+            ("The idea in a sentence", "What could this be, and why does it interest you?", .note),
+            ("Explore", "Questions and experiments.", .divider),
+            ("Find one useful reference", "Collect a source, example, or conversation that could help.", .card),
+            ("Try a small experiment", "Choose a quick way to learn something before committing.", .card),
+            ("Keep learning", "Your discoveries and open questions.", .divider),
+            ("Questions to revisit", "What are you curious or uncertain about?", .note),
+            ("What did you discover?", "Keep the parts worth exploring further.", .note)
+        ]
+        case .startProject: [
+            ("Picture the outcome", "Replace this picture with a sketch, reference, or vision for your project.", .picture),
+            ("What does success look like?", "Describe the result, who it helps, and what is in scope.", .note),
+            ("First steps", "Turn your plan into action.", .divider),
+            ("Gather what you need", "Identify the resources, references, or people that will help.", .card),
+            ("Complete the first milestone", "Define one small result you can finish and review.", .card),
+            ("Project context", "Keep useful details together.", .divider),
+            ("Decisions and references", "Record choices and links with a little context.", .note),
+            ("Progress and next steps", "Capture what changed and where to go next.", .note)
+        ]
+        }
+    }
+    func makeCollection(existingTitles: [String]) -> PersonalCollection {
+        let title = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
+        var collection = PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
+        collection.lists[0].cards = items.enumerated().map { index, item in
+            var card = KanbanCard(id: index, word: item.0, listTitle: title, checklists: [],
+                descriptionOverride: item.1, subtitleOverride: "", listDisplayFormat: item.2)
+            if item.2 == .note { card.presentation = .note }
+            if item.2 == .picture {
+                let image = KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
+                card.attachments = [image]
+                card.coverAttachmentID = image.id
+            }
+            return card
+        }
+        return collection
+    }
+}

@@ -4278,6 +4278,13 @@ struct BoardListsView: View {
 
     private var createMenu: some View { /* Directory actions for creating Lists and Boards */
         Menu {
+            Menu("Mixed list templates", systemImage: "square.stack.3d.up") {
+                ForEach(MixedListTemplate.allCases) { template in
+                    Button(template.rawValue) {
+                        editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
+                    }
+                }
+            }
 
             Button("New List", systemImage: "list.bullet") {
                 editingCollection = PersonalCollection(title: "", kind: .list)
@@ -4414,7 +4421,11 @@ struct BoardListsView: View {
                 PersonalListExamplesView(
                     onLoadExampleWeek: onLoadExampleWeek,
                     onUndoExampleWeek: onUndoExampleWeek,
-                    hasUndoableWeek: ExampleLoadUndoStore.load() != nil
+                    hasUndoableWeek: ExampleLoadUndoStore.load() != nil,
+                    onSelectMixedTemplate: { template in
+                        pendingExample = template.makeCollection(existingTitles: collections.map(\.title))
+                        showsExamples = false
+                    }
                 ) { example in
                     pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
                     showsExamples = false
@@ -4567,6 +4578,7 @@ struct PersonalListExamplesView: View {
     var onLoadExampleWeek: (() -> Bool)? = nil
     var onUndoExampleWeek: (() -> Bool)? = nil
     let onSelect: (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
+    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
     @State private var confirmsLoadWeek = false
     @State private var confirmsUndoWeek = false
@@ -4577,11 +4589,13 @@ struct PersonalListExamplesView: View {
         onLoadExampleWeek: (() -> Bool)? = nil,
         onUndoExampleWeek: (() -> Bool)? = nil,
         hasUndoableWeek: Bool = false,
+        onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil,
         onSelect: @escaping (PersonalListExample) -> Void
     ) {
         self.onLoadExampleWeek = onLoadExampleWeek
         self.onUndoExampleWeek = onUndoExampleWeek
         self.onSelect = onSelect
+        self.onSelectMixedTemplate = onSelectMixedTemplate
         _hasUndoableWeek = State(initialValue: hasUndoableWeek)
     }
 
@@ -4615,6 +4629,30 @@ struct PersonalListExamplesView: View {
                         Text("Loading replaces your current Week Board, including archived Week content. Your previous Week Board is retained on this device for Undo Last Load. Personal Lists and Boards stay unchanged. Nothing is uploaded.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let onSelectMixedTemplate {
+                    Section("Mixed list templates") {
+                        ForEach(MixedListTemplate.allCases) { template in
+                            DisclosureGroup(template.rawValue) {
+                                Text(template.summary).foregroundStyle(.secondary)
+                                ForEach(template.items.indices, id: \.self) { index in
+                                    let item = template.items[index]
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        if item.2 == .picture {
+                                            CardCoverPreview(attachment: KanbanAttachment(mediaKind: .photo, exampleImage: template.illustration))
+                                        }
+                                        Label(item.0, systemImage: item.2.symbol).font(.headline)
+                                        Text(item.1).font(.subheadline).foregroundStyle(.secondary)
+                                    }
+                                    .padding(.vertical, 6)
+                                }
+                                Button("Use \(template.rawValue)", systemImage: "plus") {
+                                    onSelectMixedTemplate(template)
+                                }
+                            }
+                        }
                     }
                 }
 

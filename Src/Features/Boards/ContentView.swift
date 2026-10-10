@@ -1524,6 +1524,16 @@ struct ContentView: View {
     /// @pre        The board list collection has been initialized
     /// @post       A uniquely identified empty list is appended to the board
     ///
+    private func dayDate(for listID: Int) -> Date? {
+        guard let document = planningCalendarAccess?.document,
+              let week = document.weeks.first(where: {
+                  personalCollectionID == nil
+                      ? $0.startKey == document.currentWeekKey : $0.id == personalCollectionID
+              }),
+              let key = week.dayListIDs.first(where: { $0.value == listID })?.key else { return nil }
+        return PlanningDate.date(key)
+    }
+
     private func addList() {
 
         let nextListID     = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
@@ -2493,7 +2503,8 @@ struct ContentView: View {
                                             boardAppearance: currentBoardAppearance,
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
-                                            }
+                                            },
+                                            datedTitle: dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) }
                                         )
                                         .frame(
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
@@ -2806,8 +2817,7 @@ struct ContentView: View {
                         boardAppearance: currentBoardAppearance,
                         returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
                         boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View",
-                        representedDate: planningCalendarAccess?.document.weeks.first(where: { $0.id == personalCollectionID })?
-                            .dayListIDs.first(where: { $0.value == listID }).flatMap { PlanningDate.date($0.key) }
+                        representedDate: dayDate(for: listID)
                     )
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
@@ -3803,6 +3813,19 @@ struct KanbanListView: View {
     @State private var opensDayAfterDismissal = false
     var boardAppearance: BoardAppearance = BoardAppearance()
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    var datedTitle: String? = nil
+
+    private var styledListTitle: AttributedString {
+        var title = AttributedString(list.title)
+        title.font = .title3.weight(.bold)
+        if let datedTitle {
+            var date = AttributedString(String(datedTitle.dropFirst(list.title.count)))
+            date.font = .title3.weight(.regular).italic()
+            date.foregroundColor = .secondary
+            title.append(date)
+        }
+        return title
+    }
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
@@ -3949,7 +3972,7 @@ struct KanbanListView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     ItemAppearanceMark(appearance: list.appearance)
-                    Text(list.title)
+                    Text(styledListTitle)
                         .font(.title3.weight(.bold))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -5404,6 +5427,7 @@ struct TodayListDetailView: View {
     var boardViewActionTitle: String = "Switch to Week View"
     var focusesFirstUncheckedTask = false
     var representedDate: Date? = nil
+    var includesDateInTitle = true
     @State private var didApplyInitialTaskFocus = false
 
 
@@ -5729,9 +5753,10 @@ struct TodayListDetailView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 8) {
                             ItemAppearanceMark(appearance: focusedList?.appearance)
-                            Text(focusedList?.title ?? "Today")
+                            Text((includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
                                 .font(.title2.weight(.bold))
                                 .lineLimit(1)
+                                .minimumScaleFactor(0.65)
                                 .foregroundStyle(.white)
                         }
 

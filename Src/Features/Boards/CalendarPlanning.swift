@@ -2,6 +2,14 @@ import SwiftUI
 
 /// Stable local date keys avoid timestamp shifts when a user changes time zone.
 enum PlanningDate {
+    static func listTitle(_ title: String, on date: Date, now: Date = .now, calendar: Calendar = .current) -> String {
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        let year = calendar.component(.year, from: date)
+        let suffix = year == calendar.component(.year, from: now)
+            ? "\(month)/\(day)" : "\(month)/\(day)/\(String(format: "%02d", year % 100))"
+        return "\(title) (\(suffix))"
+    }
     static func key(_ date: Date, calendar: Calendar = .current) -> String {
         var gregorian = Calendar(identifier: .gregorian)
         gregorian.timeZone = calendar.timeZone

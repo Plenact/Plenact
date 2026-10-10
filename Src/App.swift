@@ -571,6 +571,8 @@ private struct AppRootView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
 
+        .environment(\.cardMovementAccess, cardMovementAccess)
+
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
         }
@@ -609,6 +611,49 @@ private struct AppRootView: View {
         }
     }
 
+
+    private var cardMovementAccess: CardMovementAccess {
+        let weekDestinations = lists.filter { !$0.isArchived }.map {
+            CardMoveDestination(collectionID: nil, listID: $0.id, title: $0.title, group: "Week")
+        }
+        let libraryDestinations = collections.filter(\.isActive).flatMap { collection in
+            collection.lists.filter { !$0.isArchived }.map {
+                CardMoveDestination(collectionID: collection.id, listID: $0.id,
+                    title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)", group: "Library", columnTitle: $0.title)
+            }
+        }
+        return CardMovementAccess(destinations: weekDestinations + libraryDestinations, move: { card, source, destination in
+            do {
+                var updatedWeek = lists
+                var updatedCollections = collections
+                var updatedSaved = savedCardIDs
+                try CrossBoardCardMovement.move(card, from: source, to: destination,
+                    week: &updatedWeek, collections: &updatedCollections, saved: &updatedSaved)
+                // Encode both documents before the first write; publishing happens after checked saves.
+                _ = try JSONEncoder().encode(updatedWeek)
+                _ = try JSONEncoder().encode(updatedCollections)
+                let changesWeek = source == nil || destination.collectionID == nil
+                let changesLibrary = source != nil || destination.collectionID != nil
+                // Refuse to replace an unreadable retained document with fallback state.
+                if changesWeek, let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
+                    _ = try JSONDecoder().decode([KanbanList].self, from: data)
+                }
+                if changesLibrary, let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") {
+                    _ = try JSONDecoder().decode([PersonalCollection].self, from: data)
+                }
+                if changesWeek { try KanbanBoardPersistence.saveListsChecked(updatedWeek) }
+                if changesLibrary { try PersonalCollectionStore.saveChecked(updatedCollections) }
+                if changesWeek { SavedCardPersistence.save(updatedSaved) }
+                lists = updatedWeek
+                collections = updatedCollections
+                savedCardIDs = updatedSaved
+                return true
+            } catch {
+                DatabaseActivity.shared.report("Could not move this item: \(error.localizedDescription) Its content has been retained.")
+                return false
+            }
+        })
+    }
 
     private var libraryTab: some View { /* Personal collection directory and creation actions */
 

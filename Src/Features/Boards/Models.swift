@@ -3542,3 +3542,68 @@ enum SampleData {
         return initializedLists
     }()
 }
+
+
+/// A destination identifies both the owning board and its column; nil denotes Week.
+struct CardMoveDestination: Identifiable, Hashable {
+    let collectionID: UUID?
+    let listID: Int
+    let title: String
+    let group: String
+    var columnTitle: String? = nil
+    var id: String { "\(collectionID?.uuidString ?? "week"):\(listID)" }
+}
+
+/// Builds both sides before publication, retaining hidden fields and relocating bookmarks.
+enum CrossBoardCardMovement {
+    static func move(_ card: KanbanCard, from sourceID: UUID?, to destination: CardMoveDestination,
+                     week: inout [KanbanList], collections: inout [PersonalCollection],
+                     saved: inout Set<Int>) throws {
+        var sourceLists: [KanbanList]
+        var sourceSaved: Set<Int>
+        if let sourceID {
+            guard let source = collections.first(where: { $0.id == sourceID && $0.isActive }) else {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+            sourceLists = source.lists; sourceSaved = source.savedCardIDs
+        } else { sourceLists = week; sourceSaved = saved }
+        let matches = sourceLists.indices.filter { !sourceLists[$0].isArchived && sourceLists[$0].cards.contains { $0.id == card.id } }
+        guard matches.count == 1, let sourceIndex = matches.first,
+              !(sourceID == destination.collectionID && sourceLists[sourceIndex].id == destination.listID) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        var targetLists: [KanbanList]
+        var targetSaved: Set<Int>
+        let sameBoard = sourceID == destination.collectionID
+        if sameBoard { targetLists = sourceLists; targetSaved = sourceSaved }
+        else if let targetID = destination.collectionID {
+            guard let target = collections.first(where: { $0.id == targetID && $0.isActive }) else {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+            targetLists = target.lists; targetSaved = target.savedCardIDs
+        } else { targetLists = week; targetSaved = saved }
+        guard let targetIndex = targetLists.firstIndex(where: { $0.id == destination.listID && !$0.isArchived }) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        var newID = card.id
+        let reserved = Set(targetLists.flatMap(\.allCards).map(\.id))
+        if !sameBoard && reserved.contains(newID) {
+            let (next, overflow) = (reserved.max() ?? -1).addingReportingOverflow(1)
+            guard !overflow else { throw CocoaError(.validationNumberTooLarge) }
+            newID = next
+        }
+        sourceLists[sourceIndex].cards.removeAll { $0.id == card.id }
+        if sameBoard { targetLists = sourceLists }
+        targetLists[targetIndex].cards.append(card.replacingLocation(id: newID, listTitle: targetLists[targetIndex].title))
+        if !sameBoard, sourceSaved.remove(card.id) != nil { targetSaved.insert(newID) }
+        if sameBoard { sourceLists = targetLists; sourceSaved = targetSaved }
+        if let sourceID, let index = collections.firstIndex(where: { $0.id == sourceID }) {
+            collections[index].lists = sourceLists; collections[index].savedCardIDs = sourceSaved
+        } else { week = sourceLists; saved = sourceSaved }
+        if !sameBoard {
+            if let targetID = destination.collectionID, let index = collections.firstIndex(where: { $0.id == targetID }) {
+                collections[index].lists = targetLists; collections[index].savedCardIDs = targetSaved
+            } else { week = targetLists; saved = targetSaved }
+        }
+    }
+}

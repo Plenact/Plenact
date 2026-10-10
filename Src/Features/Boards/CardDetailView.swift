@@ -255,6 +255,7 @@ struct CardDetailView: View {
     let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
     let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
     let personalCollectionID: UUID? /* Original personal collection owning this detail session */
+    @Environment(\.cardMovementAccess) private var cardMovementAccess
     let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note movement destinations */
     let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves the Note and returns its destination-local record */
     let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? /* Persists edits after the Note changes collections */
@@ -296,6 +297,7 @@ struct CardDetailView: View {
     @State private var showingAttachmentNotice = false       /* Whether an attachment notice is presented                    */
     @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
     @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
+    @State private var hasMovedCard = false /* Stops editor callbacks from writing back to the old owner */
     @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
     @State private var displayFormat: ItemDisplayFormat
     @State private var presentation: ItemPresentation /* Current Card or Note rendering mode */
@@ -533,7 +535,7 @@ struct CardDetailView: View {
     ///
     private func useLibraryCover(_ image: ExampleCoverImage) -> Bool {
 
-        guard !hasDeletedCard else {
+        guard !hasDeletedCard, !hasMovedCard else {
 
             return false
         }
@@ -753,7 +755,7 @@ struct CardDetailView: View {
     @MainActor
     private func importPhotos(from photoItems: [PhotosPickerItem], coverRequestID: UUID? = nil) async {
 
-        guard !hasDeletedCard else {
+        guard !hasDeletedCard, !hasMovedCard else {
 
             return
         }
@@ -775,7 +777,7 @@ struct CardDetailView: View {
                     continue
                 }
 
-                guard !hasDeletedCard else {
+                guard !hasDeletedCard, !hasMovedCard else {
 
                     return
                 }
@@ -979,7 +981,7 @@ struct CardDetailView: View {
         clearDueDate:   Bool                = false         /* Whether to clear the due date    */
     ) -> Bool {
 
-        guard !hasDeletedCard else {
+        guard !hasDeletedCard, !hasMovedCard else {
 
             return false
         }
@@ -1379,7 +1381,9 @@ struct CardDetailView: View {
     @ViewBuilder
     private var locationControl: some View { /* List-location picker adapted to Card or Note movement */
 
-        if presentation == .note, onMoveNoteToPersonalList != nil {
+        if cardMovementAccess.move != nil {
+            CardDestinationMenu(card: workingCardSnapshot, onMoved: { hasMovedCard = true; dismiss() }, locationTitle: currentListTitle)
+        } else if presentation == .note, onMoveNoteToPersonalList != nil {
 
             personalListMenu { noteLocationLabel }
                 .accessibilityLabel("Move Note from \(currentListTitle)")
@@ -2708,8 +2712,12 @@ struct CardDetailView: View {
                             } label: {
                                 Label("Edit description", systemImage: "text.alignleft")
                             }
-                            moveCardMenu {
-                                Label("Move \(displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
+                            if cardMovementAccess.move != nil {
+                                CardDestinationMenu(card: workingCardSnapshot, onMoved: { hasMovedCard = true; dismiss() })
+                            } else {
+                                moveCardMenu {
+                                    Label("Move \(displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
+                                }
                             }
                             Button {
                                 showsNoteDetails = true

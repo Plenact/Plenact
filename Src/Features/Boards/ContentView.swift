@@ -2990,17 +2990,12 @@ struct BoardHeader: View {
 
             if let onSearch {
                 Button(action: onSearch) {
-                    Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.white)
-                        .frame(width: 40, height: 44).contentShape(Rectangle())
+                    WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                 }
                 .accessibilityLabel("Search Plenact")
             }
             Button(action: onOpenCalendar) {
-                Image(systemName: "calendar")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
+                WorkspaceHeaderIcon(systemName: "calendar").foregroundStyle(.white)
             }
 
             .buttonStyle(.plain)
@@ -3041,9 +3036,7 @@ struct BoardHeader: View {
                     Button(deleteBoardTitle, systemImage: "trash", role: .destructive) { confirmsDeleteBoard = true }
                 }
             } label: {
-                Image(systemName: "ellipsis.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
+                WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
             }
 
             .accessibilityLabel("Board options")
@@ -5757,8 +5750,7 @@ struct TodayListDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
                     Button { showsDaySearch = true } label: {
-                        Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.white)
-                            .frame(width: 40, height: 44).contentShape(Rectangle())
+                        WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                     }
                     .accessibilityLabel("Search Plenact")
                     Button {
@@ -5768,8 +5760,7 @@ struct TodayListDetailView: View {
                             planningCalendarAccess.openCurrentWeek(); onClose(); planningHomeExit?()
                         } else { onOpenWeek() }
                     } label: {
-                        Image(systemName: "rectangle.split.3x1").font(.title2).foregroundStyle(.white)
-                            .frame(width: 40, height: 44).contentShape(Rectangle())
+                        WorkspaceHeaderIcon(systemName: "rectangle.split.3x1").foregroundStyle(.white)
                     }
                     .accessibilityLabel("Open this week")
                     Menu {
@@ -5788,11 +5779,7 @@ struct TodayListDetailView: View {
 
                         Button(boardViewActionTitle, systemImage: "rectangle.split.3x1", action: onOpenWeek)
                     } label: {
-                        Image(systemName: "ellipsis.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                            .frame(width: 40, height: 44)
-                            .contentShape(Rectangle())
+                        WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
                     }
 
                     .accessibilityLabel("Day options")
@@ -6135,5 +6122,16 @@ struct CardDestinationMenu: View {
                 }
             }
         }
+    }
+}
+
+/// Shared glyph sizing and touch area for the main workspace headers.
+struct WorkspaceHeaderIcon: View {
+    let systemName: String
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20, weight: .medium))
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
     }
 }

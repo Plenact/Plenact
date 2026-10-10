@@ -1655,7 +1655,7 @@ private struct TodayHomeView: View {
     ///
     private var todayHeader: some View { /* Today's heading and account controls */
 
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .center, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today")
                     .font(.largeTitle.weight(.bold))
@@ -1669,14 +1669,11 @@ private struct TodayHomeView: View {
             Button {
                 showsSearch = true
             } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.title3.weight(.medium))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+                WorkspaceHeaderIcon(systemName: "magnifyingglass")
             }
 
             .buttonStyle(.plain)
-            .accessibilityLabel("Search Board")
+            .accessibilityLabel("Search Plenact")
 
             Button {
                 showsAccountSettings = true
@@ -3649,6 +3646,8 @@ struct LibraryCollectionRow: View {
 ///
 struct BoardListsView: View {
 
+    @State private var libraryEditMode: EditMode = .inactive
+
     @State private var showsSharedSearch = false
 
     let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
@@ -4221,6 +4220,47 @@ struct BoardListsView: View {
     /// @return     (some View) accessible toolbar creation menu
     /// @post       Choosing an entry sets editingCollection without changing stored collections
     ///
+    private var libraryHeader: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Library").font(.largeTitle.weight(.bold))
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    Text("Personal collections").font(.subheadline).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Button { showsSharedSearch = true } label: {
+                    WorkspaceHeaderIcon(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Search Plenact")
+                .accessibilityIdentifier("library.openSearch")
+                Button {
+                    withAnimation { libraryEditMode = libraryEditMode == .active ? .inactive : .active }
+                } label: {
+                    WorkspaceHeaderIcon(systemName: libraryEditMode == .active ? "checkmark" : "pencil")
+                }
+                .disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityLabel(libraryEditMode == .active ? "Done reordering collections" : "Reorder collections")
+                Button(action: onOpenSaved) {
+                    WorkspaceHeaderIcon(systemName: "bookmark")
+                }
+                .accessibilityLabel("Saved Items")
+                .accessibilityHint("Opens your bookmarked content and archived collections")
+                .accessibilityIdentifier("library.openSaved")
+                createMenu
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+            TextField("Find a collection or card", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityLabel("Filter Library collections")
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
+        .background { TodayPaperBackground() }
+    }
+
     private var createMenu: some View { /* Directory actions for creating Lists and Boards */
         Menu {
 
@@ -4258,7 +4298,7 @@ struct BoardListsView: View {
                 }
             }
         } label: {
-            Image(systemName: "plus")
+            WorkspaceHeaderIcon(systemName: "plus.circle.fill")
         }
 
         .accessibilityLabel("Create list or board")
@@ -4336,42 +4376,9 @@ struct BoardListsView: View {
 
             .scrollContentBackground(.hidden)
             .background { TodayPaperBackground() }
-            .navigationTitle("Library")
-            .searchable(text: $searchText, prompt: "Find a collection or card")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showsSharedSearch = true } label: {
-                        Image(systemName: "magnifyingglass")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Search Plenact")
-                    .accessibilityIdentifier("library.openSearch")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    EditButton().disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: onOpenSaved) {
-                        Image(systemName: "bookmark")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Saved Items")
-                    .accessibilityHint("Opens your bookmarked content and archived collections")
-                    .accessibilityIdentifier("library.openSaved")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) { createMenu }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) { libraryHeader }
+            .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 
             .sheet(item: $editingCollection) { collection in

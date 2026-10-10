@@ -718,6 +718,22 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 window.rootViewController = detail
                 detail.view.layoutIfNeeded()
                 try await Task.sleep(for: .milliseconds(150))
+                if format == .title || format == .text {
+                    let row = KanbanCardView(card: item, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
+                        onUpdateCard: { _ in XCTFail("Layout must not edit writing") }, onDeleteCard: { XCTFail("Layout must not delete") },
+                        onArchiveCard: { XCTFail("Layout must not archive") }, onToggle: { XCTFail("Writing must not complete") })
+                    let host = UIHostingController(rootView: row.padding().environment(\.dynamicTypeSize, textSize))
+                    window.rootViewController = host
+                    host.view.layoutIfNeeded()
+                    try await Task.sleep(for: .milliseconds(150))
+                    let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                        window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                    }
+                    let snapshot = XCTAttachment(image: image)
+                    snapshot.name = "WritingRow-\(format.rawValue)-\(textSize)"
+                    snapshot.lifetime = .keepAlways
+                    add(snapshot)
+                }
                 XCTAssertEqual(item, original)
             }
         }

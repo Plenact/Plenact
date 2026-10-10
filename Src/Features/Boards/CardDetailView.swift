@@ -393,7 +393,7 @@ struct CardDetailView: View {
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
         _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
-        _presentation         = State(initialValue: card.displayFormat == .note ? .note : .card)
+        _presentation         = State(initialValue: [.note, .title, .text].contains(card.displayFormat) ? .note : .card)
         _displayFormat        = State(initialValue: card.displayFormat)
         _recordID = State(initialValue: card.id)
         _currentListTitle = State(initialValue: card.listTitle)
@@ -2001,7 +2001,7 @@ struct CardDetailView: View {
         focusedField = nil
         appearance = updated
         displayFormat = format
-        presentation = format == .note ? .note : .card
+        presentation = [.note, .title, .text].contains(format) ? .note : .card
         showsNoteDetails = false
         if !hasEditedDescription {
             descriptionText = presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph

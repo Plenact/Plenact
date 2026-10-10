@@ -123,7 +123,7 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
 
 /// Per-item list rendering; Card/Note creation defaults remain independent.
 enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable {
-    case card, note, divider, picture
+    case card, note, divider, picture, title, text
 
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
@@ -133,6 +133,8 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable {
         case .note: "note.text"
         case .divider: "minus"
         case .picture: "photo"
+        case .title: "textformat.size.larger"
+        case .text: "text.alignleft"
         }
     }
 }
@@ -308,8 +310,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             listDisplayFormat ?? ((isDivider || Self.isDividerTitle(word)) ? .divider : (presentation == .note ? .note : .card))
         }
         set {
-            if newValue == .card || newValue == .note {
-                presentation = newValue == .note ? .note : .card
+            if newValue == .card || newValue == .note || newValue == .title || newValue == .text {
+                presentation = newValue == .card ? .card : .note
             }
             listDisplayFormat = newValue
         }
@@ -575,7 +577,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.dismissedActivityIDs = dismissedActivityIDs    /* Set of activity IDs that were dismissed by user    */
         self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
         self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
-        let retainedPresentation = listDisplayFormat == .note ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
+        let retainedPresentation = [.note, .title, .text].contains(listDisplayFormat) ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
         self.itemPresentation     = retainedPresentation == .card ? nil : retainedPresentation
         self.appearance           = appearance?.isEmpty == true ? nil : appearance
         self.listDisplayFormat    = listDisplayFormat
@@ -3627,9 +3629,11 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
     var items: [(String, String, ItemDisplayFormat)] {
         switch self {
         case .planDay: [
+            ("Make room for today", "A heading for your day.", .title),
             ("A little inspiration", "Replace this picture with something that sets the tone for your day.", .picture),
-            ("What matters today?", "Write one thing you want to make room for today.", .note),
+            ("A little space, a clear intention, and one useful next step.", "Set the tone for your day.", .text),
             ("Take action", "Your next steps.", .divider),
+            ("What matters today?", "Write one thing you want to make room for today.", .note),
             ("Choose your first small step", "Make it something you can begin without extra preparation.", .card),
             ("Make time for a pause", "Choose a moment to rest, walk, or reconnect.", .card),
             ("Reflect", "A place to look back.", .divider),
@@ -3637,9 +3641,11 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
             ("Carry forward", "Leave yourself one useful thought for tomorrow.", .note)
         ]
         case .exploreIdea: [
+            ("Something worth exploring", "A heading for your idea.", .title),
             ("Gather inspiration", "Replace this picture with an image that sparks your idea.", .picture),
-            ("The idea in a sentence", "What could this be, and why does it interest you?", .note),
+            ("Follow your curiosity before deciding what this idea should become.", "A little context for your exploration.", .text),
             ("Explore", "Questions and experiments.", .divider),
+            ("The idea in a sentence", "What could this be, and why does it interest you?", .note),
             ("Find one useful reference", "Collect a source, example, or conversation that could help.", .card),
             ("Try a small experiment", "Choose a quick way to learn something before committing.", .card),
             ("Keep learning", "Your discoveries and open questions.", .divider),
@@ -3647,9 +3653,11 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
             ("What did you discover?", "Keep the parts worth exploring further.", .note)
         ]
         case .startProject: [
+            ("Computer Desk", "A heading for your project workspace.", .title),
             ("Picture the outcome", "Replace this picture with a sketch, reference, or vision for your project.", .picture),
-            ("What does success look like?", "Describe the result, who it helps, and what is in scope.", .note),
+            ("Clean office up so we can start the project", "A little context before taking action.", .text),
             ("First steps", "Turn your plan into action.", .divider),
+            ("What does success look like?", "Describe the result, who it helps, and what is in scope.", .note),
             ("Gather what you need", "Identify the resources, references, or people that will help.", .card),
             ("Complete the first milestone", "Define one small result you can finish and review.", .card),
             ("Project context", "Keep useful details together.", .divider),

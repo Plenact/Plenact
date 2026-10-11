@@ -49,6 +49,7 @@ enum ChecklistMoveDirection {
 /// @note   The detail surface is intentionally scrollable so every card section remains accessible on iPhone
 ///
 struct CardDetailView: View {
+    @State private var isActivityCollapsed = false
     @Environment(\.workspaceBottomBarHeight) private var workspaceBottomBarHeight
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
@@ -2369,7 +2370,7 @@ struct CardDetailView: View {
                     //                                                                            //
                     //          Presents the primary actions available for the selected card      //
                     //****************************************************************************//
-                    DetailSection(title: "Quick Actions") {
+                    DetailSection(title: "Quick Actions", collapsible: true) {
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
 
@@ -2402,7 +2403,7 @@ struct CardDetailView: View {
                     //****************************************************************************//
                     if presentation == .card {
 
-                    DetailSection(title: "Description") {
+                    DetailSection(title: "Description", collapsible: true) {
 
                         RichTextEditor(placeholder: "Description", text: descriptionEditingBinding,
                                        focus: Binding(get: { focusedField == .description }, set: { focusedField = $0 ? .description : nil }))
@@ -2416,7 +2417,7 @@ struct CardDetailView: View {
                     //                                                                            //
                     //          Presents selected card's dates, labels & meta in aligned rows     //
                     //****************************************************************************//
-                    DetailSection(title: "Details") {
+                    DetailSection(title: "Details", collapsible: true) {
 
                         if startDate != nil {
 
@@ -2520,7 +2521,7 @@ struct CardDetailView: View {
                     //          Presents card's checklist groups & completion state. Checklist    //
                     //          creation & deletion update the local collection rendered here     //
                     //****************************************************************************//
-                    DetailSection(title: "Checklists", trailing: "plus", trailingAction: { addChecklist(using: scrollProxy) }) {
+                    DetailSection(title: "Checklists", collapsible: true, trailing: "plus", trailingAction: { addChecklist(using: scrollProxy) }) {
 
                         ForEach(checklists) { checklist in
                             checklistBlock(for: checklist)
@@ -2553,33 +2554,35 @@ struct CardDetailView: View {
                             }
 
                             .accessibilityLabel("Activity options")
+                            SectionCollapseButton(title: "Activity", isCollapsed: $isActivityCollapsed)
                         }
 
-                        if activityFilter != .cardActivity {
+                        if !isActivityCollapsed {
+                            if activityFilter != .cardActivity {
 
-                            ForEach(comments) { comment in
-                                CommentActivityRow(
-                                    comment:     comment,
-                                    memberColor: memberIconColor(for: comment.author)
-                                ) {
-                                    deleteComment(with: comment.id)
+                                ForEach(comments) { comment in
+                                    CommentActivityRow(
+                                        comment:     comment,
+                                        memberColor: memberIconColor(for: comment.author)
+                                    ) {
+                                        deleteComment(with: comment.id)
+                                    }
                                 }
                             }
-                        }
 
-                        if activityFilter != .comments {
+                            if activityFilter != .comments {
 
-                            ForEach(GeneratedActivity.allCases.filter { !dismissedActivityIDs.contains($0.id) }) { activity in
-                                ActivityRow(
-                                    text:       activity.text(for: card, actorName: currentUserName),
-                                    actorColor: memberIconColor(for: currentUserName)
-                                ) {
-                                    dismissGeneratedActivity(activity)
+                                ForEach(GeneratedActivity.allCases.filter { !dismissedActivityIDs.contains($0.id) }) { activity in
+                                    ActivityRow(
+                                        text:       activity.text(for: card, actorName: currentUserName),
+                                        actorColor: memberIconColor(for: currentUserName)
+                                    ) {
+                                        dismissGeneratedActivity(activity)
+                                    }
                                 }
                             }
                         }
                     }
-
                     .padding(16)
                     .background(.background)
                     .overlay(alignment: .bottom) { Divider() }
@@ -2608,6 +2611,11 @@ struct CardDetailView: View {
 
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                    .frame(height: isActivityCollapsed ? 0 : nil)
+                    .clipped()
+                    .opacity(isActivityCollapsed ? 0 : 1)
+                    .allowsHitTesting(!isActivityCollapsed)
+                    .accessibilityHidden(isActivityCollapsed)
                     }
                 }
             }
@@ -3425,6 +3433,8 @@ private struct CardMembersSheet: View {
 ///
 struct DetailSection<Content: View>: View {
 
+    @State private var isCollapsed = false
+    let collapsible: Bool
     let title:          String          /* The title of the detail section                    */
     var trailing:       String?         /* The optional trailing symbol of the detail section */
     var trailingAction: (() -> Void)?   /* The optional action for the trailing symbol        */
@@ -3445,8 +3455,9 @@ struct DetailSection<Content: View>: View {
     /// @return     (DetailSection) configured detail section
     /// @post       Content and trailing action are retained without being invoked
     ///
-    init(title: String, trailing: String? = nil, trailingAction: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String, collapsible: Bool = false, trailing: String? = nil, trailingAction: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
 
+        self.collapsible = collapsible
         self.title          = title          /* The title of the detail section                    */
         self.trailing       = trailing       /* The optional trailing symbol of the detail section */
         self.trailingAction = trailingAction /* The optional action for the trailing symbol        */
@@ -3466,7 +3477,7 @@ struct DetailSection<Content: View>: View {
     var body: some View { /* Detail subsection heading and content */
 
         // Build the detail section container with heading, optional trailing symbol/action, content, and divider
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: isCollapsed ? 0 : 10) {
 
             // Build the heading row with title and optional trailing symbol/action
             HStack {
@@ -3496,9 +3507,18 @@ struct DetailSection<Content: View>: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if collapsible {
+                    SectionCollapseButton(title: title, isCollapsed: $isCollapsed)
+                }
             }
 
-            content()
+            VStack(alignment: .leading, spacing: 10) { content() }
+                .frame(height: isCollapsed ? 0 : nil, alignment: .top)
+                .clipped()
+                .contentShape(Rectangle())
+                .opacity(isCollapsed ? 0 : 1)
+                .allowsHitTesting(!isCollapsed)
+                .accessibilityHidden(isCollapsed)
         }
 
         .padding(16)
@@ -4484,5 +4504,22 @@ extension EnvironmentValues {
     var workspaceBottomBarHeight: CGFloat {
         get { self[WorkspaceBottomBarHeightKey.self] }
         set { self[WorkspaceBottomBarHeightKey.self] = newValue }
+    }
+}
+
+/// Shared section control, matching the individual checklist chevron.
+struct SectionCollapseButton: View {
+    let title: String
+    @Binding var isCollapsed: Bool
+    var body: some View {
+        Button { isCollapsed.toggle() } label: {
+            Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isCollapsed ? "Expand \(title)" : "Collapse \(title)")
     }
 }

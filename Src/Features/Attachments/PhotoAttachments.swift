@@ -1312,6 +1312,7 @@ struct CardPhotoGallery: View {
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .contentShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Photo \(index + 1)")

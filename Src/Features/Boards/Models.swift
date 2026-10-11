@@ -349,7 +349,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             presentation:         presentation,
             createdAt:            createdAt,
             appearance:           appearance,
-            listDisplayFormat:    listDisplayFormat
+            listDisplayFormat:    listDisplayFormat,
+            sectionLayout:        sectionLayout
         )
     }
 
@@ -3738,5 +3739,34 @@ struct CardSectionLayout: Hashable, Codable, Sendable {
     var sections: [CardSection] {
         var seen: Set<CardSection> = []
         return (order + CardSection.allCases).filter { seen.insert($0).inserted && !hidden.contains($0) }
+    }
+}
+
+/// Allocate destination-local identities and remap links between cards in a copied list.
+enum ListCopying {
+    static func copy(_ source: KanbanList, into destination: [KanbanList], crossBoard: Bool) -> KanbanList {
+        let listID = (destination.map(\.id).max() ?? -1) + 1
+        let firstCardID = (destination.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
+        let ids = Dictionary(uniqueKeysWithValues: source.allCards.enumerated().map { ($0.element.id, firstCardID + $0.offset) })
+        let title = source.title + " Copy"
+        func copyCard(_ card: KanbanCard) -> KanbanCard {
+            var copy = card.replacingLocation(id: ids[card.id]!, listTitle: title)
+            copy.checklists = card.checklists.map { checklist in
+                let items = checklist.items.map { item in
+                    var item = item
+                    if case .linkedCard(let id) = item.content {
+                        if let copiedID = ids[id] { item.content = .linkedCard(cardID: copiedID) }
+                        else if crossBoard { item.content = .standard }
+                    }
+                    return item
+                }
+                return KanbanChecklist(id: checklist.id, title: checklist.title, items: items, completedItemIndices: checklist.completedItemIndices)
+            }
+            return copy
+        }
+        var result = KanbanList(id: listID, title: title, cards: source.cards.map(copyCard), archivedCards: source.archivedCards.map(copyCard), newItemPresentation: source.newItemPresentation)
+        result.subtitleOverride = source.subtitleOverride
+        result.appearance = source.appearance
+        return result
     }
 }

@@ -1531,6 +1531,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(field.text, text)
     }
 
+    func testListCopyAllocatesIDsAndPreservesContentAndInternalLinks() throws {
+        var first = KanbanCard(id: 1, word: "First", listTitle: "Source", descriptionOverride: "Keep", sectionLayout: CardSectionLayout(hidden: [.details]))
+        first.checklists = [KanbanChecklist(title: "Links", items: [KanbanChecklistItem(title: "Internal", content: .linkedCard(cardID: 2)), KanbanChecklistItem(title: "External", content: .linkedCard(cardID: 99))])]
+        let archived = KanbanCard(id: 2, word: "Archived", listTitle: "Source")
+        var source = KanbanList(id: 1, title: "Source", cards: [first], archivedCards: [archived], newItemPresentation: .note)
+        source.subtitleOverride = "Subtitle"
+        let destination = [KanbanList(id: 8, title: "Other", cards: [KanbanCard(id: 20, word: "Existing", listTitle: "Other")])]
+        let copy = ListCopying.copy(source, into: destination, crossBoard: true)
+        XCTAssertEqual(copy.id, 9)
+        XCTAssertEqual(copy.allCards.map(\.id), [21, 22])
+        XCTAssertEqual(copy.cards.first?.descriptionOverride, "Keep")
+        XCTAssertEqual(copy.cards.first?.sectionLayout, first.sectionLayout)
+        XCTAssertEqual(copy.newItemPresentation, .note)
+        XCTAssertEqual(copy.subtitleOverride, "Subtitle")
+        XCTAssertEqual(copy.cards[0].checklists[0].items[0].content, .linkedCard(cardID: 22))
+        XCTAssertEqual(copy.cards[0].checklists[0].items[1].content, .standard)
+        XCTAssertEqual(source.cards[0].checklists[0].items[0].content, .linkedCard(cardID: 2))
+        XCTAssertEqual(try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(copy)), copy)
+    }
+
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws {
         var layout = CardSectionLayout()
         layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]

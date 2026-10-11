@@ -1141,6 +1141,7 @@ struct ContentView: View {
     /// Controls presentation of archived lists.
     @State private var showsArchivedLists = false /* Archived-list browser presentation state */
     /// Navigation stack path for card-detail destinations.
+    @State private var listToCopy: KanbanList?
     @State private var navigationPath = NavigationPath() /* Card-detail destinations in the Board navigation stack */
     @State private var boardBoundaryJumpRequest = 0 /* Trigger distinguishing repeated boundary-navigation requests */
     @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation */
@@ -1731,45 +1732,7 @@ struct ContentView: View {
             return
         }
 
-        let source       = lists[sourceIndex] /* Source list snapshot */
-        let copiedTitle  = "\(source.title) Copy" /* New list display title */
-        let copiedListID = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* New list identity */
-        var nextCardID   = ((lists + archivedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next unique card identity */
-
-        let copiedCards = source.cards.map { card /* Source card being copied */ in
-        
-            let copy = KanbanCard(     /* New card retaining source content */
-                id:                   nextCardID,
-                word:                 card.word,
-                listTitle:            copiedTitle,
-                isDivider:            card.isDivider,
-                isTitleChecked:       card.isTitleChecked,
-                startDate:            card.startDate,
-                dueDate:              card.dueDate,
-                checklists:           card.checklists,
-                comments:             card.comments,
-                members:              card.members,
-                labelIDs:             card.labelIDs,
-                attachments:          card.attachments,
-                coverAttachmentID:    card.coverAttachmentID,
-                dismissedActivityIDs: card.dismissedActivityIDs,
-                descriptionOverride:  card.descriptionOverride,
-                subtitleOverride:     card.subtitleOverride,
-                presentation:         card.presentation,
-                createdAt:            card.createdAt,
-                appearance:           card.appearance,
-                listDisplayFormat:    card.listDisplayFormat,
-                sectionLayout:        card.sectionLayout
-            )
-
-            nextCardID += 1
-            
-            return copy
-        }
-
-        var copiedList = KanbanList(id: copiedListID, title: copiedTitle, cards: copiedCards, newItemPresentation: source.newItemPresentation)
-        copiedList.subtitleOverride = source.subtitleOverride
-        copiedList.appearance = source.appearance
+        let copiedList = ListCopying.copy(lists[sourceIndex], into: lists + archivedLists, crossBoard: false)
         lists.insert(copiedList, at: sourceIndex + 1)
     }
 
@@ -2450,7 +2413,9 @@ struct ContentView: View {
                                             canMoveLater:          listIndex < lists.count - 1,
                                             onAddCard:             { title, description, subtitle in addCard(to: list.id, title: title, description: description, subtitle: subtitle)
                                             },
-                                            onCopyList:            { copyList(with: list.id) },
+                                            onCopyList:            {
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { listToCopy = list }
+                                            },
                                             onMoveList:            { offset in moveList(with: list.id, by: offset) },
                                             onSortList:            { ascending in sortList(with: list.id, ascending: ascending) },
                                             onArchiveCompleted:    { archiveCompletedCards(in: list.id) },
@@ -2822,6 +2787,12 @@ struct ContentView: View {
                     )
                     .environment(\.workspaceBottomBarHeight, 0)
                     .environment(\.cardMovementSource, personalCollectionID)
+                }
+            }
+            .sheet(item: $listToCopy) { source in
+                CopyListDestinationSheet(source: source, access: planningCalendarAccess, currentID: personalCollectionID) {
+                    copyList(with: source.id)
+                    return true
                 }
             }
             .sheet(isPresented: $showsBoardAppearance) {
@@ -6238,5 +6209,57 @@ struct BoardOptionsPopover: View {
         .padding(12)
         .frame(width: dynamicTypeSize.isAccessibilitySize ? 320 : nil)
         .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
+    }
+}
+
+struct CopyListDestinationSheet: View {
+    let source: KanbanList
+    let access: PlanningCalendarAccess?
+    let currentID: UUID?
+    let copyHere: () -> Bool
+    @Environment(\.dismiss) private var dismiss
+    private func destinationWeeks(_ access: PlanningCalendarAccess) -> [DatedPlanningWeek] {
+        let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id
+        return access.document.weeks.filter { $0.collection.isActive && $0.id != sourceID }
+    }
+    private func copy(to week: DatedPlanningWeek, using access: PlanningCalendarAccess) {
+        var updated = week
+        let copy = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
+        updated.collection.lists.append(copy)
+        if access.saveWeek(updated) { dismiss() }
+    }
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Button("This board") { if copyHere() { dismiss() } }
+                }
+                if let access {
+                    Section("Week boards") {
+                        ForEach(destinationWeeks(access)) { week in
+                            Button(week.startKey == access.document.currentWeekKey ? "This Week" : week.rangeTitle) {
+                                copy(to: week, using: access)
+                            }
+                        }
+                    }
+                    Section("Library boards") {
+                        ForEach(access.library.filter { $0.isActive && $0.kind == .board && $0.id != currentID }) { board in
+                            Button(board.title) {
+                                var updated = board
+                                updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
+                                if access.saveLibrary(updated) { dismiss() }
+                            }
+                        }
+                    }
+                    Section {
+                        Text("Copies cards, archived cards, and list settings. Links to cards outside this list become plain checklist text on another board.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Copy List To")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
     }
 }

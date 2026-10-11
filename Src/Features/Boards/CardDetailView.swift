@@ -3781,7 +3781,7 @@ struct ChecklistBlock: View {
                     linkedCardID:   cardID,
                     linkedCard:     linkedCardsByID[cardID],
                     onToggle:       { onToggleItem(entry.offset) },
-                    onUpdate:       { _ in },
+                    onUpdate:       { text in onUpdateItem(entry.offset, text) },
                     onDelete:       { onDeleteItem(entry.offset) },
                     shouldFocus:    false,
                     onFocusHandled: {}
@@ -3793,7 +3793,7 @@ struct ChecklistBlock: View {
                     isCompleted:    checklist.completedItemIndices.contains(entry.offset),
                     onOpenDetail:   { onOpenActionDetail(entry.element.id) },
                     onToggle:       { onToggleItem(entry.offset) },
-                    onUpdate:       { _ in },
+                    onUpdate:       { text in onUpdateItem(entry.offset, text) },
                     onDelete:       { onDeleteItem(entry.offset) },
                     shouldFocus:    false,
                     onFocusHandled: {}
@@ -4073,50 +4073,36 @@ struct ChecklistItemRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
 
-                if let linkedCardID { /* Linked Board-card reference */
-
-                    if let linkedCard { /* Resolved linked card */
-
+                if let linkedCardID {
+                    if let linkedCard {
                         NavigationLink(value: linkedCard) {
-                            Label(item, systemImage: "link")
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
                         }
-
                         .buttonStyle(.plain)
-                        .accessibilityHint("Opens the linked card")
-
+                        .accessibilityLabel("Open linked card: \(item)")
                     } else {
-                        Label("\(item) unavailable", systemImage: "link.badge.plus")
+                        Image(systemName: "link.badge.plus")
                             .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityHint("Linked card \(linkedCardID) is unavailable")
+                            .frame(width: 28, height: 28)
+                            .accessibilityLabel("Linked card \(linkedCardID) is unavailable")
                     }
-
-                } else if let onOpenDetail { /* Action Detail navigation callback */
-
+                } else if let onOpenDetail {
                     Button(action: onOpenDetail) {
-                        Label(item, systemImage: "doc.text")
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Image(systemName: "doc.text").frame(width: 28, height: 28).contentShape(Rectangle())
                     }
-
                     .buttonStyle(.plain)
-                    .accessibilityHint("Opens action details")
+                    .accessibilityLabel("Open action details: \(item)")
+                }
 
-                } else {
-
-                    ChecklistTextField(text: Binding(get: { item }, set: onUpdate),
-                                       focus: Binding(get: { isTextFocused }, set: { isTextFocused = $0 }))
+                ChecklistTextField(text: Binding(get: { item }, set: onUpdate),
+                                   focus: Binding(get: { isTextFocused }, set: { isTextFocused = $0 }))
                     .onAppear {
-                        guard shouldFocus else {
-
-                            return
-                        }
+                        guard shouldFocus else { return }
                         DispatchQueue.main.async {
                             isTextFocused = true
                             onFocusHandled()
                         }
                     }
-                }
 
                 Spacer()
             }

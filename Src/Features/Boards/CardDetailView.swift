@@ -3919,7 +3919,7 @@ struct ChecklistBlock: View {
 
             if !isCollapsed {
 
-                ForEach(visibleItems, id: \.offset) { entry in
+                ForEach(visibleItems, id: \.element.id) { entry in
                     actionRow(for: entry)
                 }
 
@@ -4042,7 +4042,7 @@ struct ChecklistItemRow: View {
     ///             Missing links show unavailable copy. Standard editors asynchronously handle initial focus
     ///
     /// @return     (some View) clipped row over a 72-point destructive button
-    /// @post       Horizontal drags beyond 36 points reveal deletion; beyond 120 points invoke onDelete.
+    /// @post       Horizontal drags beyond 36 points reveal deletion; only the trash button invokes onDelete.
     ///             Vertical-dominant drags are ignored; text/completion changes delegate to callbacks
     /// @note       The parent must install a KanbanCard navigation destination for resolved links
     ///
@@ -4050,7 +4050,10 @@ struct ChecklistItemRow: View {
 
         ZStack(alignment: .trailing) {
 
-            Button(role: .destructive, action: onDelete) {
+            Button(role: .destructive) {
+                horizontalOffset = 0
+                onDelete()
+            } label: {
 
                 Image(systemName: "trash")
                     .foregroundStyle(.white)
@@ -4129,12 +4132,7 @@ struct ChecklistItemRow: View {
                         }
 
                         withAnimation(.easeOut(duration: 0.2)) {
-                            if value.translation.width < -120 {
-
-                                onDelete()
-                            } else {
-                                horizontalOffset = value.translation.width < -36 ? -72 : 0
-                            }
+                            horizontalOffset = value.translation.width < -36 ? -72 : 0
                         }
                     }
             )

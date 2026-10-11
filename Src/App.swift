@@ -571,7 +571,7 @@ private struct AppRootView: View {
                 lists:           lists.filter { !$0.isArchived },
                 savedCardIDs:    savedCardIDs,
                 collections:     $collections,
-                onOpenBoardList: openBoardList,
+                onOpenBoardCard: openBoardCard,
                 onOpenPersonalCard: { target in
                     savedPersonalCardTarget = target
                     selectedDestination = .lists
@@ -4600,8 +4600,8 @@ struct BoardListsView: View {
             return
         }
 
-        boardTargetListID = target.listID
         boardTargetCardID = target.cardID
+        boardTargetListID = target.listID
         mostRecentlyOpenedListID = collection.kind == .list ? collection.id : nil
         openedCollection = collection
         onClearSavedPersonalCardTarget()
@@ -5468,7 +5468,7 @@ private struct SavedCardsView: View {
     let lists: [KanbanList] /* Current Board snapshot */
     let savedCardIDs: Set<Int> /* Local bookmark set */
     @Binding var collections: [PersonalCollection] /* Collections whose archived boards can be restored */
-    let onOpenBoardList: (Int) -> Void /* Navigate to the containing list */
+    let onOpenBoardCard: (Int, Int) -> Void /* Open the exact bookmarked item */
     let onOpenPersonalCard: (PersonalSavedCardTarget) -> Void /* Navigate to a bookmarked personal record */
     let onRestoreBoard: (UUID) -> Void /* Restore a saved board by identity */
     let onDeleteBoard: (UUID) -> Bool /* Save permanent collection removal and report success */
@@ -5522,7 +5522,7 @@ private struct SavedCardsView: View {
     ///
     /// @return     (some View) paper-backed Saved surface
     /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
-    ///             opens its containing Week list without removing the bookmark
+    ///             opens the bookmarked item directly without removing the bookmark
     ///
     var body: some View { /* Saved-card directory and navigation destinations */
 
@@ -5555,7 +5555,7 @@ private struct SavedCardsView: View {
                                     .font(.headline)
                                 ForEach(savedCards) { result in
                                     Button {
-                                        onOpenBoardList(result.listID)
+                                        onOpenBoardCard(result.listID, result.card.id)
                                     } label: {
                                         HStack(spacing: 12) {
                                             Image(systemName: "bookmark.fill")

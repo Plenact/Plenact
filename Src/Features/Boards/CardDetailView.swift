@@ -3625,6 +3625,7 @@ struct ChecklistBlock: View {
     let onFirstItemFocused: () -> Void      /* The action invoked when the first item receives focus                   */
 
     @State private var newItemText = ""
+    @State private var confirmsDeletion = false
     @State private var isRenaming = false   /* Whether the checklist title is currently being renamed                  */
     @State private var titleDraft = ""      /* The draft text for the checklist title being edited                     */
     @State private var hideCompletedItems = false /* Checklist completed-item filter */
@@ -3823,7 +3824,9 @@ struct ChecklistBlock: View {
                         Label("Rename", systemImage: "pencil")
                     }
 
-                    Button(role: .destructive, action: onDelete) {
+                    Button(role: .destructive) {
+                        confirmsDeletion = true
+                    } label: {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
@@ -3862,6 +3865,12 @@ struct ChecklistBlock: View {
         }
 
         .padding(.vertical, 6)
+        .alert("Delete checklist?", isPresented: $confirmsDeletion) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Checklist", role: .destructive, action: onDelete)
+        } message: {
+            Text("Delete “\(checklist.title)” and all of its items? This cannot be undone.")
+        }
         .alert("Rename Checklist", isPresented: $isRenaming) {
             TextField("Checklist title", text: $titleDraft)
             Button("Cancel", role: .cancel) {}

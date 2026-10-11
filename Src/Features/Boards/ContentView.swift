@@ -3713,6 +3713,7 @@ private struct MemberColorEditorSheet: View {
 ///     Keep a list title, list metadata, add-card action, and vertically scrollable card collection together
 ///
 struct KanbanListView: View {
+    @Environment(\.cardMovementSource) private var draftCollectionID
 
 
     /// Identifies the modal sheet currently presented by a kanban list
@@ -4257,7 +4258,7 @@ struct KanbanListView: View {
                 )
                 .databaseActivityOverlay()
             case .newCard:
-                NewKanbanCardSheet(listTitle: list.title, presentation: list.newItemPresentation, onCreate: onAddCard)
+                NewKanbanCardSheet(listTitle: list.title, presentation: list.newItemPresentation, draftKey: ListCreationDraft.key(collectionID: draftCollectionID, listID: list.id), onCreate: onAddCard)
                     .databaseActivityOverlay()
             }
         }
@@ -4319,16 +4320,56 @@ private struct HideNavigationLinkIndicator: ViewModifier {
 ///
 /// @note       Dismissing with Cancel does not invoke the creation callback
 ///
-private struct NewKanbanCardSheet: View {
+struct ListCreationDraft: Codable, Equatable {
+    var title = ""
+    var subtitle = ""
+    var description = ""
+
+    static func key(collectionID: UUID?, listID: Int) -> String {
+        "plenact.creationDraft.\(collectionID?.uuidString ?? "currentWeek").\(listID)"
+    }
+
+    static func load(key: String, defaults: UserDefaults = .standard) -> Self {
+        guard let data = defaults.data(forKey: key), let draft = try? JSONDecoder().decode(Self.self, from: data) else { return Self() }
+        return draft
+    }
+
+    func save(key: String, defaults: UserDefaults = .standard) {
+        if let data = try? JSONEncoder().encode(self) { defaults.set(data, forKey: key) }
+    }
+
+    static func clear(key: String, defaults: UserDefaults = .standard) { defaults.removeObject(forKey: key) }
+}
+
+/// Owns the live composer independently of sheet reconstruction and persists edits immediately.
+final class ListCreationDraftModel: ObservableObject {
+    private let key: String
+    @Published var title: String { didSet { save() } }
+    @Published var subtitle: String { didSet { save() } }
+    @Published var description: String { didSet { save() } }
+
+    init(key: String) {
+        self.key = key
+        let saved = ListCreationDraft.load(key: key)
+        title = saved.title
+        subtitle = saved.subtitle
+        description = saved.description
+    }
+
+    private func save() {
+        ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: key)
+    }
+}
+
+struct NewKanbanCardSheet: View {
 
     let listTitle: String                               /* Title of the kanban list to which the new card will be added                             */
     let presentation: ItemPresentation /* Card or Note kind determining the creation form */
     let onCreate: (String, String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
 
     @Environment(\.dismiss) private var dismiss         /* Environment variable to dismiss the current view */
-    @State private var subtitle = ""
-    @State private var title       = ""                 /* User-entered card title                          */
-    @State private var description = ""                 /* User-entered card description                    */
+    let draftKey: String
+    @StateObject private var draft: ListCreationDraftModel
 
 
     ///
@@ -4339,8 +4380,17 @@ private struct NewKanbanCardSheet: View {
     /// @return     (String) trimmed title, potentially empty
     /// @post       No card is created and draft text remains unchanged
     ///
+
+    init(listTitle: String, presentation: ItemPresentation, draftKey: String, onCreate: @escaping (String, String, String) -> Void) {
+        self.listTitle = listTitle
+        self.presentation = presentation
+        self.draftKey = draftKey
+        self.onCreate = onCreate
+        _draft = StateObject(wrappedValue: ListCreationDraftModel(key: draftKey))
+    }
+
     private var trimmedTitle: String { /* Normalized new-card title */
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+        draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
 
@@ -4361,11 +4411,11 @@ private struct NewKanbanCardSheet: View {
             Form {
 
                 Section("\(presentation.title) details") {
-                    TextField("Title (or --- for divider)", text: $title, axis: .vertical)
+                    TextField("Title (or --- for divider)", text: $draft.title, axis: .vertical)
                         .lineLimit(1...6)
                         .textInputAutocapitalization(.never)
-                    TextField("Subtitle (optional)", text: $subtitle)
-                    RichTextEditor(placeholder: "Description (optional)", text: $description)
+                    TextField("Subtitle (optional)", text: $draft.subtitle)
+                    RichTextEditor(placeholder: "Description (optional)", text: $draft.description)
                 }
             }
 
@@ -4376,6 +4426,7 @@ private struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     
                     Button("Cancel") {
+                        ListCreationDraft.clear(key: draftKey)
                         dismiss()
                     }
                 }
@@ -4383,7 +4434,8 @@ private struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     
                     Button("Add") {
-                        onCreate(trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                        onCreate(trimmedTitle, presentation == .note ? draft.description : draft.description.trimmingCharacters(in: .whitespacesAndNewlines), draft.subtitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                        ListCreationDraft.clear(key: draftKey)
                         dismiss()
                     }
 
@@ -5861,7 +5913,7 @@ struct TodayListDetailView: View {
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsDaySearch, onLeaveForHome: { onClose(); planningHomeExit?() }))
         .sheet(isPresented: $showsNewCard) {
             if let focusedList = lists.first(where: { $0.id == listID }) {
-                NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation) { title, description, subtitle in
+                NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID)) { title, description, subtitle in
                     addCard(title: title, description: description, subtitle: subtitle)
                 }
             }

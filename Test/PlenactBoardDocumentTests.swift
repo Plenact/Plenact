@@ -21,6 +21,58 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testNewCardDraftFieldsRemainEditableWhileSaving() async throws {
+        let key = "plenact.testDraft.\(UUID().uuidString)"
+        defer { ListCreationDraft.clear(key: key) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: NewKanbanCardSheet(listTitle: "List", presentation: .note, draftKey: key) { _, _, _ in })
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200))
+        func editors(_ view: UIView) -> [UITextView] {
+            (view as? UITextView).map { [$0] } ?? view.subviews.flatMap { editors($0) }
+        }
+        func fields(_ view: UIView) -> [UITextField] {
+            (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields($0) }
+        }
+        let subtitle = try XCTUnwrap(fields(host.view).first(where: { $0.placeholder == "Subtitle (optional)" }))
+        XCTAssertTrue(subtitle.becomeFirstResponder())
+        subtitle.text = "Subtitle"
+        subtitle.sendActions(for: .editingChanged)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(subtitle.isFirstResponder)
+        XCTAssertEqual(ListCreationDraft.load(key: key).subtitle, "Subtitle")
+        let description = try XCTUnwrap(editors(host.view).first(where: { $0.accessibilityLabel == "Description (optional)" }))
+        XCTAssertTrue(description.becomeFirstResponder())
+        for character in ["A", "B", "C"] {
+            description.insertText(character)
+            try await Task.sleep(for: .milliseconds(80))
+            XCTAssertTrue(description.isFirstResponder)
+        }
+        XCTAssertEqual(PlanRichText.plain(ListCreationDraft.load(key: key).description), "ABC")
+        let restored = ListCreationDraftModel(key: key)
+        XCTAssertEqual(restored.subtitle, "Subtitle")
+        XCTAssertEqual(PlanRichText.plain(restored.description), "ABC")
+    }
+
+    func testListCreationDraftSurvivesRecreationAndStaysInItsCollection() throws {
+        let suite = "ListDraftTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let key = ListCreationDraft.key(collectionID: UUID(), listID: 1)
+        let other = ListCreationDraft.key(collectionID: UUID(), listID: 1)
+        let draft = ListCreationDraft(title: "A\nB", subtitle: "Subtitle", description: "Body")
+        draft.save(key: key, defaults: defaults)
+        XCTAssertEqual(ListCreationDraft.load(key: key, defaults: defaults), draft)
+        XCTAssertEqual(ListCreationDraft.load(key: other, defaults: defaults), ListCreationDraft())
+        ListCreationDraft.clear(key: key, defaults: defaults)
+        XCTAssertEqual(ListCreationDraft.load(key: key, defaults: defaults), ListCreationDraft())
+    }
+
     func testDueBadgeOmitsOnlyTheOwningListsAssignedDay() throws {
         let calendar = Calendar.current
         let due = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 17, minute: 46)))

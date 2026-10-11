@@ -3701,6 +3701,34 @@ extension EnvironmentValues {
     }
 }
 
+struct LibraryPlateTile: View {
+    let item: LibraryPlateItem
+    @ScaledMetric(relativeTo: .body) private var tileWidth: CGFloat = 132
+    @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 110
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: item.rank == 0 ? "exclamationmark.circle.fill" : (item.rank == 3 ? "star.fill" : "clock"))
+                    .foregroundStyle(item.rank == 0 ? Color.red : item.collection.color.color)
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
+            }
+            Text(item.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(3)
+            Spacer(minLength: 4)
+        }
+        .padding(12)
+        .frame(width: tileWidth, alignment: .leading)
+        .frame(minHeight: tileHeight, alignment: .topLeading)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        .overlay { RoundedRectangle(cornerRadius: 14).fill(item.collection.color.color.opacity(0.10)).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(item.collection.color.color.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(item.collection.title + ", " + item.reason)
+    }
+}
+
 struct LibraryCollectionRow: View {
 
     let title: String      /* User-owned collection or Week Board title       */
@@ -3774,6 +3802,7 @@ struct LibraryCollectionRow: View {
 ///     Browse personal organizing spaces independently from the dedicated Week destination
 ///
 struct BoardListsView: View {
+    @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight
 
     @State private var libraryEditMode: EditMode = .inactive
 
@@ -4386,29 +4415,25 @@ struct BoardListsView: View {
                     .font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
                     .listRowBackground(Color(.secondarySystemGroupedBackground))
             } else {
-                ForEach(plateItems) { item in
-                    Button {
-                        boardTargetListID = item.list.id
-                        boardTargetCardID = item.card.id
-                        openedCollection = item.collection
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: item.rank == 0 ? "exclamationmark.circle" : (item.rank == 3 ? "star.fill" : "clock"))
-                                .foregroundStyle(item.rank == 0 ? Color.red : item.collection.color.color)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.card.word).font(.headline).foregroundStyle(.primary).lineLimit(2)
-                                Text(item.collection.title).font(.caption).foregroundStyle(.secondary)
-                                Text(item.reason).font(.caption).foregroundStyle(item.rank == 0 ? Color.red : Color.blue)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(plateItems) { item in
+                            Button {
+                                boardTargetListID = item.list.id
+                                boardTargetCardID = item.card.id
+                                openedCollection = item.collection
+                            } label: {
+                                LibraryPlateTile(item: item)
                             }
-                            Spacer(minLength: 0)
-                            Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Opens this item directly")
                         }
-                        .padding(.vertical, 6)
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color(.secondarySystemGroupedBackground))
-                    .accessibilityHint("Opens this item directly")
+                    .padding(.vertical, 4)
                 }
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         } header: { Text("On the Plate") }
     }
@@ -4699,8 +4724,6 @@ struct BoardListsView: View {
                     }
                 } header: {
                     Text("Personal collections")
-                } footer: {
-                    Text("Lists organize cards. Boards bring several lists together. Archived boards are in Saved.")
                 }
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active {
                     plateSection
@@ -4708,6 +4731,8 @@ struct BoardListsView: View {
             }
 
             .listRowSpacing(7)
+            .listSectionSpacing(.custom(0))
+            .contentMargins(.bottom, bottomBarHeight + 16, for: .scrollContent)
             .onChange(of: collections) { old, updated in
                 for collection in updated where collection.isActive {
                     let previousIDs = Set(old.first(where: { $0.id == collection.id })?.lists.flatMap(\.allCards).map(\.id) ?? [])

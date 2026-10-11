@@ -2868,6 +2868,7 @@ struct ContentView: View {
                     .databaseActivityOverlay()
             }
 
+            .environment(\.checklistLinkCandidates, lists.flatMap(\.cards))
             .onChange(of: lists) { _, updatedLists in
                 onListsChanged(updatedLists)
             }
@@ -5956,6 +5957,7 @@ struct TodayListDetailView: View {
         }
 
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsDaySearch, onLeaveForHome: { onClose(); planningHomeExit?() }))
+        .environment(\.checklistLinkCandidates, lists.filter { !$0.isArchived }.flatMap(\.cards))
         .sheet(isPresented: $showsNewCard) {
             if let focusedList = lists.first(where: { $0.id == listID }) {
                 NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID)) { title, description, subtitle in

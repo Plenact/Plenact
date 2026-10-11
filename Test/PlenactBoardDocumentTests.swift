@@ -21,6 +21,41 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testChecklistTypeSwitchesPreserveInactiveContentAndIdentity() throws {
+        let url = try XCTUnwrap(URL(string: "https://example.com/plan"))
+        let detail = KanbanChecklistActionDetail(description: "My plan", checklists: [KanbanChecklist(title: "Steps", items: ["First", "Next"])], comments: [])
+        var item = KanbanChecklistItem(title: "Action", isCompleted: true, content: .actionDetail(detail))
+        let id = item.id
+        item.content = .linkedCard(cardID: 42)
+        item.linkedCollectionID = UUID()
+        item.content = .webLink(url)
+        item.content = .standard
+        let restored = try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONEncoder().encode(item))
+        XCTAssertEqual(restored.id, id)
+        XCTAssertTrue(restored.isCompleted)
+        XCTAssertEqual(restored.title, "Action")
+        XCTAssertEqual(restored.retainedDetail, detail)
+        XCTAssertEqual(restored.retainedCardID, 42)
+        XCTAssertEqual(restored.retainedURL, url)
+        XCTAssertEqual(restored.linkedCollectionID, item.linkedCollectionID)
+        var switched = restored
+        switched.content = .actionDetail(try XCTUnwrap(switched.retainedDetail))
+        XCTAssertEqual(switched.type, .actionDetail)
+        switched.content = .webLink(try XCTUnwrap(switched.retainedURL))
+        XCTAssertEqual(try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONEncoder().encode(switched)), switched)
+    }
+
+    func testLegacyTypedChecklistItemsSeedRetainedPayloads() throws {
+        let item = KanbanChecklistItem(title: "Linked", content: .linkedCard(cardID: 12))
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(item)) as? [String: Any])
+        json.removeValue(forKey: "retainedCardID")
+        let restored = try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(restored.retainedCardID, 12)
+        XCTAssertEqual(restored.content, .linkedCard(cardID: 12))
+        json.removeValue(forKey: "content")
+        XCTAssertEqual(try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONSerialization.data(withJSONObject: json)).type, .standard)
+    }
+
     func testBoardCardDetailPersistsAndDecodesLegacyAppearance() throws {
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.cardDetail)

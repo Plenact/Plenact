@@ -190,8 +190,11 @@ extension PlanningCalendarDocument {
                     result.checklists = card.checklists.map { checklist in
                         let items = checklist.items.map { item in
                             var item = item
+                            let owner = checklistLinkWeeks?[item.id] ?? item.linkedCollectionID ?? source.id
+                            if let retained = item.retainedCardID, let replacement = cardIDs[owner]?[retained] {
+                                item.retainedCardID = replacement
+                            }
                             if case .linkedCard(let id) = item.content {
-                                let owner = checklistLinkWeeks?[item.id] ?? source.id
                                 if let replacement = cardIDs[owner]?[id] {
                                     item.content = .linkedCard(cardID: replacement)
                                 }
@@ -248,6 +251,31 @@ extension PlanningCalendarDocument {
                     }
                 }
             }
+        }
+        let sourceWeekIDs = Set(sources.map(\.id))
+        for key in Array(rebuilt.keys) {
+            var week = rebuilt[key]!
+            func preservingOwners(_ card: KanbanCard) -> KanbanCard {
+                var card = card
+                card.checklists = card.checklists.map { checklist in
+                    let items = checklist.items.map { original in
+                        var item = original
+                        if let id = item.retainedCardID,
+                           item.linkedCollectionID == nil || sourceWeekIDs.contains(item.linkedCollectionID!),
+                           let owner = cardOwners[id] {
+                            item.linkedCollectionID = owner
+                        }
+                        return item
+                    }
+                    return KanbanChecklist(id: checklist.id, title: checklist.title, items: items, completedItemIndices: checklist.completedItemIndices)
+                }
+                return card
+            }
+            for index in week.collection.lists.indices {
+                week.collection.lists[index].cards = week.collection.lists[index].cards.map(preservingOwners)
+                week.collection.lists[index].archivedCards = week.collection.lists[index].archivedCards.map(preservingOwners)
+            }
+            rebuilt[key] = week
         }
         checklistLinkWeeks = linkWeeks.isEmpty ? nil : linkWeeks
         firstWeekday = weekday
@@ -776,10 +804,11 @@ struct PlanningChecklistLink: View {
     let itemID: UUID
     let cardID: Int
     let title: String
+    var ownerID: UUID? = nil
     @Environment(\.planningCalendarAccess) private var access
     @State private var showsCard = false
     private var destination: (DatedPlanningWeek, Int)? {
-        guard let owner = access?.document.checklistLinkWeeks?[itemID],
+        guard let owner = access?.document.checklistLinkWeeks?[itemID] ?? ownerID,
               let week = access?.document.weeks.first(where: { $0.id == owner }),
               let list = week.collection.lists.first(where: { !$0.isArchived && $0.cards.contains { $0.id == cardID } }) else { return nil }
         return (week, list.id)

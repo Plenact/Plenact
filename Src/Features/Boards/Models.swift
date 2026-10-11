@@ -1250,6 +1250,7 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable {
 ///
 enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
+    case webLink(URL)
     case standard                                      /* Plain text action       */
     case linkedCard(cardID: Int)                       /* Existing card reference */
     case actionDetail(KanbanChecklistActionDetail)     /* Owned reduced detail    */
@@ -1262,6 +1263,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///     Keep the encoded representation explicit and stable across associated-value changes
     ///
     private enum Kind: String, Codable {
+        case webLink
         case standard       /* Plain text action kind  */
         case linkedCard     /* Existing card link kind */
         case actionDetail   /* Reduced detail kind     */
@@ -1275,6 +1277,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///     Separate the content discriminator from its optional associated payload
     ///
     private enum CodingKeys: String, CodingKey {
+        case url
         case kind       /* Content discriminator */
         case cardID     /* Linked card identity  */
         case detail     /* Owned Action Detail   */
@@ -1299,6 +1302,8 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
         switch kind {
 
+            case .webLink:
+                self = .webLink(try container.decode(URL.self, forKey: .url))
             case .standard:
                 self = .standard
             case .linkedCard:
@@ -1326,6 +1331,9 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
         switch self {
 
+            case .webLink(let url):
+                try container.encode(Kind.webLink, forKey: .kind)
+                try container.encode(url, forKey: .url)
             case .standard:
                 try container.encode(Kind.standard, forKey: .kind)
             case .linkedCard(let cardID): /* Referenced Board card identity */
@@ -1351,12 +1359,40 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 ///
 /// @note   Revision 0 checklist strings migrate to standard items during decoding
 ///
+enum ChecklistItemType: String, CaseIterable, Identifiable {
+    case standard, linkedCard, actionDetail, webLink
+    var id: String { rawValue }
+    var title: String {
+        switch self { case .standard: "Standard"; case .linkedCard: "Linked Card"; case .actionDetail: "Action Detail"; case .webLink: "Web Link" }
+    }
+}
+
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
     let id:        UUID                           /* Stable checklist action ID */
     var title:     String                         /* User-facing action text    */
     var isCompleted: Bool                         /* Current completion state   */
-    var content:   KanbanChecklistActionContent   /* Action behavior and data  */
+    var content: KanbanChecklistActionContent {
+        didSet { retainActiveContent() }
+    }
+    var retainedDetail: KanbanChecklistActionDetail? = nil
+    var retainedCardID: Int? = nil
+    var retainedURL: URL? = nil
+    var linkedCollectionID: UUID? = nil
+
+    mutating func retainActiveContent() {
+        switch content {
+        case .standard: break
+        case .linkedCard(let id): retainedCardID = id
+        case .actionDetail(let detail): retainedDetail = detail
+        case .webLink(let url): retainedURL = url
+        }
+    }
+
+    var type: ChecklistItemType {
+        switch content { case .standard: .standard; case .linkedCard: .linkedCard; case .actionDetail: .actionDetail; case .webLink: .webLink }
+    }
+
 
 
     ///
@@ -1377,6 +1413,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         self.title       = title
         self.isCompleted = isCompleted
         self.content     = content
+        retainActiveContent()
     }
 
 
@@ -1414,6 +1451,11 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         title       = try container.decode(String.self, forKey: .title)
         isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
         content     = try container.decodeIfPresent(KanbanChecklistActionContent.self, forKey: .content) ?? .standard
+        retainedDetail = try container.decodeIfPresent(KanbanChecklistActionDetail.self, forKey: .retainedDetail)
+        retainedCardID = try container.decodeIfPresent(Int.self, forKey: .retainedCardID)
+        retainedURL = try container.decodeIfPresent(URL.self, forKey: .retainedURL)
+        linkedCollectionID = try container.decodeIfPresent(UUID.self, forKey: .linkedCollectionID)
+        retainActiveContent()
     }
 
 
@@ -1436,6 +1478,10 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         try container.encode(title,       forKey: .title)
         try container.encode(isCompleted, forKey: .isCompleted)
         try container.encode(content,     forKey: .content)
+        try container.encodeIfPresent(retainedDetail, forKey: .retainedDetail)
+        try container.encodeIfPresent(retainedCardID, forKey: .retainedCardID)
+        try container.encodeIfPresent(retainedURL, forKey: .retainedURL)
+        try container.encodeIfPresent(linkedCollectionID, forKey: .linkedCollectionID)
     }
 
 
@@ -1450,6 +1496,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         case title         /* User-facing action text */
         case isCompleted   /* Direct completion state */
         case content       /* Action behavior payload */
+        case retainedDetail, retainedCardID, retainedURL, linkedCollectionID
     }
 }
 
@@ -3817,6 +3864,10 @@ enum ListCopying {
             copy.checklists = card.checklists.map { checklist in
                 let items = checklist.items.map { item in
                     var item = item
+                    if let id = item.retainedCardID, let copiedID = ids[id] {
+                        item.retainedCardID = copiedID
+                        item.linkedCollectionID = nil
+                    }
                     if case .linkedCard(let id) = item.content {
                         if let copiedID = ids[id] { item.content = .linkedCard(cardID: copiedID) }
                         else if crossBoard { item.content = .standard }

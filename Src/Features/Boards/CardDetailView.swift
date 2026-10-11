@@ -48,7 +48,18 @@ enum ChecklistMoveDirection {
 ///
 /// @note   The detail surface is intentionally scrollable so every card section remains accessible on iPhone
 ///
+private struct ChecklistCandidatesKey: EnvironmentKey { static let defaultValue: [KanbanCard] = [] }
+extension EnvironmentValues {
+    var checklistLinkCandidates: [KanbanCard] {
+        get { self[ChecklistCandidatesKey.self] }
+        set { self[ChecklistCandidatesKey.self] = newValue }
+    }
+}
+
 struct CardDetailView: View {
+    @Environment(\.planningCalendarAccess) private var checklistTypePlanningAccess
+    @Environment(\.checklistLinkCandidates) private var checklistLinkCandidates
+    @Environment(\.cardMovementSource) private var checklistCollectionID
     @Environment(\.libraryItemOpened) private var libraryItemOpened
     @Environment(\.libraryImportance) private var libraryImportance
     @State private var isActivityCollapsed = false
@@ -329,8 +340,8 @@ struct CardDetailView: View {
     /// @pre        Cards across availableLists have unique IDs; duplicate keys are not accepted
     /// @post       No Board or card state is modified
     ///
-    private var linkedCardsByID: [Int: KanbanCard] {   /* Linked cards by ID */
-        Dictionary(uniqueKeysWithValues: availableLists.flatMap(\.cards).map { ($0.id, $0) })
+    private var linkedCardsByID: [Int: KanbanCard] {
+        Dictionary((availableLists.flatMap(\.cards) + checklistLinkCandidates).map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
     }
 
     /// UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields.
@@ -1998,6 +2009,20 @@ struct CardDetailView: View {
             focusFirstItem:     checklist.id == checklistToFocus,
             onFirstItemFocused: {
                 checklistToFocus = nil
+            },
+            onChangeType: { item in
+                guard let index = checklists.firstIndex(where: { $0.id == checklist.id }),
+                      let position = checklists[index].items.firstIndex(where: { $0.id == item.id }) else { return false }
+                let previous = checklists
+                var items = checklists[index].items
+                var updated = item
+                if case .linkedCard = updated.content, updated.linkedCollectionID == nil {
+                    updated.linkedCollectionID = checklistCollectionID ?? checklistTypePlanningAccess?.document.weeks.first(where: { $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey })?.id
+                }
+                items[position] = updated
+                checklists[index] = KanbanChecklist(id: checklist.id, title: checklists[index].title, items: items, completedItemIndices: checklists[index].completedItemIndices)
+                if !syncCardState() { checklists = previous; return false }
+                return true
             }
         )
         .id(checklist.id)
@@ -3684,6 +3709,9 @@ struct ChecklistBlock: View {
     let canMoveDown: Bool                   /* Whether the checklist can be moved down in the list                     */
     let focusFirstItem: Bool                /* Whether the first item should be focused when the checklist is rendered */
     let onFirstItemFocused: () -> Void      /* The action invoked when the first item receives focus                   */
+    var onChangeType: ((KanbanChecklistItem) -> Bool)? = nil
+    @State private var typeDraft: KanbanChecklistItem?
+    @State private var requestedType = ChecklistItemType.standard
 
     @State private var newItemText = ""
     @State private var confirmsDeletion = false
@@ -3747,6 +3775,11 @@ struct ChecklistBlock: View {
 
         switch entry.element.content {
 
+            case .webLink(let url):
+                ChecklistItemRow(item: entry.element.title, isCompleted: entry.element.isCompleted,
+                    webURL: url, onToggle: { onToggleItem(entry.offset) },
+                    onUpdate: { onUpdateItem(entry.offset, $0) }, onDelete: { onDeleteItem(entry.offset) },
+                    shouldFocus: false, onFocusHandled: {})
             case .standard:
                 ChecklistItemRow(
                     item:           entry.element.title,
@@ -3764,6 +3797,7 @@ struct ChecklistBlock: View {
                     isCompleted:    checklist.completedItemIndices.contains(entry.offset),
                     planningLinkID: entry.element.id,
                     linkedCardID:   cardID,
+                    linkedCollectionID: entry.element.linkedCollectionID,
                     linkedCard:     linkedCardsByID[cardID],
                     onToggle:       { onToggleItem(entry.offset) },
                     onUpdate:       { text in onUpdateItem(entry.offset, text) },
@@ -3797,6 +3831,21 @@ struct ChecklistBlock: View {
     /// @post       Content mutations delegate to parent callbacks; collapse/filter/rename presentation
     ///             remain local. Blank rename input and boundary movement controls are disabled
     ///
+    private func chooseType(_ type: ChecklistItemType, for item: KanbanChecklistItem) {
+        var updated = item
+        switch type {
+        case .standard: updated.content = .standard
+        case .actionDetail: updated.content = .actionDetail(item.retainedDetail ?? KanbanChecklistActionDetail())
+        case .linkedCard:
+            if let id = item.retainedCardID, item.type != .linkedCard { updated.content = .linkedCard(cardID: id) }
+            else { requestedType = type; typeDraft = item; return }
+        case .webLink:
+            if let url = item.retainedURL, item.type != .webLink { updated.content = .webLink(url) }
+            else { requestedType = type; typeDraft = item; return }
+        }
+        if onChangeType?(updated) == true && type == .actionDetail { onOpenActionDetail(item.id) }
+    }
+
     private func submitNewItems() {
         guard !MultilineEntry.titles(newItemText).isEmpty else { return }
         onAddItem(newItemText)
@@ -3906,6 +3955,23 @@ struct ChecklistBlock: View {
 
                 ForEach(visibleItems, id: \.element.id) { entry in
                     actionRow(for: entry)
+                        .contextMenu {
+                            if onChangeType != nil {
+                                ForEach(ChecklistItemType.allCases) { type in
+                                    Button { chooseType(type, for: entry.element) } label: {
+                                        Label(type.title, systemImage: type == entry.element.type ? "checkmark" : "circle")
+                                    }
+                                }
+                            }
+                        }
+                        .accessibilityActions {
+                            if onChangeType != nil {
+                                Button("Change item type") {
+                                    requestedType = entry.element.type
+                                    typeDraft = entry.element
+                                }
+                            }
+                        }
                 }
 
                 HStack {
@@ -3932,6 +3998,11 @@ struct ChecklistBlock: View {
             Button("Delete Checklist", role: .destructive, action: onDelete)
         } message: {
             Text("Delete “\(checklist.title)” and all of its items? This cannot be undone.")
+        }
+        .sheet(item: $typeDraft) { item in
+            ChecklistItemTypeEditor(item: item, initialType: requestedType, candidates: Array(linkedCardsByID.values)) { updated in
+                onChangeType?(updated) ?? false
+            }
         }
         .alert("Rename Checklist", isPresented: $isRenaming) {
             TextField("Checklist title", text: $titleDraft)
@@ -3960,11 +4031,14 @@ struct ChecklistBlock: View {
 struct ChecklistItemRow: View {
     @Environment(\.planningCalendarAccess) private var planningAccess
     let planningLinkID: UUID?
+    let linkedCollectionID: UUID?
+    @Environment(\.cardMovementSource) private var linkedSourceID
 
     let item: String                  /* The editable item text                                        */
     let isCompleted: Bool             /* The current completion state                                  */
     let linkedCardID: Int?            /* Stable linked card ID, when present                           */
     let linkedCard: KanbanCard?       /* Resolved linked card, when available                          */
+    var webURL: URL? = nil
     let onOpenDetail: (() -> Void)?   /* Action Detail presentation callback                           */
     let onToggle: () -> Void          /* The action invoked by the checkbox                            */
     let onUpdate: (String) -> Void    /* The action invoked by text editing                            */
@@ -4001,8 +4075,10 @@ struct ChecklistItemRow: View {
         isCompleted: Bool,
         planningLinkID: UUID? = nil,
         linkedCardID: Int? = nil,
+        linkedCollectionID: UUID? = nil,
         linkedCard: KanbanCard? = nil,
         onOpenDetail: (() -> Void)? = nil,
+        webURL: URL? = nil,
         onToggle: @escaping () -> Void,
         onUpdate: @escaping (String) -> Void,
         onDelete: @escaping () -> Void,
@@ -4013,9 +4089,11 @@ struct ChecklistItemRow: View {
         self.item           = item
         self.isCompleted    = isCompleted
         self.planningLinkID = planningLinkID
+        self.linkedCollectionID = linkedCollectionID
         self.linkedCardID   = linkedCardID
         self.linkedCard     = linkedCard
         self.onOpenDetail   = onOpenDetail
+        self.webURL = webURL
         self.onToggle       = onToggle
         self.onUpdate       = onUpdate
         self.onDelete       = onDelete
@@ -4065,9 +4143,15 @@ struct ChecklistItemRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
 
-                if let linkedCardID {
+                if let webURL {
+                    Link(destination: webURL) { Image(systemName: "globe").frame(width: 32, height: 32) }
+                        .accessibilityLabel("Open website")
+                } else if let linkedCardID {
                     if let planningLinkID, planningAccess?.document.checklistLinkWeeks?[planningLinkID] != nil {
                         PlanningChecklistLink(itemID: planningLinkID, cardID: linkedCardID, title: item)
+                    } else if let owner = linkedCollectionID,
+                              owner != (linkedSourceID ?? planningAccess?.document.weeks.first(where: { $0.startKey == planningAccess?.document.currentWeekKey })?.id) {
+                        PlanningChecklistLink(itemID: planningLinkID ?? UUID(), cardID: linkedCardID, title: item, ownerID: owner)
                     } else if let linkedCard {
                         NavigationLink(value: linkedCard) {
                             Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
@@ -4677,6 +4761,67 @@ struct CardDateEditorSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { if onSave(kind.normalized(date), kind) { dismiss() } }
+                }
+            }
+        }
+    }
+}
+
+struct ChecklistItemTypeEditor: View {
+    let item: KanbanChecklistItem
+    let candidates: [KanbanCard]
+    let onSave: (KanbanChecklistItem) -> Bool
+    @State private var type: ChecklistItemType
+    @State private var cardID: Int?
+    @State private var urlText: String
+    @Environment(\.dismiss) private var dismiss
+
+    init(item: KanbanChecklistItem, initialType: ChecklistItemType, candidates: [KanbanCard], onSave: @escaping (KanbanChecklistItem) -> Bool) {
+        self.item = item; self.candidates = candidates; self.onSave = onSave
+        _type = State(initialValue: initialType)
+        _cardID = State(initialValue: item.retainedCardID)
+        _urlText = State(initialValue: item.retainedURL?.absoluteString ?? "")
+    }
+    private var url: URL? {
+        let text = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host?.isEmpty == false else { return nil }
+        return url
+    }
+    var body: some View {
+        NavigationStack {
+            Form {
+                Picker("Item type", selection: $type) {
+                    ForEach(ChecklistItemType.allCases) { Text($0.title).tag($0) }
+                }
+                if type == .linkedCard {
+                    Section("Choose a card from this board") {
+                        Picker("Card", selection: $cardID) {
+                            Text("Choose a card").tag(Optional<Int>.none)
+                            ForEach(candidates.filter { !$0.isSectionDivider }.sorted { $0.word < $1.word }) { card in
+                                Text(card.word + " · " + card.listTitle).tag(Optional(card.id))
+                            }
+                        }
+                    }
+                } else if type == .webLink {
+                    TextField("https://example.com", text: $urlText).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Text("Enter a complete http or https website address.").font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Checklist item type").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        switch type {
+                        case .standard: updated.content = .standard
+                        case .linkedCard: if let cardID { if cardID != item.retainedCardID { updated.linkedCollectionID = nil }; updated.content = .linkedCard(cardID: cardID) }
+                        case .actionDetail: updated.content = .actionDetail(item.retainedDetail ?? KanbanChecklistActionDetail())
+                        case .webLink: if let url { updated.content = .webLink(url) }
+                        }
+                        if onSave(updated) { dismiss() }
+                    }
+                    .disabled((type == .linkedCard && !candidates.contains { $0.id == cardID }) || (type == .webLink && url == nil))
                 }
             }
         }

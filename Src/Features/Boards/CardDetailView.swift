@@ -1685,7 +1685,7 @@ struct CardDetailView: View {
     ///
     /// @fcn        CardDetailView.addItem(to:)
     /// @brief      Append a new item to a checklist
-    /// @details    Appends a standard Item N action while preserving existing typed action records
+    /// @details    Appends one action per nonblank line while preserving existing records and completion states
     ///
     /// @param[in]  checklistID  Identifier of the checklist receiving the new item
     ///
@@ -1693,7 +1693,7 @@ struct CardDetailView: View {
     ///
     /// @post       The new item appears above the checklist's Add item... control
     ///
-    private func addItem(to checklistID: UUID) {
+    private func addItem(to checklistID: UUID, text: String) {
 
         // Find the index of the checklist to which the new item will be added
         guard let checklistIndex = checklists.firstIndex(where: { /* Checklist receiving the new action */
@@ -1704,13 +1704,13 @@ struct CardDetailView: View {
             return
         }
 
-        let checklist = checklists[checklistIndex] /* Current checklist snapshot */
-        let itemNumber = checklist.items.count + 1 /* User-facing number for the next item */
-
+        let titles = MultilineEntry.titles(text)
+        guard !titles.isEmpty else { return }
+        let checklist = checklists[checklistIndex]
         checklists[checklistIndex] = KanbanChecklist(
-            id:    checklist.id,
-            title: checklist.title,
-            items: checklist.items + [KanbanChecklistItem(title: "Item \(itemNumber)")]
+            id: checklist.id, title: checklist.title,
+            items: checklist.items + titles.map { KanbanChecklistItem(title: $0) },
+            completedItemIndices: checklist.completedItemIndices
         )
         syncCardState()
     }
@@ -1952,8 +1952,8 @@ struct CardDetailView: View {
 
                 deleteChecklist(with: checklist.id)
             },
-            onAddItem:          {
-                addItem(to: checklist.id)
+            onAddItem:          { text in
+                addItem(to: checklist.id, text: text)
             },
             onToggleItem:       { itemIndex in
                 toggleItem(in: checklist.id, at: itemIndex)
@@ -3611,7 +3611,7 @@ struct ChecklistBlock: View {
     let checklist: KanbanChecklist          /* The checklist data rendered by the block                                */
     let linkedCardsByID: [Int: KanbanCard]  /* Linked cards keyed by stable ID                                          */
     let onDelete: ()        -> Void         /* The action invoked when the checklist is deleted                        */
-    let onAddItem: ()       -> Void         /* The action invoked when a new item is added                             */
+    let onAddItem: (String) -> Void         /* The action invoked when a new item is added                             */
     let onToggleItem: (Int) -> Void         /* The action invoked when an item is toggled                              */
     let onUpdateItem: (Int, String) -> Void /* The action invoked when item text is edited                             */
     let onDeleteItem: (Int)  -> Void        /* The action invoked when an item is deleted                              */
@@ -3624,6 +3624,7 @@ struct ChecklistBlock: View {
     let focusFirstItem: Bool                /* Whether the first item should be focused when the checklist is rendered */
     let onFirstItemFocused: () -> Void      /* The action invoked when the first item receives focus                   */
 
+    @State private var newItemText = ""
     @State private var isRenaming = false   /* Whether the checklist title is currently being renamed                  */
     @State private var titleDraft = ""      /* The draft text for the checklist title being edited                     */
     @State private var hideCompletedItems = false /* Checklist completed-item filter */
@@ -3733,6 +3734,12 @@ struct ChecklistBlock: View {
     /// @post       Content mutations delegate to parent callbacks; collapse/filter/rename presentation
     ///             remain local. Blank rename input and boundary movement controls are disabled
     ///
+    private func submitNewItems() {
+        guard !MultilineEntry.titles(newItemText).isEmpty else { return }
+        onAddItem(newItemText)
+        newItemText = ""
+    }
+
     var body: some View { /* Checklist heading, rows, and action menu */
 
         VStack(alignment: .leading, spacing: 0) {
@@ -3836,16 +3843,21 @@ struct ChecklistBlock: View {
                     actionRow(for: entry)
                 }
 
-                Button(action: onAddItem) {
-
-                    Text("Add item...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 6)
+                HStack {
+                    TextField("Add item...", text: $newItemText, axis: .vertical)
+                        .lineLimit(1...6)
+                        .submitLabel(.done)
+                        .onSubmit(submitNewItems)
+                        .onChange(of: newItemText) { _, value in
+                            if value.contains(where: { $0.isNewline }) { submitNewItems() }
+                        }
+                    Button(action: submitNewItems) { Image(systemName: "plus.circle") }
+                        .disabled(MultilineEntry.titles(newItemText).isEmpty)
+                        .accessibilityLabel("Add checklist items")
                 }
+                .font(.subheadline)
+                .padding(.vertical, 6)
 
-                .buttonStyle(.plain)
             }
         }
 

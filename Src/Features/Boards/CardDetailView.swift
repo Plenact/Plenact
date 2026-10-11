@@ -861,8 +861,8 @@ struct CardDetailView: View {
 
 
     ///
-    /// @fcn        CardDetailView.addClipboardLink()
-    /// @brief      Read and add a web address from the system clipboard
+    /// @fcn        CardDetailView.addClipboardAttachment()
+    /// @brief      Import copied images or a web address from the system clipboard
     /// @details    Prefers a clipboard URL over string content and validates with the
     ///             attachment-store helper
     ///
@@ -871,19 +871,40 @@ struct CardDetailView: View {
     /// @post       Invalid input closes the source sheet and shows a notice without adding an
     ///             attachment
     ///
-    private func addClipboardLink() {
+    private func addClipboardAttachment() {
+        guard !hasDeletedCard, !hasMovedCard else { return }
+        let pasteboard = UIPasteboard.general
+        activeSheet = nil
 
-        let clipboardText = UIPasteboard.general.url?.absoluteString ?? UIPasteboard.general.string ?? "" /* Candidate clipboard link */
-
-        guard let url = CardAttachmentStore.webURL(from: clipboardText) else { /* Parsed clipboard URL */
-
-            attachmentNoticeMessage = "The clipboard does not contain a valid web link."
-            showingAttachmentNotice = true
-            activeSheet             = nil
-
+        if let images = pasteboard.images, !images.isEmpty {
+            let previous = attachments
+            var imported: [KanbanAttachment] = []
+            do {
+                for image in images {
+                    guard let data = image.pngData() else {
+                        throw CocoaError(.fileReadCorruptFile)
+                    }
+                    imported.append(try CardAttachmentStore.saveMedia(data, kind: .photo, fileExtension: "png"))
+                }
+                attachments.append(contentsOf: imported)
+                guard syncCardState(attachments: attachments) else {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+            } catch {
+                attachments = previous
+                try? CardAttachmentStore.removeDeletedFiles(Set(imported.compactMap(\.fileName)), keeping: Set(previous.compactMap(\.fileName)))
+                attachmentNoticeMessage = "Could not add the clipboard image. Please try again."
+                showingAttachmentNotice = true
+            }
             return
         }
 
+        let clipboardText = pasteboard.url?.absoluteString ?? pasteboard.string ?? ""
+        guard let url = CardAttachmentStore.webURL(from: clipboardText) else {
+            attachmentNoticeMessage = "The clipboard does not contain an image or a valid web link."
+            showingAttachmentNotice = true
+            return
+        }
         addWebLink(url)
     }
 
@@ -2876,7 +2897,7 @@ struct CardDetailView: View {
                     CardAttachmentSourceSheet(
                         photoSelection:   $selectedPhotoItems,
                         onAddLink:        { activeSheet = .addLink },
-                        onPasteClipboard: addClipboardLink,
+                        onPasteClipboard: addClipboardAttachment,
                         onComingSoon:     showAttachmentSourceComingSoon
                     )
                     .databaseActivityOverlay()

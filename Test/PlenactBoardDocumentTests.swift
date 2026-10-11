@@ -1505,6 +1505,28 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain("plenact-rich-v1:invalid"), "plenact-rich-v1:invalid")
     }
 
+    func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws {
+        var layout = CardSectionLayout()
+        layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]
+        layout.hidden = [.description, .checklists]
+        let original = KanbanCard(id: 9, word: "Custom", listTitle: "Saturday", descriptionOverride: "Keep this description", sectionLayout: layout)
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(original))
+        XCTAssertEqual(decoded.sectionLayout, layout)
+        XCTAssertEqual(decoded.sectionLayout?.sections, [.activity, .quickActions, .media, .details])
+        XCTAssertEqual(decoded.descriptionOverride, "Keep this description")
+        XCTAssertEqual(decoded.checklists, original.checklists)
+        var restored = decoded
+        restored.sectionLayout = nil
+        XCTAssertEqual((restored.sectionLayout ?? CardSectionLayout()).sections, CardSection.allCases)
+        XCTAssertEqual(restored.checklists, original.checklists)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
+        legacy.removeValue(forKey: "sectionLayout")
+        let oldCard = try JSONDecoder().decode(KanbanCard.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(oldCard.sectionLayout)
+        let repaired = CardSectionLayout(order: [.activity, .activity], hidden: [.details])
+        XCTAssertEqual(repaired.sections, [.activity, .quickActions, .media, .description, .checklists])
+    }
+
     func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws {
         let input = " A\r\nB\n\n C \rD\nA\n"
         XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])

@@ -1758,7 +1758,8 @@ struct ContentView: View {
                 presentation:         card.presentation,
                 createdAt:            card.createdAt,
                 appearance:           card.appearance,
-                listDisplayFormat:    card.listDisplayFormat
+                listDisplayFormat:    card.listDisplayFormat,
+                sectionLayout:        card.sectionLayout
             )
 
             nextCardID += 1
@@ -4987,7 +4988,8 @@ struct KanbanCardView: View {
             presentation:         card.presentation,
             createdAt:            card.createdAt,
             appearance:           card.appearance,
-            listDisplayFormat:    card.listDisplayFormat
+            listDisplayFormat:    card.listDisplayFormat,
+                sectionLayout:        card.sectionLayout
         )
     }
 

@@ -280,6 +280,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var dueDate:              Date?               /* Optional due date for the card                     */
     let createdAt:            Date?               /* Unknown for records created before timestamp support */
     var descriptionOverride:  String?             /* Optional user-edited description                   */
+    var sectionLayout: CardSectionLayout?
     var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
 
     var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
@@ -559,7 +560,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -580,6 +581,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         let retainedPresentation = [.note, .title, .text].contains(listDisplayFormat) ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
         self.itemPresentation     = retainedPresentation == .card ? nil : retainedPresentation
         self.appearance           = appearance?.isEmpty == true ? nil : appearance
+        self.sectionLayout = sectionLayout
         self.listDisplayFormat    = listDisplayFormat
         self.checklists           = checklists ?? [
             KanbanChecklist(title: "Focus",   items: ["Gather the important bits",   "Make it look intentional", "Celebrate the surprisingly good result"], completed: id % 4),
@@ -636,7 +638,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             presentation:         try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card,
             createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt),
             appearance:           try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance),
-            listDisplayFormat:    try container.decodeIfPresent(ItemDisplayFormat.self, forKey: .listDisplayFormat)
+            listDisplayFormat:    try container.decodeIfPresent(ItemDisplayFormat.self, forKey: .listDisplayFormat),
+            sectionLayout:        try container.decodeIfPresent(CardSectionLayout.self, forKey: .sectionLayout)
         )
     }
 
@@ -668,6 +671,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case itemPresentation
         case listDisplayFormat
         case appearance
+        case sectionLayout
     }
 
 
@@ -3710,5 +3714,29 @@ extension KanbanList {
             makeItem(id: id + offset, title: title, description: description, subtitle: subtitle,
                      presentationOverride: presentation, actions: actions)
         }
+    }
+}
+
+/// Per-card presentation only; hiding sections never removes their content.
+enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable {
+    case quickActions, media, description, details, checklists, activity
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .quickActions: "Quick Actions"
+        case .media: "Photos & Attachments"
+        case .description: "Description"
+        case .details: "Details"
+        case .checklists: "Checklists"
+        case .activity: "Activity"
+        }
+    }
+}
+struct CardSectionLayout: Hashable, Codable, Sendable {
+    var order: [CardSection] = CardSection.allCases
+    var hidden: Set<CardSection> = []
+    var sections: [CardSection] {
+        var seen: Set<CardSection> = []
+        return (order + CardSection.allCases).filter { seen.insert($0).inserted && !hidden.contains($0) }
     }
 }

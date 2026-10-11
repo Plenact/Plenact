@@ -49,6 +49,8 @@ enum ChecklistMoveDirection {
 /// @note   The detail surface is intentionally scrollable so every card section remains accessible on iPhone
 ///
 struct CardDetailView: View {
+    @Environment(\.libraryItemOpened) private var libraryItemOpened
+    @Environment(\.libraryImportance) private var libraryImportance
     @State private var isActivityCollapsed = false
     @State private var startDateKind: CardDateKind
     @State private var dueDateKind: CardDateKind
@@ -2705,6 +2707,9 @@ struct CardDetailView: View {
                     }
                     Menu {
                         if displayFormat != .divider {
+                            if let libraryImportance {
+                                Toggle("Mark important", isOn: Binding(get: { libraryImportance.contains(card.id) }, set: { libraryImportance.set(card.id, $0) }))
+                            }
                             Toggle("Show due date in lists", isOn: Binding(get: { showsDueDateInList }, set: { visible in
                                 let previous = showsDueDateInList
                                 showsDueDateInList = visible
@@ -2793,6 +2798,7 @@ struct CardDetailView: View {
                 noteToolbar(using: scrollProxy)
             }
         }
+        .onAppear { if !card.isSectionDivider { libraryItemOpened(card.id) } }
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)

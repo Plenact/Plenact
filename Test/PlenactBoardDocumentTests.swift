@@ -21,6 +21,50 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems() throws {
+        let calendar = Calendar.current
+        let now = try XCTUnwrap(PlanningDate.date("2026-10-11"))
+        func due(_ days: Int) -> Date { calendar.date(byAdding: .day, value: days, to: now)! }
+        var collection = PersonalCollection(title: "Projects", kind: .list)
+        var important = KanbanCard(id: 1, word: "Important", listTitle: "Projects")
+        important.isTitleChecked = false
+        func task(_ id: Int, _ days: Int) -> KanbanCard {
+            var card = KanbanCard(id: id, word: "Task \(id)", listTitle: "Projects", dueDate: due(days))
+            card.isTitleChecked = false
+            return card
+        }
+        var completed = task(5, -4); completed.isTitleChecked = true
+        var timeOnly = task(6, -5); timeOnly.dueDateKind = .time
+        let normal = KanbanCard(id: 7, word: "No deadline", listTitle: "Projects")
+        collection.lists[0].cards = [important, task(2, 2), task(3, 0), task(4, -1), completed, timeOnly, normal, task(8, 30)]
+        let marked = [LibraryRecentItem(collectionID: collection.id, cardID: 1)]
+        let selected = LibraryPlateSelection.items(in: [collection], important: marked, now: now)
+        XCTAssertEqual(selected.map(\.card.id), [4, 3, 2, 1])
+        XCTAssertEqual(selected.map(\.rank), [0, 1, 2, 3])
+        collection.lists[0].cards.append(task(9, -2))
+        XCTAssertEqual(LibraryPlateSelection.items(in: [collection], important: marked, now: now).map(\.card.id), [9, 4, 3, 2])
+        collection.lists[0].isArchived = true
+        XCTAssertTrue(LibraryPlateSelection.items(in: [collection], important: marked, now: now).isEmpty)
+        collection.lists[0].isArchived = false
+        collection.isArchived = true
+        XCTAssertTrue(LibraryPlateSelection.items(in: [collection], important: marked, now: now).isEmpty)
+    }
+
+    func testLibraryRecentsPersistDeduplicateAndKeepCollectionsSeparate() throws {
+        let suite = "LibraryRecentTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = LibraryRecentItem(collectionID: UUID(), cardID: 1)
+        let second = LibraryRecentItem(collectionID: UUID(), cardID: 1)
+        _ = LibraryRecentStore.remember(first, defaults: defaults)
+        _ = LibraryRecentStore.remember(second, defaults: defaults)
+        XCTAssertEqual(LibraryRecentStore.remember(first, defaults: defaults), [first, second])
+        XCTAssertEqual(LibraryRecentStore.load(from: defaults), [first, second])
+        for id in 2...12 { _ = LibraryRecentStore.remember(LibraryRecentItem(collectionID: first.collectionID, cardID: id), defaults: defaults) }
+        XCTAssertEqual(LibraryRecentStore.load(from: defaults).count, 8)
+        XCTAssertEqual(LibraryRecentStore.load(from: defaults).first?.cardID, 12)
+    }
+
     func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws {
         let today = try XCTUnwrap(PlanningDate.date("2026-10-11"))
         var calendar = Calendar.current
@@ -3746,7 +3790,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             XCTAssertEqual(standard.width,   width, accuracy: 1)
             XCTAssertEqual(accessible.width, width, accuracy: 1)
-            XCTAssertGreaterThanOrEqual(standard.height, 68)
+            XCTAssertGreaterThanOrEqual(standard.height, 48)
             XCTAssertGreaterThan(accessible.height, standard.height)
             XCTAssertLessThan(accessible.height, 1_000)
         }

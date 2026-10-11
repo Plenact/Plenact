@@ -3614,6 +3614,93 @@ private struct CalendarCardResult: Identifiable {
 /// @section    Purpose
 ///     Share readable collection identity and card counts across Week and personal entries
 ///
+struct LibraryRecentItem: Codable, Equatable, Identifiable {
+    let collectionID: UUID
+    let cardID: Int
+    var id: String { "\(collectionID.uuidString).\(cardID)" }
+}
+
+enum LibraryRecentStore {
+    static let key = "Plenact.LibraryRecents.v1"
+    static func load(from defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
+        guard let data = defaults.data(forKey: key) else { return [] }
+        return (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
+    }
+    static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
+        let items = Array(([item] + load(from: defaults).filter { $0 != item }).prefix(8))
+        if let data = try? JSONEncoder().encode(items) { defaults.set(data, forKey: key) }
+        return items
+    }
+}
+
+struct LibraryImportanceAccess {
+    let contains: (Int) -> Bool
+    let set: (Int, Bool) -> Void
+}
+private struct LibraryImportanceKey: EnvironmentKey {
+    static let defaultValue: LibraryImportanceAccess? = nil
+}
+extension EnvironmentValues {
+    var libraryImportance: LibraryImportanceAccess? {
+        get { self[LibraryImportanceKey.self] }
+        set { self[LibraryImportanceKey.self] = newValue }
+    }
+}
+
+struct LibraryPlateItem: Identifiable {
+    let collection: PersonalCollection
+    let list: KanbanList
+    let card: KanbanCard
+    let reason: String
+    let rank: Int
+    let date: Date
+    var id: String { "\(collection.id.uuidString).\(card.id)" }
+}
+enum LibraryPlateSelection {
+    static func items(in collections: [PersonalCollection], important: [LibraryRecentItem], now: Date = .now, calendar: Calendar = .current) -> [LibraryPlateItem] {
+        let today = calendar.startOfDay(for: now)
+        let horizon = calendar.date(byAdding: .day, value: 7, to: today) ?? today
+        var items: [LibraryPlateItem] = []
+        for collection in collections where collection.isActive {
+            for list in collection.lists where !list.isArchived {
+                for card in list.cards where !card.isSectionDivider && !card.isTitleChecked {
+                    let marked = important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
+                    var due = card.dueDate
+                    // A time without a date cannot be assigned an urgency day.
+                    if !card.dueDateKind.includesDate { due = nil }
+                    let rank: Int
+                    let reason: String
+                    if let due, due < today || (card.dueDateKind.includesTime && due < now) {
+                        rank = 0; reason = "Overdue · " + card.dueDateLabel
+                    } else if let due, calendar.isDate(due, inSameDayAs: now) {
+                        rank = 1; reason = card.dueDateKind.includesTime ? "Due at " + CardDateKind.time.label(for: due) : "Due today"
+                    } else if let due, due < horizon {
+                        rank = 2; reason = "Due " + card.dueDateLabel
+                    } else if marked {
+                        rank = 3; reason = "Marked important"
+                    } else { continue }
+                    items.append(LibraryPlateItem(collection: collection, list: list, card: card, reason: reason, rank: rank, date: due ?? .distantFuture))
+                }
+            }
+        }
+        return Array(items.sorted {
+            if $0.rank != $1.rank { return $0.rank < $1.rank }
+            if $0.date != $1.date { return $0.date < $1.date }
+            return $0.id < $1.id
+        }.prefix(4))
+    }
+}
+
+private struct LibraryItemOpenedKey: EnvironmentKey {
+    static let defaultValue: (Int) -> Void = { _ in }
+}
+extension EnvironmentValues {
+    var libraryItemOpened: (Int) -> Void {
+        get { self[LibraryItemOpenedKey.self] }
+        set { self[LibraryItemOpenedKey.self] = newValue }
+    }
+}
+
 struct LibraryCollectionRow: View {
 
     let title: String      /* User-owned collection or Week Board title       */
@@ -3621,6 +3708,7 @@ struct LibraryCollectionRow: View {
     let icon: String       /* SF Symbol representing the organizing space     */
     let color: Color       /* Collection accent, not its only identifying cue */
     let count: Int         /* Active non-divider card count                   */
+    var preview: String = ""
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
 
@@ -3638,14 +3726,14 @@ struct LibraryCollectionRow: View {
 
             RoundedRectangle(cornerRadius: 2)
                 .fill(color)
-                .frame(width: 4, height: 48)
+                .frame(width: 4, height: 38)
                 .accessibilityHidden(true)
 
             Image(systemName: icon)
-                .font(.title2)
+                .font(.system(size: 24, weight: .medium))
                 .foregroundStyle(color)
-                .frame(width: 48, height: 48)
-                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+                .frame(width: 44, height: 44)
+                .background(color.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityHidden(true)
 
             let layout = dynamicTypeSize.isAccessibilitySize /* Accessible arrangement of the collection name and count */
@@ -3658,10 +3746,7 @@ struct LibraryCollectionRow: View {
                         .font(.headline)
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+
                 }
 
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -3674,8 +3759,8 @@ struct LibraryCollectionRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
 
-        .padding(.vertical, 10)
-        .frame(minHeight: 68)
+        .padding(.vertical, 4)
+        .frame(minHeight: 48)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
@@ -3704,6 +3789,10 @@ struct BoardListsView: View {
     var savedPersonalCardTarget: PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation */
     var onClearSavedPersonalCardTarget: () -> Void = {} /* Acknowledge a handled or invalid Saved request */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
+    @FocusState private var isLibrarySearchFocused: Bool
+    @State private var showsRecentShelf = false
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
+    @State private var recentItems = LibraryRecentStore.load()
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -3751,7 +3840,7 @@ struct BoardListsView: View {
                 openedCollection = collection
             } label: {
                 row(title: collection.title, subtitle: collectionSubtitle,
-                    icon: collection.icon.rawValue, color: collection.color.color, count: collection.cardCount)
+                    icon: collection.icon.rawValue, color: collection.color.color, count: collection.cardCount, preview: collectionPreview(collection))
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens this personal collection")
@@ -3767,7 +3856,14 @@ struct BoardListsView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("\(collection.title) actions")
         }
-        .listRowBackground(collection.color.color.opacity(0.08))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+        .overlay { RoundedRectangle(cornerRadius: 20).fill(collection.color.color.opacity(0.12)).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(collection.color.color.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
         .accessibilityActions {
             Button("Edit Collection") { editingCollection = collection }
             Button("Archive Collection") { archivingCollection = collection }
@@ -4202,6 +4298,17 @@ struct BoardListsView: View {
             },
             registerNewNote:           registerListNewNote
         )
+        .environment(\.libraryImportance, LibraryImportanceAccess(contains: { cardID in
+            importantItems.contains(LibraryRecentItem(collectionID: collection.id, cardID: cardID))
+        }, set: { cardID, marked in
+            let item = LibraryRecentItem(collectionID: collection.id, cardID: cardID)
+            var updated = importantItems.filter { $0 != item }
+            if marked { updated.append(item) }
+            if let data = try? JSONEncoder().encode(updated) { importantData = data }
+        }))
+        .environment(\.libraryItemOpened, { cardID in
+            recentItems = LibraryRecentStore.remember(LibraryRecentItem(collectionID: collection.id, cardID: cardID))
+        })
     }
 
 
@@ -4251,9 +4358,9 @@ struct BoardListsView: View {
     ///
     /// @post       Rendering does not change collection state
     ///
-    private func row(title: String, subtitle: String, icon: String, color: Color, count: Int) -> some View {
+    private func row(title: String, subtitle: String, icon: String, color: Color, count: Int, preview: String = "") -> some View {
 
-        LibraryCollectionRow(title: title, subtitle: subtitle, icon: icon, color: color, count: count)
+        LibraryCollectionRow(title: title, subtitle: subtitle, icon: icon, color: color, count: count, preview: preview)
     }
 
 
@@ -4266,6 +4373,91 @@ struct BoardListsView: View {
     /// @return     (some View) accessible toolbar creation menu
     /// @post       Choosing an entry sets editingCollection without changing stored collections
     ///
+    private var importantItems: [LibraryRecentItem] {
+        (try? JSONDecoder().decode([LibraryRecentItem].self, from: importantData)) ?? []
+    }
+    private var plateItems: [LibraryPlateItem] {
+        LibraryPlateSelection.items(in: collections, important: importantItems)
+    }
+    private var plateSection: some View {
+        Section {
+            if plateItems.isEmpty {
+                Text("Nothing urgent right now. Mark an item important from its menu or add a due date to bring it here.")
+                    .font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
+                    .listRowBackground(Color(.secondarySystemGroupedBackground))
+            } else {
+                ForEach(plateItems) { item in
+                    Button {
+                        boardTargetListID = item.list.id
+                        boardTargetCardID = item.card.id
+                        openedCollection = item.collection
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: item.rank == 0 ? "exclamationmark.circle" : (item.rank == 3 ? "star.fill" : "clock"))
+                                .foregroundStyle(item.rank == 0 ? Color.red : item.collection.color.color)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.card.word).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                                Text(item.collection.title).font(.caption).foregroundStyle(.secondary)
+                                Text(item.reason).font(.caption).foregroundStyle(item.rank == 0 ? Color.red : Color.blue)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color(.secondarySystemGroupedBackground))
+                    .accessibilityHint("Opens this item directly")
+                }
+            }
+        } header: { Text("On the Plate") }
+    }
+
+    private func collectionPreview(_ collection: PersonalCollection) -> String {
+        let items = collection.lists.filter { !$0.isArchived }.flatMap(\.cards).filter { !$0.isSectionDivider }
+        return items.isEmpty ? "Room for your next idea" : items.prefix(3).map(\.word).joined(separator: " · ")
+    }
+
+    private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)] {
+        recentItems.compactMap { item in
+            guard let collection = collections.first(where: { $0.id == item.collectionID && $0.isActive }),
+                  let list = collection.lists.first(where: { !$0.isArchived && $0.cards.contains { $0.id == item.cardID && !$0.isSectionDivider } }),
+                  let card = list.cards.first(where: { $0.id == item.cardID }) else { return nil }
+            return (item, collection, list, card)
+        }
+    }
+
+    private var recentShelf: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(availableRecents, id: \.0.id) { item, collection, list, card in
+                    Button {
+                        boardTargetListID = list.id
+                        boardTargetCardID = card.id
+                        openedCollection = collection
+                    } label: {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label(card.presentation.title, systemImage: card.presentation == .note ? "note.text" : "rectangle")
+                                .font(.caption).foregroundStyle(collection.color.color)
+                            Text(card.word).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                            Text(card.subtitle.isEmpty ? PlanRichText.plain(card.descriptionOverride ?? "") : card.subtitle)
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            Spacer(minLength: 0)
+                            Text(collection.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        .frame(width: 148, height: 132, alignment: .topLeading)
+                        .padding(14)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(collection.color.color.opacity(0.4), lineWidth: 1) }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens this item directly")
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
     private var libraryHeader: some View {
         VStack(spacing: 12) {
             HStack(spacing: 0) {
@@ -4297,9 +4489,37 @@ struct BoardListsView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.primary)
-            TextField("Find a collection or card", text: $searchText)
-                .textFieldStyle(.roundedBorder)
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField("Find in your Library", text: $searchText)
+                    .focused($isLibrarySearchFocused)
+            }
+            .padding(12)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
                 .accessibilityLabel("Filter Library collections")
+            if showsRecentShelf {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Recently added or viewed").font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Button {
+                            isLibrarySearchFocused = false
+                            withAnimation { showsRecentShelf = false }
+                        } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                        .accessibilityLabel("Close recent items")
+                    }
+                    if availableRecents.isEmpty {
+                        Text("Open or add a Library item to find it here.")
+                            .font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
+                    } else {
+                        recentShelf
+                    }
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .onChange(of: isLibrarySearchFocused) { _, focused in
+            if focused { withAnimation { showsRecentShelf = true } }
         }
         .padding(.horizontal, 20)
         .padding(.top, 4)
@@ -4431,7 +4651,6 @@ struct BoardListsView: View {
         NavigationStack {
 
             List {
-
                 Section {
 
                     ForEach(filteredCollections) { collection in
@@ -4483,8 +4702,20 @@ struct BoardListsView: View {
                 } footer: {
                     Text("Lists organize cards. Boards bring several lists together. Archived boards are in Saved.")
                 }
+                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active {
+                    plateSection
+                }
             }
 
+            .listRowSpacing(7)
+            .onChange(of: collections) { old, updated in
+                for collection in updated where collection.isActive {
+                    let previousIDs = Set(old.first(where: { $0.id == collection.id })?.lists.flatMap(\.allCards).map(\.id) ?? [])
+                    for card in collection.lists.filter({ !$0.isArchived }).flatMap(\.cards) where !card.isSectionDivider && !previousIDs.contains(card.id) {
+                        recentItems = LibraryRecentStore.remember(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
+                    }
+                }
+            }
             .scrollContentBackground(.hidden)
             .background { TodayPaperBackground() }
             .toolbar(.hidden, for: .navigationBar)

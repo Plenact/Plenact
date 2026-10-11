@@ -1991,7 +1991,7 @@ enum NoteTextSharing {
 
         if let body = note.descriptionOverride, !body.isEmpty { /* Nonempty Note body included in shared text */
 
-            sections.append(body)
+            sections.append(PlanRichText.plain(body))
         }
         let links = (note.attachments ?? []).compactMap { attachment -> String? in /* Web links appended to the shared Note text */
             guard attachment.kind == .link, let url = attachment.url else { /* Address of a shareable link attachment */
@@ -2680,7 +2680,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         return term.isEmpty || title.localizedStandardContains(term) || lists.filter { !$0.isArchived }.contains { list in
             list.title.localizedStandardContains(term) || list.cards.contains {
                 !$0.isSectionDivider && ($0.word.localizedStandardContains(term)
-                    || ($0.descriptionOverride?.localizedStandardContains(term) ?? false))
+                    || PlanRichText.plain($0.descriptionOverride ?? "").localizedStandardContains(term))
             }
         }
     }

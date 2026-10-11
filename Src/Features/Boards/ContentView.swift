@@ -2819,6 +2819,7 @@ struct ContentView: View {
                         boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View",
                         representedDate: dayDate(for: listID)
                     )
+                    .environment(\.workspaceBottomBarHeight, 0)
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
             }
@@ -3219,7 +3220,7 @@ private struct ArchivedListContentsView: View {
                 }
 
                 .font(.headline)
-                Text(card.funParagraph).foregroundStyle(.secondary)
+                Text(PlanRichText.display(card.funParagraph)).foregroundStyle(.secondary)
                 Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = card }
             }
         }
@@ -3291,7 +3292,7 @@ struct ArchivedCardInspectionView: View {
                 Section("Card Cover") { CardCoverPreview(attachment: cover) }
             }
 
-            Section("Description") { Text(card.funParagraph) }
+            Section("Description") { Text(PlanRichText.display(card.funParagraph)) }
             ForEach(card.checklists) { checklist in
                 Section(checklist.title) {
                     ForEach(checklist.items) { item in
@@ -3317,7 +3318,7 @@ struct ArchivedCardInspectionView: View {
                 ForEach(card.comments) { comment in
                     VStack(alignment: .leading) {
                         Text(comment.author).font(.headline)
-                        Text(comment.body)
+                        Text(PlanRichText.display(comment.body))
                     }
                 }
             }
@@ -4375,8 +4376,7 @@ private struct NewKanbanCardSheet: View {
                     TextField("Title (or --- for divider)", text: $title)
                         .textInputAutocapitalization(.never)
                     TextField("Subtitle (optional)", text: $subtitle)
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...8)
+                    RichTextEditor(placeholder: "Description (optional)", text: $description)
                 }
             }
 
@@ -4828,7 +4828,7 @@ private struct ArchivedCardsView: View {
 
                             if !card.funParagraph.isEmpty {
 
-                                Text(card.funParagraph)
+                                Text(PlanRichText.display(card.funParagraph))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(3)
@@ -5089,7 +5089,7 @@ struct KanbanCardView: View {
 
                     if let body = card.descriptionOverride, !body.isEmpty { /* Nonempty stored description shown in the card preview */
 
-                        Text(body)
+                        Text(PlanRichText.display(body))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(3)
@@ -5360,8 +5360,7 @@ private struct CardInfoEditorSheet: View {
                 }
 
                 Section("Description") {
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(4...12)
+                    RichTextEditor(placeholder: "Description", text: $description)
                 }
             }
 

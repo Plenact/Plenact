@@ -603,6 +603,7 @@ private struct AppRootView: View {
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
 
+        .environment(\.workspaceBottomBarHeight, verticalSizeClass == .compact ? 52 : 74)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
 
@@ -2256,6 +2257,7 @@ private struct TodayHomeView: View {
                         representedDate: .now,
                         includesDateInTitle: false
                     )
+                    .environment(\.workspaceBottomBarHeight, 0)
                 }
             }
 
@@ -2669,8 +2671,7 @@ struct QuickNoteComposer: View {
                 Section(presentation.title) {
                     TextField("Title", text: $title)
                     TextField("Subtitle (optional)", text: $subtitle)
-                    TextField("Details (optional)", text: $description, axis: .vertical)
-                        .lineLimit(4...8)
+                    RichTextEditor(placeholder: "Details (optional)", text: $description)
                 }
 
                 if template != nil && presentation == .card {
@@ -2849,11 +2850,8 @@ private struct NewPersonalNoteComposer: View {
                 NoteCreationDateLabel(createdAt: draft.createdAt)
                     .accessibilityIdentifier("library.newNoteCreationDate")
 
-                TextField("Start writing...", text: $draft.body, axis: .vertical)
-                    .font(.body)
-                    .lineSpacing(6)
-                    .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
-                    .focused($focusedField, equals: .body)
+                RichTextEditor(placeholder: "Start writing...", text: $draft.body,
+                               focus: Binding(get: { focusedField == .body }, set: { focusedField = $0 ? .body : nil }), minimumHeight: 320)
                     .accessibilityLabel("Note body")
 
                 Spacer(minLength: 0)
@@ -2871,7 +2869,7 @@ private struct NewPersonalNoteComposer: View {
                         .disabled(!draft.canSave(in: availablePersonalLists))
                 }
                 ToolbarItemGroup(placement: .keyboard) {
-                    if focusedField != nil {
+                    if focusedField == .title {
 
                         Spacer()
                         Button("Done") { focusedField = nil }
@@ -3076,7 +3074,7 @@ enum TodaySearchIndex {
                 }
 
                 let checklistText = card.checklists.flatMap { [$0.title] + $0.items.map(\.title) } /* Searchable checklist and action titles */
-                let commentText = card.comments.flatMap { [$0.author, $0.body] } /* Searchable discussion authors and content */
+                let commentText = card.comments.flatMap { [$0.author, PlanRichText.plain($0.body)] } /* Searchable discussion authors and content */
                 let users = card.members.map(\.displayName) /* Searchable assignee names */
                 let labels = library.labels.filter { card.labelIDs.contains($0.id) } /* Definitions of labels assigned to this card */
                 let labelText = labels.flatMap { label in /* Searchable label and category names */
@@ -3090,7 +3088,7 @@ enum TodaySearchIndex {
                     case .labels: searchableText = labelText
                     case .users: searchableText = users
                     case .all:
-                        searchableText = [list.title, card.word, card.descriptionOverride ?? "", card.subtitleOverride ?? ""]
+                        searchableText = [list.title, card.word, PlanRichText.plain(card.descriptionOverride ?? ""), card.subtitleOverride ?? ""]
                             + checklistText + commentText + users + labelText
                     case .boards: searchableText = []
                 }
@@ -3110,7 +3108,7 @@ enum TodaySearchIndex {
                     case .labels: detail = labels.map(\.name).joined(separator: ", ")
                     case .users: detail = users.joined(separator: ", ")
                     default:
-                        detail = [card.subtitleOverride, card.descriptionOverride].compactMap { $0 }
+                        detail = [card.subtitleOverride, card.descriptionOverride.map { PlanRichText.plain($0) }].compactMap { $0 }
                             .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
                             ?? checklistText.first ?? ""
                 }
@@ -4510,6 +4508,7 @@ struct BoardListsView: View {
 
             .fullScreenCover(item: $openedCollection, onDismiss: registerDirectoryNewNote) { collection in
                 presentedCollectionBoard(collection)
+                    .environment(\.workspaceBottomBarHeight, 0)
             }
 
             .alert("Delete \(deletingCollection?.kind.rawValue ?? "item")?", isPresented: Binding(

@@ -1429,6 +1429,82 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     /// @return     (Void) records creation/default assertion failures
     ///
+    @MainActor
+    func testRichTextFormattingPreservesSelectedRunsAndCardPersistence() throws {
+        var stored = "Before selected after"
+        let editor = RichTextEditor(placeholder: "Description", text: Binding(get: { stored }, set: { stored = $0 }))
+        let coordinator = editor.makeCoordinator()
+        let view = UITextView()
+        view.attributedText = PlanRichText.attributed(stored)
+        view.selectedRange = NSRange(location: 7, length: 8)
+        coordinator.view = view
+        coordinator.toggle(.traitBold)
+        coordinator.toggle(.traitItalic)
+        coordinator.color("Blue")
+        XCTAssertEqual(view.selectedRange, NSRange(location: 7, length: 8))
+        XCTAssertEqual(PlanRichText.plain(stored), "Before selected after")
+        let selected = PlanRichText.attributed(stored).attributes(at: 7, effectiveRange: nil)
+        let font = try XCTUnwrap(selected[.font] as? UIFont)
+        XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitItalic))
+        XCTAssertEqual(selected[NSAttributedString.Key("PlenactColor")] as? String, "Blue")
+        XCTAssertFalse((PlanRichText.attributed(stored).attribute(.font, at: 0, effectiveRange: nil) as? UIFont)?.fontDescriptor.symbolicTraits.contains(.traitBold) ?? true)
+        var card = KanbanList(id: 1, title: "Ideas", cards: []).makeItem(id: 2, title: "Formatted", description: stored)
+        card.comments = [KanbanComment(author: "Alex", body: stored)]
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(decoded.descriptionOverride, stored)
+        XCTAssertEqual(decoded.comments.first?.body, stored)
+        XCTAssertTrue(NoteTextSharing.text(for: decoded).contains("Before selected after"))
+        XCTAssertFalse(NoteTextSharing.text(for: decoded).contains(PlanRichText.prefix))
+        coordinator.toggle(.traitBold)
+        coordinator.toggle(.traitItalic)
+        coordinator.color("Default")
+        XCTAssertEqual(stored, "Before selected after")
+    }
+
+    @MainActor
+    func testRichTextEditorProvidesAccessibleKeyboardToolbar() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previousWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: RichTextEditor(placeholder: "Description", text: .constant("A multiline description\nwith a second line")))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previousWindow?.makeKeyAndVisible() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        func editor(in view: UIView) -> UITextView? {
+            if let text = view as? UITextView { return text }
+            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        let text = try XCTUnwrap(editor(in: host.view))
+        let toolbar = try XCTUnwrap(text.inputAccessoryView as? UIToolbar)
+        XCTAssertEqual(toolbar.items?.compactMap(\.accessibilityLabel), ["Bold", "Italic", "Text color", "Hide keyboard"])
+        XCTAssertEqual(text.text, "A multiline description\nwith a second line")
+        XCTAssertGreaterThan(text.sizeThatFits(CGSize(width: 300, height: 1000)).height, 40)
+        XCTAssertNotNil(toolbar.items?[2].menu)
+    }
+
+    @MainActor
+    func testRichTextTypingStylesAndLegacyText() {
+        var stored = "Legacy plain text 😊"
+        let editor = RichTextEditor(placeholder: "Comment", text: Binding(get: { stored }, set: { stored = $0 }))
+        let coordinator = editor.makeCoordinator()
+        let view = UITextView()
+        view.attributedText = PlanRichText.attributed(stored)
+        view.selectedRange = NSRange(location: view.textStorage.length, length: 0)
+        view.typingAttributes = [.font: UIFont.preferredFont(forTextStyle: .body)]
+        coordinator.view = view
+        coordinator.toggle(.traitBold)
+        coordinator.color("Purple")
+        XCTAssertEqual(stored, "Legacy plain text 😊")
+        XCTAssertTrue((view.typingAttributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits.contains(.traitBold) ?? false)
+        XCTAssertEqual(view.typingAttributes[NSAttributedString.Key("PlenactColor")] as? String, "Purple")
+        XCTAssertEqual(PlanRichText.encode(PlanRichText.attributed(stored)), stored)
+        XCTAssertEqual(PlanRichText.plain("plenact-rich-v1:invalid"), "plenact-rich-v1:invalid")
+    }
+
     func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws {
         let list = KanbanList(id: 1, title: "Saturday", cards: [])
         let blank = list.makeItem(id: 1, title: "New task")

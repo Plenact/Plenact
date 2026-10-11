@@ -1159,7 +1159,18 @@ struct ContentView: View {
     @State private var listDragGrabOffset: CGFloat = 0 /* Offset between the initial pointer and grabbed list center */
     @State private var listDragInitialCenter: CGFloat? // Center before the temporary drag overview.
     @State private var listDragTilt: Double = 0
-    private var listDragScale: CGFloat { draggedListID != nil && !reducesMotion ? 0.72 : 1 }
+    @State private var isPanoramic = false
+    private var boardZoomScale: CGFloat { isPanoramic ? 0.62 : 1 }
+    private var listDragScale: CGFloat {
+        boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
+    }
+
+    private func toggleBoardZoom() {
+        guard draggedListID == nil, draggedCardID == nil else { return }
+        withAnimation(reducesMotion ? nil : .smooth(duration: 0.25)) {
+            isPanoramic.toggle()
+        }
+    }
     @State private var draggedCardID: Int? /* Card identity participating in the native drag session */
     @State private var cardDragLocation: CGPoint? /* Current card-drag pointer in global coordinates */
     @State private var cardFrames: [Int: CGRect] = [:] /* Global card-row frames keyed by card identity */
@@ -1812,7 +1823,7 @@ struct ContentView: View {
 
         if listDragLocation == nil {
 
-            listDragGrabOffset = (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x)) * listDragScale
+            listDragGrabOffset = (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x)) * (listDragScale / boardZoomScale)
         }
 
         listDragLocation = value.location.x
@@ -2390,6 +2401,8 @@ struct ContentView: View {
                             onJumpToLastList:    lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
                             onAppearance:        { showsBoardAppearance = true },
                             onSearch: { showsSharedSearch = true },
+                            onToggleZoom: toggleBoardZoom,
+                            isPanoramic: isPanoramic,
                             calendarAccessibilityTitle: calendarOpeningDate.formatted(.dateTime.month(.wide)) + " calendar",
                             onAddList:           addList
                         )
@@ -2414,7 +2427,7 @@ struct ContentView: View {
                                         ZStack {
                                         KanbanListView(
                                             list:                  list,
-                                            availableListHeight:   listArea.size.height,
+                                            availableListHeight:   listArea.size.height / boardZoomScale,
                                             displaySettings:       displaySettings,
                                             presentation:          presentation,
                                             labelLibrary:          labelLibrary,
@@ -2489,7 +2502,7 @@ struct ContentView: View {
                                         )
                                         .environment(\.cardMovementSource, personalCollectionID)
                                         .scaleEffect(listDragScale * (draggedListID == list.id && !reducesMotion ? 1.04 : 1), anchor: .top)
-                                        .frame(width: columnWidth * listDragScale, height: listArea.size.height * listDragScale, alignment: .top)
+                                        .frame(width: columnWidth * listDragScale, height: (listArea.size.height / boardZoomScale) * listDragScale, alignment: .top)
                                         .rotationEffect(.degrees(draggedListID == list.id ? listDragTilt : 0), anchor: .top)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
@@ -2905,6 +2918,8 @@ struct BoardHeader: View {
 
     var onAppearance: (() -> Void)? = nil
     var onSearch: (() -> Void)? = nil
+    var onToggleZoom: (() -> Void)? = nil
+    var isPanoramic: Bool = false
     var calendarAccessibilityTitle: String = "Open this month"
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
@@ -3014,6 +3029,17 @@ struct BoardHeader: View {
 
             .buttonStyle(.plain)
             .accessibilityLabel(calendarAccessibilityTitle)
+
+            if let onToggleZoom {
+                Button(action: onToggleZoom) {
+                    WorkspaceHeaderIcon(systemName: isPanoramic ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPanoramic ? "Restore normal board size" : "Zoom out board")
+                .accessibilityValue(isPanoramic ? "Panoramic" : "Normal")
+                .accessibilityIdentifier("board.zoom")
+            }
 
             Button { showsBoardOptions = true } label: {
                 WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)

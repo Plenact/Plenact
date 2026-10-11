@@ -6,17 +6,13 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 ## Development Work
 
-- Lists/Notes Interface Idea
-
-- Kanban Look & Feel Idea
-	- List Zoom like Trello!!!
-	- Panoramic like Trello!
-
 - Kanban Card/Note Representation Concept
 
 - Calendar Idea
 
 ### Upcoming
+
+- Zoom levels (default & last, automatically handled)
 
 - Unsplash cover images & Backgrounds & Custom Backgrounds
 

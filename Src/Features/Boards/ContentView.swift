@@ -1568,7 +1568,7 @@ struct ContentView: View {
     /// @pre        The caller validates and trims the title and description
     /// @post       The new card appears last; a missing destination leaves Board state unchanged
     ///
-    private func addCard(to listID: Int, title: String, description: String) {
+    private func addCard(to listID: Int, title: String, description: String, subtitle: String) {
 
         guard let listIndex = lists.firstIndex(where: { /* Destination list index */
 
@@ -1583,7 +1583,7 @@ struct ContentView: View {
 
         /// Append the new card to the list's cards array
         updatedList.cards.append(
-            updatedList.makeItem(id: nextCardID, title: title, description: description)
+            updatedList.makeItem(id: nextCardID, title: title, description: description, subtitle: subtitle)
         )
 
         lists[listIndex] = updatedList
@@ -2447,7 +2447,7 @@ struct ContentView: View {
                                             },
                                             canMoveEarlier:        listIndex > 0,
                                             canMoveLater:          listIndex < lists.count - 1,
-                                            onAddCard:             { title, description in addCard(to: list.id, title: title, description: description)
+                                            onAddCard:             { title, description, subtitle in addCard(to: list.id, title: title, description: description, subtitle: subtitle)
                                             },
                                             onCopyList:            { copyList(with: list.id) },
                                             onMoveList:            { offset in moveList(with: list.id, by: offset) },
@@ -3758,7 +3758,7 @@ struct KanbanListView: View {
     let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
     let canMoveEarlier: Bool                    /* Indicates whether the list can be moved earlier in the board   */
     let canMoveLater:  Bool                     /* Indicates whether the list can be moved later in the board     */
-    let onAddCard: (String, String) -> Void     /* The action invoked to add a new card to the list               */
+    let onAddCard: (String, String, String) -> Void     /* The action invoked to add a new card to the list               */
     let onCopyList: () -> Void                  /* The action invoked to copy the list                            */
     let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
     let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
@@ -4334,9 +4334,10 @@ private struct NewKanbanCardSheet: View {
 
     let listTitle: String                               /* Title of the kanban list to which the new card will be added                             */
     let presentation: ItemPresentation /* Card or Note kind determining the creation form */
-    let onCreate: (String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
+    let onCreate: (String, String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
 
     @Environment(\.dismiss) private var dismiss         /* Environment variable to dismiss the current view */
+    @State private var subtitle = ""
     @State private var title       = ""                 /* User-entered card title                          */
     @State private var description = ""                 /* User-entered card description                    */
 
@@ -4373,6 +4374,7 @@ private struct NewKanbanCardSheet: View {
                 Section("\(presentation.title) details") {
                     TextField("Title (or --- for divider)", text: $title)
                         .textInputAutocapitalization(.never)
+                    TextField("Subtitle (optional)", text: $subtitle)
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3...8)
                 }
@@ -4392,7 +4394,7 @@ private struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     
                     Button("Add") {
-                        onCreate(trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines))
+                        onCreate(trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
 
@@ -5429,7 +5431,7 @@ struct TodayListDetailView: View {
     }
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
-    @State private var newCardTitle = "" /* Inline card-creation draft */
+    @State private var showsNewCard = false
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken = UUID().uuidString
     @State private var draggedCardID: Int?
@@ -5654,19 +5656,18 @@ struct TodayListDetailView: View {
 
                         .moveDisabled(editMode != .active)
 
-                        HStack(spacing: 10) {
-                            TextField("Add a card to \(focusedList.title)…", text: $newCardTitle)
-                                .submitLabel(.done)
-                                .onSubmit(addCard)
-
-                            Button(action: addCard) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title2)
+                        Button { showsNewCard = true } label: {
+                            HStack {
+                                Text("Add a card to \(focusedList.title)…")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Image(systemName: "plus.circle.fill").font(.title2)
                             }
-
-                            .disabled(newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            .accessibilityLabel("Add card to \(focusedList.title)")
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Add card to \(focusedList.title)")
 
                         .padding(12)
                         .background { cardDropSurface }
@@ -5850,6 +5851,13 @@ struct TodayListDetailView: View {
         }
 
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsDaySearch, onLeaveForHome: { onClose(); planningHomeExit?() }))
+        .sheet(isPresented: $showsNewCard) {
+            if let focusedList = lists.first(where: { $0.id == listID }) {
+                NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation) { title, description, subtitle in
+                    addCard(title: title, description: description, subtitle: subtitle)
+                }
+            }
+        }
         .sheet(isPresented: $isEditingList) {
             if let focusedList {
                 ListInfoEditorSheet(list: focusedList) { title, subtitle, defaultPresentation in
@@ -6030,14 +6038,14 @@ struct TodayListDetailView: View {
     /// @details    Trims whitespace, reserves IDs across active and archived cards/lists, and
     ///             recognizes divider-marker titles before appending a new record
     ///
-    /// @return     (Void) appends the card and clears newCardTitle after successful insertion
+    /// @return     (Void) appends the submitted card to the focused day list
     ///
-    /// @post       Blank input or an unavailable list leaves the draft and Board unchanged;
+    /// @post       Blank input or an unavailable list leaves the Board unchanged;
     ///             persistence follows the caller's shared-state observation
     ///
-    private func addCard() {
+    private func addCard(title draftTitle: String, description: String, subtitle: String) {
 
-        let title = newCardTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank heading used to create the focused-list record */
+        let title = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank heading used to create the focused-list record */
 
         guard !title.isEmpty, let listIndex = lists.firstIndex(where: { /* Active focused list receiving the new record */
 
@@ -6050,9 +6058,8 @@ struct TodayListDetailView: View {
         let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond active and reserved retained records */
 
         lists[listIndex].cards.append(
-            lists[listIndex].makeItem(id: nextCardID, title: title)
+            lists[listIndex].makeItem(id: nextCardID, title: title, description: description, subtitle: subtitle)
         )
-        newCardTitle = ""
     }
 }
 

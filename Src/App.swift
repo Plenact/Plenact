@@ -524,8 +524,8 @@ private struct AppRootView: View {
                     profile = nil
                     LocalProfileStore.remove()
                 },
-                onAddCard:              { listID, title, description, presentation, actions in
-                    addCard(to: listID, title: title, description: description, presentation: presentation, actions: actions)
+                onAddCard:              { listID, title, description, subtitle, presentation, actions in
+                    addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
                 },
                 onToggleCardCompletion: toggleCardCompletion,
                 onOpenBoardList:        openBoardList,
@@ -638,8 +638,8 @@ private struct AppRootView: View {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
                 initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: profile?.preferences.defaultListID)
-            ) { listID, title, description, presentation, actions in
-                addCard(to: listID, title: title, description: description, presentation: presentation, actions: actions)
+            ) { listID, title, description, subtitle, presentation, actions in
+                addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
             }
 
             .databaseActivityOverlay()
@@ -1481,7 +1481,7 @@ private struct AppRootView: View {
         /// @pre        The caller has validated and trimmed the title
         /// @post       An absent list leaves the snapshot unchanged
         ///
-        private func addCard(to listID: Int, title: String, description: String, presentation: ItemPresentation? = nil, actions: [String]? = nil) {
+        private func addCard(to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil, actions: [String]? = nil) {
 
             guard let listIndex = lists.firstIndex(where: { /* Destination list index */
 
@@ -1496,7 +1496,7 @@ private struct AppRootView: View {
 
             let item = updatedList.makeItem(
                 id: nextCardID, title: title, description: description.isEmpty ? nil : description,
-                presentationOverride: presentation, actions: actions
+                subtitle: subtitle, presentationOverride: presentation, actions: actions
             )
             updatedList.cards.append(item)
 
@@ -1529,7 +1529,7 @@ private struct TodayHomeView: View {
     let profile:            LocalProfile?                   /* Current local profile and preferences              */
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
     let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
-    let onAddCard: (Int, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records */
+    let onAddCard: (Int, String, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records */
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
     let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
@@ -1790,7 +1790,7 @@ private struct TodayHomeView: View {
         profile:         LocalProfile?,
         onSaveProfile:   @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
-        onAddCard: @escaping (Int, String, String, ItemPresentation?, [String]?) -> Void,
+        onAddCard: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
         onOpenBoardCard: @escaping (Int, Int) -> Void,
@@ -2023,7 +2023,7 @@ private struct TodayHomeView: View {
             return
         }
 
-        onAddCard(selectedTodayList.id, title, "", nil, nil)
+        onAddCard(selectedTodayList.id, title, "", "", nil, nil)
         quickCaptureTitle = ""
     }
 
@@ -2276,8 +2276,8 @@ private struct TodayHomeView: View {
                         initialListID: selectedTodayList.id,
                         initialTitle:  quickComposerInitialTitle,
                         template:      composerTemplate
-                    ) { listID, title, description, presentation, actions in
-                        onAddCard(listID, title, description, presentation, actions)
+                    ) { listID, title, description, subtitle, presentation, actions in
+                        onAddCard(listID, title, description, subtitle, presentation, actions)
                         quickComposerInitialTitle = ""
                     }
 
@@ -2594,11 +2594,12 @@ struct QuickCaptureTemplatesView: View {
 struct QuickNoteComposer: View {
 
     @Binding var lists: [KanbanList]                         /* Current destination lists */
-    let onSave: (Int, String, String, ItemPresentation?, [String]?) -> Void
+    let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     let template: QuickCaptureTemplate?
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
+    @State private var subtitle = ""
     @State private var title = ""               /* New card title */
     @State private var description = ""         /* Optional card detail */
     @State private var selectedListID: Int?      /* Destination selected in the form */
@@ -2623,7 +2624,7 @@ struct QuickNoteComposer: View {
         initialListID: Int?,
         initialTitle: String = "",
         template: QuickCaptureTemplate? = nil,
-        onSave: @escaping (Int, String, String, ItemPresentation?, [String]?) -> Void
+        onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     ) {
 
         _lists = lists
@@ -2667,6 +2668,7 @@ struct QuickNoteComposer: View {
             Form {
                 Section(presentation.title) {
                     TextField("Title", text: $title)
+                    TextField("Subtitle (optional)", text: $subtitle)
                     TextField("Details (optional)", text: $description, axis: .vertical)
                         .lineLimit(4...8)
                 }
@@ -2717,7 +2719,7 @@ struct QuickNoteComposer: View {
                         guard let selectedListID, /* Chosen Week destination identity */
                               lists.contains(where: { $0.id == selectedListID }) else { return }
                         let editedActions = actions.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), template?.presentation, template == nil ? nil : editedActions)
+                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines), template?.presentation, template == nil ? nil : editedActions)
                         dismiss()
                     }
 

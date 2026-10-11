@@ -1289,7 +1289,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let controller = UIHostingController(rootView: QuickNoteComposer(
                 lists: .constant([KanbanList(id: 4, title: "Thursday", cards: [])]),
                 initialListID: 4, initialTitle: "Captured thought", template: template
-            ) { _, _, _, _, _ in
+            ) { _, _, _, _, _, _ in
                 XCTFail("Reviewing a template must not create a record")
             })
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -1429,6 +1429,21 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     /// @return     (Void) records creation/default assertion failures
     ///
+    func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws {
+        let list = KanbanList(id: 1, title: "Saturday", cards: [])
+        let blank = list.makeItem(id: 1, title: "New task")
+        XCTAssertEqual(blank.subtitleOverride, "")
+        XCTAssertEqual(blank.subtitle, "")
+        let entered = list.makeItem(id: 2, title: "New task", description: "Details", subtitle: "  A useful subtitle  ")
+        XCTAssertEqual(entered.subtitle, "A useful subtitle")
+        XCTAssertEqual(entered.descriptionOverride, "Details")
+        for card in [blank, entered] {
+            let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+            XCTAssertEqual(decoded.subtitle, card.subtitle)
+            XCTAssertEqual(decoded.subtitleOverride, card.subtitleOverride)
+        }
+    }
+
     func testListNoteDefaultAppliesOnlyToNewNondividerItems() {
 
         let existing = KanbanCard(id: 1, word: "Existing", listTitle: "Ideas") /* Existing Card retained while applying List defaults */
@@ -4520,7 +4535,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let view = KanbanListView( /* Hosted view under test */
                 list: list, availableListHeight: 700, displaySettings: BoardDisplaySettings(),
                 presentation:         preset, labelLibrary: .starter, toggleCardTitle: { _ in },
-                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _, _ in },
+                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _, _, _ in },
                 onCopyList:           {}, onMoveList: { _ in }, onSortList: { _ in }, onArchiveCompleted: {},
                 archivedCards:        .constant([]), onRestoreArchivedCard: { _ in },
                 onDeleteArchivedCard: { _ in }, onArchiveList: {}, onDeleteList: {},

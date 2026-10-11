@@ -894,7 +894,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  actions      Template actions; nil preserves ordinary Card checklist defaults
     /// @return     (KanbanCard) new record without modifying the list
     ///
-    func makeItem(id: Int, title: String, description: String? = nil, createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil) -> KanbanCard {
+    func makeItem(id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil) -> KanbanCard {
 
         let isDivider = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
         let presentation = isDivider ? ItemPresentation.card : (presentationOverride ?? newItemPresentation) /* Item kind selected for the new record */
@@ -906,6 +906,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
             id: id, word: title, listTitle: self.title, isDivider: isDivider,
             checklists:          checklists,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
+            subtitleOverride:    subtitle.trimmingCharacters(in: .whitespacesAndNewlines),
             presentation:        presentation,
             createdAt:           createdAt
         )

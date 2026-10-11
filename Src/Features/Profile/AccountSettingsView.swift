@@ -212,6 +212,9 @@ struct AccountSettingsView: View {
     let onSave:   (LocalProfile) -> Void         /* Profile save callback  */
     let onRemove: () -> Void                     /* Profile removal        */
 
+    @Environment(\.planningCalendarAccess) private var planningAccess
+    @State private var firstWeekday = 1
+    @State private var didLoadWeekStart = false
     @Environment(\.dismiss) private var dismiss  /* Sheet dismissal       */
 
     @State private var profileID:           UUID                     /* Draft profile ID       */
@@ -322,6 +325,11 @@ struct AccountSettingsView: View {
 
             photoSaveError = error.localizedDescription
 
+            return
+        }
+
+        guard planningAccess?.setFirstWeekday(didLoadWeekStart ? firstWeekday : (planningAccess?.document.firstWeekday ?? 1)) != false else {
+            ProfileAvatarPhotoStore.remove(photoFileName)
             return
         }
 
@@ -447,6 +455,15 @@ struct AccountSettingsView: View {
 
                 Form {
                     Section {
+                        Picker("Week starts on", selection: $firstWeekday) {
+                            Text("Sunday").tag(1)
+                            Text("Monday").tag(2)
+                        }
+                        .onAppear {
+                            guard !didLoadWeekStart else { return }
+                            firstWeekday = planningAccess?.document.firstWeekday ?? Calendar.current.firstWeekday
+                            didLoadWeekStart = true
+                        }
                         Picker("Default Today list", selection: $defaultListID) {
                             Text("Choose each day").tag(nil as Int?)
 
@@ -457,7 +474,7 @@ struct AccountSettingsView: View {
                     } header: {
                         Text("Planning")
                     } footer: {
-                        Text("The default is used only when no list has been chosen for that date.")
+                        Text("The week start applies to Week view and Calendar. Existing plans keep their dates. The default Today list is used only when no list has been chosen for that date.")
                     }
 
                     Section {

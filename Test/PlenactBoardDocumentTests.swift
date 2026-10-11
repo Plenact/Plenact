@@ -21,6 +21,101 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs() throws {
+        var sunday = Calendar(identifier: .gregorian)
+        sunday.timeZone = TimeZone(secondsFromGMT: 0)!
+        sunday.firstWeekday = 1
+        let today = try XCTUnwrap(PlanningDate.date("2026-10-11", calendar: sunday))
+        let earlier = try XCTUnwrap(PlanningDate.date("2026-10-04", calendar: sunday))
+        var first = DatedPlanningWeek.make(for: earlier, calendar: sunday)
+        var second = DatedPlanningWeek.make(for: today, calendar: sunday)
+        func fill(_ week: inout DatedPlanningWeek) {
+            for index in week.collection.lists.indices {
+                let list = week.collection.lists[index]
+                var card = list.makeItem(id: index, title: "\(week.startKey) \(list.title)", description: "Retained body", subtitle: "Retained subtitle")
+                card.sectionLayout = CardSectionLayout(order: [.activity, .description], hidden: [.details])
+                week.collection.lists[index].cards = [card]
+            }
+        }
+        fill(&first); fill(&second)
+        let link = KanbanChecklistItem(title: "Sunday link", content: .linkedCard(cardID: 0))
+        second.collection.lists[1].cards[0].checklists = [KanbanChecklist(title: "Linked", items: [link])]
+        first.explicitlySaved = true
+        first.collection.lists[2].archivedCards = [first.collection.lists[2].makeItem(id: 100, title: "Archived note", presentationOverride: .note)]
+        second.collection.savedCardIDs = [0]
+        second.collection.lists.append(KanbanList(id: 20, title: "Undated extras", cards: []))
+        let before = [first, second].flatMap { $0.collection.lists.flatMap(\.allCards) }
+        var document = PlanningCalendarDocument(currentWeekKey: second.startKey, firstWeekday: 1, weeks: [first, second])
+        try document.changeFirstWeekday(to: 2, now: today)
+        XCTAssertEqual(document.currentWeekKey, "2026-10-05")
+        XCTAssertEqual(document.calendar.firstWeekday, 2)
+        let current = try XCTUnwrap(document.week(for: today))
+        XCTAssertEqual(current.list(on: today)?.cards.first?.word, "2026-10-11 Sunday")
+        XCTAssertEqual(current.collection.savedCardIDs, Set(current.list(on: today)!.cards.map(\.id)))
+        XCTAssertEqual(current.collection.lists.first?.title, "Monday")
+        XCTAssertEqual(current.collection.lists[6].title, "Sunday")
+        let after = document.weeks.flatMap { $0.collection.lists.flatMap(\.allCards) }
+        XCTAssertEqual(Set(after.map(\.word)), Set(before.map(\.word)))
+        XCTAssertEqual(after.count, before.count)
+        XCTAssertEqual(Set(after.map(\.id)).count, after.count)
+        for original in before {
+            let migrated = try XCTUnwrap(after.first { $0.word == original.word })
+            XCTAssertEqual(migrated.descriptionOverride, original.descriptionOverride)
+            XCTAssertEqual(migrated.subtitleOverride, original.subtitleOverride)
+            XCTAssertEqual(migrated.sectionLayout, original.sectionLayout)
+            XCTAssertEqual(migrated.presentation, original.presentation)
+        }
+        for originalWeek in [first, second] {
+            for (dateKey, listID) in originalWeek.dayListIDs {
+                let date = try XCTUnwrap(PlanningDate.date(dateKey, calendar: sunday))
+                let oldList = try XCTUnwrap(originalWeek.collection.lists.first { $0.id == listID })
+                let newList = try XCTUnwrap(document.week(for: date)?.list(on: date))
+                XCTAssertEqual(newList.cards.map(\.word), oldList.cards.map(\.word))
+                XCTAssertEqual(newList.archivedCards.map(\.word), oldList.archivedCards.map(\.word))
+            }
+        }
+        let owner = try XCTUnwrap(document.weeks.first { $0.id == second.id })
+        XCTAssertEqual(document.checklistLinkWeeks?[link.id], current.id)
+        XCTAssertEqual(owner.startKey, "2026-10-12")
+        XCTAssertTrue(owner.collection.lists.contains { $0.title == "Undated extras" })
+        let ownerIndex = try XCTUnwrap(document.weeks.firstIndex { $0.id == owner.id })
+        let extrasIndex = try XCTUnwrap(document.weeks[ownerIndex].collection.lists.firstIndex { $0.title == "Undated extras" })
+        document.weeks[ownerIndex].collection.lists[extrasIndex].cards = [KanbanCard(id: 0, word: "Imported ID collision", listTitle: "Undated extras")]
+        try document.changeFirstWeekday(to: 1, now: today)
+        let reunited = try XCTUnwrap(document.week(for: today))
+        let monday = try XCTUnwrap(reunited.collection.lists.first { $0.title == "Monday" })
+        XCTAssertEqual(monday.cards.first?.checklists.first?.items.first?.content, .linkedCard(cardID: reunited.list(on: today)!.cards[0].id))
+        XCTAssertEqual(document.currentWeekKey, "2026-10-11")
+        XCTAssertNil(document.checklistLinkWeeks?[link.id])
+        XCTAssertEqual(document.week(for: today)?.list(on: today)?.cards.first?.word, "2026-10-11 Sunday")
+        let encoded = try JSONEncoder().encode(document)
+        XCTAssertEqual(try JSONDecoder().decode(PlanningCalendarDocument.self, from: encoded), document)
+        let unchanged = document
+        try document.changeFirstWeekday(to: 1, now: today)
+        XCTAssertEqual(document, unchanged)
+        XCTAssertThrowsError(try document.changeFirstWeekday(to: 4, now: today))
+        XCTAssertEqual(document, unchanged)
+    }
+
+    func testMondayWeekStartAcrossYearBoundaryAndStoredReload() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 1
+        let date = try XCTUnwrap(PlanningDate.date("2027-01-03", calendar: calendar))
+        let week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        var document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 1, weeks: [week])
+        try document.changeFirstWeekday(to: 2, now: date)
+        XCTAssertEqual(document.currentWeekKey, "2026-12-28")
+        XCTAssertEqual(document.week(for: date)?.collection.lists.first?.title, "Monday")
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: UUID().uuidString))
+        defer { defaults.removeObject(forKey: PlanningCalendarStore.key) }
+        try PlanningCalendarStore.save(document, to: defaults)
+        XCTAssertEqual(try PlanningCalendarStore.load(from: defaults), document)
+        let next = document.rollForward(to: try XCTUnwrap(PlanningDate.date("2027-01-04", calendar: calendar)), currentLists: document.week(for: date)!.collection.lists, saved: [])
+        XCTAssertEqual(next.startKey, "2027-01-04")
+        XCTAssertEqual(next.collection.lists.first?.title, "Monday")
+    }
+
 
     @MainActor
     func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws {

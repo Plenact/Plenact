@@ -606,6 +606,7 @@ private struct AppRootView: View {
         .environment(\.workspaceBottomBarHeight, verticalSizeClass == .compact ? 52 : 74)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
+        .environment(\.calendar, calendarDocument?.calendar ?? .current)
 
         .onChange(of: savedCardIDs) { _, updatedIDs in
             SavedCardPersistence.save(updatedIDs)
@@ -662,7 +663,35 @@ private struct AppRootView: View {
                 var snapshot = collections; snapshot[index] = collection
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
                 catch { DatabaseActivity.shared.report("Could not save this Library collection: \(error.localizedDescription)"); return false }
-            })
+            }, setFirstWeekday: setPlanningFirstWeekday)
+    }
+
+    private func setPlanningFirstWeekday(_ weekday: Int) -> Bool {
+        guard let previous = calendarDocument else { return false }
+        guard previous.firstWeekday != weekday else { return true }
+        var updated = previous
+        if var current = updated.weeks.first(where: { $0.startKey == updated.currentWeekKey }) {
+            current.collection.lists = lists
+            current.collection.savedCardIDs = savedCardIDs
+            updated.upsert(current)
+        }
+        do {
+            try updated.changeFirstWeekday(to: weekday)
+            let current = updated.weeks.first { $0.startKey == updated.currentWeekKey }!
+            try PlanningCalendarStore.save(updated)
+            do { try KanbanBoardPersistence.saveListsChecked(current.collection.lists) }
+            catch { try PlanningCalendarStore.save(previous); throw error }
+            calendarDocument = updated
+            lists = current.collection.lists
+            savedCardIDs = current.collection.savedCardIDs
+            SavedCardPersistence.save(savedCardIDs)
+            boardTargetListID = nil; boardTargetCardID = nil
+            weekRootRequest += 1
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not change the start of the week: \(error.localizedDescription) Your plans have been retained.")
+            return false
+        }
     }
 
     private func persistCurrentPlanningWeek() {

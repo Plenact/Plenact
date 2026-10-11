@@ -3778,6 +3778,7 @@ struct ChecklistBlock: View {
                 ChecklistItemRow(
                     item:           entry.element.title,
                     isCompleted:    checklist.completedItemIndices.contains(entry.offset),
+                    planningLinkID: entry.element.id,
                     linkedCardID:   cardID,
                     linkedCard:     linkedCardsByID[cardID],
                     onToggle:       { onToggleItem(entry.offset) },
@@ -3973,6 +3974,8 @@ struct ChecklistBlock: View {
 ///     Provide reliable physical-device swipe behavior inside the card's custom ScrollView layout
 ///
 struct ChecklistItemRow: View {
+    @Environment(\.planningCalendarAccess) private var planningAccess
+    let planningLinkID: UUID?
 
     let item: String                  /* The editable item text                                        */
     let isCompleted: Bool             /* The current completion state                                  */
@@ -4012,6 +4015,7 @@ struct ChecklistItemRow: View {
     init(
         item: String,
         isCompleted: Bool,
+        planningLinkID: UUID? = nil,
         linkedCardID: Int? = nil,
         linkedCard: KanbanCard? = nil,
         onOpenDetail: (() -> Void)? = nil,
@@ -4024,6 +4028,7 @@ struct ChecklistItemRow: View {
 
         self.item           = item
         self.isCompleted    = isCompleted
+        self.planningLinkID = planningLinkID
         self.linkedCardID   = linkedCardID
         self.linkedCard     = linkedCard
         self.onOpenDetail   = onOpenDetail
@@ -4077,7 +4082,9 @@ struct ChecklistItemRow: View {
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
 
                 if let linkedCardID {
-                    if let linkedCard {
+                    if let planningLinkID, planningAccess?.document.checklistLinkWeeks?[planningLinkID] != nil {
+                        PlanningChecklistLink(itemID: planningLinkID, cardID: linkedCardID, title: item)
+                    } else if let linkedCard {
                         NavigationLink(value: linkedCard) {
                             Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
                         }

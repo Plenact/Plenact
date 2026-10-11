@@ -102,6 +102,7 @@ struct PlanningCalendarDocument: Hashable, Codable {
     var currentWeekKey: String
     var firstWeekday: Int = Calendar.current.firstWeekday
     var weeks: [DatedPlanningWeek]
+    var checklistLinkWeeks: [UUID: UUID]? = nil
     var calendar: Calendar {
         var value = Calendar.current
         value.firstWeekday = firstWeekday
@@ -128,6 +129,130 @@ struct PlanningCalendarDocument: Hashable, Codable {
         upsert(next)
         currentWeekKey = key
         return next
+    }
+}
+
+
+extension PlanningCalendarDocument {
+    /// Repartition dated lists without changing their dates or dropping archived content.
+    /// Undated lists and board appearance stay with the middle of their original week.
+    mutating func changeFirstWeekday(to weekday: Int, now: Date = .now) throws {
+        guard weekday == 1 || weekday == 2 else { throw CocoaError(.validationMissingMandatoryProperty) }
+        guard weekday != firstWeekday else { return }
+        let oldCalendar = calendar
+        var newCalendar = calendar
+        newCalendar.firstWeekday = weekday
+        let sources = weeks.sorted {
+            if ($0.startKey == currentWeekKey) != ($1.startKey == currentWeekKey) { return $0.startKey == currentWeekKey }
+            return $0.startKey < $1.startKey
+        }
+        var rebuilt: [String: DatedPlanningWeek] = [:]
+        var cardIDs: [UUID: [Int: Int]] = [:]
+        var usedCardIDs = Set<Int>()
+        var nextCardID = (weeks.flatMap { $0.collection.lists.flatMap(\.allCards) }.map(\.id).max() ?? -1) + 1
+        // Globally distinct IDs prevent a link from resolving to an unrelated card after a split.
+        for source in sources {
+            var mapping: [Int: Int] = [:]
+            for card in source.collection.lists.flatMap(\.allCards) {
+                let id: Int
+                if usedCardIDs.insert(card.id).inserted { id = card.id }
+                else { id = nextCardID; nextCardID += 1; usedCardIDs.insert(id) }
+                mapping[card.id] = id
+            }
+            cardIDs[source.id] = mapping
+            guard let middle = PlanningDate.days(in: source.startKey, calendar: oldCalendar).dropFirst(3).first else {
+                throw CocoaError(.coderReadCorrupt)
+            }
+            let key = PlanningDate.weekKey(middle, calendar: newCalendar)
+            var retained = source
+            retained.startKey = key
+            retained.collection.title = "Week of \(key)"
+            retained.collection.lists = []
+            retained.collection.savedCardIDs = []
+            retained.dayListIDs = [:]
+            rebuilt[key] = retained
+        }
+        for source in sources {
+            let middle = PlanningDate.days(in: source.startKey, calendar: oldCalendar)[3]
+            let ownerKey = PlanningDate.weekKey(middle, calendar: newCalendar)
+            for list in source.collection.lists {
+                let dateKey = source.dayListIDs.first { $0.value == list.id }?.key
+                let date = dateKey.flatMap { PlanningDate.date($0, calendar: oldCalendar) }
+                let key = date.map { PlanningDate.weekKey($0, calendar: newCalendar) } ?? ownerKey
+                var target = rebuilt[key] ?? DatedPlanningWeek.make(for: date ?? middle, calendar: newCalendar)
+                // A new boundary week starts empty; weekday panels are filled after migration.
+                if rebuilt[key] == nil { target.collection.lists = []; target.dayListIDs = [:] }
+                let occupied = Set(target.collection.lists.map(\.id))
+                let listID = occupied.contains(list.id) ? (occupied.max() ?? -1) + 1 : list.id
+                let mapping = cardIDs[source.id]!
+                func relocated(_ card: KanbanCard) -> KanbanCard {
+                    var result = card.replacingLocation(id: mapping[card.id]!, listTitle: list.title)
+                    result.checklists = card.checklists.map { checklist in
+                        let items = checklist.items.map { item in
+                            var item = item
+                            if case .linkedCard(let id) = item.content {
+                                let owner = checklistLinkWeeks?[item.id] ?? source.id
+                                if let replacement = cardIDs[owner]?[id] {
+                                    item.content = .linkedCard(cardID: replacement)
+                                }
+                            }
+                            return item
+                        }
+                        return KanbanChecklist(id: checklist.id, title: checklist.title, items: items,
+                                               completedItemIndices: checklist.completedItemIndices)
+                    }
+                    return result
+                }
+                var moved = KanbanList(id: listID, title: list.title, cards: list.cards.map(relocated),
+                    archivedCards: list.archivedCards.map(relocated), newItemPresentation: list.newItemPresentation)
+                moved.subtitleOverride = list.subtitleOverride
+                moved.appearance = list.appearance
+                moved.isArchived = list.isArchived
+                target.collection.lists.append(moved)
+                for card in list.allCards where source.collection.savedCardIDs.contains(card.id) {
+                    target.collection.savedCardIDs.insert(mapping[card.id]!)
+                }
+                if let dateKey { target.dayListIDs[dateKey] = listID }
+                rebuilt[key] = target
+            }
+        }
+        let currentKey = PlanningDate.weekKey(now, calendar: newCalendar)
+        if rebuilt[currentKey] == nil { rebuilt[currentKey] = DatedPlanningWeek.make(for: now, calendar: newCalendar) }
+        for key in Array(rebuilt.keys) {
+            var week = rebuilt[key]!
+            for date in PlanningDate.days(in: key, calendar: newCalendar) where week.dayListIDs[PlanningDate.key(date)] == nil {
+                _ = week.prepareDay(date)
+            }
+            let datesByID = Dictionary(uniqueKeysWithValues: week.dayListIDs.map { ($0.value, $0.key) })
+            week.collection.lists = week.collection.lists.enumerated().sorted { lhs, rhs in
+                switch (datesByID[lhs.element.id], datesByID[rhs.element.id]) {
+                case let (left?, right?): return left < right
+                case (_?, nil): return true
+                case (nil, _?): return false
+                default: return lhs.offset < rhs.offset
+                }
+            }.map(\.element)
+            rebuilt[key] = week
+        }
+        // Keep checklist links navigable when their two dated lists now belong to different weeks.
+        let cardOwners = Dictionary(uniqueKeysWithValues: rebuilt.values.flatMap { week in
+            week.collection.lists.flatMap(\.allCards).map { ($0.id, week.id) }
+        })
+        var linkWeeks: [UUID: UUID] = [:]
+        for week in rebuilt.values {
+            for card in week.collection.lists.flatMap(\.allCards) {
+                for item in card.checklists.flatMap(\.items) {
+                    if case .linkedCard(let cardID) = item.content,
+                       let owner = cardOwners[cardID], owner != week.id {
+                        linkWeeks[item.id] = owner
+                    }
+                }
+            }
+        }
+        checklistLinkWeeks = linkWeeks.isEmpty ? nil : linkWeeks
+        firstWeekday = weekday
+        currentWeekKey = currentKey
+        weeks = rebuilt.values.sorted { $0.startKey < $1.startKey }
     }
 }
 
@@ -168,6 +293,7 @@ struct PlanningCalendarAccess {
     var openToday: () -> Void
     var openLibraryCard: (PersonalSavedCardTarget) -> Void
     var saveLibrary: (PersonalCollection) -> Bool
+    var setFirstWeekday: (Int) -> Bool = { _ in false }
     var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
     var searchableItems: [PlanningSearchResult] {
         document.weeks.flatMap { week in
@@ -642,5 +768,33 @@ private struct PlanningSearchLibraryView: View {
             .onChange(of: access?.library) { _, library in
                 if let next = library?.first(where: { $0.id == collection.id }), next != collection { collection = next }
             }
+    }
+}
+
+/// Date-preserving week migration can separate two lists containing linked checklist cards.
+struct PlanningChecklistLink: View {
+    let itemID: UUID
+    let cardID: Int
+    let title: String
+    @Environment(\.planningCalendarAccess) private var access
+    @State private var showsCard = false
+    private var destination: (DatedPlanningWeek, Int)? {
+        guard let owner = access?.document.checklistLinkWeeks?[itemID],
+              let week = access?.document.weeks.first(where: { $0.id == owner }),
+              let list = week.collection.lists.first(where: { !$0.isArchived && $0.cards.contains { $0.id == cardID } }) else { return nil }
+        return (week, list.id)
+    }
+    var body: some View {
+        Button { showsCard = true } label: {
+            Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(destination == nil)
+        .accessibilityLabel("Open linked card: \(title)")
+        .fullScreenCover(isPresented: $showsCard) {
+            if let (week, listID) = destination {
+                PlanningCalendarWeekView(week: week, initialDayID: listID, initialCardID: cardID, onLeaveForHome: { showsCard = false })
+            }
+        }
     }
 }

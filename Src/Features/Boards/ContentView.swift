@@ -5271,7 +5271,15 @@ struct KanbanCardView: View {
 
         if displaySettings.showDueDateBadges, let badge = card.dueDateBadge(on: listedOnDate) {
 
-            Label(badge.label, systemImage: badge.systemImage)
+            if badge.systemImage == "clock" {
+                Label(badge.label, systemImage: badge.systemImage)
+                    .foregroundStyle(Color(red: 0.25, green: 0.60, blue: 0.90))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color(red: 0.90, green: 0.96, blue: 1.0), in: RoundedRectangle(cornerRadius: 5))
+            } else {
+                Label(badge.label, systemImage: badge.systemImage)
+            }
         }
     }
 }

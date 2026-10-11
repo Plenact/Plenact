@@ -331,6 +331,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     var defaultListID:       Int?   /* Preferred Today list   */
     var usesReducedContent:  Bool   /* Hide supporting copy   */
     var usesLargeControls:   Bool   /* Use taller key actions */
+    var showsDueDatesOnNewCards: Bool
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
 
 
@@ -344,6 +345,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         case defaultListID
         case usesReducedContent
         case usesLargeControls
+        case showsDueDatesOnNewCards
         case showsNavigationLabels
     }
 
@@ -366,13 +368,15 @@ struct LocalProfilePreferences: Hashable, Codable {
         defaultListID: Int? = nil,
         usesReducedContent: Bool = false,
         usesLargeControls: Bool = false,
-        showsNavigationLabels: Bool = true
+        showsNavigationLabels: Bool = true,
+        showsDueDatesOnNewCards: Bool = true
     ) {
 
         self.defaultListID      = defaultListID
         self.usesReducedContent = usesReducedContent
         self.usesLargeControls  = usesLargeControls
         self.showsNavigationLabels = showsNavigationLabels
+        self.showsDueDatesOnNewCards = showsDueDatesOnNewCards
     }
 
 
@@ -398,7 +402,8 @@ struct LocalProfilePreferences: Hashable, Codable {
             defaultListID:         try container.decodeIfPresent(Int.self, forKey: .defaultListID),
             usesReducedContent:    try container.decodeIfPresent(Bool.self, forKey: .usesReducedContent) ?? false,
             usesLargeControls:     try container.decodeIfPresent(Bool.self, forKey: .usesLargeControls) ?? false,
-            showsNavigationLabels: try container.decodeIfPresent(Bool.self, forKey: .showsNavigationLabels) ?? true
+            showsNavigationLabels: try container.decodeIfPresent(Bool.self, forKey: .showsNavigationLabels) ?? true,
+            showsDueDatesOnNewCards: try container.decodeIfPresent(Bool.self, forKey: .showsDueDatesOnNewCards) ?? true
         )
     }
 }

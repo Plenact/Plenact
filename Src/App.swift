@@ -5411,8 +5411,8 @@ struct TodayCalendarView: View {
                     return nil
                 }
 
-                let starts = card.startDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false /* Start date marker */
-                let due = card.dueDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false /* Due date marker */
+                let starts = card.startDateKind.includesDate && (card.startDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false) /* Start date marker */
+                let due = card.dueDateKind.includesDate && (card.dueDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false) /* Due date marker */
 
                 guard starts || due else {
 

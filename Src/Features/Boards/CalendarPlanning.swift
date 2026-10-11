@@ -369,7 +369,7 @@ struct PlanningCalendarView: View {
         let plannedID = plannedWeek.list(on: date)?.id
         return access.searchableItems.filter { item in
             let planned = item.weekKey == plannedWeek.startKey && item.listID == plannedID
-            let scheduled = [item.card.startDate, item.card.dueDate].compactMap { $0 }.contains {
+            let scheduled = [item.card.startDateKind.includesDate ? item.card.startDate : nil, item.card.dueDateKind.includesDate ? item.card.dueDate : nil].compactMap { $0 }.contains {
                 Calendar.current.isDate($0, inSameDayAs: date)
             }
             return planned || scheduled

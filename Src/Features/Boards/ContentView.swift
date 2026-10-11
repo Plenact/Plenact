@@ -2481,6 +2481,7 @@ struct ContentView: View {
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
                                             },
+                                            assignedDate: dayDate(for: list.id),
                                             datedTitle: dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) }
                                         )
                                         .frame(
@@ -3780,6 +3781,7 @@ struct KanbanListView: View {
     @State private var opensDayAfterDismissal = false
     var boardAppearance: BoardAppearance = BoardAppearance()
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    var assignedDate: Date? = nil
     var datedTitle: String? = nil
 
     private var styledListTitle: AttributedString {
@@ -4078,6 +4080,7 @@ struct KanbanListView: View {
                                     height:          cardHeight,
                                     displaySettings: displaySettings,
                                     cardBackground:  boardAppearance.cardBackground,
+                                    listedOnDate:    assignedDate,
                                     presentation:    presentation,
                                     labelLibrary:    labelLibrary,
                                     onUpdateCard:    onUpdateCard,
@@ -4889,6 +4892,7 @@ struct KanbanCardView: View {
     let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
     var cardBackground: KanbanListTint? = nil /* Board-scoped tint, independent of item banner metadata */
+    var listedOnDate: Date? = nil // Assigned day from the list, independent of its editable title.
     /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard /* Board layout controlling the card row's density */
     let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
@@ -4973,7 +4977,10 @@ struct KanbanCardView: View {
             createdAt:            card.createdAt,
             appearance:           card.appearance,
             listDisplayFormat:    card.listDisplayFormat,
-                sectionLayout:        card.sectionLayout
+                sectionLayout:        card.sectionLayout,
+            showsDueDateInList:    card.showsDueDateInList,
+            startDateKind:         card.startDateKind,
+            dueDateKind:           card.dueDateKind
         )
     }
 
@@ -5013,8 +5020,7 @@ struct KanbanCardView: View {
     ///
     /// @return     (some View) card summary with alerts and information-editor presentation
     /// @post       All card mutations delegate to parent callbacks; local state controls presentations only
-    /// @note       The due-date badge uses the existing Today label whenever hasDueDate is true;
-    ///             this row does not compare the due date with the current calendar day
+    /// @note       Due-date badges require a stored date and this card's saved visibility setting
     ///
     var body: some View { /* Compact card summary and card actions */
 
@@ -5194,6 +5200,13 @@ struct KanbanCardView: View {
         Menu {
             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
             CardDestinationMenu(card: card)
+            if !card.isSectionDivider {
+                Toggle("Show due date in lists", isOn: Binding(get: { card.showsDueDateInList }, set: { visible in
+                    var updated = card
+                    updated.showsDueDateInList = visible
+                    onUpdateCard(updated)
+                }))
+            }
 
             if card.coverAttachmentID != nil {
 
@@ -5256,9 +5269,9 @@ struct KanbanCardView: View {
             Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
         }
 
-        if displaySettings.showDueDateBadges && card.hasDueDate {
+        if displaySettings.showDueDateBadges, let badge = card.dueDateBadge(on: listedOnDate) {
 
-            Label("Today", systemImage: "calendar")
+            Label(badge.label, systemImage: badge.systemImage)
         }
     }
 }
@@ -5599,6 +5612,7 @@ struct TodayListDetailView: View {
                                         height:          BoardPresentation.standard.minimumCardHeight,
                                         displaySettings: BoardDisplaySettings(),
                                         cardBackground:  effectiveBoardAppearance.cardBackground,
+                                        listedOnDate:    representedDate,
                                         labelLibrary:    labelLibrary,
                                         onUpdateCard:    updateCard,
                                         onDeleteCard:    { deleteCard(card.id) },

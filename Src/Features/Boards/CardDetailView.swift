@@ -50,6 +50,9 @@ enum ChecklistMoveDirection {
 ///
 struct CardDetailView: View {
     @State private var isActivityCollapsed = false
+    @State private var startDateKind: CardDateKind
+    @State private var dueDateKind: CardDateKind
+    @State private var showsDueDateInList: Bool
     @State private var sectionLayout: CardSectionLayout
     @State private var showsLayoutEditor = false
     @Environment(\.workspaceBottomBarHeight) private var workspaceBottomBarHeight
@@ -415,6 +418,9 @@ struct CardDetailView: View {
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
         _sectionLayout = State(initialValue: card.sectionLayout ?? CardSectionLayout())
+        _showsDueDateInList = State(initialValue: card.showsDueDateInList)
+        _startDateKind = State(initialValue: card.startDateKind)
+        _dueDateKind = State(initialValue: card.dueDateKind)
         _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
         _presentation         = State(initialValue: [.note, .title, .text].contains(card.displayFormat) ? .note : .card)
         _displayFormat        = State(initialValue: card.displayFormat)
@@ -1088,6 +1094,9 @@ struct CardDetailView: View {
         updated.isTitleChecked = titleChecked
         updated.startDate = startDate
         updated.dueDate = dueDate
+        updated.showsDueDateInList = showsDueDateInList
+        updated.startDateKind = startDateKind
+        updated.dueDateKind = dueDateKind
         updated.members = members
         updated.labelIDs = selectedLabelIDs
         updated.attachments = attachments.isEmpty && card.attachments == nil ? nil : attachments
@@ -1287,63 +1296,24 @@ struct CardDetailView: View {
     /// @post       The other date is preserved and the active sheet is closed
     ///
     private func resetDate(for field: DateField) {
-
-        switch field {
-
-            case .start:
-                startDate = nil
-                syncCardState(clearStartDate: true)
-            case .due:
-                dueDate = nil
-                syncCardState(clearDueDate: true)
-        }
-
-        activeSheet = nil
+        if saveDate(nil, kind: .date, for: field) { activeSheet = nil }
     }
 
-
-    ///
-    /// @fcn        CardDetailView.dateBinding(for:)
-    /// @brief      Create a binding for the selected card date
-    /// @details    Updates the local date and parent card state, then dismisses the calendar sheet
-    ///
-    /// @param[in]  field  The card date field being edited
-    ///
-    /// @return     (Binding<Date>) binding that updates and dismisses on selection
-    ///
-    /// @post       Constructing the binding does not write; an unset getter returns the current
-    ///             time. Setter writes local date state, submits it, and closes the active sheet
-    ///
-    private func dateBinding(for field: DateField) -> Binding<Date> {
-
-        Binding(
-            get: {
-
-                switch field {
-
-                    case .start:
-                        return startDate ?? Date()
-
-                    case .due:
-                        return dueDate ?? Date()
-                }
-            },
-            set: { newValue in
-
-                switch field {
-
-                    case .start:
-                        startDate = newValue
-                        syncCardState(startDate: newValue)
-
-                    case .due:
-                        dueDate = newValue
-                        syncCardState(dueDate: newValue)
-                }
-
-                activeSheet = nil
-            }
-        )
+    /// Commit date value and kind together; failed persistence retains the original selection.
+    private func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool {
+        let previousStart = startDate, previousDue = dueDate
+        let previousStartKind = startDateKind, previousDueKind = dueDateKind
+        let normalized = value.map { kind.normalized($0) }
+        switch field {
+        case .start: startDate = normalized; startDateKind = value == nil ? .date : kind
+        case .due: dueDate = normalized; dueDateKind = value == nil ? .date : kind
+        }
+        guard syncCardState(clearStartDate: field == .start && value == nil, clearDueDate: field == .due && value == nil) else {
+            startDate = previousStart; dueDate = previousDue
+            startDateKind = previousStartKind; dueDateKind = previousDueKind
+            return false
+        }
+        return true
     }
 
 
@@ -1504,7 +1474,8 @@ struct CardDetailView: View {
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
         let iconName    = field == .start ? "calendar" : "calendar.badge.clock" /* Symbol for this date field */
 
-        let dateLabel = currentDate.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "Add date" /* Button label */
+        let kind = field == .start ? startDateKind : dueDateKind
+        let dateLabel = currentDate.map { kind.label(for: $0) } ?? "Add date" /* Button label */
         let fieldName = field.title.lowercased() /* Accessibility label value */
 
         let row = HStack(alignment: .center) { /* Shared date-row presentation */
@@ -2733,6 +2704,13 @@ struct CardDetailView: View {
 
                     }
                     Menu {
+                        if displayFormat != .divider {
+                            Toggle("Show due date in lists", isOn: Binding(get: { showsDueDateInList }, set: { visible in
+                                let previous = showsDueDateInList
+                                showsDueDateInList = visible
+                                if !syncCardState() { showsDueDateInList = previous }
+                            }))
+                        }
                         if presentation == .card && displayFormat != .divider {
                             Button("Layout", systemImage: "rectangle.3.group") { showsLayoutEditor = true }
                         }
@@ -2865,33 +2843,12 @@ struct CardDetailView: View {
             switch sheet {
 
                 case .date(let field): /* Date field selected for editing */
-                    NavigationStack {
-                        DatePicker(
-                            field.title,
-                            selection:           dateBinding(for: field),
-                            displayedComponents: [.date]
-                        )
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
-                        .padding()
-                        .navigationTitle(field.title)
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button("Reset") {
-                                    resetDate(for: field)
-                                }
-                            }
-
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Done") {
-                                    activeSheet = nil
-                                }
-                            }
-                        }
+                    CardDateEditorSheet(title: field.title,
+                        date: field == .start ? startDate : dueDate,
+                        kind: field == .start ? startDateKind : dueDateKind) { value, kind in
+                        saveDate(value, kind: kind, for: field)
                     }
-
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.large])
                     .databaseActivityOverlay()
 
                 case .members:
@@ -4664,6 +4621,58 @@ struct ChecklistTextField: UIViewRepresentable {
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
             field.resignFirstResponder()
             return true
+        }
+    }
+}
+
+/// Date selection is a draft until Save, allowing calendar and clock controls to be adjusted together.
+struct CardDateEditorSheet: View {
+    let title: String
+    let hasExistingValue: Bool
+    let onSave: (Date?, CardDateKind) -> Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var date: Date
+    @State private var kind: CardDateKind
+    init(title: String, date: Date?, kind: CardDateKind, onSave: @escaping (Date?, CardDateKind) -> Bool) {
+        self.title = title
+        self.hasExistingValue = date != nil
+        self.onSave = onSave
+        _date = State(initialValue: date ?? .now)
+        _kind = State(initialValue: kind)
+    }
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Picker("Set", selection: $kind) {
+                        ForEach(CardDateKind.allCases) { kind in Text(kind.title).tag(kind) }
+                    }
+                    .pickerStyle(.segmented)
+                    if kind.includesDate {
+                        DatePicker("Date", selection: $date, displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                    }
+                    if kind.includesTime {
+                        DatePicker("Time", selection: $date, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.wheel)
+                            .environment(\.locale, Locale(identifier: "en_US_POSIX"))
+                            .frame(maxHeight: 180)
+                    }
+                    if hasExistingValue {
+                        Button("Remove", role: .destructive) {
+                            if onSave(nil, .date) { dismiss() }
+                        }
+                    }
+                }.padding()
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { if onSave(kind.normalized(date), kind) { dismiss() } }
+                }
+            }
         }
     }
 }

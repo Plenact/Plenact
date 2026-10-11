@@ -228,6 +228,7 @@ struct AccountSettingsView: View {
     @State private var defaultListID:       Int?                     /* Draft default list     */
     @State private var usesReducedContent:  Bool                     /* Draft content density  */
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
+    @State private var showsDueDatesOnNewCards: Bool
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false                  /* Whether the nested avatar picker is visible */
@@ -294,6 +295,7 @@ struct AccountSettingsView: View {
         _usesReducedContent = State(initialValue: preferences.usesReducedContent)
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
+        _showsDueDatesOnNewCards = State(initialValue: preferences.showsDueDatesOnNewCards)
     }
 
 
@@ -347,7 +349,8 @@ struct AccountSettingsView: View {
                 defaultListID:         defaultListID,
                 usesReducedContent:    usesReducedContent,
                 usesLargeControls:     usesLargeControls,
-                showsNavigationLabels: showsNavigationLabels
+                showsNavigationLabels: showsNavigationLabels,
+                showsDueDatesOnNewCards: showsDueDatesOnNewCards
             )
         )
 
@@ -464,6 +467,7 @@ struct AccountSettingsView: View {
                             firstWeekday = planningAccess?.document.firstWeekday ?? Calendar.current.firstWeekday
                             didLoadWeekStart = true
                         }
+                        Toggle("Show due dates on new cards", isOn: $showsDueDatesOnNewCards)
                         Picker("Default Today list", selection: $defaultListID) {
                             Text("Choose each day").tag(nil as Int?)
 
@@ -474,7 +478,7 @@ struct AccountSettingsView: View {
                     } header: {
                         Text("Planning")
                     } footer: {
-                        Text("The week start applies to Week view and Calendar. Existing plans keep their dates. The default Today list is used only when no list has been chosen for that date.")
+                        Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
                     }
 
                     Section {

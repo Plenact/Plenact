@@ -21,6 +21,138 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testDueBadgeOmitsOnlyTheOwningListsAssignedDay() throws {
+        let calendar = Calendar.current
+        let due = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 17, minute: 46)))
+        let sameDay = calendar.startOfDay(for: due)
+        let nextWeek = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: sameDay))
+        var card = KanbanCard(id: 0, word: "Task", listTitle: "Renamed list", dueDate: due,
+                             showsDueDateInList: true, dueDateKind: .date)
+        XCTAssertNil(card.dueDateBadge(on: sameDay))
+        XCTAssertEqual(card.dueDateBadge(on: nextWeek)?.label, card.dueDateLabel)
+        XCTAssertEqual(card.dueDateBadge(on: nil)?.systemImage, "calendar", "Undated Library lists retain the full date")
+        card.dueDateKind = .dateAndTime
+        XCTAssertEqual(card.dueDateBadge(on: sameDay)?.label, "5:46 PM")
+        XCTAssertEqual(card.dueDateBadge(on: sameDay)?.systemImage, "clock")
+        XCTAssertEqual(card.dueDateBadge(on: nextWeek)?.label, card.dueDateLabel)
+        XCTAssertEqual(card.dueDateBadge(on: nextWeek)?.systemImage, "calendar")
+        XCTAssertEqual(card.dueDateKind, .dateAndTime, "Compact rendering must retain the saved type")
+        XCTAssertEqual(card.dueDate, due)
+        card.dueDateKind = .time
+        XCTAssertEqual(card.dueDateBadge(on: nil)?.label, "5:46 PM")
+        XCTAssertEqual(card.dueDateBadge(on: nextWeek)?.systemImage, "clock")
+        card.showsDueDateInList = false
+        XCTAssertNil(card.dueDateBadge(on: sameDay))
+        card.showsDueDateInList = true
+        card.dueDate = nil
+        XCTAssertNil(card.dueDateBadge(on: nil))
+    }
+
+    func testCardDateKindsPersistAndCopyWithoutInventingDates() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 13, hour: 20, minute: 45)))
+        for kind in CardDateKind.allCases {
+            var card = KanbanCard(id: 1, word: "Scheduled", listTitle: "Monday", startDate: date, dueDate: date,
+                                 showsDueDateInList: true, startDateKind: kind, dueDateKind: kind)
+            let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+            XCTAssertEqual(decoded.startDateKind, kind)
+            XCTAssertEqual(decoded.dueDateKind, kind)
+            XCTAssertEqual(decoded.startDate, date)
+            XCTAssertEqual(decoded.dueDate, date)
+            if kind.includesTime {
+                XCTAssertTrue(decoded.startDateLabel.contains("8:45 PM"))
+                XCTAssertTrue(decoded.listDueDateLabel?.contains("8:45 PM") ?? false)
+            } else { XCTAssertFalse(decoded.dueDateLabel.contains("PM")) }
+            let relocated = decoded.replacingLocation(id: 20, listTitle: "Thursday")
+            XCTAssertEqual(relocated.startDateKind, kind)
+            XCTAssertEqual(relocated.dueDateKind, kind)
+            let list = KanbanList(id: 0, title: "Monday", cards: [decoded])
+            let copied = ListCopying.copy(list, into: [list], crossBoard: true).cards[0]
+            XCTAssertEqual(copied.startDateKind, kind)
+            XCTAssertEqual(copied.dueDateKind, kind)
+            card.dueDate = nil
+            XCTAssertNil(card.listDueDateLabel)
+            card.startDate = nil
+            XCTAssertEqual(card.startDateLabel, "")
+        }
+        XCTAssertEqual(calendar.component(.hour, from: CardDateKind.date.normalized(date, calendar: calendar)), 0)
+        XCTAssertEqual(calendar.component(.minute, from: CardDateKind.date.normalized(date, calendar: calendar)), 0)
+        XCTAssertEqual(CardDateKind.dateAndTime.normalized(date, calendar: calendar), date)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(KanbanCard(id: 0, word: "Legacy", listTitle: "Monday", dueDate: date))) as? [String: Any])
+        legacy.removeValue(forKey: "startDateKind"); legacy.removeValue(forKey: "dueDateKind")
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertEqual(decoded.startDateKind, .date)
+        XCTAssertEqual(decoded.dueDateKind, .date)
+        XCTAssertFalse(decoded.dueDateLabel.contains("PM"))
+    }
+
+    @MainActor
+    func testDateTimeEditorOpeningDoesNotSaveDraft() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        var saves = 0
+        let host = UIHostingController(rootView: CardDateEditorSheet(title: "Due date", date: nil, kind: .dateAndTime) { _, _ in saves += 1; return true })
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(saves, 0, "Opening a date draft must not create a stored date")
+        XCTAssertGreaterThan(host.view.bounds.height, 0)
+    }
+
+    func testDueDateVisibilityRequiresAStoredDateAndPreservesCardPreference() throws {
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        var card = KanbanCard(id: 1, word: "Due date", listTitle: "Monday", dueDate: date, showsDueDateInList: true)
+        XCTAssertTrue(card.hasDueDate, "Date presence must not depend on the sample card ID")
+        XCTAssertEqual(card.listDueDateLabel, card.dueDateLabel)
+        XCTAssertNotEqual(card.listDueDateLabel, "Today")
+        card.showsDueDateInList = false
+        XCTAssertNil(card.listDueDateLabel)
+        XCTAssertEqual(card.dueDate, date, "Hiding the badge must retain the due date")
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertFalse(restored.showsDueDateInList)
+        XCTAssertEqual(restored.dueDate, date)
+        XCTAssertFalse(restored.replacingLocation(id: 50, listTitle: "Friday").showsDueDateInList)
+        let source = KanbanList(id: 0, title: "Monday", cards: [restored])
+        XCTAssertFalse(ListCopying.copy(source, into: [source], crossBoard: true).cards[0].showsDueDateInList)
+        card.dueDate = nil
+        card.showsDueDateInList = true
+        XCTAssertFalse(card.hasDueDate)
+        XCTAssertNil(card.listDueDateLabel)
+        XCTAssertEqual(card.dueDateLabel, "")
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(restored)) as? [String: Any])
+        legacy.removeValue(forKey: "showsDueDateInList")
+        let decodedLegacy = try JSONDecoder().decode(KanbanCard.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertTrue(decodedLegacy.showsDueDateInList)
+        XCTAssertEqual(decodedLegacy.listDueDateLabel, restored.dueDateLabel)
+    }
+
+    func testNewCardDueDateDefaultPreferencesPersistAndLegacyDefaultsToTrue() throws {
+        let suite = UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertTrue(KanbanCard.defaultDueDateVisibility(from: defaults))
+        var profile = LocalProfile(displayName: "Synthetic")
+        XCTAssertTrue(profile.preferences.showsDueDatesOnNewCards)
+        profile.preferences.showsDueDatesOnNewCards = false
+        LocalProfileStore.save(profile, to: defaults)
+        XCTAssertFalse(KanbanCard.defaultDueDateVisibility(from: defaults))
+        XCTAssertFalse(try XCTUnwrap(LocalProfileStore.load(from: defaults)).preferences.showsDueDatesOnNewCards)
+        let explicit = KanbanCard(id: 1, word: "Override", listTitle: "Monday", showsDueDateInList: true)
+        XCTAssertTrue(explicit.showsDueDateInList)
+        profile.preferences.showsDueDatesOnNewCards = true
+        LocalProfileStore.save(profile, to: defaults)
+        XCTAssertTrue(KanbanCard.defaultDueDateVisibility(from: defaults))
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(profile.preferences)) as? [String: Any])
+        legacy.removeValue(forKey: "showsDueDatesOnNewCards")
+        let decoded = try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertTrue(decoded.showsDueDatesOnNewCards)
+    }
+
     @MainActor
     func testCardCommentComposerKeepsKeyboardFocusWhileTyping() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

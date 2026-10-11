@@ -266,6 +266,31 @@ struct ItemAppearance: Hashable, Codable, Sendable {
 ///
 /// @note   Derived values are deterministic so the board and previews remain reproducible
 ///
+enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable {
+    case date, time, dateAndTime
+    var id: String { rawValue }
+    var title: String {
+        switch self { case .date: "Date only"; case .time: "Time only"; case .dateAndTime: "Date & time" }
+    }
+    var includesDate: Bool { self != .time }
+    var includesTime: Bool { self != .date }
+    func normalized(_ value: Date, calendar: Calendar = .current) -> Date {
+        self == .date ? calendar.startOfDay(for: value) : value
+    }
+    func label(for value: Date) -> String {
+        let date = DateFormatter()
+        date.dateStyle = .medium
+        let time = DateFormatter()
+        time.locale = Locale(identifier: "en_US_POSIX")
+        time.dateFormat = "h:mm a"
+        switch self {
+        case .date: return date.string(from: value)
+        case .time: return time.string(from: value)
+        case .dateAndTime: return date.string(from: value) + " • " + time.string(from: value)
+        }
+    }
+}
+
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     let id:                   Int                 /* Stable numeric identifier for the card             */
@@ -280,6 +305,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var dueDate:              Date?               /* Optional due date for the card                     */
     let createdAt:            Date?               /* Unknown for records created before timestamp support */
     var descriptionOverride:  String?             /* Optional user-edited description                   */
+    var startDateKind: CardDateKind
+    var dueDateKind: CardDateKind
+    var showsDueDateInList: Bool
     var sectionLayout: CardSectionLayout?
     var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
 
@@ -350,7 +378,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             createdAt:            createdAt,
             appearance:           appearance,
             listDisplayFormat:    listDisplayFormat,
-            sectionLayout:        sectionLayout
+            sectionLayout:        sectionLayout,
+            showsDueDateInList:    showsDueDateInList,
+            startDateKind:         startDateKind,
+            dueDateKind:           dueDateKind
         )
     }
 
@@ -561,7 +592,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date, dueDateKind: CardDateKind = .date) {
 
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
@@ -569,6 +600,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         self.isDivider            = isDivider               /* Whether this item renders as a section divider     */
         self.isTitleChecked       = isTitleChecked          /* Whether the card's main title checkbox is selected */
         self.startDate            = startDate               /* Optional start date for the card                   */
+        self.startDateKind = startDateKind
+        self.dueDateKind = dueDateKind
+        self.showsDueDateInList = showsDueDateInList ?? Self.defaultDueDateVisibility()
         self.dueDate              = dueDate                 /* Optional due date for the card                     */
         self.createdAt            = createdAt
         self.comments             = comments                /* Array of comments associated with the card         */
@@ -640,7 +674,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             createdAt:            try container.decodeIfPresent(Date.self, forKey: .createdAt),
             appearance:           try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance),
             listDisplayFormat:    try container.decodeIfPresent(ItemDisplayFormat.self, forKey: .listDisplayFormat),
-            sectionLayout:        try container.decodeIfPresent(CardSectionLayout.self, forKey: .sectionLayout)
+            sectionLayout:        try container.decodeIfPresent(CardSectionLayout.self, forKey: .sectionLayout),
+            showsDueDateInList:    try container.decodeIfPresent(Bool.self, forKey: .showsDueDateInList) ?? true,
+            startDateKind:         try container.decodeIfPresent(CardDateKind.self, forKey: .startDateKind) ?? .date,
+            dueDateKind:           try container.decodeIfPresent(CardDateKind.self, forKey: .dueDateKind) ?? .date
         )
     }
 
@@ -659,6 +696,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case isTitleChecked
         case startDate
         case dueDate
+        case showsDueDateInList
+        case startDateKind
+        case dueDateKind
         case createdAt
         case checklists
         case comments
@@ -689,10 +729,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
         guard let startDate else { /* No explicit start date */
 
-            return "Today"
+            return ""
         }
 
-        return Self.dateFormatter.string(from: startDate)
+        return startDateKind.label(for: startDate)
     }
 
     /// Human-readable label for the card's due date
@@ -708,10 +748,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
         guard let dueDate else { /* No explicit due date */
 
-            return "Tomorrow"
+            return ""
         }
 
-        return Self.dateFormatter.string(from: dueDate)
+        return dueDateKind.label(for: dueDate)
     }
 
     /// Shared formatter used to render card date labels
@@ -792,8 +832,24 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @return     (Bool) whether a due date is set
     /// @post       Card state is unchanged
     ///
-    var hasDueDate: Bool { /* Sample badge visibility for the card */
-        id % 3 != 1
+    var hasDueDate: Bool { dueDate != nil }
+
+    /// The badge is derived only from a stored due date and this card's saved display preference.
+    var listDueDateLabel: String? { showsDueDateInList && hasDueDate ? dueDateLabel : nil }
+
+    /// Omit a date already supplied by the owning list, while retaining any explicit time.
+    func dueDateBadge(on listDate: Date?, calendar: Calendar = .current) -> (label: String, systemImage: String)? {
+        guard showsDueDateInList, let dueDate else { return nil }
+        let matchesListDay = dueDateKind.includesDate && listDate.map { calendar.isDate(dueDate, inSameDayAs: $0) } == true
+        if matchesListDay || dueDateKind == .time {
+            guard dueDateKind.includesTime else { return nil }
+            return (CardDateKind.time.label(for: dueDate), "clock")
+        }
+        return (dueDateLabel, "calendar")
+    }
+
+    static func defaultDueDateVisibility(from defaults: UserDefaults = .standard) -> Bool {
+        LocalProfileStore.load(from: defaults)?.preferences.showsDueDatesOnNewCards ?? true
     }
 
     /// Humorous context paragraph shown in the card detail view

@@ -49,6 +49,7 @@ enum ChecklistMoveDirection {
 /// @note   The detail surface is intentionally scrollable so every card section remains accessible on iPhone
 ///
 struct CardDetailView: View {
+    @Environment(\.workspaceBottomBarHeight) private var workspaceBottomBarHeight
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
 
@@ -1175,7 +1176,7 @@ struct CardDetailView: View {
 
         let text = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment draft */
 
-        guard !text.isEmpty else {
+        guard !PlanRichText.plain(text).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 
             return
         }
@@ -2069,24 +2070,10 @@ struct CardDetailView: View {
             .itemBannerBackground(appearance)
             .padding(.horizontal, appearance?.background == nil ? 0 : -20)
 
-            TextField("Start writing...", text: descriptionEditingBinding, axis: .vertical)
-                .font(.body)
-                .lineSpacing(6)
-                .frame(minHeight: 280, alignment: .topLeading)
-                .focused($focusedField, equals: .description)
+            RichTextEditor(placeholder: "Start writing...", text: descriptionEditingBinding,
+                           focus: Binding(get: { focusedField == .description }, set: { focusedField = $0 ? .description : nil }), minimumHeight: 280)
                 .accessibilityLabel("Note body")
-                .onChange(of: descriptionText) {
-                    syncCardState()
-                }
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        if focusedField == .description || focusedField == .title {
-
-                            Spacer()
-                            Button("Done") { focusedField = nil }
-                        }
-                    }
-                }
+                .onChange(of: descriptionText) { syncCardState() }
 
             if let cover = workingCardSnapshot.coverAttachment {
                 selectedCoverPreview(cover)
@@ -2417,36 +2404,10 @@ struct CardDetailView: View {
 
                     DetailSection(title: "Description") {
 
-                        TextField("Description", text: descriptionEditingBinding, axis: .vertical)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .lineLimit(3...12)
-                            .focused($focusedField, equals: .description)
-                            .onTapGesture {
-                                focusedField = .description
-                            }
+                        RichTextEditor(placeholder: "Description", text: descriptionEditingBinding,
+                                       focus: Binding(get: { focusedField == .description }, set: { focusedField = $0 ? .description : nil }))
+                            .onChange(of: descriptionText) { syncCardState() }
 
-                            .onChange(of: descriptionText) {
-                                syncCardState()
-                            }
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    if focusedField == .description {
-
-                                        Spacer()
-                                        Button {
-                                            focusedField = nil
-                                        } label: {
-                                            Image(systemName: "chevron.down")
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .frame(width: 30, height: 30)
-                                        }
-
-                                        .foregroundStyle(.blue)
-                                    }
-                                }
-                            }
                     }
                     }
 
@@ -2629,11 +2590,10 @@ struct CardDetailView: View {
                             .font(.title2)
                             .foregroundStyle(memberIconColor(for: currentUserName))
 
-                        TextField("Comment...", text: $commentDraft, axis: .vertical)
-                            .lineLimit(1...4)
-                            .focused($focusedField, equals: .comment)
+                        RichTextEditor(placeholder: "Comment...", text: $commentDraft,
+                                       focus: Binding(get: { focusedField == .comment }, set: { focusedField = $0 ? .comment : nil }), minimumHeight: 24, verticalInset: 2)
                             .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 4)
                             .background(.background)
                             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
 
@@ -2642,7 +2602,7 @@ struct CardDetailView: View {
                                 .font(.body.weight(.semibold))
                         }
 
-                        .disabled(commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(PlanRichText.plain(commentDraft).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityLabel("Post comment")
                     }
 
@@ -2653,6 +2613,8 @@ struct CardDetailView: View {
             }
 
             .padding(.bottom, 12)
+            // Add scrollable clearance without shortening the visible card-detail viewport.
+            .contentMargins(.bottom, workspaceBottomBarHeight, for: .scrollContent)
             }
         }
 
@@ -3118,7 +3080,7 @@ private struct ChecklistActionDetailView: View {
 
         let trimmedDraft = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment */
 
-        guard !trimmedDraft.isEmpty else {
+        guard !PlanRichText.plain(trimmedDraft).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 
             return
         }
@@ -3143,8 +3105,7 @@ private struct ChecklistActionDetailView: View {
             Form {
 
                 Section("Description") {
-                    TextField("Description", text: $descriptionText, axis: .vertical)
-                        .lineLimit(3...8)
+                    RichTextEditor(placeholder: "Description", text: $descriptionText)
                 }
 
                 ForEach(checklists) { checklist in
@@ -3178,19 +3139,18 @@ private struct ChecklistActionDetailView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(comment.author)
                                 .font(.caption.weight(.semibold))
-                            Text(comment.body)
+                            Text(PlanRichText.display(comment.body))
                         }
                     }
 
                     HStack {
-                        TextField("Add comment", text: $commentDraft)
-                            .onSubmit(postComment)
+                        RichTextEditor(placeholder: "Add comment", text: $commentDraft, minimumHeight: 24, verticalInset: 2)
 
                         Button(action: postComment) {
                             Image(systemName: "paperplane.fill")
                         }
 
-                        .disabled(commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(PlanRichText.plain(commentDraft).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityLabel("Post action comment")
                     }
                 }
@@ -4185,7 +4145,7 @@ struct CommentActivityRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
 
-                    (Text(comment.author).fontWeight(.semibold) + Text(" ") + Text(comment.body))
+                    (Text(comment.author).fontWeight(.semibold) + Text(" ") + Text(PlanRichText.display(comment.body)))
                         .font(.subheadline)
 
                     Text(comment.createdAt.formatted(date: .abbreviated, time: .shortened))
@@ -4319,5 +4279,189 @@ struct ActivitySwipeRow<Content: View>: View {
     #Preview {
     NavigationStack {
         CardDetailView(card: SampleData.lists[0].cards[0])
+    }
+}
+
+// Rich text remains in the existing string fields, with a versioned, portable run representation.
+// Ordinary text stays ordinary text; legacy descriptions and comments need no migration.
+enum PlanRichText {
+    static let prefix = "plenact-rich-v1:"
+    struct Run: Codable, Equatable {
+        var text: String
+        var bold: Bool = false
+        var italic: Bool = false
+        var color: String? = nil
+    }
+    static let colors: [(String, UIColor)] = [
+        ("Default", .label), ("Blue", .systemBlue), ("Green", .systemGreen),
+        ("Orange", .systemOrange), ("Purple", .systemPurple), ("Red", .systemRed)
+    ]
+    static func runs(_ value: String) -> [Run]? {
+        guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))) else { return nil }
+        return try? JSONDecoder().decode([Run].self, from: data)
+    }
+    static func plain(_ value: String) -> String { runs(value)?.map(\.text).joined() ?? value }
+    static func attributed(_ value: String) -> NSAttributedString {
+        let result = NSMutableAttributedString(string: "")
+        for run in runs(value) ?? [Run(text: value)] {
+            var traits: UIFontDescriptor.SymbolicTraits = []
+            if run.bold { traits.insert(.traitBold) }
+            if run.italic { traits.insert(.traitItalic) }
+            let font = UIFont.preferredFont(forTextStyle: .body)
+            let styledFont = UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor, size: font.pointSize)
+            var attributes: [NSAttributedString.Key: Any] = [.font: styledFont, .foregroundColor: UIColor.label]
+            if let name = run.color, let color = colors.first(where: { $0.0 == name })?.1 {
+                attributes[.foregroundColor] = color
+                attributes[NSAttributedString.Key("PlenactColor")] = name
+            }
+            result.append(NSAttributedString(string: run.text, attributes: attributes))
+        }
+        return result
+    }
+    static func encode(_ value: NSAttributedString) -> String {
+        var runs: [Run] = []
+        value.enumerateAttributes(in: NSRange(location: 0, length: value.length)) { attributes, range, _ in
+            let traits = (attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits ?? []
+            runs.append(Run(text: (value.string as NSString).substring(with: range), bold: traits.contains(.traitBold),
+                            italic: traits.contains(.traitItalic), color: attributes[NSAttributedString.Key("PlenactColor")] as? String))
+        }
+        guard runs.contains(where: { $0.bold || $0.italic || $0.color != nil }), let data = try? JSONEncoder().encode(runs) else { return value.string }
+        return prefix + data.base64EncodedString()
+    }
+    static func display(_ value: String) -> AttributedString {
+        var result = AttributedString(plain(value))
+        if let runs = runs(value) {
+            result = AttributedString()
+            for run in runs {
+                var part = AttributedString(run.text)
+                var font = Font.body
+                if run.bold { font = font.bold() }
+                if run.italic { font = font.italic() }
+                part.font = font
+                if let name = run.color, let color = colors.first(where: { $0.0 == name })?.1 { part.foregroundColor = Color(uiColor: color) }
+                result.append(part)
+            }
+        }
+        return result
+    }
+}
+
+struct RichTextEditor: UIViewRepresentable {
+    let placeholder: String
+    @Binding var text: String
+    var focus: Binding<Bool>? = nil
+    var minimumHeight: CGFloat = 80
+    var verticalInset: CGFloat = 6
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView()
+        view.backgroundColor = .clear
+        view.isScrollEnabled = false
+        view.adjustsFontForContentSizeCategory = true
+        view.textContainerInset = UIEdgeInsets(top: verticalInset, left: 0, bottom: verticalInset, right: 0)
+        view.textContainer.lineFragmentPadding = 0
+        view.attributedText = PlanRichText.attributed(text)
+        view.typingAttributes = [.font: UIFont.preferredFont(forTextStyle: .body), .foregroundColor: UIColor.label]
+        view.accessibilityLabel = placeholder
+        view.delegate = context.coordinator
+        context.coordinator.view = view
+        let hint = UILabel()
+        hint.text = placeholder
+        hint.font = .preferredFont(forTextStyle: .body)
+        hint.textColor = .placeholderText
+        hint.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hint)
+        NSLayoutConstraint.activate([hint.leadingAnchor.constraint(equalTo: view.leadingAnchor), hint.topAnchor.constraint(equalTo: view.topAnchor, constant: verticalInset)])
+        context.coordinator.hint = hint
+        hint.isHidden = !PlanRichText.plain(text).isEmpty
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        func button(_ title: String, _ symbol: String, _ handler: @escaping () -> Void) -> UIBarButtonItem {
+            let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction(title: title) { _ in handler() })
+            item.accessibilityLabel = title
+            return item
+        }
+        let bold = button("Bold", "bold") { [weak coordinator = context.coordinator] in coordinator?.toggle(.traitBold) }
+        let italic = button("Italic", "italic") { [weak coordinator = context.coordinator] in coordinator?.toggle(.traitItalic) }
+        let color = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: UIMenu(title: "Text color", children: PlanRichText.colors.map { name, color in
+            UIAction(title: name, image: UIImage(systemName: "circle.fill")?.withTintColor(color, renderingMode: .alwaysOriginal)) { [weak coordinator = context.coordinator] _ in coordinator?.color(name) }
+        }))
+        color.accessibilityLabel = "Text color"
+        let done = button("Hide keyboard", "chevron.down") { [weak view] in view?.resignFirstResponder() }
+        toolbar.items = [bold, italic, color, .flexibleSpace(), done]
+        view.inputAccessoryView = toolbar
+        return view
+    }
+    func updateUIView(_ view: UITextView, context: Context) {
+        context.coordinator.parent = self
+        if PlanRichText.encode(view.attributedText) != text {
+            let selection = view.selectedRange
+            view.attributedText = PlanRichText.attributed(text)
+            view.selectedRange = NSRange(location: min(selection.location, view.textStorage.length), length: 0)
+        }
+        context.coordinator.hint?.isHidden = !PlanRichText.plain(text).isEmpty
+        if let focus {
+            if focus.wrappedValue && !view.isFirstResponder { view.becomeFirstResponder() }
+            else if !focus.wrappedValue && view.isFirstResponder { view.resignFirstResponder() }
+        }
+    }
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        guard let width = proposal.width else { return nil }
+        return CGSize(width: width, height: max(minimumHeight, uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height))
+    }
+    class Coordinator: NSObject, UITextViewDelegate {
+        var parent: RichTextEditor
+        weak var view: UITextView?
+        weak var hint: UILabel?
+        init(_ parent: RichTextEditor) { self.parent = parent }
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = PlanRichText.encode(textView.attributedText)
+            hint?.isHidden = !textView.text.isEmpty
+        }
+        func textViewDidBeginEditing(_ textView: UITextView) { parent.focus?.wrappedValue = true }
+        func textViewDidEndEditing(_ textView: UITextView) { parent.focus?.wrappedValue = false }
+        func apply(_ change: ([NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any]) {
+            guard let view else { return }
+            let selection = view.selectedRange
+            if selection.length == 0 { view.typingAttributes = change(view.typingAttributes); return }
+            let copy = NSMutableAttributedString(attributedString: view.attributedText)
+            copy.enumerateAttributes(in: selection) { attributes, range, _ in copy.setAttributes(change(attributes), range: range) }
+            view.attributedText = copy
+            view.selectedRange = selection
+            textViewDidChange(view)
+        }
+        func toggle(_ trait: UIFontDescriptor.SymbolicTraits) {
+            guard let view else { return }
+            let attributes = view.selectedRange.length == 0 ? view.typingAttributes : view.textStorage.attributes(at: view.selectedRange.location, effectiveRange: nil)
+            let enabled = !((attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits.contains(trait) ?? false)
+            apply { attributes in
+                var attributes = attributes
+                let font = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
+                var traits = font.fontDescriptor.symbolicTraits
+                if enabled { traits.insert(trait) } else { traits.remove(trait) }
+                attributes[.font] = UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor, size: font.pointSize)
+                return attributes
+            }
+        }
+        func color(_ name: String) {
+            apply { attributes in
+                var attributes = attributes
+                attributes[.foregroundColor] = PlanRichText.colors.first(where: { $0.0 == name })?.1 ?? UIColor.label
+                attributes[NSAttributedString.Key("PlenactColor")] = name == "Default" ? nil : name
+                return attributes
+            }
+        }
+    }
+}
+
+private struct WorkspaceBottomBarHeightKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var workspaceBottomBarHeight: CGFloat {
+        get { self[WorkspaceBottomBarHeightKey.self] }
+        set { self[WorkspaceBottomBarHeightKey.self] = newValue }
     }
 }

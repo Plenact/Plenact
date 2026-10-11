@@ -50,6 +50,8 @@ enum ChecklistMoveDirection {
 ///
 struct CardDetailView: View {
     @State private var isActivityCollapsed = false
+    @State private var sectionLayout: CardSectionLayout
+    @State private var showsLayoutEditor = false
     @Environment(\.workspaceBottomBarHeight) private var workspaceBottomBarHeight
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
@@ -181,7 +183,7 @@ struct CardDetailView: View {
         /// @post       No card or activity state is modified
         ///
         func text(for card: KanbanCard, actorName: String) -> String {
-            
+
             switch self {
 
                 case .addedCard:
@@ -204,7 +206,7 @@ struct CardDetailView: View {
     ///
     private enum ActivityFilter: String, CaseIterable, Identifiable {
         case all                /* All activity entries for the card       */
-        case comments           /* User-added comments for the card        */  
+        case comments           /* User-added comments for the card        */
         case cardActivity       /* Generated activity entries for the card */
 
         ///
@@ -394,6 +396,7 @@ struct CardDetailView: View {
         _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
         _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
+        _sectionLayout = State(initialValue: card.sectionLayout ?? CardSectionLayout())
         _descriptionText      = State(initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
         _presentation         = State(initialValue: [.note, .title, .text].contains(card.displayFormat) ? .note : .card)
         _displayFormat        = State(initialValue: card.displayFormat)
@@ -770,7 +773,7 @@ struct CardDetailView: View {
         var importFailed = false /* Whether any selected media failed to import */
 
         for photoItem in photoItems { /* Selected Photos-library item */
-            
+
             do {
 
                 guard let mediaData = try await photoItem.loadTransferable(type: Data.self) else { /* Transferred media bytes */
@@ -869,15 +872,15 @@ struct CardDetailView: View {
     ///             attachment
     ///
     private func addClipboardLink() {
-        
+
         let clipboardText = UIPasteboard.general.url?.absoluteString ?? UIPasteboard.general.string ?? "" /* Candidate clipboard link */
 
         guard let url = CardAttachmentStore.webURL(from: clipboardText) else { /* Parsed clipboard URL */
-            
+
             attachmentNoticeMessage = "The clipboard does not contain a valid web link."
             showingAttachmentNotice = true
             activeSheet             = nil
-            
+
             return
         }
 
@@ -897,7 +900,7 @@ struct CardDetailView: View {
     /// @post       Card attachments and files remain unchanged
     ///
     private func showAttachmentSourceComingSoon(_ source: String) {
-        
+
         attachmentNoticeMessage = "\(source) attachments are coming soon."
         showingAttachmentNotice = true
         activeSheet             = nil
@@ -1050,6 +1053,7 @@ struct CardDetailView: View {
         updated.labelIDs = selectedLabelIDs
         updated.attachments = attachments.isEmpty && card.attachments == nil ? nil : attachments
         updated.coverAttachmentID = coverAttachmentID
+        updated.sectionLayout = sectionLayout == CardSectionLayout() ? nil : sectionLayout
         updated.checklists = checklists
         updated.comments = comments
         updated.dismissedActivityIDs = dismissedActivityIDs
@@ -1158,7 +1162,7 @@ struct CardDetailView: View {
             movedNoteIsSaved = nil
         }
     }
-    
+
 
     ///
     /// @fcn        CardDetailView.postComment()
@@ -1278,10 +1282,10 @@ struct CardDetailView: View {
 
                 switch field {
 
-                    case .start: 
+                    case .start:
                         return startDate ?? Date()
 
-                    case .due:   
+                    case .due:
                         return dueDate ?? Date()
                 }
             },
@@ -1292,12 +1296,12 @@ struct CardDetailView: View {
                     case .start:
                         startDate = newValue
                         syncCardState(startDate: newValue)
-                        
+
                     case .due:
                         dueDate = newValue
                         syncCardState(dueDate: newValue)
                 }
-                
+
                 activeSheet = nil
             }
         )
@@ -1486,7 +1490,7 @@ struct CardDetailView: View {
         }
 
         if currentDate != nil {
-            
+
             ActivitySwipeRow(
                 onDelete:                   { resetDate(for: field) },
                 deletionAccessibilityLabel: "Remove \(fieldName)"
@@ -1516,7 +1520,7 @@ struct CardDetailView: View {
         let checklist = KanbanChecklist(title: "Checklist", items: [""]) /* New checklist with an initial item */
 
         checklists.append(checklist)
-        
+
         checklistToFocus = checklist.id
 
         syncCardState()
@@ -1564,7 +1568,7 @@ struct CardDetailView: View {
     /// @post       The checklist displays the trimmed title; blank titles leave state unchanged
     ///
     private func renameChecklist(with checklistID: UUID, to title: String) {
-        
+
         guard let checklistIndex = checklists.firstIndex(where: { /* Position of the checklist to rename */
 
             $0.id == checklistID
@@ -1572,9 +1576,9 @@ struct CardDetailView: View {
 
             return
         }
-        
+
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized checklist title */
-        
+
         guard !trimmedTitle.isEmpty else {
 
             return
@@ -1682,7 +1686,7 @@ struct CardDetailView: View {
         syncCardState()
     }
 
-    
+
     ///
     /// @fcn        CardDetailView.addItem(to:)
     /// @brief      Append a new item to a checklist
@@ -1781,7 +1785,7 @@ struct CardDetailView: View {
     ///             trimmed
     ///
     private func updateItem(in checklistID: UUID, at itemIndex: Int, with text: String) {
-        
+
         // Find the index of the checklist being updated
         guard let checklistIndex = checklists.firstIndex(where: { /* Checklist containing the action to replace */
 
@@ -2251,125 +2255,10 @@ struct CardDetailView: View {
     /// @post       Main edits synchronize immediately; deletion suppresses further snapshots.
     ///             Changing presentation retains content and does not relocate the item
     ///
-    var body: some View { /* Full card-detail presentation */
-
-        ScrollViewReader { scrollProxy in
-        ZStack {
-            Color(.systemGroupedBackground)
-                .ignoresSafeArea()
-
-            if displayFormat == .divider {
-
-                VStack(alignment: .leading) {
-
-                    Text(titleText)
-                        .font(.title2.weight(.bold))
-
-                    Spacer(minLength: 0)
-                }
-
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(16)
-
-            } else {
-
-                ScrollView {
-
-                VStack(alignment: .leading, spacing: 0) {
-
-                    if displayFormat == .picture {
-                        Button {
-                            focusedField = nil
-                            activeSheet = .appearance
-                            showsAppearanceCover = true
-                        } label: {
-                            ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(workingCardSnapshot.coverAttachment == nil ? "Choose picture" : "Change picture")
-                        .disabled(onTitleToggle == nil)
-                        .padding(16)
-                    }
-                    if presentation == .note {
-
-                        noteEditor
-                    }
-
-                    if presentation == .card || showsNoteDetails {
-
-                    Color.clear
-                        .frame(height: 0)
-                        .id("note.detailsStart")
-
-                    if presentation == .card {
-
-                    HStack(alignment: .center, spacing: 12) {
-
-                        Button(action: toggleCardTitle) {
-                            
-                            Image(systemName: titleChecked ? "checkmark.square.fill" : "square")
-                                .font(.title2)
-                                .foregroundStyle(titleChecked ? .blue : .secondary)
-                        }
-
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(titleChecked ? "Uncheck card title" : "Check card title")
-
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                ItemAppearanceMark(appearance: appearance)
-                                TextField("Card title", text: $titleText)
-                                    .font(.title2.weight(.bold))
-                                    .textInputAutocapitalization(.never)
-                                    .focused($focusedField, equals: .title)
-                                    .submitLabel(.done)
-                                    .onSubmit { focusedField = nil }
-                                    .onChange(of: titleText) { _, newValue in
-                                        syncCardState(title: newValue)
-                                    }
-
-                                locationControl
-
-                                .buttonStyle(.plain)
-                                }
-
-                            TextField("Card subtitle", text: $subtitleText)
-                                .font(.subheadline)
-                                .textInputAutocapitalization(.never)
-                                .foregroundColor(focusedField == .subtitle ? Color.secondary : Color.clear)
-                                .focused($focusedField, equals: .subtitle)
-                                .submitLabel(.done)
-                                .overlay(alignment: .leading) {
-                                    if focusedField != .subtitle {
-
-                                        Text(subtitleText)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.tail)
-                                            .allowsHitTesting(false)
-                                            .accessibilityHidden(true)
-                                    }
-                                }
-                                .onSubmit { focusedField = nil }
-                                .onChange(of: subtitleText) { _, newValue in
-                                    syncCardState(subtitle: newValue)
-                                }
-                        }
-
-                        Spacer()
-
-                    }
-
-                    .padding(16)
-                    .itemBannerBackground(appearance)
-                    }
-
-                    //****************************************************************************//
-                    // SECTION: Quick Actions                                                     //
-                    //                                                                            //
-                    //          Presents the primary actions available for the selected card      //
-                    //****************************************************************************//
+    @ViewBuilder
+    private func cardSection(_ section: CardSection, using scrollProxy: ScrollViewProxy) -> some View {
+        switch section {
+        case .quickActions:
                     DetailSection(title: "Quick Actions", collapsible: true) {
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
@@ -2381,6 +2270,8 @@ struct CardDetailView: View {
                         }
                     }
 
+
+        case .media:
                     if presentation == .card, displayFormat != .picture, let cover = workingCardSnapshot.coverAttachment {
                         selectedCoverPreview(cover)
                             .padding(16)
@@ -2401,6 +2292,8 @@ struct CardDetailView: View {
                     //          Presents humorous context assoc with selected card. Text expands  //
                     //          vertically so the complete description remains readable           //
                     //****************************************************************************//
+
+        case .description:
                     if presentation == .card {
 
                     DetailSection(title: "Description", collapsible: true) {
@@ -2417,6 +2310,8 @@ struct CardDetailView: View {
                     //                                                                            //
                     //          Presents selected card's dates, labels & meta in aligned rows     //
                     //****************************************************************************//
+
+        case .details:
                     DetailSection(title: "Details", collapsible: true) {
 
                         if startDate != nil {
@@ -2487,7 +2382,7 @@ struct CardDetailView: View {
                                     HStack(spacing: -5) {
 
                                         ForEach(Array(members.enumerated()), id: \.offset) { _, member in
-                                        
+
                                             Image(systemName: "person.crop.circle.fill")
                                                 .foregroundStyle(memberIconColor(for: member.displayName))
                                         }
@@ -2521,6 +2416,8 @@ struct CardDetailView: View {
                     //          Presents card's checklist groups & completion state. Checklist    //
                     //          creation & deletion update the local collection rendered here     //
                     //****************************************************************************//
+
+        case .checklists:
                     DetailSection(title: "Checklists", collapsible: true, trailing: "plus", trailingAction: { addChecklist(using: scrollProxy) }) {
 
                         ForEach(checklists) { checklist in
@@ -2533,6 +2430,8 @@ struct CardDetailView: View {
                     //                                                                            //
                     //          Presents the recent events associated with the selected card      //
                     //****************************************************************************//
+
+        case .activity:
                     VStack(alignment: .leading, spacing: 10) {
 
                         HStack {
@@ -2616,6 +2515,131 @@ struct CardDetailView: View {
                     .opacity(isActivityCollapsed ? 0 : 1)
                     .allowsHitTesting(!isActivityCollapsed)
                     .accessibilityHidden(isActivityCollapsed)
+        }
+    }
+
+    var body: some View { /* Full card-detail presentation */
+
+        ScrollViewReader { scrollProxy in
+        ZStack {
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+
+            if displayFormat == .divider {
+
+                VStack(alignment: .leading) {
+
+                    Text(titleText)
+                        .font(.title2.weight(.bold))
+
+                    Spacer(minLength: 0)
+                }
+
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(16)
+
+            } else {
+
+                ScrollView {
+
+                VStack(alignment: .leading, spacing: 0) {
+
+                    if displayFormat == .picture {
+                        Button {
+                            focusedField = nil
+                            activeSheet = .appearance
+                            showsAppearanceCover = true
+                        } label: {
+                            ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(workingCardSnapshot.coverAttachment == nil ? "Choose picture" : "Change picture")
+                        .disabled(onTitleToggle == nil)
+                        .padding(16)
+                    }
+                    if presentation == .note {
+
+                        noteEditor
+                    }
+
+                    if presentation == .card || showsNoteDetails {
+
+                    Color.clear
+                        .frame(height: 0)
+                        .id("note.detailsStart")
+
+                    if presentation == .card {
+
+                    HStack(alignment: .center, spacing: 12) {
+
+                        Button(action: toggleCardTitle) {
+
+                            Image(systemName: titleChecked ? "checkmark.square.fill" : "square")
+                                .font(.title2)
+                                .foregroundStyle(titleChecked ? .blue : .secondary)
+                        }
+
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(titleChecked ? "Uncheck card title" : "Check card title")
+
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                ItemAppearanceMark(appearance: appearance)
+                                TextField("Card title", text: $titleText)
+                                    .font(.title2.weight(.bold))
+                                    .textInputAutocapitalization(.never)
+                                    .focused($focusedField, equals: .title)
+                                    .submitLabel(.done)
+                                    .onSubmit { focusedField = nil }
+                                    .onChange(of: titleText) { _, newValue in
+                                        syncCardState(title: newValue)
+                                    }
+
+                                locationControl
+
+                                .buttonStyle(.plain)
+                                }
+
+                            TextField("Card subtitle", text: $subtitleText)
+                                .font(.subheadline)
+                                .textInputAutocapitalization(.never)
+                                .foregroundColor(focusedField == .subtitle ? Color.secondary : Color.clear)
+                                .focused($focusedField, equals: .subtitle)
+                                .submitLabel(.done)
+                                .overlay(alignment: .leading) {
+                                    if focusedField != .subtitle {
+
+                                        Text(subtitleText)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                            .allowsHitTesting(false)
+                                            .accessibilityHidden(true)
+                                    }
+                                }
+                                .onSubmit { focusedField = nil }
+                                .onChange(of: subtitleText) { _, newValue in
+                                    syncCardState(subtitle: newValue)
+                                }
+                        }
+
+                        Spacer()
+
+                    }
+
+                    .padding(16)
+                    .itemBannerBackground(appearance)
+                    }
+
+                    //****************************************************************************//
+                    // SECTION: Quick Actions                                                     //
+                    //                                                                            //
+                    //          Presents the primary actions available for the selected card      //
+                    //****************************************************************************//
+                    ForEach(sectionLayout.sections) { section in
+                        cardSection(section, using: scrollProxy)
+                    }
                     }
                 }
             }
@@ -2670,6 +2694,9 @@ struct CardDetailView: View {
 
                     }
                     Menu {
+                        if presentation == .card && displayFormat != .divider {
+                            Button("Layout", systemImage: "rectangle.3.group") { showsLayoutEditor = true }
+                        }
                         Button("Appearance", systemImage: "paintpalette") {
                             focusedField = nil
                             activeSheet = .appearance
@@ -2783,6 +2810,15 @@ struct CardDetailView: View {
             Text("This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
         }
 
+        .sheet(isPresented: $showsLayoutEditor) {
+            CardLayoutEditor(layout: sectionLayout) { updated in
+                let previous = sectionLayout
+                sectionLayout = updated
+                if syncCardState() { return true }
+                sectionLayout = previous
+                return false
+            }
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
 
@@ -3254,7 +3290,7 @@ private struct CardMembersSheet: View {
     private var normalizedMembers: [CardAssignee] { /* Deduplicated assignments prepared for saving */
 
         var seenAssignments: Set<String> = [] /* Identity keys already emitted */
-        
+
         let manualDraft = canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : [] /* Optional new manual assignment */
         let membersToSave = members + manualDraft /* Existing assignments plus valid draft */
 
@@ -3311,7 +3347,7 @@ private struct CardMembersSheet: View {
     /// @note       Duplicate detection is case-insensitive
     ///
     private func addMember() {
-        
+
         guard canAddMember else {
 
             return
@@ -3406,7 +3442,7 @@ private struct CardMembersSheet: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    
+
                     Button("Save") {
                         onSave(normalizedMembers)
                         dismiss()
@@ -4303,7 +4339,7 @@ struct ActivitySwipeRow<Content: View>: View {
         }
     }
 
-    
+
 // -------------------------------------- MARK: - Card Detail Preview --------------------------- //
 
     ///
@@ -4521,5 +4557,36 @@ struct SectionCollapseButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isCollapsed ? "Expand \(title)" : "Collapse \(title)")
+    }
+}
+
+struct CardLayoutEditor: View {
+    @State var layout: CardSectionLayout
+    let onSave: (CardSectionLayout) -> Bool
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(layout.order) { section in
+                        Toggle(section.title, isOn: Binding(
+                            get: { !layout.hidden.contains(section) },
+                            set: { if $0 { layout.hidden.remove(section) } else { layout.hidden.insert(section) } }
+                        ))
+                    }
+                    .onMove { layout.order.move(fromOffsets: $0, toOffset: $1) }
+                } footer: {
+                    Text("Drag to reorder sections. Turn a section off to hide it. Its content is kept.")
+                }
+                Button("Reset layout") { layout = CardSectionLayout() }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Card Layout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Save") { if onSave(layout) { dismiss() } } }
+            }
+        }
     }
 }

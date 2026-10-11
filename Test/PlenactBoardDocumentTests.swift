@@ -1505,6 +1505,32 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain("plenact-rich-v1:invalid"), "plenact-rich-v1:invalid")
     }
 
+    @MainActor
+    func testChecklistEditingSelectsWholeExistingItem() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        var text = "Cut or replace this item 😊"
+        var focused = false
+        let host = UIHostingController(rootView: ChecklistTextField(text: Binding(get: { text }, set: { text = $0 }), focus: Binding(get: { focused }, set: { focused = $0 })))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.endEditing(true); window.isHidden = true; previous?.makeKeyAndVisible() }
+        host.view.layoutIfNeeded()
+        func find(in view: UIView) -> UITextField? {
+            if let field = view as? UITextField { return field }
+            return view.subviews.lazy.compactMap { find(in: $0) }.first
+        }
+        let field = try XCTUnwrap(find(in: host.view))
+        XCTAssertTrue(field.becomeFirstResponder())
+        try await Task.sleep(for: .milliseconds(150))
+        let selection = try XCTUnwrap(field.selectedTextRange)
+        XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start), 0)
+        XCTAssertEqual(field.offset(from: selection.start, to: selection.end), (text as NSString).length)
+        XCTAssertEqual(field.text, text)
+    }
+
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws {
         var layout = CardSectionLayout()
         layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]

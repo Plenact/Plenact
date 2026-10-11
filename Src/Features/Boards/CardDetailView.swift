@@ -4083,12 +4083,8 @@ struct ChecklistItemRow: View {
 
                 } else {
 
-                    TextField("Item", text: Binding(
-                        get: { item },
-                        set: onUpdate
-                    ))
-                    .font(.subheadline)
-                    .focused($isTextFocused)
+                    ChecklistTextField(text: Binding(get: { item }, set: onUpdate),
+                                       focus: Binding(get: { isTextFocused }, set: { isTextFocused = $0 }))
                     .onAppear {
                         guard shouldFocus else {
 
@@ -4587,6 +4583,54 @@ struct CardLayoutEditor: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button("Save") { if onSave(layout) { dismiss() } } }
             }
+        }
+    }
+}
+
+/// Select an existing action once on entry to editing, then allow normal caret/selection changes.
+struct ChecklistTextField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var focus: Bool
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField()
+        field.placeholder = "Item"
+        field.font = .preferredFont(forTextStyle: .subheadline)
+        field.adjustsFontForContentSizeCategory = true
+        field.textColor = .label
+        field.returnKeyType = .done
+        field.accessibilityLabel = "Checklist item"
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+        return field
+    }
+    func updateUIView(_ field: UITextField, context: Context) {
+        context.coordinator.parent = self
+        if field.text != text { field.text = text }
+        if focus && !field.isFirstResponder { field.becomeFirstResponder() }
+        else if !focus && field.isFirstResponder { field.resignFirstResponder() }
+    }
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField, context: Context) -> CGSize? {
+        guard let width = proposal.width else { return nil }
+        return CGSize(width: width, height: max(24, uiView.intrinsicContentSize.height))
+    }
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: ChecklistTextField
+        init(_ parent: ChecklistTextField) { self.parent = parent }
+        @objc func changed(_ field: UITextField) { parent.text = field.text ?? "" }
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            parent.focus = true
+            DispatchQueue.main.async { [weak field] in
+                guard let field, field.isFirstResponder, !(field.text ?? "").isEmpty else { return }
+                field.selectAll(nil)
+            }
+        }
+        func textFieldDidEndEditing(_ field: UITextField) { parent.focus = false }
+        func textFieldShouldReturn(_ field: UITextField) -> Bool {
+            field.resignFirstResponder()
+            return true
         }
     }
 }

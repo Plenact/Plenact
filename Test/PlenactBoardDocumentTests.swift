@@ -21,6 +21,32 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws {
+        let today = try XCTUnwrap(PlanningDate.date("2026-10-11"))
+        var calendar = Calendar.current
+        calendar.firstWeekday = 1
+        var original = DatedPlanningWeek.make(for: today, calendar: calendar)
+        let sundayID = try XCTUnwrap(original.list(on: today)?.id)
+        let index = try XCTUnwrap(original.collection.lists.firstIndex { $0.id == sundayID })
+        original.collection.lists[index].cards = [KanbanCard(id: 42, word: "October 11 plans", listTitle: "Sunday")]
+        var document = PlanningCalendarDocument(currentWeekKey: original.startKey, firstWeekday: 1, weeks: [original])
+        try document.changeFirstWeekday(to: 2, now: today)
+        let current = try XCTUnwrap(document.week(for: today))
+        XCTAssertEqual(document.currentWeekKey, "2026-10-05")
+        XCTAssertEqual(current.startKey, "2026-10-05")
+        let dates = try current.collection.lists.map { list in
+            try XCTUnwrap(current.dayListIDs.first { $0.value == list.id }?.key)
+        }
+        XCTAssertEqual(dates, ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"])
+        XCTAssertEqual(current.collection.lists.last?.cards.first?.word, "October 11 plans")
+        let followingSunday = try XCTUnwrap(PlanningDate.date("2026-10-18"))
+        let following = try XCTUnwrap(document.week(for: followingSunday))
+        XCTAssertEqual(following.startKey, "2026-10-12")
+        XCTAssertTrue(try XCTUnwrap(following.list(on: followingSunday)).cards.isEmpty)
+        XCTAssertEqual(following.dayListIDs.count, 7)
+        XCTAssertFalse(following.dayListIDs.keys.contains("2026-10-11"))
+    }
+
     @MainActor
     func testNewCardDraftFieldsRemainEditableWhileSaving() async throws {
         let key = "plenact.testDraft.\(UUID().uuidString)"

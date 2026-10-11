@@ -21,6 +21,39 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testCardCommentComposerKeepsKeyboardFocusWhileTyping() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        var card = KanbanCard(id: 42, word: "Comment focus", listTitle: "Monday", checklists: [], comments: [], descriptionOverride: "Description")
+        card.sectionLayout = CardSectionLayout(order: [.description, .activity], hidden: [.quickActions, .media, .details, .checklists])
+        let host = UIHostingController(rootView: CardDetailView(card: card))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        func findComment(_ view: UIView) -> UITextView? {
+            if let text = view as? UITextView, text.accessibilityLabel == "Comment..." { return text }
+            return view.subviews.lazy.compactMap { findComment($0) }.first
+        }
+        let comment = try XCTUnwrap(findComment(host.view))
+        XCTAssertTrue(comment.becomeFirstResponder())
+        try await Task.sleep(for: .milliseconds(100))
+        for character in ["H", "e", "l", "l", "o"] {
+            comment.insertText(character)
+            try await Task.sleep(for: .milliseconds(80))
+            XCTAssertTrue(comment.isFirstResponder, "Comment typing must not dismiss the keyboard")
+            XCTAssertTrue(findComment(host.view) === comment, "The composer must retain its view identity")
+        }
+        XCTAssertEqual(comment.text, "Hello")
+        comment.resignFirstResponder()
+        try await Task.sleep(for: .milliseconds(80))
+        XCTAssertFalse(comment.isFirstResponder, "Explicit keyboard dismissal must still work")
+    }
+
     func testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs() throws {
         var sunday = Calendar(identifier: .gregorian)
         sunday.timeZone = TimeZone(secondsFromGMT: 0)!

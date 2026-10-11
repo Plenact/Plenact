@@ -272,6 +272,7 @@ struct CardDetailView: View {
     let onDelete: (() -> Bool)? /* Save-first removal; false keeps the editor and drafts open */
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
+    @State private var richTextFocusedField: EditableField? // UIKit editors retain focus independently of SwiftUI text fields.
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
 
     @State private var checklists: [KanbanChecklist]         /* The checklist groups associated with the selected card       */
@@ -325,6 +326,23 @@ struct CardDetailView: View {
     ///
     private var linkedCardsByID: [Int: KanbanCard] {   /* Linked cards by ID */
         Dictionary(uniqueKeysWithValues: availableLists.flatMap(\.cards).map { ($0.id, $0) })
+    }
+
+    /// UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields.
+    private func richTextFocusBinding(for field: EditableField) -> Binding<Bool> {
+        Binding(get: { richTextFocusedField == field }, set: { isFocused in
+            if isFocused {
+                focusedField = nil
+                richTextFocusedField = field
+            } else if richTextFocusedField == field {
+                richTextFocusedField = nil
+            }
+        })
+    }
+
+    private func dismissEditing() {
+        richTextFocusedField = nil
+        focusedField = nil
     }
 
 
@@ -1128,7 +1146,7 @@ struct CardDetailView: View {
             return
         }
 
-        focusedField = nil
+        dismissEditing()
         dismiss()
     }
 
@@ -2025,7 +2043,7 @@ struct CardDetailView: View {
         let previousPresentation = presentation
         let previousDescription = descriptionText
         let previousDetails = showsNoteDetails
-        focusedField = nil
+        dismissEditing()
         appearance = updated
         displayFormat = format
         presentation = [.note, .title, .text].contains(format) ? .note : .card
@@ -2097,7 +2115,7 @@ struct CardDetailView: View {
             .padding(.horizontal, appearance?.background == nil ? 0 : -20)
 
             RichTextEditor(placeholder: "Start writing...", text: descriptionEditingBinding,
-                           focus: Binding(get: { focusedField == .description }, set: { focusedField = $0 ? .description : nil }), minimumHeight: 280)
+                           focus: richTextFocusBinding(for: .description), minimumHeight: 280)
                 .accessibilityLabel("Note body")
                 .onChange(of: descriptionText) { syncCardState() }
 
@@ -2149,7 +2167,7 @@ struct CardDetailView: View {
             }
             Button {
                 showsNoteDetails = true
-                focusedField = .comment
+                richTextFocusedField = .comment
             } label: {
                 Label("Add comment", systemImage: "text.bubble")
             }
@@ -2177,7 +2195,7 @@ struct CardDetailView: View {
     private func noteToolbar(using scrollProxy: ScrollViewProxy) -> some View {
         HStack(spacing: 0) {
             Button {
-                focusedField = nil
+                dismissEditing()
                 dismiss()
             } label: {
                 Image(systemName: "chevron.left")
@@ -2188,7 +2206,7 @@ struct CardDetailView: View {
             Spacer(minLength: 0)
 
             Button {
-                focusedField = nil
+                dismissEditing()
                 showsNoteDetails.toggle()
                 let target = showsNoteDetails ? "note.detailsStart" : "plenact.noteEditor" /* Scroll anchor selected by Note detail visibility */
                 DispatchQueue.main.async {
@@ -2205,7 +2223,7 @@ struct CardDetailView: View {
             Spacer(minLength: 0)
 
             Button {
-                focusedField = nil
+                dismissEditing()
                 activeSheet = .noteAttachments
             } label: {
                 Image(systemName: "paperclip")
@@ -2320,7 +2338,7 @@ struct CardDetailView: View {
                     DetailSection(title: "Description", collapsible: true) {
 
                         RichTextEditor(placeholder: "Description", text: descriptionEditingBinding,
-                                       focus: Binding(get: { focusedField == .description }, set: { focusedField = $0 ? .description : nil }))
+                                       focus: richTextFocusBinding(for: .description))
                             .onChange(of: descriptionText) { syncCardState() }
 
                     }
@@ -2514,7 +2532,7 @@ struct CardDetailView: View {
                             .foregroundStyle(memberIconColor(for: currentUserName))
 
                         RichTextEditor(placeholder: "Comment...", text: $commentDraft,
-                                       focus: Binding(get: { focusedField == .comment }, set: { focusedField = $0 ? .comment : nil }), minimumHeight: 24, verticalInset: 2)
+                                       focus: richTextFocusBinding(for: .comment), minimumHeight: 24, verticalInset: 2)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 4)
                             .background(.background)
@@ -2567,7 +2585,7 @@ struct CardDetailView: View {
 
                     if displayFormat == .picture {
                         Button {
-                            focusedField = nil
+                            dismissEditing()
                             activeSheet = .appearance
                             showsAppearanceCover = true
                         } label: {
@@ -2611,7 +2629,7 @@ struct CardDetailView: View {
                                     .textInputAutocapitalization(.never)
                                     .focused($focusedField, equals: .title)
                                     .submitLabel(.done)
-                                    .onSubmit { focusedField = nil }
+                                    .onSubmit { dismissEditing() }
                                     .onChange(of: titleText) { _, newValue in
                                         syncCardState(title: newValue)
                                     }
@@ -2639,7 +2657,7 @@ struct CardDetailView: View {
                                             .accessibilityHidden(true)
                                     }
                                 }
-                                .onSubmit { focusedField = nil }
+                                .onSubmit { dismissEditing() }
                                 .onChange(of: subtitleText) { _, newValue in
                                     syncCardState(subtitle: newValue)
                                 }
@@ -2719,14 +2737,14 @@ struct CardDetailView: View {
                             Button("Layout", systemImage: "rectangle.3.group") { showsLayoutEditor = true }
                         }
                         Button("Appearance", systemImage: "paintpalette") {
-                            focusedField = nil
+                            dismissEditing()
                             activeSheet = .appearance
                         }
                         .disabled(onTitleToggle == nil)
 
                         if displayFormat != .divider {
                             Button {
-                                focusedField = .description
+                                richTextFocusedField = .description
                             } label: {
                                 Label("Edit description", systemImage: "text.alignleft")
                             }
@@ -2801,6 +2819,9 @@ struct CardDetailView: View {
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
+        .onChange(of: focusedField) { _, field in
+            if field != nil { richTextFocusedField = nil }
+        }
         .onChange(of: selectedCoverPhoto) { _, photoItem in
             guard let photoItem else { return } /* Newly selected library media awaiting cover import */
 

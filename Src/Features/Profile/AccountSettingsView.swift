@@ -1153,6 +1153,7 @@ private struct AvatarPhotoCropView: View {
                 .resizable()
                 .frame(width: image.size.width * scale, height: image.size.height * scale)
                 .offset(currentOffset)
+                .frame(width: side, height: side)
 
             Path { path in
                 path.addRect(CGRect(x: 0, y: 0, width: side, height: side))
@@ -1160,10 +1161,12 @@ private struct AvatarPhotoCropView: View {
             }
 
             .fill(.black.opacity(0.55), style: FillStyle(eoFill: true))
+            .frame(width: side, height: side)
             .allowsHitTesting(false)
 
             Circle()
                 .strokeBorder(.white, lineWidth: 2)
+                .frame(width: side, height: side)
                 .allowsHitTesting(false)
         }
 

@@ -21,6 +21,20 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testBoardCardDetailPersistsAndDecodesLegacyAppearance() throws {
+        let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.cardDetail)
+        for detail in BoardCardDetail.allCases {
+            var appearance = BoardAppearance()
+            appearance.cardDetail = detail
+            let data = try JSONEncoder().encode(appearance)
+            XCTAssertEqual(try BoardAppearance.decodeWeek(data).cardDetail, detail)
+            var collection = PersonalCollection(title: "Project", kind: .board)
+            collection.boardAppearance = appearance
+            XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection)).boardAppearance?.cardDetail, detail)
+        }
+    }
+
     func testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems() throws {
         let calendar = Calendar.current
         let now = try XCTUnwrap(PlanningDate.date("2026-10-11"))

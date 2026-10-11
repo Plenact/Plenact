@@ -219,11 +219,18 @@ enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable {
 }
 
 /// Board defaults are separate from explicit per-List overrides.
+enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable {
+    case compact, detailed
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct BoardAppearance: Hashable, Codable, Sendable {
     static let weekStorageKey = "Plenact.WeekAppearance.v1"
     var bannerBackground: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
     var cardBackground: KanbanListTint? = nil
+    var cardDetail: BoardCardDetail? = nil
 
     func resolved(_ appearance: ItemAppearance?) -> ItemAppearance {
         var result = appearance ?? ItemAppearance()

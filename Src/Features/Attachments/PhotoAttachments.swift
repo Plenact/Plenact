@@ -1626,7 +1626,11 @@ struct BoardAppearanceSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        Text("Standard shows supporting summaries. Overview shows narrower lists and concise cards. This preference applies to Week and personal boards on this device.")
+                        Picker("Card detail", selection: Binding(get: { draft.cardDetail ?? .detailed }, set: { draft.cardDetail = $0 })) {
+                            ForEach(BoardCardDetail.allCases) { option in Text(option.title).tag(option) }
+                        }
+                        .pickerStyle(.segmented)
+                        Text("Compact focuses on titles and useful badges. Detailed includes supporting text and card covers. Day views keep their full presentation.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }

@@ -1096,9 +1096,13 @@ struct ContentView: View {
     @State private var focusedDayListID: Int?
 
     private var currentBoardAppearance: BoardAppearance {
-        if let appearanceBinding { return appearanceBinding.wrappedValue ?? BoardAppearance() }
-        guard personalCollectionID == nil else { return BoardAppearance() }
-        return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
+        var appearance: BoardAppearance
+        if let appearanceBinding { appearance = appearanceBinding.wrappedValue ?? BoardAppearance() }
+        else if personalCollectionID == nil { appearance = (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance() }
+        else { appearance = BoardAppearance() }
+        let isPlanningWeek = personalCollectionID == nil || planningCalendarAccess?.document.weeks.contains(where: { $0.id == personalCollectionID }) == true
+        if appearance.cardDetail == nil { appearance.cardDetail = isPlanningWeek ? .compact : .detailed }
+        return appearance
     }
 
     private func saveBoardAppearance(_ appearance: BoardAppearance, applyToAll: Bool) -> Bool {
@@ -3878,7 +3882,7 @@ struct KanbanListView: View {
     /// @post       Screen geometry and list content remain unchanged
     ///
     private var cardHeight: CGFloat { /* Minimum card-row height adjusted for layout and text size */
-        presentation.minimumCardHeight * cardScale
+        (boardAppearance.cardDetail == .compact ? 64 : presentation.minimumCardHeight) * cardScale
     }
 
 
@@ -4095,7 +4099,7 @@ struct KanbanListView: View {
                         }
 
                         .accessibilityAction(named: "Delete Divider") { deletingCard = card }
-                            .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                            .listRowInsets(EdgeInsets(top: boardAppearance.cardDetail == .compact ? 2 : 4, leading: 4, bottom: boardAppearance.cardDetail == .compact ? 2 : 4, trailing: 4))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     } else {
@@ -4107,6 +4111,7 @@ struct KanbanListView: View {
                                     height:          cardHeight,
                                     displaySettings: displaySettings,
                                     cardBackground:  boardAppearance.cardBackground,
+                                    compactCards:    boardAppearance.cardDetail == .compact,
                                     listedOnDate:    assignedDate,
                                     presentation:    presentation,
                                     labelLibrary:    labelLibrary,
@@ -4970,6 +4975,7 @@ struct KanbanCardView: View {
     let height: CGFloat                             /* Minimum card height; content may grow                         */
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
     var cardBackground: KanbanListTint? = nil /* Board-scoped tint, independent of item banner metadata */
+    var compactCards: Bool = false
     var listedOnDate: Date? = nil // Assigned day from the list, independent of its editable title.
     /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard /* Board layout controlling the card row's density */
@@ -5102,7 +5108,7 @@ struct KanbanCardView: View {
     ///
     var body: some View { /* Compact card summary and card actions */
 
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: compactCards ? 2 : 9) {
             if card.displayFormat == .title || card.displayFormat == .text {
                 HStack(alignment: .top, spacing: 8) {
                     Text(card.word)
@@ -5113,18 +5119,29 @@ struct KanbanCardView: View {
                         .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
                     cardActions
                 }
-            } else if card.displayFormat == .picture {
+            } else if card.displayFormat == .picture && !compactCards {
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
             } else {
 
-                if showsCardCovers, let cover = card.coverAttachment { /* Featured attachment allowed by the current display settings */
+                if !compactCards && showsCardCovers, let cover = card.coverAttachment { /* Featured attachment allowed by the current display settings */
 
                     CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
                 }
 
                 HStack(alignment: .center, spacing: 8) {
 
-                    if card.presentation == .note {
+                    if card.displayFormat == .picture {
+                        Group {
+                            if let attachment = card.coverAttachment {
+                                CardCoverPreview(attachment: attachment, height: 44)
+                            } else {
+                                Image(systemName: "photo").foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .accessibilityHidden(true)
+                    } else if card.presentation == .note {
 
                         Image(systemName: "note.text")
                             .font(.headline)
@@ -5154,9 +5171,10 @@ struct KanbanCardView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
+                    if compactCards { cardActions }
                 }
 
-                if presentation == .standard && card.presentation == .note {
+                if !compactCards && presentation == .standard && card.presentation == .note {
 
                     if let body = card.descriptionOverride, !body.isEmpty { /* Nonempty stored description shown in the card preview */
 
@@ -5165,7 +5183,7 @@ struct KanbanCardView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(3)
                     }
-                } else if presentation == .standard && !card.subtitle.isEmpty {
+                } else if !compactCards && presentation == .standard && !card.subtitle.isEmpty {
 
                     Text(card.subtitle)
                         .font(.subheadline)
@@ -5174,7 +5192,7 @@ struct KanbanCardView: View {
                         .truncationMode(.tail)
                 }
 
-                if presentation == .standard && !cardLabels.isEmpty {
+                if !compactCards && presentation == .standard && !cardLabels.isEmpty {
 
                     ViewThatFits(in: .horizontal) {
                         HStack(spacing: 5) {
@@ -5214,21 +5232,22 @@ struct KanbanCardView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    cardActions
+                    if !compactCards { cardActions }
                 }
             }
         }
 
         .fixedSize(horizontal: false, vertical: true)
-        .padding(card.displayFormat == .picture ? 0 : (presentation == .overview ? 8 : 12))
+        .padding(.horizontal, card.displayFormat == .picture && !compactCards ? 0 : (compactCards || presentation == .overview ? 8 : 12))
+        .padding(.vertical, card.displayFormat == .picture && !compactCards ? 0 : (compactCards ? 4 : (presentation == .overview ? 8 : 12)))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: [.picture, .title, .text].contains(card.displayFormat) ? 0 : height, alignment: .top)
+        .frame(minHeight: ([.title, .text].contains(card.displayFormat) || (card.displayFormat == .picture && !compactCards)) ? 0 : height, alignment: .top)
         .background {
             ZStack {
                 if card.displayFormat != .title && card.displayFormat != .text {
                     Color(.systemBackground)
                 }
-                if ![.picture, .title, .text].contains(card.displayFormat), let cardBackground, cardBackground != .neutral {
+                if ![.title, .text].contains(card.displayFormat) && (compactCards || card.displayFormat != .picture), let cardBackground, cardBackground != .neutral {
                     cardBackground.color
                 }
             }
@@ -5337,12 +5356,12 @@ struct KanbanCardView: View {
     ///
     @ViewBuilder
     private var cardBadges: some View { /* Enabled discussion, checklist-progress, and due-date indicators */
-        if displaySettings.showCommentCounts {
+        if displaySettings.showCommentCounts && (!compactCards || card.commentCount > 0) {
 
             Label("\(card.commentCount)", systemImage: "text.bubble")
         }
 
-        if displaySettings.showChecklistProgress {
+        if displaySettings.showChecklistProgress && (!compactCards || !card.checklists.isEmpty) {
 
             Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
         }

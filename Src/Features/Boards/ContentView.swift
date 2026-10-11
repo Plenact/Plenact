@@ -1582,8 +1582,8 @@ struct ContentView: View {
         var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
         /// Append the new card to the list's cards array
-        updatedList.cards.append(
-            updatedList.makeItem(id: nextCardID, title: title, description: description, subtitle: subtitle)
+        updatedList.cards.append(contentsOf:
+            updatedList.makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
         )
 
         lists[listIndex] = updatedList
@@ -4373,7 +4373,8 @@ private struct NewKanbanCardSheet: View {
             Form {
 
                 Section("\(presentation.title) details") {
-                    TextField("Title (or --- for divider)", text: $title)
+                    TextField("Title (or --- for divider)", text: $title, axis: .vertical)
+                        .lineLimit(1...6)
                         .textInputAutocapitalization(.never)
                     TextField("Subtitle (optional)", text: $subtitle)
                     RichTextEditor(placeholder: "Description (optional)", text: $description)
@@ -6056,8 +6057,8 @@ struct TodayListDetailView: View {
 
         let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond active and reserved retained records */
 
-        lists[listIndex].cards.append(
-            lists[listIndex].makeItem(id: nextCardID, title: title, description: description, subtitle: subtitle)
+        lists[listIndex].cards.append(contentsOf:
+            lists[listIndex].makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
         )
     }
 }

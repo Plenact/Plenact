@@ -3693,3 +3693,22 @@ extension PersonalCollection {
         return draft
     }
 }
+
+/// Shared paste/submission policy: keep line order and duplicates, omit empty lines.
+enum MultilineEntry {
+    static func titles(_ text: String) -> [String] {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+}
+
+extension KanbanList {
+    func makeItems(startingAt id: Int, titles: String, description: String? = nil, subtitle: String = "",
+                   presentation: ItemPresentation? = nil, actions: [String]? = nil) -> [KanbanCard] {
+        MultilineEntry.titles(titles).enumerated().map { offset, title in
+            makeItem(id: id + offset, title: title, description: description, subtitle: subtitle,
+                     presentationOverride: presentation, actions: actions)
+        }
+    }
+}

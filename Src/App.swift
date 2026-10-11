@@ -1495,11 +1495,10 @@ private struct AppRootView: View {
             let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
             var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
-            let item = updatedList.makeItem(
-                id: nextCardID, title: title, description: description.isEmpty ? nil : description,
-                subtitle: subtitle, presentationOverride: presentation, actions: actions
-            )
-            updatedList.cards.append(item)
+            updatedList.cards.append(contentsOf: updatedList.makeItems(
+                startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
+                subtitle: subtitle, presentation: presentation, actions: actions
+            ))
 
             lists[listIndex] = updatedList
 
@@ -2669,7 +2668,8 @@ struct QuickNoteComposer: View {
         NavigationStack {
             Form {
                 Section(presentation.title) {
-                    TextField("Title", text: $title)
+                    TextField("Title", text: $title, axis: .vertical)
+                        .lineLimit(1...6)
                     TextField("Subtitle (optional)", text: $subtitle)
                     RichTextEditor(placeholder: "Details (optional)", text: $description)
                 }

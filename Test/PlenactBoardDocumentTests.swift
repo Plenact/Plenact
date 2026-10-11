@@ -1505,6 +1505,23 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain("plenact-rich-v1:invalid"), "plenact-rich-v1:invalid")
     }
 
+    func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws {
+        let input = " A\r\nB\n\n C \rD\nA\n"
+        XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])
+        XCTAssertTrue(MultilineEntry.titles(" \n\t\r\n").isEmpty)
+        let list = KanbanList(id: 1, title: "Saturday", cards: [])
+        let cards = list.makeItems(startingAt: 20, titles: input, description: "Shared details", subtitle: "Subtitle")
+        XCTAssertEqual(cards.map(\.word), ["A", "B", "C", "D", "A"])
+        XCTAssertEqual(cards.map(\.id), [20, 21, 22, 23, 24])
+        XCTAssertTrue(cards.allSatisfy { $0.descriptionOverride == "Shared details" && $0.subtitle == "Subtitle" })
+        let decoded = try JSONDecoder().decode([KanbanCard].self, from: JSONEncoder().encode(cards))
+        XCTAssertEqual(decoded, cards)
+        let items = MultilineEntry.titles(input).map { KanbanChecklistItem(title: $0) }
+        XCTAssertEqual(items.map(\.title), ["A", "B", "C", "D", "A"])
+        XCTAssertEqual(Set(items.map(\.id)).count, 5)
+        XCTAssertTrue(items.allSatisfy { !$0.isCompleted })
+    }
+
     func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws {
         let list = KanbanList(id: 1, title: "Saturday", cards: [])
         let blank = list.makeItem(id: 1, title: "New task")

@@ -1157,6 +1157,9 @@ struct ContentView: View {
     @State private var listDragLocation: CGFloat? /* Horizontal pointer position during list reordering */
     /// Horizontal offset between the drag start and the grabbed list center.
     @State private var listDragGrabOffset: CGFloat = 0 /* Offset between the initial pointer and grabbed list center */
+    @State private var listDragInitialCenter: CGFloat? // Center before the temporary drag overview.
+    @State private var listDragTilt: Double = 0
+    private var listDragScale: CGFloat { draggedListID != nil && !reducesMotion ? 0.72 : 1 }
     @State private var draggedCardID: Int? /* Card identity participating in the native drag session */
     @State private var cardDragLocation: CGPoint? /* Current card-drag pointer in global coordinates */
     @State private var cardFrames: [Int: CGRect] = [:] /* Global card-row frames keyed by card identity */
@@ -1796,7 +1799,10 @@ struct ContentView: View {
 
         if draggedListID == nil {
 
-            draggedListID = listID
+            listDragInitialCenter = listCenters[listID]
+            withAnimation(reducesMotion ? nil : .smooth(duration: 0.25)) {
+                draggedListID = listID
+            }
         }
 
         guard draggedListID == listID, let value else { /* Current gesture sample for the active list drag */
@@ -1806,10 +1812,11 @@ struct ContentView: View {
 
         if listDragLocation == nil {
 
-            listDragGrabOffset = value.startLocation.x - (listCenters[listID] ?? value.startLocation.x)
+            listDragGrabOffset = (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x)) * listDragScale
         }
 
         listDragLocation = value.location.x
+        listDragTilt = reducesMotion ? 0 : max(-3, min(3, Double(value.translation.width / 40)))
 
         guard let source = lists.firstIndex(where: { /* Current position of the dragged list */
 
@@ -1848,9 +1855,13 @@ struct ContentView: View {
             return
         }
 
-        draggedListID = nil
-        listDragLocation = nil
-        listDragGrabOffset = 0
+        withAnimation(reducesMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85)) {
+            draggedListID = nil
+            listDragLocation = nil
+            listDragGrabOffset = 0
+            listDragInitialCenter = nil
+            listDragTilt = 0
+        }
     }
 
 
@@ -2390,7 +2401,7 @@ struct ContentView: View {
                             fillsAvailableWidth: fillsAvailableListWidth
                         )
                         let horizontalInset = presentation == .standard
-                            ? max(14, (listArea.size.width - columnWidth) / 2)
+                            ? max(14, (listArea.size.width - columnWidth * listDragScale) / 2)
                             : 14
                         ScrollViewReader { listProxy in
 
@@ -2476,12 +2487,14 @@ struct ContentView: View {
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
                                         )
                                         .environment(\.cardMovementSource, personalCollectionID)
-                                        .scaleEffect(draggedListID == list.id && !reducesMotion ? 1.025 : 1)
+                                        .scaleEffect(listDragScale * (draggedListID == list.id && !reducesMotion ? 1.04 : 1), anchor: .top)
+                                        .frame(width: columnWidth * listDragScale, height: listArea.size.height * listDragScale, alignment: .top)
+                                        .rotationEffect(.degrees(draggedListID == list.id ? listDragTilt : 0), anchor: .top)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
                                         }
 
-                                        .frame(width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth))
+                                        .frame(width: columnWidth * listDragScale)
                                         .background {
                                             GeometryReader { geometry in
                                                 Color.clear.preference(
@@ -2507,7 +2520,7 @@ struct ContentView: View {
                                                 .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
                                         }
                                         .buttonStyle(.plain)
-                                        .frame(width: columnWidth)
+                                        .frame(width: columnWidth * listDragScale)
                                         .accessibilityIdentifier("board.addList")
                                         .id(Int.min)
                                     }

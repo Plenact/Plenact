@@ -132,6 +132,7 @@ struct CardDetailView: View {
         case attachmentSources                      /* Attachment source chooser                           */
         case noteAttachments
         case appearance
+        case cover
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
@@ -154,6 +155,7 @@ struct CardDetailView: View {
                 case .labels:                            "labels"
                 case .attachmentSources:                 "attachment-sources"
                 case .noteAttachments:                   "note-attachments"
+                case .cover: "cover"
                 case .appearance:                        "appearance"
                 case .addLink:                           "add-link"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
@@ -2147,8 +2149,28 @@ struct CardDetailView: View {
     ///
     /// @return     (some View) accessible Add menu for the current Note
     ///
+    private func cardCoverPanel(onDone: @escaping () -> Void) -> some View {
+        NavigationStack {
+            ScrollView { coverControls }
+                .navigationTitle("Card Cover")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) }
+                }
+        }
+        .presentationDetents([.medium, .large])
+        .databaseActivityOverlay()
+    }
+
     private func addMenu(using scrollProxy: ScrollViewProxy) -> some View {
         Menu {
+            if displayFormat != .divider {
+                Button(workingCardSnapshot.coverAttachment == nil ? "Add cover" : "Change cover", systemImage: "photo") {
+                    dismissEditing()
+                    activeSheet = .cover
+                }
+            }
+
             Button {
                 showsNoteDetails = true
                 addChecklist(using: scrollProxy)
@@ -2931,19 +2953,11 @@ struct CardDetailView: View {
                         saveDisplayAppearance(updated, format: displayFormat)
                     }
                     .sheet(isPresented: $showsAppearanceCover) {
-                        NavigationStack {
-                            ScrollView { coverControls }
-                                .navigationTitle("Card Cover")
-                                .navigationBarTitleDisplayMode(.inline)
-                                .toolbar {
-                                    ToolbarItem(placement: .confirmationAction) {
-                                        Button("Done") { showsAppearanceCover = false }
-                                    }
-                                }
-                        }
-                        .presentationDetents([.medium, .large])
-                        .databaseActivityOverlay()
+                        cardCoverPanel { showsAppearanceCover = false }
                     }
+
+                case .cover:
+                    cardCoverPanel { activeSheet = nil }
 
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)

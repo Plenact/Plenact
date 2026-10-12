@@ -415,8 +415,8 @@ struct PlenactLoadingView: View {
     var animatesLogo = true
 
     var body: some View {
-        ZStack {
-            Color("LaunchBackground")
+        GeometryReader { geometry in
+            ZStack {
             Image("LaunchLogo")
                 .resizable().scaledToFit()
                 .frame(width: 136, height: 136)
@@ -432,7 +432,11 @@ struct PlenactLoadingView: View {
                 Text("Planning your life into action").font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
             }
             .offset(y: 124)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .offset(y: -geometry.size.height * 0.125)
         }
+        .background(Color("LaunchBackground"))
         .ignoresSafeArea()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Plenact is loading")
@@ -499,6 +503,7 @@ private struct AppRootView: View {
                 return
             }
 
+            let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(700))
             let legacy = await KanbanBoardPersistence.loadListsInBackground()
             do {
                 if var document = try PlanningCalendarStore.load() {
@@ -525,6 +530,8 @@ private struct AppRootView: View {
                 DatabaseActivity.shared.report("Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained.")
             }
             SavedCardPersistence.save(savedCardIDs)
+            do { try await ContinuousClock().sleep(until: launchDeadline) }
+            catch { return }
             hasLoadedBoard = true
         }
     }
@@ -602,6 +609,7 @@ private struct AppRootView: View {
             libraryTab
 
             SavedCardsView(
+                planningDocument: calendarDocument,
                 lists:           lists.filter { !$0.isArchived },
                 savedCardIDs:    savedCardIDs,
                 collections:     $collections,
@@ -616,7 +624,7 @@ private struct AppRootView: View {
                 onDeleteCard:    deleteWeekCard
             )
                 .tabItem {
-                    Label("Saved", systemImage: "bookmark")
+                    Label("Activity", systemImage: "clock.arrow.circlepath")
                 }
 
                 .tag(AppDestination.saved)
@@ -932,7 +940,7 @@ private struct AppRootView: View {
                     .accessibilityHidden(true)
 
                 tabButton(.lists, title: "Library", systemImage: "books.vertical.fill")
-                tabButton(.saved, title: "Saved",   systemImage: "bookmark.fill")
+                tabButton(.saved, title: "Activity", systemImage: "clock.arrow.circlepath")
             }
 
             .padding(.horizontal, 12)
@@ -3664,9 +3672,26 @@ enum LibraryRecentStore {
         return (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
     }
     static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
+        ActivityRecentStore.remember(item, defaults: defaults)
         let items = Array(([item] + load(from: defaults).filter { $0 != item }).prefix(8))
         if let data = try? JSONEncoder().encode(items) { defaults.set(data, forKey: key) }
         return items
+    }
+}
+
+enum ActivityRecentStore {
+    static let key = "Plenact.ActivityRecents.v1"
+    static func load(from defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
+        guard let data = defaults.data(forKey: key) else { return LibraryRecentStore.load(from: defaults) }
+        return (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
+    }
+    static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard) {
+        let items = Array(([item] + load(from: defaults).filter { $0 != item }).prefix(20))
+        if let data = try? JSONEncoder().encode(items) { defaults.set(data, forKey: key) }
+    }
+    static func clear(defaults: UserDefaults = .standard) {
+        defaults.set(Data("[]".utf8), forKey: key)
+        defaults.set(Data("[]".utf8), forKey: LibraryRecentStore.key)
     }
 }
 
@@ -3859,6 +3884,7 @@ struct BoardListsView: View {
     @State private var showsRecentShelf = false
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
     @State private var recentItems = LibraryRecentStore.load()
+    @AppStorage(LibraryRecentStore.key) private var libraryRecentData = Data()
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -4882,7 +4908,9 @@ struct BoardListsView: View {
             }
 
         }
+        .onChange(of: libraryRecentData) { _, _ in recentItems = LibraryRecentStore.load() }
         .onAppear {
+            recentItems = LibraryRecentStore.load()
             registerDirectoryNewNote()
             if let savedPersonalCardTarget {
 
@@ -5786,6 +5814,80 @@ private struct SavedCardResult: Identifiable {
 ///     Provide access to saved cards and save-first board restoration
 ///
 private struct SavedCardsView: View {
+    let planningDocument: PlanningCalendarDocument?
+    @AppStorage(ActivityRecentStore.key) private var recentData = Data()
+    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
+    @State private var query = ""
+    @State private var showsSearch = false
+    @State private var confirmsClear = false
+    @State private var historicalTarget: ActivityRecentResult?
+
+    private struct ActivityRecentResult: Identifiable {
+        let item: LibraryRecentItem
+        let card: KanbanCard
+        let list: KanbanList
+        let location: String
+        let week: DatedPlanningWeek?
+        let isCurrent: Bool
+        var id: String { item.id }
+    }
+    private func matches(_ title: String, _ location: String) -> Bool {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        (title + " " + location).localizedStandardContains(query.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+    private var recents: [ActivityRecentResult] {
+        let items = recentData.isEmpty ? ActivityRecentStore.load() : ((try? JSONDecoder().decode([LibraryRecentItem].self, from: recentData)) ?? [])
+        return items.compactMap { item in
+            if let collection = collections.first(where: { $0.id == item.collectionID && $0.isActive }),
+               let list = collection.lists.first(where: { !$0.isArchived && $0.cards.contains(where: { $0.id == item.cardID && !$0.isSectionDivider }) }),
+               let card = list.cards.first(where: { $0.id == item.cardID }), matches(card.word, collection.title + " " + list.title) {
+                return ActivityRecentResult(item: item, card: card, list: list, location: collection.title + " · " + list.title, week: nil, isCurrent: false)
+            }
+            guard let week = planningDocument?.weeks.first(where: { $0.id == item.collectionID }) else { return nil }
+            let current = week.startKey == planningDocument?.currentWeekKey
+            let source = current ? lists : week.collection.lists
+            guard let list = source.first(where: { !$0.isArchived && $0.cards.contains(where: { $0.id == item.cardID && !$0.isSectionDivider }) }),
+                  let card = list.cards.first(where: { $0.id == item.cardID }), matches(card.word, list.title) else { return nil }
+            return ActivityRecentResult(item: item, card: card, list: list, location: list.title + " · " + week.compactRangeTitle, week: week, isCurrent: current)
+        }
+    }
+    private func openRecent(_ result: ActivityRecentResult) {
+        if result.isCurrent { onOpenBoardCard(result.list.id, result.card.id) }
+        else if result.week != nil { historicalTarget = result }
+        else { onOpenPersonalCard(PersonalSavedCardTarget(collectionID: result.item.collectionID, listID: result.list.id, cardID: result.card.id)) }
+    }
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Recent").font(.caption).foregroundStyle(.secondary)
+            Text("Pick up where you left off").font(.title3.weight(.semibold))
+            if recents.isEmpty {
+                Text(query.isEmpty ? "Open a card or note in Today, Week, or Library to find it here." : "No recent items match your search.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(recents) { result in
+                            Button { openRecent(result) } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if showsCovers, let cover = result.card.coverAttachment {
+                                        CardCoverPreview(attachment: cover, height: 64).frame(height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
+                                    }
+                                    Label(result.card.presentation == .note ? "Note" : "Card", systemImage: result.card.presentation == .note ? "note.text" : "rectangle")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                    Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(3)
+                                    Spacer(minLength: 0)
+                                    Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                }
+                                .padding(12).frame(width: 156, height: showsCovers ? 210 : 144, alignment: .topLeading)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            }.buttonStyle(.plain).accessibilityHint("Reopen this item in " + result.location)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     let lists: [KanbanList] /* Current Board snapshot */
     let savedCardIDs: Set<Int> /* Local bookmark set */
@@ -5813,7 +5915,7 @@ private struct SavedCardsView: View {
     private var savedCards: [SavedCardResult] { /* Bookmarked cards paired with their containing lists */
         lists.flatMap { list in
             list.cards.compactMap { card in
-                guard savedCardIDs.contains(card.id), !card.isSectionDivider else {
+                guard savedCardIDs.contains(card.id), !card.isSectionDivider, matches(card.word, list.title) else {
 
                     return nil
                 }
@@ -5831,8 +5933,11 @@ private struct SavedCardsView: View {
     ///
     /// @return     ([PersonalCollectionBookmarkedCard]) available personal bookmark rows
     ///
+    private var archivedCollections: [PersonalCollection] {
+        collections.filter { $0.isArchived == true && matches($0.title, "") }
+    }
     private var personalSavedCards: [PersonalCollectionBookmarkedCard] { /* Active personal bookmarks for Saved */
-        collections.filter(\.isActive).flatMap(\.bookmarkedCards)
+        collections.filter(\.isActive).flatMap(\.bookmarkedCards).filter { matches($0.card.word, $0.collectionTitle + " " + $0.listTitle) }
     }
 
 
@@ -5854,19 +5959,35 @@ private struct SavedCardsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Saved")
-                            .font(.largeTitle.weight(.bold))
-                        Text("Bookmarks and archived collections on this device")
+                        HStack {
+                            Text("Activity").font(.largeTitle.weight(.bold))
+                            Spacer()
+                            Button { showsSearch.toggle(); if !showsSearch { query = "" } } label: { Image(systemName: "magnifyingglass") }
+                                .accessibilityLabel("Search Activity")
+                            Menu {
+                                Toggle("Show cover previews", isOn: $showsCovers)
+                                Button("Clear recent history", systemImage: "trash", role: .destructive) { confirmsClear = true }
+                            } label: { Image(systemName: "ellipsis.circle") }
+                                .accessibilityLabel("Activity options")
+                        }
+                        Text("Recent work and saved favorites")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
 
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                    if showsSearch {
+                        TextField("Find in Activity", text: $query)
+                            .textFieldStyle(.roundedBorder)
+                            .submitLabel(.search)
+                    }
+                    recentSection
+                    Label("Saved", systemImage: "bookmark").font(.title2.weight(.semibold))
                     VStack(alignment: .leading, spacing: 10) {
                         if savedCards.isEmpty && personalSavedCards.isEmpty {
 
-                            Label("No saved items yet", systemImage: "bookmark")
+                            Label(query.isEmpty ? "No saved items yet" : "No saved items match", systemImage: "bookmark")
                                 .font(.headline)
                             Text("Open a card and tap the bookmark to keep it here.")
                                 .font(.subheadline)
@@ -5964,7 +6085,7 @@ private struct SavedCardsView: View {
                     }) {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Archived Collections").font(.title2.weight(.semibold))
-                            ForEach(collections.filter { $0.isArchived == true }) { board in
+                            ForEach(archivedCollections) { board in
                                 HStack {
                                     Image(systemName: "archivebox").foregroundStyle(.secondary)
                                     VStack(alignment: .leading, spacing: 4) {
@@ -6001,6 +6122,15 @@ private struct SavedCardsView: View {
             }
 
             .background(.clear)
+        }
+
+        .confirmationDialog("Clear recent history?", isPresented: $confirmsClear, titleVisibility: .visible) {
+            Button("Clear recent history", role: .destructive) { ActivityRecentStore.clear() }
+        } message: { Text("Removes recent shortcuts from Activity and Library. Your cards, notes, and Saved items stay intact.") }
+        .fullScreenCover(item: $historicalTarget) { result in
+            if let week = result.week {
+                PlanningCalendarWeekView(week: week, initialDayID: result.list.id, initialCardID: result.card.id, onLeaveForHome: { historicalTarget = nil })
+            }
         }
 
         .confirmationDialog("Delete \(deletingBoard?.title ?? "collection")?", isPresented: Binding(

@@ -198,6 +198,28 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(LibraryPlateSelection.items(in: [collection], important: marked, now: now).isEmpty)
     }
 
+    func testActivityHistoryRetainsOwnersBoundsAndClearsOnlyShortcuts() throws {
+        let suite = "ActivityTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let library = LibraryRecentItem(collectionID: UUID(), cardID: 1)
+        let week = LibraryRecentItem(collectionID: UUID(), cardID: 1)
+        _ = LibraryRecentStore.remember(library, defaults: defaults)
+        ActivityRecentStore.remember(week, defaults: defaults)
+        ActivityRecentStore.remember(library, defaults: defaults)
+        XCTAssertEqual(ActivityRecentStore.load(from: defaults), [library, week])
+        for id in 2...30 { ActivityRecentStore.remember(LibraryRecentItem(collectionID: week.collectionID, cardID: id), defaults: defaults) }
+        XCTAssertEqual(ActivityRecentStore.load(from: defaults).count, 20)
+        XCTAssertEqual(ActivityRecentStore.load(from: defaults).first?.cardID, 30)
+        defaults.set("saved payload", forKey: "SavedFixture")
+        ActivityRecentStore.clear(defaults: defaults)
+        XCTAssertTrue(ActivityRecentStore.load(from: defaults).isEmpty)
+        XCTAssertTrue(LibraryRecentStore.load(from: defaults).isEmpty)
+        XCTAssertEqual(defaults.string(forKey: "SavedFixture"), "saved payload")
+        _ = LibraryRecentStore.remember(library, defaults: defaults)
+        XCTAssertEqual(ActivityRecentStore.load(from: defaults), [library])
+    }
+
     func testLibraryRecentsPersistDeduplicateAndKeepCollectionsSeparate() throws {
         let suite = "LibraryRecentTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

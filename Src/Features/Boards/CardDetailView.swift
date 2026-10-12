@@ -2847,7 +2847,12 @@ struct CardDetailView: View {
                 noteToolbar(using: scrollProxy)
             }
         }
-        .onAppear { if !card.isSectionDivider { libraryItemOpened(card.id) } }
+        .onAppear {
+            guard !card.isSectionDivider else { return }
+            libraryItemOpened(card.id)
+            let owner = checklistCollectionID ?? checklistTypePlanningAccess?.document.weeks.first(where: { $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey })?.id
+            if let owner { ActivityRecentStore.remember(LibraryRecentItem(collectionID: owner, cardID: card.id)) }
+        }
         .onAppear { workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }
         .onDisappear { workspaceNoteVisibility(noteVisibilityID, false) }
         .onChange(of: displayFormat) { _, _ in workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }

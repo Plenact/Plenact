@@ -592,7 +592,7 @@ private struct PlanningCalendarResultRow: View {
     }
 }
 
-private struct PlanningCalendarWeekView: View {
+struct PlanningCalendarWeekView: View {
     @State var week: DatedPlanningWeek
     let initialDayID: Int?
     let initialCardID: Int?

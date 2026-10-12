@@ -21,6 +21,32 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let probe = NoteNavigationProbe()
+        let host = UIHostingController(rootView: NoteNavigationTestView(probe: probe))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertFalse(probe.noteIsVisible)
+        probe.path = [KanbanCard(id: 1, word: "Note", listTitle: "Sunday", presentation: .note)]
+        try await Task.sleep(for: .milliseconds(400))
+        XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")
+        probe.path = []
+        for _ in 0..<20 {
+            if !probe.noteIsVisible { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertFalse(probe.noteIsVisible, "Returning to Week must restore the app bar")
+        probe.path = [KanbanCard(id: 2, word: "Card", listTitle: "Sunday")]
+        try await Task.sleep(for: .milliseconds(400))
+        XCTAssertFalse(probe.noteIsVisible, "Ordinary Card navigation remains unchanged")
+    }
+
     func testChecklistTypeSwitchesPreserveInactiveContentAndIdentity() throws {
         let url = try XCTUnwrap(URL(string: "https://example.com/plan"))
         let detail = KanbanChecklistActionDetail(description: "My plan", checklists: [KanbanChecklist(title: "Steps", items: ["First", "Next"])], comments: [])
@@ -6761,5 +6787,23 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let secureURL = URL(string: "https://demo.example.test/api/")! /* Valid HTTPS base URL */
 
         XCTAssertNoThrow(try PlenactAPIClient(baseURL: secureURL))
+    }
+}
+@MainActor
+private final class NoteNavigationProbe: ObservableObject {
+    @Published var path: [KanbanCard] = []
+    var visibleNotes: Set<UUID> = []
+    var noteIsVisible: Bool { !visibleNotes.isEmpty }
+}
+private struct NoteNavigationTestView: View {
+    @ObservedObject var probe: NoteNavigationProbe
+    var body: some View {
+        NavigationStack(path: $probe.path) {
+            Text("Week")
+                .navigationDestination(for: KanbanCard.self) { card in CardDetailView(card: card) }
+        }
+        .environment(\.workspaceNoteVisibility, { id, visible in
+            if visible { probe.visibleNotes.insert(id) } else { probe.visibleNotes.remove(id) }
+        })
     }
 }

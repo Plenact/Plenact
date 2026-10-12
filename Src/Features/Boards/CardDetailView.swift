@@ -57,6 +57,8 @@ extension EnvironmentValues {
 }
 
 struct CardDetailView: View {
+    @Environment(\.workspaceNoteVisibility) private var workspaceNoteVisibility
+    @State private var noteVisibilityID = UUID()
     @Environment(\.planningCalendarAccess) private var checklistTypePlanningAccess
     @Environment(\.checklistLinkCandidates) private var checklistLinkCandidates
     @Environment(\.cardMovementSource) private var checklistCollectionID
@@ -2824,6 +2826,9 @@ struct CardDetailView: View {
             }
         }
         .onAppear { if !card.isSectionDivider { libraryItemOpened(card.id) } }
+        .onAppear { workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }
+        .onDisappear { workspaceNoteVisibility(noteVisibilityID, false) }
+        .onChange(of: displayFormat) { _, _ in workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
@@ -4605,6 +4610,16 @@ struct RichTextEditor: UIViewRepresentable {
                 return attributes
             }
         }
+    }
+}
+
+private struct WorkspaceNoteVisibilityKey: EnvironmentKey {
+    static let defaultValue: (UUID, Bool) -> Void = { _, _ in }
+}
+extension EnvironmentValues {
+    var workspaceNoteVisibility: (UUID, Bool) -> Void {
+        get { self[WorkspaceNoteVisibilityKey.self] }
+        set { self[WorkspaceNoteVisibilityKey.self] = newValue }
     }
 }
 

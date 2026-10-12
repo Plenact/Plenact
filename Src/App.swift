@@ -419,6 +419,8 @@ private struct AppRootView: View {
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
     @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
+    @State private var visibleNoteIDs: Set<UUID> = []
+    private var isNotePresented: Bool { !visibleNoteIDs.isEmpty }
     @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
     @State private var savedCardIDs                        = SavedCardPersistence.load()    /* Device-local saved cards                            */
     @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                    /* Personal bookmark requested from Saved             */
@@ -591,19 +593,22 @@ private struct AppRootView: View {
 
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear
-                .frame(height: verticalSizeClass == .compact ? 52 : 74)
+                .frame(height: isNotePresented ? 0 : (verticalSizeClass == .compact ? 52 : 74))
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
         .overlay {
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
-                bottomNavigationBar
+                if !isNotePresented { bottomNavigationBar }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
 
-        .environment(\.workspaceBottomBarHeight, verticalSizeClass == .compact ? 52 : 74)
+        .environment(\.workspaceNoteVisibility, { id, visible in
+            if visible { visibleNoteIDs.insert(id) } else { visibleNoteIDs.remove(id) }
+        })
+        .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : (verticalSizeClass == .compact ? 52 : 74))
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
         .environment(\.calendar, calendarDocument?.calendar ?? .current)

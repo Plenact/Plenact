@@ -1,0 +1,4004 @@
+[
+  {
+    "name": "morning-routine",
+    "category": "home",
+    "symbol": "sun.max",
+    "tags": [
+      "wake",
+      "habits",
+      "breakfast"
+    ]
+  },
+  {
+    "name": "bedroom-reset",
+    "category": "home",
+    "symbol": "bed.double",
+    "tags": [
+      "clean",
+      "tidy",
+      "sleep",
+      "sheets"
+    ]
+  },
+  {
+    "name": "family-home",
+    "category": "home",
+    "symbol": "house",
+    "tags": [
+      "family",
+      "household",
+      "shelter"
+    ]
+  },
+  {
+    "name": "window-cleaning",
+    "category": "home",
+    "symbol": "window.vertical.closed",
+    "tags": [
+      "glass",
+      "chores",
+      "wash"
+    ]
+  },
+  {
+    "name": "mail-and-letters",
+    "category": "home",
+    "symbol": "envelope",
+    "tags": [
+      "post",
+      "correspondence",
+      "bills"
+    ]
+  },
+  {
+    "name": "bathroom-care",
+    "category": "home",
+    "symbol": "shower",
+    "tags": [
+      "clean",
+      "hygiene",
+      "wash"
+    ]
+  },
+  {
+    "name": "home-budget",
+    "category": "home",
+    "symbol": "banknote",
+    "tags": [
+      "money",
+      "finances",
+      "bills"
+    ]
+  },
+  {
+    "name": "closet-organizing",
+    "category": "home",
+    "symbol": "cabinet",
+    "tags": [
+      "clothes",
+      "storage",
+      "tidy"
+    ]
+  },
+  {
+    "name": "shoe-rack",
+    "category": "home",
+    "symbol": "shoe",
+    "tags": [
+      "shoes",
+      "entry",
+      "organize"
+    ]
+  },
+  {
+    "name": "house-keys",
+    "category": "home",
+    "symbol": "key",
+    "tags": [
+      "keys",
+      "door",
+      "move"
+    ]
+  },
+  {
+    "name": "vacuum-cleaning",
+    "category": "home",
+    "symbol": "fan",
+    "tags": [
+      "clean",
+      "floor",
+      "dust",
+      "chores"
+    ]
+  },
+  {
+    "name": "moving-day",
+    "category": "home",
+    "symbol": "shippingbox",
+    "tags": [
+      "relocation",
+      "packing",
+      "boxes"
+    ]
+  },
+  {
+    "name": "home-security",
+    "category": "home",
+    "symbol": "lock.shield",
+    "tags": [
+      "safety",
+      "secure",
+      "protection"
+    ]
+  },
+  {
+    "name": "recycling-day",
+    "category": "home",
+    "symbol": "arrow.3.trianglepath",
+    "tags": [
+      "recycle",
+      "environment",
+      "rubbish"
+    ]
+  },
+  {
+    "name": "lightbulb-moment",
+    "category": "home",
+    "symbol": "lightbulb",
+    "tags": [
+      "ideas",
+      "electricity",
+      "repair"
+    ]
+  },
+  {
+    "name": "household-tools",
+    "category": "home",
+    "symbol": "wrench.and.screwdriver",
+    "tags": [
+      "fix",
+      "maintenance",
+      "tools"
+    ]
+  },
+  {
+    "name": "home-laundry-basket",
+    "category": "home",
+    "symbol": "basket",
+    "tags": [
+      "washing",
+      "clothes",
+      "chores"
+    ]
+  },
+  {
+    "name": "seedling-care",
+    "category": "nature",
+    "symbol": "leaf",
+    "tags": [
+      "grow",
+      "seeds",
+      "spring",
+      "plants"
+    ]
+  },
+  {
+    "name": "apple-orchard",
+    "category": "nature",
+    "symbol": "tree",
+    "tags": [
+      "fruit",
+      "trees",
+      "harvest"
+    ]
+  },
+  {
+    "name": "flower-bed",
+    "category": "nature",
+    "symbol": "camera.macro",
+    "tags": [
+      "flowers",
+      "bloom",
+      "planting"
+    ]
+  },
+  {
+    "name": "garden-tools",
+    "category": "nature",
+    "symbol": "shovel",
+    "tags": [
+      "dig",
+      "planting",
+      "gardening"
+    ]
+  },
+  {
+    "name": "bird-watching",
+    "category": "nature",
+    "symbol": "bird",
+    "tags": [
+      "wildlife",
+      "birds",
+      "outdoor"
+    ]
+  },
+  {
+    "name": "sunflower-day",
+    "category": "nature",
+    "symbol": "sun.max",
+    "tags": [
+      "flowers",
+      "yellow",
+      "summer"
+    ]
+  },
+  {
+    "name": "moonlit-garden",
+    "category": "nature",
+    "symbol": "moon.stars",
+    "tags": [
+      "night",
+      "quiet",
+      "nature"
+    ]
+  },
+  {
+    "name": "autumn-leaves",
+    "category": "nature",
+    "symbol": "leaf.fill",
+    "tags": [
+      "fall",
+      "seasonal",
+      "trees"
+    ]
+  },
+  {
+    "name": "snowy-morning",
+    "category": "nature",
+    "symbol": "snowflake",
+    "tags": [
+      "winter",
+      "cold",
+      "snow"
+    ]
+  },
+  {
+    "name": "rainbow-sky",
+    "category": "nature",
+    "symbol": "rainbow",
+    "tags": [
+      "hope",
+      "color",
+      "weather"
+    ]
+  },
+  {
+    "name": "cloud-watching",
+    "category": "nature",
+    "symbol": "cloud",
+    "tags": [
+      "sky",
+      "calm",
+      "weather"
+    ]
+  },
+  {
+    "name": "river-flow",
+    "category": "nature",
+    "symbol": "water.waves",
+    "tags": [
+      "river",
+      "stream",
+      "water"
+    ]
+  },
+  {
+    "name": "greenhouse",
+    "category": "nature",
+    "symbol": "house",
+    "tags": [
+      "grow",
+      "indoor",
+      "plants"
+    ]
+  },
+  {
+    "name": "cactus-care",
+    "category": "nature",
+    "symbol": "cactus",
+    "tags": [
+      "desert",
+      "succulent",
+      "plant"
+    ]
+  },
+  {
+    "name": "spring-rain",
+    "category": "nature",
+    "symbol": "cloud.rain",
+    "tags": [
+      "rain",
+      "water",
+      "spring"
+    ]
+  },
+  {
+    "name": "honey-bees",
+    "category": "nature",
+    "symbol": "ant",
+    "tags": [
+      "insects",
+      "pollination",
+      "bees"
+    ]
+  },
+  {
+    "name": "starry-sky",
+    "category": "nature",
+    "symbol": "sparkles",
+    "tags": [
+      "stars",
+      "astronomy",
+      "night"
+    ]
+  },
+  {
+    "name": "team-meeting",
+    "category": "work",
+    "symbol": "person.3",
+    "tags": [
+      "team",
+      "collaboration",
+      "meeting"
+    ]
+  },
+  {
+    "name": "research-session",
+    "category": "work",
+    "symbol": "magnifyingglass",
+    "tags": [
+      "research",
+      "investigate",
+      "discover"
+    ]
+  },
+  {
+    "name": "inbox-review",
+    "category": "work",
+    "symbol": "tray",
+    "tags": [
+      "email",
+      "messages",
+      "office"
+    ]
+  },
+  {
+    "name": "presentation-day",
+    "category": "work",
+    "symbol": "chart.bar",
+    "tags": [
+      "slides",
+      "audience",
+      "speak"
+    ]
+  },
+  {
+    "name": "math-practice",
+    "category": "work",
+    "symbol": "function",
+    "tags": [
+      "numbers",
+      "mathematics",
+      "study"
+    ]
+  },
+  {
+    "name": "science-lab",
+    "category": "work",
+    "symbol": "flask",
+    "tags": [
+      "experiment",
+      "chemistry",
+      "science"
+    ]
+  },
+  {
+    "name": "language-study",
+    "category": "work",
+    "symbol": "character.bubble",
+    "tags": [
+      "language",
+      "vocabulary",
+      "speaking"
+    ]
+  },
+  {
+    "name": "exam-preparation",
+    "category": "work",
+    "symbol": "pencil.and.list.clipboard",
+    "tags": [
+      "exam",
+      "test",
+      "revision"
+    ]
+  },
+  {
+    "name": "career-growth",
+    "category": "work",
+    "symbol": "stairs",
+    "tags": [
+      "career",
+      "promotion",
+      "goals"
+    ]
+  },
+  {
+    "name": "remote-office",
+    "category": "work",
+    "symbol": "laptopcomputer",
+    "tags": [
+      "remote",
+      "work",
+      "computer",
+      "desk"
+    ]
+  },
+  {
+    "name": "project-milestone",
+    "category": "work",
+    "symbol": "flag.checkered",
+    "tags": [
+      "finish",
+      "deadline",
+      "project"
+    ]
+  },
+  {
+    "name": "document-review",
+    "category": "work",
+    "symbol": "doc.text",
+    "tags": [
+      "documents",
+      "proofread",
+      "paperwork"
+    ]
+  },
+  {
+    "name": "focus-session",
+    "category": "work",
+    "symbol": "scope",
+    "tags": [
+      "concentration",
+      "focus",
+      "productivity"
+    ]
+  },
+  {
+    "name": "idea-map",
+    "category": "work",
+    "symbol": "point.3.connected.trianglepath.dotted",
+    "tags": [
+      "brainstorm",
+      "mindmap",
+      "connections"
+    ]
+  },
+  {
+    "name": "engineering-plan",
+    "category": "work",
+    "symbol": "gearshape.2",
+    "tags": [
+      "build",
+      "design",
+      "engineering"
+    ]
+  },
+  {
+    "name": "school-day",
+    "category": "work",
+    "symbol": "backpack",
+    "tags": [
+      "school",
+      "children",
+      "class"
+    ]
+  },
+  {
+    "name": "certificate-goal",
+    "category": "work",
+    "symbol": "graduationcap",
+    "tags": [
+      "graduation",
+      "qualification",
+      "learning"
+    ]
+  },
+  {
+    "name": "tea-time",
+    "category": "food",
+    "symbol": "cup.and.saucer",
+    "tags": [
+      "tea",
+      "warm",
+      "pause",
+      "drink"
+    ]
+  },
+  {
+    "name": "soup-season",
+    "category": "food",
+    "symbol": "mug",
+    "tags": [
+      "soup",
+      "cooking",
+      "comfort"
+    ]
+  },
+  {
+    "name": "fruit-bowl",
+    "category": "food",
+    "symbol": "basket",
+    "tags": [
+      "fruit",
+      "healthy",
+      "snack"
+    ]
+  },
+  {
+    "name": "pizza-night",
+    "category": "food",
+    "symbol": "circle.grid.cross",
+    "tags": [
+      "pizza",
+      "dinner",
+      "family"
+    ]
+  },
+  {
+    "name": "salad-preparation",
+    "category": "food",
+    "symbol": "leaf",
+    "tags": [
+      "salad",
+      "vegetables",
+      "lunch"
+    ]
+  },
+  {
+    "name": "meal-prep",
+    "category": "food",
+    "symbol": "takeoutbag.and.cup.and.straw",
+    "tags": [
+      "meal",
+      "plan",
+      "cooking",
+      "prepare"
+    ]
+  },
+  {
+    "name": "bread-making",
+    "category": "food",
+    "symbol": "oven",
+    "tags": [
+      "bread",
+      "bake",
+      "baking"
+    ]
+  },
+  {
+    "name": "birthday-cake",
+    "category": "food",
+    "symbol": "birthday.cake",
+    "tags": [
+      "birthday",
+      "celebration",
+      "cake"
+    ]
+  },
+  {
+    "name": "water-bottle",
+    "category": "food",
+    "symbol": "waterbottle",
+    "tags": [
+      "water",
+      "hydrate",
+      "drink"
+    ]
+  },
+  {
+    "name": "shopping-cart",
+    "category": "food",
+    "symbol": "cart",
+    "tags": [
+      "shopping",
+      "groceries",
+      "buy"
+    ]
+  },
+  {
+    "name": "weekly-menu",
+    "category": "food",
+    "symbol": "list.bullet.rectangle",
+    "tags": [
+      "menu",
+      "meals",
+      "plan"
+    ]
+  },
+  {
+    "name": "recipe-book",
+    "category": "food",
+    "symbol": "book",
+    "tags": [
+      "recipe",
+      "cooking",
+      "kitchen"
+    ]
+  },
+  {
+    "name": "packed-lunch",
+    "category": "food",
+    "symbol": "bag",
+    "tags": [
+      "lunch",
+      "school",
+      "picnic"
+    ]
+  },
+  {
+    "name": "farmers-market",
+    "category": "food",
+    "symbol": "carrot",
+    "tags": [
+      "farm",
+      "produce",
+      "vegetables",
+      "market"
+    ]
+  },
+  {
+    "name": "food-storage",
+    "category": "food",
+    "symbol": "refrigerator",
+    "tags": [
+      "fridge",
+      "leftovers",
+      "preserve"
+    ]
+  },
+  {
+    "name": "family-dinner",
+    "category": "food",
+    "symbol": "fork.knife",
+    "tags": [
+      "dinner",
+      "family",
+      "food"
+    ]
+  },
+  {
+    "name": "kitchen-timer",
+    "category": "food",
+    "symbol": "timer",
+    "tags": [
+      "cooking",
+      "timing",
+      "bake"
+    ]
+  },
+  {
+    "name": "road-trip",
+    "category": "travel",
+    "symbol": "car",
+    "tags": [
+      "car",
+      "holiday",
+      "drive",
+      "journey"
+    ]
+  },
+  {
+    "name": "city-break",
+    "category": "travel",
+    "symbol": "building.2",
+    "tags": [
+      "city",
+      "urban",
+      "vacation"
+    ]
+  },
+  {
+    "name": "airport-departure",
+    "category": "travel",
+    "symbol": "airplane",
+    "tags": [
+      "flight",
+      "airport",
+      "travel"
+    ]
+  },
+  {
+    "name": "passport-ready",
+    "category": "travel",
+    "symbol": "person.text.rectangle",
+    "tags": [
+      "passport",
+      "documents",
+      "abroad"
+    ]
+  },
+  {
+    "name": "beach-day",
+    "category": "travel",
+    "symbol": "beach.umbrella",
+    "tags": [
+      "beach",
+      "sea",
+      "summer"
+    ]
+  },
+  {
+    "name": "kayaking",
+    "category": "travel",
+    "symbol": "sailboat",
+    "tags": [
+      "paddle",
+      "river",
+      "adventure"
+    ]
+  },
+  {
+    "name": "hiking-boots",
+    "category": "travel",
+    "symbol": "shoe",
+    "tags": [
+      "hike",
+      "trail",
+      "mountain",
+      "walking"
+    ]
+  },
+  {
+    "name": "ski-weekend",
+    "category": "travel",
+    "symbol": "figure.skiing.downhill",
+    "tags": [
+      "snow",
+      "winter",
+      "ski",
+      "sport"
+    ]
+  },
+  {
+    "name": "map-and-route",
+    "category": "travel",
+    "symbol": "map",
+    "tags": [
+      "map",
+      "directions",
+      "explore"
+    ]
+  },
+  {
+    "name": "compass-point",
+    "category": "travel",
+    "symbol": "location.north",
+    "tags": [
+      "direction",
+      "compass",
+      "navigate"
+    ]
+  },
+  {
+    "name": "waterfall-walk",
+    "category": "travel",
+    "symbol": "water.waves",
+    "tags": [
+      "waterfall",
+      "nature",
+      "walk"
+    ]
+  },
+  {
+    "name": "campfire-evening",
+    "category": "travel",
+    "symbol": "flame",
+    "tags": [
+      "camp",
+      "fire",
+      "outdoors",
+      "warmth"
+    ]
+  },
+  {
+    "name": "stargazing-trip",
+    "category": "travel",
+    "symbol": "moon.stars",
+    "tags": [
+      "stars",
+      "night",
+      "camping"
+    ]
+  },
+  {
+    "name": "bike-route",
+    "category": "travel",
+    "symbol": "bicycle",
+    "tags": [
+      "cycling",
+      "fitness",
+      "journey"
+    ]
+  },
+  {
+    "name": "fishing-trip",
+    "category": "travel",
+    "symbol": "fish",
+    "tags": [
+      "fish",
+      "lake",
+      "outdoors"
+    ]
+  },
+  {
+    "name": "travel-camera",
+    "category": "travel",
+    "symbol": "camera",
+    "tags": [
+      "holiday",
+      "memories",
+      "photography"
+    ]
+  },
+  {
+    "name": "weekend-getaway",
+    "category": "travel",
+    "symbol": "suitcase",
+    "tags": [
+      "weekend",
+      "vacation",
+      "relax"
+    ]
+  },
+  {
+    "name": "pottery-session",
+    "category": "creativity",
+    "symbol": "cup.and.saucer",
+    "tags": [
+      "pottery",
+      "clay",
+      "craft"
+    ]
+  },
+  {
+    "name": "sewing-project",
+    "category": "creativity",
+    "symbol": "scissors",
+    "tags": [
+      "sew",
+      "fabric",
+      "craft"
+    ]
+  },
+  {
+    "name": "knitting-time",
+    "category": "creativity",
+    "symbol": "circle.dotted",
+    "tags": [
+      "knit",
+      "yarn",
+      "textiles"
+    ]
+  },
+  {
+    "name": "piano-practice",
+    "category": "creativity",
+    "symbol": "pianokeys",
+    "tags": [
+      "piano",
+      "music",
+      "practice"
+    ]
+  },
+  {
+    "name": "guitar-session",
+    "category": "creativity",
+    "symbol": "guitars",
+    "tags": [
+      "guitar",
+      "music",
+      "rehearsal"
+    ]
+  },
+  {
+    "name": "creative-writing",
+    "category": "creativity",
+    "symbol": "pencil",
+    "tags": [
+      "write",
+      "story",
+      "journal",
+      "poetry"
+    ]
+  },
+  {
+    "name": "film-night",
+    "category": "creativity",
+    "symbol": "film",
+    "tags": [
+      "movie",
+      "friends",
+      "cinema"
+    ]
+  },
+  {
+    "name": "letter-to-friend",
+    "category": "creativity",
+    "symbol": "envelope.open",
+    "tags": [
+      "letter",
+      "friendship",
+      "connection"
+    ]
+  },
+  {
+    "name": "community-time",
+    "category": "creativity",
+    "symbol": "person.3",
+    "tags": [
+      "community",
+      "neighbors",
+      "connection"
+    ]
+  },
+  {
+    "name": "volunteer-day",
+    "category": "creativity",
+    "symbol": "hands.sparkles",
+    "tags": [
+      "volunteer",
+      "helping",
+      "kindness"
+    ]
+  },
+  {
+    "name": "party-planning",
+    "category": "creativity",
+    "symbol": "party.popper",
+    "tags": [
+      "party",
+      "celebration",
+      "event"
+    ]
+  },
+  {
+    "name": "family-memories",
+    "category": "creativity",
+    "symbol": "photo.on.rectangle",
+    "tags": [
+      "family",
+      "photos",
+      "memories"
+    ]
+  },
+  {
+    "name": "puzzle-break",
+    "category": "creativity",
+    "symbol": "puzzlepiece",
+    "tags": [
+      "puzzle",
+      "game",
+      "leisure"
+    ]
+  },
+  {
+    "name": "stage-performance",
+    "category": "creativity",
+    "symbol": "theatermasks",
+    "tags": [
+      "theater",
+      "stage",
+      "drama"
+    ]
+  },
+  {
+    "name": "color-palette",
+    "category": "creativity",
+    "symbol": "paintpalette",
+    "tags": [
+      "paint",
+      "color",
+      "art",
+      "drawing"
+    ]
+  },
+  {
+    "name": "sketchbook",
+    "category": "creativity",
+    "symbol": "pencil.tip.crop.circle",
+    "tags": [
+      "sketch",
+      "drawing",
+      "art"
+    ]
+  },
+  {
+    "name": "friendship-call",
+    "category": "creativity",
+    "symbol": "phone.bubble",
+    "tags": [
+      "phone",
+      "call",
+      "friend",
+      "conversation"
+    ]
+  },
+  {
+    "name": "morning-stretch",
+    "category": "health",
+    "symbol": "figure.flexibility",
+    "tags": [
+      "stretch",
+      "movement",
+      "body"
+    ]
+  },
+  {
+    "name": "walking-break",
+    "category": "health",
+    "symbol": "figure.walk",
+    "tags": [
+      "walking",
+      "steps",
+      "exercise"
+    ]
+  },
+  {
+    "name": "running-route",
+    "category": "health",
+    "symbol": "figure.run",
+    "tags": [
+      "running",
+      "fitness",
+      "cardio"
+    ]
+  },
+  {
+    "name": "yoga-practice",
+    "category": "health",
+    "symbol": "figure.yoga",
+    "tags": [
+      "yoga",
+      "stretch",
+      "balance"
+    ]
+  },
+  {
+    "name": "strength-session",
+    "category": "health",
+    "symbol": "dumbbell",
+    "tags": [
+      "strength",
+      "weights",
+      "gym"
+    ]
+  },
+  {
+    "name": "swimming-laps",
+    "category": "health",
+    "symbol": "figure.pool.swim",
+    "tags": [
+      "swim",
+      "water",
+      "exercise"
+    ]
+  },
+  {
+    "name": "heart-health",
+    "category": "health",
+    "symbol": "heart",
+    "tags": [
+      "heart",
+      "wellness",
+      "health"
+    ]
+  },
+  {
+    "name": "hydration-habit",
+    "category": "health",
+    "symbol": "drop",
+    "tags": [
+      "water",
+      "hydrate",
+      "wellness"
+    ]
+  },
+  {
+    "name": "balanced-meal",
+    "category": "health",
+    "symbol": "carrot",
+    "tags": [
+      "nutrition",
+      "healthy",
+      "food"
+    ]
+  },
+  {
+    "name": "sleep-habit",
+    "category": "health",
+    "symbol": "bed.double",
+    "tags": [
+      "sleep",
+      "rest",
+      "health"
+    ]
+  },
+  {
+    "name": "meditation-practice",
+    "category": "health",
+    "symbol": "figure.mind.and.body",
+    "tags": [
+      "meditation",
+      "calm",
+      "breathing"
+    ]
+  },
+  {
+    "name": "breathing-pause",
+    "category": "health",
+    "symbol": "wind",
+    "tags": [
+      "breathe",
+      "calm",
+      "mindfulness"
+    ]
+  },
+  {
+    "name": "health-appointment",
+    "category": "health",
+    "symbol": "cross.case",
+    "tags": [
+      "doctor",
+      "appointment",
+      "care"
+    ]
+  },
+  {
+    "name": "medicine-reminder",
+    "category": "health",
+    "symbol": "pills",
+    "tags": [
+      "medication",
+      "reminder",
+      "health"
+    ]
+  },
+  {
+    "name": "recovery-steps",
+    "category": "health",
+    "symbol": "figure.walk",
+    "tags": [
+      "recovery",
+      "pace",
+      "progress"
+    ]
+  },
+  {
+    "name": "wheelchair-journey",
+    "category": "health",
+    "symbol": "figure.roll",
+    "tags": [
+      "accessibility",
+      "mobility",
+      "journey"
+    ]
+  },
+  {
+    "name": "gentle-movement",
+    "category": "health",
+    "symbol": "figure.cooldown",
+    "tags": [
+      "gentle",
+      "rehabilitation",
+      "stretch"
+    ]
+  },
+  {
+    "name": "dance-workout",
+    "category": "health",
+    "symbol": "figure.dance",
+    "tags": [
+      "dance",
+      "movement",
+      "exercise"
+    ]
+  },
+  {
+    "name": "sports-practice",
+    "category": "health",
+    "symbol": "sportscourt",
+    "tags": [
+      "sport",
+      "team",
+      "exercise"
+    ]
+  },
+  {
+    "name": "boxing-session",
+    "category": "health",
+    "symbol": "figure.boxing",
+    "tags": [
+      "boxing",
+      "fitness",
+      "training"
+    ]
+  },
+  {
+    "name": "balance-training",
+    "category": "health",
+    "symbol": "figure.gymnastics",
+    "tags": [
+      "balance",
+      "stability",
+      "exercise"
+    ]
+  },
+  {
+    "name": "outdoor-fitness",
+    "category": "health",
+    "symbol": "figure.hiking",
+    "tags": [
+      "hike",
+      "outdoor",
+      "exercise"
+    ]
+  },
+  {
+    "name": "self-care",
+    "category": "health",
+    "symbol": "hands.sparkles",
+    "tags": [
+      "self",
+      "care",
+      "wellbeing",
+      "routine"
+    ]
+  },
+  {
+    "name": "healthy-boundaries",
+    "category": "health",
+    "symbol": "hand.raised",
+    "tags": [
+      "boundaries",
+      "wellbeing",
+      "pause"
+    ]
+  },
+  {
+    "name": "wellness-journal",
+    "category": "health",
+    "symbol": "heart.text.clipboard",
+    "tags": [
+      "health",
+      "journal",
+      "reflect"
+    ]
+  },
+  {
+    "name": "quiet-morning",
+    "category": "rest",
+    "symbol": "sun.horizon",
+    "tags": [
+      "quiet",
+      "morning",
+      "peaceful",
+      "calm"
+    ]
+  },
+  {
+    "name": "cozy-evening",
+    "category": "rest",
+    "symbol": "moon",
+    "tags": [
+      "evening",
+      "cozy",
+      "rest"
+    ]
+  },
+  {
+    "name": "slow-weekend",
+    "category": "rest",
+    "symbol": "cup.and.saucer",
+    "tags": [
+      "slow",
+      "weekend",
+      "relax"
+    ]
+  },
+  {
+    "name": "reading-pause",
+    "category": "rest",
+    "symbol": "book.closed",
+    "tags": [
+      "reading",
+      "quiet",
+      "book",
+      "rest"
+    ]
+  },
+  {
+    "name": "reflection-journal",
+    "category": "rest",
+    "symbol": "book",
+    "tags": [
+      "reflect",
+      "journal",
+      "thoughts"
+    ]
+  },
+  {
+    "name": "peaceful-breath",
+    "category": "rest",
+    "symbol": "wind",
+    "tags": [
+      "peace",
+      "breathe",
+      "calm"
+    ]
+  },
+  {
+    "name": "unplug-time",
+    "category": "rest",
+    "symbol": "power",
+    "tags": [
+      "offline",
+      "screen",
+      "break",
+      "unplug"
+    ]
+  },
+  {
+    "name": "candlelight",
+    "category": "rest",
+    "symbol": "flame",
+    "tags": [
+      "candle",
+      "calm",
+      "warmth"
+    ]
+  },
+  {
+    "name": "warm-bath",
+    "category": "rest",
+    "symbol": "bathtub",
+    "tags": [
+      "bath",
+      "relax",
+      "rest"
+    ]
+  },
+  {
+    "name": "soft-music",
+    "category": "rest",
+    "symbol": "music.note",
+    "tags": [
+      "music",
+      "calm",
+      "listen"
+    ]
+  },
+  {
+    "name": "mindful-moment",
+    "category": "rest",
+    "symbol": "sparkles",
+    "tags": [
+      "mindfulness",
+      "moment",
+      "calm"
+    ]
+  },
+  {
+    "name": "gratitude-list",
+    "category": "rest",
+    "symbol": "heart.text.clipboard",
+    "tags": [
+      "gratitude",
+      "thankful",
+      "journal"
+    ]
+  },
+  {
+    "name": "sunset-rest",
+    "category": "rest",
+    "symbol": "sunset",
+    "tags": [
+      "sunset",
+      "evening",
+      "relax"
+    ]
+  },
+  {
+    "name": "cloud-dreams",
+    "category": "rest",
+    "symbol": "cloud",
+    "tags": [
+      "dream",
+      "clouds",
+      "calm"
+    ]
+  },
+  {
+    "name": "moonlight",
+    "category": "rest",
+    "symbol": "moon.stars",
+    "tags": [
+      "moon",
+      "night",
+      "quiet"
+    ]
+  },
+  {
+    "name": "tea-and-thoughts",
+    "category": "rest",
+    "symbol": "mug",
+    "tags": [
+      "tea",
+      "reflection",
+      "peaceful"
+    ]
+  },
+  {
+    "name": "restful-space",
+    "category": "rest",
+    "symbol": "sofa",
+    "tags": [
+      "sofa",
+      "rest",
+      "comfort"
+    ]
+  },
+  {
+    "name": "rainy-window",
+    "category": "rest",
+    "symbol": "cloud.rain",
+    "tags": [
+      "rain",
+      "quiet",
+      "indoors"
+    ]
+  },
+  {
+    "name": "peaceful-lake",
+    "category": "rest",
+    "symbol": "water.waves",
+    "tags": [
+      "lake",
+      "water",
+      "tranquil"
+    ]
+  },
+  {
+    "name": "forest-retreat",
+    "category": "rest",
+    "symbol": "tree",
+    "tags": [
+      "forest",
+      "retreat",
+      "quiet"
+    ]
+  },
+  {
+    "name": "personal-pause",
+    "category": "rest",
+    "symbol": "pause.circle",
+    "tags": [
+      "pause",
+      "personal",
+      "break"
+    ]
+  },
+  {
+    "name": "fresh-start",
+    "category": "rest",
+    "symbol": "arrow.clockwise",
+    "tags": [
+      "begin",
+      "reset",
+      "fresh",
+      "hope"
+    ]
+  },
+  {
+    "name": "small-victories",
+    "category": "rest",
+    "symbol": "star",
+    "tags": [
+      "success",
+      "celebrate",
+      "progress"
+    ]
+  },
+  {
+    "name": "kindness-moment",
+    "category": "rest",
+    "symbol": "heart",
+    "tags": [
+      "kindness",
+      "care",
+      "connection"
+    ]
+  },
+  {
+    "name": "intentional-day",
+    "category": "rest",
+    "symbol": "sun.max",
+    "tags": [
+      "intention",
+      "purpose",
+      "planning"
+    ]
+  },
+  {
+    "name": "cat-companion",
+    "category": "home",
+    "symbol": "cat",
+    "context": "heart",
+    "tags": [
+      "animal",
+      "animals",
+      "pets",
+      "feline",
+      "cat",
+      "cats",
+      "affection",
+      "care"
+    ]
+  },
+  {
+    "name": "dog-walk",
+    "category": "home",
+    "symbol": "dog",
+    "context": "figure.walk",
+    "tags": [
+      "animal",
+      "animals",
+      "pets",
+      "canine",
+      "dog",
+      "dogs",
+      "walk",
+      "companion"
+    ]
+  },
+  {
+    "name": "puppy-play",
+    "category": "home",
+    "symbol": "dog.fill",
+    "context": "tennisball",
+    "tags": [
+      "animal",
+      "animals",
+      "puppy",
+      "dog",
+      "dogs",
+      "fun",
+      "energetic"
+    ]
+  },
+  {
+    "name": "cat-nap",
+    "category": "home",
+    "symbol": "cat.fill",
+    "context": "moon",
+    "tags": [
+      "animal",
+      "animals",
+      "cat",
+      "cats",
+      "sleepy",
+      "cozy",
+      "rest",
+      "mood"
+    ]
+  },
+  {
+    "name": "fish-tank",
+    "category": "home",
+    "symbol": "fish",
+    "context": "drop",
+    "tags": [
+      "animal",
+      "animals",
+      "fish",
+      "aquatic",
+      "pets",
+      "water"
+    ]
+  },
+  {
+    "name": "breakfast-table",
+    "category": "home",
+    "symbol": "table.furniture",
+    "context": "sun.max",
+    "tags": [
+      "morning",
+      "family",
+      "breakfast",
+      "furniture"
+    ]
+  },
+  {
+    "name": "linen-sorting",
+    "category": "home",
+    "symbol": "washer",
+    "context": "basket",
+    "tags": [
+      "laundry",
+      "clean",
+      "towels",
+      "sheets",
+      "organize"
+    ]
+  },
+  {
+    "name": "storage-boxes",
+    "category": "home",
+    "symbol": "shippingbox.fill",
+    "context": "archivebox",
+    "tags": [
+      "storage",
+      "boxes",
+      "tidy",
+      "organize"
+    ]
+  },
+  {
+    "name": "family-calendar",
+    "category": "home",
+    "symbol": "calendar",
+    "context": "person.2",
+    "tags": [
+      "family",
+      "schedule",
+      "appointments",
+      "planning"
+    ]
+  },
+  {
+    "name": "plant-shelf",
+    "category": "home",
+    "symbol": "leaf",
+    "context": "books.vertical",
+    "tags": [
+      "plants",
+      "shelves",
+      "home",
+      "greenery"
+    ]
+  },
+  {
+    "name": "weekend-chores",
+    "category": "home",
+    "symbol": "checklist",
+    "context": "house",
+    "tags": [
+      "clean",
+      "chores",
+      "errands",
+      "checklist"
+    ]
+  },
+  {
+    "name": "balcony-break",
+    "category": "home",
+    "symbol": "door.sliding.left.hand.closed",
+    "context": "cup.and.saucer",
+    "tags": [
+      "balcony",
+      "outdoor",
+      "pause",
+      "coffee",
+      "mood"
+    ]
+  },
+  {
+    "name": "home-network",
+    "category": "home",
+    "symbol": "wifi",
+    "context": "desktopcomputer",
+    "tags": [
+      "internet",
+      "router",
+      "network",
+      "technology"
+    ]
+  },
+  {
+    "name": "room-refresh",
+    "category": "home",
+    "symbol": "paintbrush",
+    "context": "house",
+    "tags": [
+      "decorate",
+      "paint",
+      "interior",
+      "renovate"
+    ]
+  },
+  {
+    "name": "organized-entryway",
+    "category": "home",
+    "symbol": "door.left.hand.closed",
+    "context": "key",
+    "tags": [
+      "entry",
+      "hallway",
+      "keys",
+      "organize"
+    ]
+  },
+  {
+    "name": "blanket-corner",
+    "category": "home",
+    "symbol": "sofa.fill",
+    "context": "book",
+    "tags": [
+      "cozy",
+      "blanket",
+      "reading",
+      "comfort",
+      "mood"
+    ]
+  },
+  {
+    "name": "trash-day",
+    "category": "home",
+    "symbol": "trash",
+    "context": "calendar",
+    "tags": [
+      "trash",
+      "waste",
+      "clean",
+      "collection"
+    ]
+  },
+  {
+    "name": "dishwashing",
+    "category": "home",
+    "symbol": "sink",
+    "context": "drop",
+    "tags": [
+      "dishes",
+      "wash",
+      "kitchen",
+      "clean"
+    ]
+  },
+  {
+    "name": "window-garden",
+    "category": "home",
+    "symbol": "window.vertical.open",
+    "context": "leaf",
+    "tags": [
+      "plants",
+      "window",
+      "sunlight",
+      "herbs"
+    ]
+  },
+  {
+    "name": "home-delivery",
+    "category": "home",
+    "symbol": "shippingbox",
+    "context": "truck.box",
+    "tags": [
+      "delivery",
+      "parcel",
+      "receive",
+      "errands"
+    ]
+  },
+  {
+    "name": "kitchen-supplies",
+    "category": "home",
+    "symbol": "cabinet.fill",
+    "context": "fork.knife",
+    "tags": [
+      "kitchen",
+      "pantry",
+      "utensils",
+      "organize"
+    ]
+  },
+  {
+    "name": "shared-household",
+    "category": "home",
+    "symbol": "person.2",
+    "context": "house.fill",
+    "tags": [
+      "family",
+      "teamwork",
+      "chores",
+      "connection"
+    ]
+  },
+  {
+    "name": "shoe-cleaning",
+    "category": "home",
+    "symbol": "shoe.fill",
+    "context": "sparkles",
+    "tags": [
+      "shoe",
+      "shoes",
+      "cleaning",
+      "care"
+    ]
+  },
+  {
+    "name": "battery-check",
+    "category": "home",
+    "symbol": "battery.100percent",
+    "context": "bolt",
+    "tags": [
+      "battery",
+      "charge",
+      "maintenance",
+      "power"
+    ]
+  },
+  {
+    "name": "seasonal-decor",
+    "category": "home",
+    "symbol": "sparkles",
+    "context": "house",
+    "tags": [
+      "holiday",
+      "decorate",
+      "season",
+      "home"
+    ]
+  },
+  {
+    "name": "woodland-hare",
+    "category": "nature",
+    "symbol": "hare",
+    "context": "tree",
+    "tags": [
+      "animal",
+      "animals",
+      "wildlife",
+      "woodland",
+      "forest",
+      "mammals"
+    ]
+  },
+  {
+    "name": "rabbit-garden",
+    "category": "nature",
+    "symbol": "hare.fill",
+    "context": "carrot",
+    "tags": [
+      "animal",
+      "animals",
+      "rabbit",
+      "rabbits",
+      "wildlife",
+      "garden"
+    ]
+  },
+  {
+    "name": "pond-fish",
+    "category": "nature",
+    "symbol": "fish.fill",
+    "context": "water.waves",
+    "tags": [
+      "animal",
+      "animals",
+      "fish",
+      "pond",
+      "water",
+      "wildlife"
+    ]
+  },
+  {
+    "name": "songbird-morning",
+    "category": "nature",
+    "symbol": "bird.fill",
+    "context": "sun.max",
+    "tags": [
+      "animal",
+      "animals",
+      "bird",
+      "birds",
+      "dawn",
+      "morning",
+      "song"
+    ]
+  },
+  {
+    "name": "butterfly-meadow",
+    "category": "nature",
+    "symbol": "butterfly",
+    "context": "camera.macro",
+    "tags": [
+      "animal",
+      "animals",
+      "insects",
+      "butterfly",
+      "flowers",
+      "meadow"
+    ]
+  },
+  {
+    "name": "ladybug-leaf",
+    "category": "nature",
+    "symbol": "ladybug",
+    "context": "leaf",
+    "tags": [
+      "animal",
+      "animals",
+      "insects",
+      "ladybug",
+      "garden",
+      "leaf"
+    ]
+  },
+  {
+    "name": "dragonfly-pond",
+    "category": "nature",
+    "symbol": "dragonfly",
+    "context": "drop",
+    "tags": [
+      "animal",
+      "animals",
+      "insect",
+      "pond",
+      "summer",
+      "wildlife"
+    ]
+  },
+  {
+    "name": "pine-forest",
+    "category": "nature",
+    "symbol": "tree.fill",
+    "context": "mountain.2",
+    "tags": [
+      "pine",
+      "evergreen",
+      "forest",
+      "trees",
+      "wilderness"
+    ]
+  },
+  {
+    "name": "moon-and-cloud",
+    "category": "nature",
+    "symbol": "cloud.moon",
+    "context": "moon.stars",
+    "tags": [
+      "night",
+      "sky",
+      "calm",
+      "cloudy",
+      "mood"
+    ]
+  },
+  {
+    "name": "sun-after-rain",
+    "category": "nature",
+    "symbol": "cloud.sun",
+    "context": "rainbow",
+    "tags": [
+      "sun",
+      "rain",
+      "weather",
+      "optimism",
+      "mood"
+    ]
+  },
+  {
+    "name": "winter-forest",
+    "category": "nature",
+    "symbol": "snowflake",
+    "context": "tree",
+    "tags": [
+      "winter",
+      "forest",
+      "snow",
+      "cold"
+    ]
+  },
+  {
+    "name": "mushroom-walk",
+    "category": "nature",
+    "symbol": "tree",
+    "context": "figure.walk",
+    "tags": [
+      "forest",
+      "foraging",
+      "mushrooms",
+      "walk"
+    ]
+  },
+  {
+    "name": "orchard-harvest",
+    "category": "nature",
+    "symbol": "basket",
+    "context": "tree",
+    "tags": [
+      "fruit",
+      "harvest",
+      "orchard",
+      "seasonal"
+    ]
+  },
+  {
+    "name": "wildflower-trail",
+    "category": "nature",
+    "symbol": "camera.macro",
+    "context": "figure.hiking",
+    "tags": [
+      "flowers",
+      "trail",
+      "bloom",
+      "nature",
+      "walk"
+    ]
+  },
+  {
+    "name": "river-stones",
+    "category": "nature",
+    "symbol": "circle.hexagongrid",
+    "context": "water.waves",
+    "tags": [
+      "river",
+      "stones",
+      "water",
+      "geology"
+    ]
+  },
+  {
+    "name": "fern-corner",
+    "category": "nature",
+    "symbol": "leaf.fill",
+    "context": "house",
+    "tags": [
+      "fern",
+      "green",
+      "plant",
+      "shade",
+      "indoor"
+    ]
+  },
+  {
+    "name": "rose-garden",
+    "category": "nature",
+    "symbol": "camera.macro",
+    "context": "heart",
+    "tags": [
+      "flowers",
+      "roses",
+      "romantic",
+      "bloom",
+      "affection"
+    ]
+  },
+  {
+    "name": "stormy-sky",
+    "category": "nature",
+    "symbol": "cloud.bolt",
+    "context": "cloud.rain",
+    "tags": [
+      "storm",
+      "thunder",
+      "weather",
+      "rain"
+    ]
+  },
+  {
+    "name": "misty-hills",
+    "category": "nature",
+    "symbol": "cloud.fog",
+    "context": "mountain.2",
+    "tags": [
+      "mist",
+      "fog",
+      "mountains",
+      "hills",
+      "quiet",
+      "mood"
+    ]
+  },
+  {
+    "name": "garden-harvest",
+    "category": "nature",
+    "symbol": "carrot.fill",
+    "context": "basket",
+    "tags": [
+      "vegetables",
+      "harvest",
+      "garden",
+      "grow"
+    ]
+  },
+  {
+    "name": "bird-feeder",
+    "category": "nature",
+    "symbol": "bird",
+    "context": "basket",
+    "tags": [
+      "animal",
+      "animals",
+      "birds",
+      "feed",
+      "wildlife",
+      "garden"
+    ]
+  },
+  {
+    "name": "potting-day",
+    "category": "nature",
+    "symbol": "leaf.circle",
+    "context": "shovel",
+    "tags": [
+      "soil",
+      "pot",
+      "plant",
+      "repot",
+      "gardening"
+    ]
+  },
+  {
+    "name": "garden-fence",
+    "category": "nature",
+    "symbol": "rectangle.split.3x1",
+    "context": "leaf",
+    "tags": [
+      "fence",
+      "boundary",
+      "garden",
+      "outdoors"
+    ]
+  },
+  {
+    "name": "nature-observation",
+    "category": "nature",
+    "symbol": "binoculars",
+    "context": "bird",
+    "tags": [
+      "animal",
+      "animals",
+      "wildlife",
+      "observe",
+      "discovery"
+    ]
+  },
+  {
+    "name": "fall-walk",
+    "category": "nature",
+    "symbol": "leaf",
+    "context": "figure.walk",
+    "tags": [
+      "autumn",
+      "fall",
+      "leaves",
+      "walk",
+      "seasonal"
+    ]
+  },
+  {
+    "name": "daily-priorities",
+    "category": "work",
+    "symbol": "list.number",
+    "context": "flag",
+    "tags": [
+      "priorities",
+      "tasks",
+      "focus",
+      "planning"
+    ]
+  },
+  {
+    "name": "weekly-review",
+    "category": "work",
+    "symbol": "calendar.badge.checkmark",
+    "context": "checklist",
+    "tags": [
+      "week",
+      "review",
+      "planning",
+      "progress"
+    ]
+  },
+  {
+    "name": "writing-draft",
+    "category": "work",
+    "symbol": "doc.badge.plus",
+    "context": "pencil",
+    "tags": [
+      "write",
+      "draft",
+      "document",
+      "ideas"
+    ]
+  },
+  {
+    "name": "proofreading",
+    "category": "work",
+    "symbol": "doc.text.magnifyingglass",
+    "context": "checkmark",
+    "tags": [
+      "proofread",
+      "edit",
+      "text",
+      "review"
+    ]
+  },
+  {
+    "name": "video-conference",
+    "category": "work",
+    "symbol": "video",
+    "context": "person.2",
+    "tags": [
+      "meeting",
+      "remote",
+      "video",
+      "conference"
+    ]
+  },
+  {
+    "name": "phone-interview",
+    "category": "work",
+    "symbol": "phone",
+    "context": "briefcase",
+    "tags": [
+      "interview",
+      "job",
+      "career",
+      "phone"
+    ]
+  },
+  {
+    "name": "job-search",
+    "category": "work",
+    "symbol": "briefcase",
+    "context": "magnifyingglass",
+    "tags": [
+      "job",
+      "career",
+      "employment",
+      "search"
+    ]
+  },
+  {
+    "name": "portfolio-building",
+    "category": "work",
+    "symbol": "folder",
+    "context": "paintpalette",
+    "tags": [
+      "portfolio",
+      "creative",
+      "career",
+      "showcase"
+    ]
+  },
+  {
+    "name": "business-plan",
+    "category": "work",
+    "symbol": "chart.line.uptrend.xyaxis",
+    "context": "briefcase",
+    "tags": [
+      "business",
+      "strategy",
+      "goals",
+      "plan"
+    ]
+  },
+  {
+    "name": "financial-review",
+    "category": "work",
+    "symbol": "chart.pie",
+    "context": "banknote",
+    "tags": [
+      "finance",
+      "budget",
+      "review",
+      "numbers"
+    ]
+  },
+  {
+    "name": "coding-practice",
+    "category": "work",
+    "symbol": "curlybraces",
+    "context": "laptopcomputer",
+    "tags": [
+      "code",
+      "computer",
+      "programming",
+      "learning"
+    ]
+  },
+  {
+    "name": "software-release",
+    "category": "work",
+    "symbol": "shippingbox",
+    "context": "desktopcomputer",
+    "tags": [
+      "software",
+      "release",
+      "delivery",
+      "project"
+    ]
+  },
+  {
+    "name": "product-design",
+    "category": "work",
+    "symbol": "square.and.pencil",
+    "context": "lightbulb",
+    "tags": [
+      "product",
+      "design",
+      "concept",
+      "ideas"
+    ]
+  },
+  {
+    "name": "team-retrospective",
+    "category": "work",
+    "symbol": "arrow.counterclockwise",
+    "context": "person.3",
+    "tags": [
+      "team",
+      "retrospective",
+      "reflect",
+      "improvement"
+    ]
+  },
+  {
+    "name": "mentoring",
+    "category": "work",
+    "symbol": "person.2",
+    "context": "graduationcap",
+    "tags": [
+      "mentor",
+      "teaching",
+      "support",
+      "learning"
+    ]
+  },
+  {
+    "name": "history-study",
+    "category": "work",
+    "symbol": "books.vertical",
+    "context": "clock",
+    "tags": [
+      "history",
+      "study",
+      "reading",
+      "past"
+    ]
+  },
+  {
+    "name": "geography-study",
+    "category": "work",
+    "symbol": "globe",
+    "context": "map",
+    "tags": [
+      "geography",
+      "learning",
+      "world",
+      "map"
+    ]
+  },
+  {
+    "name": "biology-study",
+    "category": "work",
+    "symbol": "leaf",
+    "context": "flask",
+    "tags": [
+      "biology",
+      "science",
+      "study",
+      "nature"
+    ]
+  },
+  {
+    "name": "physics-practice",
+    "category": "work",
+    "symbol": "atom",
+    "context": "function",
+    "tags": [
+      "physics",
+      "science",
+      "math",
+      "learning"
+    ]
+  },
+  {
+    "name": "chemistry-notes",
+    "category": "work",
+    "symbol": "flask.fill",
+    "context": "pencil",
+    "tags": [
+      "chemistry",
+      "science",
+      "experiment",
+      "notes"
+    ]
+  },
+  {
+    "name": "online-course",
+    "category": "work",
+    "symbol": "play.rectangle",
+    "context": "graduationcap",
+    "tags": [
+      "online",
+      "course",
+      "education",
+      "study"
+    ]
+  },
+  {
+    "name": "library-visit",
+    "category": "work",
+    "symbol": "books.vertical.fill",
+    "context": "building.columns",
+    "tags": [
+      "library",
+      "books",
+      "study",
+      "research"
+    ]
+  },
+  {
+    "name": "study-group",
+    "category": "work",
+    "symbol": "person.3.fill",
+    "context": "book",
+    "tags": [
+      "study",
+      "teamwork",
+      "education",
+      "revision"
+    ]
+  },
+  {
+    "name": "presentation-rehearsal",
+    "category": "work",
+    "symbol": "mic",
+    "context": "chart.bar",
+    "tags": [
+      "presentation",
+      "speech",
+      "rehearsal",
+      "confidence"
+    ]
+  },
+  {
+    "name": "learning-milestone",
+    "category": "work",
+    "symbol": "medal",
+    "context": "graduationcap",
+    "tags": [
+      "learning",
+      "milestone",
+      "achievement",
+      "progress"
+    ]
+  },
+  {
+    "name": "apple-snack",
+    "category": "food",
+    "symbol": "apple",
+    "context": "basket",
+    "tags": [
+      "apple",
+      "fruit",
+      "snack",
+      "nutrition"
+    ]
+  },
+  {
+    "name": "vegetable-chopping",
+    "category": "food",
+    "symbol": "carrot",
+    "context": "scissors",
+    "tags": [
+      "vegetables",
+      "chop",
+      "cook",
+      "preparation"
+    ]
+  },
+  {
+    "name": "smoothie-break",
+    "category": "food",
+    "symbol": "cup.and.saucer.fill",
+    "context": "carrot",
+    "tags": [
+      "smoothie",
+      "fruit",
+      "drink",
+      "breakfast"
+    ]
+  },
+  {
+    "name": "coffee-beans",
+    "category": "food",
+    "symbol": "mug.fill",
+    "context": "bag",
+    "tags": [
+      "coffee",
+      "beans",
+      "drink",
+      "caffeine"
+    ]
+  },
+  {
+    "name": "herbal-tea",
+    "category": "food",
+    "symbol": "leaf",
+    "context": "cup.and.saucer",
+    "tags": [
+      "herbal",
+      "tea",
+      "calm",
+      "relaxing",
+      "mood"
+    ]
+  },
+  {
+    "name": "hot-chocolate",
+    "category": "food",
+    "symbol": "mug",
+    "context": "heart",
+    "tags": [
+      "chocolate",
+      "warm",
+      "drink",
+      "cozy",
+      "mood"
+    ]
+  },
+  {
+    "name": "cookie-baking",
+    "category": "food",
+    "symbol": "circle.grid.3x3",
+    "context": "oven",
+    "tags": [
+      "cookie",
+      "bake",
+      "baking",
+      "dessert"
+    ]
+  },
+  {
+    "name": "pancake-morning",
+    "category": "food",
+    "symbol": "sun.max",
+    "context": "fork.knife",
+    "tags": [
+      "pancake",
+      "breakfast",
+      "morning",
+      "food"
+    ]
+  },
+  {
+    "name": "sandwich-lunch",
+    "category": "food",
+    "symbol": "takeoutbag.and.cup.and.straw.fill",
+    "context": "clock",
+    "tags": [
+      "sandwich",
+      "lunch",
+      "quick",
+      "meal"
+    ]
+  },
+  {
+    "name": "pasta-evening",
+    "category": "food",
+    "symbol": "fork.knife.circle",
+    "context": "moon",
+    "tags": [
+      "pasta",
+      "dinner",
+      "evening",
+      "cooking"
+    ]
+  },
+  {
+    "name": "rice-bowl",
+    "category": "food",
+    "symbol": "bowl",
+    "context": "leaf",
+    "tags": [
+      "rice",
+      "bowl",
+      "meal",
+      "grain"
+    ]
+  },
+  {
+    "name": "spice-shelf",
+    "category": "food",
+    "symbol": "cabinet",
+    "context": "flame",
+    "tags": [
+      "spice",
+      "seasoning",
+      "kitchen",
+      "cooking"
+    ]
+  },
+  {
+    "name": "olive-oil",
+    "category": "food",
+    "symbol": "drop.fill",
+    "context": "leaf",
+    "tags": [
+      "oil",
+      "olive",
+      "ingredients",
+      "cooking"
+    ]
+  },
+  {
+    "name": "freezer-prep",
+    "category": "food",
+    "symbol": "snowflake",
+    "context": "refrigerator",
+    "tags": [
+      "freeze",
+      "store",
+      "meal",
+      "preparation"
+    ]
+  },
+  {
+    "name": "leftovers-plan",
+    "category": "food",
+    "symbol": "refrigerator.fill",
+    "context": "calendar",
+    "tags": [
+      "leftovers",
+      "meal",
+      "plan",
+      "reduce",
+      "waste"
+    ]
+  },
+  {
+    "name": "dinner-reservation",
+    "category": "food",
+    "symbol": "fork.knife",
+    "context": "calendar",
+    "tags": [
+      "restaurant",
+      "dinner",
+      "reservation",
+      "date"
+    ]
+  },
+  {
+    "name": "shopping-list",
+    "category": "food",
+    "symbol": "list.bullet",
+    "context": "cart",
+    "tags": [
+      "shopping",
+      "groceries",
+      "list",
+      "errands"
+    ]
+  },
+  {
+    "name": "budget-groceries",
+    "category": "food",
+    "symbol": "banknote",
+    "context": "basket",
+    "tags": [
+      "budget",
+      "groceries",
+      "savings",
+      "food"
+    ]
+  },
+  {
+    "name": "checkout-time",
+    "category": "food",
+    "symbol": "creditcard",
+    "context": "cart.fill",
+    "tags": [
+      "buy",
+      "checkout",
+      "payment",
+      "shopping"
+    ]
+  },
+  {
+    "name": "local-bakery",
+    "category": "food",
+    "symbol": "oven.fill",
+    "context": "building.2",
+    "tags": [
+      "bakery",
+      "bread",
+      "local",
+      "shop"
+    ]
+  },
+  {
+    "name": "fresh-fish",
+    "category": "food",
+    "symbol": "fish",
+    "context": "fork.knife",
+    "tags": [
+      "fish",
+      "seafood",
+      "protein",
+      "cooking"
+    ]
+  },
+  {
+    "name": "vegetarian-meal",
+    "category": "food",
+    "symbol": "leaf.circle",
+    "context": "fork.knife",
+    "tags": [
+      "vegetarian",
+      "vegetables",
+      "plant",
+      "nutrition"
+    ]
+  },
+  {
+    "name": "fruit-picnic",
+    "category": "food",
+    "symbol": "basket.fill",
+    "context": "sun.max",
+    "tags": [
+      "fruit",
+      "picnic",
+      "outdoor",
+      "lunch"
+    ]
+  },
+  {
+    "name": "celebration-toast",
+    "category": "food",
+    "symbol": "party.popper",
+    "context": "cup.and.saucer",
+    "tags": [
+      "celebrate",
+      "toast",
+      "drink",
+      "occasion",
+      "mood"
+    ]
+  },
+  {
+    "name": "recipe-testing",
+    "category": "food",
+    "symbol": "flask",
+    "context": "book",
+    "tags": [
+      "recipe",
+      "cooking",
+      "experiment",
+      "learning"
+    ]
+  },
+  {
+    "name": "train-platform",
+    "category": "travel",
+    "symbol": "tram",
+    "context": "clock",
+    "tags": [
+      "train",
+      "commute",
+      "station",
+      "travel"
+    ]
+  },
+  {
+    "name": "bus-journey",
+    "category": "travel",
+    "symbol": "bus",
+    "context": "map",
+    "tags": [
+      "bus",
+      "journey",
+      "commute",
+      "transport"
+    ]
+  },
+  {
+    "name": "ferry-crossing",
+    "category": "travel",
+    "symbol": "ferry",
+    "context": "water.waves",
+    "tags": [
+      "ferry",
+      "boat",
+      "crossing",
+      "sea"
+    ]
+  },
+  {
+    "name": "motorcycle-ride",
+    "category": "travel",
+    "symbol": "motorcycle",
+    "context": "map",
+    "tags": [
+      "motorcycle",
+      "ride",
+      "road",
+      "adventure"
+    ]
+  },
+  {
+    "name": "camper-van",
+    "category": "travel",
+    "symbol": "car.side",
+    "context": "tent",
+    "tags": [
+      "camper",
+      "camping",
+      "van",
+      "holiday"
+    ]
+  },
+  {
+    "name": "hotel-checkin",
+    "category": "travel",
+    "symbol": "bed.double",
+    "context": "key",
+    "tags": [
+      "hotel",
+      "accommodation",
+      "stay",
+      "checkin"
+    ]
+  },
+  {
+    "name": "beach-sunrise",
+    "category": "travel",
+    "symbol": "sunrise",
+    "context": "beach.umbrella",
+    "tags": [
+      "beach",
+      "morning",
+      "sea",
+      "sunrise"
+    ]
+  },
+  {
+    "name": "seaside-picnic",
+    "category": "travel",
+    "symbol": "basket",
+    "context": "sailboat",
+    "tags": [
+      "sea",
+      "picnic",
+      "coast",
+      "lunch"
+    ]
+  },
+  {
+    "name": "mountain-cabin",
+    "category": "travel",
+    "symbol": "house",
+    "context": "mountain.2",
+    "tags": [
+      "cabin",
+      "mountain",
+      "retreat",
+      "vacation"
+    ]
+  },
+  {
+    "name": "forest-camping",
+    "category": "travel",
+    "symbol": "tent",
+    "context": "tree",
+    "tags": [
+      "camping",
+      "forest",
+      "outdoor",
+      "adventure"
+    ]
+  },
+  {
+    "name": "lake-kayak",
+    "category": "travel",
+    "symbol": "sailboat.fill",
+    "context": "drop",
+    "tags": [
+      "kayak",
+      "lake",
+      "paddle",
+      "water"
+    ]
+  },
+  {
+    "name": "sunset-sailing",
+    "category": "travel",
+    "symbol": "sailboat",
+    "context": "sunset",
+    "tags": [
+      "sail",
+      "sunset",
+      "sea",
+      "boat"
+    ]
+  },
+  {
+    "name": "island-escape",
+    "category": "travel",
+    "symbol": "beach.umbrella.fill",
+    "context": "sailboat",
+    "tags": [
+      "island",
+      "escape",
+      "holiday",
+      "tropical"
+    ]
+  },
+  {
+    "name": "national-park",
+    "category": "travel",
+    "symbol": "tree",
+    "context": "map",
+    "tags": [
+      "park",
+      "national",
+      "wilderness",
+      "explore"
+    ]
+  },
+  {
+    "name": "travel-itinerary",
+    "category": "travel",
+    "symbol": "list.bullet.rectangle",
+    "context": "airplane",
+    "tags": [
+      "itinerary",
+      "travel",
+      "organize",
+      "schedule"
+    ]
+  },
+  {
+    "name": "packing-checklist",
+    "category": "travel",
+    "symbol": "suitcase.rolling",
+    "context": "checklist",
+    "tags": [
+      "pack",
+      "luggage",
+      "checklist",
+      "travel"
+    ]
+  },
+  {
+    "name": "travel-budget",
+    "category": "travel",
+    "symbol": "banknote",
+    "context": "airplane",
+    "tags": [
+      "travel",
+      "budget",
+      "money",
+      "vacation"
+    ]
+  },
+  {
+    "name": "roadside-stop",
+    "category": "travel",
+    "symbol": "car",
+    "context": "cup.and.saucer",
+    "tags": [
+      "road",
+      "stop",
+      "coffee",
+      "journey"
+    ]
+  },
+  {
+    "name": "scenic-overlook",
+    "category": "travel",
+    "symbol": "binoculars",
+    "context": "mountain.2",
+    "tags": [
+      "scenic",
+      "view",
+      "overlook",
+      "landscape"
+    ]
+  },
+  {
+    "name": "waterfront-stroll",
+    "category": "travel",
+    "symbol": "figure.walk",
+    "context": "sailboat",
+    "tags": [
+      "walk",
+      "waterfront",
+      "sea",
+      "outdoors"
+    ]
+  },
+  {
+    "name": "urban-exploration",
+    "category": "travel",
+    "symbol": "building.2.fill",
+    "context": "map",
+    "tags": [
+      "city",
+      "urban",
+      "explore",
+      "streets"
+    ]
+  },
+  {
+    "name": "museum-day",
+    "category": "travel",
+    "symbol": "building.columns",
+    "context": "paintpalette",
+    "tags": [
+      "museum",
+      "culture",
+      "travel",
+      "art"
+    ]
+  },
+  {
+    "name": "travel-postcard",
+    "category": "travel",
+    "symbol": "envelope",
+    "context": "globe",
+    "tags": [
+      "postcard",
+      "memories",
+      "travel",
+      "letter"
+    ]
+  },
+  {
+    "name": "snow-adventure",
+    "category": "travel",
+    "symbol": "figure.skiing.crosscountry",
+    "context": "snowflake",
+    "tags": [
+      "ski",
+      "snow",
+      "winter",
+      "adventure"
+    ]
+  },
+  {
+    "name": "returning-home",
+    "category": "travel",
+    "symbol": "house",
+    "context": "suitcase",
+    "tags": [
+      "home",
+      "return",
+      "travel",
+      "rest"
+    ]
+  },
+  {
+    "name": "watercolor-practice",
+    "category": "creativity",
+    "symbol": "paintbrush.pointed",
+    "context": "drop",
+    "tags": [
+      "watercolor",
+      "paint",
+      "art",
+      "creativity"
+    ]
+  },
+  {
+    "name": "paper-collage",
+    "category": "creativity",
+    "symbol": "doc.on.doc",
+    "context": "scissors",
+    "tags": [
+      "paper",
+      "collage",
+      "cut",
+      "craft"
+    ]
+  },
+  {
+    "name": "origami-time",
+    "category": "creativity",
+    "symbol": "paperplane",
+    "context": "square",
+    "tags": [
+      "origami",
+      "paper",
+      "fold",
+      "craft"
+    ]
+  },
+  {
+    "name": "embroidery-work",
+    "category": "creativity",
+    "symbol": "circle.dotted",
+    "context": "scissors",
+    "tags": [
+      "embroidery",
+      "fabric",
+      "sewing",
+      "craft"
+    ]
+  },
+  {
+    "name": "woodworking",
+    "category": "creativity",
+    "symbol": "hammer",
+    "context": "ruler",
+    "tags": [
+      "woodwork",
+      "craft",
+      "build",
+      "tools"
+    ]
+  },
+  {
+    "name": "creative-brainstorm",
+    "category": "creativity",
+    "symbol": "lightbulb",
+    "context": "pencil",
+    "tags": [
+      "brainstorm",
+      "ideas",
+      "creative",
+      "imagine"
+    ]
+  },
+  {
+    "name": "poetry-reading",
+    "category": "creativity",
+    "symbol": "text.quote",
+    "context": "book",
+    "tags": [
+      "poetry",
+      "read",
+      "language",
+      "expression",
+      "mood"
+    ]
+  },
+  {
+    "name": "story-outline",
+    "category": "creativity",
+    "symbol": "list.bullet",
+    "context": "pencil",
+    "tags": [
+      "story",
+      "outline",
+      "write",
+      "creative"
+    ]
+  },
+  {
+    "name": "songwriting",
+    "category": "creativity",
+    "symbol": "music.note.list",
+    "context": "pencil",
+    "tags": [
+      "song",
+      "music",
+      "write",
+      "lyrics"
+    ]
+  },
+  {
+    "name": "choir-practice",
+    "category": "creativity",
+    "symbol": "person.3",
+    "context": "music.note",
+    "tags": [
+      "choir",
+      "singing",
+      "music",
+      "together"
+    ]
+  },
+  {
+    "name": "singing-session",
+    "category": "creativity",
+    "symbol": "mic.fill",
+    "context": "music.note",
+    "tags": [
+      "sing",
+      "sing",
+      "voice",
+      "music"
+    ]
+  },
+  {
+    "name": "violin-practice",
+    "category": "creativity",
+    "symbol": "music.note",
+    "context": "metronome",
+    "tags": [
+      "violin",
+      "music",
+      "practice",
+      "instrument"
+    ]
+  },
+  {
+    "name": "drum-rhythm",
+    "category": "creativity",
+    "symbol": "waveform",
+    "context": "metronome",
+    "tags": [
+      "drum",
+      "rhythm",
+      "beat",
+      "music"
+    ]
+  },
+  {
+    "name": "recording-session",
+    "category": "creativity",
+    "symbol": "mic",
+    "context": "waveform",
+    "tags": [
+      "record",
+      "audio",
+      "music",
+      "podcast"
+    ]
+  },
+  {
+    "name": "photo-editing",
+    "category": "creativity",
+    "symbol": "camera.filters",
+    "context": "photo",
+    "tags": [
+      "photo",
+      "edit",
+      "color",
+      "creative"
+    ]
+  },
+  {
+    "name": "portrait-session",
+    "category": "creativity",
+    "symbol": "person.crop.rectangle",
+    "context": "camera",
+    "tags": [
+      "portrait",
+      "photography",
+      "people"
+    ]
+  },
+  {
+    "name": "street-photography",
+    "category": "creativity",
+    "symbol": "camera.fill",
+    "context": "building.2",
+    "tags": [
+      "street",
+      "photo",
+      "city",
+      "creative"
+    ]
+  },
+  {
+    "name": "handmade-gift",
+    "category": "creativity",
+    "symbol": "gift.fill",
+    "context": "scissors",
+    "tags": [
+      "handmade",
+      "gift",
+      "craft",
+      "care"
+    ]
+  },
+  {
+    "name": "birthday-letter",
+    "category": "creativity",
+    "symbol": "envelope",
+    "context": "birthday.cake",
+    "tags": [
+      "birthday",
+      "letter",
+      "celebration",
+      "connection"
+    ]
+  },
+  {
+    "name": "board-game-evening",
+    "category": "creativity",
+    "symbol": "dice",
+    "context": "moon",
+    "tags": [
+      "game",
+      "friends",
+      "evening",
+      "leisure",
+      "mood"
+    ]
+  },
+  {
+    "name": "family-game",
+    "category": "creativity",
+    "symbol": "puzzlepiece.fill",
+    "context": "person.3",
+    "tags": [
+      "game",
+      "family",
+      "play",
+      "connection"
+    ]
+  },
+  {
+    "name": "book-club",
+    "category": "creativity",
+    "symbol": "book",
+    "context": "person.3",
+    "tags": [
+      "book",
+      "club",
+      "reading",
+      "discussion"
+    ]
+  },
+  {
+    "name": "community-garden",
+    "category": "creativity",
+    "symbol": "person.3",
+    "context": "leaf",
+    "tags": [
+      "community",
+      "garden",
+      "volunteer",
+      "connection"
+    ]
+  },
+  {
+    "name": "charity-project",
+    "category": "creativity",
+    "symbol": "heart",
+    "context": "hands.sparkles",
+    "tags": [
+      "charity",
+      "helping",
+      "kindness",
+      "volunteer"
+    ]
+  },
+  {
+    "name": "celebration-memories",
+    "category": "creativity",
+    "symbol": "photo.stack",
+    "context": "party.popper",
+    "tags": [
+      "celebration",
+      "memories",
+      "photos",
+      "mood"
+    ]
+  },
+  {
+    "name": "sunrise-walk",
+    "category": "health",
+    "symbol": "figure.walk",
+    "context": "sunrise",
+    "tags": [
+      "walk",
+      "morning",
+      "health",
+      "energy",
+      "mood"
+    ]
+  },
+  {
+    "name": "park-jog",
+    "category": "health",
+    "symbol": "figure.run",
+    "context": "tree",
+    "tags": [
+      "jog",
+      "run",
+      "park",
+      "exercise"
+    ]
+  },
+  {
+    "name": "stair-workout",
+    "category": "health",
+    "symbol": "stairs",
+    "context": "heart",
+    "tags": [
+      "stairs",
+      "cardio",
+      "fitness",
+      "training"
+    ]
+  },
+  {
+    "name": "cycling-session",
+    "category": "health",
+    "symbol": "figure.outdoor.cycle",
+    "context": "bicycle",
+    "tags": [
+      "cycling",
+      "exercise",
+      "cardio",
+      "fitness"
+    ]
+  },
+  {
+    "name": "indoor-cycling",
+    "category": "health",
+    "symbol": "figure.indoor.cycle",
+    "context": "heart",
+    "tags": [
+      "bike",
+      "indoor",
+      "gym",
+      "exercise"
+    ]
+  },
+  {
+    "name": "pilates-practice",
+    "category": "health",
+    "symbol": "figure.pilates",
+    "context": "heart",
+    "tags": [
+      "pilates",
+      "stretch",
+      "strength",
+      "balance"
+    ]
+  },
+  {
+    "name": "mobility-session",
+    "category": "health",
+    "symbol": "figure.flexibility",
+    "context": "arrow.left.and.right",
+    "tags": [
+      "mobility",
+      "flexibility",
+      "rehabilitation",
+      "care"
+    ]
+  },
+  {
+    "name": "rest-day",
+    "category": "health",
+    "symbol": "bed.double",
+    "context": "heart",
+    "tags": [
+      "rest",
+      "recovery",
+      "health",
+      "sleep",
+      "mood"
+    ]
+  },
+  {
+    "name": "physical-therapy",
+    "category": "health",
+    "symbol": "cross.case",
+    "context": "figure.walk",
+    "tags": [
+      "therapy",
+      "physical",
+      "rehabilitation",
+      "healing"
+    ]
+  },
+  {
+    "name": "medical-checkup",
+    "category": "health",
+    "symbol": "stethoscope",
+    "context": "calendar",
+    "tags": [
+      "doctor",
+      "checkup",
+      "medical",
+      "appointment"
+    ]
+  },
+  {
+    "name": "vision-care",
+    "category": "health",
+    "symbol": "eye",
+    "context": "eyeglasses",
+    "tags": [
+      "vision",
+      "eyes",
+      "health",
+      "checkup"
+    ]
+  },
+  {
+    "name": "dental-care",
+    "category": "health",
+    "symbol": "mouth",
+    "context": "sparkles",
+    "tags": [
+      "dental",
+      "teeth",
+      "hygiene",
+      "health"
+    ]
+  },
+  {
+    "name": "blood-pressure",
+    "category": "health",
+    "symbol": "heart",
+    "context": "gauge",
+    "tags": [
+      "heart",
+      "pressure",
+      "health",
+      "monitor"
+    ]
+  },
+  {
+    "name": "vitamin-routine",
+    "category": "health",
+    "symbol": "pills.fill",
+    "context": "sun.max",
+    "tags": [
+      "vitamin",
+      "supplement",
+      "health",
+      "routine"
+    ]
+  },
+  {
+    "name": "mindful-eating",
+    "category": "health",
+    "symbol": "fork.knife",
+    "context": "heart",
+    "tags": [
+      "eat",
+      "mindfulness",
+      "nutrition",
+      "healthy",
+      "mood"
+    ]
+  },
+  {
+    "name": "protein-prep",
+    "category": "health",
+    "symbol": "takeoutbag.and.cup.and.straw",
+    "context": "dumbbell",
+    "tags": [
+      "protein",
+      "nutrition",
+      "meal",
+      "strength"
+    ]
+  },
+  {
+    "name": "healthy-snack",
+    "category": "health",
+    "symbol": "carrot",
+    "context": "heart",
+    "tags": [
+      "snack",
+      "healthy",
+      "nutrition",
+      "energy"
+    ]
+  },
+  {
+    "name": "water-reminder",
+    "category": "health",
+    "symbol": "drop",
+    "context": "clock",
+    "tags": [
+      "water",
+      "hydration",
+      "reminder",
+      "habit"
+    ]
+  },
+  {
+    "name": "sleep-schedule",
+    "category": "health",
+    "symbol": "bed.double.fill",
+    "context": "clock",
+    "tags": [
+      "sleep",
+      "routine",
+      "schedule",
+      "health",
+      "mood"
+    ]
+  },
+  {
+    "name": "body-scan",
+    "category": "health",
+    "symbol": "figure.mind.and.body",
+    "context": "heart",
+    "tags": [
+      "mindfulness",
+      "body",
+      "awareness",
+      "meditation",
+      "mood"
+    ]
+  },
+  {
+    "name": "stress-release",
+    "category": "health",
+    "symbol": "wind",
+    "context": "heart",
+    "tags": [
+      "stress",
+      "relax",
+      "breathe",
+      "wellbeing",
+      "mood"
+    ]
+  },
+  {
+    "name": "mental-health",
+    "category": "health",
+    "symbol": "brain.head.profile",
+    "context": "heart",
+    "tags": [
+      "mental",
+      "health",
+      "feelings",
+      "wellbeing",
+      "mood"
+    ]
+  },
+  {
+    "name": "support-session",
+    "category": "health",
+    "symbol": "person.2",
+    "context": "heart",
+    "tags": [
+      "support",
+      "therapy",
+      "listening",
+      "care",
+      "mood"
+    ]
+  },
+  {
+    "name": "small-progress",
+    "category": "health",
+    "symbol": "figure.walk",
+    "context": "chart.line.uptrend.xyaxis",
+    "tags": [
+      "progress",
+      "recovery",
+      "small",
+      "steps",
+      "motivation"
+    ]
+  },
+  {
+    "name": "energy-check",
+    "category": "health",
+    "symbol": "bolt.heart",
+    "context": "gauge",
+    "tags": [
+      "energy",
+      "wellbeing",
+      "check",
+      "pace",
+      "mood"
+    ]
+  },
+  {
+    "name": "afternoon-pause",
+    "category": "rest",
+    "symbol": "sun.haze",
+    "context": "pause",
+    "tags": [
+      "afternoon",
+      "pause",
+      "relax",
+      "quiet"
+    ]
+  },
+  {
+    "name": "weekend-reading",
+    "category": "rest",
+    "symbol": "book",
+    "context": "sofa",
+    "tags": [
+      "weekend",
+      "read",
+      "rest",
+      "cozy"
+    ]
+  },
+  {
+    "name": "hammock-time",
+    "category": "rest",
+    "symbol": "moon",
+    "context": "tree",
+    "tags": [
+      "hammock",
+      "leisure",
+      "rest",
+      "shade"
+    ]
+  },
+  {
+    "name": "cabin-quiet",
+    "category": "rest",
+    "symbol": "house",
+    "context": "tree",
+    "tags": [
+      "cabin",
+      "quiet",
+      "retreat",
+      "peaceful"
+    ]
+  },
+  {
+    "name": "seaside-calm",
+    "category": "rest",
+    "symbol": "water.waves",
+    "context": "moon",
+    "tags": [
+      "sea",
+      "calm",
+      "peaceful",
+      "water"
+    ]
+  },
+  {
+    "name": "mountain-stillness",
+    "category": "rest",
+    "symbol": "mountain.2",
+    "context": "sun.max",
+    "tags": [
+      "mountain",
+      "quiet",
+      "stillness",
+      "peace"
+    ]
+  },
+  {
+    "name": "rain-listening",
+    "category": "rest",
+    "symbol": "ear",
+    "context": "cloud.rain",
+    "tags": [
+      "rain",
+      "listen",
+      "quiet",
+      "mindfulness"
+    ]
+  },
+  {
+    "name": "slow-breathing",
+    "category": "rest",
+    "symbol": "wind",
+    "context": "timer",
+    "tags": [
+      "slow",
+      "breathing",
+      "calm",
+      "relaxation"
+    ]
+  },
+  {
+    "name": "sunrise-reflection",
+    "category": "rest",
+    "symbol": "sunrise",
+    "context": "book",
+    "tags": [
+      "sunrise",
+      "reflect",
+      "journal",
+      "morning"
+    ]
+  },
+  {
+    "name": "moon-journal",
+    "category": "rest",
+    "symbol": "moon",
+    "context": "pencil",
+    "tags": [
+      "night",
+      "journal",
+      "reflect",
+      "quiet"
+    ]
+  },
+  {
+    "name": "self-compassion",
+    "category": "rest",
+    "symbol": "heart",
+    "context": "hands.sparkles",
+    "tags": [
+      "compassion",
+      "kindness",
+      "care",
+      "feelings"
+    ]
+  },
+  {
+    "name": "hopeful-morning",
+    "category": "rest",
+    "symbol": "sun.max",
+    "context": "sparkles",
+    "tags": [
+      "hope",
+      "optimism",
+      "morning",
+      "fresh"
+    ]
+  },
+  {
+    "name": "calm-focus",
+    "category": "rest",
+    "symbol": "scope",
+    "context": "leaf",
+    "tags": [
+      "calm",
+      "focus",
+      "intention",
+      "mindfulness"
+    ]
+  },
+  {
+    "name": "letting-go",
+    "category": "rest",
+    "symbol": "leaf",
+    "context": "wind",
+    "tags": [
+      "release",
+      "acceptance",
+      "relax",
+      "feelings"
+    ]
+  },
+  {
+    "name": "quiet-confidence",
+    "category": "rest",
+    "symbol": "star",
+    "context": "heart",
+    "tags": [
+      "confidence",
+      "reassurance",
+      "growth",
+      "feelings"
+    ]
+  },
+  {
+    "name": "joyful-moment",
+    "category": "rest",
+    "symbol": "face.smiling",
+    "context": "sun.max",
+    "tags": [
+      "joy",
+      "happy",
+      "cheerful",
+      "emotion"
+    ]
+  },
+  {
+    "name": "comfort-corner",
+    "category": "rest",
+    "symbol": "sofa",
+    "context": "heart",
+    "tags": [
+      "comfort",
+      "safe",
+      "cozy",
+      "rest"
+    ]
+  },
+  {
+    "name": "peaceful-sleep",
+    "category": "rest",
+    "symbol": "bed.double",
+    "context": "moon.stars",
+    "tags": [
+      "sleep",
+      "peaceful",
+      "night",
+      "dream"
+    ]
+  },
+  {
+    "name": "screen-free-evening",
+    "category": "rest",
+    "symbol": "power",
+    "context": "moon",
+    "tags": [
+      "offline",
+      "evening",
+      "disconnect",
+      "rest"
+    ]
+  },
+  {
+    "name": "journaling-prompt",
+    "category": "rest",
+    "symbol": "pencil.and.list.clipboard",
+    "context": "book",
+    "tags": [
+      "journal",
+      "prompt",
+      "reflection",
+      "feelings"
+    ]
+  },
+  {
+    "name": "fresh-perspective",
+    "category": "rest",
+    "symbol": "eye",
+    "context": "sun.max",
+    "tags": [
+      "perspective",
+      "insight",
+      "growth",
+      "reflection"
+    ]
+  },
+  {
+    "name": "patient-progress",
+    "category": "rest",
+    "symbol": "hourglass",
+    "context": "leaf",
+    "tags": [
+      "patience",
+      "progress",
+      "gentle",
+      "hope"
+    ]
+  },
+  {
+    "name": "soft-sunlight",
+    "category": "rest",
+    "symbol": "sun.haze.fill",
+    "context": "leaf",
+    "tags": [
+      "sunlight",
+      "gentle",
+      "warm",
+      "peaceful"
+    ]
+  },
+  {
+    "name": "clear-mind",
+    "category": "rest",
+    "symbol": "brain.head.profile",
+    "context": "sparkles",
+    "tags": [
+      "clarity",
+      "mind",
+      "focus",
+      "reflection"
+    ]
+  },
+  {
+    "name": "thankful-evening",
+    "category": "rest",
+    "symbol": "heart",
+    "context": "moon",
+    "tags": [
+      "gratitude",
+      "thankful",
+      "evening",
+      "reflection"
+    ]
+  }
+]

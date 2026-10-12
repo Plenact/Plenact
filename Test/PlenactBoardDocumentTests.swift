@@ -21,6 +21,37 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testCoverSearchMatchesTagsWithinTheSelectedAlbum() {
+        XCTAssertEqual(ExampleCoverImage.search("").count, 400)
+        XCTAssertEqual(ExampleCoverImage.search("  ", in: .nature).count, 50)
+        XCTAssertTrue(ExampleCoverImage.search("quiet morning", in: .rest).contains(.quietMorning))
+        XCTAssertTrue(ExampleCoverImage.search("WATER plants", in: .nature).contains(.wateringPlants))
+        XCTAssertTrue(ExampleCoverImage.search("guitar music", in: .creativity).contains(.guitarSession))
+        XCTAssertTrue(ExampleCoverImage.search("computer desk", in: .work).contains(.workspace))
+        XCTAssertTrue(ExampleCoverImage.search("running fitness", in: .health).contains(.runningRoute))
+        XCTAssertTrue(ExampleCoverImage.search("running fitness", in: .food).isEmpty)
+        XCTAssertTrue(ExampleCoverImage.search("unicorn submarines", in: .home).isEmpty)
+        XCTAssertTrue(ExampleCoverImage.allCases.allSatisfy { (10...20).contains($0.tags.count) })
+        let animals = ExampleCoverImage.search("animal")
+        XCTAssertTrue(animals.contains(.petCare))
+        XCTAssertTrue(animals.contains(.birdWatching))
+        XCTAssertTrue(animals.contains(.butterfly))
+        XCTAssertTrue(animals.contains(.honeyBees))
+        XCTAssertFalse(animals.contains(.workspace))
+        XCTAssertTrue(ExampleCoverImage.search("dogs").contains(.petCare))
+        XCTAssertTrue(ExampleCoverImage.search("cat").contains(.petCare))
+        XCTAssertFalse(ExampleCoverImage.search("cat").contains(.studyBooks))
+        XCTAssertTrue(ExampleCoverImage.search("mood").contains(.peacefulBreath))
+        XCTAssertTrue(ExampleCoverImage.search("mood").contains(.morningStretch))
+        XCTAssertTrue(ExampleCoverImage.search("mood", in: .food).contains(.coffeeBreak))
+        XCTAssertFalse(ExampleCoverImage.search("mood", in: .food).contains(.peacefulBreath))
+        XCTAssertTrue(ExampleCoverImage.search("cats", in: .home).contains(.catCompanion))
+        XCTAssertTrue(ExampleCoverImage.search("dogs", in: .home).contains(.dogWalk))
+        XCTAssertTrue(ExampleCoverImage.search("wildlife", in: .nature).contains(.birdFeeder))
+        XCTAssertTrue(ExampleCoverImage.search("mood", in: .rest).contains(.joyfulMoment))
+        XCTAssertTrue(ExampleCoverImage.search("mental health", in: .health).contains(.mentalHealth))
+    }
+
     @MainActor
     func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2934,8 +2965,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testOfflineLibraryContains48DistinctBundledIllustrations()
-    /// @brief      Verify the complete six-category library is shipped with the app
+    /// @fcn        PlenactBoardDocumentTests.testOfflineLibraryContains400DistinctBundledIllustrations()
+    /// @brief      Verify the complete eight-category library is shipped with the app
     /// @details    Checks actual app resources, exact canvas dimensions, distinct bytes, and total
     ///             size. Does not enable covers or write personal media files
     ///
@@ -2943,22 +2974,22 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     /// @throws     Missing bundle resources, image decoding, or file-read errors
     ///
-    func testOfflineLibraryContains48DistinctBundledIllustrations() throws {
+    func testOfflineLibraryContains400DistinctBundledIllustrations() throws {
 
         let categories = CoverCategory.allCases /* Available attachment categories */
 
-        XCTAssertEqual(categories.count, 6)
+        XCTAssertEqual(categories.count, 8)
 
         for category in categories {
 
-            XCTAssertEqual(category.images.count, 8, category.rawValue)
+            XCTAssertEqual(category.images.count, 50, category.rawValue)
         }
 
         let images = categories.flatMap(\.images) /* Synthetic image fixtures */
         let names  = images.map(\.rawValue) /* Bundled illustration asset names */
 
-        XCTAssertEqual(names.count,      48)
-        XCTAssertEqual(Set(names).count, 48)
+        XCTAssertEqual(names.count,      400)
+        XCTAssertEqual(Set(names).count, 400)
         XCTAssertEqual(Set(images),      Set(ExampleCoverImage.allCases))
 
         var distinctImages: Set<Data> = [] /* Distinct image fixtures */
@@ -2982,8 +3013,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             totalBytes += bytes.count
         }
 
-        XCTAssertEqual(distinctImages.count, 48)
-        XCTAssertLessThan(totalBytes, 1_048_576, "Keep the initial offline artwork below one MiB")
+        XCTAssertEqual(distinctImages.count, 400)
+        XCTAssertLessThan(totalBytes, 150_000_000, "Keep offline artwork within the 150 MB budget")
 
         let directory    = try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("CardCoverImages") /* Synthetic photo directory */
 
@@ -3046,7 +3077,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         try card.useLibraryCover(.garden)
 
-        XCTAssertEqual(card.attachments?.count,                49)
+        XCTAssertEqual(card.attachments?.count, ExampleCoverImage.allCases.count + 1)
         XCTAssertEqual(card.coverAttachment?.exampleImage,     .garden)
         XCTAssertEqual(snapshot.coverAttachment?.exampleImage, ExampleCoverImage.allCases.last)
 

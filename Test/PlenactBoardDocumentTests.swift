@@ -771,6 +771,27 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map { PlanningDate.key($0, calendar: calendar) }, "2027-01-02")
     }
 
+    func testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity() throws {
+        var first = PersonalCollection(title: "Garden", kind: .list)
+        var second = PersonalCollection(title: "Home", kind: .list)
+        let note = KanbanCard(id: 42, word: "Ideas", listTitle: first.lists[0].title,
+                              descriptionOverride: "Water the seedlings", presentation: .note)
+        first.lists[0].cards = [note]
+        second.lists[0].cards = [note]
+        let labels = LabelLibraryStore.load()
+        let results = LibrarySearchIndex.results(query: " seedlings ", collections: [first, second], labels: labels)
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(Set(results.compactMap(\.ownerID)), [first.id, second.id])
+        XCTAssertEqual(Set(results.map(\.id)).count, 2)
+        XCTAssertEqual(results.first?.cardID, 42)
+        XCTAssertEqual(results.first?.listID, first.lists[0].id)
+        XCTAssertTrue(results.allSatisfy { $0.weekKey == nil })
+        first.lists[0].isArchived = true
+        second.isArchived = true
+        XCTAssertTrue(LibrarySearchIndex.results(query: "seedlings", collections: [first, second], labels: labels).isEmpty)
+        XCTAssertTrue(LibrarySearchIndex.results(query: "  ", collections: [first, second], labels: labels).isEmpty)
+    }
+
     func testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))

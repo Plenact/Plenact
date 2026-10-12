@@ -3316,7 +3316,7 @@ struct TodaySearchView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
 
-                    TextField("Search", text: $query)
+                    TextField(resultProvider == nil ? "Find in your Week" : "Find in Plenact", text: $query)
                         .focused($searchFieldFocused)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
@@ -3346,8 +3346,13 @@ struct TodaySearchView: View {
 
                 .padding(.horizontal, 14)
                 .frame(minHeight: 48)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-                .padding()
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 14))
+                .padding(.horizontal)
+                .padding(.top)
+                Text(resultProvider == nil ? "Your Week · Cards, notes, and lists" : "Your Plenact · Today, Week, and Library")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal).padding(.top, 8).padding(.bottom, 12)
 
                 Picker("Search filter", selection: $scope) {
                     ForEach(TodaySearchScope.allCases) { scope in
@@ -3429,7 +3434,7 @@ struct TodaySearchView: View {
             }
 
             .background(Color(.systemBackground))
-            .navigationTitle("Search")
+            .navigationTitle(resultProvider == nil ? "Search your Week" : "Search Plenact")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -3695,6 +3700,19 @@ enum ActivityRecentStore {
     }
 }
 
+enum LibrarySearchIndex {
+    static func results(query: String, collections: [PersonalCollection], labels: LabelLibrary) -> [TodaySearchResult] {
+        collections.filter(\.isActive).flatMap { collection in
+            TodaySearchIndex.results(query: query, scope: .all, lists: collection.lists.filter { !$0.isArchived }, library: labels).map { match in
+                var result = match
+                result.ownerID = collection.id
+                result.ownerTitle = collection.title
+                return result
+            }
+        }
+    }
+}
+
 struct LibraryImportanceAccess {
     let contains: (Int) -> Bool
     let set: (Int, Bool) -> Void
@@ -3907,7 +3925,41 @@ struct BoardListsView: View {
     /// @post       Archived collections remain stored but are not returned
     ///
     private var filteredCollections: [PersonalCollection] { /* Active directory entries matching the search */
-        collections.filter { $0.isActive && $0.matches(searchText) }
+        let owners = Set(librarySearchResults.compactMap(\.ownerID))
+        return collections.filter { $0.isActive && ($0.matches(searchText) || owners.contains($0.id)) }
+    }
+
+    private var librarySearchResults: [TodaySearchResult] {
+        LibrarySearchIndex.results(query: searchText, collections: collections, labels: LabelLibraryStore.load())
+    }
+
+    private func openLibrarySearchResult(_ result: TodaySearchResult) {
+        guard let collection = collections.first(where: { $0.id == result.ownerID && $0.isActive }) else { return }
+        isLibrarySearchFocused = false
+        boardTargetListID = result.listID
+        boardTargetCardID = result.cardID
+        openedCollection = collection
+    }
+
+    private func librarySearchRow(_ result: TodaySearchResult) -> some View {
+        let card = collections.first { $0.id == result.ownerID }?.lists.first { $0.id == result.listID }?.cards.first { $0.id == result.cardID }
+        return Button { openLibrarySearchResult(result) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: card?.presentation == .note ? "note.text" : "rectangle")
+                    .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(result.cardTitle).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                    Text(result.ownerTitle == result.listTitle ? result.listTitle : (result.ownerTitle ?? "Library") + " · " + result.listTitle)
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
+            }.padding(12)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        }.buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .accessibilityHint("Opens this item in your Library")
     }
 
 
@@ -4581,10 +4633,24 @@ struct BoardListsView: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Find in your Library", text: $searchText)
                     .focused($isLibrarySearchFocused)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                    .accessibilityLabel("Find in your Library")
+                    .accessibilityHint("Search your personal collections, cards, and notes")
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                        .accessibilityLabel("Clear Library search")
+                }
             }
-            .padding(12)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-                .accessibilityLabel("Filter Library collections")
+            if isLibrarySearchFocused || !searchText.isEmpty {
+                Text("Your Library · Collections, cards, and notes")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if showsRecentShelf {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -4762,14 +4828,14 @@ struct BoardListsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label(
                                 searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? "Your own organizing spaces" : "No matching collections",
+                                    ? "Your own organizing spaces" : "No Library matches",
                                 systemImage: "books.vertical"
                             )
                             .font(.headline)
                             Text(
                                 searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                     ? "Keep ideas, projects, and everyday plans together in personal lists and boards."
-                                    : "Try another collection name or card title."
+                                    : "Nothing in your Library matches ‘\(searchText.trimmingCharacters(in: .whitespacesAndNewlines))’. Try another word or phrase."
                             )
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -4787,6 +4853,11 @@ struct BoardListsView: View {
                     }
                 } header: {
                     Text("Personal collections")
+                }
+                if !librarySearchResults.isEmpty {
+                    Section {
+                        ForEach(librarySearchResults) { result in librarySearchRow(result) }
+                    } header: { Text("Cards and notes · \(librarySearchResults.count) matches") }
                 }
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active {
                     plateSection

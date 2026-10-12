@@ -410,7 +410,38 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 /// @note   Board persistence remains owned by the existing board persistence path
 ///
+struct PlenactLoadingView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var animatesLogo = true
+
+    var body: some View {
+        ZStack {
+            Color("LaunchBackground")
+            Image("LaunchLogo")
+                .resizable().scaledToFit()
+                .frame(width: 136, height: 136)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .phaseAnimator(reduceMotion || !animatesLogo ? [false] : [false, true]) { logo, expanded in
+                    logo.scaleEffect(expanded ? 1.035 : 1)
+                        .opacity(expanded ? 1 : 0.94)
+                        .shadow(color: .black.opacity(expanded ? 0.25 : 0.20), radius: expanded ? 20 : 18, x: 0, y: 8)
+                } animation: { _ in .easeInOut(duration: 1.8) }
+                .accessibilityHidden(true)
+            VStack(spacing: 8) {
+                Text("Plenact").font(.system(size: 28, weight: .bold)).foregroundStyle(.white)
+                Text("Planning your life into action").font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
+            }
+            .offset(y: 124)
+        }
+        .ignoresSafeArea()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Plenact is loading")
+        .accessibilityIdentifier("app.loading")
+    }
+}
+
 private struct AppRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
     @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
     @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
@@ -452,10 +483,11 @@ private struct AppRootView: View {
 
                 navigationContent
             } else {
-                Color(.systemBackground).ignoresSafeArea()
+                PlenactLoadingView()
             }
         }
 
+        .animation(reduceLaunchMotion ? nil : .easeOut(duration: 0.2), value: hasLoadedBoard)
         .databaseActivityOverlay()
         .onChange(of: scenePhase) { _, phase in if phase == .active { advancePlanningWeekIfNeeded() } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in

@@ -21,6 +21,48 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testLoadingScreenResourcesAndReducedMotionLayout() async throws {
+        XCTAssertNotNil(UIImage(named: "LaunchLogo"))
+        XCTAssertNotNil(UIImage(named: "LaunchShadow"))
+        XCTAssertNotNil(UIColor(named: "LaunchBackground"))
+        XCTAssertNotNil(Bundle.main.url(forResource: "PlenactLaunch", withExtension: "storyboardc"))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: PlenactLoadingView(animatesLogo: false))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(120))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in
+            host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+        }
+        let data = try XCTUnwrap(image.pngData())
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-loading-preview.png")
+        try data.write(to: path)
+        print("Loading preview: " + path.path)
+        let launch = try XCTUnwrap(UIStoryboard(name: "PlenactLaunch", bundle: .main).instantiateInitialViewController())
+        launch.loadViewIfNeeded()
+        launch.view.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        launch.view.layoutIfNeeded()
+        let staticImage = UIGraphicsImageRenderer(bounds: launch.view.bounds).image { context in
+            launch.view.layer.render(in: context.cgContext)
+        }
+        let staticPath = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-static-launch-preview.png")
+        try XCTUnwrap(staticImage.pngData()).write(to: staticPath)
+        print("Static launch preview: " + staticPath.path)
+
+        for size in [CGSize(width: 393, height: 852), CGSize(width: 852, height: 393)] {
+            let fitted = host.sizeThatFits(in: size)
+            XCTAssertTrue(fitted.width.isFinite && fitted.height.isFinite)
+            XCTAssertEqual(fitted.width, size.width, accuracy: 1)
+            XCTAssertEqual(fitted.height, size.height, accuracy: 1)
+        }
+    }
+
     func testCoverSearchMatchesTagsWithinTheSelectedAlbum() {
         XCTAssertEqual(ExampleCoverImage.search("").count, 400)
         XCTAssertEqual(ExampleCoverImage.search("  ", in: .nature).count, 50)

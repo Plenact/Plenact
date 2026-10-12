@@ -2524,6 +2524,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
 
         let title      = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles) /* Example name made unique within the directory */
         var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color) /* New personal List populated from the example */
+        collection.collectionDescription = summary
 
         collection.lists[0].cards = cards.enumerated().map { index, content in
         
@@ -2581,6 +2582,16 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     var savedCardIDs: Set<Int>           /* Bookmarked cards retained by the collection */
     var isArchived: Bool? = nil          /* Optional archive state for older saved data */
     var boardAppearance: BoardAppearance? = nil /* Independent persisted List color defaults */
+    var collectionDescription: String? = nil
+
+    var contentPreview: String {
+        let description = collectionDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !description.isEmpty { return description }
+        let titles = lists.filter { !$0.isArchived }.flatMap(\.cards)
+            .filter { !$0.isSectionDivider }.map(\.word)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        return titles.prefix(3).joined(separator: " · ")
+    }
 
     ///
     /// @fcn        PersonalCollection.isActive
@@ -3785,6 +3796,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
     func makeCollection(existingTitles: [String]) -> PersonalCollection {
         let title = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
         var collection = PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
+        collection.collectionDescription = summary
         collection.lists[0].cards = items.enumerated().map { index, item in
             var card = KanbanCard(id: index, word: item.0, listTitle: title, checklists: [],
                 descriptionOverride: item.1, subtitleOverride: "", listDisplayFormat: item.2)
@@ -3804,6 +3816,7 @@ extension PersonalCollection {
     static func exampleWeek(existingTitles: [String]) -> PersonalCollection {
         let title = uniqueTitle("Week View", existingTitles: existingTitles)
         var draft = PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)
+        draft.collectionDescription = "A week of plans, everyday actions, and room for reflection."
         draft.lists = SampleData.lists
         return draft
     }

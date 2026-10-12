@@ -3809,6 +3809,96 @@ struct LibraryPlateTile: View {
     }
 }
 
+private struct PreviewTextWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+private struct PreviewViewportWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+private struct PreviewVisibility: ViewModifier {
+    @Binding var visible: Bool
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.onScrollVisibilityChange(threshold: 0.1) { visible = $0 }
+        } else {
+            content.onAppear { visible = true }.onDisappear { visible = false }
+        }
+    }
+}
+
+/// Keeps short previews still and reveals overflowing text without changing row size.
+struct GentleCollectionPreview: View {
+    let text: String
+    var scrolls = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var textWidth: CGFloat = 0
+    @State private var viewportWidth: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    @State private var opacity: Double = 1
+    @State private var visible = false
+    private struct Loop: Hashable {
+        let text: String
+        let distance: CGFloat
+        let active: Bool
+    }
+    private var loop: Loop {
+        Loop(text: text, distance: max(0, textWidth - viewportWidth),
+             active: scrolls && !reduceMotion && !typeSize.isAccessibilitySize && visible && viewportWidth > 0)
+    }
+    var body: some View {
+        Group {
+            if scrolls && !reduceMotion && !typeSize.isAccessibilitySize {
+                Text(text).lineLimit(1).hidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay(alignment: .leading) {
+                        Text(text).fixedSize(horizontal: true, vertical: false)
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.preference(key: PreviewTextWidthKey.self, value: geometry.size.width)
+                                }
+                            }
+                            .offset(x: offset).opacity(opacity)
+                    }
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: PreviewViewportWidthKey.self, value: geometry.size.width)
+                        }
+                    }
+                    .clipped()
+            } else {
+                Text(text).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+            }
+        }
+        .font(.caption).foregroundStyle(.secondary)
+        .accessibilityElement(children: .ignore).accessibilityLabel(text)
+        .onPreferenceChange(PreviewTextWidthKey.self) { textWidth = $0 }
+        .onPreferenceChange(PreviewViewportWidthKey.self) { viewportWidth = $0 }
+        .modifier(PreviewVisibility(visible: $visible))
+        .task(id: loop) {
+            var reset = Transaction(); reset.disablesAnimations = true
+            withTransaction(reset) { offset = 0; opacity = 1 }
+            guard loop.active, loop.distance > 1 else { return }
+            let distance = loop.distance
+            let seconds = max(4, Double(distance) / 14)
+            do {
+                while !Task.isCancelled {
+                    try await Task.sleep(for: .seconds(2.5))
+                    withAnimation(.linear(duration: seconds)) { offset = -distance }
+                    try await Task.sleep(for: .seconds(seconds + 2.5))
+                    withAnimation(.easeOut(duration: 0.4)) { opacity = 0 }
+                    try await Task.sleep(for: .seconds(0.4))
+                    withTransaction(reset) { offset = 0 }
+                    withAnimation(.easeIn(duration: 0.6)) { opacity = 1 }
+                    try await Task.sleep(for: .seconds(0.6))
+                }
+            } catch { /* Leaving the row or changing preferences cancels its loop. */ }
+        }
+    }
+}
+
 struct LibraryCollectionRow: View {
 
     let title: String      /* User-owned collection or Week Board title       */
@@ -3817,6 +3907,7 @@ struct LibraryCollectionRow: View {
     let color: Color       /* Collection accent, not its only identifying cue */
     let count: Int         /* Active non-divider card count                   */
     var preview: String = ""
+    var scrollsPreview = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
 
@@ -3854,7 +3945,9 @@ struct LibraryCollectionRow: View {
                         .font(.headline)
                         .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
-
+                    if !preview.isEmpty {
+                        GentleCollectionPreview(text: preview, scrolls: scrollsPreview)
+                    }
                 }
 
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -3903,6 +3996,8 @@ struct BoardListsView: View {
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
     @State private var recentItems = LibraryRecentStore.load()
     @AppStorage(LibraryRecentStore.key) private var libraryRecentData = Data()
+    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
+    @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -4504,7 +4599,7 @@ struct BoardListsView: View {
     ///
     private func row(title: String, subtitle: String, icon: String, color: Color, count: Int, preview: String = "") -> some View {
 
-        LibraryCollectionRow(title: title, subtitle: subtitle, icon: icon, color: color, count: count, preview: preview)
+        LibraryCollectionRow(title: title, subtitle: subtitle, icon: icon, color: color, count: count, preview: preview, scrollsPreview: scrollsCollectionPreviews)
     }
 
 
@@ -4554,8 +4649,7 @@ struct BoardListsView: View {
     }
 
     private func collectionPreview(_ collection: PersonalCollection) -> String {
-        let items = collection.lists.filter { !$0.isArchived }.flatMap(\.cards).filter { !$0.isSectionDivider }
-        return items.isEmpty ? "Room for your next idea" : items.prefix(3).map(\.word).joined(separator: " · ")
+        showsCollectionPreviews ? collection.contentPreview : ""
     }
 
     private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)] {
@@ -4612,13 +4706,18 @@ struct BoardListsView: View {
                 }
                 .accessibilityLabel("Search Plenact")
                 .accessibilityIdentifier("library.openSearch")
-                Button {
-                    withAnimation { libraryEditMode = libraryEditMode == .active ? .inactive : .active }
+                Menu {
+                    Button(libraryEditMode == .active ? "Done reordering collections" : "Reorder collections", systemImage: libraryEditMode == .active ? "checkmark" : "arrow.up.arrow.down") {
+                        withAnimation { libraryEditMode = libraryEditMode == .active ? .inactive : .active }
+                    }
+                    .disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Toggle("Show collection previews", isOn: $showsCollectionPreviews)
+                    Toggle("Scroll long previews", isOn: $scrollsCollectionPreviews)
+                        .disabled(!showsCollectionPreviews)
                 } label: {
                     WorkspaceHeaderIcon(systemName: libraryEditMode == .active ? "checkmark" : "pencil")
                 }
-                .disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityLabel(libraryEditMode == .active ? "Done reordering collections" : "Reorder collections")
+                .accessibilityLabel("Library display and organization")
                 Button(action: onOpenSaved) {
                     WorkspaceHeaderIcon(systemName: "bookmark")
                 }
@@ -5417,6 +5516,11 @@ private struct PersonalCollectionSettingsView: View {
             Form {
                 Section {
                     TextField("Name", text: $draft.title)
+                    TextField("Description (optional)", text: Binding(
+                        get: { draft.collectionDescription ?? "" },
+                        set: { draft.collectionDescription = $0 }
+                    ), axis: .vertical)
+                        .lineLimit(1...3)
                     LabeledContent("Type", value: draft.kind.rawValue)
                     Picker("Icon", selection: $draft.icon) {
                         ForEach(PersonalCollectionIcon.allCases, id: \.self) { icon in

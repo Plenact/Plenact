@@ -771,6 +771,36 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map { PlanningDate.key($0, calendar: calendar) }, "2027-01-02")
     }
 
+    func testCollectionPreviewsPreferDescriptionsAndReadOlderCollections() throws {
+        var collection = PersonalCollection(title: "Ideas", kind: .list)
+        collection.lists[0].cards = [
+            KanbanCard(id: 1, word: "Garden plans", listTitle: "Ideas"),
+            KanbanCard(id: 2, word: "Divider", listTitle: "Ideas", isDivider: true),
+            KanbanCard(id: 3, word: "Desk project", listTitle: "Ideas"),
+            KanbanCard(id: 4, word: "Weekend ideas", listTitle: "Ideas"),
+            KanbanCard(id: 5, word: "Later", listTitle: "Ideas")
+        ]
+        XCTAssertEqual(collection.contentPreview, "Garden plans · Desk project · Weekend ideas")
+        collection.collectionDescription = "  Personal projects and plans  "
+        XCTAssertEqual(collection.contentPreview, "Personal projects and plans")
+        let data = try JSONEncoder().encode(collection)
+        XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: data).collectionDescription, collection.collectionDescription)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        legacy.removeValue(forKey: "collectionDescription")
+        let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(decoded.collectionDescription)
+        XCTAssertEqual(decoded.contentPreview, "Garden plans · Desk project · Weekend ideas")
+        collection.collectionDescription = "  "
+        collection.lists[0].isArchived = true
+        XCTAssertEqual(collection.contentPreview, "")
+        for example in PersonalListExample.allCases {
+            XCTAssertEqual(example.makeCollection(existingTitles: []).contentPreview, example.summary)
+        }
+        for template in MixedListTemplate.allCases {
+            XCTAssertEqual(template.makeCollection(existingTitles: []).contentPreview, template.summary)
+        }
+    }
+
     func testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity() throws {
         var first = PersonalCollection(title: "Garden", kind: .list)
         var second = PersonalCollection(title: "Home", kind: .list)

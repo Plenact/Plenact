@@ -261,8 +261,12 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var icon: PersonalCollectionIcon?
     var background: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
+    var hideEmptySubtitle: Bool? = nil
+    func hidesSubtitle(_ text: String) -> Bool {
+        hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
-    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil }
+    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true }
 }
 
 ///

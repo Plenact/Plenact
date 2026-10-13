@@ -2666,6 +2666,7 @@ struct CardDetailView: View {
                                 .buttonStyle(.plain)
                                 }
 
+                            if appearance?.hidesSubtitle(subtitleText) != true || focusedField == .subtitle {
                             TextField("Card subtitle", text: $subtitleText)
                                 .font(.subheadline)
                                 .textInputAutocapitalization(.never)
@@ -2688,6 +2689,7 @@ struct CardDetailView: View {
                                 .onChange(of: subtitleText) { _, newValue in
                                     syncCardState(subtitle: newValue)
                                 }
+                            }
                         }
 
                         Spacer()
@@ -2770,8 +2772,8 @@ struct CardDetailView: View {
                                 if !syncCardState() { showsDueDateInList = previous }
                             }))
                         }
-                        if presentation == .card && displayFormat != .divider {
-                            Button("Layout", systemImage: "rectangle.3.group") { showsLayoutEditor = true }
+                        if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true {
+                            Button("Add subtitle", systemImage: "text.badge.plus") { focusedField = .subtitle }
                         }
                         Button("Appearance", systemImage: "paintpalette") {
                             dismissEditing()
@@ -2898,15 +2900,6 @@ struct CardDetailView: View {
             Text("This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone.")
         }
 
-        .sheet(isPresented: $showsLayoutEditor) {
-            CardLayoutEditor(layout: sectionLayout) { updated in
-                let previous = sectionLayout
-                sectionLayout = updated
-                if syncCardState() { return true }
-                sectionLayout = previous
-                return false
-            }
-        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
 
@@ -2957,6 +2950,7 @@ struct CardDetailView: View {
                         title: titleText,
                         appearance: appearance,
                         onOpenCover: displayFormat == .divider ? nil : { showsAppearanceCover = true },
+                        onOpenLayout: { showsLayoutEditor = true },
                         displayFormat: displayFormat,
                         onSaveDisplay: saveDisplayAppearance
                     ) { updated in
@@ -2964,6 +2958,15 @@ struct CardDetailView: View {
                     }
                     .sheet(isPresented: $showsAppearanceCover) {
                         cardCoverPanel { showsAppearanceCover = false }
+                    }
+                    .sheet(isPresented: $showsLayoutEditor) {
+                        CardLayoutEditor(layout: sectionLayout) { updated in
+                            let previous = sectionLayout
+                            sectionLayout = updated
+                            if syncCardState() { return true }
+                            sectionLayout = previous
+                            return false
+                        }
                     }
 
                 case .cover:

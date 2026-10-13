@@ -1307,6 +1307,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"listBackground":"invalid"}"#.utf8)))
     }
 
+    func testEmptySubtitleAppearanceIsOptionalAndNeverHidesWriting() throws {
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.hideEmptySubtitle)
+        XCTAssertFalse(legacy.hidesSubtitle(""))
+        var appearance = ItemAppearance()
+        appearance.hideEmptySubtitle = true
+        XCTAssertFalse(appearance.isEmpty)
+        XCTAssertTrue(appearance.hidesSubtitle(" \n "))
+        XCTAssertFalse(appearance.hidesSubtitle("A useful subtitle"))
+        var card = KanbanCard(id: 42, word: "Plan", listTitle: "Today", subtitleOverride: "", appearance: appearance)
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(restored.appearance, appearance)
+        XCTAssertTrue(restored.appearance?.hidesSubtitle(restored.subtitle) == true)
+        card.subtitleOverride = "A useful subtitle"
+        XCTAssertFalse(card.appearance?.hidesSubtitle(card.subtitle) == true)
+        appearance.hideEmptySubtitle = nil
+        XCTAssertTrue(appearance.isEmpty)
+        XCTAssertFalse(appearance.hidesSubtitle(""))
+    }
+
     func testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues() throws {
         let card = try JSONDecoder().decode(KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","checklists":[]}"#.utf8))
         let list = try JSONDecoder().decode(KanbanList.self, from: Data(#"{"id":0,"title":"Monday","cards":[]}"#.utf8))
@@ -1491,7 +1511,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 var item = KanbanCard(id: 73, word: "A long example title for a mixed List", listTitle: "Ideas", descriptionOverride: "Retained writing")
                 item.displayFormat = format
                 let original = item
-                let sheet = ItemAppearanceSheet(title: item.word, appearance: nil, displayFormat: format,
+                let sheet = ItemAppearanceSheet(title: item.word, appearance: nil,
+                    onOpenLayout: { XCTFail("Presentation must not open Layout") }, displayFormat: format,
                     onSaveDisplay: { _, _ in XCTFail("Layout must not save display"); return false }
                 ) { _ in XCTFail("Layout must not save decoration"); return false }
                 let controller = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, textSize))

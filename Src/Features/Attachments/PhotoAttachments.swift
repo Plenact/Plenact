@@ -1499,17 +1499,19 @@ struct ItemAppearanceSheet: View {
     let title: String
     let onSave: (ItemAppearance?) -> Bool
     let onOpenCover: (() -> Void)?
+    let onOpenLayout: (() -> Void)?
     let showsListBackground: Bool
     let onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
     @State private var draftDisplay: ItemDisplayFormat?
     @State private var draft: ItemAppearance
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
+    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
         self.title = title
         self.showsListBackground = showsListBackground
         self.onSave = onSave
         self.onOpenCover = onOpenCover
+        self.onOpenLayout = onOpenLayout
         self.onSaveDisplay = onSaveDisplay
         _draftDisplay = State(initialValue: displayFormat)
         _draft = State(initialValue: appearance ?? ItemAppearance())
@@ -1535,6 +1537,23 @@ struct ItemAppearanceSheet: View {
                             Text("Picture uses the selected Card Cover. Save this format, then choose a picture in Card Cover if needed.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                if draftDisplay == .card {
+                    Section("Subtitle") {
+                        Toggle("Hide subtitle when empty", isOn: Binding(
+                            get: { draft.hideEmptySubtitle == true },
+                            set: { draft.hideEmptySubtitle = $0 ? true : nil }
+                        ))
+                        .accessibilityIdentifier("appearance.hideEmptySubtitle")
+                        Text("Filled subtitles stay visible. Use Add subtitle from the card menu to write one when the empty field is hidden.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let onOpenLayout {
+                        Section("Card Layout") {
+                            Button("Layout", systemImage: "rectangle.3.group", action: onOpenLayout)
+                                .accessibilityIdentifier("appearance.layout")
                         }
                     }
                 }

@@ -2027,6 +2027,39 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testQuickCreationSwitchKeepsTitleAndTemplateWriting() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        let host = UIHostingController(rootView: QuickNoteComposer(lists: .constant([KanbanList(id: 4, title: "Ideas", cards: [])]),
+            initialListID: 4, initialTitle: "Keep this idea", template: .smallPlan) { _, _, _, _, _, _ in
+                XCTFail("Switching type must not create content")
+            })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap { descendants($0) } }
+        func textValues() -> [String] {
+            descendants(host.view).compactMap { view in
+                if let field = view as? UITextField { return field.text }
+                if let text = view as? UITextView { return text.text }
+                return nil
+            }
+        }
+        for index in [1, 0] {
+            try await Task.sleep(for: .milliseconds(180))
+            host.view.layoutIfNeeded()
+            let control = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UISegmentedControl }.first)
+            control.selectedSegmentIndex = index
+            control.sendActions(for: .valueChanged)
+            try await Task.sleep(for: .milliseconds(180))
+            host.view.layoutIfNeeded()
+            XCTAssertTrue(textValues().contains("Keep this idea"))
+            XCTAssertTrue(textValues().contains(QuickCaptureTemplate.smallPlan.body))
+        }
+    }
+
+    @MainActor
     func testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -2036,8 +2069,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previous?.makeKey()
         }
-        func fields(in view: UIView) -> [UITextField] {
-            (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
+        func fields(in view: UIView) -> [UIView] {
+            let editable = (view is UITextField || view is UITextView) ? [view] : []
+            return editable + view.subviews.flatMap { fields(in: $0) }
         }
         for template in [QuickCaptureTemplate.smallPlan, .idea] {
             let controller = UIHostingController(rootView: QuickNoteComposer(
@@ -2051,7 +2085,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.makeKeyAndVisible()
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(150))
-            XCTAssertTrue(fields(in: controller.view).contains { $0.text == "Captured thought" })
+            XCTAssertTrue(fields(in: controller.view).contains {
+                ($0 as? UITextField)?.text == "Captured thought" || ($0 as? UITextView)?.text == "Captured thought"
+            })
         }
     }
 
@@ -2485,6 +2521,21 @@ final class PlenactBoardDocumentTests: XCTestCase {
     /// @return     (Void) records new-Note and save/cancel boundary assertions
     /// @throws     Synthetic fixture setup errors
     ///
+    func testPersonalCreationHonorsSelectedKindWithoutChangingListDefault() throws {
+        var collection = PersonalCollection(title: "Ideas", kind: .list)
+        let createdAt = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+        let body = "First paragraph\n\nSecond paragraph  "
+        try collection.addNote(title: "A card", body: body, createdAt: createdAt, presentation: .card, subtitle: " Useful context ")
+        try collection.addNote(title: "A note", body: body, createdAt: createdAt, presentation: .note)
+        XCTAssertEqual(collection.lists[0].newItemPresentation, .note)
+        let cards = collection.lists[0].cards
+        XCTAssertEqual(cards.map(\.presentation), [.card, .note])
+        XCTAssertEqual(cards[0].subtitleOverride, "Useful context")
+        XCTAssertTrue(cards.allSatisfy { $0.descriptionOverride == body && $0.createdAt == createdAt })
+        XCTAssertNotEqual(cards[0].id, cards[1].id)
+        XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection)), collection)
+    }
+
     func testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody() throws {
 
         var collection = PersonalCollection(title: "Synthetic ideas", kind: .list) /* Collection state under verification */
@@ -4367,7 +4418,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                         onArchive:                 { XCTFail("Layout must not archive") },
                         onDelete:                  { XCTFail("Layout must not delete") },
                         onCommitDeletion:          { _ in XCTFail("Layout must not commit deletion") },
-                        onCreateNote:              { _, _, _, _ in XCTFail("Layout must not create a Note") },
+                        onCreateNote:              { _, _, _, _, _, _ in XCTFail("Layout must not create an item") },
                         onMoveNote:                { _, _, _ in throw CocoaError(.validationMissingMandatoryProperty) },
                         onUpdateMovedNote:         { _, _ in XCTFail("Layout must not update a moved Note"); return false },
                         onArchiveMovedNote:        { _, _ in XCTFail("Layout must not archive a moved Note"); return false },

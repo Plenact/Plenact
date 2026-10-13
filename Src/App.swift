@@ -2666,6 +2666,16 @@ struct QuickCaptureTemplatesView: View {
 /// @section    Purpose
 ///     Collect card text and destination before submitting through the parent callback
 ///
+struct ContentCreationKindPicker: View {
+    @Binding var presentation: ItemPresentation
+    var body: some View {
+        Picker("Create as", selection: $presentation) {
+            Label("Card", systemImage: "rectangle").tag(ItemPresentation.card)
+            Label("Note", systemImage: "note.text").tag(ItemPresentation.note)
+        }.pickerStyle(.segmented).accessibilityLabel("Create as Card or Note")
+    }
+}
+
 struct QuickNoteComposer: View {
 
     @Binding var lists: [KanbanList]                         /* Current destination lists */
@@ -2674,6 +2684,8 @@ struct QuickNoteComposer: View {
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
+    @State private var presentation: ItemPresentation
+    @State private var createdAt = Date.now
     @State private var subtitle = ""
     @State private var title = ""               /* New card title */
     @State private var description = ""         /* Optional card detail */
@@ -2703,6 +2715,7 @@ struct QuickNoteComposer: View {
     ) {
 
         _lists = lists
+        _presentation = State(initialValue: template?.presentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
         _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? initialTitle)
         _description = State(initialValue: template?.body ?? "")
         _actions = State(initialValue: (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
@@ -2735,11 +2748,29 @@ struct QuickNoteComposer: View {
     /// @return     (some View) large-sheet navigation form with Cancel and Add actions
     /// @post       Cancel discards the draft; creating/persisting a submitted card belongs to onSave
     ///
+    private var destinationPicker: some View {
+        Picker("List", selection: $selectedListID) {
+            Text("Choose a list").tag(nil as Int?)
+            ForEach(lists) { list in Text(list.title).tag(Optional(list.id)) }
+        }.pickerStyle(.menu)
+    }
+
     var body: some View { /* New-card form and destination controls */
 
-        let presentation = template?.presentation ?? lists.first(where: { $0.id == selectedListID })?.newItemPresentation ?? .card
-
         NavigationStack {
+            VStack(spacing: 0) {
+                ContentCreationKindPicker(presentation: $presentation).padding(.horizontal, 20).padding(.vertical, 12)
+                if presentation == .note {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            destinationPicker
+                            TextField("Note title", text: $title, axis: .vertical)
+                                .font(.largeTitle.weight(.bold))
+                            NoteCreationDateLabel(createdAt: createdAt)
+                            RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
+                        }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                    }.background(Color(.systemGroupedBackground))
+                } else {
             Form {
                 Section(presentation.title) {
                     TextField("Title", text: $title, axis: .vertical)
@@ -2778,6 +2809,9 @@ struct QuickNoteComposer: View {
                 }
             }
 
+                }
+            }
+
             .navigationTitle("New \(presentation.title.lowercased())")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -2794,7 +2828,7 @@ struct QuickNoteComposer: View {
                         guard let selectedListID, /* Chosen Week destination identity */
                               lists.contains(where: { $0.id == selectedListID }) else { return }
                         let editedActions = actions.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines), template?.presentation, template == nil ? nil : editedActions)
+                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation, template == nil ? nil : editedActions)
                         dismiss()
                     }
 
@@ -2817,10 +2851,12 @@ struct QuickNoteComposer: View {
 private struct NewPersonalNoteComposer: View {
 
     let availablePersonalLists: [PersonalCollection] /* Personal List destinations offered by the composer */
-    let onSave: (UUID, String, String, Date) throws -> Void /* Checked Note creation callback */
+    let onSave: (UUID, String, String, String, Date, ItemPresentation) throws -> Void /* Checked Note creation callback */
 
     @Environment(\.dismiss) private var dismiss /* Composer dismissal action */
     @FocusState private var focusedField: Field? /* Input currently receiving keyboard focus */
+    @State private var presentation: ItemPresentation = .note
+    @State private var subtitle = ""
     @State private var draft: PersonalListNoteDraft /* Unsaved Note content and destination */
 
 
@@ -2839,7 +2875,7 @@ private struct NewPersonalNoteComposer: View {
     init(
         initialCollectionID: UUID,
         availablePersonalLists: [PersonalCollection],
-        onSave: @escaping (UUID, String, String, Date) throws -> Void
+        onSave: @escaping (UUID, String, String, String, Date, ItemPresentation) throws -> Void
     ) {
 
         _draft = State(initialValue: PersonalListNoteDraft(destinationID: initialCollectionID))
@@ -2878,19 +2914,17 @@ private struct NewPersonalNoteComposer: View {
 
         do {
 
-            try draft.save(in: availablePersonalLists, onSave: onSave)
+            try draft.save(in: availablePersonalLists) { destinationID, title, body, createdAt in
+                try onSave(destinationID, title, body, subtitle, createdAt, presentation)
+            }
             dismiss()
         } catch {
 
-            DatabaseActivity.shared.report("Could not save the Note: \(error.localizedDescription) The draft remains open.")
+            DatabaseActivity.shared.report("Could not save the \(presentation.title): \(error.localizedDescription) The draft remains open.")
         }
     }
 
-    var body: some View { /* Note draft editor and destination picker */
-
-        NavigationStack {
-            ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+    private var destinationMenu: some View {
                 Menu {
                     ForEach(destinations) { collection in
                         Button {
@@ -2916,6 +2950,26 @@ private struct NewPersonalNoteComposer: View {
                 .accessibilityHint("Choose the personal List where this Note will be saved")
                 .accessibilityIdentifier("library.newNoteLocationPicker")
 
+    }
+
+    var body: some View { /* Note draft editor and destination picker */
+
+        NavigationStack {
+            VStack(spacing: 0) {
+                ContentCreationKindPicker(presentation: $presentation).padding(.horizontal, 20).padding(.vertical, 12)
+                if presentation == .card {
+                    Form {
+                        Section("Card") {
+                            TextField("Title", text: $draft.title, axis: .vertical).lineLimit(1...6)
+                            TextField("Subtitle (optional)", text: $subtitle)
+                            RichTextEditor(placeholder: "Details (optional)", text: $draft.body)
+                        }
+                        Section("Add to") { destinationMenu }
+                    }
+                } else {
+            ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                destinationMenu
                 TextField("Note title", text: $draft.title, axis: .vertical)
                     .font(.largeTitle.weight(.bold))
                     .focused($focusedField, equals: .title)
@@ -2934,6 +2988,9 @@ private struct NewPersonalNoteComposer: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .background(Color(.systemGroupedBackground))
+                }
+            }
+            .onChange(of: presentation) { _, _ in focusedField = nil }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -2950,7 +3007,7 @@ private struct NewPersonalNoteComposer: View {
                     }
                 }
             }
-            .navigationTitle("New Note")
+            .navigationTitle("New " + presentation.title)
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.large])
@@ -4246,7 +4303,7 @@ struct BoardListsView: View {
     /// @return     (Void) saves and publishes one new Note record
     /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
     ///
-    private func createNote(in collectionID: UUID, title: String, body: String, createdAt: Date) throws {
+    private func createNote(in collectionID: UUID, title: String, body: String, subtitle: String, createdAt: Date, presentation: ItemPresentation) throws {
 
         guard let collectionIndex = collections.firstIndex(where: { /* Active personal List receiving the new Note */
 
@@ -4258,7 +4315,7 @@ struct BoardListsView: View {
 
         var updated = collections[collectionIndex] /* Destination collection receiving the new Note */
 
-        try updated.addNote(title: title, body: body, createdAt: createdAt)
+        try updated.addNote(title: title, body: body, createdAt: createdAt, presentation: presentation, subtitle: subtitle)
 
         var snapshot = collections /* Collection snapshot saved before publishing the new Note */
 
@@ -4541,8 +4598,8 @@ struct BoardListsView: View {
                 try PersonalCollectionStore.saveChecked(snapshot)
                 collections = snapshot
             },
-            onCreateNote:              { destinationID, title, body, createdAt in
-                try createNote(in: destinationID, title: title, body: body, createdAt: createdAt)
+            onCreateNote:              { destinationID, title, body, subtitle, createdAt, presentation in
+                try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation)
             },
             onMoveNote:                { note, sourceID, destinationID in
                 try moveNote(note.id, from: sourceID, to: destinationID)
@@ -5089,8 +5146,8 @@ struct BoardListsView: View {
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
                     availablePersonalLists: collections
-                ) { destinationID, title, body, createdAt in
-                    try createNote(in: destinationID, title: title, body: body, createdAt: createdAt)
+                ) { destinationID, title, body, subtitle, createdAt, presentation in
+                    try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation)
                 }
                 .databaseActivityOverlay()
             }
@@ -5437,7 +5494,7 @@ struct PersonalCollectionBoardView: View {
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
-    let onCreateNote: (UUID, String, String, Date) throws -> Void /* Checked creation callback for a destination List */
+    let onCreateNote: (UUID, String, String, String, Date, ItemPresentation) throws -> Void /* Checked creation callback for a destination List */
     let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard /* Checked movement callback returning the relocated Note */
     let onUpdateMovedNote: (UUID, KanbanCard) -> Bool /* Persists edits in the Note's current collection */
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool /* Archives the Note in its current collection */

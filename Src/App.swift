@@ -2996,7 +2996,7 @@ struct TodaySearchResult: Identifiable {
 ///
 enum TodaySearchScope: String, CaseIterable, Identifiable {
     case all = "All"
-    case boards = "Boards"
+    case boards = "Lists"
     case labels = "Labels"
     case users = "Users"
 
@@ -3354,7 +3354,10 @@ struct TodaySearchView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal).padding(.top, 8).padding(.bottom, 12)
 
-                Picker("Search filter", selection: $scope) {
+                Text("Search by").font(.caption).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal).padding(.bottom, 6)
+                Picker("Search by", selection: $scope) {
                     ForEach(TodaySearchScope.allCases) { scope in
                         Text(scope.rawValue).tag(scope)
                     }
@@ -3700,6 +3703,20 @@ enum ActivityRecentStore {
     }
 }
 
+enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
+    case all = "All", lists = "Lists", boards = "Boards"
+    var id: String { rawValue }
+    var symbol: String {
+        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1" }
+    }
+    var accent: Color {
+        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo }
+    }
+    func includes(_ collection: PersonalCollection) -> Bool {
+        collection.isActive && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
+    }
+}
+
 enum LibrarySearchIndex {
     static func results(query: String, collections: [PersonalCollection], labels: LabelLibrary) -> [TodaySearchResult] {
         collections.filter(\.isActive).flatMap { collection in
@@ -3998,6 +4015,7 @@ struct BoardListsView: View {
     @AppStorage(LibraryRecentStore.key) private var libraryRecentData = Data()
     @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
+    @State private var browseFilter: LibraryBrowseFilter = .all
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -4021,11 +4039,11 @@ struct BoardListsView: View {
     ///
     private var filteredCollections: [PersonalCollection] { /* Active directory entries matching the search */
         let owners = Set(librarySearchResults.compactMap(\.ownerID))
-        return collections.filter { $0.isActive && ($0.matches(searchText) || owners.contains($0.id)) }
+        return collections.filter { browseFilter.includes($0) && ($0.matches(searchText) || owners.contains($0.id)) }
     }
 
     private var librarySearchResults: [TodaySearchResult] {
-        LibrarySearchIndex.results(query: searchText, collections: collections, labels: LabelLibraryStore.load())
+        LibrarySearchIndex.results(query: searchText, collections: collections.filter { browseFilter.includes($0) }, labels: LabelLibraryStore.load())
     }
 
     private func openLibrarySearchResult(_ result: TodaySearchResult) {
@@ -4654,7 +4672,7 @@ struct BoardListsView: View {
 
     private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)] {
         recentItems.compactMap { item in
-            guard let collection = collections.first(where: { $0.id == item.collectionID && $0.isActive }),
+            guard let collection = collections.first(where: { $0.id == item.collectionID && browseFilter.includes($0) }),
                   let list = collection.lists.first(where: { !$0.isArchived && $0.cards.contains { $0.id == item.cardID && !$0.isSectionDivider } }),
                   let card = list.cards.first(where: { $0.id == item.cardID }) else { return nil }
             return (item, collection, list, card)
@@ -4692,6 +4710,42 @@ struct BoardListsView: View {
         }
     }
 
+    private var libraryBrowseFilters: some View {
+        let layout = dynamicLibraryFilterLayout
+        return layout {
+            ForEach(LibraryBrowseFilter.allCases) { filter in
+                Button {
+                    browseFilter = filter
+                    libraryEditMode = .inactive
+                } label: {
+                    Label(filter.rawValue, systemImage: filter.symbol)
+                        .font(.subheadline.weight(browseFilter == filter ? .semibold : .regular))
+                        .foregroundStyle(browseFilter == filter ? filter.accent : Color.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(browseFilter == filter ? filter.accent.opacity(0.12) : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(browseFilter == filter ? filter.accent.opacity(0.35) : Color.clear, lineWidth: 1)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(browseFilter == filter ? .isSelected : [])
+                .accessibilityLabel("Show " + filter.rawValue.lowercased() + " collections")
+            }
+        }
+        .padding(4)
+        .background(Color(.secondarySystemGroupedBackground).opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Library collection filters")
+    }
+
+    @Environment(\.dynamicTypeSize) private var libraryFilterTypeSize
+    private var dynamicLibraryFilterLayout: AnyLayout {
+        libraryFilterTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4))
+    }
+
     private var libraryHeader: some View {
         VStack(spacing: 12) {
             HStack(spacing: 0) {
@@ -4710,7 +4764,7 @@ struct BoardListsView: View {
                     Button(libraryEditMode == .active ? "Done reordering collections" : "Reorder collections", systemImage: libraryEditMode == .active ? "checkmark" : "arrow.up.arrow.down") {
                         withAnimation { libraryEditMode = libraryEditMode == .active ? .inactive : .active }
                     }
-                    .disabled(!searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(browseFilter != .all || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Toggle("Show collection previews", isOn: $showsCollectionPreviews)
                     Toggle("Scroll long previews", isOn: $scrollsCollectionPreviews)
                         .disabled(!showsCollectionPreviews)
@@ -4745,6 +4799,10 @@ struct BoardListsView: View {
             .padding(.horizontal, 14)
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Browse").font(.caption).foregroundStyle(.secondary)
+                libraryBrowseFilters
+            }
             if isLibrarySearchFocused || !searchText.isEmpty {
                 Text("Your Library · Collections, cards, and notes")
                     .font(.caption).foregroundStyle(.secondary)
@@ -4911,7 +4969,7 @@ struct BoardListsView: View {
                         collectionEntry(collection)
                     }
                     .onMove { source, destination in
-                        guard searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        guard browseFilter == .all, searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
 
                             return
                         }
@@ -4927,7 +4985,7 @@ struct BoardListsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label(
                                 searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? "Your own organizing spaces" : "No Library matches",
+                                    ? (browseFilter == .all ? "Your own organizing spaces" : "No " + browseFilter.rawValue.lowercased() + " yet") : "No Library matches",
                                 systemImage: "books.vertical"
                             )
                             .font(.headline)

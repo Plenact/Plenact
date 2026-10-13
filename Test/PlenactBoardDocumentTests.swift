@@ -801,6 +801,24 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testLibraryBrowseFiltersScopeSearchAndExcludeArchivedCollections() {
+        var list = PersonalCollection(title: "Reading", kind: .list)
+        var board = PersonalCollection(title: "Projects", kind: .board)
+        var archived = PersonalCollection(title: "Old", kind: .list)
+        archived.isArchived = true
+        list.lists[0].cards = [KanbanCard(id: 1, word: "Garden reference", listTitle: "Reading")]
+        board.lists[0].cards = [KanbanCard(id: 1, word: "Garden project", listTitle: "Ideas")]
+        let collections = [list, board, archived]
+        XCTAssertEqual(collections.filter { LibraryBrowseFilter.all.includes($0) }.map(\.id), [list.id, board.id])
+        XCTAssertEqual(collections.filter { LibraryBrowseFilter.lists.includes($0) }.map(\.id), [list.id])
+        XCTAssertEqual(collections.filter { LibraryBrowseFilter.boards.includes($0) }.map(\.id), [board.id])
+        for (filter, expected) in [(LibraryBrowseFilter.lists, list.id), (.boards, board.id)] {
+            let results = LibrarySearchIndex.results(query: "garden", collections: collections.filter { filter.includes($0) }, labels: LabelLibraryStore.load())
+            XCTAssertEqual(results.count, 1)
+            XCTAssertEqual(results.first?.ownerID, expected)
+        }
+    }
+
     func testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity() throws {
         var first = PersonalCollection(title: "Garden", kind: .list)
         var second = PersonalCollection(title: "Home", kind: .list)

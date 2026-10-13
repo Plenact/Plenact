@@ -75,6 +75,23 @@ extension Binding where Value == [KanbanList] {
 /// @section    Purpose
 ///     Keep card progress, comment, and date visibility preferences together
 ///
+struct NamedSectionDivider: View {
+    let card: KanbanCard
+    var body: some View {
+        HStack(spacing: 10) {
+            if let heading = card.sectionHeading {
+                Text(heading).font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Rectangle().fill(Color.secondary.opacity(0.35)).frame(height: 1)
+                .frame(maxWidth: .infinity).accessibilityHidden(true)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+}
+
 struct BoardDisplaySettings {
     /// Whether cards show checklist completion progress.
     var showChecklistProgress = true    /* Display checklist progress on cards */
@@ -4064,18 +4081,12 @@ struct KanbanListView: View {
 
                         NavigationLink(value: card) {
 
-                            Rectangle()
-                                .fill(Color.secondary.opacity(0.45))
-                                .frame(height: 2)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 12)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
+                            NamedSectionDivider(card: card)
                         }
 
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
-                        .accessibilityLabel("Open section divider")
+                        .accessibilityLabel(card.sectionHeading.map { "Edit section heading: " + $0 } ?? "Edit section divider")
                         .background {
                             if editMode != .active {
                                 BoardCardDragSource(token: cardDragToken,
@@ -4442,12 +4453,16 @@ struct NewKanbanCardSheet: View {
 
             Form {
 
-                Section("\(presentation.title) details") {
-                    TextField("Title (or --- for divider)", text: $draft.title, axis: .vertical)
+                Section {
+                    TextField("Title (or --- Ideas for a section)", text: $draft.title, axis: .vertical)
                         .lineLimit(1...6)
                         .textInputAutocapitalization(.never)
                     TextField("Subtitle (optional)", text: $draft.subtitle)
                     RichTextEditor(placeholder: "Description (optional)", text: $draft.description)
+                } header: {
+                    Text("\(presentation.title) details")
+                } footer: {
+                    Text("Add a section heading with --- Ideas, --- This week, or --- Later. Use --- alone for a plain divider.")
                 }
             }
 
@@ -5681,16 +5696,11 @@ struct TodayListDetailView: View {
                             if card.isSectionDivider {
 
                                 NavigationLink(value: card) {
-                                    Rectangle()
-                                        .fill(Color.secondary.opacity(0.45))
-                                        .frame(height: 2)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .frame(maxWidth: .infinity)
+                                    NamedSectionDivider(card: card)
                                 }
                                     .buttonStyle(.plain)
                                     .modifier(HideNavigationLinkIndicator())
-                                    .accessibilityLabel("Open section divider")
+                                    .accessibilityLabel(card.sectionHeading.map { "Edit section heading: " + $0 } ?? "Edit section divider")
                                     .contextMenu { ItemDisplayFormatMenu(card: card, onUpdate: updateCard) }
                                     .modifier(ContentLifecycleActions(
                                         title: "Divider", kind: "Card", onArchive: nil,

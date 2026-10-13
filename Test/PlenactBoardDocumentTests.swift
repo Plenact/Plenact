@@ -801,6 +801,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testNamedDividersPreserveIdentityAndLegacySeparators() throws {
+        let list = KanbanList(id: 3, title: "Plans", cards: [])
+        var named = list.makeItem(id: 42, title: "--- Ideas")
+        XCTAssertTrue(named.isSectionDivider)
+        XCTAssertEqual(named.word, "Ideas")
+        XCTAssertEqual(named.sectionHeading, "Ideas")
+        named.word = "This week"
+        XCTAssertTrue(named.isSectionDivider)
+        XCTAssertEqual(named.sectionHeading, "This week")
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(named))
+        XCTAssertEqual(restored.id, 42)
+        XCTAssertTrue(restored.isSectionDivider)
+        XCTAssertEqual(restored.sectionHeading, "This week")
+        named.word = ""
+        XCTAssertTrue(named.isSectionDivider)
+        XCTAssertNil(named.sectionHeading)
+        XCTAssertNil(list.makeItem(id: 43, title: "---").sectionHeading)
+        XCTAssertTrue(list.makeItem(id: 44, title: "——— Later").isSectionDivider)
+        XCTAssertFalse(list.makeItem(id: 45, title: "- A regular item").isSectionDivider)
+        var converted = list.makeItem(id: 46, title: "Later")
+        converted.displayFormat = .divider
+        XCTAssertEqual(converted.sectionHeading, "Later")
+        converted.displayFormat = .card
+        XCTAssertFalse(converted.isSectionDivider)
+        XCTAssertNil(converted.sectionHeading)
+    }
+
     func testLibraryBrowseFiltersScopeSearchAndExcludeArchivedCollections() {
         var list = PersonalCollection(title: "Reading", kind: .list)
         var board = PersonalCollection(title: "Projects", kind: .board)

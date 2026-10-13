@@ -429,7 +429,7 @@ struct CardDetailView: View {
         self.onDelete = onDelete
 
         _titleChecked         = State(initialValue: card.isTitleChecked)        /* Initialize the title checked state based on the card's current value */
-        _titleText            = State(initialValue: card.word)                  /* Initialize the editable title from the card                          */
+        _titleText            = State(initialValue: card.isSectionDivider ? (card.sectionHeading ?? "") : card.word)                  /* Initialize the editable title from the card                          */
         _appearance           = State(initialValue: card.appearance)
         _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
         _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
@@ -1126,7 +1126,7 @@ struct CardDetailView: View {
         if displayFormat == .card || displayFormat == .note {
             updated.presentation = presentation
         }
-        if displayFormat != card.displayFormat || card.listDisplayFormat != nil {
+        if displayFormat == .divider || displayFormat != card.displayFormat || card.listDisplayFormat != nil {
             updated.displayFormat = displayFormat
         }
         return updated
@@ -2590,9 +2590,14 @@ struct CardDetailView: View {
 
                 VStack(alignment: .leading) {
 
-                    Text(titleText)
+                    TextField("Section heading (optional)", text: $titleText, axis: .vertical)
                         .font(.title2.weight(.bold))
-
+                        .focused($focusedField, equals: .title)
+                        .submitLabel(.done)
+                        .onSubmit { dismissEditing() }
+                        .onChange(of: titleText) { _, newValue in syncCardState(title: newValue) }
+                    Text("Organize the items beneath this divider. Leave the heading blank for a simple line.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 }
 

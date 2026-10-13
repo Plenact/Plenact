@@ -554,8 +554,26 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     ///
     /// @post       The title and card state remain unchanged
     ///
-    static func isDividerTitle(_ title: String) -> Bool {
+    /// A named divider uses three or more dashes followed by a space and its heading.
+    static func namedDividerHeading(_ title: String) -> String? {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let space = trimmed.firstIndex(where: { $0.isWhitespace }) else { return nil }
+        let marker = trimmed[..<space]
+        let dashes = CharacterSet(charactersIn: "-‐‑‒–—―−")
+        guard marker.count >= 3, marker.unicodeScalars.allSatisfy({ dashes.contains($0) }) else { return nil }
+        let heading = trimmed[space...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return heading.isEmpty ? nil : heading
+    }
 
+    var sectionHeading: String? {
+        guard isSectionDivider else { return nil }
+        if let heading = Self.namedDividerHeading(word) { return heading }
+        let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || Self.isDividerTitle(trimmed) ? nil : trimmed
+    }
+
+    static func isDividerTitle(_ title: String) -> Bool {
+        if namedDividerHeading(title) != nil { return true }
         let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
         let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−") /* Accepted divider dash characters */
 
@@ -971,7 +989,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         }
 
         return KanbanCard(
-            id: id, word: title, listTitle: self.title, isDivider: isDivider,
+            id: id, word: KanbanCard.namedDividerHeading(title) ?? title, listTitle: self.title, isDivider: isDivider,
             checklists:          checklists,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
             subtitleOverride:    subtitle.trimmingCharacters(in: .whitespacesAndNewlines),

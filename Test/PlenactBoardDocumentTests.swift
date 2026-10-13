@@ -801,6 +801,41 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testRichBoardExamplesRemainIndependentAndResolveTheirInternalLinks() throws {
+        let now = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+        for example in PersonalBoardExample.allCases {
+            let draft = example.makeCollection(existingTitles: [example.rawValue], now: now)
+            XCTAssertEqual(draft.kind, .board)
+            XCTAssertNotEqual(draft.title, example.rawValue)
+            XCTAssertNotNil(draft.boardAppearance)
+            XCTAssertFalse(draft.collectionDescription?.isEmpty ?? true)
+            let all = draft.lists.flatMap(\.allCards)
+            let ids = Set(all.map(\.id))
+            XCTAssertEqual(ids.count, all.count)
+            XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(draft)), draft)
+            XCTAssertEqual(Set(all.map(\.displayFormat)), Set(ItemDisplayFormat.allCases))
+            XCTAssertTrue(draft.lists.contains(where: \.isArchived))
+            XCTAssertTrue(draft.lists.contains { !$0.archivedCards.isEmpty })
+            XCTAssertFalse(draft.savedCardIDs.isEmpty)
+            for card in all {
+                if let cover = card.coverAttachment { XCTAssertNotNil(cover.exampleImage?.url) }
+                for item in card.checklists.flatMap(\.items) {
+                    if case .linkedCard(let target) = item.content {
+                        XCTAssertTrue(ids.contains(target))
+                        XCTAssertEqual(item.linkedCollectionID, draft.id)
+                    }
+                }
+            }
+            let active = draft.lists.filter { !$0.isArchived }
+            if example == .life {
+                XCTAssertEqual(active.count, 12)
+                XCTAssertEqual(active.prefix(3).map { $0.cards.count }, [30, 28, 26])
+                XCTAssertGreaterThan(active.flatMap(\.cards).filter { $0.coverAttachment != nil }.count, 60)
+            }
+            XCTAssertNotEqual(draft.id, example.makeCollection(existingTitles: [], now: now).id)
+        }
+    }
+
     func testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems() throws {
         let calendar = planningTestCalendar()
         let now = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar)).addingTimeInterval(12 * 3600)

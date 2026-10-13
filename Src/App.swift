@@ -4885,6 +4885,15 @@ struct BoardListsView: View {
 
     private var weekExamplesMenu: some View {
         Menu("Examples", systemImage: "sparkles") {
+            Menu("Board examples", systemImage: "rectangle.3.group") {
+                ForEach(PersonalBoardExample.allCases) { example in
+                    Button(example.rawValue, systemImage: "plus") {
+                        editingCollection = example.makeCollection(existingTitles: collections.map(\.title))
+                    }
+                }
+            }
+            Button("Browse all examples", systemImage: "books.vertical") { showsExamples = true }
+            Divider()
             Button("Use Week View", systemImage: "plus") {
                 editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title))
             }
@@ -5062,6 +5071,10 @@ struct BoardListsView: View {
                     onLoadExampleWeek: onLoadExampleWeek,
                     onUndoExampleWeek: onUndoExampleWeek,
                     hasUndoableWeek: ExampleLoadUndoStore.load() != nil,
+                    onSelectBoardExample: { example in
+                        pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
+                        showsExamples = false
+                    },
                     onSelectMixedTemplate: { template in
                         pendingExample = template.makeCollection(existingTitles: collections.map(\.title))
                         showsExamples = false
@@ -5222,6 +5235,7 @@ struct PersonalListExamplesView: View {
     var onUndoExampleWeek: (() -> Bool)? = nil
     let onSelect: (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
     var onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil
+    var onSelectBoardExample: ((PersonalBoardExample) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
     @State private var confirmsLoadWeek = false
     @State private var confirmsUndoWeek = false
@@ -5232,6 +5246,7 @@ struct PersonalListExamplesView: View {
         onLoadExampleWeek: (() -> Bool)? = nil,
         onUndoExampleWeek: (() -> Bool)? = nil,
         hasUndoableWeek: Bool = false,
+        onSelectBoardExample: ((PersonalBoardExample) -> Void)? = nil,
         onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil,
         onSelect: @escaping (PersonalListExample) -> Void
     ) {
@@ -5239,6 +5254,7 @@ struct PersonalListExamplesView: View {
         self.onUndoExampleWeek = onUndoExampleWeek
         self.onSelect = onSelect
         self.onSelectMixedTemplate = onSelectMixedTemplate
+        self.onSelectBoardExample = onSelectBoardExample
         _hasUndoableWeek = State(initialValue: hasUndoableWeek)
     }
 
@@ -5253,7 +5269,7 @@ struct PersonalListExamplesView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Example Lists to explore and make your own. Selecting a List opens a draft; only Save adds a new personal List. Your Week Board and existing collections stay unchanged when adding a List.")
+                    Text("Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Library. Your Week and existing collections stay unchanged.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -5272,6 +5288,32 @@ struct PersonalListExamplesView: View {
                         Text("Loading replaces your current Week Board, including archived Week content. Your previous Week Board is retained on this device for Undo Last Load. Personal Lists and Boards stay unchanged. Nothing is uploaded.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let onSelectBoardExample {
+                    Section("Board examples") {
+                        ForEach(PersonalBoardExample.allCases) { example in
+                            DisclosureGroup {
+                                Text(example.summary).foregroundStyle(.secondary)
+                                ForEach(Array(example.listSummaries.enumerated()), id: \.offset) { _, list in
+                                    HStack {
+                                        Label(list.title, systemImage: "rectangle.split.3x1")
+                                        Spacer()
+                                        Text("\(list.count) items").font(.caption).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Text("Includes pictures, notes, named dividers, checklists, dates, labels, bookmarks, color overrides, and archived examples. Dates are illustrative and relative to when you create the draft.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                Button("Use \(example.rawValue)", systemImage: "plus") { onSelectBoardExample(example) }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Label(example.rawValue, systemImage: "rectangle.3.group").font(.headline)
+                                    Text("\(example.listSummaries.count) lists · \(example.listSummaries.reduce(0) { $0 + $1.count }) items")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                     }
                 }
 

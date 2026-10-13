@@ -3756,6 +3756,131 @@ enum CrossBoardCardMovement {
 }
 
 /// Offline, mixed-format starters that remain drafts until explicitly saved.
+/// Synthetic, offline board drafts. Generation never writes collections or shared preferences.
+enum PersonalBoardExample: String, CaseIterable, Identifiable {
+    case garden = "Garden seasons"
+    case home = "A home to love"
+    case travel = "Travel dreams"
+    case life = "Life in Motion · Zoom playground"
+    var id: String { rawValue }
+    var summary: String {
+        switch self {
+        case .garden: "Planting ideas, growing plans, seasonal care, and garden reflections."
+        case .home: "Room inspiration, practical projects, recipes, and a calmer home."
+        case .travel: "Dream destinations, research notes, preparations, and memories."
+        case .life: "A rich 12-list board for exploring Normal, Panoramic, and Gallery views. Its busiest lists contain 30, 28, and 26 items."
+        }
+    }
+    private var topics: [(String, CoverCategory, [String])] {
+        let garden: (String, CoverCategory, [String]) = ("Garden", .nature, ["Plan the herb bed", "Choose pollinator flowers", "Check the soil", "Water the seedlings", "Prepare a compost corner", "Sketch a garden path", "Harvest something fresh", "Record what is growing"])
+        let home: (String, CoverCategory, [String]) = ("Home", .home, ["Refresh the reading corner", "Organize the entryway", "Measure the desk space", "Choose a warm lamp", "Clear the kitchen counter", "Make room for plants", "Repair the loose shelf", "Capture room inspiration"])
+        let travel: (String, CoverCategory, [String]) = ("Travel", .travel, ["Choose a dream destination", "Explore a walking route", "Compare places to stay", "Plan a quiet weekend", "Prepare the packing list", "Collect local discoveries", "Map a scenic stop", "Write a travel memory"])
+        let food: (String, CoverCategory, [String]) = ("Kitchen", .food, ["Save a seasonal recipe", "Plan a simple dinner", "Prepare a market list", "Try a new breakfast", "Share a meal", "Stock the pantry", "Bake something comforting", "Record a favorite flavor"])
+        let learning: (String, CoverCategory, [String]) = ("Learning", .work, ["Choose a useful book", "Explore a new skill", "Collect one reference", "Make a study plan", "Practice for twenty minutes", "Organize research notes", "Write down a discovery", "Review the next step"])
+        let health: (String, CoverCategory, [String]) = ("Wellbeing", .health, ["Take a morning walk", "Prepare for a stretch", "Plan an outdoor break", "Choose a gentle workout", "Make time to recharge", "Reflect on energy", "Build a small routine", "Celebrate steady progress"])
+        let creative: (String, CoverCategory, [String]) = ("Creative projects", .creativity, ["Collect a color palette", "Sketch a small idea", "Capture a photograph", "Write a short story", "Make a handmade gift", "Try a creative experiment", "Share a work in progress", "Keep an inspiration note"])
+        let rest: (String, CoverCategory, [String]) = ("Reflection", .rest, ["Notice a small win", "Write a gratitude note", "Make space for quiet", "Reflect on the week", "Record a meaningful moment", "Choose what to carry forward", "Let an idea rest", "Plan an unhurried evening"])
+        switch self {
+        case .garden: return [("Inspiration", garden.1, garden.2), ("To plant", garden.1, garden.2), ("Growing", garden.1, garden.2), ("Seasonal care", garden.1, garden.2), ("Garden journal", garden.1, garden.2)]
+        case .home: return [("Room inspiration", home.1, home.2), ("Planning", home.1, home.2), ("In progress", home.1, home.2), food, ("Finished and learned", home.1, home.2)]
+        case .travel: return [("Destinations", travel.1, travel.2), ("Research", travel.1, travel.2), ("Preparing", travel.1, travel.2), ("On the journey", travel.1, travel.2), ("Memories", travel.1, travel.2), ("Someday", travel.1, travel.2)]
+        case .life: return [garden, home, travel, food, learning, health, creative, rest,
+            ("Family and friends", .creativity, ["Plan a birthday visit", "Write a thoughtful message", "Arrange a shared meal", "Make a memory together"]),
+            ("Weekend ideas", .travel, travel.2), ("Small victories", .rest, rest.2), ("Someday", .nature, garden.2)]
+        }
+    }
+    var listSummaries: [(title: String, count: Int)] {
+        topics.enumerated().map { index, topic in
+            (topic.0, self == .life ? ([30, 28, 26] + Array(repeating: 12, count: 9))[index] : 12)
+        }
+    }
+    func makeCollection(existingTitles: [String], now: Date = .now, calendar: Calendar = .current) -> PersonalCollection {
+        var board = PersonalCollection(title: PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles), kind: .board,
+                                       icon: self == .garden ? .home : .project, color: self == .garden ? .green : .teal)
+        board.collectionDescription = summary
+        board.boardAppearance = BoardAppearance(bannerBackground: .teal, listBackground: .neutral, cardBackground: .neutral,
+                                                cardDetail: self == .life ? .compact : .detailed)
+        let accents: [ItemAccent] = [.green, .blue, .orange, .purple, .rose, .teal]
+        let tints: [KanbanListTint] = [.green, .blue, .orange, .neutral, .red]
+        var nextID = 0
+        board.lists = topics.enumerated().map { listIndex, topic in
+            var list = KanbanList(id: listIndex, title: topic.0, cards: [], newItemPresentation: listIndex % 3 == 0 ? .note : .card)
+            list.subtitleOverride = "Ideas, useful next steps, and discoveries for " + topic.0.lowercased()
+            list.appearance = ItemAppearance(accent: accents[listIndex % accents.count], icon: .project,
+                background: listIndex % 2 == 0 ? accents[listIndex % accents.count] : nil,
+                listBackground: listIndex % 2 == 0 ? tints[listIndex % tints.count] : nil)
+            let images = topic.1.images
+            for index in 0..<listSummaries[listIndex].count {
+                let id = nextID; nextID += 1
+                if index % 10 == 0 {
+                    list.cards.append(list.makeItem(id: id, title: "--- " + ["Ideas", "This week", "Later"][min(index / 10, 2)]))
+                    continue
+                }
+                let action = topic.2[(index - 1) % topic.2.count]
+                let prefix = index > topic.2.count ? ["Review: ", "Explore: ", "Reflect: "][((index - 1) / topic.2.count - 1) % 3] : ""
+                var card = KanbanCard(id: id, word: prefix + action, listTitle: topic.0, checklists: [],
+                    descriptionOverride: "An example for your \(topic.0.lowercased()) workspace. Make this idea your own.\n\nNotice what interests you, collect the context, and choose one useful next step.",
+                    subtitleOverride: "A small step with room to grow", createdAt: now,
+                    appearance: ItemAppearance(accent: accents[(listIndex + index) % accents.count], icon: index % 2 == 0 ? .notes : .project))
+                switch index % 10 {
+                case 1: card.displayFormat = .title
+                case 2: card.displayFormat = .text
+                case 3, 8: card.displayFormat = .picture
+                case 4, 7: card.displayFormat = .note
+                default: card.displayFormat = .card
+                }
+                if card.displayFormat == .picture || index % 3 == 0 || index % 10 == 4 {
+                    let image = KanbanAttachment(mediaKind: .photo, addedAt: now,
+                        exampleImage: images[(listIndex * 7 + index) % images.count], caption: "Inspiration for " + topic.0.lowercased())
+                    card.attachments = [image]; card.coverAttachmentID = image.id
+                    if index % 10 == 3 {
+                        card.attachments?.append(KanbanAttachment(mediaKind: .photo, addedAt: now,
+                            exampleImage: images[(listIndex * 7 + index + 11) % images.count], caption: "Another direction to explore"))
+                    }
+                }
+                if card.displayFormat == .card {
+                    card.isTitleChecked = index % 9 == 0
+                    card.startDate = calendar.date(byAdding: .day, value: -2, to: now)
+                    card.dueDate = calendar.date(byAdding: .day, value: (index + listIndex) % 9 - 1, to: now)
+                    card.dueDateKind = index % 2 == 0 ? .dateAndTime : .date
+                    card.showsDueDateInList = index % 4 != 0
+                    let detail = KanbanChecklistActionDetail(description: "Prepare the context before taking this step.",
+                        checklists: [KanbanChecklist(title: "Prepare", items: ["Gather a reference", "Choose the next step"])],
+                        comments: [KanbanComment(author: "Example planner", body: "Keep it small enough to begin.", createdAt: now)])
+                    card.checklists = [KanbanChecklist(title: "Next steps", items: [
+                        KanbanChecklistItem(title: "Choose one useful step", isCompleted: true),
+                        KanbanChecklistItem(title: "Prepare the details", content: .actionDetail(detail)),
+                        KanbanChecklistItem(title: "Explore a reference", content: .webLink(URL(string: "https://en.wikipedia.org/wiki/Gardening")!))])]
+                    card.comments = [KanbanComment(author: "Example planner", body: "Example content: adjust the dates and steps to fit your life.", createdAt: now)]
+                    card.members = [CardAssignee(kind: .manual, displayName: "Example planner")]
+                    card.labelIDs = [LabelLibrary.starterLabelIDs[(listIndex + index) % LabelLibrary.starterLabelIDs.count]]
+                    card.sectionLayout = CardSectionLayout(order: [.checklists, .description, .details, .media, .activity, .quickActions], hidden: index % 2 == 0 ? [.activity] : [])
+                }
+                if index % 10 == 4 { card.labelIDs = ["leisure-hobby"]; board.savedCardIDs.insert(id) }
+                list.cards.append(card)
+            }
+            return list
+        }
+        // Internal references stay in the draft's own identity space, including across lists.
+        for listIndex in board.lists.indices {
+            let nextList = board.lists[(listIndex + 1) % board.lists.count]
+            guard let target = nextList.cards.first(where: { $0.displayFormat == .note }),
+                  let source = board.lists[listIndex].cards.firstIndex(where: { !$0.checklists.isEmpty }) else { continue }
+            var item = KanbanChecklistItem(title: "Open a related note", content: .linkedCard(cardID: target.id))
+            item.linkedCollectionID = board.id
+            let checklist = board.lists[listIndex].cards[source].checklists[0]
+            board.lists[listIndex].cards[source].checklists[0] = KanbanChecklist(id: checklist.id, title: checklist.title, items: checklist.items + [item])
+        }
+        var archived = KanbanCard(id: nextID, word: "An earlier idea kept for reference", listTitle: board.lists[0].title,
+            checklists: [], descriptionOverride: "This example demonstrates restoring an archived card.", createdAt: now)
+        archived.labelIDs = ["leisure-hobby"]
+        board.lists[0].archivedCards = [archived]
+        let archiveList = KanbanList(id: board.lists.count, title: "Past season", cards: [KanbanCard(id: nextID + 1, word: "A completed chapter", listTitle: "Past season", checklists: [], descriptionOverride: "Restore this archived list to revisit its content.")])
+        var retained = archiveList; retained.isArchived = true; board.lists.append(retained)
+        return board
+    }
+}
+
 enum MixedListTemplate: String, CaseIterable, Identifiable {
     case planDay = "Plan a day"
     case exploreIdea = "Explore an idea"

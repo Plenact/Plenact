@@ -75,6 +75,59 @@ extension Binding where Value == [KanbanList] {
 /// @section    Purpose
 ///     Keep card progress, comment, and date visibility preferences together
 ///
+enum BoardPanoramicZoom {
+    static let initial: CGFloat = 0.62
+    static func preset(panoramic: Bool) -> CGFloat { panoramic ? initial : 1 }
+    static let minimum: CGFloat = 0.25
+    static let maximum: CGFloat = 1.25
+    static func clamped(_ scale: CGFloat) -> CGFloat {
+        guard scale.isFinite else { return initial }
+        return min(maximum, max(minimum, scale))
+    }
+    static func scale(start: CGFloat, magnification: CGFloat) -> CGFloat {
+        guard magnification.isFinite, magnification > 0 else { return clamped(start) }
+        return clamped(start * magnification)
+    }
+}
+/// Drag hit-testing needs fresh geometry, but passive scrolling must not redraw the board.
+final class BoardDragGeometryCache {
+    var centers: [Int: CGFloat] = [:]
+    var cards: [Int: CGRect] = [:]
+    var lists: [Int: CGRect] = [:]
+    var viewport: CGRect = .zero
+}
+
+private struct BoardZoomHint: View {
+    let percentage: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var visible = true
+    var body: some View {
+        Text("Pinch to zoom · \(percentage)%")
+            .font(.caption.weight(.medium)).padding(.horizontal, 12).padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .opacity(visible ? 1 : 0)
+            .allowsHitTesting(false).accessibilityHidden(true)
+            .task {
+                visible = true
+                do {
+                    try await Task.sleep(for: .seconds(3))
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7)) { visible = false }
+                } catch { /* Leaving the board cancels the hint timer. */ }
+            }
+    }
+}
+
+private struct BoardPinchState {
+    var magnification: CGFloat = 1
+    var active = false
+}
+private struct BoardZoomScrollBehavior: ScrollTargetBehavior {
+    let panoramic: Bool
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        if !panoramic { ViewAlignedScrollTargetBehavior().updateTarget(&target, context: context) }
+    }
+}
+
 struct BoardGalleryGroup: Identifiable {
     let id: Int
     let divider: KanbanCard?
@@ -1265,7 +1318,12 @@ struct ContentView: View {
     /// List identity currently being dragged for reordering.
     @State private var draggedListID: Int? /* List identity participating in active reordering */
     /// Measured horizontal centers keyed by list identity.
-    @State private var listCenters: [Int: CGFloat] = [:] /* Measured horizontal centers keyed by list identity */
+    @State private var dragGeometry = BoardDragGeometryCache()
+    @State private var dragGeometryRevision = 0
+    private func refreshActiveDragGeometry() {
+        if draggedListID != nil || draggedCardID != nil { dragGeometryRevision &+= 1 }
+    }
+    // /* Measured horizontal centers keyed by list identity */
     /// Current horizontal location of an active list drag.
     @State private var listDragLocation: CGFloat? /* Horizontal pointer position during list reordering */
     /// Horizontal offset between the drag start and the grabbed list center.
@@ -1274,7 +1332,37 @@ struct ContentView: View {
     @State private var listDragTilt: Double = 0
     @State private var isPanoramic = false
     @State private var isGallery = false
-    private var boardZoomScale: CGFloat { isPanoramic ? 0.62 : 1 }
+    @State private var boardScale: CGFloat = 1
+    @GestureState private var boardPinch = BoardPinchState()
+    private var boardZoomScale: CGFloat {
+        BoardPanoramicZoom.scale(start: boardScale, magnification: boardPinch.magnification)
+    }
+    private var usesFreeBoardScrolling: Bool { isPanoramic || boardPinch.active || abs(boardZoomScale - 1) > 0.001 }
+    private var boardPinchGesture: some Gesture {
+        MagnifyGesture(minimumScaleDelta: 0.01)
+            .updating($boardPinch) { value, state, transaction in
+                guard !isGallery, draggedListID == nil, draggedCardID == nil else { return }
+                transaction.disablesAnimations = true
+                state.active = true
+                state.magnification = value.magnification
+            }
+            .onEnded { value in
+                guard !isGallery, draggedListID == nil, draggedCardID == nil else { return }
+                boardScale = BoardPanoramicZoom.scale(start: boardScale, magnification: value.magnification)
+            }
+    }
+    private func resetBoardZoom() {
+        guard draggedListID == nil, draggedCardID == nil else { return }
+        withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) { boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic) }
+    }
+    private func adjustBoardZoom(_ direction: AccessibilityAdjustmentDirection) {
+        guard !isGallery, draggedListID == nil, draggedCardID == nil else { return }
+        switch direction {
+        case .increment: boardScale = BoardPanoramicZoom.clamped(boardScale * 1.15)
+        case .decrement: boardScale = BoardPanoramicZoom.clamped(boardScale / 1.15)
+        @unknown default: break
+        }
+    }
     private var listDragScale: CGFloat {
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
     }
@@ -1283,13 +1371,11 @@ struct ContentView: View {
         guard draggedListID == nil, draggedCardID == nil else { return }
         withAnimation(reducesMotion ? nil : .smooth(duration: 0.25)) {
             isPanoramic.toggle()
+            boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
         }
     }
     @State private var draggedCardID: Int? /* Card identity participating in the native drag session */
     @State private var cardDragLocation: CGPoint? /* Current card-drag pointer in global coordinates */
-    @State private var cardFrames: [Int: CGRect] = [:] /* Global card-row frames keyed by card identity */
-    @State private var listFrames: [Int: CGRect] = [:] /* Global list-panel frames keyed by list identity */
-    @State private var cardDragViewportFrame: CGRect = .zero /* Global Board bounds used to validate card drop targeting */
     @State private var cardDragToken = UUID().uuidString /* Per-Board token rejecting drags from other Board surfaces */
     /// Environment preference used to reduce or remove animated transitions.
     @Environment(\.accessibilityReduceMotion) private var reducesMotion /* Accessibility preference limiting animated transitions */
@@ -1917,14 +2003,13 @@ struct ContentView: View {
     ///
     private func updateListDrag(_ listID: Int, value: DragGesture.Value?) {
 
-        guard draggedCardID == nil else {
-
+        guard draggedCardID == nil, !boardPinch.active else {
             return
         }
 
         if draggedListID == nil {
 
-            listDragInitialCenter = listCenters[listID]
+            listDragInitialCenter = dragGeometry.centers[listID]
             withAnimation(reducesMotion ? nil : .smooth(duration: 0.25)) {
                 draggedListID = listID
             }
@@ -1947,12 +2032,12 @@ struct ContentView: View {
 
             $0.id == listID
         }),
-              let center = listCenters[listID] else { return } /* Measured center of the dragged list */
+              let center = dragGeometry.centers[listID] else { return } /* Measured center of the dragged list */
               let direction = value.location.x > center ? 1 : -1 /* Neighbor direction selected by the pointer position */
               let destination = source + direction /* Adjacent list position considered for swapping */
 
         guard lists.indices.contains(destination),
-              let targetCenter = listCenters[lists[destination].id], /* Neighbor center used as the reorder threshold */
+              let targetCenter = dragGeometry.centers[lists[destination].id], /* Neighbor center used as the reorder threshold */
               direction > 0 ? value.location.x > targetCenter : value.location.x < targetCenter else { return }
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) {
             _ = BoardListReordering.move(listID, to: destination, in: &lists)
@@ -2005,7 +2090,7 @@ struct ContentView: View {
     private func listDragOffset(for listID: Int) -> CGFloat {
 
         guard draggedListID == listID, let location = listDragLocation, /* Pointer position driving the dragged list's offset */
-              let center = listCenters[listID] else { return 0 } /* Measured resting center of the dragged list */
+              let center = dragGeometry.centers[listID] else { return 0 } /* Measured resting center of the dragged list */
         return location - center - listDragGrabOffset
     }
 
@@ -2357,14 +2442,15 @@ struct ContentView: View {
         }
     }
 
-    private var cardDropTarget: BoardCardDropTarget? { /* Valid list and insertion anchor under the card-drag pointer */
+    private var cardDropTarget: BoardCardDropTarget? {
+        _ = dragGeometryRevision /* Valid list and insertion anchor under the card-drag pointer */
         guard let location = cardDragLocation, let draggedCardID else { /* Active pointer position and dragged record identity */
 
             return nil
         }
 
-        return BoardCardMovement.target(for: draggedCardID, at: location, viewport: cardDragViewportFrame,
-                                        lists: lists, listFrames: listFrames, cardFrames: cardFrames)
+        return BoardCardMovement.target(for: draggedCardID, at: location, viewport: dragGeometry.viewport,
+                                        lists: lists, listFrames: dragGeometry.lists, cardFrames: dragGeometry.cards)
     }
 
 
@@ -2403,8 +2489,7 @@ struct ContentView: View {
     ///
     private func beginCardDrag(_ cardID: Int, location: CGPoint) {
 
-        guard draggedListID == nil, draggedCardID == nil else {
-
+        guard draggedListID == nil, draggedCardID == nil, !boardPinch.active else {
             return
         }
 
@@ -2450,8 +2535,8 @@ struct ContentView: View {
 
         guard commit, let target = location.map({ /* Validated destination for the committed card drop */
 
-            BoardCardMovement.target(for: cardID, at: $0, viewport: cardDragViewportFrame,
-                                     lists: lists, listFrames: listFrames, cardFrames: cardFrames)
+            BoardCardMovement.target(for: cardID, at: $0, viewport: dragGeometry.viewport,
+                                     lists: lists, listFrames: dragGeometry.lists, cardFrames: dragGeometry.cards)
         }) ?? cardDropTarget else { return false }
         do {
 
@@ -2519,6 +2604,9 @@ struct ContentView: View {
                             onToggleGallery: { isGallery.toggle() },
                             isGallery: isGallery,
                             isPanoramic: isPanoramic,
+                            zoomPercentage: Int((boardZoomScale * 100).rounded()),
+                            onResetZoom: !isGallery ? resetBoardZoom : nil,
+                            onAdjustZoom: adjustBoardZoom,
                             calendarAccessibilityTitle: calendarOpeningDate.formatted(.dateTime.month(.wide)) + " calendar",
                             onAddList:           addList
                         )
@@ -2538,14 +2626,14 @@ struct ContentView: View {
                             accessibilitySize: dynamicTypeSize.isAccessibilitySize,
                             fillsAvailableWidth: fillsAvailableListWidth
                         )
-                        let horizontalInset = presentation == .standard
+                        let horizontalInset = presentation == .standard && !isPanoramic
                             ? max(14, (listArea.size.width - columnWidth * listDragScale) / 2)
                             : 14
                         ScrollViewReader { listProxy in
 
                             ScrollView(.horizontal, showsIndicators: false) {
 
-                                HStack(alignment: .top, spacing: presentation == .standard ? 17 : 12) {
+                                LazyHStack(alignment: .top, spacing: (presentation == .standard ? 17 : 12) * (usesFreeBoardScrolling ? boardZoomScale : 1)) {
 
                                     ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 
@@ -2670,24 +2758,26 @@ struct ContentView: View {
                             }
 
                             .contentMargins(.horizontal, horizontalInset, for: .scrollContent)
-                            .scrollTargetBehavior(.viewAligned)
-                            .scrollPosition(id: $visibleListID, anchor: presentation == .standard ? .center : .leading)
-                            .scrollDisabled(draggedListID != nil)
+                            .scrollTargetBehavior(BoardZoomScrollBehavior(panoramic: usesFreeBoardScrolling))
+                            .scrollPosition(id: $visibleListID, anchor: presentation == .standard && !isPanoramic ? .center : .leading)
+                            .scrollDisabled(draggedListID != nil || boardPinch.active)
+                            .simultaneousGesture(boardPinchGesture)
                             .coordinateSpace(name: "WeekListsViewport")
                             .onPreferenceChange(BoardListCenterPreferenceKey.self) { centers in
-                                listCenters = centers
+                                dragGeometry.centers = centers
+                                refreshActiveDragGeometry()
                             }
 
-                            .onPreferenceChange(BoardListFramePreferenceKey.self) { listFrames = $0 }
-                            .onPreferenceChange(BoardCardFramePreferenceKey.self) { cardFrames = $0 }
+                            .onPreferenceChange(BoardListFramePreferenceKey.self) { dragGeometry.lists = $0; refreshActiveDragGeometry() }
+                            .onPreferenceChange(BoardCardFramePreferenceKey.self) { dragGeometry.cards = $0; refreshActiveDragGeometry() }
                             .background {
                                 GeometryReader { geometry in
                                     Color.clear.onAppear {
-                                        cardDragViewportFrame = geometry.frame(in: .global)
+                                        dragGeometry.viewport = geometry.frame(in: .global)
                                     }
 
                                     .onChange(of: geometry.frame(in: .global)) { _, frame in
-                                        cardDragViewportFrame = frame
+                                        dragGeometry.viewport = frame
                                     }
                                 }
                             }
@@ -2838,8 +2928,8 @@ struct ContentView: View {
                                         }
 
                                         let direction = BoardListReordering.edgeDirection( /* Activated edge relative to the card-drag viewport */
-                                            at:            location.x - cardDragViewportFrame.minX,
-                                            viewportWidth: cardDragViewportFrame.width
+                                            at:            location.x - dragGeometry.viewport.minX,
+                                            viewportWidth: dragGeometry.viewport.width
                                         )
                                         guard direction != 0,
                                               let current = lists.firstIndex(where: { $0.id == visibleListID }), /* Position of the currently visible list */
@@ -2872,6 +2962,12 @@ struct ContentView: View {
                         }
                         }
 
+                        .overlay(alignment: .bottomTrailing) {
+                            if usesFreeBoardScrolling {
+                                BoardZoomHint(percentage: Int((boardZoomScale * 100).rounded()))
+                                    .padding(.trailing, 16)
+                            }
+                        }
                         .padding(.bottom, 32)
                         }
                     }
@@ -3052,6 +3148,9 @@ struct BoardHeader: View {
     var onToggleGallery: (() -> Void)? = nil
     var isGallery = false
     var isPanoramic: Bool = false
+    var zoomPercentage = 62
+    var onResetZoom: (() -> Void)? = nil
+    var onAdjustZoom: ((AccessibilityAdjustmentDirection) -> Void)? = nil
     var calendarAccessibilityTitle: String = "Open this month"
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
@@ -3075,6 +3174,7 @@ struct BoardHeader: View {
         guard let action = pendingBoardAction else { return }
         pendingBoardAction = nil
         switch action {
+        case .resetZoom: onResetZoom?()
         case .gallery: onToggleGallery?()
         case .first: onJumpToFirstList?()
         case .last: onJumpToLastList?()
@@ -3169,8 +3269,10 @@ struct BoardHeader: View {
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isPanoramic ? "Restore normal board size" : "Zoom out board")
-                .accessibilityValue(isPanoramic ? "Panoramic" : "Normal")
+                .accessibilityLabel(isPanoramic ? "Reset to Normal zoom" : "Reset to Panoramic zoom")
+                .accessibilityValue("\(isPanoramic ? "Panoramic" : "Normal"), \(zoomPercentage) percent")
+                .accessibilityHint("Pinch the board to adjust zoom. Tap to reset to the other zoom preset, or adjust this control.")
+                .accessibilityAdjustableAction { direction in onAdjustZoom?(direction) }
                 .accessibilityIdentifier("board.zoom")
             }
 
@@ -3183,7 +3285,7 @@ struct BoardHeader: View {
                 BoardOptionsPopover(canJumpFirst: onJumpToFirstList != nil,
                     canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
                     canArchive: onArchiveBoard != nil, canDelete: onDeleteBoard != nil,
-                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery) { action in
+                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery, canResetZoom: onResetZoom != nil) { action in
                         pendingBoardAction = action
                         showsBoardOptions = false
                     }
@@ -4335,7 +4437,9 @@ struct KanbanListView: View {
             .background(.clear)
             .frame(height: cardCollectionHeight)
             .onPreferenceChange(BoardCardHeightPreferenceKey.self) { heights in
-                measuredCardHeights.merge(heights, uniquingKeysWith: { _, latest in latest })
+                var updated = measuredCardHeights
+                updated.merge(heights, uniquingKeysWith: { _, latest in latest })
+                if updated != measuredCardHeights { measuredCardHeights = updated }
             }
 
             .padding(.horizontal, 4)
@@ -6400,7 +6504,7 @@ struct WorkspaceHeaderIcon: View {
     }
 }
 
-enum BoardOptionsAction { case first, last, gallery, appearance, settings, archived, archive, delete }
+enum BoardOptionsAction { case first, last, gallery, resetZoom, appearance, settings, archived, archive, delete }
 
 struct BoardOptionsPopover: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -6412,6 +6516,7 @@ struct BoardOptionsPopover: View {
     let deleteTitle: String
     var hasGallery = false
     var isGallery = false
+    var canResetZoom = false
     let onAction: (BoardOptionsAction) -> Void
 
     private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
@@ -6436,6 +6541,12 @@ struct BoardOptionsPopover: View {
                 icon("forward.end", name: "Jump to Last List", action: .last, enabled: canJumpLast)
             }
             Divider()
+            if canResetZoom {
+                Button { onAction(.resetZoom) } label: {
+                    Label("Reset board zoom", systemImage: "arrow.counterclockwise")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }.padding(.horizontal, 8)
+            }
             if hasGallery {
                 Button { onAction(.gallery) } label: {
                     Label(isGallery ? "Board view" : "Gallery view", systemImage: isGallery ? "rectangle.split.3x1" : "square.grid.2x2")

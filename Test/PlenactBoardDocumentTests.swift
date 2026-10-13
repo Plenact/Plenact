@@ -582,7 +582,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
         for size in [DynamicTypeSize.large, .accessibility3] {
             let menu = BoardOptionsPopover(canJumpFirst: true, canJumpLast: true, hasAppearance: true,
-                canArchive: true, canDelete: true, deleteTitle: "Delete Board", hasGallery: true) { _ in
+                canArchive: true, canDelete: true, deleteTitle: "Delete Board", hasGallery: true, canResetZoom: true) { _ in
                     XCTFail("Presenting options must not perform an action")
                 }
             let host = UIHostingController(rootView: menu
@@ -798,6 +798,34 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
         for template in MixedListTemplate.allCases {
             XCTAssertEqual(template.makeCollection(existingTitles: []).contentPreview, template.summary)
+        }
+    }
+
+    func testBoardZoomPresetsResetAfterPinchingFromEitherMode() {
+        XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)
+        XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 1, magnification: 0.5), 0.5)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 1, magnification: 2), 1.25)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 0.5), 0.31)
+        XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)
+    }
+
+    func testPanoramicPinchZoomClampsAndReversesAtBothLimits() {
+        XCTAssertEqual(BoardPanoramicZoom.initial, 0.62)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93, accuracy: 0.001)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 0.1), 0.25)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 10), 1.25)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.25, magnification: 2), 0.5)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 1.25, magnification: 0.5), 0.625)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.8, magnification: .nan), 0.8)
+        XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.8, magnification: 0), 0.8)
+        XCTAssertEqual(BoardPanoramicZoom.clamped(.infinity), BoardPanoramicZoom.initial)
+        for viewport: CGFloat in [320, 393, 852] {
+            let width = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+            for scale in [BoardPanoramicZoom.minimum, BoardPanoramicZoom.initial, BoardPanoramicZoom.maximum] {
+                XCTAssertGreaterThan(width * scale, 0)
+                XCTAssertTrue((viewport / scale).isFinite)
+            }
         }
     }
 

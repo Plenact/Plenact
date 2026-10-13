@@ -801,6 +801,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems() throws {
+        let calendar = planningTestCalendar()
+        let now = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar)).addingTimeInterval(12 * 3600)
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: now))
+        var card = KanbanCard(id: 1, word: "Garden", listTitle: "Plans", dueDate: yesterday)
+        XCTAssertTrue(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        XCTAssertTrue(ActivityFocusSelection.dueReason(card, now: now, calendar: calendar).hasPrefix("Overdue"))
+        card.dueDate = now
+        XCTAssertTrue(ActivityFocusSelection.dueReason(card, now: now, calendar: calendar).hasPrefix("Due today"))
+        card.dueDate = calendar.date(byAdding: .day, value: 6, to: now)
+        XCTAssertTrue(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        card.dueDate = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: now))
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        card.dueDate = yesterday
+        card.isTitleChecked = true
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        card.isTitleChecked = false
+        card.dueDateKind = .time
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        card.dueDateKind = .date
+        card.displayFormat = .divider
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        card.displayFormat = .card
+        card.dueDate = nil
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+    }
+
     func testGalleryGroupsPreserveItemOrderAndDividerIdentity() {
         var list = KanbanList(id: 3, title: "Plans", cards: [])
         list.cards = [list.makeItem(id: 1, title: "First"), list.makeItem(id: 2, title: "--- Ideas"),

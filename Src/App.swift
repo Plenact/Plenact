@@ -6046,6 +6046,29 @@ private struct SavedCardResult: Identifiable {
 /// @section    Purpose
 ///     Provide access to saved cards and save-first board restoration
 ///
+enum ActivityFocus: String, CaseIterable, Identifiable {
+    case saved = "Saved", dueSoon = "Due soon", labels = "By label"
+    var id: String { rawValue }
+    var symbol: String {
+        switch self { case .saved: "bookmark"; case .dueSoon: "clock"; case .labels: "tag" }
+    }
+}
+enum ActivityFocusSelection {
+    static func isDueSoon(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard !card.isSectionDivider, !card.isTitleChecked, card.dueDateKind.includesDate, let due = card.dueDate,
+              let horizon = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: now)) else { return false }
+        return due < horizon
+    }
+    static func dueReason(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> String {
+        guard let due = card.dueDate else { return "" }
+        if due < calendar.startOfDay(for: now) || (card.dueDateKind.includesTime && due < now) {
+            return "Overdue · " + card.dueDateLabel
+        }
+        if calendar.isDate(due, inSameDayAs: now) { return "Due today · " + card.dueDateLabel }
+        return "Due · " + card.dueDateLabel
+    }
+}
+
 private struct SavedCardsView: View {
     let planningDocument: PlanningCalendarDocument?
     @AppStorage(ActivityRecentStore.key) private var recentData = Data()
@@ -6054,6 +6077,116 @@ private struct SavedCardsView: View {
     @State private var showsSearch = false
     @State private var confirmsClear = false
     @State private var historicalTarget: ActivityRecentResult?
+    @State private var focus: ActivityFocus = .saved
+    @State private var selectedLabelID: String?
+    @State private var focusLabelLibrary = LabelLibraryStore.load()
+    private var focusCalendar: Calendar { planningDocument?.calendar ?? .current }
+
+    private var availableFocusItems: [ActivityRecentResult] {
+        var items: [ActivityRecentResult] = []
+        for week in planningDocument?.weeks ?? [] {
+            let current = week.startKey == planningDocument?.currentWeekKey
+            for list in (current ? lists : week.collection.lists) where !list.isArchived {
+                for card in list.cards where !card.isSectionDivider {
+                    items.append(ActivityRecentResult(item: LibraryRecentItem(collectionID: week.id, cardID: card.id), card: card, list: list,
+                        location: list.title + " · " + week.compactRangeTitle, week: week, isCurrent: current))
+                }
+            }
+        }
+        for collection in collections where collection.isActive {
+            for list in collection.lists where !list.isArchived {
+                for card in list.cards where !card.isSectionDivider {
+                    items.append(ActivityRecentResult(item: LibraryRecentItem(collectionID: collection.id, cardID: card.id), card: card, list: list,
+                        location: collection.title == list.title ? collection.title : collection.title + " · " + list.title, week: nil, isCurrent: false))
+                }
+            }
+        }
+        return items
+    }
+    private var availableFocusLabels: [KanbanLabel] {
+        let assigned = Set(availableFocusItems.flatMap { $0.card.labelIDs })
+        return focusLabelLibrary.labels.filter { assigned.contains($0.id) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+    private var selectedFocusLabel: KanbanLabel? {
+        availableFocusLabels.first { $0.id == selectedLabelID }
+    }
+    private var focusedItems: [ActivityRecentResult] {
+        let items = availableFocusItems.filter { matches($0.card.word, $0.location) }
+        switch focus {
+        case .saved: return []
+        case .dueSoon:
+            return items.filter { ActivityFocusSelection.isDueSoon($0.card, calendar: focusCalendar) }.sorted {
+                if $0.card.dueDate != $1.card.dueDate { return ($0.card.dueDate ?? .distantFuture) < ($1.card.dueDate ?? .distantFuture) }
+                return $0.id < $1.id
+            }
+        case .labels:
+            guard let selectedLabelID else { return [] }
+            return items.filter { $0.card.labelIDs.contains(selectedLabelID) }
+        }
+    }
+    private var focusHeading: some View {
+        Menu {
+            Picker("Show items", selection: $focus) {
+                ForEach(ActivityFocus.allCases) { option in
+                    Label(option.rawValue, systemImage: option.symbol).tag(option)
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Label(focus.rawValue, systemImage: focus.symbol).font(.title2.weight(.semibold))
+                Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+            }.foregroundStyle(.primary).frame(minHeight: 44)
+        }.accessibilityLabel("Activity view: " + focus.rawValue)
+    }
+    private var focusContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if focus == .labels {
+                Menu {
+                    ForEach(availableFocusLabels) { label in
+                        Button { selectedLabelID = label.id } label: {
+                            Label(label.name, systemImage: selectedLabelID == label.id ? "checkmark" : "tag")
+                        }
+                    }
+                } label: {
+                    HStack {
+                        if let label = selectedFocusLabel { KanbanLabelChip(label: label) }
+                        else { Text("Choose a label") }
+                        Image(systemName: "chevron.down").font(.caption)
+                    }.frame(minHeight: 44)
+                }.disabled(availableFocusLabels.isEmpty)
+                Text("Cards and notes using this label across your Week and Library.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Unfinished items that are overdue or due within the next 7 days.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if focusedItems.isEmpty {
+                Text(focus == .labels
+                    ? (availableFocusLabels.isEmpty ? "Add labels to a card or note to browse them here." : "No items match this label and search.")
+                    : "Nothing due soon matches this view.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            ForEach(focusedItems) { result in
+                Button { openRecent(result) } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: result.card.presentation == .note ? "note.text" : "rectangle")
+                            .foregroundStyle(Color.accentColor)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(result.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                            Text(result.location).font(.caption).foregroundStyle(.secondary)
+                            Text(focus == .dueSoon ? ActivityFocusSelection.dueReason(result.card, calendar: focusCalendar) : "Label: " + (selectedFocusLabel?.name ?? ""))
+                                .font(.caption).foregroundStyle(focus == .dueSoon ? Color.orange : Color.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
+                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                }.buttonStyle(.plain).accessibilityHint("Opens this item in " + result.location)
+            }
+        }.padding(16).modifier(TodayPanelSurface())
+    }
+
 
     private struct ActivityRecentResult: Identifiable {
         let item: LibraryRecentItem
@@ -6216,7 +6349,10 @@ private struct SavedCardsView: View {
                             .submitLabel(.search)
                     }
                     recentSection
-                    Label("Saved", systemImage: "bookmark").font(.title2.weight(.semibold))
+                    focusHeading
+                    if focus != .saved {
+                        focusContent
+                    } else {
                     VStack(alignment: .leading, spacing: 10) {
                         if savedCards.isEmpty && personalSavedCards.isEmpty {
 
@@ -6311,8 +6447,9 @@ private struct SavedCardsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
                     .modifier(TodayPanelSurface())
+                    }
 
-                    if collections.contains(where: {
+                    if focus == .saved && collections.contains(where: {
 
                         $0.isArchived == true
                     }) {
@@ -6357,6 +6494,13 @@ private struct SavedCardsView: View {
             .background(.clear)
         }
 
+        .onAppear { focusLabelLibrary = LabelLibraryStore.load() }
+        .onChange(of: focus) { _, value in
+            if value == .labels && selectedFocusLabel == nil { selectedLabelID = availableFocusLabels.first?.id }
+        }
+        .onChange(of: availableFocusLabels) { _, labels in
+            if !labels.contains(where: { $0.id == selectedLabelID }) { selectedLabelID = labels.first?.id }
+        }
         .confirmationDialog("Clear recent history?", isPresented: $confirmsClear, titleVisibility: .visible) {
             Button("Clear recent history", role: .destructive) { ActivityRecentStore.clear() }
         } message: { Text("Removes recent shortcuts from Activity and Library. Your cards, notes, and Saved items stay intact.") }

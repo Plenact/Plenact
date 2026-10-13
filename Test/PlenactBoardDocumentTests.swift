@@ -582,7 +582,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
         for size in [DynamicTypeSize.large, .accessibility3] {
             let menu = BoardOptionsPopover(canJumpFirst: true, canJumpLast: true, hasAppearance: true,
-                canArchive: true, canDelete: true, deleteTitle: "Delete Board") { _ in
+                canArchive: true, canDelete: true, deleteTitle: "Delete Board", hasGallery: true) { _ in
                     XCTFail("Presenting options must not perform an action")
                 }
             let host = UIHostingController(rootView: menu
@@ -799,6 +799,22 @@ final class PlenactBoardDocumentTests: XCTestCase {
         for template in MixedListTemplate.allCases {
             XCTAssertEqual(template.makeCollection(existingTitles: []).contentPreview, template.summary)
         }
+    }
+
+    func testGalleryGroupsPreserveItemOrderAndDividerIdentity() {
+        var list = KanbanList(id: 3, title: "Plans", cards: [])
+        list.cards = [list.makeItem(id: 1, title: "First"), list.makeItem(id: 2, title: "--- Ideas"),
+                      list.makeItem(id: 3, title: "A note", description: "Writing", presentationOverride: .note),
+                      list.makeItem(id: 4, title: "A picture"), list.makeItem(id: 5, title: "--- Later"),
+                      list.makeItem(id: 6, title: "Last")]
+        list.cards[3].displayFormat = .picture
+        let original = list
+        let groups = BoardGalleryGroup.groups(in: list)
+        XCTAssertEqual(groups.flatMap(\.cards).map(\.id), [1, 3, 4, 6])
+        XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])
+        XCTAssertEqual(groups.compactMap { $0.divider?.sectionHeading }, ["Ideas", "Later"])
+        XCTAssertEqual(groups.flatMap { ($0.divider.map { [$0] } ?? []) + $0.cards }.map(\.id), list.cards.map(\.id))
+        XCTAssertEqual(list, original)
     }
 
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws {

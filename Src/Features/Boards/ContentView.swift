@@ -75,6 +75,98 @@ extension Binding where Value == [KanbanList] {
 /// @section    Purpose
 ///     Keep card progress, comment, and date visibility preferences together
 ///
+struct BoardGalleryGroup: Identifiable {
+    let id: Int
+    let divider: KanbanCard?
+    var cards: [KanbanCard]
+    static func groups(in list: KanbanList) -> [BoardGalleryGroup] {
+        var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]
+        for card in list.cards {
+            if card.isSectionDivider {
+                groups.append(BoardGalleryGroup(id: groups.count, divider: card, cards: []))
+            } else { groups[groups.count - 1].cards.append(card) }
+        }
+        return groups
+    }
+}
+
+struct BoardGalleryView: View {
+    let lists: [KanbanList]
+    let listTitle: (KanbanList) -> String
+    let onOpen: (KanbanCard, Int) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 260 : 156), spacing: 12, alignment: .top)]
+    }
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24) {
+                ForEach(lists) { list in
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text(listTitle(list)).font(.title3.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                            Spacer()
+                            Text("\(list.cards.filter { !$0.isSectionDivider }.count) items").font(.caption).foregroundStyle(.secondary)
+                        }
+                        ForEach(BoardGalleryGroup.groups(in: list)) { group in
+                            if let divider = group.divider {
+                                Button { onOpen(divider, list.id) } label: { NamedSectionDivider(card: divider) }
+                                    .buttonStyle(.plain).accessibilityLabel(divider.sectionHeading ?? "Section divider")
+                            }
+                            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+                                ForEach(group.cards) { card in
+                                    Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card) }
+                                        .buttonStyle(.plain).accessibilityHint("Opens this item in " + listTitle(list))
+                                }
+                            }
+                        }
+                        if list.cards.isEmpty {
+                            Text("Room for your next idea").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(16)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                }
+                if lists.isEmpty { Text("Add a list to start your gallery.").foregroundStyle(.white.opacity(0.8)) }
+            }.padding(16).padding(.bottom, 16)
+        }
+    }
+}
+struct BoardGalleryTile: View {
+    let card: KanbanCard
+    private var excerpt: String {
+        PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let cover = card.coverAttachment {
+                CardCoverPreview(attachment: cover, height: card.displayFormat == .picture ? 150 : 112)
+                    .frame(height: card.displayFormat == .picture ? 150 : 112)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else if card.displayFormat == .picture {
+                Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 112)
+            }
+            Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
+                .foregroundStyle(.primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+            if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
+                Text(excerpt).font(.subheadline).foregroundStyle(.secondary).lineLimit(3).lineSpacing(3)
+            }
+            HStack(spacing: 8) {
+                Label(card.displayFormat.title, systemImage: card.displayFormat.symbol)
+                if card.isTitleChecked { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).accessibilityLabel("Completed") }
+                if !card.checklists.isEmpty { Image(systemName: "checklist").accessibilityLabel("Has checklist") }
+            }.font(.caption).foregroundStyle(.secondary)
+            if card.showsDueDateInList && card.dueDate != nil {
+                Text(card.dueDateLabel).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(12).frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading)
+        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.15)) }
+    }
+}
+
 struct NamedSectionDivider: View {
     let card: KanbanCard
     var body: some View {
@@ -1181,6 +1273,7 @@ struct ContentView: View {
     @State private var listDragInitialCenter: CGFloat? // Center before the temporary drag overview.
     @State private var listDragTilt: Double = 0
     @State private var isPanoramic = false
+    @State private var isGallery = false
     private var boardZoomScale: CGFloat { isPanoramic ? 0.62 : 1 }
     private var listDragScale: CGFloat {
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
@@ -2418,16 +2511,27 @@ struct ContentView: View {
                             onArchiveBoard:      onArchiveBoard,
                             onDeleteBoard:       onDeleteBoard,
                             deleteBoardTitle:    deleteBoardTitle,
-                            onJumpToFirstList:   lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
-                            onJumpToLastList:    lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
+                            onJumpToFirstList:   !isGallery && lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
+                            onJumpToLastList:    !isGallery && lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
                             onAppearance:        { showsBoardAppearance = true },
                             onSearch: { showsSharedSearch = true },
-                            onToggleZoom: toggleBoardZoom,
+                            onToggleZoom: isGallery ? nil : toggleBoardZoom,
+                            onToggleGallery: { isGallery.toggle() },
+                            isGallery: isGallery,
                             isPanoramic: isPanoramic,
                             calendarAccessibilityTitle: calendarOpeningDate.formatted(.dateTime.month(.wide)) + " calendar",
                             onAddList:           addList
                         )
 
+                        if isGallery {
+                            BoardGalleryView(lists: lists, listTitle: { list in
+                                dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) } ?? list.title
+                            }, onOpen: { card, listID in
+                                visibleListID = listID
+                                onListViewed(listID)
+                                navigationPath.append(card)
+                            })
+                        } else {
                         GeometryReader { listArea in
                         let columnWidth = presentation.columnWidth(
                             viewportWidth: listArea.size.width,
@@ -2769,6 +2873,7 @@ struct ContentView: View {
                         }
 
                         .padding(.bottom, 32)
+                        }
                     }
                 }
             }
@@ -2776,6 +2881,9 @@ struct ContentView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: boardRootRequest) { _, _ in
                 navigationPath = NavigationPath()
+            }
+            .onChange(of: boardTargetListID) { _, target in
+                if target != nil { isGallery = false }
             }
             .navigationDestination(for: KanbanCard.self) { card in
                 CardDetailView(
@@ -2941,6 +3049,8 @@ struct BoardHeader: View {
     var onAppearance: (() -> Void)? = nil
     var onSearch: (() -> Void)? = nil
     var onToggleZoom: (() -> Void)? = nil
+    var onToggleGallery: (() -> Void)? = nil
+    var isGallery = false
     var isPanoramic: Bool = false
     var calendarAccessibilityTitle: String = "Open this month"
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
@@ -2965,6 +3075,7 @@ struct BoardHeader: View {
         guard let action = pendingBoardAction else { return }
         pendingBoardAction = nil
         switch action {
+        case .gallery: onToggleGallery?()
         case .first: onJumpToFirstList?()
         case .last: onJumpToLastList?()
         case .appearance: onAppearance?()
@@ -3072,7 +3183,7 @@ struct BoardHeader: View {
                 BoardOptionsPopover(canJumpFirst: onJumpToFirstList != nil,
                     canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
                     canArchive: onArchiveBoard != nil, canDelete: onDeleteBoard != nil,
-                    deleteTitle: deleteBoardTitle) { action in
+                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery) { action in
                         pendingBoardAction = action
                         showsBoardOptions = false
                     }
@@ -6289,7 +6400,7 @@ struct WorkspaceHeaderIcon: View {
     }
 }
 
-enum BoardOptionsAction { case first, last, appearance, settings, archived, archive, delete }
+enum BoardOptionsAction { case first, last, gallery, appearance, settings, archived, archive, delete }
 
 struct BoardOptionsPopover: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -6299,6 +6410,8 @@ struct BoardOptionsPopover: View {
     let canArchive: Bool
     let canDelete: Bool
     let deleteTitle: String
+    var hasGallery = false
+    var isGallery = false
     let onAction: (BoardOptionsAction) -> Void
 
     private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
@@ -6323,6 +6436,12 @@ struct BoardOptionsPopover: View {
                 icon("forward.end", name: "Jump to Last List", action: .last, enabled: canJumpLast)
             }
             Divider()
+            if hasGallery {
+                Button { onAction(.gallery) } label: {
+                    Label(isGallery ? "Board view" : "Gallery view", systemImage: isGallery ? "rectangle.split.3x1" : "square.grid.2x2")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }.padding(.horizontal, 8)
+            }
             if hasAppearance {
                 Button { onAction(.appearance) } label: {
                     HStack(spacing: 12) {

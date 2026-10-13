@@ -5002,6 +5002,14 @@ struct KanbanCardView: View {
     let onArchiveCard: () -> Void /* Archives this card through its containing list */
     let onToggle: () -> Void                        /* Callback invoked when the card's title checkbox is toggled    */
 
+    /// Plain writing keeps previews readable without changing the stored rich note.
+    private var noteExcerpt: String {
+        PlanRichText.plain(card.descriptionOverride ?? "")
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     @State private var renameDraft        = ""      /* Draft text for the rename operation                           */
     @State private var isRenaming         = false   /* Flag indicating if the rename operation is active             */
     @State private var isEditingInfo      = false   /* Flag indicating if the card info editing mode is active       */
@@ -5192,12 +5200,15 @@ struct KanbanCardView: View {
 
                 if !compactCards && presentation == .standard && card.presentation == .note {
 
-                    if let body = card.descriptionOverride, !body.isEmpty { /* Nonempty stored description shown in the card preview */
-
-                        Text(PlanRichText.display(body))
+                    if !noteExcerpt.isEmpty {
+                        Text(noteExcerpt)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineSpacing(3)
                             .lineLimit(3)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 } else if !compactCards && presentation == .standard && !card.subtitle.isEmpty {
 
@@ -5257,7 +5268,7 @@ struct KanbanCardView: View {
         .padding(.horizontal, card.displayFormat == .picture && !compactCards ? 0 : (compactCards || presentation == .overview ? 8 : 12))
         .padding(.vertical, card.displayFormat == .picture && !compactCards ? 0 : (compactCards ? 4 : (presentation == .overview ? 8 : 12)))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: ([.title, .text].contains(card.displayFormat) || (card.displayFormat == .picture && !compactCards)) ? 0 : height, alignment: .top)
+        .frame(minHeight: ([.title, .text].contains(card.displayFormat) || (card.displayFormat == .picture && !compactCards) || (!compactCards && card.presentation == .note && noteExcerpt.isEmpty)) ? 0 : height, alignment: .top)
         .background {
             ZStack {
                 if card.displayFormat != .title && card.displayFormat != .text {

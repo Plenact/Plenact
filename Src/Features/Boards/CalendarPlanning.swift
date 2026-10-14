@@ -322,6 +322,7 @@ struct PlanningCalendarAccess {
     var openLibraryCard: (PersonalSavedCardTarget) -> Void
     var saveLibrary: (PersonalCollection) -> Bool
     var setFirstWeekday: (Int) -> Bool = { _ in false }
+    var openWeek: (DatedPlanningWeek) -> Void = { _ in }
     var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
     var searchableItems: [PlanningSearchResult] {
         document.weeks.flatMap { week in
@@ -344,7 +345,14 @@ struct PlanningCalendarAccess {
 private struct PlanningCalendarAccessKey: EnvironmentKey {
     static let defaultValue: PlanningCalendarAccess? = nil
 }
+private struct PlanningDisplayedWeekKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+}
 extension EnvironmentValues {
+    var planningDisplayedWeekKey: String? {
+        get { self[PlanningDisplayedWeekKey.self] }
+        set { self[PlanningDisplayedWeekKey.self] = newValue }
+    }
     var planningCalendarAccess: PlanningCalendarAccess? {
         get { self[PlanningCalendarAccessKey.self] }
         set { self[PlanningCalendarAccessKey.self] = newValue }
@@ -597,6 +605,7 @@ struct PlanningCalendarWeekView: View {
     let initialDayID: Int?
     let initialCardID: Int?
     let onLeaveForHome: () -> Void
+    var isWeekTab = false
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var targetListID: Int?
@@ -613,8 +622,8 @@ struct PlanningCalendarWeekView: View {
             lists: $week.collection.lists.activeLists, archivedLists: $week.collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID,
             savedCardIDs: $week.collection.savedCardIDs,
-            boardTitle: isCurrent ? "This Week" : "Week", boardSubtitle: week.compactRangeTitle,
-            allowsAddingLists: false, onClose: { dismiss() },
+            boardTitle: isWeekTab ? "Plenact" : (isCurrent ? "This Week" : "Week"), boardSubtitle: (isWeekTab ? "Week • " : "") + week.compactRangeTitle,
+            allowsAddingLists: false, onClose: isWeekTab ? nil : { dismiss() },
             onCommitDeletion: { lists, saved in
                 var next = week; next.collection.lists = lists; next.collection.savedCardIDs = saved
                 guard access?.saveWeek(next) == true else { throw CocoaError(.fileWriteUnknown) }
@@ -626,6 +635,7 @@ struct PlanningCalendarWeekView: View {
             boardAppearance: $week.collection.boardAppearance
         )
         .safeAreaInset(edge: .bottom) {
+            if !isWeekTab {
             HStack {
                 if !isStored {
                     Button("Save empty week", systemImage: "square.and.arrow.down") {
@@ -640,7 +650,9 @@ struct PlanningCalendarWeekView: View {
             }
             .padding(12)
             .background(.regularMaterial)
+            }
         }
+        .environment(\.planningDisplayedWeekKey, week.startKey)
         .environment(\.cardMovementSource, week.id)
         .environment(\.planningHomeExit, { dismiss(); onLeaveForHome() })
         .task {
@@ -825,5 +837,170 @@ struct PlanningChecklistLink: View {
                 PlanningCalendarWeekView(week: week, initialDayID: listID, initialCardID: cardID, onLeaveForHome: { showsCard = false })
             }
         }
+    }
+}
+
+
+/// Direct week selection changes the browsed board without changing Today's active week.
+struct PlanningWeekSelector: View {
+    let document: PlanningCalendarDocument
+    let selectedWeekKey: String
+    let onSelect: (DatedPlanningWeek) -> Void
+    @State private var referenceDate: Date
+    @Environment(\.dismiss) private var dismiss
+
+    init(initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String,
+         onSelect: @escaping (DatedPlanningWeek) -> Void) {
+        self.document = document
+        self.selectedWeekKey = selectedWeekKey
+        self.onSelect = onSelect
+        _referenceDate = State(initialValue: initialDate)
+    }
+
+    private var weeks: [DatedPlanningWeek] { Self.choices(document: document, referenceDate: referenceDate) }
+
+    static func choices(document: PlanningCalendarDocument, referenceDate: Date) -> [DatedPlanningWeek] {
+        var choices = Dictionary(uniqueKeysWithValues: document.weeks.map { ($0.startKey, $0) })
+        for offset in -8...8 {
+            guard let date = document.calendar.date(byAdding: .weekOfYear, value: offset, to: referenceDate) else { continue }
+            let key = PlanningDate.weekKey(date, calendar: document.calendar)
+            if choices[key] == nil { choices[key] = DatedPlanningWeek.make(for: date, calendar: document.calendar) }
+        }
+        return choices.values.sorted { $0.startKey < $1.startKey }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { proxy in
+                List {
+                    Section {
+                        DatePicker("Jump to a date", selection: $referenceDate, displayedComponents: .date)
+                    }
+                    Section("Choose a week") {
+                        ForEach(weeks) { week in
+                            Button {
+                                dismiss()
+                                onSelect(week)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(week.rangeTitle).foregroundStyle(.primary)
+                                        if week.startKey == document.currentWeekKey {
+                                            Text("This week").font(.caption).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    if week.startKey == selectedWeekKey { Image(systemName: "checkmark") }
+                                }
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                            }
+                            .id(week.startKey)
+                            .accessibilityAddTraits(week.startKey == selectedWeekKey ? .isSelected : [])
+                        }
+                    }
+                }
+                .onAppear { proxy.scrollTo(selectedWeekKey, anchor: .center) }
+                .onChange(of: referenceDate) { _, date in
+                    proxy.scrollTo(PlanningDate.weekKey(date, calendar: document.calendar), anchor: .center)
+                }
+            }
+            .navigationTitle("Choose week")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+    }
+}
+
+
+struct PlanningDaySelection {
+    let date: Date
+    let week: DatedPlanningWeek
+    let listID: Int
+
+    static func resolve(_ date: Date, document: PlanningCalendarDocument) -> Self? {
+        let date = document.calendar.startOfDay(for: date)
+        let week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+        guard let id = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)],
+              week.collection.lists.contains(where: { $0.id == id && !$0.isArchived }) else { return nil }
+        return Self(date: date, week: week, listID: id)
+    }
+}
+
+struct PlanningDaySelector: View {
+    @State private var date: Date
+    let onSelect: (Date) -> Void
+    @Environment(\.dismiss) private var dismiss
+    init(initialDate: Date, onSelect: @escaping (Date) -> Void) {
+        _date = State(initialValue: initialDate)
+        self.onSelect = onSelect
+    }
+    var body: some View {
+        NavigationStack {
+            DatePicker("Choose a day", selection: $date, displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .padding()
+                .navigationTitle("Choose day")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Show day") { dismiss(); onSelect(date) }
+                    }
+                }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+/// Keeps date browsing in one Day surface and saves edits to the selected week's owner.
+struct PlanningSelectedDayView: View {
+    let selection: PlanningDaySelection
+    let currentUserName: String
+    let returnDestinationTitle: String
+    let onClose: () -> Void
+    let onSelectDay: (Date) -> Void
+    @State private var week: DatedPlanningWeek
+    @State private var labels = LabelLibraryStore.load()
+    @State private var isRevertingEdit = false
+    @Environment(\.planningCalendarAccess) private var access
+
+    init(selection: PlanningDaySelection, currentUserName: String, returnDestinationTitle: String,
+         onClose: @escaping () -> Void, onSelectDay: @escaping (Date) -> Void) {
+        self.selection = selection
+        self.currentUserName = currentUserName
+        self.returnDestinationTitle = returnDestinationTitle
+        self.onClose = onClose
+        self.onSelectDay = onSelectDay
+        _week = State(initialValue: selection.week)
+    }
+
+    var body: some View {
+        TodayListDetailView(onSelectDay: onSelectDay,
+            lists: $week.collection.lists.activeLists,
+            reservedLists: week.collection.lists.filter(\.isArchived), labelLibrary: $labels,
+            savedCardIDs: $week.collection.savedCardIDs, listID: selection.listID,
+            currentUserName: currentUserName, onClose: onClose,
+            onOpenWeek: { access?.openWeek(week); onClose() },
+            onPermanentDelete: { cardID in
+                var next = week
+                BoardContentDeletion.card(cardID, in: &next.collection.lists, savedCardIDs: &next.collection.savedCardIDs)
+                guard access?.saveWeek(next) == true else { return false }
+                week = next
+                return true
+            }, boardAppearance: week.collection.boardAppearance,
+            returnDestinationTitle: returnDestinationTitle,
+            representedDate: selection.date)
+            .environment(\.cardMovementSource, week.id)
+            .environment(\.planningDisplayedWeekKey, week.startKey)
+            .onChange(of: week) { old, updated in
+                if isRevertingEdit { isRevertingEdit = false; return }
+                if access?.saveWeek(updated) != true { isRevertingEdit = true; week = old }
+            }
+            .onChange(of: access?.document) { _, document in
+                if let updated = document?.weeks.first(where: { $0.startKey == week.startKey }), updated != week {
+                    week = updated
+                }
+            }
     }
 }

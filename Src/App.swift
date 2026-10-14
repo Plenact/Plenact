@@ -450,6 +450,7 @@ private struct AppRootView: View {
     @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
     @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
     @State private var calendarDocument: PlanningCalendarDocument?
+    @State private var displayedPlanningWeek: DatedPlanningWeek?
     @Environment(\.scenePhase) private var scenePhase
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
@@ -584,6 +585,12 @@ private struct AppRootView: View {
             .tag(AppDestination.today)
             .toolbar(.hidden, for: .tabBar)
 
+            Group {
+                if let displayedPlanningWeek {
+                    PlanningCalendarWeekView(week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
+                        onLeaveForHome: { self.displayedPlanningWeek = nil }, isWeekTab: true)
+                        .id(displayedPlanningWeek.startKey)
+                } else {
             ContentView(
                 lists:             $lists.activeLists,
                 archivedLists:     $lists.archivedLists,
@@ -599,6 +606,8 @@ private struct AppRootView: View {
                 onCommitDeletion:  commitWeekDeletion,
                 onListsChanged:    { _ in }
             )
+                }
+            }
                 .tabItem {
                     Label("Board", systemImage: "rectangle.3.group")
                 }
@@ -698,6 +707,7 @@ private struct AppRootView: View {
         guard let document = calendarDocument else { return nil }
         return PlanningCalendarAccess(document: document, library: collections, saveWeek: savePlanningWeek,
             openCurrentWeek: {
+                displayedPlanningWeek = nil
                 selectedDestination = .board
                 weekRootRequest += 1
                 boardTargetListID = nil; boardTargetCardID = nil
@@ -708,7 +718,12 @@ private struct AppRootView: View {
                 var snapshot = collections; snapshot[index] = collection
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
                 catch { DatabaseActivity.shared.report("Could not save this Library collection: \(error.localizedDescription)"); return false }
-            }, setFirstWeekday: setPlanningFirstWeekday)
+            }, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
+                weekRootRequest += 1
+                displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
+                boardTargetListID = nil; boardTargetCardID = nil
+                selectedDestination = .board
+            })
     }
 
     private func setPlanningFirstWeekday(_ weekday: Int) -> Bool {
@@ -1111,6 +1126,7 @@ private struct AppRootView: View {
     /// @post       Board content remains unchanged
     ///
     private func openBoardList(_ listID: Int) {
+        displayedPlanningWeek = nil
 
         rememberLastViewedList(listID)
         boardTargetCardID = nil
@@ -1448,6 +1464,7 @@ private struct AppRootView: View {
     /// @post       No card or list content is modified
     ///
     private func openBoardCard(listID: Int, cardID: Int) {
+        displayedPlanningWeek = nil
 
         rememberLastViewedList(listID)
         boardTargetCardID = cardID
@@ -1535,6 +1552,7 @@ private struct AppRootView: View {
         }
 
         lists.append(KanbanList(id: nextListID, title: title, cards: []))
+        displayedPlanningWeek = nil
         boardTargetListID = nextListID
         selectedDestination = .board
     }

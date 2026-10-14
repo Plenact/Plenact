@@ -1296,12 +1296,15 @@ struct ContentView: View {
     /// Controls presentation of the calendar sheet.
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
+    @Environment(\.planningDisplayedWeekKey) private var displayedWeekKey
     private var calendarOpeningDate: Date {
+        if let displayedWeekKey, let date = PlanningDate.date(displayedWeekKey) { return date }
         guard let week = planningCalendarAccess?.document.weeks.first(where: { $0.id == personalCollectionID }),
               week.startKey != planningCalendarAccess?.document.currentWeekKey else { return .now }
         return PlanningDate.date(week.startKey) ?? .now
     }
     @State private var showsSharedSearch = false
+    @State private var showsWeekSelector = false
     @State private var showsCalendar = false /* Calendar sheet presentation state */
     @State private var calendarCardTarget: (listID: Int, cardID: Int)? /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists.
@@ -2608,6 +2611,7 @@ struct ContentView: View {
                             onResetZoom: !isGallery ? resetBoardZoom : nil,
                             onAdjustZoom: adjustBoardZoom,
                             calendarAccessibilityTitle: calendarOpeningDate.formatted(.dateTime.month(.wide)) + " calendar",
+                            onSubtitleTap: (displayedWeekKey != nil || personalCollectionID == nil || planningCalendarAccess?.document.weeks.contains(where: { $0.id == personalCollectionID }) == true) ? { showsWeekSelector = true } : nil,
                             onAddList:           addList
                         )
 
@@ -3052,6 +3056,16 @@ struct ContentView: View {
                     onSavePresentation: { presentation = $0 }, onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
+            .sheet(isPresented: $showsWeekSelector) {
+                if let access = planningCalendarAccess {
+                    PlanningWeekSelector(initialDate: calendarOpeningDate, document: access.document,
+                        selectedWeekKey: personalCollectionID.flatMap { id in access.document.weeks.first { $0.id == id }?.startKey }
+                            ?? PlanningDate.weekKey(calendarOpeningDate, calendar: access.document.calendar)) { week in
+                        showsWeekSelector = false
+                        access.openWeek(week)
+                    }
+                }
+            }
             .sheet(isPresented: $showsCalendar, onDismiss: {
                 guard let target = calendarCardTarget else { return }
                 calendarCardTarget = nil
@@ -3152,6 +3166,7 @@ struct BoardHeader: View {
     var onResetZoom: (() -> Void)? = nil
     var onAdjustZoom: ((AccessibilityAdjustmentDirection) -> Void)? = nil
     var calendarAccessibilityTitle: String = "Open this month"
+    var onSubtitleTap: (() -> Void)? = nil
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
     @State private var showsBoardOptions = false
@@ -3196,9 +3211,23 @@ struct BoardHeader: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
 
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.75))
+            if let onSubtitleTap {
+                Button(action: onSubtitleTap) {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.75))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(subtitle)
+                .accessibilityHint("Choose the week displayed in the Week tab")
+                .accessibilityIdentifier("board.weekSelector")
+            } else {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.75))
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .contentShape(Rectangle())
@@ -5748,6 +5777,9 @@ struct TodayListDetailView: View {
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
     @State private var showsDaySearch = false
+    @State private var showsDaySelector = false
+    @State private var selectedDay: PlanningDaySelection?
+    var onSelectDay: ((Date) -> Void)? = nil
 
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
@@ -5885,7 +5917,34 @@ struct TodayListDetailView: View {
     /// @post       Card edits mutate the shared binding for caller-owned persistence; label changes
     ///             save locally. Toolbar actions delegate Today/Week routing to supplied callbacks
     ///
-    var body: some View { /* Focused-list Board surface and card-detail navigation */
+    var body: some View {
+        Group {
+            if let selectedDay {
+                PlanningSelectedDayView(selection: selectedDay, currentUserName: currentUserName,
+                    returnDestinationTitle: returnDestinationTitle, onClose: onClose,
+                    onSelectDay: selectDay)
+                    .id(selectedDay.date)
+            } else {
+                dayContent
+            }
+        }
+        .sheet(isPresented: $showsDaySelector) {
+            PlanningDaySelector(initialDate: representedDate ?? .now) { date in
+                showsDaySelector = false
+                selectDay(date)
+            }
+            .environment(\.calendar, planningCalendarAccess?.document.calendar ?? .current)
+        }
+    }
+
+    private func selectDay(_ date: Date) {
+        if let onSelectDay { onSelectDay(date); return }
+        guard let access = planningCalendarAccess,
+              let selection = PlanningDaySelection.resolve(date, document: access.document) else { return }
+        selectedDay = selection
+    }
+
+    private var dayContent: some View { /* Focused-list Board surface and card-detail navigation */
 
         NavigationStack {
             ZStack {
@@ -6097,8 +6156,16 @@ struct TodayListDetailView: View {
                         }
 
                         if let representedDate {
-                            Text(representedDate.formatted(.dateTime.month(.abbreviated).day().year()))
-                                .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                            Button { showsDaySelector = true } label: {
+                                Text(representedDate.formatted(.dateTime.month(.abbreviated).day().year()))
+                                    .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(planningCalendarAccess == nil && onSelectDay == nil)
+                            .accessibilityHint("Choose the day displayed in this view")
+                            .accessibilityIdentifier("day.dateSelector")
                         } else if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
 
                             Text(subtitle)
@@ -6109,7 +6176,7 @@ struct TodayListDetailView: View {
                     }
 
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityElement(children: .combine)
+                    .accessibilityElement(children: .contain)
                     Button { showsDaySearch = true } label: {
                         WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                     }

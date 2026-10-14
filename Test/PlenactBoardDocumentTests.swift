@@ -21,6 +21,52 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testDaySelectorResolvesDatesAcrossWeeksWithoutChangingContent() throws {
+        for firstWeekday in [1, 2] {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.firstWeekday = firstWeekday
+            let date = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+            var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+            let dayID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+            let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == dayID })
+            week.collection.lists[index].cards = [KanbanCard(id: 333, word: "Selected day's content", listTitle: week.collection.lists[index].title)]
+            let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: firstWeekday, weeks: [week])
+            let original = document
+            let selection = try XCTUnwrap(PlanningDaySelection.resolve(date, document: document))
+            XCTAssertEqual(selection.listID, dayID)
+            XCTAssertEqual(selection.week, week)
+            for offset in -9...9 {
+                let target = try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: date))
+                let selected = try XCTUnwrap(PlanningDaySelection.resolve(target, document: document))
+                XCTAssertEqual(selected.week.startKey, PlanningDate.weekKey(target, calendar: calendar))
+                XCTAssertEqual(selected.week.dayListIDs[PlanningDate.key(target, calendar: calendar)], selected.listID)
+                XCTAssertTrue(selected.week.collection.lists.contains { $0.id == selected.listID && !$0.isArchived })
+            }
+            XCTAssertEqual(document, original)
+        }
+    }
+
+    func testWeekSelectorPreservesStoredContentAndActiveWeek() throws {
+        for firstWeekday in [1, 2] {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.firstWeekday = firstWeekday
+            let date = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+            var current = DatedPlanningWeek.make(for: date, calendar: calendar)
+            current.collection.lists[0].cards = [KanbanCard(id: 987, word: "Keep this writing", listTitle: current.collection.lists[0].title)]
+            let document = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: firstWeekday, weeks: [current])
+            let original = document
+            let choices = PlanningWeekSelector.choices(document: document, referenceDate: date)
+            XCTAssertEqual(choices.count, 17)
+            XCTAssertEqual(Set(choices.map(\.startKey)).count, choices.count)
+            XCTAssertEqual(choices.first { $0.startKey == current.startKey }, current)
+            XCTAssertTrue(choices.allSatisfy { PlanningDate.weekKey(PlanningDate.date($0.startKey)!, calendar: calendar) == $0.startKey })
+            let future = try XCTUnwrap(calendar.date(byAdding: .month, value: 6, to: date))
+            let futureChoices = PlanningWeekSelector.choices(document: document, referenceDate: future)
+            XCTAssertTrue(futureChoices.contains { $0.startKey == PlanningDate.weekKey(future, calendar: calendar) })
+            XCTAssertEqual(document, original)
+        }
+    }
+
     @MainActor
     func testLoadingScreenResourcesAndReducedMotionLayout() async throws {
         XCTAssertNotNil(UIImage(named: "LaunchLogo"))

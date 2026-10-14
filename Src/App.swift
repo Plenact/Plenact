@@ -3763,6 +3763,13 @@ enum ActivityRecentStore {
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
     case all = "All", lists = "Lists", boards = "Boards"
     var id: String { rawValue }
+    var searchPrompt: String {
+        switch self {
+        case .all: "Find in your Library"
+        case .lists: "Find in your Lists"
+        case .boards: "Find in your Boards"
+        }
+    }
     var symbol: String {
         switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1" }
     }
@@ -4073,6 +4080,7 @@ struct BoardListsView: View {
     @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
     @State private var browseFilter: LibraryBrowseFilter = .all
+    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
     @State private var searchText = ""                         /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
@@ -4693,12 +4701,24 @@ struct BoardListsView: View {
     private var plateItems: [LibraryPlateItem] {
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
+    private var showsPlateShelf: Bool {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
+    }
+
     private var plateSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("On the Plate")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 28)
+                .accessibilityAddTraits(.isHeader)
             if plateItems.isEmpty {
                 Text("Nothing urgent right now. Mark an item important from its menu or add a due date to bring it here.")
-                    .font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
-                    .listRowBackground(Color(.secondarySystemGroupedBackground))
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, 28)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 10) {
@@ -4709,18 +4729,22 @@ struct BoardListsView: View {
                                 openedCollection = item.collection
                             } label: {
                                 LibraryPlateTile(item: item)
+                                    .frame(height: plateTileHeight)
                             }
                             .buttonStyle(.plain)
                             .accessibilityHint("Opens this item directly")
                         }
                     }
+                    .padding(.horizontal, 28)
                     .padding(.vertical, 4)
                 }
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                .contentMargins(.all, 0, for: .scrollContent)
+                .frame(height: plateTileHeight + 8)
             }
-        } header: { Text("On the Plate") }
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 5)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func collectionPreview(_ collection: PersonalCollection) -> String {
@@ -4767,49 +4791,42 @@ struct BoardListsView: View {
         }
     }
 
-    private var libraryBrowseFilters: some View {
-        let layout = dynamicLibraryFilterLayout
-        return layout {
+    private var collectionFilterMenu: some View {
+        Menu {
             ForEach(LibraryBrowseFilter.allCases) { filter in
                 Button {
                     browseFilter = filter
                     libraryEditMode = .inactive
                 } label: {
-                    Label(filter.rawValue, systemImage: filter.symbol)
-                        .font(.subheadline.weight(browseFilter == filter ? .semibold : .regular))
-                        .foregroundStyle(browseFilter == filter ? filter.accent : Color.secondary)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(browseFilter == filter ? filter.accent.opacity(0.12) : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(browseFilter == filter ? filter.accent.opacity(0.35) : Color.clear, lineWidth: 1)
-                        }
+                    HStack {
+                        Label(filter.rawValue, systemImage: filter.symbol)
+                        if browseFilter == filter { Image(systemName: "checkmark") }
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(browseFilter == filter ? .isSelected : [])
-                .accessibilityLabel("Show " + filter.rawValue.lowercased() + " collections")
             }
+        } label: {
+            Image(systemName: browseFilter.symbol)
+                .font(.system(size: 22.5, weight: .medium))
+                .foregroundStyle(Color(red: 177.0 / 255, green: 143.0 / 255, blue: 112.0 / 255))
+                .padding(5)
+                .frame(width: 32, height: 44)
+                .contentShape(Rectangle())
         }
-        .padding(4)
-        .background(Color(.secondarySystemGroupedBackground).opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Library collection filters")
-    }
-
-    @Environment(\.dynamicTypeSize) private var libraryFilterTypeSize
-    private var dynamicLibraryFilterLayout: AnyLayout {
-        libraryFilterTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4))
+        .buttonStyle(.plain)
+        .textCase(nil)
+        .accessibilityLabel("Filter collections")
+        .accessibilityValue(browseFilter.rawValue)
+        .accessibilityHint("Choose All, Lists, or Boards. Your search text is kept.")
+        .accessibilityIdentifier("library.collectionFilter")
     }
 
     private var libraryHeader: some View {
         VStack(spacing: 12) {
             HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    collectionFilterMenu
                     Text("Library").font(.largeTitle.weight(.bold))
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                    Text("Personal collections").font(.subheadline).foregroundStyle(.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.5)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Button { showsSharedSearch = true } label: {
@@ -4841,12 +4858,12 @@ struct BoardListsView: View {
             .foregroundStyle(.primary)
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Find in your Library", text: $searchText)
+                TextField(browseFilter.searchPrompt, text: $searchText)
                     .focused($isLibrarySearchFocused)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(.search)
-                    .accessibilityLabel("Find in your Library")
+                    .accessibilityLabel(browseFilter.searchPrompt)
                     .accessibilityHint("Search your personal collections, cards, and notes")
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
@@ -4856,10 +4873,6 @@ struct BoardListsView: View {
             .padding(.horizontal, 14)
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Browse").font(.caption).foregroundStyle(.secondary)
-                libraryBrowseFilters
-            }
             if isLibrarySearchFocused || !searchText.isEmpty {
                 Text("Your Library · Collections, cards, and notes")
                     .font(.caption).foregroundStyle(.secondary)
@@ -5074,22 +5087,18 @@ struct BoardListsView: View {
 
                         .padding(.vertical, 12)
                     }
-                } header: {
-                    Text("Personal collections")
                 }
                 if !librarySearchResults.isEmpty {
                     Section {
                         ForEach(librarySearchResults) { result in librarySearchRow(result) }
                     } header: { Text("Cards and notes · \(librarySearchResults.count) matches") }
                 }
-                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active {
-                    plateSection
-                }
             }
 
             .listRowSpacing(7)
             .listSectionSpacing(.custom(0))
-            .contentMargins(.bottom, bottomBarHeight + 16, for: .scrollContent)
+            .contentMargins(.top, 12, for: .scrollContent)
+            .contentMargins(.bottom, 8, for: .scrollContent)
             .onChange(of: collections) { old, updated in
                 for collection in updated where collection.isActive {
                     let previousIDs = Set(old.first(where: { $0.id == collection.id })?.lists.flatMap(\.allCards).map(\.id) ?? [])
@@ -5099,9 +5108,17 @@ struct BoardListsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background { TodayPaperBackground() }
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) { libraryHeader }
+            // Reserve the shelf above the app toolbar, independently of List's scrolling layout.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if showsPlateShelf {
+                    plateSection
+                        .padding(.bottom, bottomBarHeight > 0 ? 77 : 0)
+                        .background { TodayPaperBackground().clipped() }
+                }
+            }
+            .background { TodayPaperBackground() }
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 

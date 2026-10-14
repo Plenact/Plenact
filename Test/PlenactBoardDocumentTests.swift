@@ -22,6 +22,46 @@ import SwiftUI
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
+    func testCreationSessionClearsLiveDraftAndRejectsDismissalCallbacks() {
+        let key = "test.creation.reset." + UUID().uuidString
+        defer { ListCreationDraft.clear(key: key) }
+        let draft = ListCreationDraftModel(key: key)
+        for _ in 0..<2 {
+            draft.beginSession()
+            draft.binding(\.title).wrappedValue = "New card"
+            draft.binding(\.subtitle).wrappedValue = "Subtitle"
+            draft.binding(\.description).wrappedValue = "Body"
+            XCTAssertEqual(ListCreationDraft.load(key: key).title, "New card")
+            draft.finishSession()
+            draft.binding(\.description).wrappedValue = "Late editor callback"
+            XCTAssertEqual(draft.title, "")
+            XCTAssertEqual(draft.subtitle, "")
+            XCTAssertEqual(draft.description, "")
+            XCTAssertEqual(ListCreationDraft.load(key: key), ListCreationDraft())
+            draft.beginSession()
+            XCTAssertEqual(draft.title, "")
+            XCTAssertEqual(draft.description, "")
+        }
+        draft.title = "Unsubmitted writing"
+        draft.description = "Keep this draft"
+        draft.beginSession()
+        XCTAssertEqual(draft.title, "Unsubmitted writing")
+        XCTAssertEqual(draft.description, "Keep this draft")
+    }
+
+    func testLaunchProgressRevealsOnlyStartedStagesAndKeepsCompletedStagesSteady() {
+        for stage in PlenactLaunchStage.allCases {
+            let progress = PlenactLaunchProgress(stage: stage)
+            for step in PlenactLaunchStage.allCases {
+                XCTAssertEqual(progress.status(for: step), step.rawValue < stage.rawValue ? .complete : (step == stage ? .running : .waiting))
+            }
+        }
+        let finished = PlenactLaunchProgress(stage: .welcome, finished: true)
+        XCTAssertTrue(PlenactLaunchStage.allCases.allSatisfy { finished.status(for: $0) == .complete })
+        XCTAssertEqual(PlenactLaunchStage.allCases.map(\.symbol), ["folder", "calendar", "slider.horizontal.3", "sun.max"])
+    }
+
+    @MainActor
     func testRichEditorDefersFocusAndIgnoresStaleRequests() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)

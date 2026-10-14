@@ -4631,6 +4631,7 @@ struct ListCreationDraft: Codable, Equatable {
 /// Owns the live composer independently of sheet reconstruction and persists edits immediately.
 final class ListCreationDraftModel: ObservableObject {
     private let key: String
+    private var acceptsEdits = true
     @Published var title: String { didSet { save() } }
     @Published var subtitle: String { didSet { save() } }
     @Published var description: String { didSet { save() } }
@@ -4643,7 +4644,33 @@ final class ListCreationDraftModel: ObservableObject {
         description = saved.description
     }
 
+    func beginSession() {
+        acceptsEdits = false
+        let saved = ListCreationDraft.load(key: key)
+        title = saved.title
+        subtitle = saved.subtitle
+        description = saved.description
+        acceptsEdits = true
+    }
+
+    func finishSession() {
+        // Dismissal can deliver a final text-editor callback after Add or Cancel.
+        acceptsEdits = false
+        title = ""
+        subtitle = ""
+        description = ""
+        ListCreationDraft.clear(key: key)
+    }
+
+    func binding(_ field: ReferenceWritableKeyPath<ListCreationDraftModel, String>) -> Binding<String> {
+        Binding(get: { self[keyPath: field] }, set: { value in
+            guard self.acceptsEdits else { return }
+            self[keyPath: field] = value
+        })
+    }
+
     private func save() {
+        guard acceptsEdits else { return }
         ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: key)
     }
 }
@@ -4698,11 +4725,11 @@ struct NewKanbanCardSheet: View {
             Form {
 
                 Section {
-                    TextField("Title (or --- Ideas for a section)", text: $draft.title, axis: .vertical)
+                    TextField("Title (or --- Ideas for a section)", text: draft.binding(\.title), axis: .vertical)
                         .lineLimit(1...6)
                         .textInputAutocapitalization(.never)
-                    TextField("Subtitle (optional)", text: $draft.subtitle)
-                    RichTextEditor(placeholder: "Description (optional)", text: $draft.description)
+                    TextField("Subtitle (optional)", text: draft.binding(\.subtitle))
+                    RichTextEditor(placeholder: "Description (optional)", text: draft.binding(\.description))
                 } header: {
                     Text("\(presentation.title) details")
                 } footer: {
@@ -4717,7 +4744,7 @@ struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     
                     Button("Cancel") {
-                        ListCreationDraft.clear(key: draftKey)
+                        draft.finishSession()
                         dismiss()
                     }
                 }
@@ -4726,7 +4753,7 @@ struct NewKanbanCardSheet: View {
                     
                     Button("Add") {
                         onCreate(trimmedTitle, presentation == .note ? draft.description : draft.description.trimmingCharacters(in: .whitespacesAndNewlines), draft.subtitle.trimmingCharacters(in: .whitespacesAndNewlines))
-                        ListCreationDraft.clear(key: draftKey)
+                        draft.finishSession()
                         dismiss()
                     }
 
@@ -4735,6 +4762,7 @@ struct NewKanbanCardSheet: View {
             }
         }
 
+        .onAppear { draft.beginSession() }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

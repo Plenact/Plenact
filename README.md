@@ -4,6 +4,10 @@ Plenact is an iPhone planning and organization app being built around a calm, li
 
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
 
+## Query
+
+This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
+
 ## Development Work
 
 - Kanban Card/Note Representation Concept

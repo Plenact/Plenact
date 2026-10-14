@@ -410,9 +410,57 @@ private struct TodayScrollFadeTracking: ViewModifier {
 ///
 /// @note   Board persistence remains owned by the existing board persistence path
 ///
+enum PlenactLaunchStage: Int, CaseIterable {
+    case restore, plans, ready, welcome
+    var symbol: String {
+        switch self { case .restore: "folder"; case .plans: "calendar"; case .ready: "slider.horizontal.3"; case .welcome: "sun.max" }
+    }
+    var label: String {
+        switch self {
+        case .restore: "Restoring your workspace"
+        case .plans: "Preparing your plans"
+        case .ready: "Readying the app"
+        case .welcome: "Welcoming you in"
+        }
+    }
+}
+
+struct PlenactLaunchProgress: Equatable {
+    enum Status { case waiting, running, complete }
+    var stage: PlenactLaunchStage = .restore
+    var finished = false
+    func status(for step: PlenactLaunchStage) -> Status {
+        if finished || step.rawValue < stage.rawValue { return .complete }
+        return step == stage ? .running : .waiting
+    }
+}
+
+struct PlenactLaunchIndicators: View {
+    let progress: PlenactLaunchProgress
+    var animates = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        HStack(spacing: 36) {
+            ForEach(PlenactLaunchStage.allCases, id: \.rawValue) { step in
+                let status = progress.status(for: step)
+                Image(systemName: step.symbol)
+                    .font(.system(size: 25.3, weight: .light))
+                    .frame(width: 30.8, height: 35.2)
+                    .foregroundStyle(.white)
+                    .phaseAnimator(status == .running && animates && !reduceMotion ? [false, true] : [false]) { icon, bright in
+                        icon.opacity(status == .waiting ? 0 : (status == .complete ? 0.85 : (bright ? 0.9 : 0.4)))
+                    } animation: { _ in .easeInOut(duration: 1.2) }
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: status)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 struct PlenactLoadingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var animatesLogo = true
+    var progress = PlenactLaunchProgress()
 
     var body: some View {
         GeometryReader { geometry in
@@ -435,11 +483,16 @@ struct PlenactLoadingView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .offset(y: -geometry.size.height * 0.125)
+            .overlay(alignment: .bottom) {
+                PlenactLaunchIndicators(progress: progress, animates: animatesLogo)
+                    .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
+            }
         }
         .background(Color("LaunchBackground"))
         .ignoresSafeArea()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Plenact is loading")
+        .accessibilityValue(progress.finished ? "Your workspace is ready" : progress.stage.label)
         .accessibilityIdentifier("app.loading")
     }
 }
@@ -452,6 +505,7 @@ private struct AppRootView: View {
     @State private var calendarDocument: PlanningCalendarDocument?
     @State private var displayedPlanningWeek: DatedPlanningWeek?
     @Environment(\.scenePhase) private var scenePhase
+    @State private var launchProgress = PlenactLaunchProgress()
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
     @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
@@ -488,7 +542,7 @@ private struct AppRootView: View {
 
                 navigationContent
             } else {
-                PlenactLoadingView()
+                PlenactLoadingView(progress: launchProgress)
             }
         }
 
@@ -505,32 +559,48 @@ private struct AppRootView: View {
             }
 
             let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(700))
+            launchProgress = PlenactLaunchProgress()
             let legacy = await KanbanBoardPersistence.loadListsInBackground()
+            launchProgress.stage = .plans
+            await Task.yield()
+            var preparedDocument: PlanningCalendarDocument?
+            var preparedWeek: DatedPlanningWeek?
             do {
                 if var document = try PlanningCalendarStore.load() {
                     let previous = document.weeks.first { $0.startKey == document.currentWeekKey }!
-                    let current = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs)
-                    try PlanningCalendarStore.save(document)
-                    lists = current.collection.lists
-                    savedCardIDs = current.collection.savedCardIDs
-                    calendarDocument = document
-                    try KanbanBoardPersistence.saveListsChecked(lists)
+                    preparedWeek = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs)
+                    preparedDocument = document
                 } else {
                     if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
                         _ = try JSONDecoder().decode([KanbanList].self, from: data)
                     }
                     let current = DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs)
-                    let document = PlanningCalendarDocument(currentWeekKey: current.startKey, weeks: [current])
-                    try PlanningCalendarStore.save(document)
-                    calendarDocument = document
-                    lists = current.collection.lists
-                    try KanbanBoardPersistence.saveListsChecked(lists)
+                    preparedWeek = current
+                    preparedDocument = PlanningCalendarDocument(currentWeekKey: current.startKey, weeks: [current])
                 }
             } catch {
                 lists = legacy
                 DatabaseActivity.shared.report("Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained.")
             }
+            launchProgress.stage = .ready
+            await Task.yield()
+            if let document = preparedDocument, let current = preparedWeek {
+                do {
+                    try PlanningCalendarStore.save(document)
+                    lists = current.collection.lists
+                    savedCardIDs = current.collection.savedCardIDs
+                    calendarDocument = document
+                    try KanbanBoardPersistence.saveListsChecked(lists)
+                } catch {
+                    lists = legacy
+                    DatabaseActivity.shared.report("Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained.")
+                }
+            }
             SavedCardPersistence.save(savedCardIDs)
+            launchProgress.stage = .welcome
+            await Task.yield()
+            // Preparation is complete; keep the steady icons visible during the existing minimum launch time.
+            launchProgress.finished = true
             do { try await ContinuousClock().sleep(until: launchDeadline) }
             catch { return }
             hasLoadedBoard = true

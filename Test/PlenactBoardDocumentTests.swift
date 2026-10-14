@@ -21,6 +21,19 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testLaunchPacingRevealsEvenlyAndWaitsForReadiness() {
+        let ready = PlenactLaunchProgress(stage: .welcome, finished: true)
+        for (time, stage) in [(0.0, PlenactLaunchStage.restore), (0.23, .plans), (0.45, .ready), (0.67, .welcome)] {
+            let visual = ready.paced(elapsed: time)
+            XCTAssertEqual(visual.stage, stage)
+            XCTAssertFalse(visual.finished)
+        }
+        XCTAssertTrue(ready.paced(elapsed: 0.9).finished)
+        let loading = PlenactLaunchProgress(stage: .plans)
+        XCTAssertEqual(loading.paced(elapsed: 2).status(for: .welcome), .running)
+        XCTAssertFalse(loading.paced(elapsed: 2).finished)
+    }
+
     @MainActor
     func testCreationSessionClearsLiveDraftAndRejectsDismissalCallbacks() {
         let key = "test.creation.reset." + UUID().uuidString

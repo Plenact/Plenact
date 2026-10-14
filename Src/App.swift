@@ -429,6 +429,12 @@ struct PlenactLaunchProgress: Equatable {
     enum Status { case waiting, running, complete }
     var stage: PlenactLaunchStage = .restore
     var finished = false
+    func paced(elapsed: TimeInterval) -> Self {
+        let index = min(3, max(0, Int(max(0, elapsed) / 0.22)))
+        return Self(stage: PlenactLaunchStage(rawValue: index) ?? .restore,
+                    finished: finished && elapsed >= 0.84)
+    }
+
     func status(for step: PlenactLaunchStage) -> Status {
         if finished || step.rawValue < stage.rawValue { return .complete }
         return step == stage ? .running : .waiting
@@ -449,11 +455,23 @@ struct PlenactLaunchIndicators: View {
                     .foregroundStyle(.white)
                     .phaseAnimator(status == .running && animates && !reduceMotion ? [false, true] : [false]) { icon, bright in
                         icon.opacity(status == .waiting ? 0 : (status == .complete ? 0.85 : (bright ? 0.9 : 0.4)))
-                    } animation: { _ in .easeInOut(duration: 1.2) }
+                    } animation: { _ in .easeInOut(duration: 1.4) }
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: status)
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+struct PlenactLaunchSequence: View {
+    let progress: PlenactLaunchProgress
+    var animates: Bool
+    @State private var startedAt = Date()
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
+            PlenactLaunchIndicators(progress: animates ? progress.paced(elapsed: context.date.timeIntervalSince(startedAt)) : progress,
+                                    animates: animates)
+        }
     }
 }
 
@@ -484,7 +502,8 @@ struct PlenactLoadingView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
             .offset(y: -geometry.size.height * 0.125)
             .overlay(alignment: .bottom) {
-                PlenactLaunchIndicators(progress: progress, animates: animatesLogo)
+                PlenactLaunchSequence(progress: progress, animates: animatesLogo)
+                    .offset(x: -20)
                     .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
             }
         }
@@ -541,12 +560,14 @@ private struct AppRootView: View {
             if hasLoadedBoard {
 
                 navigationContent
+                    .transition(.opacity)
             } else {
                 PlenactLoadingView(progress: launchProgress)
+                    .transition(.opacity)
             }
         }
 
-        .animation(reduceLaunchMotion ? nil : .easeOut(duration: 0.2), value: hasLoadedBoard)
+        .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .databaseActivityOverlay()
         .onChange(of: scenePhase) { _, phase in if phase == .active { advancePlanningWeekIfNeeded() } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
@@ -558,7 +579,7 @@ private struct AppRootView: View {
                 return
             }
 
-            let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(700))
+            let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(900))
             launchProgress = PlenactLaunchProgress()
             let legacy = await KanbanBoardPersistence.loadListsInBackground()
             launchProgress.stage = .plans

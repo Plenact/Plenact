@@ -4586,10 +4586,9 @@ struct RichTextEditor: UIViewRepresentable {
             view.selectedRange = NSRange(location: min(selection.location, view.textStorage.length), length: 0)
         }
         context.coordinator.hint?.isHidden = !PlanRichText.plain(text).isEmpty
-        if let focus {
-            if focus.wrappedValue && !view.isFirstResponder { view.becomeFirstResponder() }
-            else if !focus.wrappedValue && view.isFirstResponder { view.resignFirstResponder() }
-        }
+        // UIKit focus changes must happen after SwiftUI finishes its current view update.
+        context.coordinator.scheduleFocusUpdate(view)
+
     }
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width else { return nil }
@@ -4599,13 +4598,36 @@ struct RichTextEditor: UIViewRepresentable {
         var parent: RichTextEditor
         weak var view: UITextView?
         weak var hint: UILabel?
+        private var focusUpdatePending = false
+        private var applyingFocus = false
         init(_ parent: RichTextEditor) { self.parent = parent }
+
+        func scheduleFocusUpdate(_ view: UITextView) {
+            guard let focus = parent.focus, focus.wrappedValue != view.isFirstResponder,
+                  !focusUpdatePending else { return }
+            focusUpdatePending = true
+            DispatchQueue.main.async { [weak self, weak view] in
+                guard let self else { return }
+                self.focusUpdatePending = false
+                guard let view, view.window != nil, let focus = self.parent.focus,
+                      focus.wrappedValue != view.isFirstResponder else { return }
+                // Read the latest request: a user may have tapped another field while this was queued.
+                self.applyingFocus = true
+                defer { self.applyingFocus = false }
+                if focus.wrappedValue { view.becomeFirstResponder() }
+                else { view.resignFirstResponder() }
+            }
+        }
         func textViewDidChange(_ textView: UITextView) {
             parent.text = PlanRichText.encode(textView.attributedText)
             hint?.isHidden = !textView.text.isEmpty
         }
-        func textViewDidBeginEditing(_ textView: UITextView) { parent.focus?.wrappedValue = true }
-        func textViewDidEndEditing(_ textView: UITextView) { parent.focus?.wrappedValue = false }
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            if !applyingFocus, parent.focus?.wrappedValue == false { parent.focus?.wrappedValue = true }
+        }
+        func textViewDidEndEditing(_ textView: UITextView) {
+            if !applyingFocus, parent.focus?.wrappedValue == true { parent.focus?.wrappedValue = false }
+        }
         func apply(_ change: ([NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any]) {
             guard let view else { return }
             let selection = view.selectedRange

@@ -21,6 +21,47 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testRichEditorDefersFocusAndIgnoresStaleRequests() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let textView = UITextView(frame: CGRect(x: 20, y: 100, width: 300, height: 150))
+        window.rootViewController?.view.addSubview(textView)
+        var requestedFocus = true
+        var writing = "Review: Sketch a garden path"
+        let parent = RichTextEditor(placeholder: "Description",
+            text: Binding(get: { writing }, set: { writing = $0 }),
+            focus: Binding(get: { requestedFocus }, set: { requestedFocus = $0 }))
+        let coordinator = parent.makeCoordinator()
+        textView.delegate = coordinator
+        textView.attributedText = PlanRichText.attributed(writing)
+        coordinator.scheduleFocusUpdate(textView)
+        XCTAssertFalse(textView.isFirstResponder, "Focus must not change inside the SwiftUI update")
+        requestedFocus = false
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(textView.isFirstResponder, "An obsolete description-focus request must not steal title focus")
+        for _ in 0..<3 {
+            requestedFocus = true
+            coordinator.scheduleFocusUpdate(textView)
+            coordinator.scheduleFocusUpdate(textView)
+            XCTAssertFalse(textView.isFirstResponder)
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertTrue(textView.isFirstResponder)
+            textView.attributedText = PlanRichText.attributed(writing + " edited")
+            coordinator.textViewDidChange(textView)
+            XCTAssertTrue(writing.hasSuffix(" edited"))
+            requestedFocus = false
+            coordinator.scheduleFocusUpdate(textView)
+            XCTAssertTrue(textView.isFirstResponder)
+            try await Task.sleep(for: .milliseconds(100))
+            XCTAssertFalse(textView.isFirstResponder)
+        }
+    }
+
     func testDaySelectorResolvesDatesAcrossWeeksWithoutChangingContent() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar(identifier: .gregorian)

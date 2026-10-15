@@ -1812,6 +1812,7 @@ private struct TodayHomeView: View {
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @State private var showsTodayList = false               /* Focused single-list presentation         */
+    @State private var showsTodayTargets = false
     @State private var focusedListID: Int?                  /* Current-day list selected when opening Focus */
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var quickComposerInitialTitle = ""       /* Quick-capture title handed to full editor */
@@ -1929,9 +1930,17 @@ private struct TodayHomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today")
                     .font(.largeTitle.weight(.bold))
-                Text(Date.now.formatted(date: .complete, time: .omitted))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Button { showsTodayTargets = true } label: {
+                    Text(Date.now.formatted(date: .complete, time: .omitted))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Today's targets, " + Date.now.formatted(date: .complete, time: .omitted))
+                .accessibilityHint("Opens a preview of today's targets and commitments")
+                .accessibilityIdentifier("today.targets")
             }
 
             Spacer()
@@ -2493,6 +2502,9 @@ private struct TodayHomeView: View {
             }
 
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showsTodayTargets) {
+                TodayTargetsView()
+            }
             .sheet(isPresented: $showsAccountSettings) {
 
                 AccountSettingsView(
@@ -7248,5 +7260,126 @@ private struct LibraryExamplePreviewView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
+    }
+}
+
+
+/// Read-only examples for the future daily targets workspace; no card or preference writes.
+struct TodayTargetsView: View {
+    @Environment(\.dismiss) private var dismiss
+    var date: Date = .now
+
+    private func target(_ number: String, title: String, detail: String, cue: String,
+                        symbol: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: symbol)
+                .font(.system(size: 21, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 44, height: 44)
+                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("TARGET " + number).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                Text(title).font(.headline).foregroundStyle(.primary)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(cue).font(.caption.weight(.medium)).foregroundStyle(color).padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+        .overlay(alignment: .leading) {
+            Capsule().fill(color.opacity(0.7)).frame(width: 3).padding(.vertical, 20)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func commitment(_ time: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Text(time).font(.subheadline.weight(.semibold)).monospacedDigit()
+                .foregroundStyle(.secondary).frame(width: 68, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.subheadline.weight(.medium))
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Label("Sample plan", systemImage: "sparkles")
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Color(.secondarySystemGroupedBackground), in: Capsule())
+                            Spacer()
+                        }
+                        Text(date.formatted(date: .complete, time: .omitted))
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Text("A clear plan for today")
+                            .font(.largeTitle.weight(.bold)).fixedSize(horizontal: false, vertical: true)
+                        Text("Make progress on one priority, care for the everyday, and leave room to recharge.")
+                            .font(.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        Text("Example targets and commitments for this preview.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("What matters today").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                        target("1", title: "Finish the project outline",
+                               detail: "A clear first draft, ready to share for feedback.", cue: "One focused hour · Before lunch",
+                               symbol: "scope", color: .blue)
+                        target("2", title: "Tend to the garden",
+                               detail: "Water what needs it and choose the next small improvement.", cue: "20 minutes · While it's light",
+                               symbol: "leaf", color: .green)
+                        target("3", title: "Make time for a walk",
+                               detail: "Step away, get some fresh air, and give the day a quieter finish.", cue: "20 minutes · Before dinner",
+                               symbol: "figure.walk", color: .orange)
+                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Make room for").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                        VStack(spacing: 16) {
+                            commitment("9:30 AM", title: "Morning check-in", detail: "Agree on the next useful step")
+                            Divider()
+                            commitment("12:30 PM", title: "Lunch break", detail: "A real pause between work blocks")
+                            Divider()
+                            commitment("5:30 PM", title: "Wrap up the day", detail: "Capture what's next, then step away")
+                        }
+                        .padding(18)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("What I need").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                        VStack(alignment: .leading, spacing: 14) {
+                            Label("A calm start before jumping into tasks", systemImage: "sun.max")
+                            Label("A proper lunch and water nearby", systemImage: "cup.and.saucer")
+                            Label("Some breathing room when plans change", systemImage: "wind")
+                        }
+                        .font(.subheadline)
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity)
+            }
+            .background(Color(.systemGroupedBackground))
+            .toolbarBackground(Color(.systemGroupedBackground), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .navigationTitle("Today's targets")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationBackground(Color(.systemGroupedBackground))
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }

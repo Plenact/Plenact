@@ -21,6 +21,27 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testTodayTargetsPreviewRendersWithoutChangingStoredPlans() async throws {
+        let before = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: TodayTargetsView())
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-targets-preview.png")
+        try XCTUnwrap(image.pngData()).write(to: path)
+        print("Targets preview: " + path.path)
+        let after = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }
+        XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))
+    }
+
     func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))

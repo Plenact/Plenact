@@ -810,7 +810,7 @@ private struct AppRootView: View {
                 guard let index = collections.firstIndex(where: { $0.id == collection.id }) else { return false }
                 var snapshot = collections; snapshot[index] = collection
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
-                catch { DatabaseActivity.shared.report("Could not save this Library collection: \(error.localizedDescription)"); return false }
+                catch { DatabaseActivity.shared.report("Could not save this Plans collection: \(error.localizedDescription)"); return false }
             }, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
                 displayedPlanningListID = nil
                 weekRootRequest += 1
@@ -919,7 +919,7 @@ private struct AppRootView: View {
         let libraryDestinations = collections.filter(\.isActive).flatMap { collection in
             collection.lists.filter { !$0.isArchived }.map {
                 CardMoveDestination(collectionID: collection.id, listID: $0.id,
-                    title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)", group: "Library", columnTitle: $0.title)
+                    title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)", group: "Plans", columnTitle: $0.title)
             }
         }
         return CardMovementAccess(destinations: weekDestinations + calendarDestinations + libraryDestinations,
@@ -998,7 +998,7 @@ private struct AppRootView: View {
             collections = updatedLibrary
             lists = current.collection.lists
             savedCardIDs = current.collection.savedCardIDs
-            let destination = newStandalone != nil ? "Library as a standalone List"
+            let destination = newStandalone != nil ? "Plans as a standalone List"
                 : (document.weeks.first(where: { $0.id == destinationID })?.rangeTitle
                     ?? updatedLibrary.first(where: { $0.id == destinationID })?.title ?? "another board")
             TransferConfirmationPresenter.shared.show(TransferConfirmation(title: moved.title, destination: destination))
@@ -1067,7 +1067,7 @@ private struct AppRootView: View {
             onClearSavedPersonalCardTarget: { savedPersonalCardTarget = nil }
         )
         .tabItem {
-            Label("Library", systemImage: "books.vertical")
+            Label("Plans", systemImage: "books.vertical")
         }
         .tag(AppDestination.lists)
         .toolbar(.hidden, for: .tabBar)
@@ -1131,7 +1131,7 @@ private struct AppRootView: View {
                     .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 54)
                     .accessibilityHidden(true)
 
-                tabButton(.lists, title: "Library", systemImage: "books.vertical.fill")
+                tabButton(.lists, title: "Plans", systemImage: "books.vertical.fill")
                 tabButton(.saved, title: "Activity", systemImage: "clock.arrow.circlepath")
             }
 
@@ -1186,7 +1186,7 @@ private struct AppRootView: View {
                 .accessibilityHint(
                     activePersonalListNewNote == nil
                         ? "Tap to create a card. Touch and hold until New shakes, then release to add a Week list."
-                        : "Creates a Note in the open personal List, or the most recently opened personal List from Library. Touch and hold until New shakes, then release to add a Week list."
+                        : "Creates a Note in the open personal List, or the most recently opened personal List from Plans. Touch and hold until New shakes, then release to add a Week list."
                 )
 
                     if profile?.preferences.showsNavigationLabels ?? true {
@@ -3422,7 +3422,7 @@ struct TodaySearchView: View {
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal)
                 .padding(.top)
-                Text(resultProvider == nil ? "Your Week · Cards, notes, and lists" : "Your Plenact · Today, Week, and Library")
+                Text(resultProvider == nil ? "Your Week · Cards, notes, and lists" : "Your Plenact · Today, Week, and Plans")
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal).padding(.top, 8).padding(.bottom, 12)
@@ -3632,7 +3632,7 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var searchPrompt: String {
         switch self {
-        case .all: "Find in your Library"
+        case .all: "Find in your Plans"
         case .lists: "Find in your Lists"
         case .boards: "Find in your Boards"
         case .labels: "Find in your Labels"
@@ -4030,7 +4030,7 @@ struct BoardListsView: View {
                     .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(result.cardTitle).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                    Text(result.ownerTitle == result.listTitle ? result.listTitle : (result.ownerTitle ?? "Library") + " · " + result.listTitle)
+                    Text(result.ownerTitle == result.listTitle ? result.listTitle : (result.ownerTitle ?? "Plans") + " · " + result.listTitle)
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -4040,7 +4040,7 @@ struct BoardListsView: View {
         }.buttonStyle(.plain)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            .accessibilityHint("Opens this item in your Library")
+            .accessibilityHint("Opens this item in your Plans")
     }
 
 
@@ -4153,7 +4153,7 @@ struct BoardListsView: View {
 
         guard let destination = directoryNoteDestination else { /* Available personal List for the new draft */
 
-            DatabaseActivity.shared.report("Create a personal List before adding a Note from Library.")
+            DatabaseActivity.shared.report("Create a personal List before adding a Note from Plans.")
 
             return
         }
@@ -4751,7 +4751,7 @@ struct BoardListsView: View {
                 } label: {
                     WorkspaceHeaderIcon(systemName: libraryEditMode == .active ? "checkmark" : "pencil")
                 }
-                .accessibilityLabel("Library display and organization")
+                .accessibilityLabel("Plans display and organization")
                 Button(action: onOpenSaved) {
                     WorkspaceHeaderIcon(systemName: "bookmark")
                 }
@@ -4773,14 +4773,14 @@ struct BoardListsView: View {
                     .accessibilityHint("Search your personal collections, cards, and notes")
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                        .accessibilityLabel("Clear Library search")
+                        .accessibilityLabel("Clear Plans search")
                 }
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
             if isLibrarySearchFocused || !searchText.isEmpty {
-                Text(browseFilter == .labels ? "Labels · Active cards across Week and Library" : "Your Library · Collections, cards, and notes")
+                Text(browseFilter == .labels ? "Labels · Active cards across Week and Plans" : "Your Plans · Collections, cards, and notes")
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -4796,7 +4796,7 @@ struct BoardListsView: View {
                         .accessibilityLabel("Close recent items")
                     }
                     if availableRecents.isEmpty {
-                        Text("Open or add a Library item to find it here.")
+                        Text("Open or add a Plans item to find it here.")
                             .font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 8)
                     } else {
                         recentShelf
@@ -4824,7 +4824,7 @@ struct BoardListsView: View {
         } label: {
             WorkspaceHeaderIcon(systemName: "plus.circle.fill")
         }
-        .accessibilityLabel("Library creation and examples")
+        .accessibilityLabel("Plans creation and examples")
     }
 
     private var listCreationMenu: some View {
@@ -4973,14 +4973,14 @@ struct BoardListsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Label(
                                 searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? (browseFilter == .all ? "Your own organizing spaces" : "No " + browseFilter.rawValue.lowercased() + " yet") : "No Library matches",
+                                    ? (browseFilter == .all ? "Your own organizing spaces" : "No " + browseFilter.rawValue.lowercased() + " yet") : "No Plans matches",
                                 systemImage: "books.vertical"
                             )
                             .font(.headline)
                             Text(
                                 searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                     ? "Keep ideas, projects, and everyday plans together in personal lists and boards."
-                                    : "Nothing in your Library matches ‘\(searchText.trimmingCharacters(in: .whitespacesAndNewlines))’. Try another word or phrase."
+                                    : "Nothing in your Plans matches ‘\(searchText.trimmingCharacters(in: .whitespacesAndNewlines))’. Try another word or phrase."
                             )
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -5260,7 +5260,7 @@ struct PersonalListExamplesView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Library. Your Week and existing collections stay unchanged.")
+                    Text("Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Plans. Your Week and existing collections stay unchanged.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -6188,7 +6188,7 @@ private struct SavedCardsView: View {
                         Image(systemName: "chevron.down").font(.caption)
                     }.frame(minHeight: 44)
                 }.disabled(availableFocusLabels.isEmpty)
-                Text("Cards and notes using this label across your Week and Library.")
+                Text("Cards and notes using this label across your Week and Plans.")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
                 Text("Unfinished items that are overdue or due within the next 7 days.")
@@ -6260,7 +6260,7 @@ private struct SavedCardsView: View {
             Text("Recent").font(.caption).foregroundStyle(.secondary)
             Text("Pick up where you left off").font(.title3.weight(.semibold))
             if recents.isEmpty {
-                Text(query.isEmpty ? "Open a card or note in Today, Week, or Library to find it here." : "No recent items match your search.")
+                Text(query.isEmpty ? "Open a card or note in Today, Week, or Plans to find it here." : "No recent items match your search.")
                     .font(.subheadline).foregroundStyle(.secondary)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -6437,7 +6437,7 @@ private struct SavedCardsView: View {
                             }
 
                             if !personalSavedCards.isEmpty {
-                                Text("Library")
+                                Text("Plans")
                                     .font(.headline)
                                 ForEach(personalSavedCards) { result in
                                     Button {
@@ -6509,7 +6509,7 @@ private struct SavedCardsView: View {
                                 }
                             }
 
-                            Text("Restored boards appear in Library. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
+                            Text("Restored boards appear in Plans. Restoring a Week Board creates a separate board and leaves your current Week unchanged.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -6536,7 +6536,7 @@ private struct SavedCardsView: View {
         }
         .confirmationDialog("Clear recent history?", isPresented: $confirmsClear, titleVisibility: .visible) {
             Button("Clear recent history", role: .destructive) { ActivityRecentStore.clear() }
-        } message: { Text("Removes recent shortcuts from Activity and Library. Your cards, notes, and Saved items stay intact.") }
+        } message: { Text("Removes recent shortcuts from Activity and Plans. Your cards, notes, and Saved items stay intact.") }
         .fullScreenCover(item: $historicalTarget) { result in
             if let week = result.week {
                 PlanningCalendarWeekView(week: week, initialDayID: result.list.id, initialCardID: result.card.id, onLeaveForHome: { historicalTarget = nil })
@@ -7324,21 +7324,23 @@ private struct PinnedListDayContent: View {
 struct TodayShortcutGrid: View {
     let pinned: [WorkspaceListDestination]
     let onOpen: (WorkspaceListReference) -> Void
+    private var usesLargeIcons: Bool { pinned.count <= 3 }
+
     var body: some View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                 ForEach(pinned) { destination in
                     Button { onOpen(destination.reference) } label: {
-                        VStack(spacing: 8) {
+                        VStack(spacing: usesLargeIcons ? 12 : 8) {
                             Image(systemName: destination.list.appearance?.icon?.rawValue ?? destination.owner.icon.rawValue)
-                                .font(.system(size: 25, weight: .medium))
+                                .font(.system(size: usesLargeIcons ? 40 : 25, weight: .medium))
                                 .foregroundStyle((destination.list.appearance?.accent?.color ?? destination.owner.color.color))
-                                .frame(width: 44, height: 44)
+                                .frame(width: usesLargeIcons ? 60 : 44, height: usesLargeIcons ? 60 : 44)
                             Text(destination.list.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                                 .foregroundStyle(.primary).multilineTextAlignment(.center)
                             Text("\(destination.list.cards.filter { !$0.isSectionDivider }.count) cards").font(.caption).foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 12).padding(.horizontal, 4)
-                        .frame(maxWidth: .infinity, minHeight: 130, alignment: .top)
+                        .frame(maxWidth: .infinity, minHeight: usesLargeIcons ? 150 : 130, alignment: .top)
                     }.buttonStyle(.plain)
                         .accessibilityHint("Opens " + destination.owner.title + ", " + destination.list.title)
                 }

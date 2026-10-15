@@ -3284,7 +3284,7 @@ struct BoardHeader: View {
                 }
 
                 .foregroundStyle(.white)
-                .accessibilityLabel("Back to Library")
+                .accessibilityLabel("Back to Plans")
             }
 
             titleSwipeArea
@@ -6584,7 +6584,7 @@ struct CardDestinationMenu: View {
     var body: some View {
         if access.move != nil {
             Menu {
-                ForEach(["Week", "Calendar", "Library"], id: \.self) { group in
+                ForEach(["Week", "Calendar", "Plans"], id: \.self) { group in
                     Menu(group) {
                         ForEach(destinations.filter { $0.group == group }) { destination in
                             Button(destination.title) {
@@ -6763,7 +6763,7 @@ struct CopyListDestinationSheet: View {
                             }
                         }
                     }
-                    Section("Library boards") {
+                    Section("Plans boards") {
                         ForEach(access.library.filter { $0.isActive && $0.kind == .board && $0.id != currentID }) { board in
                             Button(board.title) {
                                 var updated = board
@@ -6805,7 +6805,7 @@ struct MoveListDestinationSheet: View {
                 if let access {
                     Section {
                         Button { move(to: nil) } label: {
-                            Label("Standalone List in Library", systemImage: "list.bullet.rectangle")
+                            Label("Standalone List in Plans", systemImage: "list.bullet.rectangle")
                         }
                     }
                     Section("Week boards") {
@@ -6813,7 +6813,7 @@ struct MoveListDestinationSheet: View {
                             Button(week.startKey == access.document.currentWeekKey ? "This Week · " + week.rangeTitle : week.rangeTitle) { move(to: week.id) }
                         }
                     }
-                    Section("Library boards") {
+                    Section("Plans boards") {
                         ForEach(access.library.filter { $0.id != sourceID && $0.isActive && $0.kind == .board }) { board in
                             Button(board.title) { move(to: board.id) }
                         }

@@ -719,7 +719,7 @@ enum PlanningSharedSearchIndex {
                         labels: LabelLibrary) -> [TodaySearchResult] {
         let sources: [(UUID, String?, String, [KanbanList])] = access.document.weeks.map {
             ($0.id, $0.startKey, $0.startKey == access.document.currentWeekKey ? "This week · \($0.rangeTitle)" : $0.rangeTitle, $0.collection.lists)
-        } + access.library.filter(\.isActive).map { ($0.id, nil, "Library · \($0.title)", $0.lists) }
+        } + access.library.filter(\.isActive).map { ($0.id, nil, "Plans · \($0.title)", $0.lists) }
         return sources.flatMap { ownerID, weekKey, title, lists in
             TodaySearchIndex.results(query: query, scope: scope, lists: lists.filter { !$0.isArchived }, library: labels).map { match in
                 var result = match
@@ -794,7 +794,7 @@ struct PlanningSearchLibraryView: View {
     var body: some View {
         ContentView(lists: $collection.lists.activeLists, archivedLists: $collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID, savedCardIDs: $collection.savedCardIDs,
-            boardTitle: collection.title, boardSubtitle: "Library", allowsAddingLists: collection.kind == .board,
+            boardTitle: collection.title, boardSubtitle: "Plans", allowsAddingLists: collection.kind == .board,
             fillsAvailableListWidth: collection.kind == .list, onClose: { dismiss() },
             onCommitDeletion: { lists, saved in
                 var updated = collection; updated.lists = lists; updated.savedCardIDs = saved

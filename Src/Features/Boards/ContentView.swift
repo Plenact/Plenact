@@ -1311,6 +1311,7 @@ struct ContentView: View {
     @State private var showsArchivedLists = false /* Archived-list browser presentation state */
     /// Navigation stack path for card-detail destinations.
     @State private var listToCopy: KanbanList?
+    @State private var listToMove: KanbanList?
     @State private var navigationPath = NavigationPath() /* Card-detail destinations in the Board navigation stack */
     @State private var boardBoundaryJumpRequest = 0 /* Trigger distinguishing repeated boundary-navigation requests */
     @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation */
@@ -2657,6 +2658,9 @@ struct ContentView: View {
                                             onCopyList:            {
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { listToCopy = list }
                                             },
+                                            onMoveToBoard: planningCalendarAccess?.moveList != nil && planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.kind != .list ? {
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { listToMove = list }
+                                            } : nil,
                                             onMoveList:            { offset in moveList(with: list.id, by: offset) },
                                             onSortList:            { ascending in sortList(with: list.id, ascending: ascending) },
                                             onArchiveCompleted:    { archiveCompletedCards(in: list.id) },
@@ -3044,6 +3048,10 @@ struct ContentView: View {
                     .environment(\.workspaceBottomBarHeight, 0)
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
+            }
+            .sheet(item: $listToMove) { source in
+                MoveListDestinationSheet(source: source, access: planningCalendarAccess, currentID: personalCollectionID)
+                    .databaseActivityOverlay()
             }
             .sheet(item: $listToCopy) { source in
                 CopyListDestinationSheet(source: source, access: planningCalendarAccess, currentID: personalCollectionID) {
@@ -4038,6 +4046,7 @@ struct KanbanListView: View {
     let canMoveLater:  Bool                     /* Indicates whether the list can be moved later in the board     */
     let onAddCard: (String, String, String) -> Void     /* The action invoked to add a new card to the list               */
     let onCopyList: () -> Void                  /* The action invoked to copy the list                            */
+    var onMoveToBoard: (() -> Void)? = nil
     let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
     let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
     let onArchiveCompleted: () -> Void          /* The action invoked to archive all completed cards in the list  */
@@ -4527,6 +4536,7 @@ struct KanbanListView: View {
                         activeSheet = nil
                     },
                     onCopyList:            onCopyList,
+                    onMoveToBoard:         onMoveToBoard,
                     onMoveList:            onMoveList,
                     onSortList:            onSortList,
                     cardEditMode:          $editMode,
@@ -4797,6 +4807,7 @@ private struct KanbanListActionsSheet: View {
     @Binding var isWatching: Bool          /* Indicates if the user is watching the list                                    */
     let onAddCard: () -> Void              /* Action to perform when adding a card                                          */
     let onCopyList: () -> Void             /* Action to perform when copying the list                                       */
+    var onMoveToBoard: (() -> Void)? = nil
     let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
     let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
     @Binding var cardEditMode: EditMode /* Manual card ordering in the owning List */
@@ -4900,6 +4911,15 @@ private struct KanbanListActionsSheet: View {
                     } label: {
                         Label("Copy list", systemImage: "doc.on.doc")
                     }
+                    if let onMoveToBoard {
+                        Button {
+                            onMoveToBoard()
+                            dismiss()
+                        } label: {
+                            Label("Move list to another board", systemImage: "arrow.right.square")
+                        }
+                    }
+
 
                     Menu {
                         Button("Move earlier") {
@@ -6706,7 +6726,10 @@ struct CopyListDestinationSheet: View {
         var updated = week
         let copy = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
         updated.collection.lists.append(copy)
-        if access.saveWeek(updated) { dismiss() }
+        if access.saveWeek(updated) {
+            dismiss()
+            TransferConfirmationPresenter.shared.show(TransferConfirmation(title: source.title, destination: week.rangeTitle, action: .copied))
+        }
     }
     var body: some View {
         NavigationStack {
@@ -6727,7 +6750,10 @@ struct CopyListDestinationSheet: View {
                             Button(board.title) {
                                 var updated = board
                                 updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
-                                if access.saveLibrary(updated) { dismiss() }
+                                if access.saveLibrary(updated) {
+                                    dismiss()
+                                    TransferConfirmationPresenter.shared.show(TransferConfirmation(title: source.title, destination: board.title, action: .copied))
+                                }
                             }
                         }
                     }
@@ -6738,6 +6764,49 @@ struct CopyListDestinationSheet: View {
                 }
             }
             .navigationTitle("Copy List To")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+    }
+}
+
+
+struct MoveListDestinationSheet: View {
+    let source: KanbanList
+    let access: PlanningCalendarAccess?
+    let currentID: UUID?
+    @Environment(\.dismiss) private var dismiss
+    private var sourceID: UUID? { currentID ?? access?.document.weeks.first { $0.startKey == access?.document.currentWeekKey }?.id }
+    private func move(to id: UUID?) {
+        guard let sourceID, access?.moveList?(source.id, sourceID, id) == true else { return }
+        dismiss()
+    }
+    var body: some View {
+        NavigationStack {
+            List {
+                if let access {
+                    Section {
+                        Button { move(to: nil) } label: {
+                            Label("Standalone List in Library", systemImage: "list.bullet.rectangle")
+                        }
+                    }
+                    Section("Week boards") {
+                        ForEach(access.document.weeks.filter { $0.id != sourceID && $0.collection.isActive }) { week in
+                            Button(week.startKey == access.document.currentWeekKey ? "This Week · " + week.rangeTitle : week.rangeTitle) { move(to: week.id) }
+                        }
+                    }
+                    Section("Library boards") {
+                        ForEach(access.library.filter { $0.id != sourceID && $0.isActive && $0.kind == .board }) { board in
+                            Button(board.title) { move(to: board.id) }
+                        }
+                    }
+                    Section {
+                        Text("Moves the list and all its contents. A dated list leaves an empty day in its original week.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Move List To")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }

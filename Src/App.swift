@@ -814,7 +814,7 @@ private struct AppRootView: View {
                 displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
                 boardTargetListID = nil; boardTargetCardID = nil
                 selectedDestination = .board
-            })
+            }, moveList: movePlanningList)
     }
 
     private func setPlanningFirstWeekday(_ weekday: Int) -> Bool {
@@ -921,9 +921,81 @@ private struct AppRootView: View {
                 guard let list = week.collection.lists.first(where: { $0.id == listID }) else { return false }
                 document.upsert(week)
                 return movePlanningCard(card, source: source,
-                    destination: CardMoveDestination(collectionID: week.id, listID: list.id, title: list.title, group: "Calendar"),
+                    destination: CardMoveDestination(collectionID: week.id, listID: list.id, title: "\(week.rangeTitle) / \(list.title)", group: "Calendar"),
                     documentOverride: document)
             })
+    }
+
+    private func movePlanningList(_ listID: Int, sourceID: UUID, destinationID: UUID?) -> Bool {
+        do {
+            guard var document = calendarDocument else { return false }
+            if let current = document.weeks.firstIndex(where: { $0.startKey == document.currentWeekKey }) {
+                document.weeks[current].collection.lists = lists
+                document.weeks[current].collection.savedCardIDs = savedCardIDs
+            }
+            let datedSource = document.weeks.first { $0.id == sourceID }
+            let emptiedDates = datedSource?.dayListIDs.filter { $0.value == listID }.map(\.key) ?? []
+            var combined = collections + document.weeks.map(\.collection)
+            let moved: KanbanList
+            let newStandalone: PersonalCollection?
+            if let destinationID {
+                moved = try CrossBoardListMovement.move(listID: listID, from: sourceID, to: destinationID, collections: &combined)
+                newStandalone = nil
+            } else {
+                let standalone = try CrossBoardListMovement.detach(listID: listID, from: sourceID, collections: &combined)
+                moved = standalone.lists[0]
+                newStandalone = standalone
+            }
+            for index in document.weeks.indices {
+                if let updated = combined.first(where: { $0.id == document.weeks[index].id }) {
+                    document.weeks[index].collection = updated
+                }
+                if document.weeks[index].id == sourceID {
+                    for key in emptiedDates {
+                        if let date = PlanningDate.date(key, calendar: document.calendar) {
+                            _ = document.weeks[index].prepareDay(date)
+                        }
+                    }
+                }
+            }
+            let updatedLibrary = combined.filter { candidate in
+                candidate.id == newStandalone?.id || collections.contains { $0.id == candidate.id }
+            }
+            guard let current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { return false }
+            // Validate all payloads and retained stores before any writes or publication.
+            _ = try JSONEncoder().encode(document)
+            _ = try JSONEncoder().encode(updatedLibrary)
+            _ = try JSONEncoder().encode(current.collection.lists)
+            _ = try PlanningCalendarStore.load()
+            if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") { _ = try JSONDecoder().decode([KanbanList].self, from: data) }
+            if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") { _ = try JSONDecoder().decode([PersonalCollection].self, from: data) }
+            let defaults = UserDefaults.standard
+            let keys = [PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1"]
+            let previous = keys.map { defaults.object(forKey: $0) }
+            do {
+                try PlanningCalendarStore.save(document)
+                try PersonalCollectionStore.saveChecked(updatedLibrary)
+                try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
+                SavedCardPersistence.save(current.collection.savedCardIDs)
+            } catch {
+                for (key, value) in zip(keys, previous) {
+                    if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) }
+                }
+                throw error
+            }
+            calendarDocument = document
+            collections = updatedLibrary
+            lists = current.collection.lists
+            savedCardIDs = current.collection.savedCardIDs
+            let destination = newStandalone != nil ? "Library as a standalone List"
+                : (document.weeks.first(where: { $0.id == destinationID })?.rangeTitle
+                    ?? updatedLibrary.first(where: { $0.id == destinationID })?.title ?? "another board")
+            TransferConfirmationPresenter.shared.show(TransferConfirmation(title: moved.title, destination: destination))
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not move this list: \(error.localizedDescription) Its content has been retained.")
+            return false
+        }
     }
 
     private func movePlanningCard(_ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
@@ -961,6 +1033,9 @@ private struct AppRootView: View {
             SavedCardPersistence.save(updatedSaved)
             calendarDocument = document
             lists = updatedWeek; collections = updatedLibrary; savedCardIDs = updatedSaved
+            if normalizedSource != normalizedDestination.collectionID {
+                TransferConfirmationPresenter.shared.show(TransferConfirmation(title: card.word, destination: destination.title))
+            }
             return true
         } catch {
             DatabaseActivity.shared.report("Could not move this item: \(error.localizedDescription) Its content has been retained.")
@@ -4464,6 +4539,9 @@ struct BoardListsView: View {
         )
         try PersonalCollectionStore.saveChecked(snapshot)
         collections = snapshot
+        if sourceID != destinationID, let destination = snapshot.first(where: { $0.id == destinationID }) {
+            TransferConfirmationPresenter.shared.show(TransferConfirmation(title: moved.word, destination: destination.title))
+        }
 
         return moved
     }

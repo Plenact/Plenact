@@ -21,6 +21,135 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testDetachListCreatesStandaloneLibraryCollectionWithoutCopying() throws {
+        for title in ["Week board", "Library board"] {
+            var source = PersonalCollection(title: title, kind: .board, icon: .home, color: .green)
+            var card = KanbanCard(id: 8, word: "Keep this note", listTitle: "Garden", descriptionOverride: "Original writing")
+            card.displayFormat = .note
+            card.checklists = [KanbanChecklist(title: "Link", items: [KanbanChecklistItem(title: "Archived", content: .linkedCard(cardID: 9))])]
+            let archive = KanbanCard(id: 9, word: "Archived", listTitle: "Garden")
+            var list = KanbanList(id: 4, title: "Garden", cards: [card], archivedCards: [archive], newItemPresentation: .note)
+            list.subtitleOverride = "Seasonal notes"
+            list.appearance = ItemAppearance(accent: .green)
+            source.lists = [list]
+            source.savedCardIDs = [8, 9]
+            var collections = [source]
+            let result = try CrossBoardListMovement.detach(listID: list.id, from: source.id, collections: &collections)
+            XCTAssertEqual(collections.count, 2)
+            XCTAssertTrue(collections[0].lists.isEmpty)
+            XCTAssertTrue(collections[0].savedCardIDs.isEmpty)
+            XCTAssertEqual(result.kind, .list)
+            XCTAssertEqual(result.title, list.title)
+            XCTAssertEqual(result.color, source.color)
+            XCTAssertEqual(result.lists.count, 1)
+            XCTAssertEqual(result.savedCardIDs, [8, 9])
+            XCTAssertEqual(result.lists[0].id, list.id)
+            XCTAssertEqual(result.lists[0].appearance, list.appearance)
+            XCTAssertEqual(result.lists[0].subtitleOverride, list.subtitleOverride)
+            XCTAssertEqual(result.lists[0].newItemPresentation, .note)
+            XCTAssertEqual(result.lists[0].cards[0].descriptionOverride, card.descriptionOverride)
+            XCTAssertEqual(result.lists[0].archivedCards, [archive])
+            XCTAssertEqual(result.lists[0].cards[0].checklists[0].items[0].linkedCollectionID, result.id)
+            XCTAssertEqual(try JSONDecoder().decode([PersonalCollection].self, from: JSONEncoder().encode(collections)), collections)
+        }
+        var empty = [PersonalCollection]()
+        XCTAssertThrowsError(try CrossBoardListMovement.detach(listID: 4, from: UUID(), collections: &empty))
+        XCTAssertTrue(empty.isEmpty)
+    }
+
+    func testWholeListMovePreservesContentBookmarksAndCrossBoardLinks() throws {
+        var first = KanbanCard(id: 1, word: "Garden plan", listTitle: "Ideas", descriptionOverride: "Keep all writing")
+        first.displayFormat = .note
+        first.checklists = [KanbanChecklist(title: "Links", items: [
+            KanbanChecklistItem(title: "Internal archived card", content: .linkedCard(cardID: 2)),
+            KanbanChecklistItem(title: "Stays on source board", content: .linkedCard(cardID: 99))])]
+        let archived = KanbanCard(id: 2, word: "Archived", listTitle: "Ideas")
+        var moving = KanbanList(id: 1, title: "Ideas", cards: [first], archivedCards: [archived], newItemPresentation: .note)
+        moving.appearance = ItemAppearance(accent: .green)
+        moving.subtitleOverride = "Keep list description"
+        var source = PersonalCollection(title: "Week", kind: .board)
+        var remaining = KanbanCard(id: 99, word: "Remaining", listTitle: "Other")
+        remaining.checklists = [KanbanChecklist(title: "Link", items: [KanbanChecklistItem(title: "Moved note", content: .linkedCard(cardID: 1))])]
+        source.lists = [moving, KanbanList(id: 9, title: "Other", cards: [remaining])]
+        source.savedCardIDs = [1, 2, 99]
+        var target = PersonalCollection(title: "Library", kind: .board)
+        target.lists = [KanbanList(id: 1, title: "Existing", cards: [first], archivedCards: [archived])]
+        target.savedCardIDs = [1]
+        var boards = [source, target]
+        let moved = try CrossBoardListMovement.move(listID: 1, from: source.id, to: target.id, collections: &boards)
+        XCTAssertEqual(boards[0].lists.map(\.id), [9])
+        XCTAssertEqual(boards[1].lists.count, 2)
+        XCTAssertEqual(moved.title, moving.title)
+        XCTAssertNotEqual(moved.id, moving.id)
+        XCTAssertEqual(moved.appearance, moving.appearance)
+        XCTAssertEqual(moved.subtitleOverride, moving.subtitleOverride)
+        XCTAssertEqual(moved.newItemPresentation, .note)
+        let note = try XCTUnwrap(moved.cards.first)
+        let retained = try XCTUnwrap(moved.archivedCards.first)
+        XCTAssertEqual(note.descriptionOverride, first.descriptionOverride)
+        XCTAssertEqual(note.displayFormat, .note)
+        XCTAssertNotEqual(note.id, 1)
+        XCTAssertNotEqual(retained.id, 2)
+        XCTAssertEqual(note.checklists[0].items[0].content, .linkedCard(cardID: retained.id))
+        XCTAssertEqual(note.checklists[0].items[0].linkedCollectionID, target.id)
+        XCTAssertEqual(note.checklists[0].items[1].content, .linkedCard(cardID: 99))
+        XCTAssertEqual(note.checklists[0].items[1].linkedCollectionID, source.id)
+        XCTAssertEqual(boards[0].lists[0].cards[0].checklists[0].items[0].content, .linkedCard(cardID: note.id))
+        XCTAssertEqual(boards[0].lists[0].cards[0].checklists[0].items[0].linkedCollectionID, target.id)
+        XCTAssertEqual(boards[0].savedCardIDs, [99])
+        XCTAssertEqual(boards[1].savedCardIDs, [1, note.id, retained.id])
+        let roundTrip = try JSONDecoder().decode([PersonalCollection].self, from: JSONEncoder().encode(boards))
+        XCTAssertEqual(roundTrip, boards)
+        let returned = try CrossBoardListMovement.move(listID: moved.id, from: target.id, to: source.id, collections: &boards)
+        XCTAssertEqual(returned.cards[0].descriptionOverride, first.descriptionOverride)
+        XCTAssertEqual(returned.archivedCards.count, 1)
+        XCTAssertEqual(boards[1].lists.count, 1)
+    }
+
+    func testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation() throws {
+        var source = PersonalCollection(title: "Source", kind: .board)
+        source.lists = [KanbanList(id: 4, title: "List", cards: [])]
+        var archived = PersonalCollection(title: "Archived", kind: .board)
+        archived.isArchived = true
+        var boards = [source, archived]
+        let original = boards
+        for destination in [source.id, archived.id, UUID()] {
+            XCTAssertThrowsError(try CrossBoardListMovement.move(listID: 4, from: source.id, to: destination, collections: &boards))
+            XCTAssertEqual(boards, original)
+        }
+    }
+
+    @MainActor
+    func testTransferToastIsVisibleWithoutTakingFocusOrInterceptingTouches() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let keyWindow = scene.windows.first(where: \.isKeyWindow)
+        let presenter = TransferConfirmationPresenter.shared
+        presenter.show(TransferConfirmation(title: "Sketch a garden path", destination: "Garden seasons / Ideas"))
+        defer { presenter.dismiss() }
+        try await Task.sleep(for: .milliseconds(300))
+        let window = try XCTUnwrap(scene.windows.first { $0.windowLevel > .alert && !$0.isHidden })
+        XCTAssertFalse(window.isKeyWindow)
+        XCTAssertTrue(scene.windows.first(where: \.isKeyWindow) === keyWindow)
+        XCTAssertNil(window.hitTest(CGPoint(x: 100, y: window.bounds.height - 150), with: nil))
+        let view = try XCTUnwrap(window.rootViewController?.view)
+        view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: view.bounds).image { _ in
+            view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+        }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-transfer-toast-preview.png")
+        try XCTUnwrap(image.pngData()).write(to: path)
+        print("Transfer preview: " + path.path)
+    }
+
+    func testTransferConfirmationsNameDestinationAndDistinguishCopies() {
+        XCTAssertEqual(TransferConfirmation(title: "Garden path", destination: "Garden / Ideas").message,
+                       "Moved ‘Garden path’ to Garden / Ideas.")
+        XCTAssertEqual(TransferConfirmation(title: "My note", destination: "Journal").message,
+                       "Moved ‘My note’ to Journal.")
+        XCTAssertEqual(TransferConfirmation(title: "Ideas", destination: "Home", action: .copied).message,
+                       "Copied ‘Ideas’ to Home.")
+    }
+
     func testLaunchPacingRevealsEvenlyAndWaitsForReadiness() {
         let ready = PlenactLaunchProgress(stage: .welcome, finished: true)
         for (time, stage) in [(0.0, PlenactLaunchStage.restore), (0.23, .plans), (0.45, .ready), (0.67, .welcome)] {

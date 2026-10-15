@@ -323,6 +323,7 @@ struct PlanningCalendarAccess {
     var saveLibrary: (PersonalCollection) -> Bool
     var setFirstWeekday: (Int) -> Bool = { _ in false }
     var openWeek: (DatedPlanningWeek) -> Void = { _ in }
+    var moveList: ((Int, UUID, UUID?) -> Bool)? = nil
     var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
     var searchableItems: [PlanningSearchResult] {
         document.weeks.flatMap { week in

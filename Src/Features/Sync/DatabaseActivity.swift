@@ -200,3 +200,85 @@ extension View {
         modifier(DatabaseActivityOverlay())
     }
 }
+
+
+struct TransferConfirmation: Equatable {
+    enum Action { case moved, copied }
+    let title: String
+    let destination: String
+    var action: Action = .moved
+    var message: String {
+        "\(action == .moved ? "Moved" : "Copied") ‘\(title)’ to \(destination)."
+    }
+}
+
+/// A noninteractive window keeps confirmations visible across sheets and full-screen editors.
+@MainActor
+final class TransferConfirmationPresenter {
+    static let shared = TransferConfirmationPresenter()
+    private var window: UIWindow?
+    private var dismissTask: Task<Void, Never>?
+
+    func dismiss() {
+        dismissTask?.cancel()
+        window?.isHidden = true
+        window = nil
+    }
+
+    func show(_ confirmation: TransferConfirmation) {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else { return }
+        dismissTask?.cancel()
+        window?.isHidden = true
+        let window = TransferConfirmationWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        window.windowLevel = .alert + 1
+        window.backgroundColor = .clear
+        window.rootViewController = UIHostingController(rootView: TransferConfirmationToast(message: confirmation.message))
+        window.rootViewController?.view.backgroundColor = .clear
+        self.window = window
+        window.isHidden = false
+        UIAccessibility.post(notification: .announcement, argument: confirmation.message)
+        dismissTask = Task { [weak self, weak window] in
+            do { try await Task.sleep(for: .milliseconds(3400)) } catch { return }
+            guard let self, let window, self.window === window else { return }
+            window.isHidden = true
+            self.window = nil
+        }
+    }
+}
+
+private final class TransferConfirmationWindow: UIWindow {
+    override var canBecomeKey: Bool { false }
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? { nil }
+}
+
+private struct TransferConfirmationToast: View {
+    let message: String
+    @State private var visible = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        VStack {
+            Spacer()
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "checkmark.circle.fill").font(.title3)
+                Text(message).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(.white)
+            .padding(16)
+            .frame(maxWidth: 520, alignment: .leading)
+            .background(Color(red: 0.18, green: 0.39, blue: 0.29), in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .opacity(visible ? 1 : 0)
+            .offset(y: reduceMotion || visible ? 0 : 8)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 100)
+        }
+        .allowsHitTesting(false)
+        .task {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { visible = true }
+            do { try await Task.sleep(for: .seconds(3)) } catch { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { visible = false }
+        }
+    }
+}

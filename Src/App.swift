@@ -2261,6 +2261,7 @@ private struct TodayHomeView: View {
 
                     quickCaptureSection
                         .modifier(TodayPanelSurface())
+                        .padding(.top, 40)
 
                     TimelineView(.everyMinute) { context in
                         let focus = calendarDayList(context.date) /* Active list matching the current weekday */
@@ -2269,7 +2270,7 @@ private struct TodayHomeView: View {
                         TodayFocusSection(
                             list:            focus,
                             cards:           cards,
-                            openCards:       Array(cards.filter { !$0.isTitleChecked }.prefix(3)),
+                            openCards:       Array(cards.filter { !$0.isTitleChecked }.prefix(4)),
                             onToggleCard:    { cardID in
                                 if let focus { /* Weekday list available for navigation */
 
@@ -4613,7 +4614,7 @@ struct BoardListsView: View {
 
     private var plateSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("On the Plate")
+            Text("Coming Soon")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 28)
@@ -5019,14 +5020,17 @@ struct BoardListsView: View {
             }
             .scrollContentBackground(.hidden)
             .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) { libraryHeader }
-            // Reserve the shelf above the app toolbar, independently of List's scrolling layout.
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if showsPlateShelf {
-                    plateSection
-                        .padding(.bottom, bottomBarHeight > 0 ? 77 : 0)
-                        .background { TodayPaperBackground().clipped() }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    libraryHeader
+                    if showsPlateShelf {
+                        plateSection
+                            .background { TodayPaperBackground().clipped() }
+                    }
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: bottomBarHeight > 0 ? 77 : 0)
             }
             .background { TodayPaperBackground() }
             .environment(\.editMode, $libraryEditMode)

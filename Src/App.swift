@@ -446,7 +446,7 @@ struct PlenactLaunchIndicators: View {
     var animates = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        HStack(spacing: 36) {
+        HStack(spacing: 44) {
             ForEach(PlenactLaunchStage.allCases, id: \.rawValue) { step in
                 let status = progress.status(for: step)
                 Image(systemName: step.symbol)
@@ -503,7 +503,8 @@ struct PlenactLoadingView: View {
             .offset(y: -geometry.size.height * 0.125)
             .overlay(alignment: .bottom) {
                 PlenactLaunchSequence(progress: progress, animates: animatesLogo)
-                    .offset(x: -20)
+                    // Compensate for the wider row so the first icon stays anchored.
+                    .offset(x: -8)
                     .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
             }
         }

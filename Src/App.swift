@@ -2065,7 +2065,7 @@ private struct TodayHomeView: View {
 
     ///
     /// @fcn        TodayHomeView.browseListsAction
-    /// @brief      Provide the Browse all lists entry point
+    /// @brief      Provide the Browse this week entry point
     /// @details    Opens the shared list picker in navigation mode rather than Today-selection mode
     ///
     /// @return     (some View) accessible list-browsing button
@@ -2078,7 +2078,7 @@ private struct TodayHomeView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "rectangle.3.group")
-                Text("Browse all lists")
+                Text("Browse this week")
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -6835,7 +6835,7 @@ private struct TodayFocusSection: View {
                 }
 
                 Button(action: onOpenTodayList) {
-                    Label("Open today's list", systemImage: "arrow.right")
+                    Label("Open today", systemImage: "arrow.right")
                         .font(.subheadline.weight(.medium))
                         .frame(minHeight: 36)
                 }

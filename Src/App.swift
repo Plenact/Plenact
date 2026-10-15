@@ -523,6 +523,7 @@ private struct AppRootView: View {
     @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
     @State private var calendarDocument: PlanningCalendarDocument?
     @State private var displayedPlanningWeek: DatedPlanningWeek?
+    @State private var displayedPlanningListID: Int?
     @Environment(\.scenePhase) private var scenePhase
     @State private var launchProgress = PlenactLaunchProgress()
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
@@ -679,7 +680,7 @@ private struct AppRootView: View {
             Group {
                 if let displayedPlanningWeek {
                     PlanningCalendarWeekView(week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
-                        onLeaveForHome: { self.displayedPlanningWeek = nil }, isWeekTab: true)
+                        onLeaveForHome: { self.displayedPlanningWeek = nil }, isWeekTab: true, initialBoardListID: displayedPlanningListID)
                         .id(displayedPlanningWeek.startKey)
                 } else {
             ContentView(
@@ -798,6 +799,7 @@ private struct AppRootView: View {
         guard let document = calendarDocument else { return nil }
         return PlanningCalendarAccess(document: document, library: collections, saveWeek: savePlanningWeek,
             openCurrentWeek: {
+                displayedPlanningListID = nil
                 displayedPlanningWeek = nil
                 selectedDestination = .board
                 weekRootRequest += 1
@@ -810,11 +812,20 @@ private struct AppRootView: View {
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
                 catch { DatabaseActivity.shared.report("Could not save this Library collection: \(error.localizedDescription)"); return false }
             }, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
+                displayedPlanningListID = nil
                 weekRootRequest += 1
                 displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
                 boardTargetListID = nil; boardTargetCardID = nil
                 selectedDestination = .board
-            }, moveList: movePlanningList)
+            }, moveList: movePlanningList, openWeekOnDay: { week, date in
+                let listID = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)]
+                weekRootRequest += 1
+                displayedPlanningListID = listID
+                displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
+                boardTargetCardID = nil
+                boardTargetListID = week.startKey == calendarDocument?.currentWeekKey ? listID : nil
+                selectedDestination = .board
+            })
     }
 
     private func setPlanningFirstWeekday(_ weekday: Int) -> Bool {

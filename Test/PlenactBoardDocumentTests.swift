@@ -21,6 +21,49 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts() throws {
+        for firstWeekday in [1, 2] {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.firstWeekday = firstWeekday
+            for key in ["2026-10-14", "2026-12-31", "2027-01-01", "2028-02-29"] {
+                let date = try XCTUnwrap(PlanningDate.date(key, calendar: calendar))
+                let days = PlanningWeekSelector.monthDays(date, calendar: calendar)
+                XCTAssertEqual(days.count, 42)
+                XCTAssertEqual(calendar.component(.weekday, from: days[0]), firstWeekday)
+                for row in 0..<6 {
+                    let keys = Set(days[(row * 7)..<(row * 7 + 7)].map { PlanningDate.weekKey($0, calendar: calendar) })
+                    XCTAssertEqual(keys.count, 1)
+                }
+                let month = try XCTUnwrap(calendar.dateInterval(of: .month, for: date))
+                let count = try XCTUnwrap(calendar.range(of: .day, in: .month, for: date)).count
+                XCTAssertEqual(days.filter { month.contains($0) && $0 < month.end }.count, count)
+            }
+        }
+    }
+
+    @MainActor
+    func testWeekCalendarPickerRendersSelectedWeekAndDay() async throws {
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-14"))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.firstWeekday = 1
+        let week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 1, weeks: [week])
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: PlanningWeekSelector(initialDate: date, document: document, selectedWeekKey: week.startKey) { _, _ in })
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 480)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-week-calendar-preview.png")
+        try XCTUnwrap(image.pngData()).write(to: path)
+        print("Week calendar preview: " + path.path)
+    }
+
     func testDetachListCreatesStandaloneLibraryCollectionWithoutCopying() throws {
         for title in ["Week board", "Library board"] {
             var source = PersonalCollection(title: title, kind: .board, icon: .home, color: .green)

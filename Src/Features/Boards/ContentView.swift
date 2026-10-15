@@ -3066,11 +3066,12 @@ struct ContentView: View {
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsWeekSelector) {
                 if let access = planningCalendarAccess {
-                    PlanningWeekSelector(initialDate: calendarOpeningDate, document: access.document,
+                    PlanningWeekSelector(initialDate: dayDate(for: visibleListID ?? lists.first?.id ?? -1) ?? calendarOpeningDate, document: access.document,
                         selectedWeekKey: personalCollectionID.flatMap { id in access.document.weeks.first { $0.id == id }?.startKey }
-                            ?? PlanningDate.weekKey(calendarOpeningDate, calendar: access.document.calendar)) { week in
+                            ?? PlanningDate.weekKey(calendarOpeningDate, calendar: access.document.calendar)) { week, date in
                         showsWeekSelector = false
-                        access.openWeek(week)
+                        if let open = access.openWeekOnDay { open(week, date) }
+                        else { access.openWeek(week) }
                     }
                 }
             }

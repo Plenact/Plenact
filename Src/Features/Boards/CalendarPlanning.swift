@@ -324,6 +324,7 @@ struct PlanningCalendarAccess {
     var setFirstWeekday: (Int) -> Bool = { _ in false }
     var openWeek: (DatedPlanningWeek) -> Void = { _ in }
     var moveList: ((Int, UUID, UUID?) -> Bool)? = nil
+    var openWeekOnDay: ((DatedPlanningWeek, Date) -> Void)? = nil
     var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
     var searchableItems: [PlanningSearchResult] {
         document.weeks.flatMap { week in
@@ -607,6 +608,7 @@ struct PlanningCalendarWeekView: View {
     let initialCardID: Int?
     let onLeaveForHome: () -> Void
     var isWeekTab = false
+    var initialBoardListID: Int? = nil
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var targetListID: Int?
@@ -659,10 +661,14 @@ struct PlanningCalendarWeekView: View {
         .task {
             guard !didOpenInitialTarget else { return }
             didOpenInitialTarget = true
+            if let initialBoardListID { targetListID = initialBoardListID }
             if let initialDayID {
                 if let initialCardID { targetListID = initialDayID; targetCardID = initialCardID }
                 else { dayID = initialDayID; showsDay = true }
             }
+        }
+        .onChange(of: initialBoardListID) { _, id in
+            if let id { targetListID = id; targetCardID = nil }
         }
         .onChange(of: week) { old, updated in
             guard old != updated else { return }
@@ -845,20 +851,22 @@ struct PlanningChecklistLink: View {
 /// Direct week selection changes the browsed board without changing Today's active week.
 struct PlanningWeekSelector: View {
     let document: PlanningCalendarDocument
-    let selectedWeekKey: String
-    let onSelect: (DatedPlanningWeek) -> Void
+    let onSelect: (DatedPlanningWeek, Date) -> Void
     @State private var referenceDate: Date
+    @State private var selectedDate: Date
+    @State private var highlightedWeekKey: String
+    @State private var isSelecting = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String,
-         onSelect: @escaping (DatedPlanningWeek) -> Void) {
+         onSelect: @escaping (DatedPlanningWeek, Date) -> Void) {
         self.document = document
-        self.selectedWeekKey = selectedWeekKey
         self.onSelect = onSelect
         _referenceDate = State(initialValue: initialDate)
+        _selectedDate = State(initialValue: initialDate)
+        _highlightedWeekKey = State(initialValue: selectedWeekKey)
     }
-
-    private var weeks: [DatedPlanningWeek] { Self.choices(document: document, referenceDate: referenceDate) }
 
     static func choices(document: PlanningCalendarDocument, referenceDate: Date) -> [DatedPlanningWeek] {
         var choices = Dictionary(uniqueKeysWithValues: document.weeks.map { ($0.startKey, $0) })
@@ -870,46 +878,93 @@ struct PlanningWeekSelector: View {
         return choices.values.sorted { $0.startKey < $1.startKey }
     }
 
+
+    static func monthDays(_ date: Date, calendar: Calendar) -> [Date] {
+        guard let first = calendar.dateInterval(of: .month, for: date)?.start,
+              let gridStart = calendar.dateInterval(of: .weekOfYear, for: first)?.start else { return [] }
+        return (0..<42).compactMap { calendar.date(byAdding: .day, value: $0, to: gridStart) }
+    }
+    private var rows: [[Date]] {
+        let days = Self.monthDays(referenceDate, calendar: document.calendar)
+        return stride(from: 0, to: days.count, by: 7).map { Array(days[$0..<min($0 + 7, days.count)]) }
+    }
+    private var weekdaySymbols: [String] {
+        let symbols = document.calendar.veryShortStandaloneWeekdaySymbols
+        return (0..<7).map { symbols[($0 + document.calendar.firstWeekday - 1) % 7] }
+    }
+    private func changeMonth(_ amount: Int) {
+        if let first = document.calendar.dateInterval(of: .month, for: referenceDate)?.start,
+           let next = document.calendar.date(byAdding: .month, value: amount, to: first) { referenceDate = next }
+    }
+    private func select(_ date: Date) {
+        guard !isSelecting else { return }
+        isSelecting = true
+        let key = PlanningDate.weekKey(date, calendar: document.calendar)
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) {
+            highlightedWeekKey = key
+            selectedDate = date
+        }
+        let week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(140)) } catch { return }
+            onSelect(week, date)
+            dismiss()
+        }
+    }
     var body: some View {
         NavigationStack {
-            ScrollViewReader { proxy in
-                List {
-                    Section {
-                        DatePicker("Jump to a date", selection: $referenceDate, displayedComponents: .date)
+            VStack(spacing: 12) {
+                HStack {
+                    Text(referenceDate.formatted(.dateTime.month(.wide).year())).font(.headline)
+                    Spacer()
+                    Button { changeMonth(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Previous month")
+                    Button { changeMonth(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Next month")
+                }
+                .foregroundStyle(.primary)
+                HStack(spacing: 0) {
+                    ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
+                        Text(symbol.uppercased()).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                     }
-                    Section("Choose a week") {
-                        ForEach(weeks) { week in
-                            Button {
-                                dismiss()
-                                onSelect(week)
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(week.rangeTitle).foregroundStyle(.primary)
-                                        if week.startKey == document.currentWeekKey {
-                                            Text("This week").font(.caption).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    if week.startKey == selectedWeekKey { Image(systemName: "checkmark") }
+                }
+                VStack(spacing: 4) {
+                    ForEach(rows.indices, id: \.self) { row in
+                        let dates = rows[row]
+                        let highlighted = dates.first.map { PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey } ?? false
+                        HStack(spacing: 0) {
+                            ForEach(dates, id: \.self) { date in
+                                let selected = document.calendar.isDate(date, inSameDayAs: selectedDate)
+                                let inMonth = document.calendar.isDate(date, equalTo: referenceDate, toGranularity: .month)
+                                Button { select(date) } label: {
+                                    Text(String(document.calendar.component(.day, from: date)))
+                                        .font(.body.weight(selected ? .semibold : .regular))
+                                        .foregroundStyle(selected ? Color.white : (inMonth ? Color.primary : Color.secondary))
+                                        .frame(width: 36, height: 36)
+                                        .background(selected ? Color.blue : Color.clear, in: Circle())
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .contentShape(Rectangle())
                                 }
-                                .frame(minHeight: 44)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
+                                .accessibilityHint("Show the week containing this day")
+                                .accessibilityAddTraits(selected ? .isSelected : [])
                             }
-                            .id(week.startKey)
-                            .accessibilityAddTraits(week.startKey == selectedWeekKey ? .isSelected : [])
                         }
+                        .background(highlighted ? Color.blue.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                     }
                 }
-                .onAppear { proxy.scrollTo(selectedWeekKey, anchor: .center) }
-                .onChange(of: referenceDate) { _, date in
-                    proxy.scrollTo(PlanningDate.weekKey(date, calendar: document.calendar), anchor: .center)
-                }
+                Text("Tap any day to show its week.").font(.footnote).foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .disabled(isSelecting)
             .navigationTitle("Choose week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+        .presentationDetents([.height(520), .large])
     }
 }
 

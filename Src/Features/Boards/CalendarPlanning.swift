@@ -960,10 +960,15 @@ struct PlanningWeekSelector: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .disabled(isSelecting)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemBackground))
+            .toolbarBackground(Color(.systemBackground), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .navigationTitle("Choose week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+        .presentationBackground(Color(.systemBackground))
         .presentationDetents([.height(520), .large])
     }
 }

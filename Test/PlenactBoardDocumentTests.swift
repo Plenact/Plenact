@@ -21,6 +21,71 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity() throws {
+        let catalog = LabelLibrary.starter
+        let label = try XCTUnwrap(catalog.labels.first)
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-15"))
+        var week = DatedPlanningWeek.make(for: date)
+        var card = KanbanCard(id: 5, word: "Week card", listTitle: week.collection.lists[0].title)
+        card.labelIDs = [label.id, label.id]
+        week.collection.lists[0].cards = [card]
+        week.collection.lists[0].archivedCards = [card.replacingLocation(id: 88, listTitle: "Archive")]
+        var library = PersonalCollection(title: "Notes", kind: .list)
+        var note = card.replacingLocation(id: 5, listTitle: library.title)
+        note.presentation = .note
+        library.lists[0].cards = [note]
+        var archived = PersonalCollection(title: "Old", kind: .board)
+        archived.isArchived = true
+        archived.lists[0].cards = [card]
+        var hidden = KanbanList(id: 100, title: "Archived list", cards: [card])
+        hidden.isArchived = true
+        library.lists.append(hidden)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        let owners = WorkspaceBrowseIndex.owners(document: document, library: [library, archived])
+        let usage = try XCTUnwrap(WorkspaceBrowseIndex.labels(in: owners, catalog: catalog).first { $0.id == label.id })
+        XCTAssertEqual(usage.matches.count, 2)
+        XCTAssertEqual(Set(usage.matches.map(\.collectionID)), [week.id, library.id])
+        XCTAssertEqual(Set(usage.matches.map(\.id)).count, 2, "Identical numeric IDs in different owners stay distinct")
+        XCTAssertEqual(usage.matches.filter { $0.card.presentation == .note }.count, 1)
+        XCTAssertFalse(WorkspaceBrowseIndex.lists(in: owners).contains { $0.list.isArchived })
+        XCTAssertFalse(LibraryBrowseFilter.labels.includes(library))
+        XCTAssertEqual(LibraryBrowseFilter.labels.searchPrompt, "Find in your Labels")
+    }
+
+    func testTodayShortcutPinsKeepOrderOwnerAndSixItemLimit() {
+        let first = WorkspaceListReference(ownerID: UUID(), listID: 0)
+        let second = WorkspaceListReference(ownerID: UUID(), listID: 0)
+        let extras = (1...8).map { WorkspaceListReference(ownerID: first.ownerID, listID: $0) }
+        let pins = [first, second, first] + extras
+        let decoded = TodayListPins.decode(TodayListPins.encode(pins))
+        XCTAssertEqual(decoded.count, 6)
+        XCTAssertEqual(Array(decoded.prefix(2)), [first, second])
+        XCTAssertEqual(Set(decoded).count, 6)
+        XCTAssertTrue(TodayListPins.decode(Data("invalid".utf8)).isEmpty)
+        XCTAssertEqual(TodayListPins.decode(TodayListPins.encode(Array(decoded.reversed()))), Array(decoded.reversed()))
+    }
+
+    @MainActor
+    func testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing() async throws {
+        var owner = PersonalCollection(title: "Projects", kind: .board)
+        owner.lists = (0..<6).map { KanbanList(id: $0, title: ["On the Table", "Garden", "Shopping", "Reading", "Ideas", "Home"][$0], cards: []) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: TodayShortcutGrid(pinned: WorkspaceBrowseIndex.lists(in: [owner]),
+            onOpen: { _ in XCTFail("Rendering must not open a list") }).padding(20).background(Color(.systemGroupedBackground)))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 440)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-shortcuts-preview.png")
+        try XCTUnwrap(image.pngData()).write(to: path)
+        print("Shortcuts preview: " + path.path)
+    }
+
     @MainActor
     func testTodayTargetsPreviewRendersWithoutChangingStoredPlans() async throws {
         let before = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }

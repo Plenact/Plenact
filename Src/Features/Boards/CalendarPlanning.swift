@@ -780,7 +780,7 @@ struct PlanningSharedSearchPresentation: ViewModifier {
     }
 }
 
-private struct PlanningSearchLibraryView: View {
+struct PlanningSearchLibraryView: View {
     @State var collection: PersonalCollection
     let initialListID: Int
     let initialCardID: Int?

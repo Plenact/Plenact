@@ -213,6 +213,8 @@ struct AccountSettingsView: View {
     let onRemove: () -> Void                     /* Profile removal        */
 
     @Environment(\.planningCalendarAccess) private var planningAccess
+    @AppStorage(TodayListPins.key) private var listPinData = Data()
+    @State private var showsShortcutEditor = false
     @State private var firstWeekday = 1
     @State private var didLoadWeekStart = false
     @Environment(\.dismiss) private var dismiss  /* Sheet dismissal       */
@@ -458,6 +460,9 @@ struct AccountSettingsView: View {
 
                 Form {
                     Section {
+                        Button { showsShortcutEditor = true } label: {
+                            Label("My shortcuts", systemImage: "square.grid.3x2")
+                        }
                         Picker("Week starts on", selection: $firstWeekday) {
                             Text("Sunday").tag(1)
                             Text("Monday").tag(2)
@@ -507,6 +512,12 @@ struct AccountSettingsView: View {
             }
 
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
+            .sheet(isPresented: $showsShortcutEditor) {
+                TodayShortcutEditor(pins: TodayListPins.decode(listPinData),
+                    owners: WorkspaceBrowseIndex.owners(document: planningAccess?.document, library: planningAccess?.library ?? [])) { pins in
+                    listPinData = TodayListPins.encode(pins)
+                }
+            }
             .databaseActivityOverlay()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -1813,6 +1813,9 @@ private struct TodayHomeView: View {
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayTargets = false
+    @AppStorage(TodayListPins.key) private var listPinData = Data()
+    @State private var openedShortcut: WorkspaceListReference?
+
     @State private var focusedListID: Int?                  /* Current-day list selected when opening Focus */
     @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
     @State private var quickComposerInitialTitle = ""       /* Quick-capture title handed to full editor */
@@ -1824,8 +1827,6 @@ private struct TodayHomeView: View {
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
     @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
-    @State private var selectedLabelCategoryID: String? = nil /* Category selected in Your Labels       */
-    @State private var selectedLabel: KanbanLabel? = nil    /* If label opened to its applied cards     */
     @State private var isContentScrolled = false            /* If content is passing beneath the header */
 
 
@@ -1848,70 +1849,6 @@ private struct TodayHomeView: View {
         }                                            /* No saved or default list selection */
 
         return lists.first { $0.id == resolvedListID }
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.usedLabelCategories
-    /// @brief      Group currently applied labels by their library category
-    /// @details    Finds matching active cards for each label and omits labels and categories
-    ///             with no usage, preserving the label library's ordering
-    ///
-    /// @return     ([TodayLabelCategoryUsage]) populated categories and their matching cards
-    /// @post       Neither label definitions nor card assignments are changed
-    ///
-    private var usedLabelCategories: [TodayLabelCategoryUsage] { /* Label categories with matching active cards */
-
-        labelLibrary.categories.compactMap { category in
-
-            let labels: [TodayLabelUsage] = labelLibrary.labels /* Assigned labels grouped under this category */
-            
-                .filter { $0.categoryID == category.id }
-                .compactMap { label in
-                    let cards = cards(using: label.id) /* Active cards assigned this label */
-
-                    guard !cards.isEmpty else {
-
-                        return nil
-                    }
-
-                    return TodayLabelUsage(label: label, cards: cards)
-                }
-
-            guard !labels.isEmpty else {
-
-                return nil
-            }
-
-            return TodayLabelCategoryUsage(category: category, labels: labels)
-        }
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.selectedUsedLabelCategory
-    /// @brief      Resolve the visible applied-label category
-    /// @details    Uses the selected category when still populated, otherwise the first used category
-    ///
-    /// @return     (TodayLabelCategoryUsage?) resolved category, or nil when no labels are used
-    /// @post       The stored category selection is not modified
-    ///
-    private var selectedUsedLabelCategory: TodayLabelCategoryUsage? { /* Selected category resolved against current usage */
-        usedLabelCategories.first { $0.id == selectedLabelCategoryID } ?? usedLabelCategories.first
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.primaryControlHeight
-    /// @brief      Resolve the profile's preferred primary-control height
-    /// @details    Uses 52 points for larger controls and 44 points otherwise, including no-profile state
-    ///
-    /// @return     (CGFloat) preferred height in points
-    /// @post       Profile preferences remain unchanged
-    ///
-    private var primaryControlHeight: CGFloat {                                                 /* Personalized control height */
-
-        profile?.preferences.usesLargeControls == true ? 52 : 44
     }
 
 
@@ -2117,128 +2054,12 @@ private struct TodayHomeView: View {
     }
 
 
-    ///
-    /// @fcn        TodayHomeView.cards(using:)
-    /// @brief      Find active cards assigned a specific label
-    /// @details    Traverses supplied lists in order, excludes dividers, and includes list
-    ///             provenance so matching cards can route back to their existing Board locations
-    ///
-    /// @param[in]  labelID  Stable label identity to match
-    ///
-    /// @return     ([TodayLabelCard]) matching card/list pairs
-    ///
-    /// @post       No card assignments or label definitions are changed
-    ///
-    private func cards(using labelID: String) -> [TodayLabelCard] {
-
-        lists.flatMap { list in
-            list.cards.compactMap { card in
-                guard !card.isSectionDivider, card.labelIDs.contains(labelID) else {
-
-                    return nil
-                }
-
-                return TodayLabelCard(card: card, listID: list.id, listTitle: list.title)
-            }
-        }
-    }
-
-
-    ///
-    /// @fcn        TodayHomeView.yourLabelsSection
-    /// @brief      Present applied labels and counts for the selected category
-    /// @details    Offers a category menu, populated label rows, and an empty-state explanation;
-    ///             selecting a label opens its matching-card sheet
-    ///
-    /// @return     (some View) Today label-browsing section
-    /// @post       Interactions update category or label presentation state, not card assignments
-    ///
-    private var yourLabelsSection: some View { /* Assigned-label browsing and category controls */
-
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Your Labels")
-                    .font(.title2.weight(.semibold))
-
-                Spacer()
-
-                if let selectedUsedLabelCategory { /* Category whose assigned labels are displayed */
-
-                    Menu {
-                        ForEach(usedLabelCategories) { category in
-                            Button {
-                                selectedLabelCategoryID = category.id
-                            } label: {
-                                if selectedUsedLabelCategory.id == category.id {
-
-                                    Label(category.category.name, systemImage: "checkmark")
-                                } else {
-                                    Text(category.category.name)
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(selectedUsedLabelCategory.category.name)
-                            Image(systemName: "chevron.down")
-                                .font(.caption.weight(.semibold))
-                        }
-
-                        .font(.subheadline.weight(.medium))
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 10)
-                        .background(.thinMaterial, in: Capsule())
-                    }
-
-                    .accessibilityLabel("Choose label category")
-                }
-            }
-
-            if usedLabelCategories.isEmpty {
-
-                Text("Labels applied to your cards will appear here.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else if let selectedUsedLabelCategory { /* Category shown in the empty-state context */
-                VStack(spacing: 0) {
-                    ForEach(selectedUsedLabelCategory.labels) { usage in
-                        Button {
-                            selectedLabel = usage.label
-                        } label: {
-                            HStack(spacing: 10) {
-                                Circle()
-                                    .fill(usage.label.color.color)
-                                    .frame(width: 10, height: 10)
-                                Text(usage.label.name)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Text("\(usage.cards.count)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Image(systemName: "chevron.right")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                            }
-
-                            .frame(minHeight: 40)
-                            .contentShape(Rectangle())
-                        }
-
-                        .buttonStyle(.plain)
-
-                        if usage.id != selectedUsedLabelCategory.labels.last?.id {
-
-                            Divider()
-                        }
-                    }
-                }
-            }
-
-            Divider()
-        }
-
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(TodayPanelSurface())
+    /// Pinned, owner-qualified list shortcuts chosen by the user and persisted across launches.
+    private var yourShortcutsSection: some View {
+        let owners = WorkspaceBrowseIndex.owners(document: planningCalendarAccess?.document, library: planningCalendarAccess?.library ?? [])
+        let available = WorkspaceBrowseIndex.lists(in: owners)
+        let pinned = TodayListPins.decode(listPinData).compactMap { reference in available.first { $0.reference == reference } }
+        return TodayShortcutGrid(pinned: pinned, onOpen: { openedShortcut = $0 })
     }
 
 
@@ -2465,7 +2286,7 @@ private struct TodayHomeView: View {
                         }
                     }
 
-                    yourLabelsSection
+                    yourShortcutsSection
                     browseListsAction
                 }
                         .padding(20)
@@ -2502,6 +2323,9 @@ private struct TodayHomeView: View {
             }
 
             .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(item: $openedShortcut) { reference in
+                WorkspacePinnedListView(reference: reference)
+            }
             .sheet(isPresented: $showsTodayTargets) {
                 TodayTargetsView()
             }
@@ -2587,24 +2411,9 @@ private struct TodayHomeView: View {
             }
 
 
-            .sheet(item: $selectedLabel) { label in
-                TodayLabelCardsView(
-                    label: label, cards: cards(using: label.id), onOpenBoardList: onOpenBoardList,
-                    onArchiveCard: onArchiveCard, onDeleteCard: onDeleteCard
-                )
-            }
             .onAppear {
                 labelLibrary = LabelLibraryStore.load()
                 ensureCurrentWeekdayList()
-
-                if !usedLabelCategories.contains(where: {
-
-                    $0.id == selectedLabelCategoryID
-                }) {
-
-                    selectedLabelCategoryID = usedLabelCategories.first(where: { $0.id == "work" })?.id
-                        ?? usedLabelCategories.first?.id
-                }
             }
 
             .onChange(of: quickCreateRequest) { _, _ in
@@ -3755,155 +3564,6 @@ struct TodaySearchView: View {
 /// @section    Purpose
 ///     Preserve routing context for label results
 ///
-private struct TodayLabelCard: Identifiable {
-
-    let card: KanbanCard /* Matched Board card */
-    let listID: Int /* List opened when selected */
-    let listTitle: String /* Containing list name */
-
-    ///
-    /// @fcn        TodayLabelCard.id
-    /// @brief      Identify a label match by its list and card
-    /// @details    Combines both numeric identities for stable matching-card rows
-    ///
-    /// @return     (String) composite list/card identity
-    /// @post       The matched card is unchanged
-    ///
-    var id: String { "\(listID):\(card.id)" } /* Stable list-qualified label-result identity */
-}
-
-
-///
-/// Represents one label and its matching cards in Today browsing
-///
-/// @section    Purpose
-///     Keep the reusable label and its current Board matches together
-///
-private struct TodayLabelUsage: Identifiable {
-
-    let label: KanbanLabel /* Reusable label definition */
-    let cards: [TodayLabelCard] /* Cards currently carrying this label */
-
-    ///
-    /// @fcn        TodayLabelUsage.id
-    /// @brief      Identify an applied-label usage row
-    /// @details    Reuses the underlying reusable-label identity
-    ///
-    /// @return     (String) label identity
-    /// @post       Label definitions and matches remain unchanged
-    ///
-    var id: String { label.id } /* Assigned label's stable identity */
-}
-
-
-///
-/// Represents one populated label category and its applied labels
-///
-/// @section    Purpose
-///     Provide grouped data for Today label browsing
-///
-private struct TodayLabelCategoryUsage: Identifiable {
-
-    let category: KanbanLabelCategory /* Label category */
-    let labels: [TodayLabelUsage] /* Labels in use in this category */
-
-    ///
-    /// @fcn        TodayLabelCategoryUsage.id
-    /// @brief      Identify a populated label category
-    /// @details    Reuses the underlying library-category identity
-    ///
-    /// @return     (String) category identity
-    /// @post       Category contents remain unchanged
-    ///
-    var id: String { category.id } /* Assigned category's stable identity */
-
-    ///
-    /// @fcn        TodayLabelCategoryUsage.cardCount
-    /// @brief      Count distinct matched cards across this category's labels
-    /// @details    Deduplicates composite list/card IDs so a card with several labels counts once
-    ///
-    /// @return     (Int) distinct card count
-    /// @post       Usage collections remain unchanged
-    ///
-    var cardCount: Int { Set(labels.flatMap { $0.cards.map(\.id) }).count } /* Distinct cards using labels in this category */
-}
-
-
-/// Opens the cards currently assigned one label.
-///
-/// Presents the cards currently assigned one selected label
-///
-/// @section    Purpose
-///     Show matching cards with their list provenance and route to the containing Week list
-///
-private struct TodayLabelCardsView: View {
-
-    let label: KanbanLabel /* Selected label */
-    let cards: [TodayLabelCard] /* Matching Board cards */
-    let onOpenBoardList: (Int) -> Void /* Navigate to the card's Board list */
-    let onArchiveCard: (Int) -> Void /* Archive the canonical label match */
-    let onDeleteCard: (Int) -> Bool /* Report confirmed canonical label-match removal */
-
-    @Environment(\.dismiss) private var dismiss /* Close the label card list */
-
-
-    ///
-    /// @fcn        TodayLabelCardsView.body
-    /// @brief      Display cards carrying the selected label
-    /// @details    Shows card titles and containing-list names; selection opens the containing
-    ///             Week list rather than card detail and dismisses this sheet
-    ///
-    /// @return     (some View) labeled card-results navigation list
-    /// @post       Done only dismisses; result selection delegates navigation without changing labels
-    ///
-    var body: some View { /* Label-filtered card results */
-        NavigationStack {
-            List(cards) { result in
-                Button {
-                    onOpenBoardList(result.listID)
-                    dismiss()
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(result.card.word)
-                            .foregroundStyle(.primary)
-                        Text(result.listTitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-
-                .buttonStyle(.plain)
-                .modifier(ContentLifecycleActions(
-                    title: result.card.word, kind: "Card",
-                    onArchive: { onArchiveCard(result.card.id) }, onDelete: { onDeleteCard(result.card.id) }
-                ))
-            }
-
-            .navigationTitle(label.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-
-        .presentationDetents([.medium, .large])
-    }
-}
-
-
-///
-/// Identifies one dated-card result in the calendar
-///
-/// @section    Purpose
-///     Carry card and list identity with the title and matching-date marker
-///
 private struct CalendarCardResult: Identifiable {
 
     let cardID: Int /* Stable card identity */
@@ -3968,23 +3628,24 @@ enum ActivityRecentStore {
 }
 
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
-    case all = "All", lists = "Lists", boards = "Boards"
+    case all = "All", lists = "Lists", boards = "Boards", labels = "Labels"
     var id: String { rawValue }
     var searchPrompt: String {
         switch self {
         case .all: "Find in your Library"
         case .lists: "Find in your Lists"
         case .boards: "Find in your Boards"
+        case .labels: "Find in your Labels"
         }
     }
     var symbol: String {
-        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1" }
+        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1"; case .labels: "tag" }
     }
     var accent: Color {
-        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo }
+        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple }
     }
     func includes(_ collection: PersonalCollection) -> Bool {
-        collection.isActive && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
+        collection.isActive && self != .labels && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
 }
 
@@ -4263,6 +3924,9 @@ struct LibraryCollectionRow: View {
 ///     Browse personal organizing spaces independently from the dedicated Week destination
 ///
 struct BoardListsView: View {
+    @Environment(\.planningCalendarAccess) private var planningAccess
+    @State private var browsedLabel: KanbanLabel?
+    @State private var browseLabelLibrary = LabelLibraryStore.load()
     @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight
 
     @State private var libraryEditMode: EditMode = .inactive
@@ -4309,6 +3973,38 @@ struct BoardListsView: View {
     /// @return     ([PersonalCollection]) visible active collections
     /// @post       Archived collections remain stored but are not returned
     ///
+    @ViewBuilder
+    private var libraryLabelRows: some View {
+        let owners = WorkspaceBrowseIndex.owners(document: planningAccess?.document, library: collections)
+        let usages = WorkspaceBrowseIndex.labels(in: owners, catalog: browseLabelLibrary).filter {
+            searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || $0.label.name.localizedStandardContains(searchText.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        if usages.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("No matching labels", systemImage: "tag") .font(.headline)
+                Text("Labels assigned to active cards and notes appear here.").font(.subheadline).foregroundStyle(.secondary)
+            }.padding(.vertical, 12)
+        }
+        ForEach(usages) { usage in
+            Button { browsedLabel = usage.label } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "tag").font(.title3).foregroundStyle(usage.label.color.color)
+                        .frame(width: 40, height: 40)
+                        .background(usage.label.color.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                    Text(usage.label.name).font(.headline).foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(usage.matches.count)").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color(.secondarySystemGroupedBackground))
+            .accessibilityLabel(usage.label.name + ", \(usage.matches.count) active items")
+        }
+    }
+
     private var filteredCollections: [PersonalCollection] { /* Active directory entries matching the search */
         let owners = Set(librarySearchResults.compactMap(\.ownerID))
         return collections.filter { browseFilter.includes($0) && ($0.matches(searchText) || owners.contains($0.id)) }
@@ -4912,7 +4608,7 @@ struct BoardListsView: View {
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
     private var showsPlateShelf: Bool {
-        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
+        browseFilter != .labels && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
     }
 
     private var plateSection: some View {
@@ -5026,7 +4722,7 @@ struct BoardListsView: View {
         .textCase(nil)
         .accessibilityLabel("Filter collections")
         .accessibilityValue(browseFilter.rawValue)
-        .accessibilityHint("Choose All, Lists, or Boards. Your search text is kept.")
+        .accessibilityHint("Choose All, Lists, Boards, or Labels. Your search text is kept.")
         .accessibilityIdentifier("library.collectionFilter")
     }
 
@@ -5084,11 +4780,11 @@ struct BoardListsView: View {
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
             if isLibrarySearchFocused || !searchText.isEmpty {
-                Text("Your Library · Collections, cards, and notes")
+                Text(browseFilter == .labels ? "Labels · Active cards across Week and Library" : "Your Library · Collections, cards, and notes")
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if showsRecentShelf {
+            if showsRecentShelf && browseFilter != .labels {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Recently added or viewed").font(.subheadline.weight(.semibold))
@@ -5251,6 +4947,9 @@ struct BoardListsView: View {
         NavigationStack {
 
             List {
+                if browseFilter == .labels {
+                    libraryLabelRows
+                } else {
                 Section {
 
                     ForEach(filteredCollections) { collection in
@@ -5298,6 +4997,7 @@ struct BoardListsView: View {
                         .padding(.vertical, 12)
                     }
                 }
+                }
                 if !librarySearchResults.isEmpty {
                     Section {
                         ForEach(librarySearchResults) { result in librarySearchRow(result) }
@@ -5332,6 +5032,13 @@ struct BoardListsView: View {
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 
+            .sheet(item: $browsedLabel) { label in
+                LibraryLabelMatchesView(label: label)
+            }
+            .onAppear { browseLabelLibrary = LabelLibraryStore.load() }
+            .onChange(of: browseFilter) { _, filter in
+                if filter == .labels { browseLabelLibrary = LabelLibraryStore.load() }
+            }
             .sheet(item: $examplePreview) { preview in
                 LibraryExamplePreviewView(preview: preview)
             }
@@ -7381,5 +7088,261 @@ struct TodayTargetsView: View {
         .presentationBackground(Color(.systemGroupedBackground))
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+// Shared owner-qualified browsing prevents card/list IDs on different boards from colliding.
+struct WorkspaceListReference: Hashable, Codable, Identifiable {
+    let ownerID: UUID
+    let listID: Int
+    var id: String { "\(ownerID):\(listID)" }
+}
+struct WorkspaceListDestination: Identifiable {
+    let owner: PersonalCollection
+    let list: KanbanList
+    var reference: WorkspaceListReference { WorkspaceListReference(ownerID: owner.id, listID: list.id) }
+    var id: String { reference.id }
+}
+struct WorkspaceLabelUsage: Identifiable {
+    let label: KanbanLabel
+    let matches: [PlanningSearchResult]
+    var id: String { label.id }
+}
+enum WorkspaceBrowseIndex {
+    static func owners(document: PlanningCalendarDocument?, library: [PersonalCollection]) -> [PersonalCollection] {
+        (document?.weeks.map { week in
+            var owner = week.collection
+            owner.title = (week.startKey == document?.currentWeekKey ? "This Week · " : "") + week.rangeTitle
+            return owner
+        } ?? []) + library.filter(\.isActive)
+    }
+    static func lists(in owners: [PersonalCollection]) -> [WorkspaceListDestination] {
+        owners.filter(\.isActive).flatMap { owner in
+            owner.lists.filter { !$0.isArchived }.map { WorkspaceListDestination(owner: owner, list: $0) }
+        }
+    }
+    static func labels(in owners: [PersonalCollection], catalog: LabelLibrary) -> [WorkspaceLabelUsage] {
+        var matches: [String: [PlanningSearchResult]] = [:]
+        for destination in lists(in: owners) {
+            for card in destination.list.cards where !card.isSectionDivider {
+                let result = PlanningSearchResult(weekKey: nil, collectionID: destination.owner.id,
+                    collectionTitle: destination.owner.title, listID: destination.list.id,
+                    listTitle: destination.list.title, card: card)
+                for labelID in Set(card.labelIDs) { matches[labelID, default: []].append(result) }
+            }
+        }
+        return catalog.labels.compactMap { label in
+            guard let cards = matches[label.id], !cards.isEmpty else { return nil }
+            return WorkspaceLabelUsage(label: label, matches: cards)
+        }
+    }
+}
+enum TodayListPins {
+    static let key = "Plenact.TodayListShortcuts.v1"
+    static func normalized(_ pins: [WorkspaceListReference]) -> [WorkspaceListReference] {
+        var seen = Set<WorkspaceListReference>()
+        return Array(pins.filter { seen.insert($0).inserted }.prefix(6))
+    }
+    static func decode(_ data: Data) -> [WorkspaceListReference] {
+        normalized((try? JSONDecoder().decode([WorkspaceListReference].self, from: data)) ?? [])
+    }
+    static func encode(_ pins: [WorkspaceListReference]) -> Data {
+        (try? JSONEncoder().encode(normalized(pins))) ?? Data()
+    }
+}
+
+struct TodayShortcutEditor: View {
+    @State private var pins: [WorkspaceListReference]
+    let owners: [PersonalCollection]
+    let onSave: ([WorkspaceListReference]) -> Void
+    @Environment(\.dismiss) private var dismiss
+    init(pins: [WorkspaceListReference], owners: [PersonalCollection], onSave: @escaping ([WorkspaceListReference]) -> Void) {
+        _pins = State(initialValue: TodayListPins.normalized(pins))
+        self.owners = owners; self.onSave = onSave
+    }
+    private var available: [WorkspaceListDestination] { WorkspaceBrowseIndex.lists(in: owners) }
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(pins) { reference in
+                        let destination = available.first { $0.reference == reference }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(destination?.list.title ?? "Unavailable list")
+                            Text(destination?.owner.title ?? "Archived or removed; remove this shortcut to free a space")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .onDelete { pins.remove(atOffsets: $0) }
+                    .onMove { pins.move(fromOffsets: $0, toOffset: $1) }
+                } header: { Text("Pinned · \(pins.count) of 6") }
+                footer: { Text("Drag to reorder. Removing a shortcut keeps its list and cards.") }
+                ForEach(owners.filter(\.isActive)) { owner in
+                    Section(owner.title) {
+                        ForEach(owner.lists.filter { !$0.isArchived }) { list in
+                            let reference = WorkspaceListReference(ownerID: owner.id, listID: list.id)
+                            Button {
+                                guard pins.count < 6, !pins.contains(reference) else { return }
+                                pins.append(reference)
+                            } label: {
+                                HStack {
+                                    Label(list.title, systemImage: list.appearance?.icon?.rawValue ?? owner.icon.rawValue)
+                                    Spacer()
+                                    Image(systemName: pins.contains(reference) ? "checkmark" : "plus.circle")
+                                }
+                                .frame(minHeight: 44)
+                            }
+                            .disabled(pins.contains(reference) || pins.count >= 6)
+                        }
+                    }
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("My shortcuts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { onSave(pins); dismiss() } }
+            }
+        }
+    }
+}
+
+struct LibraryLabelMatchesView: View {
+    let label: KanbanLabel
+    @Environment(\.planningCalendarAccess) private var access
+    @Environment(\.dismiss) private var dismiss
+    @State private var openedCard: PlanningSearchResult?
+    @State private var query = ""
+    private var matches: [PlanningSearchResult] {
+        let owners = WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])
+        let all = WorkspaceBrowseIndex.labels(in: owners, catalog: LabelLibraryStore.load()).first { $0.id == label.id }?.matches ?? []
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return all.filter { query.isEmpty || $0.card.word.localizedStandardContains(query) || $0.listTitle.localizedStandardContains(query) || $0.collectionTitle.localizedStandardContains(query) }
+    }
+    var body: some View {
+        NavigationStack {
+            List {
+                if matches.isEmpty { Text("No active cards or notes match this label.").foregroundStyle(.secondary) }
+                ForEach(matches) { result in
+                    Button { openedCard = result } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: result.card.presentation == .note ? "note.text" : "rectangle")
+                                .foregroundStyle(label.color.color)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(result.card.word).font(.headline).foregroundStyle(.primary)
+                                Text(result.collectionTitle + " · " + result.listTitle).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
+                        }.padding(.vertical, 6)
+                    }.buttonStyle(.plain)
+                }
+            }
+            .navigationTitle(label.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, prompt: "Find in this label")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .fullScreenCover(item: $openedCard) { result in
+                if let week = access?.document.weeks.first(where: { $0.id == result.collectionID }) {
+                    PlanningCalendarWeekView(week: week, initialDayID: result.listID, initialCardID: result.card.id,
+                        onLeaveForHome: { openedCard = nil; dismiss() })
+                } else if let collection = access?.library.first(where: { $0.id == result.collectionID && $0.isActive }) {
+                    PlanningSearchLibraryView(collection: collection, initialListID: result.listID, initialCardID: result.card.id,
+                        onLeaveForHome: { openedCard = nil; dismiss() })
+                }
+            }
+        }
+    }
+}
+
+struct WorkspacePinnedListView: View {
+    let reference: WorkspaceListReference
+    @Environment(\.planningCalendarAccess) private var access
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        if let week = access?.document.weeks.first(where: { $0.id == reference.ownerID }),
+           week.collection.lists.contains(where: { $0.id == reference.listID && !$0.isArchived }) {
+            PinnedListDayContent(collection: week.collection, reference: reference,
+                date: week.dayListIDs.first(where: { $0.value == reference.listID }).flatMap { PlanningDate.date($0.key) },
+                week: week, onClose: { dismiss() })
+        } else if let collection = access?.library.first(where: { $0.id == reference.ownerID && $0.isActive }),
+                  collection.lists.contains(where: { $0.id == reference.listID && !$0.isArchived }) {
+            PinnedListDayContent(collection: collection, reference: reference, date: nil, week: nil, onClose: { dismiss() })
+        } else {
+            NavigationStack {
+                Text("This list is archived or no longer available.").foregroundStyle(.secondary).padding()
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            }
+        }
+    }
+}
+private struct PinnedListDayContent: View {
+    @State var collection: PersonalCollection
+    let reference: WorkspaceListReference
+    let date: Date?
+    let week: DatedPlanningWeek?
+    let onClose: () -> Void
+    @Environment(\.planningCalendarAccess) private var access
+    @State private var labels = LabelLibraryStore.load()
+    @State private var reverting = false
+    private func save(_ collection: PersonalCollection) -> Bool {
+        if var week {
+            week.collection = collection
+            return access?.saveWeek(week) == true
+        }
+        return access?.saveLibrary(collection) == true
+    }
+    var body: some View {
+        TodayListDetailView(lists: $collection.lists.activeLists, reservedLists: collection.lists.filter(\.isArchived),
+            labelLibrary: $labels, savedCardIDs: $collection.savedCardIDs, listID: reference.listID,
+            currentUserName: "You", onClose: onClose,
+            onOpenWeek: { if var week { week.collection = collection; access?.openWeek(week) }; onClose() },
+            onPermanentDelete: { cardID in
+                var updated = collection
+                BoardContentDeletion.card(cardID, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
+                guard save(updated) else { return false }
+                collection = updated; return true
+            }, boardAppearance: collection.boardAppearance, returnDestinationTitle: "Today",
+            boardViewActionTitle: week == nil ? "Back to Today" : "Switch to Week View", representedDate: date)
+            .environment(\.cardMovementSource, collection.id)
+            .onChange(of: collection) { old, updated in
+                if reverting { reverting = false; return }
+                if !save(updated) { reverting = true; collection = old }
+            }
+            .onChange(of: access?.document) { _, document in
+                if let next = document?.weeks.first(where: { $0.id == reference.ownerID })?.collection, next != collection { collection = next }
+            }
+            .onChange(of: access?.library) { _, library in
+                if let next = library?.first(where: { $0.id == reference.ownerID }), next != collection { collection = next }
+            }
+            .databaseActivityOverlay()
+    }
+}
+
+
+struct TodayShortcutGrid: View {
+    let pinned: [WorkspaceListDestination]
+    let onOpen: (WorkspaceListReference) -> Void
+    var body: some View {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                ForEach(pinned) { destination in
+                    Button { onOpen(destination.reference) } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: destination.list.appearance?.icon?.rawValue ?? destination.owner.icon.rawValue)
+                                .font(.system(size: 25, weight: .medium))
+                                .foregroundStyle((destination.list.appearance?.accent?.color ?? destination.owner.color.color))
+                                .frame(width: 44, height: 44)
+                            Text(destination.list.title).font(.subheadline.weight(.semibold)).lineLimit(2)
+                                .foregroundStyle(.primary).multilineTextAlignment(.center)
+                            Text("\(destination.list.cards.filter { !$0.isSectionDivider }.count) cards").font(.caption).foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 12).padding(.horizontal, 4)
+                        .frame(maxWidth: .infinity, minHeight: 130, alignment: .top)
+                    }.buttonStyle(.plain)
+                        .accessibilityHint("Opens " + destination.owner.title + ", " + destination.list.title)
+                }
+
+            }
     }
 }

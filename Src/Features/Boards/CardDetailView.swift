@@ -271,6 +271,7 @@ struct CardDetailView: View {
     }
 
     let card: KanbanCard                                     /* The kanban card being displayed in detail                    */
+    let listedOnDate: Date?
     @Binding var labelLibrary: LabelLibrary                  /* Shared label catalog available to every card                 */
     let availableLists: [KanbanList]                         /* Other lists that can receive this card                       */
     let memberColors: [String: Color]                        /* Shared icon colors keyed by normalized member name           */
@@ -407,10 +408,12 @@ struct CardDetailView: View {
         onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
         onArchive: (() -> Void)? = nil,
-        onDelete: (() -> Bool)? = nil
+        onDelete: (() -> Bool)? = nil,
+        listedOnDate: Date? = nil
     ) {
 
         self.card           = card                                              /* The kanban card being displayed in detail                            */
+        self.listedOnDate = listedOnDate
         self._labelLibrary  = labelLibrary                                      /* Shared catalog used by all card label assignments                    */
         self.availableLists = availableLists                                    /* Other lists available as move destinations                           */
         self.memberColors   = memberColors                                      /* Shared member icon colors                                            */
@@ -1489,10 +1492,12 @@ struct CardDetailView: View {
     private func dateRow(for field: DateField) -> some View {
 
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
-        let iconName    = field == .start ? "calendar" : "calendar.badge.clock" /* Symbol for this date field */
-
+        let timeOnly = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate)
+        let iconName = timeOnly ? (field == .start ? "clock" : "checkmark.circle")
+            : (field == .start ? "calendar" : "calendar.badge.clock")
+        let title = timeOnly ? (field == .start ? "Start" : "Finish") : field.title
         let kind = field == .start ? startDateKind : dueDateKind
-        let dateLabel = currentDate.map { kind.label(for: $0) } ?? "Add date" /* Button label */
+        let dateLabel = currentDate.map { (timeOnly ? CardDateKind.time : kind).label(for: $0) } ?? "Add date"
         let fieldName = field.title.lowercased() /* Accessibility label value */
 
         let row = HStack(alignment: .center) { /* Shared date-row presentation */
@@ -1500,7 +1505,7 @@ struct CardDetailView: View {
             Image(systemName: iconName)
                 .foregroundStyle(.secondary)
 
-            Text(field.title)
+            Text(title)
                 .font(.body)
 
             Spacer()

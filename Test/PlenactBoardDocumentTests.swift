@@ -21,6 +21,36 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 24)))
+        let finish = try XCTUnwrap(calendar.date(byAdding: .minute, value: 21, to: start))
+        var card = KanbanCard(id: 0, word: "Task", listTitle: "Renamed day", startDate: start, dueDate: finish,
+                              showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+        let original = card
+        let badges = card.scheduleBadges(on: start, calendar: calendar)
+        XCTAssertEqual(badges.map(\.title), ["Start", "Finish"])
+        XCTAssertEqual(badges.map(\.systemImage), ["clock", "checkmark.circle"])
+        XCTAssertEqual(badges.map(\.value), [CardDateKind.time.label(for: start), CardDateKind.time.label(for: finish)])
+        XCTAssertEqual(card, original)
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: start))
+        XCTAssertEqual(card.scheduleBadges(on: tomorrow, calendar: calendar).map(\.title), ["Start date", "Due date"])
+        XCTAssertEqual(card.scheduleBadges(on: nil, calendar: calendar).map(\.value), [card.dueDateLabel], "Undated Library previews retain their existing date display")
+        card.dueDate = tomorrow
+        XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Start date", "Due date"])
+        card.dueDate = finish
+        card.startDateKind = .date
+        XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Start date", "Due date"])
+        card.startDate = nil
+        XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Finish"])
+        card.showsDueDateInList = false
+        XCTAssertTrue(card.scheduleBadges(on: start, calendar: calendar).isEmpty)
+        XCTAssertTrue(card.usesTimeOnlySchedule(on: start, calendar: calendar), "Detail context must not depend on list badge visibility")
+        XCTAssertFalse(card.usesTimeOnlySchedule(on: nil, calendar: calendar))
+        XCTAssertFalse(card.usesTimeOnlySchedule(on: tomorrow, calendar: calendar))
+    }
+
     func testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar(identifier: .gregorian)

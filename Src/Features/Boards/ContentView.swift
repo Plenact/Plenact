@@ -3017,7 +3017,8 @@ struct ContentView: View {
                     },
                     onDelete:                  {
                         deleteCard(card.id)
-                    }
+                    },
+                    listedOnDate: lists.first(where: { $0.cards.contains(where: { $0.id == card.id }) }).flatMap { dayDate(for: $0.id) }
                 )
                 .environment(\.cardMovementSource, personalCollectionID)
             }
@@ -5423,6 +5424,23 @@ struct KanbanCardView: View {
     /// @post       All card mutations delegate to parent callbacks; local state controls presentations only
     /// @note       Due-date badges require a stored date and this card's saved visibility setting
     ///
+    private var showsHeaderTimes: Bool {
+        displaySettings.showDueDateBadges && card.showsDueDateInList && card.usesTimeOnlySchedule(on: listedOnDate)
+    }
+
+    private var headerTimes: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            ForEach(Array(card.scheduleBadges(on: listedOnDate).enumerated()), id: \.offset) { _, badge in
+                Text(badge.value)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(badge.title + ", " + badge.value)
+            }
+        }
+        .fixedSize()
+    }
+
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9) {
@@ -5488,6 +5506,7 @@ struct KanbanCardView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
+                    if showsHeaderTimes { headerTimes }
                     if compactCards { cardActions }
                 }
 
@@ -5686,16 +5705,13 @@ struct KanbanCardView: View {
             Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
         }
 
-        if displaySettings.showDueDateBadges, let badge = card.dueDateBadge(on: listedOnDate) {
-
-            if badge.systemImage == "clock" {
+        if displaySettings.showDueDateBadges && !showsHeaderTimes {
+            ForEach(Array(card.scheduleBadges(on: listedOnDate).enumerated()), id: \.offset) { _, badge in
                 Label(badge.label, systemImage: badge.systemImage)
-                    .foregroundStyle(Color(red: 0.25, green: 0.60, blue: 0.90))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color(red: 0.90, green: 0.96, blue: 1.0), in: RoundedRectangle(cornerRadius: 5))
-            } else {
-                Label(badge.label, systemImage: badge.systemImage)
+                    .foregroundStyle(badge.systemImage == "calendar" ? Color.secondary : Color(red: 0.25, green: 0.60, blue: 0.90))
+                    .padding(.horizontal, badge.systemImage == "calendar" ? 0 : 6)
+                    .padding(.vertical, badge.systemImage == "calendar" ? 0 : 3)
+                    .background(badge.systemImage == "calendar" ? Color.clear : Color(red: 0.90, green: 0.96, blue: 1.0), in: RoundedRectangle(cornerRadius: 5))
             }
         }
     }
@@ -6299,7 +6315,8 @@ struct TodayListDetailView: View {
                     },
                     onDelete:        {
                         deleteCard(card.id)
-                    }
+                    },
+                    listedOnDate: representedDate
                 )
             }
 

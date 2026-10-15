@@ -877,6 +877,43 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return (dueDateLabel, "calendar")
     }
 
+    func usesTimeOnlySchedule(on listDate: Date?, calendar: Calendar = .current) -> Bool {
+        guard let listDate else { return false }
+        let dates = [(startDate, startDateKind), (dueDate, dueDateKind)].compactMap { date, kind in
+            date.map { ($0, kind) }
+        }
+        return !dates.isEmpty && dates.allSatisfy {
+            $0.1 == .dateAndTime && calendar.isDate($0.0, inSameDayAs: listDate)
+        }
+    }
+
+    /// Presentation-only schedule labels for a card in a dated Day or Week list.
+    func scheduleBadges(on listDate: Date?, calendar: Calendar = .current) -> [CardScheduleBadge] {
+        guard showsDueDateInList else { return [] }
+        guard listDate != nil else {
+            guard let badge = dueDateBadge(on: nil, calendar: calendar) else { return [] }
+            return [CardScheduleBadge(title: "", value: badge.label, systemImage: badge.systemImage)]
+        }
+        var entries: [(title: String, date: Date, kind: CardDateKind)] = []
+        if let startDate { entries.append(("Start", startDate, startDateKind)) }
+        if let dueDate { entries.append(("Finish", dueDate, dueDateKind)) }
+        let sameDayTimes = usesTimeOnlySchedule(on: listDate, calendar: calendar)
+        if sameDayTimes {
+            return entries.map { CardScheduleBadge(title: $0.title, value: CardDateKind.time.label(for: $0.date),
+                systemImage: $0.title == "Start" ? "clock" : "checkmark.circle") }
+        }
+        if entries.count == 2 {
+            return entries.map { CardScheduleBadge(title: $0.title == "Start" ? "Start date" : "Due date",
+                value: $0.kind.label(for: $0.date), systemImage: $0.kind == .time ? "clock" : "calendar") }
+        }
+        if dueDate == nil, let startDate {
+            return [CardScheduleBadge(title: "Start date", value: startDateKind.label(for: startDate),
+                systemImage: startDateKind == .time ? "clock" : "calendar")]
+        }
+        guard let badge = dueDateBadge(on: listDate, calendar: calendar) else { return [] }
+        return [CardScheduleBadge(title: "", value: badge.label, systemImage: badge.systemImage)]
+    }
+
     static func defaultDueDateVisibility(from defaults: UserDefaults = .standard) -> Bool {
         LocalProfileStore.load(from: defaults)?.preferences.showsDueDatesOnNewCards ?? true
     }
@@ -4161,4 +4198,12 @@ enum CrossBoardListMovement {
         collections = snapshot
         return snapshot[destinationIndex].lists.last!
     }
+}
+
+
+struct CardScheduleBadge: Equatable {
+    let title: String
+    let value: String
+    let systemImage: String
+    var label: String { title.isEmpty ? value : title + " · " + value }
 }

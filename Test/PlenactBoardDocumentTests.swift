@@ -21,6 +21,35 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
+        let suite = "Plenact.FreshInstallTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let seeded = TodayListPins.loadInitialCollections(from: defaults)
+        XCTAssertEqual(seeded.map(\.title), ["On the Table", "In the Queue", "Scheduled"])
+        XCTAssertTrue(seeded.allSatisfy { $0.kind == .list && $0.lists.count == 1 && $0.lists[0].allCards.isEmpty })
+        let pins = TodayListPins.decode(try XCTUnwrap(defaults.data(forKey: TodayListPins.key)))
+        XCTAssertEqual(pins, seeded.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) })
+        XCTAssertEqual(TodayListPins.loadInitialCollections(from: defaults), seeded)
+
+        PersonalCollectionStore.save([], to: defaults)
+        defaults.set(TodayListPins.encode([]), forKey: TodayListPins.key)
+        XCTAssertTrue(TodayListPins.loadInitialCollections(from: defaults).isEmpty)
+        XCTAssertTrue(TodayListPins.decode(try XCTUnwrap(defaults.data(forKey: TodayListPins.key))).isEmpty)
+    }
+
+    func testDefaultListsDoNotReplaceExistingOrLegacyInstallations() throws {
+        for savedKey in ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, TodayListPins.key] {
+            let suite = "Plenact.ExistingInstallTests." + UUID().uuidString
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let saved = Data("preserve saved bytes".utf8)
+            defaults.set(saved, forKey: savedKey)
+            XCTAssertTrue(TodayListPins.loadInitialCollections(from: defaults).isEmpty)
+            XCTAssertEqual(defaults.data(forKey: savedKey), saved)
+        }
+    }
+
     func testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity() throws {
         let catalog = LabelLibrary.starter
         let label = try XCTUnwrap(catalog.labels.first)

@@ -521,7 +521,7 @@ private struct AppRootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
     @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
-    @State private var collections                         = PersonalCollectionStore.load()	/* Device-local personal collections                   */
+    @State private var collections                         = TodayListPins.loadInitialCollections()	/* Device-local personal collections                   */
     @State private var calendarDocument: PlanningCalendarDocument?
     @State private var displayedPlanningWeek: DatedPlanningWeek?
     @State private var displayedPlanningListID: Int?
@@ -2260,9 +2260,12 @@ private struct TodayHomeView: View {
 
                     VStack(alignment: .leading, spacing: 16) {
 
-                    quickCaptureSection
-                        .modifier(TodayPanelSurface())
-                        .padding(.top, 40)
+                    VStack(spacing: 0) {
+                        TodaySloganView()
+                            .frame(minHeight: 40)
+                        quickCaptureSection
+                            .modifier(TodayPanelSurface())
+                    }
 
                     TimelineView(.everyMinute) { context in
                         let focus = calendarDayList(context.date) /* Active list matching the current weekday */
@@ -3760,6 +3763,34 @@ struct LibraryPlateTile: View {
     }
 }
 
+/// A quiet, readable encouragement in Today's existing space above Quick capture.
+private struct TodaySloganView: View {
+    private let slogan = "small steps today, bringing your plans into life"
+    @State private var showsFullSlogan = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Button { showsFullSlogan = true } label: {
+            GentleCollectionPreview(text: slogan, scrolls: true,
+                textFont: .system(size: 27, design: .serif).italic(),
+                textColor: (colorScheme == .dark
+                    ? Color(red: 0.84, green: 0.76, blue: 0.65)
+                    : Color(red: 0.40, green: 0.31, blue: 0.23)).opacity(0.55),
+                pointsPerSecond: 35.1, startPause: 0.4, endPause: 0.55, travelsAcross: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Today's slogan. " + slogan)
+        .accessibilityHint("Shows the full message")
+        .alert("Today's slogan", isPresented: $showsFullSlogan) {
+            Button("Done", role: .cancel) { }
+        } message: { Text(slogan) }
+    }
+}
+
 private struct PreviewTextWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
@@ -3783,6 +3814,12 @@ private struct PreviewVisibility: ViewModifier {
 struct GentleCollectionPreview: View {
     let text: String
     var scrolls = false
+    var textFont: Font = .caption
+    var textColor: Color = .secondary
+    var pointsPerSecond: Double = 14
+    var startPause: Double = 2.5
+    var endPause: Double = 2.5
+    var travelsAcross = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var textWidth: CGFloat = 0
@@ -3796,7 +3833,7 @@ struct GentleCollectionPreview: View {
         let active: Bool
     }
     private var loop: Loop {
-        Loop(text: text, distance: max(0, textWidth - viewportWidth),
+        Loop(text: text, distance: travelsAcross ? textWidth + viewportWidth : max(0, textWidth - viewportWidth),
              active: scrolls && !reduceMotion && !typeSize.isAccessibilitySize && visible && viewportWidth > 0)
     }
     var body: some View {
@@ -3820,28 +3857,29 @@ struct GentleCollectionPreview: View {
                     }
                     .clipped()
             } else {
-                Text(text).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                Text(text).lineLimit(travelsAcross ? nil : (typeSize.isAccessibilitySize ? 2 : 1))
+                    .fixedSize(horizontal: false, vertical: travelsAcross)
             }
         }
-        .font(.caption).foregroundStyle(.secondary)
+        .font(textFont).foregroundStyle(textColor)
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
         .onPreferenceChange(PreviewTextWidthKey.self) { textWidth = $0 }
         .onPreferenceChange(PreviewViewportWidthKey.self) { viewportWidth = $0 }
         .modifier(PreviewVisibility(visible: $visible))
         .task(id: loop) {
             var reset = Transaction(); reset.disablesAnimations = true
-            withTransaction(reset) { offset = 0; opacity = 1 }
+            withTransaction(reset) { offset = travelsAcross && loop.active ? viewportWidth : 0; opacity = 1 }
             guard loop.active, loop.distance > 1 else { return }
             let distance = loop.distance
-            let seconds = max(4, Double(distance) / 14)
+            let seconds = max(4, Double(distance) / max(1, pointsPerSecond))
             do {
                 while !Task.isCancelled {
-                    try await Task.sleep(for: .seconds(2.5))
-                    withAnimation(.linear(duration: seconds)) { offset = -distance }
-                    try await Task.sleep(for: .seconds(seconds + 2.5))
+                    try await Task.sleep(for: .seconds(startPause))
+                    withAnimation(.linear(duration: seconds)) { offset = travelsAcross ? -textWidth : -distance }
+                    try await Task.sleep(for: .seconds(seconds + endPause))
                     withAnimation(.easeOut(duration: 0.4)) { opacity = 0 }
                     try await Task.sleep(for: .seconds(0.4))
-                    withTransaction(reset) { offset = 0 }
+                    withTransaction(reset) { offset = travelsAcross ? viewportWidth : 0 }
                     withAnimation(.easeIn(duration: 0.6)) { opacity = 1 }
                     try await Task.sleep(for: .seconds(0.6))
                 }
@@ -7144,6 +7182,27 @@ enum WorkspaceBrowseIndex {
 }
 enum TodayListPins {
     static let key = "Plenact.TodayListShortcuts.v1"
+    /// Seed only a fresh installation; saved empty collections or shortcut selections stay empty.
+    static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection] {
+        let existing = PersonalCollectionStore.load(from: defaults)
+        let savedKeys = ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
+        guard savedKeys.allSatisfy({ defaults.object(forKey: $0) == nil }) else { return existing }
+
+        let initial = [
+            PersonalCollection(title: "On the Table", kind: .list, icon: .tasks, color: .coral),
+            PersonalCollection(title: "In the Queue", kind: .list, icon: .project, color: .teal),
+            PersonalCollection(title: "Scheduled", kind: .list, icon: .upcoming, color: .graphite)
+        ]
+        do {
+            try PersonalCollectionStore.saveChecked(initial, to: defaults)
+            let pins = initial.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) }
+            defaults.set(encode(pins), forKey: key)
+            return initial
+        } catch {
+            return existing
+        }
+    }
+
     static func normalized(_ pins: [WorkspaceListReference]) -> [WorkspaceListReference] {
         var seen = Set<WorkspaceListReference>()
         return Array(pins.filter { seen.insert($0).inserted }.prefix(6))

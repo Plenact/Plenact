@@ -179,6 +179,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))
     }
 
+    func testSameDayDateOnlySchedulesDoNotRepeatTheListDate() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let day = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 15)))
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: day))
+        var card = KanbanCard(id: 77, word: "Same-day task", listTitle: "My renamed day", startDate: day, dueDate: day,
+            showsDueDateInList: true, startDateKind: .date, dueDateKind: .date)
+        let original = card
+        XCTAssertTrue(card.scheduleBadges(on: day, calendar: calendar).isEmpty)
+        XCTAssertEqual(card, original, "Preview formatting must retain the editable dates")
+        XCTAssertEqual(card.scheduleBadges(on: tomorrow, calendar: calendar).count, 2)
+        XCTAssertFalse(card.scheduleBadges(on: nil, calendar: calendar).isEmpty, "Undated Lists still need date context")
+        card.dueDate = nil
+        XCTAssertTrue(card.scheduleBadges(on: day, calendar: calendar).isEmpty)
+        card.startDate = nil; card.dueDate = day
+        XCTAssertTrue(card.scheduleBadges(on: day, calendar: calendar).isEmpty)
+        card.startDate = day; card.dueDate = tomorrow
+        XCTAssertEqual(card.scheduleBadges(on: day, calendar: calendar).count, 2, "Cross-day ranges retain their dates")
+    }
+
     func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))

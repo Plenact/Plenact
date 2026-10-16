@@ -903,6 +903,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         var entries: [(title: String, date: Date, kind: CardDateKind)] = []
         if let startDate { entries.append(("Start", startDate, startDateKind)) }
         if let dueDate { entries.append(("Finish", dueDate, dueDateKind)) }
+        // A date-only schedule adds no information when every date is already the list's day.
+        if let listDate, !entries.isEmpty, entries.allSatisfy({
+            $0.kind == .date && calendar.isDate($0.date, inSameDayAs: listDate)
+        }) { return [] }
         let sameDayTimes = usesTimeOnlySchedule(on: listDate, calendar: calendar)
         if sameDayTimes {
             return entries.map { CardScheduleBadge(title: $0.title, value: CardDateKind.time.label(for: $0.date),

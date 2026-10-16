@@ -6343,7 +6343,10 @@ private struct SavedCardsView: View {
                 Label(focus.rawValue, systemImage: focus.symbol).font(.title2.weight(.semibold))
                 Image(systemName: "chevron.down").font(.caption.weight(.semibold))
             }.foregroundStyle(.primary).frame(minHeight: 44)
-        }.accessibilityLabel("Activity view: " + focus.rawValue)
+        }
+        .buttonStyle(.plain)
+        .tint(.primary)
+        .accessibilityLabel("Activity view: " + focus.rawValue)
     }
     private var focusContent: some View {
         VStack(alignment: .leading, spacing: 12) {

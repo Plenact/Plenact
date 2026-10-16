@@ -18,12 +18,13 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 
 - A partner app for Plenact, that accesses and navigates your lists. Consider multiple apps, as different interfaces and tools into your core Plenact data and life plans
 
+	- Full app representation!! Win/Lin/Apple/Android/Web-Desktop/Web-Mobile
+
 - Zoom levels (default & last, automatically handled)
 
 - Unsplash cover images & Backgrounds & Custom Backgrounds
 
 - Consider the value and interest, or utility of having the users be able to place notes, images and cards into the same lists
-
 
 ### Carryover
 
@@ -34,7 +35,6 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 - Trello Boards
 
 - Website Go!!!
-
 	
 Opens
 
@@ -56,35 +56,6 @@ Opens now:
 - "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
 
 //................................................................................//
-
-- List submenus!!!
-	Card List Actions
-	List Actions
-	Board Actions
-	App Menus
-	Account Tab 
-	Settings tab
-
-- Calendar page test, expose, expand and prepare
-
-- Able to load from a selection of App demos (e.g. Personal, Work, Recovery, Studies or Therapy)
-
-	- finalize load demos idea
-
-- Real phone init freeze quietly will database init loads
-
-- Quick capture keyboard loads and unexpectedly raises lower toolbar!
-
-
-### Coming Next
-
-- CLEAN data encapsulation
-
-- RELIABLE, versioned database record
-
-- Full app representation!! Win/Lin/Apple/Android/Web-Desktop/Web-Mobile
-
-// -------------------------------------------------------------------------------------------//
 
 ## Current Product
 

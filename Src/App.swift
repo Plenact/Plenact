@@ -4883,8 +4883,6 @@ struct BoardListsView: View {
                         openedCollection = collection
                     } label: {
                         VStack(alignment: .leading, spacing: 10) {
-                            Label(card.presentation.title, systemImage: card.presentation == .note ? "note.text" : "rectangle")
-                                .font(.caption).foregroundStyle(collection.color.color)
                             Text(card.word).font(.headline).foregroundStyle(.primary).lineLimit(2)
                             Text(card.subtitle.isEmpty ? PlanRichText.plain(card.descriptionOverride ?? "") : card.subtitle)
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(2)
@@ -6478,8 +6476,6 @@ private struct SavedCardsView: View {
                                     if showsCovers, let cover = result.card.coverAttachment {
                                         CardCoverPreview(attachment: cover, height: 64).frame(height: 64).clipShape(RoundedRectangle(cornerRadius: 8))
                                     }
-                                    Label(result.card.presentation == .note ? "Note" : "Card", systemImage: result.card.presentation == .note ? "note.text" : "rectangle")
-                                        .font(.caption).foregroundStyle(.secondary)
                                     Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(3)
                                     Spacer(minLength: 0)
                                     Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)

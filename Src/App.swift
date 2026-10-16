@@ -3903,7 +3903,7 @@ struct LibraryPlateTile: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: item.rank == 0 ? "exclamationmark.circle.fill" : (item.rank == 3 ? "star.fill" : "clock"))
-                    .foregroundStyle(item.rank == 0 ? Color.red : item.collection.color.color)
+                    .foregroundStyle(item.rank == 0 ? Color.red : item.collection.libraryIdentityColor)
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
             }
@@ -3914,8 +3914,8 @@ struct LibraryPlateTile: View {
         .frame(width: tileWidth, alignment: .leading)
         .frame(minHeight: tileHeight, alignment: .topLeading)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-        .overlay { RoundedRectangle(cornerRadius: 14).fill(item.collection.color.color.opacity(0.10)).allowsHitTesting(false) }
-        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(item.collection.color.color.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 14).fill(item.collection.libraryIdentityColor.opacity(0.10)).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(item.collection.libraryIdentityColor.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
         .accessibilityValue(item.collection.title + ", " + item.reason)
@@ -4125,6 +4125,16 @@ struct GentleCollectionPreview: View {
                 }
             } catch { /* Leaving the row or changing preferences cancels its loop. */ }
         }
+    }
+}
+
+extension PersonalCollection {
+    /// Match the default On the Table identity to its banner without changing custom colors.
+    var libraryIdentityColor: Color {
+        if kind == .list, title == "On the Table", color == .coral {
+            return ItemAccent.coral.darkHeaderColor
+        }
+        return color.color
     }
 }
 
@@ -4401,7 +4411,7 @@ struct BoardListsView: View {
                 openedCollection = collection
             } label: {
                 row(title: collection.title, subtitle: collectionSubtitle,
-                    icon: collection.icon.rawValue, color: collection.color.color, count: collection.cardCount, preview: collectionPreview(collection))
+                    icon: collection.icon.rawValue, color: collection.libraryIdentityColor, count: collection.cardCount, preview: collectionPreview(collection))
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens this personal collection")
@@ -4420,8 +4430,8 @@ struct BoardListsView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
-        .overlay { RoundedRectangle(cornerRadius: 20).fill(collection.color.color.opacity(0.12)).allowsHitTesting(false) }
-        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(collection.color.color.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 20).fill(collection.libraryIdentityColor.opacity(0.12)).allowsHitTesting(false) }
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(collection.libraryIdentityColor.opacity(0.3), lineWidth: 1).allowsHitTesting(false) }
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
@@ -5021,7 +5031,7 @@ struct BoardListsView: View {
                         .frame(width: 148, height: 132, alignment: .topLeading)
                         .padding(14)
                         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(collection.color.color.opacity(0.4), lineWidth: 1) }
+                        .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(collection.libraryIdentityColor.opacity(0.4), lineWidth: 1) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens this item directly")
@@ -5167,8 +5177,7 @@ struct BoardListsView: View {
         Menu("Starter Lists", systemImage: "list.bullet") {
             ForEach(["On the Table", "In the Queue", "Scheduled", "Shopping", "Reminders", "Up for Brew", "Misc"], id: \.self) { title in
                 Button(title) {
-                    editingCollection = PersonalCollection(title: title, kind: .list,
-                        icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks))
+                    editingCollection = DefaultListTutorial.makeStarter(title: title)
                 }
             }
         }
@@ -7499,11 +7508,8 @@ enum TodayListPins {
         let savedKeys = ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
         guard savedKeys.allSatisfy({ defaults.object(forKey: $0) == nil }) else { return existing }
 
-        let initial = [
-            PersonalCollection(title: "On the Table", kind: .list, icon: .tasks, color: .coral),
-            PersonalCollection(title: "In the Queue", kind: .list, icon: .project, color: .teal),
-            PersonalCollection(title: "Scheduled", kind: .list, icon: .upcoming, color: .graphite)
-        ]
+        let initial = ["On the Table", "In the Queue", "Scheduled"].map { DefaultListTutorial.makeStarter(title: $0) }
+
         do {
             try PersonalCollectionStore.saveChecked(initial, to: defaults)
             let pins = initial.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) }
@@ -7708,7 +7714,7 @@ struct TodayShortcutGrid: View {
                         VStack(spacing: usesLargeIcons ? 12 : 8) {
                             Image(systemName: destination.list.appearance?.icon?.rawValue ?? destination.owner.icon.rawValue)
                                 .font(.system(size: usesLargeIcons ? 40 : 25, weight: .medium))
-                                .foregroundStyle((destination.list.appearance?.accent?.color ?? destination.owner.color.color))
+                                .foregroundStyle((destination.list.appearance?.accent?.color ?? destination.owner.libraryIdentityColor))
                                 .frame(width: usesLargeIcons ? 60 : 44, height: usesLargeIcons ? 60 : 44)
                             Text(destination.list.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                                 .foregroundStyle(.primary).multilineTextAlignment(.center)

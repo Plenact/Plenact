@@ -479,21 +479,80 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(originals, [card, note])
     }
 
-    func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
+    func testFreshInstallationSeedsTutorialListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let seeded = TodayListPins.loadInitialCollections(from: defaults)
         XCTAssertEqual(seeded.map(\.title), ["On the Table", "In the Queue", "Scheduled"])
-        XCTAssertTrue(seeded.allSatisfy { $0.kind == .list && $0.lists.count == 1 && $0.lists[0].allCards.isEmpty })
+        XCTAssertTrue(seeded.allSatisfy { $0.kind == .list && $0.lists.count == 1 && $0.lists[0].allCards.count == 1 })
         let pins = TodayListPins.decode(try XCTUnwrap(defaults.data(forKey: TodayListPins.key)))
         XCTAssertEqual(pins, seeded.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) })
         XCTAssertEqual(TodayListPins.loadInitialCollections(from: defaults), seeded)
+
+        var cleared = seeded
+        cleared[0].lists[0].cards = []
+        cleared[1].lists[0].cards[0].isTitleChecked = true
+        PersonalCollectionStore.save(cleared, to: defaults)
+        XCTAssertEqual(TodayListPins.loadInitialCollections(from: defaults), cleared)
 
         PersonalCollectionStore.save([], to: defaults)
         defaults.set(TodayListPins.encode([]), forKey: TodayListPins.key)
         XCTAssertTrue(TodayListPins.loadInitialCollections(from: defaults).isEmpty)
         XCTAssertTrue(TodayListPins.decode(try XCTUnwrap(defaults.data(forKey: TodayListPins.key))).isEmpty)
+    }
+
+    func testDefaultListPhotosAreBundledAndRespectCustomBackgrounds() throws {
+        for (title, preset, asset) in [("On the Table", CollectionBackgroundPreset.tabletop, "DefaultListTable"), ("In the Queue", .forestPath, "DefaultListQueue"), ("Scheduled", .sunlitWall, "DefaultListScheduled")] {
+            XCTAssertEqual(CollectionBackground.defaultListBackground(for: title)?.preset, preset)
+            XCTAssertNotNil(UIImage(named: asset))
+            for override in [CollectionBackground(preset: .plain), CollectionBackground(preset: .photo, photoFileName: "my-photo.jpg"), CollectionBackground(preset: .sage)] {
+                XCTAssertEqual(CollectionBackground.defaultListBackground(for: title, overriding: override), override)
+            }
+            let saved = CollectionBackground(preset: preset)
+            XCTAssertEqual(try JSONDecoder().decode(CollectionBackground.self, from: JSONEncoder().encode(saved)), saved)
+        }
+        XCTAssertNil(CollectionBackground.defaultListBackground(for: "Monday"))
+        XCTAssertNil(CollectionBackground.defaultListBackground(for: "My own List"))
+        XCTAssertFalse(CollectionBackground.isAllowed(collectionID: UUID(), datedWeekIDs: [], isDatedView: true))
+    }
+
+    func testReferenceLabelSupportsLegacyAndExistingCustomCatalogs() {
+        let legacy = LabelLibrary(categories: [], labels: [])
+        XCTAssertEqual(legacy.includingReference.labels, [LabelLibrary.referenceLabel])
+        let custom = KanbanLabel(id: "my-reference", name: "Reference", categoryID: "custom", color: .blue)
+        let library = LabelLibrary(categories: [], labels: [custom])
+        XCTAssertEqual(library.includingReference.labels, [custom])
+        XCTAssertEqual(library.includingReference.referenceLabelID, custom.id)
+        XCTAssertEqual(LabelLibrary.starter.includingReference, LabelLibrary.starter)
+    }
+
+    func testStarterListTutorialsAreActionableAndOnlySeedTheThreeDefaultLists() throws {
+        let titles = ["On the Table", "In the Queue", "Scheduled"]
+        for title in titles {
+            let starter = DefaultListTutorial.makeStarter(title: title)
+            let list = try XCTUnwrap(starter.lists.first)
+            let card = try XCTUnwrap(list.cards.first)
+            let expected: ItemAccent = title == "On the Table" ? .coral : (title == "In the Queue" ? .teal : .graphite)
+            XCTAssertEqual(starter.boardAppearance?.bannerBackground, expected)
+            XCTAssertNil(list.appearance?.background)
+            XCTAssertEqual(list.cards.count, 1)
+            XCTAssertEqual(card.presentation, .card)
+            XCTAssertFalse(card.isTitleChecked)
+            XCTAssertNil(card.startDate)
+            XCTAssertNil(card.dueDate)
+            XCTAssertTrue(card.members.isEmpty)
+            XCTAssertEqual(card.labelIDs, [LabelLibraryStore.load().referenceLabelID])
+            XCTAssertEqual(card.subtitleOverride, "'\(title)', A quick guide to this List")
+            XCTAssertEqual(card.checklists.first?.title, "Try it")
+            XCTAssertEqual(card.checklists.first?.items.count, 3)
+            XCTAssertTrue(card.descriptionOverride?.contains("will not return") == true)
+            let restored = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(starter))
+            XCTAssertEqual(restored, starter)
+        }
+        for title in ["Shopping", "Reminders", "Up for Brew", "Misc", "My custom list"] {
+            XCTAssertTrue(DefaultListTutorial.makeStarter(title: title).lists[0].cards.isEmpty)
+        }
     }
 
     func testDefaultListsDoNotReplaceExistingOrLegacyInstallations() throws {

@@ -1452,7 +1452,17 @@ struct ContentView: View {
         var appearance = storedBoardAppearance
         let isPlanningWeek = personalCollectionID == nil || planningCalendarAccess?.document.weeks.contains(where: { $0.id == personalCollectionID }) == true
         if appearance.cardDetail == nil { appearance.cardDetail = isPlanningWeek ? .compact : .detailed }
+        if isStandaloneListView, !isPlanningWeek, appearance.bannerBackground == nil {
+            appearance.bannerBackground = DefaultListTutorial.defaultBanner(for: lists.first?.title ?? boardTitle)
+        }
         return appearance
+    }
+
+    private var displayedCollectionBackground: CollectionBackground? {
+        guard allowsCollectionBackground else { return nil }
+        return isStandaloneListView
+            ? CollectionBackground.defaultListBackground(for: lists.first?.title ?? boardTitle, overriding: storedBoardAppearance.collectionBackground)
+            : storedBoardAppearance.collectionBackground
     }
 
     private var allowsCollectionBackground: Bool {
@@ -2791,7 +2801,7 @@ struct ContentView: View {
             GeometryReader { _ in
 
                 ZStack {
-                    CollectionBackgroundSurface(background: allowsCollectionBackground ? storedBoardAppearance.collectionBackground : nil)
+                    CollectionBackgroundSurface(background: displayedCollectionBackground)
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
@@ -2829,6 +2839,9 @@ struct ContentView: View {
                             onSubtitleTap: (displayedWeekKey != nil || personalCollectionID == nil || planningCalendarAccess?.document.weeks.contains(where: { $0.id == personalCollectionID }) == true) ? { showsWeekSelector = true } : nil,
                             onAddList:           addList
                         )
+                        .background(isStandaloneListView
+                            ? (currentBoardAppearance.resolved(lists.first?.appearance).background?.darkHeaderColor ?? .clear)
+                            : .clear)
 
                         if isGallery {
                             BoardGalleryView(lists: lists, listTitle: { list in
@@ -3297,7 +3310,9 @@ struct ContentView: View {
             .sheet(isPresented: $showsBoardAppearance) {
                 BoardAppearanceSheet(appearance: storedBoardAppearance, presentation: presentation,
                     onSavePresentation: { presentation = $0 },
-                    allowsCollectionBackground: allowsCollectionBackground, onSave: saveBoardAppearance)
+                    allowsCollectionBackground: allowsCollectionBackground,
+                    defaultCollectionBackground: isStandaloneListView ? CollectionBackground.defaultListBackground(for: lists.first?.title ?? boardTitle) : nil,
+                    onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsWeekSelector) {
@@ -6274,11 +6289,13 @@ struct TodayListDetailView: View {
         guard representedDate == nil,
               CollectionBackground.isAllowed(collectionID: dayMovementSource,
                 datedWeekIDs: Set(planningCalendarAccess?.document.weeks.map(\.id) ?? []), isDatedView: false) else { return nil }
-        return effectiveBoardAppearance.collectionBackground
+        return CollectionBackground.defaultListBackground(for: focusedList?.title ?? "", overriding: effectiveBoardAppearance.collectionBackground)
     }
 
     private var headerColor: Color {
-        effectiveBoardAppearance.resolved(focusedList?.appearance).background?.darkHeaderColor
+        let chosen = effectiveBoardAppearance.resolved(focusedList?.appearance).background
+        let fallback = representedDate == nil ? DefaultListTutorial.defaultBanner(for: focusedList?.title ?? "") : nil
+        return (chosen ?? fallback)?.darkHeaderColor
             ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255) // Muted blue (#6D8B98)
     }
 

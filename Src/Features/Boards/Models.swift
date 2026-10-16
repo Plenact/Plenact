@@ -209,7 +209,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
 
 
 enum ItemAccent: String, CaseIterable, Codable, Sendable {
-    case teal, blue, purple, rose, orange, green
+    case teal, blue, purple, rose, orange, green, coral, graphite
 }
 
 enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable {
@@ -226,7 +226,7 @@ enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable {
 }
 
 enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable {
-    case linen, sage, ocean, plum, sandstone, midnight, photo
+    case linen, sage, ocean, plum, sandstone, midnight, photo, tabletop, forestPath, sunlitWall, plain
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -237,6 +237,10 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
         case .sandstone: "Sandstone"
         case .midnight: "Midnight"
         case .photo: "Your photo"
+        case .tabletop: "Ready for today"
+        case .forestPath: "The path ahead"
+        case .sunlitWall: "Light through the day"
+        case .plain: "Plain"
         }
     }
 }
@@ -244,6 +248,16 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
 struct CollectionBackground: Hashable, Codable, Sendable {
     var preset: CollectionBackgroundPreset
     var photoFileName: String? = nil
+
+    static func defaultListBackground(for title: String, overriding: CollectionBackground? = nil) -> CollectionBackground? {
+        if let overriding { return overriding }
+        switch title {
+        case "On the Table": return CollectionBackground(preset: .tabletop)
+        case "In the Queue": return CollectionBackground(preset: .forestPath)
+        case "Scheduled": return CollectionBackground(preset: .sunlitWall)
+        default: return nil
+        }
+    }
 
     static func isAllowed(collectionID: UUID?, datedWeekIDs: Set<UUID>, isDatedView: Bool) -> Bool {
         guard let collectionID, !isDatedView else { return false }
@@ -4262,4 +4276,61 @@ struct CardScheduleBadge: Equatable {
     let value: String
     let systemImage: String
     var label: String { title.isEmpty ? value : title + " · " + value }
+}
+
+/// Creation-only guidance: never called when opening or emptying an existing List.
+enum DefaultListTutorial {
+    static func defaultBanner(for title: String) -> ItemAccent? {
+        switch title {
+        case "On the Table": .coral
+        case "In the Queue": .teal
+        case "Scheduled": .graphite
+        default: nil
+        }
+    }
+
+    static func makeStarter(title: String) -> PersonalCollection {
+        let icon: PersonalCollectionIcon
+        let color: ProfileColor
+        switch title {
+        case "On the Table": icon = .tasks; color = .coral
+        case "In the Queue": icon = .project; color = .teal
+        case "Scheduled": icon = .upcoming; color = .graphite
+        case "Shopping": icon = .shopping; color = .teal
+        case "Reminders": icon = .reminders; color = .teal
+        default: icon = .tasks; color = .teal
+        }
+        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+        switch title {
+        case "On the Table": collection.boardAppearance = BoardAppearance(bannerBackground: .coral)
+        case "In the Queue": collection.boardAppearance = BoardAppearance(bannerBackground: .teal)
+        case "Scheduled": collection.boardAppearance = BoardAppearance(bannerBackground: .graphite)
+        default: break
+        }
+        let heading: String
+        let body: String
+        let steps: [String]
+        switch title {
+        case "On the Table":
+            heading = "Make room for today"
+            body = "This is a place for things you hope to accomplish today, time permitting. Choose what matters most, work through what you can, and let the rest wait without pressure.\n\nAdd a Card for something to do or a Note for something to remember. Move an item here from In the Queue when you are ready to give it attention. Mark tasks complete as you go; move anything that can wait back to In the Queue.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
+            steps = ["Add one thing you hope to accomplish today", "Move an item here from In the Queue", "Mark a task complete when it is finished"]
+        case "In the Queue":
+            heading = "Keep it for another day"
+            body = "Keep ideas, unfinished tasks, and backburner items here, including things that keep getting delayed. They still matter, even when today has no room for them.\n\nAdd a Card or Note whenever something is worth keeping. Review this List when planning your day, then move an item to On the Table when you are ready to give it attention. If it needs a particular date or time, move it to Scheduled or to a day in your calendar.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
+            steps = ["Capture one idea or backburner task", "Move a ready item to On the Table", "Mark a task complete when it is finished"]
+        case "Scheduled":
+            heading = "Give it a place in time"
+            body = "Keep commitments and tasks with a planned date or time here. Use this List for things you want to return to at the right moment.\n\nAdd a Card, open it, and set its Start date or Due date in Details. Include a time when it matters. You can also move the item to a specific day in your calendar. Adding an item to this List alone does not assign a date or create a notification.\n\nWhen the time comes, work on the item here or move it to On the Table. Mark it complete when it is finished.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
+            steps = ["Add a task and set its Start date or Due date", "Try moving a planned item to a day in your calendar", "Mark a task complete when it is finished"]
+        default: return collection
+        }
+        let list = collection.lists[0]
+        let card = KanbanCard(id: 0, word: heading, listTitle: list.title,
+            checklists: [KanbanChecklist(title: "Try it", items: steps.map { KanbanChecklistItem(title: $0) })],
+            comments: [], members: [], labelIDs: [LabelLibraryStore.load().referenceLabelID], attachments: [], descriptionOverride: body,
+            subtitleOverride: "'\(title)', A quick guide to this List", presentation: .card)
+        collection.lists[0].cards = [card]
+        return collection
+    }
 }

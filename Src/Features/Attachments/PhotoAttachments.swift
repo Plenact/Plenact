@@ -1349,6 +1349,8 @@ extension ItemAccent {
             case .teal: .teal
             case .blue: .blue
             case .purple: .purple
+            case .coral: ProfileColor.coral.color
+            case .graphite: ProfileColor.graphite.color
             case .rose: .pink
             case .orange: .orange
             case .green: .green
@@ -1360,6 +1362,8 @@ extension ItemAccent {
             case .teal: Color(red: 0.08, green: 0.28, blue: 0.28)
             case .blue: Color(red: 0.08, green: 0.20, blue: 0.36)
             case .purple: Color(red: 0.24, green: 0.12, blue: 0.32)
+            case .coral: Color(red: 0.48, green: 0.13, blue: 0.16)
+            case .graphite: Color(red: 0.32, green: 0.33, blue: 0.36)
             case .rose: Color(red: 0.34, green: 0.12, blue: 0.22)
             case .orange: Color(red: 0.34, green: 0.20, blue: 0.08)
             case .green: Color(red: 0.12, green: 0.28, blue: 0.14)
@@ -2114,7 +2118,7 @@ enum CollectionBackgroundPhotoStore {
     }
 }
 
-/// Stationary procedural surfaces keep the interface readable without extra bundled images.
+/// Stationary photo and procedural backgrounds keep content readable offline.
 struct CollectionBackgroundSurface: View {
     var background: CollectionBackground? = nil
     var draftPhoto: Data? = nil
@@ -2130,6 +2134,12 @@ struct CollectionBackgroundSurface: View {
         }
     }
     private var photo: UIImage? {
+        switch background?.preset {
+        case .tabletop: return UIImage(named: "DefaultListTable")
+        case .forestPath: return UIImage(named: "DefaultListQueue")
+        case .sunlitWall: return UIImage(named: "DefaultListScheduled")
+        default: break
+        }
         guard background?.preset == .photo else { return nil }
         if let draftPhoto { return UIImage(data: draftPhoto) }
         return CollectionBackgroundPhotoStore.image(named: background?.photoFileName)
@@ -2143,7 +2153,7 @@ struct CollectionBackgroundSurface: View {
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                     Color.black.opacity(0.30)
                     LinearGradient(colors: [.black.opacity(0.32), .clear], startPoint: .top, endPoint: .center)
-                } else if let preset = background?.preset, preset != .photo {
+                } else if let preset = background?.preset, preset != .photo, preset != .plain {
                     Canvas { context, size in
                         var grain = Path()
                         for row in stride(from: 0, through: Int(size.height), by: 7) {
@@ -2175,6 +2185,7 @@ struct BoardAppearanceSheet: View {
     @State private var isImportingPhoto = false
     @State private var backgroundError: String?
     let allowsCollectionBackground: Bool
+    var defaultCollectionBackground: CollectionBackground? = nil
     @State private var draft: BoardAppearance
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
@@ -2185,8 +2196,10 @@ struct BoardAppearanceSheet: View {
     init(appearance: BoardAppearance, presentation: BoardPresentation = .standard,
          onSavePresentation: ((BoardPresentation) -> Void)? = nil,
          allowsCollectionBackground: Bool = false,
+         defaultCollectionBackground: CollectionBackground? = nil,
          onSave: @escaping (BoardAppearance, Bool) -> Bool) {
         self.allowsCollectionBackground = allowsCollectionBackground
+        self.defaultCollectionBackground = defaultCollectionBackground
         _draft = State(initialValue: appearance)
         _draftPresentation = State(initialValue: presentation)
         self.onSavePresentation = onSavePresentation
@@ -2286,10 +2299,10 @@ struct BoardAppearanceSheet: View {
 
     private var collectionBackgroundSection: some View {
         Section("Background") {
-            CollectionBackgroundSurface(background: draft.collectionBackground, draftPhoto: draftPhoto)
+            CollectionBackgroundSurface(background: draft.collectionBackground ?? defaultCollectionBackground, draftPhoto: draftPhoto)
                 .frame(height: 136)
                 .overlay(alignment: .bottomLeading) {
-                    Text(draft.collectionBackground?.preset.title ?? "Plenact default")
+                    Text((draft.collectionBackground ?? defaultCollectionBackground)?.preset.title ?? "Plenact default")
                         .font(.headline).foregroundStyle(.white).padding(16)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14))

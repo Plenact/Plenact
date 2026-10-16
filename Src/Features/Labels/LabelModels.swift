@@ -129,6 +129,21 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 ///             available
 ///
 struct LabelLibrary: Hashable, Codable {
+    static let referenceCategory = KanbanLabelCategory(id: "plenact-reference", name: "Reference")
+    static let referenceLabel = KanbanLabel(id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
+
+    /// Keep the built-in tutorial label available without changing existing user labels.
+    var includingReference: LabelLibrary {
+        guard !labels.contains(where: { $0.id == Self.referenceLabel.id || $0.name.caseInsensitiveCompare("Reference") == .orderedSame }) else { return self }
+        var updated = self
+        if !updated.categories.contains(where: { $0.id == Self.referenceCategory.id }) { updated.categories.append(Self.referenceCategory) }
+        updated.labels.append(Self.referenceLabel)
+        return updated
+    }
+    var referenceLabelID: String {
+        labels.first { $0.name.caseInsensitiveCompare("Reference") == .orderedSame }?.id ?? Self.referenceLabel.id
+    }
+
 
     var categories: [KanbanLabelCategory] /* Reusable label categories */
     var labels: [KanbanLabel] /* Reusable label definitions */
@@ -151,7 +166,8 @@ struct LabelLibrary: Hashable, Codable {
             KanbanLabelCategory(id: "finance", name: "Finance"),
             KanbanLabelCategory(id: "health", name: "Health & Fitness"),
             KanbanLabelCategory(id: "leisure", name: "Leisure"),
-            KanbanLabelCategory(id: "casual", name: "Casual")
+            KanbanLabelCategory(id: "casual", name: "Casual"),
+            referenceCategory
         ],
         labels:     [
             KanbanLabel(id: "work-scheduled", name: "Scheduled", categoryID: "work", color: .blue),
@@ -166,7 +182,8 @@ struct LabelLibrary: Hashable, Codable {
             KanbanLabel(id: "health-wellness", name: "Wellness", categoryID: "health", color: .mint),
             KanbanLabel(id: "leisure-hobby", name: "Hobby", categoryID: "leisure", color: .purple),
             KanbanLabel(id: "leisure-travel", name: "Travel", categoryID: "leisure", color: .blue),
-            KanbanLabel(id: "casual-social", name: "Social", categoryID: "casual", color: .yellow)
+            KanbanLabel(id: "casual-social", name: "Social", categoryID: "casual", color: .yellow),
+            referenceLabel
         ]
     )
 }
@@ -206,7 +223,7 @@ enum LabelLibraryStore {
             return .starter
         }
 
-        return library
+        return library.includingReference
     }
 
 

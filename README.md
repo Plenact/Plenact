@@ -10,6 +10,14 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 
 # Opens
 
+- text starts lowercase sometimes on new card creation
+
+- Hey and why is the keyboard not raising all the way for me right now, in the simulator? it works just fine on my actual iPhone, to note
+
+- Slightest dim fade behind the launch screen logo?
+
+- Lists have the option to display their icon in their view too! Default is disabled, but is enabled for On the Table, In the Queue and also Scheduled
+
 - Reset zoom level on Board submenu
 
 - What if in the List view, the list's background was transparent and so all you saw was the List view's background behind it?

@@ -1509,6 +1509,26 @@ struct CardDisplayProfilePicker: View {
     }
 }
 
+extension ListPreviewTextColor {
+    var color: Color {
+        let light: (CGFloat, CGFloat, CGFloat)
+        let dark: (CGFloat, CGFloat, CGFloat)
+        switch self {
+        case .graphite: light = (0.22, 0.25, 0.29); dark = (0.78, 0.81, 0.85)
+        case .blue: light = (0.16, 0.32, 0.56); dark = (0.59, 0.75, 0.98)
+        case .teal: light = (0.12, 0.40, 0.42); dark = (0.52, 0.83, 0.83)
+        case .green: light = (0.19, 0.39, 0.23); dark = (0.60, 0.84, 0.62)
+        case .plum: light = (0.40, 0.26, 0.48); dark = (0.81, 0.67, 0.92)
+        case .rose: light = (0.55, 0.25, 0.34); dark = (0.95, 0.65, 0.73)
+        case .amber: light = (0.47, 0.34, 0.13); dark = (0.92, 0.78, 0.49)
+        }
+        return Color(uiColor: UIColor { traits in
+            let rgb = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
+        })
+    }
+}
+
 struct ItemAppearanceSheet: View {
     let title: String
     let onSave: (ItemAppearance?) -> Bool
@@ -1529,6 +1549,15 @@ struct ItemAppearanceSheet: View {
         self.onSaveDisplay = onSaveDisplay
         _draftDisplay = State(initialValue: displayFormat)
         _draft = State(initialValue: appearance ?? ItemAppearance())
+    }
+
+    private func previewTextColorPicker(_ title: String, field: WritableKeyPath<ItemAppearance, ListPreviewTextColor?>) -> some View {
+        Picker(title, selection: Binding(get: { draft[keyPath: field] }, set: { draft[keyPath: field] = $0 })) {
+            Text("Unchanged").tag(Optional<ListPreviewTextColor>.none)
+            ForEach(ListPreviewTextColor.allCases) { color in
+                Text(color.title).tag(Optional(color))
+            }
+        }
     }
 
     var body: some View {
@@ -1577,6 +1606,21 @@ struct ItemAppearanceSheet: View {
                         Text(showsListBackground
                              ? "Unchanged follows the Board or existing layout. Individual items can override this List."
                              : "Unchanged follows the List, then Board. This changes the list preview; opening the item still shows its full contents.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                if showsListBackground {
+                    Section("Card text colors") {
+                        previewTextColorPicker("Card title color", field: \.cardTitleColor)
+                        previewTextColorPicker("Supporting text color", field: \.cardTextColor)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Card or note title").font(.headline)
+                                .foregroundStyle(draft.cardTitleColor?.color ?? .primary)
+                            Text("Subtitle or note preview").font(.subheadline)
+                                .foregroundStyle(draft.cardTextColor?.color ?? .secondary)
+                        }
+                        .padding(.vertical, 8)
+                        Text("Unchanged keeps the existing text colors. Applies to previews in this List; opened editors, dates, labels, and status indicators keep their own styling.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }

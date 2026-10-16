@@ -294,6 +294,63 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults() throws {
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.cardTitleColor); XCTAssertNil(legacy.cardTextColor)
+        XCTAssertTrue(legacy.isEmpty)
+        for color in ListPreviewTextColor.allCases {
+            var appearance = ItemAppearance()
+            appearance.cardTitleColor = color
+            XCTAssertFalse(appearance.isEmpty)
+            var list = KanbanList(id: 9, title: "Personal List", cards: [])
+            list.appearance = appearance
+            let decoded = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+            XCTAssertEqual(decoded.appearance?.cardTitleColor, color)
+            XCTAssertNil(decoded.appearance?.cardTextColor)
+            appearance.cardTitleColor = nil; appearance.cardTextColor = color
+            list.appearance = appearance
+            XCTAssertFalse(appearance.isEmpty)
+            let inherited = BoardAppearance.inheritingLists([list])
+            XCTAssertEqual(inherited[0].appearance?.cardTextColor, color)
+            let roundTrip = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+            XCTAssertEqual(roundTrip.appearance?.cardTextColor, color)
+            XCTAssertNil(roundTrip.appearance?.cardTitleColor)
+        }
+    }
+
+    @MainActor
+    func testCustomListPreviewColorsRenderWithoutEditingContent() async throws {
+        var card = KanbanCard(id: 92, word: "Plan the garden", listTitle: "Garden")
+        card.subtitleOverride = "Choose seeds and make room to grow"
+        var note = KanbanCard(id: 93, word: "Garden reflections", listTitle: "Garden", presentation: .note)
+        note.descriptionOverride = "A few ideas for next season, with space for something new."
+        let originals = [card, note]
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: VStack(spacing: 16) {
+            ForEach(originals) { item in
+                KanbanCardView(card: item, height: 140, displaySettings: BoardDisplaySettings(),
+                    titleColor: .teal, supportingTextColor: .plum, labelLibrary: .starter,
+                    onUpdateCard: { _ in XCTFail("Colors must not edit content") },
+                    onDeleteCard: { XCTFail("Colors must not delete") },
+                    onArchiveCard: { XCTFail("Colors must not archive") }, onToggle: { XCTFail("Colors must not complete") })
+            }
+        }.padding(20).background(Color(.systemGroupedBackground)))
+        host.safeAreaRegions = []
+        window.frame = CGRect(x: 0, y: 0, width: 340, height: 390)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200))
+        host.view.frame = window.bounds; host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+        let attachment = XCTAttachment(image: image); attachment.name = "Custom List preview text colors"; attachment.lifetime = .keepAlways; add(attachment)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-list-preview-colors.png")
+        try image.pngData()?.write(to: url)
+        print("LIST_COLOR_PREVIEW_PATH=\(url.path)")
+        XCTAssertEqual(originals, [card, note])
+    }
+
     func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

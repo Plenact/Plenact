@@ -288,18 +288,26 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     }
 }
 
+enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable {
+    case graphite, blue, teal, green, plum, rose, amber
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct ItemAppearance: Hashable, Codable, Sendable {
     var accent: ItemAccent?
     var icon: PersonalCollectionIcon?
     var background: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
+    var cardTitleColor: ListPreviewTextColor? = nil
+    var cardTextColor: ListPreviewTextColor? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
     func hidesSubtitle(_ text: String) -> Bool {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil }
+    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 ///

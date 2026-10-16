@@ -333,7 +333,7 @@ struct BoardGalleryView: View {
                             }
                             LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                                 ForEach(group.cards) { card in
-                                    Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card) }
+                                    Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card, appearance: list.appearance) }
                                         .buttonStyle(.plain).accessibilityHint("Opens this item in " + listTitle(list))
                                 }
                             }
@@ -353,6 +353,7 @@ struct BoardGalleryView: View {
 }
 struct BoardGalleryTile: View {
     let card: KanbanCard
+    var appearance: ItemAppearance? = nil
     private var excerpt: String {
         PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -368,12 +369,12 @@ struct BoardGalleryTile: View {
             }
             HStack(alignment: .top, spacing: 6) {
                 Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
-                    .foregroundStyle(.primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(appearance?.cardTitleColor?.color ?? .primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 ImportantItemIndicator(cardID: card.id)
             }
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
-                Text(excerpt).font(.subheadline).foregroundStyle(.secondary).lineLimit(3).lineSpacing(3)
+                Text(excerpt).font(.subheadline).foregroundStyle(appearance?.cardTextColor?.color ?? .secondary).lineLimit(3).lineSpacing(3)
             }
             HStack(spacing: 8) {
                 Label(card.displayFormat.title, systemImage: card.displayFormat.symbol)
@@ -4601,6 +4602,8 @@ struct KanbanListView: View {
                                     displaySettings: displaySettings,
                                     cardBackground:  boardAppearance.cardBackground,
                                     compactCards:    usesCompactCards(card),
+                                    titleColor:      list.appearance?.cardTitleColor,
+                                    supportingTextColor: list.appearance?.cardTextColor,
                                     listedOnDate:    assignedDate,
                                     presentation:    presentation,
                                     labelLibrary:    labelLibrary,
@@ -5511,6 +5514,8 @@ struct KanbanCardView: View {
     let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
     var cardBackground: KanbanListTint? = nil /* Board-scoped tint, independent of item banner metadata */
     var compactCards: Bool = false
+    var titleColor: ListPreviewTextColor? = nil
+    var supportingTextColor: ListPreviewTextColor? = nil
     var listedOnDate: Date? = nil // Assigned day from the list, independent of its editable title.
     /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard /* Board layout controlling the card row's density */
@@ -5673,7 +5678,7 @@ struct KanbanCardView: View {
                 HStack(alignment: .top, spacing: 8) {
                     Text(card.word)
                         .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(titleColor?.color ?? .primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
@@ -5732,7 +5737,7 @@ struct KanbanCardView: View {
                     ItemAppearanceMark(appearance: card.appearance)
                     Text(card.word)
                         .font(.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(titleColor?.color ?? .primary)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (compactCards ? 1 : (presentation == .overview ? 2 : 3)))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -5751,7 +5756,7 @@ struct KanbanCardView: View {
                     if !noteExcerpt.isEmpty {
                         Text(noteExcerpt)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(supportingTextColor?.color ?? .secondary)
                             .lineSpacing(3)
                             .lineLimit(3)
                             .truncationMode(.tail)
@@ -5762,7 +5767,7 @@ struct KanbanCardView: View {
 
                     Text(card.subtitle)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(supportingTextColor?.color ?? .secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -6217,6 +6222,25 @@ struct TodayListDetailView: View {
         usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
+    private func cardPreview(_ card: KanbanCard) -> some View {
+        KanbanCardView(
+            card:            card,
+            height:          cardPreviewHeight(card),
+            displaySettings: BoardDisplaySettings(),
+            cardBackground:  effectiveBoardAppearance.cardBackground,
+            compactCards:    usesCompactCards(card),
+            titleColor:      focusedList?.appearance?.cardTitleColor,
+            supportingTextColor: focusedList?.appearance?.cardTextColor,
+            listedOnDate:    representedDate,
+            labelLibrary:    labelLibrary,
+            onUpdateCard:    updateCard,
+            onDeleteCard:    { deleteCard(card.id) },
+            onArchiveCard:   { archiveCard(card.id) }
+        ) {
+            toggleCard(card.id)
+        }
+    }
+
     private var personalListBackground: CollectionBackground? {
         guard representedDate == nil,
               CollectionBackground.isAllowed(collectionID: dayMovementSource,
@@ -6335,20 +6359,7 @@ struct TodayListDetailView: View {
                             } else {
 
                                 NavigationLink(value: card) {
-                                    KanbanCardView(
-                                        card:            card,
-                                        height:          cardPreviewHeight(card),
-                                        displaySettings: BoardDisplaySettings(),
-                                        cardBackground:  effectiveBoardAppearance.cardBackground,
-                                        compactCards:    usesCompactCards(card),
-                                        listedOnDate:    representedDate,
-                                        labelLibrary:    labelLibrary,
-                                        onUpdateCard:    updateCard,
-                                        onDeleteCard:    { deleteCard(card.id) },
-                                        onArchiveCard:   { archiveCard(card.id) }
-                                    ) {
-                                        toggleCard(card.id)
-                                    }
+                                    cardPreview(card)
                                 }
 
                                 .buttonStyle(.plain)

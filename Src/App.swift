@@ -3691,9 +3691,9 @@ struct ImportantItemIndicator: View {
     }
     var body: some View {
         if isImportant {
-            Image(systemName: "exclamationmark.circle.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.red)
+            Image(systemName: "star.fill")
+                .font(.caption.weight(.regular))
+                .foregroundStyle(Color.orange.opacity(0.65))
                 .accessibilityLabel("Important")
                 .accessibilityIdentifier("item.important")
         }

@@ -366,10 +366,11 @@ struct BoardGalleryTile: View {
                 Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 112)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                ImportantItemIndicator(cardID: card.id)
+            HStack(alignment: .top, spacing: 6) {
                 Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
                     .foregroundStyle(.primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                ImportantItemIndicator(cardID: card.id)
             }
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
                 Text(excerpt).font(.subheadline).foregroundStyle(.secondary).lineLimit(3).lineSpacing(3)
@@ -5670,14 +5671,16 @@ struct KanbanCardView: View {
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9) {
             if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards {
                 HStack(alignment: .top, spacing: 8) {
-                    ImportantItemIndicator(cardID: card.id)
                     Text(card.word)
                         .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
-                    cardActions
+                    HStack(alignment: .top, spacing: 4) {
+                        cardActions
+                        ImportantItemIndicator(cardID: card.id)
+                    }
                 }
             } else if card.displayFormat == .picture && !compactCards {
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
@@ -5691,7 +5694,7 @@ struct KanbanCardView: View {
                     CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
                 }
 
-                HStack(alignment: .center, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
 
                     if card.displayFormat == .picture {
                         Group {
@@ -5727,7 +5730,6 @@ struct KanbanCardView: View {
                     }
 
                     ItemAppearanceMark(appearance: card.appearance)
-                    ImportantItemIndicator(cardID: card.id)
                     Text(card.word)
                         .font(.headline)
                         .foregroundStyle(.primary)
@@ -5735,8 +5737,13 @@ struct KanbanCardView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
-                    if showsHeaderTimes { headerTimes }
-                    if compactCards { cardActions }
+                    VStack(alignment: .trailing, spacing: 4) {
+                        HStack(alignment: .top, spacing: 4) {
+                            if compactCards { cardActions }
+                            ImportantItemIndicator(cardID: card.id)
+                        }
+                        if showsHeaderTimes { headerTimes }
+                    }
                 }
 
                 if !compactCards && presentation == .standard && card.presentation == .note {

@@ -2102,7 +2102,6 @@ struct CardDetailView: View {
 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     ItemAppearanceMark(appearance: appearance)
-                    ImportantItemIndicator(cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
                     TextField("Note title", text: $titleText, axis: .vertical)
                         .font(.largeTitle.weight(.bold))
                         .focused($focusedField, equals: .title)
@@ -2657,7 +2656,6 @@ struct CardDetailView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 ItemAppearanceMark(appearance: appearance)
-                                ImportantItemIndicator(cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
                                 TextField("Card title", text: $titleText)
                                     .font(.title2.weight(.bold))
                                     .textInputAutocapitalization(.never)
@@ -2747,6 +2745,8 @@ struct CardDetailView: View {
                 }
 
                 Spacer()
+
+                ImportantItemIndicator(cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
 
                 Group {
 

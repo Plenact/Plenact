@@ -3468,7 +3468,7 @@ struct TodaySearchView: View {
                                 onOpenBoardList(result.listID)
                             }
 
-                            dismiss()
+                            if onSelectResult == nil { dismiss() }
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(result.cardTitle)
@@ -6424,9 +6424,7 @@ private struct SavedCardsView: View {
         }
     }
     private func openRecent(_ result: ActivityRecentResult) {
-        if result.isCurrent { onOpenBoardCard(result.list.id, result.card.id) }
-        else if result.week != nil { historicalTarget = result }
-        else { onOpenPersonalCard(PersonalSavedCardTarget(collectionID: result.item.collectionID, listID: result.list.id, cardID: result.card.id)) }
+        historicalTarget = result
     }
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -6573,7 +6571,9 @@ private struct SavedCardsView: View {
                                     .font(.headline)
                                 ForEach(savedCards) { result in
                                     Button {
-                                        onOpenBoardCard(result.listID, result.card.id)
+                                        if let item = availableFocusItems.first(where: { $0.isCurrent && $0.list.id == result.listID && $0.card.id == result.card.id }) {
+                                            openRecent(item)
+                                        }
                                     } label: {
                                         HStack(spacing: 12) {
                                             Image(systemName: "bookmark.fill")
@@ -6614,11 +6614,9 @@ private struct SavedCardsView: View {
                                     .font(.headline)
                                 ForEach(personalSavedCards) { result in
                                     Button {
-                                        onOpenPersonalCard(PersonalSavedCardTarget(
-                                            collectionID: result.collectionID,
-                                            listID: result.listID,
-                                            cardID: result.card.id
-                                        ))
+                                        if let item = availableFocusItems.first(where: { $0.item.collectionID == result.collectionID && $0.list.id == result.listID && $0.card.id == result.card.id }) {
+                                            openRecent(item)
+                                        }
                                     } label: {
                                         HStack(spacing: 12) {
                                             Image(systemName: "bookmark.fill")
@@ -6713,6 +6711,9 @@ private struct SavedCardsView: View {
         .fullScreenCover(item: $historicalTarget) { result in
             if let week = result.week {
                 PlanningCalendarWeekView(week: week, initialDayID: result.list.id, initialCardID: result.card.id, onLeaveForHome: { historicalTarget = nil })
+            } else if let collection = collections.first(where: { $0.id == result.item.collectionID && $0.isActive }) {
+                PlanningSearchLibraryView(collection: collection, initialListID: result.list.id, initialCardID: result.card.id,
+                    onLeaveForHome: { historicalTarget = nil })
             }
         }
 

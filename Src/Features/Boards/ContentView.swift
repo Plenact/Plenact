@@ -1312,6 +1312,8 @@ struct ContentView: View {
     /// Navigation stack path for card-detail destinations.
     @State private var listToCopy: KanbanList?
     @State private var listToMove: KanbanList?
+    @Environment(\.planningDirectItemReturn) private var directItemReturn
+    @State private var openedDirectItem = false
     @State private var navigationPath = NavigationPath() /* Card-detail destinations in the Board navigation stack */
     @State private var boardBoundaryJumpRequest = 0 /* Trigger distinguishing repeated boundary-navigation requests */
     @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation */
@@ -1517,6 +1519,7 @@ struct ContentView: View {
            let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) { /* Requested record resolved in its containing list */
             navigationPath = NavigationPath()
             navigationPath.append(card)
+            openedDirectItem = directItemReturn != nil
         }
 
         boardTargetListID = nil
@@ -2983,6 +2986,12 @@ struct ContentView: View {
             }
 
             .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: navigationPath.count) { old, new in
+                if openedDirectItem && old > 0 && new == 0 {
+                    openedDirectItem = false
+                    directItemReturn?()
+                }
+            }
             .onChange(of: boardRootRequest) { _, _ in
                 navigationPath = NavigationPath()
             }
@@ -3284,7 +3293,7 @@ struct BoardHeader: View {
                 }
 
                 .foregroundStyle(.white)
-                .accessibilityLabel("Back to Plans")
+                .accessibilityLabel("Back to previous view")
             }
 
             titleSwipeArea

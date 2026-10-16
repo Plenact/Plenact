@@ -583,6 +583,58 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testDirectCardAndNoteBackDismissesResultToItsPresenter() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        for usesWeek in [false, true] {
+            for isNote in [false, true] {
+                var owner = PersonalCollection(title: "Return test", kind: .list)
+                owner.lists[0].cards = [KanbanCard(id: 701, word: "Return item", listTitle: owner.title,
+                    presentation: isNote ? .note : .card)]
+                let date = try XCTUnwrap(PlanningDate.date("2026-10-15"))
+                var week = DatedPlanningWeek.make(for: date)
+                let listID = usesWeek ? week.collection.lists[0].id : owner.lists[0].id
+                week.collection.lists[0].cards = owner.lists[0].cards
+                let probe = DirectReturnTestProbe()
+                let window = UIWindow(windowScene: scene)
+                window.frame = scene.coordinateSpace.bounds
+                let host = UIHostingController(rootView: DirectReturnTestView(probe: probe, owner: owner,
+                    week: usesWeek ? week : nil, listID: listID))
+                window.rootViewController = host
+                window.makeKeyAndVisible()
+                defer { window.isHidden = true; window.rootViewController = nil }
+                try await Task.sleep(for: .milliseconds(150))
+                probe.presented = true
+                var navigation: UINavigationController?
+                for _ in 0..<40 {
+                    navigation = findDetailNavigation(in: host)
+                    if navigation != nil { break }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                let detail = try XCTUnwrap(navigation, "The requested item must open above its owning board")
+                XCTAssertTrue(probe.presented)
+                detail.popViewController(animated: false)
+                for _ in 0..<30 {
+                    if !probe.presented { break }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                XCTAssertFalse(probe.presented, "Back must dismiss the direct result for week=\(usesWeek), note=\(isNote)")
+            }
+        }
+        previous?.makeKey()
+    }
+
+    @MainActor
+    private func findDetailNavigation(in controller: UIViewController) -> UINavigationController? {
+        if let nav = controller as? UINavigationController, nav.viewControllers.count > 1 { return nav }
+        if let presented = controller.presentedViewController, let found = findDetailNavigation(in: presented) { return found }
+        for child in controller.children {
+            if let found = findDetailNavigation(in: child) { return found }
+        }
+        return nil
+    }
+
+    @MainActor
     func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
@@ -7662,5 +7714,29 @@ private struct NoteNavigationTestView: View {
         .environment(\.workspaceNoteVisibility, { id, visible in
             if visible { probe.visibleNotes.insert(id) } else { probe.visibleNotes.remove(id) }
         })
+    }
+}
+
+@MainActor
+private final class DirectReturnTestProbe: ObservableObject {
+    @Published var presented = false
+}
+
+private struct DirectReturnTestView: View {
+    @ObservedObject var probe: DirectReturnTestProbe
+    let owner: PersonalCollection
+    let week: DatedPlanningWeek?
+    let listID: Int
+    var body: some View {
+        Text("Origin remains here")
+            .fullScreenCover(isPresented: $probe.presented) {
+                if let week {
+                    PlanningCalendarWeekView(week: week, initialDayID: listID, initialCardID: 701,
+                        onLeaveForHome: { XCTFail("Back must not invoke explicit home navigation") })
+                } else {
+                    PlanningSearchLibraryView(collection: owner, initialListID: listID, initialCardID: 701,
+                        onLeaveForHome: { XCTFail("Back must not invoke explicit home navigation") })
+                }
+            }
     }
 }

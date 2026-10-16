@@ -655,6 +655,7 @@ struct PlanningCalendarWeekView: View {
             .background(.regularMaterial)
             }
         }
+        .environment(\.planningDirectItemReturn, initialCardID == nil ? nil : { dismiss() })
         .environment(\.planningDisplayedWeekKey, week.startKey)
         .environment(\.cardMovementSource, week.id)
         .environment(\.planningHomeExit, { dismiss(); onLeaveForHome() })
@@ -702,6 +703,16 @@ struct PlanningCalendarWeekView: View {
     }
 }
 
+
+private struct PlanningDirectItemReturnKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+extension EnvironmentValues {
+    var planningDirectItemReturn: (() -> Void)? {
+        get { self[PlanningDirectItemReturnKey.self] }
+        set { self[PlanningDirectItemReturnKey.self] = newValue }
+    }
+}
 
 private struct PlanningHomeExitKey: EnvironmentKey {
     static let defaultValue: (() -> Void)? = nil
@@ -753,29 +764,27 @@ struct PlanningSharedSearchPresentation: ViewModifier {
     @Binding var isPresented: Bool
     var onLeaveForHome: () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
-    @State private var pending: TodaySearchResult?
     @State private var route: PlanningSearchRoute?
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $isPresented, onDismiss: {
-                if let pending { self.pending = nil; route = PlanningSearchRoute(result: pending) }
-            }) {
+            .sheet(isPresented: $isPresented) {
                 TodaySearchView(lists: [], onOpenBoardList: { _ in }, onOpenBoardCard: { _, _ in },
                     onArchiveCard: { _ in }, onDeleteCard: { _ in false }, onArchiveList: { _ in }, onDeleteList: { _ in false },
                     resultProvider: { query, scope, labels in
                         guard let access else { return [] }
                         return PlanningSharedSearchIndex.results(query: query, scope: scope, access: access, labels: labels)
-                    }, onSelectResult: { result in pending = result; isPresented = false })
-            }
-            .fullScreenCover(item: $route) { route in
-                if let key = route.result.weekKey, let week = access?.document.weeks.first(where: { $0.startKey == key }) {
-                    PlanningCalendarWeekView(week: week,
-                        initialDayID: route.result.listID, initialCardID: route.result.cardID,
-                        onLeaveForHome: { self.route = nil; onLeaveForHome() })
-                } else if let collection = access?.library.first(where: { $0.id == route.result.ownerID }) {
-                    PlanningSearchLibraryView(collection: collection, initialListID: route.result.listID, initialCardID: route.result.cardID,
-                        onLeaveForHome: { self.route = nil; onLeaveForHome() })
-                }
+                    }, onSelectResult: { result in route = PlanningSearchRoute(result: result) })
+                    // Keep Search alive beneath its result, preserving query, scope, and scroll.
+                    .fullScreenCover(item: $route) { route in
+                        if let key = route.result.weekKey, let week = access?.document.weeks.first(where: { $0.startKey == key }) {
+                            PlanningCalendarWeekView(week: week,
+                                initialDayID: route.result.listID, initialCardID: route.result.cardID,
+                                onLeaveForHome: { self.route = nil; isPresented = false; onLeaveForHome() })
+                        } else if let collection = access?.library.first(where: { $0.id == route.result.ownerID }) {
+                            PlanningSearchLibraryView(collection: collection, initialListID: route.result.listID, initialCardID: route.result.cardID,
+                                onLeaveForHome: { self.route = nil; isPresented = false; onLeaveForHome() })
+                        }
+                    }
             }
     }
 }
@@ -802,6 +811,7 @@ struct PlanningSearchLibraryView: View {
                 collection = updated
             }, onListsChanged: { _ in }, retainedAttachmentLists: { access?.allRetainedLists ?? [] },
             personalCollectionID: collection.id, boardAppearance: $collection.boardAppearance)
+            .environment(\.planningDirectItemReturn, initialCardID == nil ? nil : { dismiss() })
             .environment(\.planningHomeExit, { dismiss(); onLeaveForHome() })
             .task {
                 guard !didOpenInitialTarget else { return }

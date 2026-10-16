@@ -16,6 +16,8 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 
 ### Upcoming
 
+- A partner app for Plenact, that accesses and navigates your lists. Consider multiple apps, as different interfaces and tools into your core Plenact data and life plans
+
 - Zoom levels (default & last, automatically handled)
 
 - Unsplash cover images & Backgrounds & Custom Backgrounds

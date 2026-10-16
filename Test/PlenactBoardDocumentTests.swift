@@ -52,6 +52,49 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar: london), TodaySloganCatalog.slogans[1])
     }
 
+    @MainActor
+    func testNewComposerSharesTitleAndRichBodyAcrossCardAndNote() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        let lists = [KanbanList(id: 0, title: "Monday", cards: [])]
+        let host = UIHostingController(rootView: QuickNoteComposer(lists: .constant(lists), initialListID: 0) { _, _, _, _, _, _ in
+            XCTFail("Switching formats must not create content")
+        })
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(300))
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        let title = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { String(describing: type(of: $0)).contains("VerticalTextView") })
+        title.becomeFirstResponder()
+        title.insertText("Shared draft title")
+        let details = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { $0.accessibilityLabel == "Details (optional)" })
+        let body = PlanRichText.prefix + Data("[{\"text\":\"Keep this writing\",\"bold\":true,\"italic\":false}]".utf8).base64EncodedString()
+        details.attributedText = PlanRichText.attributed(body)
+        details.delegate?.textViewDidChange?(details)
+        let picker = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UISegmentedControl }.first)
+        picker.selectedSegmentIndex = 1
+        picker.sendActions(for: .valueChanged)
+        try await Task.sleep(for: .milliseconds(350))
+        let noteTitle = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { String(describing: type(of: $0)).contains("VerticalTextView") })
+        XCTAssertEqual(noteTitle.text, "Shared draft title")
+        let writing = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { $0.accessibilityLabel == "Start writing..." })
+        XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)), PlanRichText.runs(body))
+        noteTitle.becomeFirstResponder()
+        noteTitle.insertText(" edited")
+        writing.attributedText = PlanRichText.attributed("Edited note body")
+        writing.delegate?.textViewDidChange?(writing)
+        picker.selectedSegmentIndex = 0
+        picker.sendActions(for: .valueChanged)
+        try await Task.sleep(for: .milliseconds(350))
+        let returnedTitle = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { String(describing: type(of: $0)).contains("VerticalTextView") })
+        XCTAssertEqual(returnedTitle.text, "Shared draft title edited")
+        let returnedDetails = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { $0.accessibilityLabel == "Details (optional)" })
+        XCTAssertEqual(PlanRichText.encode(returnedDetails.attributedText), "Edited note body")
+    }
+
     func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

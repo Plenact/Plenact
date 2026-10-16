@@ -312,6 +312,7 @@ struct BoardGalleryView: View {
     let lists: [KanbanList]
     let listTitle: (KanbanList) -> String
     let onOpen: (KanbanCard, Int) -> Void
+    var showsListHeadings = true
     @Environment(\.dynamicTypeSize) private var typeSize
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 260 : 156), spacing: 12, alignment: .top)]
@@ -321,10 +322,12 @@ struct BoardGalleryView: View {
             LazyVStack(alignment: .leading, spacing: 24) {
                 ForEach(lists) { list in
                     VStack(alignment: .leading, spacing: 12) {
+                        if showsListHeadings {
                         HStack {
                             Text(listTitle(list)).font(.title3.weight(.semibold)).accessibilityAddTraits(.isHeader)
                             Spacer()
                             Text("\(list.cards.filter { !$0.isSectionDivider }.count) items").font(.caption).foregroundStyle(.secondary)
+                        }
                         }
                         ForEach(BoardGalleryGroup.groups(in: list)) { group in
                             if let divider = group.divider {
@@ -1408,6 +1411,13 @@ struct ContentView: View {
     let allowsAddingLists: Bool /* Whether the board offers list creation */
     /// Lets a single-list personal collection fill the Standard viewport without changing Overview.
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
+    @State private var standaloneListActionsRequest = 0
+    private var isStandaloneListView: Bool { fillsAvailableListWidth && lists.count == 1 }
+    private var standaloneSubtitle: String {
+        guard isStandaloneListView, let description = lists.first?.subtitleOverride,
+              !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return boardSubtitle }
+        return description
+    }
     /// Optional action that returns to the parent collection view.
     let onClose: (() -> Void)? /* Optional return action to the parent collection directory */
     /// Optional parent-owned action for archiving the complete board.
@@ -2794,7 +2804,7 @@ struct ContentView: View {
                             onSetMemberColor:    setMemberColor,
                             onOpenCalendar:      { showsCalendar = true },
                             title:               boardTitle,
-                            subtitle:            boardSubtitle,
+                            subtitle:            standaloneSubtitle,
                             allowsAddingLists:   allowsAddingLists || lists.isEmpty,
                             onClose:             onClose,
                             onViewArchivedLists: { showsArchivedLists = true },
@@ -2804,6 +2814,7 @@ struct ContentView: View {
                             onJumpToFirstList:   !isGallery && lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    !isGallery && lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
                             onAppearance:        { showsBoardAppearance = true },
+                            onListActions: isStandaloneListView ? { isGallery = false; standaloneListActionsRequest += 1 } : nil,
                             onSearch: { showsSharedSearch = true },
                             onToggleZoom: isGallery ? nil : toggleBoardZoom,
                             onToggleGallery: { isGallery.toggle() },
@@ -2824,7 +2835,7 @@ struct ContentView: View {
                                 visibleListID = listID
                                 onListViewed(listID)
                                 navigationPath.append(card)
-                            })
+                            }, showsListHeadings: !isStandaloneListView)
                             .environment(\.cardMovementSource, personalCollectionID)
                             .environment(\.boardViewportMemory, viewportMemory)
                         } else {
@@ -2919,7 +2930,10 @@ struct ContentView: View {
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
                                             },
                                             assignedDate: dayDate(for: list.id),
-                                            datedTitle: dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) }
+                                            datedTitle: dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) },
+                                            hidesPanelHeader: isStandaloneListView,
+                                            listActionsRequest: standaloneListActionsRequest,
+                                            onConsumeListActions: { standaloneListActionsRequest = 0 }
                                         )
                                         .frame(
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
@@ -3386,6 +3400,7 @@ struct BoardHeader: View {
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
     var onAppearance: (() -> Void)? = nil
+    var onListActions: (() -> Void)? = nil
     var onSearch: (() -> Void)? = nil
     var onToggleZoom: (() -> Void)? = nil
     var onToggleGallery: (() -> Void)? = nil
@@ -3423,6 +3438,7 @@ struct BoardHeader: View {
         case .first: onJumpToFirstList?()
         case .last: onJumpToLastList?()
         case .appearance: onAppearance?()
+        case .listActions: onListActions?()
         case .settings: showingSettings = true
         case .archived: onViewArchivedLists()
         case .archive: confirmsArchiveBoard = true
@@ -3538,12 +3554,12 @@ struct BoardHeader: View {
                 WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Board options")
+            .accessibilityLabel(onListActions == nil ? "Board options" : "List options")
             .popover(isPresented: $showsBoardOptions, arrowEdge: .top) {
                 BoardOptionsPopover(canJumpFirst: onJumpToFirstList != nil,
                     canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
                     canArchive: onArchiveBoard != nil, canDelete: onDeleteBoard != nil,
-                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery, canResetZoom: onResetZoom != nil) { action in
+                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery, canResetZoom: onResetZoom != nil, hasListActions: onListActions != nil) { action in
                         pendingBoardAction = action
                         showsBoardOptions = false
                     }
@@ -4306,6 +4322,9 @@ struct KanbanListView: View {
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
     var assignedDate: Date? = nil
     var datedTitle: String? = nil
+    var hidesPanelHeader = false
+    var listActionsRequest = 0
+    var onConsumeListActions: () -> Void = {}
 
     private var styledListTitle: AttributedString {
         var title = AttributedString(list.title)
@@ -4410,7 +4429,7 @@ struct KanbanListView: View {
     /// @post       Header measurement and card content remain unchanged
     ///
     private var cardCollectionHeight: CGFloat { /* Card collection height capped by the remaining list viewport */
-        let availableHeight = max(1, availableListHeight - headerHeight - 24) /* Vertical space remaining after header and panel padding */
+        let availableHeight = max(1, availableListHeight - (hidesPanelHeader ? 0 : headerHeight) - 24) /* Vertical space remaining after header and panel padding */
 
         return min(cardCollectionContentHeight, availableHeight)
     }
@@ -4465,6 +4484,7 @@ struct KanbanListView: View {
 
         VStack(spacing: 0) {
 
+            if !hidesPanelHeader {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     ItemAppearanceMark(appearance: list.appearance)
@@ -4549,6 +4569,8 @@ struct KanbanListView: View {
                         .onAppear { headerHeight = header.size.height }
                         .onChange(of: header.size.height) { _, height in headerHeight = height }
                 }
+            }
+
             }
 
             List {
@@ -4741,6 +4763,11 @@ struct KanbanListView: View {
             Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
         }
 
+        .onChange(of: listActionsRequest, initial: true) { _, request in
+            guard request > 0 else { return }
+            activeSheet = .listActions
+            onConsumeListActions()
+        }
         .sheet(item: $activeSheet, onDismiss: {
             if opensDayAfterDismissal {
                 opensDayAfterDismissal = false
@@ -6922,7 +6949,7 @@ struct WorkspaceHeaderIcon: View {
     }
 }
 
-enum BoardOptionsAction { case first, last, gallery, resetZoom, appearance, settings, archived, archive, delete }
+enum BoardOptionsAction { case first, last, gallery, resetZoom, appearance, listActions, settings, archived, archive, delete }
 
 struct BoardOptionsPopover: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -6935,6 +6962,7 @@ struct BoardOptionsPopover: View {
     var hasGallery = false
     var isGallery = false
     var canResetZoom = false
+    var hasListActions = false
     let onAction: (BoardOptionsAction) -> Void
 
     private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
@@ -6968,6 +6996,12 @@ struct BoardOptionsPopover: View {
             if hasGallery {
                 Button { onAction(.gallery) } label: {
                     Label(isGallery ? "Board view" : "Gallery view", systemImage: isGallery ? "rectangle.split.3x1" : "square.grid.2x2")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }.padding(.horizontal, 8)
+            }
+            if hasListActions {
+                Button { onAction(.listActions) } label: {
+                    Label("List actions", systemImage: "list.bullet.rectangle")
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }.padding(.horizontal, 8)
             }

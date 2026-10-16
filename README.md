@@ -8,6 +8,12 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
 
+# Opens
+
+- Reset zoom level on Board submenu
+
+- What if in the List view, the list's background was transparent and so all you saw was the List view's background behind it?
+
 ## Upcoming Development Work
 
 - A partner app for Plenact, that accesses and navigates your lists. Consider multiple apps, as different interfaces and tools into your core Plenact data and life plans

@@ -7129,7 +7129,7 @@ struct TodayTargetsView: View {
             }
         }
         .presentationBackground(Color(.systemGroupedBackground))
-        .presentationDetents([.large])
+        .presentationDetents([.fraction(0.7)])
         .presentationDragIndicator(.visible)
     }
 }

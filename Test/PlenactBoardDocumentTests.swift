@@ -81,6 +81,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testImportantIndicatorUsesCollectionAndCardIdentity() throws {
+        let owner = UUID()
+        let other = UUID()
+        let data = try JSONEncoder().encode([LibraryRecentItem(collectionID: owner, cardID: 7)])
+        XCTAssertTrue(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: data))
+        XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: other, data: data))
+        XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 8, collectionID: owner, data: data))
+        XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: Data()))
+        let cleared = try JSONEncoder().encode([LibraryRecentItem]())
+        XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: cleared))
+    }
+
     func testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity() throws {
         let catalog = LabelLibrary.starter
         let label = try XCTUnwrap(catalog.labels.first)

@@ -3667,6 +3667,37 @@ enum LibrarySearchIndex {
     }
 }
 
+enum LibraryImportanceSelection {
+    static func contains(cardID: Int, collectionID: UUID, data: Data) -> Bool {
+        let items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
+        return items.contains(LibraryRecentItem(collectionID: collectionID, cardID: cardID))
+    }
+}
+
+/// A non-interactive status mark that follows the item's owner-qualified importance setting.
+struct ImportantItemIndicator: View {
+    let cardID: Int
+    var ownerID: UUID? = nil
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
+    @Environment(\.cardMovementSource) private var source
+    @Environment(\.libraryImportance) private var importance
+    private var isImportant: Bool {
+        if let owner = ownerID ?? source {
+            return LibraryImportanceSelection.contains(cardID: cardID, collectionID: owner, data: importantData)
+        }
+        return importance?.contains(cardID) == true
+    }
+    var body: some View {
+        if isImportant {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+                .accessibilityLabel("Important")
+                .accessibilityIdentifier("item.important")
+        }
+    }
+}
+
 struct LibraryImportanceAccess {
     let contains: (Int) -> Bool
     let set: (Int, Bool) -> Void

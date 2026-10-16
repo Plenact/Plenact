@@ -200,8 +200,11 @@ struct BoardGalleryTile: View {
                 Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 112)
             }
-            Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
-                .foregroundStyle(.primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                ImportantItemIndicator(cardID: card.id)
+                Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
+                    .foregroundStyle(.primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+            }
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
                 Text(excerpt).font(.subheadline).foregroundStyle(.secondary).lineLimit(3).lineSpacing(3)
             }
@@ -2632,6 +2635,7 @@ struct ContentView: View {
                                 onListViewed(listID)
                                 navigationPath.append(card)
                             })
+                            .environment(\.cardMovementSource, personalCollectionID)
                         } else {
                         GeometryReader { listArea in
                         let columnWidth = presentation.columnWidth(
@@ -5464,6 +5468,7 @@ struct KanbanCardView: View {
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9) {
             if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards {
                 HStack(alignment: .top, spacing: 8) {
+                    ImportantItemIndicator(cardID: card.id)
                     Text(card.word)
                         .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
                         .foregroundStyle(.primary)
@@ -5474,6 +5479,9 @@ struct KanbanCardView: View {
                 }
             } else if card.displayFormat == .picture && !compactCards {
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
+                    .overlay(alignment: .topTrailing) {
+                        ImportantItemIndicator(cardID: card.id).padding(10)
+                    }
             } else {
 
                 if !compactCards && showsCardCovers, let cover = card.coverAttachment { /* Featured attachment allowed by the current display settings */
@@ -5517,6 +5525,7 @@ struct KanbanCardView: View {
                     }
 
                     ItemAppearanceMark(appearance: card.appearance)
+                    ImportantItemIndicator(cardID: card.id)
                     Text(card.word)
                         .font(.headline)
                         .foregroundStyle(.primary)

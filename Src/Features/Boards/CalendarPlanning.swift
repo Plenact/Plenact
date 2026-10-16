@@ -372,6 +372,7 @@ struct PlanningCalendarView: View {
     var onLeaveForHome: () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
+    @ScaledMetric(relativeTo: .subheadline) private var todayDateFontSize: CGFloat = 17
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var route: PlanningWeekRoute?
@@ -543,7 +544,9 @@ struct PlanningCalendarView: View {
         return Button { selectedDate = date } label: {
             VStack(spacing: 4) {
                 Text(date.formatted(.dateTime.day()))
-                    .font(.subheadline.weight(Calendar.current.isDateInToday(date) ? .bold : .regular))
+                    .font(displayCalendar.isDateInToday(date)
+                          ? .system(size: todayDateFontSize, weight: .bold).italic()
+                          : .subheadline)
                     .foregroundStyle(selected ? Color.white : Color.primary)
                 Circle().fill(count > 0 ? (selected ? Color.white : Color.accentColor) : .clear).frame(width: 5, height: 5)
             }

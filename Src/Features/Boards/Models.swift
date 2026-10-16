@@ -225,12 +225,39 @@ enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: String { rawValue.capitalized }
 }
 
+enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable {
+    case linen, sage, ocean, plum, sandstone, midnight, photo
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .linen: "Warm linen"
+        case .sage: "Garden sage"
+        case .ocean: "Ocean blue"
+        case .plum: "Evening plum"
+        case .sandstone: "Sandstone"
+        case .midnight: "Midnight"
+        case .photo: "Your photo"
+        }
+    }
+}
+
+struct CollectionBackground: Hashable, Codable, Sendable {
+    var preset: CollectionBackgroundPreset
+    var photoFileName: String? = nil
+
+    static func isAllowed(collectionID: UUID?, datedWeekIDs: Set<UUID>, isDatedView: Bool) -> Bool {
+        guard let collectionID, !isDatedView else { return false }
+        return !datedWeekIDs.contains(collectionID)
+    }
+}
+
 struct BoardAppearance: Hashable, Codable, Sendable {
     static let weekStorageKey = "Plenact.WeekAppearance.v1"
     var bannerBackground: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
     var cardBackground: KanbanListTint? = nil
     var cardDetail: BoardCardDetail? = nil
+    var collectionBackground: CollectionBackground? = nil
 
     /// Explicit item choices override List, then Board; nil preserves the caller's existing layout.
     func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed) -> BoardCardDetail {

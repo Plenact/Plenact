@@ -8,31 +8,15 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
 
-## Development Work
-
-- Kanban Card/Note Representation Concept
-
-- Calendar Idea
-
-### Upcoming
+## Upcoming Development Work
 
 - A partner app for Plenact, that accesses and navigates your lists. Consider multiple apps, as different interfaces and tools into your core Plenact data and life plans
 
 	- Full app representation!! Win/Lin/Apple/Android/Web-Desktop/Web-Mobile
 
-- Zoom levels (default & last, automatically handled)
-
-- Unsplash cover images & Backgrounds & Custom Backgrounds
-
-- Consider the value and interest, or utility of having the users be able to place notes, images and cards into the same lists
-
 ### Carryover
 
 - aNote note / Trello card view sharing, overlap and use considerations for data organization and presentation in Plenact
-
-- Today View
-
-- Trello Boards
 
 - Website Go!!!
 	
@@ -44,46 +28,14 @@ Opens
 	Import leading statements in style.swift
 	struct headers
 
-- New File Menu App Review
-	- add to New Installs Reset Procedure iff
-	
-Opens now:
 
-- Quick capture keyboard raise bug!
 
-- Have Alex capture his "hundreds" of tests in written, reproducible form that also produces results, so we can begin to consistently test and verify our app is working
+
+
+
+
 
 - "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
-
-//................................................................................//
-
-## Current Product
-
-Implemented today:
-
-- A Today screen that lets the user choose an existing board list as the current day's plan
-- An optional local profile with a discreet Today avatar, Account & Settings, and personalization
-- A Board with ordered lists, cards, section dividers, completion state, dates, checklists, comments, members, labels, and attachments
-- A Monday-through-Sunday starter Board with realistic daily-planning examples for new installations
-- Seeded checklist demonstrations that link to existing cards and open reduced Action Details
-- Direct navigation from Today to any existing board list
-- A Lists library with a separate Week Board directory and locally saved personal lists and boards
-- Personal collection creation, optional starter templates, renaming, icons, colors, reordering, and confirmed deletion
-- Local persistence for board data and the label library
-- Local photo and video files in the app's private Documents directory, plus web-link attachments
-
-Not currently implemented:
-
-- Calendar synchronization or a structured calendar-event model
-- Online accounts, cloud synchronization, multi-device synchronization, or a remote database
-- A web or desktop client
-- Clinical validation, treatment functionality, or regulatory compliance claims
-
-## For Customers and Curious Readers
-
-The app is in an early development revision. The Board is the source of truth: users arrange cards within lists, and Today provides a simpler way into the list that matters now. The proposed Scheduled view is documented but not yet implemented
-
-See [Today View UI](Doc/Today-View-UI.md) for the current direction and [Board and Scheduled Views](Doc/Board-and-Scheduled-Views.md) for the relationship between planning surfaces
 
 ## Product Direction
 
@@ -115,15 +67,6 @@ The following ideas came from revision-0 planning and require separate product, 
 - Tablet support and possible desktop or web experiences
 
 Current development should not describe these roadmap items as available features. Cloud services, accounts, calendar permissions, and sharing require explicit approval and privacy review
-
-## Open Design Questions
-
-- Should board cards use a different banner or summary height?
-- How should attached hyperlinks appear more cleanly while remaining obvious and accessible?
-
-## Project History
-
-Revision 0 began as a direct continuation of the earlier [Plenact Cards & Lists](https://github.com/Plenact/Plenact-Cards-Lists) reference application. The current repository is establishing the Today, Board, persistence, accessibility, and checklist-action foundations for the broader Plenact product
 
 ## For Developers
 

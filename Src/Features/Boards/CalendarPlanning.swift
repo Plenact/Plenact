@@ -814,6 +814,7 @@ struct PlanningSearchLibraryView: View {
                 collection = updated
             }, onListsChanged: { _ in }, retainedAttachmentLists: { access?.allRetainedLists ?? [] },
             personalCollectionID: collection.id, boardAppearance: $collection.boardAppearance)
+            .environment(\.planningDisplayedWeekKey, nil)
             .environment(\.planningDirectItemReturn, initialCardID == nil ? nil : { dismiss() })
             .environment(\.planningHomeExit, { dismiss(); onLeaveForHome() })
             .task {

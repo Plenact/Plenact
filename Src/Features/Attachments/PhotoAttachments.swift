@@ -2047,7 +2047,108 @@ struct CardAttachmentPreview: View {
 
 
 // Board colors are a draft until Save; applying to all clears only List color overrides.
+/// Collection photos live separately from card attachments so attachment cleanup cannot remove them.
+enum CollectionBackgroundPhotoStore {
+    private static let cache = NSCache<NSString, UIImage>()
+    static func directory() throws -> URL {
+        let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let url = root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+    static func preparedPhoto(_ data: Data) throws -> Data {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 2048
+              ] as CFDictionary),
+              let jpeg = UIImage(cgImage: image).jpegData(compressionQuality: 0.8) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return jpeg
+    }
+    static func save(_ data: Data) throws -> String {
+        let name = UUID().uuidString + ".jpg"
+        try data.write(to: directory().appendingPathComponent(name), options: .atomic)
+        return name
+    }
+    static func image(named name: String?) -> UIImage? {
+        guard let name, name == URL(fileURLWithPath: name).lastPathComponent, name.hasSuffix(".jpg") else { return nil }
+        if let image = cache.object(forKey: name as NSString) { return image }
+        guard let directory = try? directory(), let image = UIImage(contentsOfFile: directory.appendingPathComponent(name).path) else { return nil }
+        cache.setObject(image, forKey: name as NSString, cost: Int(image.size.width * image.size.height * 4))
+        cache.totalCostLimit = 32 * 1024 * 1024
+        return image
+    }
+    static func remove(_ name: String) {
+        guard name == URL(fileURLWithPath: name).lastPathComponent, let directory = try? directory() else { return }
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
+        cache.removeObject(forKey: name as NSString)
+    }
+}
+
+/// Stationary procedural surfaces keep the interface readable without extra bundled images.
+struct CollectionBackgroundSurface: View {
+    var background: CollectionBackground? = nil
+    var draftPhoto: Data? = nil
+    private var colors: [Color] {
+        switch background?.preset {
+        case .linen: [Color(red: 0.47, green: 0.39, blue: 0.31), Color(red: 0.64, green: 0.54, blue: 0.43)]
+        case .sage: [Color(red: 0.19, green: 0.33, blue: 0.27), Color(red: 0.39, green: 0.52, blue: 0.38)]
+        case .ocean: [Color(red: 0.08, green: 0.26, blue: 0.36), Color(red: 0.21, green: 0.49, blue: 0.53)]
+        case .plum: [Color(red: 0.26, green: 0.18, blue: 0.31), Color(red: 0.49, green: 0.34, blue: 0.43)]
+        case .sandstone: [Color(red: 0.43, green: 0.28, blue: 0.22), Color(red: 0.65, green: 0.47, blue: 0.34)]
+        case .midnight: [Color(red: 0.10, green: 0.13, blue: 0.23), Color(red: 0.22, green: 0.27, blue: 0.38)]
+        default: [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)]
+        }
+    }
+    private var photo: UIImage? {
+        guard background?.preset == .photo else { return nil }
+        if let draftPhoto { return UIImage(data: draftPhoto) }
+        return CollectionBackgroundPhotoStore.image(named: background?.photoFileName)
+    }
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                if let photo {
+                    Image(uiImage: photo).resizable().scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                    Color.black.opacity(0.30)
+                    LinearGradient(colors: [.black.opacity(0.32), .clear], startPoint: .top, endPoint: .center)
+                } else if let preset = background?.preset, preset != .photo {
+                    Canvas { context, size in
+                        var grain = Path()
+                        for row in stride(from: 0, through: Int(size.height), by: 7) {
+                            for column in stride(from: 0, through: Int(size.width), by: 7) {
+                                let shift = (row * 17 + column * 13) % 5
+                                grain.addEllipse(in: CGRect(x: CGFloat(column + shift), y: CGFloat(row), width: 0.8, height: 0.8))
+                            }
+                        }
+                        context.fill(grain, with: .color(.white.opacity(0.12)))
+                        if preset == .linen || preset == .sandstone {
+                            var weave = Path()
+                            for x in stride(from: 0, through: Int(size.width), by: 4) {
+                                weave.move(to: CGPoint(x: x, y: 0)); weave.addLine(to: CGPoint(x: CGFloat(x), y: size.height))
+                            }
+                            context.stroke(weave, with: .color(.white.opacity(0.045)), lineWidth: 0.5)
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 struct BoardAppearanceSheet: View {
+    @State private var photoSelection: PhotosPickerItem?
+    @State private var draftPhoto: Data?
+    @State private var isImportingPhoto = false
+    @State private var backgroundError: String?
+    let allowsCollectionBackground: Bool
     @State private var draft: BoardAppearance
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
@@ -2057,7 +2158,9 @@ struct BoardAppearanceSheet: View {
 
     init(appearance: BoardAppearance, presentation: BoardPresentation = .standard,
          onSavePresentation: ((BoardPresentation) -> Void)? = nil,
+         allowsCollectionBackground: Bool = false,
          onSave: @escaping (BoardAppearance, Bool) -> Bool) {
+        self.allowsCollectionBackground = allowsCollectionBackground
         _draft = State(initialValue: appearance)
         _draftPresentation = State(initialValue: presentation)
         self.onSavePresentation = onSavePresentation
@@ -2067,6 +2170,7 @@ struct BoardAppearanceSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                if allowsCollectionBackground { collectionBackgroundSection }
                 if onSavePresentation != nil {
                     Section("Display") {
                         Picker("Board presentation", selection: $draftPresentation) {
@@ -2127,14 +2231,86 @@ struct BoardAppearanceSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if onSave(draft, applyToAll) {
-                            onSavePresentation?(draftPresentation)
-                            dismiss()
-                        }
+                        saveAppearance()
                     }
+                    .disabled(isImportingPhoto)
                 }
             }
         }
+        .task(id: photoSelection) {
+            guard let photoSelection else { return }
+            isImportingPhoto = true
+            defer { isImportingPhoto = false }
+            do {
+                guard let data = try await photoSelection.loadTransferable(type: Data.self) else { throw CocoaError(.fileReadCorruptFile) }
+                let prepared = try await Task.detached(priority: .userInitiated) { try CollectionBackgroundPhotoStore.preparedPhoto(data) }.value
+                try Task.checkCancellation()
+                draftPhoto = prepared
+                draft.collectionBackground = CollectionBackground(preset: .photo)
+            } catch is CancellationError { }
+            catch { backgroundError = "This photo could not be opened. Please choose another image." }
+        }
+        .alert("Background", isPresented: Binding(get: { backgroundError != nil }, set: { if !$0 { backgroundError = nil } })) {
+            Button("OK", role: .cancel) { backgroundError = nil }
+        } message: { Text(backgroundError ?? "") }
         .databaseActivityOverlay()
     }
+
+    private var collectionBackgroundSection: some View {
+        Section("Background") {
+            CollectionBackgroundSurface(background: draft.collectionBackground, draftPhoto: draftPhoto)
+                .frame(height: 136)
+                .overlay(alignment: .bottomLeading) {
+                    Text(draft.collectionBackground?.preset.title ?? "Plenact default")
+                        .font(.headline).foregroundStyle(.white).padding(16)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            Picker("Background", selection: Binding(
+                get: { draft.collectionBackground?.preset },
+                set: { preset in
+                    guard preset != draft.collectionBackground?.preset else { return }
+                    if preset != .photo { draftPhoto = nil }
+                    draft.collectionBackground = preset.map { CollectionBackground(preset: $0) }
+                }
+            )) {
+                Text("Default").tag(Optional<CollectionBackgroundPreset>.none)
+                ForEach(CollectionBackgroundPreset.allCases.filter { $0 != .photo }) { preset in
+                    Text(preset.title).tag(Optional(preset))
+                }
+                if draft.collectionBackground?.preset == .photo {
+                    Text("Your photo").tag(Optional(CollectionBackgroundPreset.photo))
+                }
+            }
+            .accessibilityIdentifier("appearance.collectionBackground")
+            .disabled(isImportingPhoto)
+            PhotosPicker(selection: $photoSelection, matching: .images) {
+                Label("Choose photo", systemImage: "photo")
+            }
+            .disabled(isImportingPhoto)
+            if isImportingPhoto { ProgressView("Preparing photo…") }
+            Text("A personal background for this Board or List. Photos stay on this device. Week and Day views keep their Plenact background.")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+
+    private func saveAppearance() {
+        guard !isImportingPhoto else { return }
+        var updated = draft
+        var importedName: String?
+        do {
+            if allowsCollectionBackground, updated.collectionBackground?.preset == .photo, let draftPhoto {
+                let name = try CollectionBackgroundPhotoStore.save(draftPhoto)
+                importedName = name
+                updated.collectionBackground?.photoFileName = name
+            }
+            if onSave(updated, applyToAll) {
+                onSavePresentation?(draftPresentation)
+                dismiss()
+            } else if let importedName { CollectionBackgroundPhotoStore.remove(importedName) }
+        } catch {
+            if let importedName { CollectionBackgroundPhotoStore.remove(importedName) }
+            backgroundError = "The background could not be saved. Your current appearance has been kept."
+        }
+    }
+
 }

@@ -1275,6 +1275,12 @@ struct ContentView: View {
         return appearance
     }
 
+    private var allowsCollectionBackground: Bool {
+        CollectionBackground.isAllowed(collectionID: personalCollectionID,
+            datedWeekIDs: Set(planningCalendarAccess?.document.weeks.map(\.id) ?? []),
+            isDatedView: displayedWeekKey != nil)
+    }
+
     private func saveBoardAppearance(_ appearance: BoardAppearance, applyToAll: Bool) -> Bool {
         do {
             if let appearanceBinding {
@@ -2585,12 +2591,8 @@ struct ContentView: View {
             GeometryReader { _ in
 
                 ZStack {
-                    LinearGradient(
-                        colors:     [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)],
-                        startPoint: .topLeading,
-                        endPoint:   .bottomTrailing
-                    )
-                    .ignoresSafeArea()
+                    CollectionBackgroundSurface(background: allowsCollectionBackground ? storedBoardAppearance.collectionBackground : nil)
+                        .ignoresSafeArea()
 
                     VStack(spacing: 0) {
 
@@ -3080,7 +3082,8 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showsBoardAppearance) {
                 BoardAppearanceSheet(appearance: storedBoardAppearance, presentation: presentation,
-                    onSavePresentation: { presentation = $0 }, onSave: saveBoardAppearance)
+                    onSavePresentation: { presentation = $0 },
+                    allowsCollectionBackground: allowsCollectionBackground, onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsWeekSelector) {
@@ -6007,6 +6010,13 @@ struct TodayListDetailView: View {
         usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
+    private var personalListBackground: CollectionBackground? {
+        guard representedDate == nil,
+              CollectionBackground.isAllowed(collectionID: dayMovementSource,
+                datedWeekIDs: Set(planningCalendarAccess?.document.weeks.map(\.id) ?? []), isDatedView: false) else { return nil }
+        return effectiveBoardAppearance.collectionBackground
+    }
+
     private var headerColor: Color {
         effectiveBoardAppearance.resolved(focusedList?.appearance).background?.darkHeaderColor
             ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255) // Muted blue (#6D8B98)
@@ -6054,7 +6064,11 @@ struct TodayListDetailView: View {
 
         NavigationStack {
             ZStack {
-                Color(.systemGray6).ignoresSafeArea()
+                if let personalListBackground {
+                    CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
+                } else {
+                    Color(.systemGray6).ignoresSafeArea()
+                }
 
                 VStack(spacing: 0) {
                     Color.clear.frame(height: 129)

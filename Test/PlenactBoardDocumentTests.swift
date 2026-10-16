@@ -95,6 +95,96 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.encode(returnedDetails.attributedText), "Edited note body")
     }
 
+    func testCollectionBackgroundsPersistAndExcludeDatedViews() throws {
+        let personalID = UUID(), weekID = UUID()
+        XCTAssertTrue(CollectionBackground.isAllowed(collectionID: personalID, datedWeekIDs: [weekID], isDatedView: false))
+        XCTAssertFalse(CollectionBackground.isAllowed(collectionID: nil, datedWeekIDs: [weekID], isDatedView: false))
+        XCTAssertFalse(CollectionBackground.isAllowed(collectionID: weekID, datedWeekIDs: [weekID], isDatedView: false))
+        XCTAssertFalse(CollectionBackground.isAllowed(collectionID: personalID, datedWeekIDs: [], isDatedView: true))
+        let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.collectionBackground)
+        for preset in CollectionBackgroundPreset.allCases {
+            var collection = PersonalCollection(title: "Personal space", kind: .board)
+            collection.boardAppearance = BoardAppearance()
+            collection.boardAppearance?.collectionBackground = CollectionBackground(preset: preset,
+                photoFileName: preset == .photo ? "example.jpg" : nil)
+            let originalLists = collection.lists
+            let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection))
+            XCTAssertEqual(decoded, collection)
+            XCTAssertEqual(decoded.lists, originalLists)
+        }
+    }
+
+    @MainActor
+    func testBackgroundPhotoResizesStoresAndRejectsInvalidImages() throws {
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let original = UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1800), format: format).image { context in
+            UIColor.systemTeal.setFill(); context.fill(CGRect(x: 0, y: 0, width: 3000, height: 1800))
+        }
+        let data = try CollectionBackgroundPhotoStore.preparedPhoto(try XCTUnwrap(original.pngData()))
+        let photo = try XCTUnwrap(UIImage(data: data))
+        XCTAssertLessThanOrEqual(max(photo.size.width, photo.size.height), 2048)
+        XCTAssertEqual(photo.size.width / photo.size.height, 3000.0 / 1800.0, accuracy: 0.01)
+        let name = try CollectionBackgroundPhotoStore.save(data)
+        defer { CollectionBackgroundPhotoStore.remove(name) }
+        XCTAssertNotNil(CollectionBackgroundPhotoStore.image(named: name))
+        XCTAssertNil(CollectionBackgroundPhotoStore.image(named: "../" + name))
+        XCTAssertThrowsError(try CollectionBackgroundPhotoStore.preparedPhoto(Data("not an image".utf8)))
+    }
+
+    @MainActor
+    func testCollectionBackgroundPresetsRenderOffline() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            ForEach(CollectionBackgroundPreset.allCases.filter { $0 != .photo }) { preset in
+                CollectionBackgroundSurface(background: CollectionBackground(preset: preset))
+                    .frame(height: 160)
+                    .overlay(alignment: .bottomLeading) { Text(preset.title).font(.headline).foregroundStyle(.white).padding(12) }
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        }.padding(16).background(Color(.systemGroupedBackground)))
+        host.safeAreaRegions = []
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 560)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200))
+        host.view.frame = window.bounds; host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+        let attachment = XCTAttachment(image: image); attachment.name = "Personal background presets"; attachment.lifetime = .keepAlways; add(attachment)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-background-presets.png")
+        try image.pngData()?.write(to: url)
+        print("BACKGROUND_PRESETS_PATH=\(url.path)")
+    }
+
+    @MainActor
+    func testPersonalBoardBackgroundAndWeekDefaultRenderSeparately() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let owner = PersonalCollection(title: "Garden plans", kind: .board)
+        var appearance = BoardAppearance()
+        appearance.collectionBackground = CollectionBackground(preset: .sage)
+        for dated in [false, true] {
+            let window = UIWindow(windowScene: scene)
+            let host = UIHostingController(rootView: ContentView(lists: .constant(owner.lists), boardTitle: dated ? "Plenact" : "Garden plans",
+                boardSubtitle: dated ? "This Week" : "Board", onClose: { }, onListsChanged: { _ in },
+                personalCollectionID: dated ? nil : owner.id, boardAppearance: .constant(appearance)))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            defer { window.isHidden = true; window.rootViewController = nil }
+            try await Task.sleep(for: .milliseconds(250))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+            let attachment = XCTAttachment(image: image); attachment.name = dated ? "Week keeps default" : "Personal Board sage background"
+            attachment.lifetime = .keepAlways; add(attachment)
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(dated ? "plenact-week-default.png" : "plenact-personal-background.png")
+            try image.pngData()?.write(to: url)
+            print("BOARD_BACKGROUND_PATH=\(url.path)")
+        }
+        previous?.makeKey()
+    }
+
     func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

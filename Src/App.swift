@@ -6413,7 +6413,7 @@ private struct SavedCardsView: View {
             if let collection = collections.first(where: { $0.id == item.collectionID && $0.isActive }),
                let list = collection.lists.first(where: { !$0.isArchived && $0.cards.contains(where: { $0.id == item.cardID && !$0.isSectionDivider }) }),
                let card = list.cards.first(where: { $0.id == item.cardID }), matches(card.word, collection.title + " " + list.title) {
-                return ActivityRecentResult(item: item, card: card, list: list, location: collection.title + " · " + list.title, week: nil, isCurrent: false)
+                return ActivityRecentResult(item: item, card: card, list: list, location: collection.title == list.title ? collection.title : collection.title + " · " + list.title, week: nil, isCurrent: false)
             }
             guard let week = planningDocument?.weeks.first(where: { $0.id == item.collectionID }) else { return nil }
             let current = week.startKey == planningDocument?.currentWeekKey
@@ -6624,7 +6624,7 @@ private struct SavedCardsView: View {
                                             VStack(alignment: .leading, spacing: 3) {
                                                 Text(result.card.word)
                                                     .foregroundStyle(.primary)
-                                                Text("\(result.collectionTitle) · \(result.listTitle)")
+                                                Text(result.collectionTitle == result.listTitle ? result.collectionTitle : result.collectionTitle + " · " + result.listTitle)
                                                     .font(.caption)
                                                     .foregroundStyle(.secondary)
                                                     .lineLimit(2)

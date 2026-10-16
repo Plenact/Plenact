@@ -1495,6 +1495,20 @@ struct ItemDisplayFormatMenu: View {
     }
 }
 
+/// Shared optional preview profile control; Unchanged is stored as no override.
+struct CardDisplayProfilePicker: View {
+    @Binding var selection: BoardCardDetail?
+    var body: some View {
+        Picker("Card display", selection: $selection) {
+            Text("Unchanged").tag(Optional<BoardCardDetail>.none)
+            Text("Detailed").tag(Optional(BoardCardDetail.detailed))
+            Text("Compact").tag(Optional(BoardCardDetail.compact))
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("appearance.cardDisplay")
+    }
+}
+
 struct ItemAppearanceSheet: View {
     let title: String
     let onSave: (ItemAppearance?) -> Bool
@@ -1555,6 +1569,15 @@ struct ItemAppearanceSheet: View {
                             Button("Layout", systemImage: "rectangle.3.group", action: onOpenLayout)
                                 .accessibilityIdentifier("appearance.layout")
                         }
+                    }
+                }
+                if showsListBackground || (draftDisplay != nil && draftDisplay != .divider) {
+                    Section("Card display") {
+                        CardDisplayProfilePicker(selection: $draft.cardDetail)
+                        Text(showsListBackground
+                             ? "Unchanged follows the Board or existing layout. Individual items can override this List."
+                             : "Unchanged follows the List, then Board. This changes the list preview; opening the item still shows its full contents.")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
                 Section("Preview") {
@@ -2052,14 +2075,13 @@ struct BoardAppearanceSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        Picker("Card detail", selection: Binding(get: { draft.cardDetail ?? .detailed }, set: { draft.cardDetail = $0 })) {
-                            ForEach(BoardCardDetail.allCases) { option in Text(option.title).tag(option) }
-                        }
-                        .pickerStyle(.segmented)
-                        Text("Compact focuses on titles and useful badges. Detailed includes supporting text and card covers. Day views keep their full presentation.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+
                     }
+                }
+                Section("Card display") {
+                    CardDisplayProfilePicker(selection: $draft.cardDetail)
+                    Text("Unchanged keeps the existing layout. Compact emphasizes titles and small indicators; Detailed includes supporting content. Lists and individual items can override this choice.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("List banner color") {
                     Picker("Banner background", selection: $draft.bannerBackground) {

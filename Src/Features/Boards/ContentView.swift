@@ -1257,11 +1257,16 @@ struct ContentView: View {
     @State private var showsBoardAppearance = false
     @State private var focusedDayListID: Int?
 
-    private var currentBoardAppearance: BoardAppearance {
+    private var storedBoardAppearance: BoardAppearance {
         var appearance: BoardAppearance
         if let appearanceBinding { appearance = appearanceBinding.wrappedValue ?? BoardAppearance() }
         else if personalCollectionID == nil { appearance = (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance() }
         else { appearance = BoardAppearance() }
+        return appearance
+    }
+
+    private var currentBoardAppearance: BoardAppearance {
+        var appearance = storedBoardAppearance
         let isPlanningWeek = personalCollectionID == nil || planningCalendarAccess?.document.weeks.contains(where: { $0.id == personalCollectionID }) == true
         if appearance.cardDetail == nil { appearance.cardDetail = isPlanningWeek ? .compact : .detailed }
         return appearance
@@ -3050,7 +3055,7 @@ struct ContentView: View {
                             focusedDayListID = nil
                         },
                         onPermanentDelete: deleteCard,
-                        boardAppearance: currentBoardAppearance,
+                        boardAppearance: storedBoardAppearance,
                         returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
                         boardViewActionTitle: personalCollectionID == nil ? "Switch to Week View" : "Switch to Board View",
                         representedDate: dayDate(for: listID)
@@ -3070,7 +3075,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showsBoardAppearance) {
-                BoardAppearanceSheet(appearance: currentBoardAppearance, presentation: presentation,
+                BoardAppearanceSheet(appearance: storedBoardAppearance, presentation: presentation,
                     onSavePresentation: { presentation = $0 }, onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
@@ -4161,8 +4166,12 @@ struct KanbanListView: View {
     /// @return     (CGFloat) finite target height of at least one point
     /// @post       Screen geometry and list content remain unchanged
     ///
-    private var cardHeight: CGFloat { /* Minimum card-row height adjusted for layout and text size */
-        (boardAppearance.cardDetail == .compact ? 64 : presentation.minimumCardHeight) * cardScale
+    private func usesCompactCards(_ card: KanbanCard) -> Bool {
+        boardAppearance.resolvedCardDetail(card: card.appearance, list: list.appearance) == .compact
+    }
+
+    private func cardHeight(for card: KanbanCard) -> CGFloat {
+        (usesCompactCards(card) ? 64 : presentation.minimumCardHeight) * cardScale
     }
 
 
@@ -4177,7 +4186,7 @@ struct KanbanListView: View {
     ///
     private var cardCollectionContentHeight: CGFloat { /* Total card content height including row spacing */
         let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in /* Accumulated measured or estimated card heights */
-            height + (card.isSectionDivider ? 44 : max(measuredCardHeights[card.id] ?? 0, cardHeight) + 8)
+            height + (card.isSectionDivider ? 44 : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card)) + 8)
         }
 
         return max(88, rowHeight + 64)
@@ -4382,10 +4391,10 @@ struct KanbanListView: View {
 
                                 KanbanCardView(
                                     card:            card,
-                                    height:          cardHeight,
+                                    height:          cardHeight(for: card),
                                     displaySettings: displaySettings,
                                     cardBackground:  boardAppearance.cardBackground,
-                                    compactCards:    boardAppearance.cardDetail == .compact,
+                                    compactCards:    usesCompactCards(card),
                                     listedOnDate:    assignedDate,
                                     presentation:    presentation,
                                     labelLibrary:    labelLibrary,
@@ -5453,7 +5462,7 @@ struct KanbanCardView: View {
     var body: some View { /* Compact card summary and card actions */
 
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9) {
-            if card.displayFormat == .title || card.displayFormat == .text {
+            if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards {
                 HStack(alignment: .top, spacing: 8) {
                     Text(card.word)
                         .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
@@ -5511,7 +5520,7 @@ struct KanbanCardView: View {
                     Text(card.word)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (presentation == .overview ? 2 : 3))
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : (compactCards ? 1 : (presentation == .overview ? 2 : 3)))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
@@ -5879,7 +5888,13 @@ struct TodayListDetailView: View {
 
 
     private var effectiveBoardAppearance: BoardAppearance {
-        boardAppearance ?? ((try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance())
+        if let boardAppearance { return boardAppearance }
+        if let dayMovementSource {
+            let owner = planningCalendarAccess?.document.weeks.first { $0.id == dayMovementSource }?.collection
+                ?? planningCalendarAccess?.library.first { $0.id == dayMovementSource }
+            return owner?.boardAppearance ?? BoardAppearance()
+        }
+        return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
     }
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
@@ -5973,6 +5988,14 @@ struct TodayListDetailView: View {
     ///
     private var focusedList: KanbanList? { /* Current list resolved for the focused Board surface */
         lists.first { $0.id == listID }
+    }
+
+    private func usesCompactCards(_ card: KanbanCard) -> Bool {
+        effectiveBoardAppearance.resolvedCardDetail(card: card.appearance, list: focusedList?.appearance) == .compact
+    }
+
+    private func cardPreviewHeight(_ card: KanbanCard) -> CGFloat {
+        usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
     private var headerColor: Color {
@@ -6084,9 +6107,10 @@ struct TodayListDetailView: View {
                                 NavigationLink(value: card) {
                                     KanbanCardView(
                                         card:            card,
-                                        height:          BoardPresentation.standard.minimumCardHeight,
+                                        height:          cardPreviewHeight(card),
                                         displaySettings: BoardDisplaySettings(),
                                         cardBackground:  effectiveBoardAppearance.cardBackground,
+                                        compactCards:    usesCompactCards(card),
                                         listedOnDate:    representedDate,
                                         labelLibrary:    labelLibrary,
                                         onUpdateCard:    updateCard,

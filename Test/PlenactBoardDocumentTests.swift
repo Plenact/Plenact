@@ -695,6 +695,98 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONSerialization.data(withJSONObject: json)).type, .standard)
     }
 
+    @MainActor
+    func testCompactProfileRendersSlimmerThanDetailedWithoutEditing() async throws {
+        var card = KanbanCard(id: 91, word: "Plan the next garden season", listTitle: "Garden")
+        card.subtitleOverride = "Choose seeds, prepare the beds, and make room for something new"
+        let original = card
+        func row(_ compact: Bool) -> some View {
+            KanbanCardView(card: card, height: compact ? 64 : 150, displaySettings: BoardDisplaySettings(),
+                compactCards: compact, labelLibrary: .starter,
+                onUpdateCard: { _ in XCTFail("Rendering must not edit content") },
+                onDeleteCard: { XCTFail("Rendering must not delete") },
+                onArchiveCard: { XCTFail("Rendering must not archive") },
+                onToggle: { XCTFail("Rendering must not complete") })
+        }
+        let compact = UIHostingController(rootView: row(true))
+        let detailed = UIHostingController(rootView: row(false))
+        compact.safeAreaRegions = []; detailed.safeAreaRegions = []
+        let compactSize = compact.sizeThatFits(in: CGSize(width: 300, height: 1000))
+        let detailedSize = detailed.sizeThatFits(in: CGSize(width: 300, height: 1000))
+        XCTAssertLessThan(compactSize.height, detailedSize.height)
+        XCTAssertLessThanOrEqual(compactSize.height, 90)
+        XCTAssertEqual(card, original)
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let preview = UIHostingController(rootView: VStack(alignment: .leading, spacing: 16) {
+            Text("Detailed").font(.headline)
+            row(false)
+            Text("Compact").font(.headline)
+            row(true)
+        }.padding(20).background(Color(.systemGroupedBackground)))
+        preview.safeAreaRegions = []
+        window.frame = CGRect(x: 0, y: 0, width: 340, height: 400)
+        window.rootViewController = preview
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200))
+        preview.view.frame = window.bounds
+        preview.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "Detailed and Compact profiles"; attachment.lifetime = .keepAlways; add(attachment)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-profile-preview.png")
+        try image.pngData()?.write(to: url)
+        print("PROFILE_PREVIEW_PATH=\(url.path)")
+    }
+
+    func testCardDisplayProfilesResolveCardThenListThenBoard() throws {
+        var board = BoardAppearance()
+        XCTAssertEqual(board.resolvedCardDetail(card: nil, list: nil), .detailed)
+        XCTAssertEqual(board.resolvedCardDetail(card: nil, list: nil, fallback: .compact), .compact)
+        board.cardDetail = .compact
+        var list = ItemAppearance()
+        var card = ItemAppearance()
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .compact)
+        list.cardDetail = .detailed
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .detailed)
+        card.cardDetail = .compact
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .compact)
+        card.cardDetail = nil
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .detailed)
+        list.cardDetail = nil
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .compact)
+        board.cardDetail = nil
+        XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .detailed)
+    }
+
+    func testCardDisplayProfilesRoundTripWithoutChangingContent() throws {
+        var collection = PersonalCollection(title: "Profiles", kind: .board)
+        var card = KanbanCard(id: 65, word: "Keep my title", listTitle: collection.lists[0].title)
+        card.descriptionOverride = "Keep my writing"
+        card.appearance = ItemAppearance()
+        card.appearance?.cardDetail = .detailed
+        collection.lists[0].appearance = ItemAppearance()
+        collection.lists[0].appearance?.cardDetail = .compact
+        collection.lists[0].cards = [card]
+        collection.boardAppearance = BoardAppearance()
+        collection.boardAppearance?.cardDetail = .detailed
+        let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection))
+        XCTAssertEqual(decoded, collection)
+        XCTAssertEqual(decoded.lists[0].cards[0].descriptionOverride, "Keep my writing")
+        XCTAssertFalse(try XCTUnwrap(decoded.lists[0].cards[0].appearance).isEmpty)
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.cardDetail)
+        XCTAssertTrue(legacy.isEmpty)
+        var profileOnly = ItemAppearance()
+        profileOnly.cardDetail = .compact
+        XCTAssertFalse(profileOnly.isEmpty)
+        let retained = BoardAppearance.inheritingLists(decoded.lists)
+        XCTAssertEqual(retained[0].appearance?.cardDetail, .compact, "Applying Board colors must keep List display profiles")
+    }
+
     func testBoardCardDetailPersistsAndDecodesLegacyAppearance() throws {
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.cardDetail)

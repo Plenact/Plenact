@@ -232,6 +232,11 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     var cardBackground: KanbanListTint? = nil
     var cardDetail: BoardCardDetail? = nil
 
+    /// Explicit item choices override List, then Board; nil preserves the caller's existing layout.
+    func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed) -> BoardCardDetail {
+        card?.cardDetail ?? list?.cardDetail ?? cardDetail ?? fallback
+    }
+
     func resolved(_ appearance: ItemAppearance?) -> ItemAppearance {
         var result = appearance ?? ItemAppearance()
         result.background = result.background ?? bannerBackground
@@ -262,11 +267,12 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var background: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
     var hideEmptySubtitle: Bool? = nil
+    var cardDetail: BoardCardDetail? = nil
     func hidesSubtitle(_ text: String) -> Bool {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true }
+    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil }
 }
 
 ///

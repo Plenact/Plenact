@@ -21,6 +21,37 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testDailySlogansStayStableAndRotateThroughSixtyLocalDays() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 15)))
+        XCTAssertEqual(TodaySloganCatalog.slogans.count, 60)
+        XCTAssertEqual(Set(TodaySloganCatalog.slogans).count, 60)
+        var seen = Set<String>()
+        for day in 0..<60 {
+            let morning = try XCTUnwrap(calendar.date(byAdding: .day, value: day, to: anchor))
+            let evening = try XCTUnwrap(calendar.date(bySettingHour: 23, minute: 59, second: 59, of: morning))
+            let slogan = TodaySloganCatalog.slogan(on: morning, calendar: calendar)
+            XCTAssertEqual(slogan, TodaySloganCatalog.slogan(on: evening, calendar: calendar))
+            seen.insert(slogan)
+        }
+        XCTAssertEqual(seen.count, 60)
+        let repeatDay = try XCTUnwrap(calendar.date(byAdding: .day, value: 60, to: anchor))
+        XCTAssertEqual(TodaySloganCatalog.slogan(on: repeatDay, calendar: calendar), TodaySloganCatalog.slogans[0])
+        let previous = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: anchor))
+        XCTAssertEqual(TodaySloganCatalog.slogan(on: previous, calendar: calendar), TodaySloganCatalog.slogans[59])
+    }
+
+    func testDailySloganUsesLocalMidnightAcrossTimeZones() throws {
+        let instant = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-16T04:30:00Z"))
+        var chicago = Calendar(identifier: .gregorian)
+        chicago.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        var london = chicago
+        london.timeZone = try XCTUnwrap(TimeZone(identifier: "Europe/London"))
+        XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar: chicago), TodaySloganCatalog.slogans[0])
+        XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar: london), TodaySloganCatalog.slogans[1])
+    }
+
     func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

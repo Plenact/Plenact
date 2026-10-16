@@ -3763,13 +3763,94 @@ struct LibraryPlateTile: View {
     }
 }
 
+/// Original encouragements selected by local calendar day, repeating every sixty days.
+enum TodaySloganCatalog {
+    static let slogans: [String] = [
+        "small steps today, bringing your plans to life",
+        "a fresh page today, with room for what matters",
+        "begin where you are, and grow from here",
+        "one kind step forward, one brighter day ahead",
+        "breathe in this morning, and begin with hope",
+        "your next chapter starts with one small step",
+        "make a little space for the life you imagine",
+        "let today be a beginning you can believe in",
+        "plant a little hope, and give it time to grow",
+        "bring a brave heart to a brand new page",
+        "a quieter start, a clearer path ahead",
+        "choose one good thing, and begin there today",
+        "your plans take shape in the steps you take",
+        "leave room for wonder in the work of today",
+        "let a small beginning open a new possibility",
+        "build a day that feels a little more like you",
+        "take a deeper breath, then take your next step",
+        "give your hopes a little time on the calendar",
+        "begin gently today, and let momentum follow",
+        "one thoughtful choice can brighten your day",
+        "make today a place where your hopes can grow",
+        "let yesterday rest, and meet today with care",
+        "bring your attention back to what matters now",
+        "your future has room for a small step today",
+        "find a little courage in the next thing you do",
+        "a new morning, a little more room to begin",
+        "turn a little intention into something real",
+        "let your next step be a promise to yourself",
+        "create a little calm, then follow your purpose",
+        "give the life you love a little care today",
+        "begin again today, with patience on your side",
+        "one clear intention, a day of possibilities",
+        "leave a little room for joy along the way",
+        "your hopes deserve a place in today’s plans",
+        "let a gentle reset lead to a meaningful start",
+        "build from this moment, one small choice at a time",
+        "bring your dreams closer with something small",
+        "a little focus today, a little more possibility",
+        "choose a steady pace, and make room to grow",
+        "this day is yours to shape with care",
+        "let the next page hold a little more hope",
+        "begin with what matters, and let that guide you",
+        "give a small idea the chance to become real",
+        "make space for a beginning that feels like you",
+        "follow a little hope into your next step",
+        "you can begin anew without beginning from nothing",
+        "let progress be gentle, and let it be yours",
+        "a little care today can change what comes next",
+        "bring your best hopes into the everyday",
+        "one honest effort, one new reason to believe",
+        "let today hold both purpose and breathing room",
+        "grow a life you love through the things you choose",
+        "a fresh start can be as small as this moment",
+        "give yourself room to try a different path",
+        "begin with a breath, continue with a little courage",
+        "make one small move toward what feels meaningful",
+        "let your plans grow with the person you are becoming",
+        "there is room in this day for a hopeful beginning",
+        "take the next kind step toward a life you love",
+        "close today knowing you gave something good a start",
+    ]
+
+    static func slogan(on date: Date, calendar: Calendar = .current) -> String {
+        // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST.
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = calendar.timeZone
+        let anchor = local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
+        let days = local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
+        let index = ((days % slogans.count) + slogans.count) % slogans.count
+        return slogans[index]
+    }
+}
+
 /// A quiet, readable encouragement in Today's existing space above Quick capture.
 private struct TodaySloganView: View {
-    private let slogan = "small steps today, bringing your plans into life"
     @State private var showsFullSlogan = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        TimelineView(.everyMinute) { context in
+            sloganContent(TodaySloganCatalog.slogan(on: context.date))
+        }
+    }
+
+    private func sloganContent(_ slogan: String) -> some View {
         Button { showsFullSlogan = true } label: {
             GentleCollectionPreview(text: slogan, scrolls: true,
                 textFont: .system(size: 27, design: .serif).italic(),

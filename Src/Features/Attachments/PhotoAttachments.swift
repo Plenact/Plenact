@@ -1551,15 +1551,6 @@ struct ItemAppearanceSheet: View {
         _draft = State(initialValue: appearance ?? ItemAppearance())
     }
 
-    private func previewTextColorPicker(_ title: String, field: WritableKeyPath<ItemAppearance, ListPreviewTextColor?>) -> some View {
-        Picker(title, selection: Binding(get: { draft[keyPath: field] }, set: { draft[keyPath: field] = $0 })) {
-            Text("Unchanged").tag(Optional<ListPreviewTextColor>.none)
-            ForEach(ListPreviewTextColor.allCases) { color in
-                Text(color.title).tag(Optional(color))
-            }
-        }
-    }
-
     var body: some View {
         NavigationStack {
             Form {
@@ -1609,20 +1600,11 @@ struct ItemAppearanceSheet: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                if showsListBackground {
-                    Section("Card text colors") {
-                        previewTextColorPicker("Card title color", field: \.cardTitleColor)
-                        previewTextColorPicker("Supporting text color", field: \.cardTextColor)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Card or note title").font(.headline)
-                                .foregroundStyle(draft.cardTitleColor?.color ?? .primary)
-                            Text("Subtitle or note preview").font(.subheadline)
-                                .foregroundStyle(draft.cardTextColor?.color ?? .secondary)
-                        }
-                        .padding(.vertical, 8)
-                        Text("Unchanged keeps the existing text colors. Applies to previews in this List; opened editors, dates, labels, and status indicators keep their own styling.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
+                if showsListBackground || draftDisplay != .divider {
+                    PreviewTextColorsSection(titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor,
+                        explanation: showsListBackground
+                            ? "Unchanged follows the Board. Individual Cards and Notes can override this List. Colors affect previews only."
+                            : "Unchanged follows the List, then Board. Colors affect previews only; opened editors, dates, labels, and status indicators keep their own styling.")
                 }
                 Section("Preview") {
                     HStack {
@@ -2231,6 +2213,8 @@ struct BoardAppearanceSheet: View {
                     Text("Unchanged keeps the existing layout. Compact emphasizes titles and small indicators; Detailed includes supporting content. Lists and individual items can override this choice.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+                PreviewTextColorsSection(titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor,
+                    explanation: "Unchanged keeps the app defaults. Lists and individual Cards and Notes can override each color independently. Colors affect previews only.")
                 Section("List banner color") {
                     Picker("Banner background", selection: $draft.bannerBackground) {
                         Text("Default").tag(Optional<ItemAccent>.none)
@@ -2357,4 +2341,31 @@ struct BoardAppearanceSheet: View {
         }
     }
 
+}
+
+/// Optional preview colors share one control at Board, List, Card, and Note scope.
+struct PreviewTextColorsSection: View {
+    @Binding var titleColor: ListPreviewTextColor?
+    @Binding var textColor: ListPreviewTextColor?
+    let explanation: String
+
+    private func picker(_ title: String, selection: Binding<ListPreviewTextColor?>) -> some View {
+        Picker(title, selection: selection) {
+            Text("Unchanged").tag(Optional<ListPreviewTextColor>.none)
+            ForEach(ListPreviewTextColor.allCases) { color in
+                Text(color.title).tag(Optional(color))
+            }
+        }
+    }
+    var body: some View {
+        Section("Preview text colors") {
+            picker("Title color", selection: $titleColor)
+            picker("Supporting text color", selection: $textColor)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Card or note title").font(.headline).foregroundStyle(titleColor?.color ?? .primary)
+                Text("Subtitle or note preview").font(.subheadline).foregroundStyle(textColor?.color ?? .secondary)
+            }.padding(.vertical, 8)
+            Text(explanation).font(.footnote).foregroundStyle(.secondary)
+        }
+    }
 }

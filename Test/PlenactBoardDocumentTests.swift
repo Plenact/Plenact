@@ -395,6 +395,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testPreviewTextColorsInheritIndependentlyFromBoardListAndItem() throws {
+        var board = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(board.cardTitleColor)
+        XCTAssertNil(board.cardTextColor)
+        board.cardTitleColor = .teal
+        board.cardTextColor = .plum
+        var list = ItemAppearance()
+        list.cardTitleColor = .blue
+        var item = ItemAppearance()
+        item.cardTextColor = .rose
+        XCTAssertEqual(board.resolvedTitleColor(card: item, list: list), .blue)
+        XCTAssertEqual(board.resolvedTextColor(card: item, list: list), .rose)
+        item.cardTitleColor = .amber
+        XCTAssertEqual(board.resolvedTitleColor(card: item, list: list), .amber)
+        item.cardTextColor = nil
+        XCTAssertEqual(board.resolvedTextColor(card: item, list: list), .plum)
+        XCTAssertEqual(board.resolvedTitleColor(card: nil, list: nil), .teal)
+        let restored = try JSONDecoder().decode(BoardAppearance.self, from: JSONEncoder().encode(board))
+        XCTAssertEqual(restored, board)
+        for presentation in [ItemPresentation.card, .note] {
+            let card = KanbanCard(id: 123, word: "Custom colors", listTitle: "Plans", presentation: presentation, appearance: item)
+            let restoredCard = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+            XCTAssertEqual(restoredCard.appearance?.cardTitleColor, .amber)
+            XCTAssertNil(restoredCard.appearance?.cardTextColor)
+        }
+    }
+
     func testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.cardTitleColor); XCTAssertNil(legacy.cardTextColor)
@@ -412,7 +439,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             list.appearance = appearance
             XCTAssertFalse(appearance.isEmpty)
             let inherited = BoardAppearance.inheritingLists([list])
-            XCTAssertEqual(inherited[0].appearance?.cardTextColor, color)
+            XCTAssertNil(inherited[0].appearance?.cardTextColor)
             let roundTrip = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
             XCTAssertEqual(roundTrip.appearance?.cardTextColor, color)
             XCTAssertNil(roundTrip.appearance?.cardTitleColor)

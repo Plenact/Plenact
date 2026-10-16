@@ -258,6 +258,15 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     var cardBackground: KanbanListTint? = nil
     var cardDetail: BoardCardDetail? = nil
     var collectionBackground: CollectionBackground? = nil
+    var cardTitleColor: ListPreviewTextColor? = nil
+    var cardTextColor: ListPreviewTextColor? = nil
+
+    func resolvedTitleColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor? {
+        card?.cardTitleColor ?? list?.cardTitleColor ?? cardTitleColor
+    }
+    func resolvedTextColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor? {
+        card?.cardTextColor ?? list?.cardTextColor ?? cardTextColor
+    }
 
     /// Explicit item choices override List, then Board; nil preserves the caller's existing layout.
     func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed) -> BoardCardDetail {
@@ -277,6 +286,8 @@ struct BoardAppearance: Hashable, Codable, Sendable {
             if var appearance = updated.appearance {
                 appearance.background = nil
                 appearance.listBackground = nil
+                appearance.cardTitleColor = nil
+                appearance.cardTextColor = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
             }
             return updated

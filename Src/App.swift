@@ -4044,6 +4044,58 @@ struct LibraryCollectionRow: View {
 /// @section    Purpose
 ///     Browse personal organizing spaces independently from the dedicated Week destination
 ///
+/// Keeps the chosen checkmark visible briefly before dismissing the filter picker.
+private struct CollectionFilterPopover: View {
+    let selection: LibraryBrowseFilter
+    let onSelect: (LibraryBrowseFilter) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @State private var pendingSelection: LibraryBrowseFilter?
+    @State private var opacity = 1.0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(LibraryBrowseFilter.allCases) { filter in
+                Button {
+                    opacity = 1
+                    onSelect(filter)
+                    pendingSelection = filter
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: filter.symbol).frame(width: 22)
+                        Text(filter.rawValue)
+                        Spacer(minLength: 24)
+                        Image(systemName: "checkmark")
+                            .font(.body.weight(.semibold))
+                            .opacity(selection == filter ? 1 : 0)
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selection == filter ? [.isSelected] : [])
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(width: 220)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .opacity(opacity)
+        .task(id: pendingSelection) {
+            guard pendingSelection != nil else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(voiceOver ? 900 : 450))
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) { opacity = 0 }
+                if !reduceMotion { try await Task.sleep(for: .milliseconds(160)) }
+                dismiss()
+            } catch { /* A newer selection or outside dismissal cancels this dismissal. */ }
+        }
+    }
+}
+
 struct BoardListsView: View {
     @Environment(\.planningCalendarAccess) private var planningAccess
     @State private var browsedLabel: KanbanLabel?
@@ -4071,6 +4123,7 @@ struct BoardListsView: View {
     @AppStorage(LibraryRecentStore.key) private var libraryRecentData = Data()
     @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
+    @State private var showsCollectionFilter = false
     @State private var browseFilter: LibraryBrowseFilter = .all
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
     @State private var searchText = ""                         /* Directory search query                      */
@@ -4819,25 +4872,21 @@ struct BoardListsView: View {
     }
 
     private var collectionFilterMenu: some View {
-        Menu {
-            ForEach(LibraryBrowseFilter.allCases) { filter in
-                Button {
-                    browseFilter = filter
-                    libraryEditMode = .inactive
-                } label: {
-                    HStack {
-                        Label(filter.rawValue, systemImage: filter.symbol)
-                        if browseFilter == filter { Image(systemName: "checkmark") }
-                    }
-                }
-            }
-        } label: {
+        Button { showsCollectionFilter = true } label: {
             Image(systemName: browseFilter.symbol)
                 .font(.system(size: 22.5, weight: .medium))
                 .foregroundStyle(Color(red: 177.0 / 255, green: 143.0 / 255, blue: 112.0 / 255))
                 .padding(5)
                 .frame(width: 32, height: 44)
                 .contentShape(Rectangle())
+        }
+        .popover(isPresented: $showsCollectionFilter, arrowEdge: .top) {
+            CollectionFilterPopover(selection: browseFilter) { filter in
+                browseFilter = filter
+                libraryEditMode = .inactive
+            }
+            .presentationCompactAdaptation(.popover)
+            .presentationBackground(.clear)
         }
         .buttonStyle(.plain)
         .textCase(nil)

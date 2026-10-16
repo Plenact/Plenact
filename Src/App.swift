@@ -5017,51 +5017,49 @@ struct BoardListsView: View {
 
     private var createMenu: some View {
         Menu {
-            listCreationMenu
-            boardCreationMenu
-            weekExamplesMenu
-            suggestedMenu
+            Button("+ New List") {
+                editingCollection = PersonalCollection(title: "", kind: .list)
+            }
+            Button("+ New Board") {
+                editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
+            }
+            Divider()
+            starterListsMenu
+            starterBoardsMenu
             templatesMenu
+            examplesMenu
         } label: {
             WorkspaceHeaderIcon(systemName: "plus.circle.fill")
         }
         .accessibilityLabel("Plans creation and examples")
     }
 
-    private var listCreationMenu: some View {
-        Menu("Lists", systemImage: "list.bullet") {
-            Button("New List", systemImage: "plus") {
-                editingCollection = PersonalCollection(title: "", kind: .list)
-            }
-            Menu("Starter Lists") {
-                ForEach(["On the table", "In the queue", "Upcoming", "Shopping", "Reminders"], id: \.self) { title in
-                    Button(title) {
-                        editingCollection = PersonalCollection(title: title, kind: .list,
-                            icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks))
-                    }
+    private var starterListsMenu: some View {
+        Menu("Starter Lists", systemImage: "list.bullet") {
+            ForEach(["On the Table", "In the Queue", "Scheduled", "Shopping", "Reminders", "Up for Brew", "Misc"], id: \.self) { title in
+                Button(title) {
+                    editingCollection = PersonalCollection(title: title, kind: .list,
+                        icon: title == "Shopping" ? .shopping : (title == "Reminders" ? .reminders : .tasks))
                 }
             }
         }
     }
 
-    private var boardCreationMenu: some View {
-        Menu("Boards", systemImage: "rectangle.3.group") {
-            Button("New Board", systemImage: "plus") {
-                editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
-            }
-            Menu("Starter Boards") {
-                ForEach(["General Notes", "Girlfriend Important Details", "New Project Notes"], id: \.self) { title in
-                    Button(title) {
-                        editingCollection = PersonalCollection(title: title, kind: .board,
-                            icon: title == "Girlfriend Important Details" ? .heart : .notes)
-                    }
+    private var starterBoardsMenu: some View {
+        Menu("Starter Boards", systemImage: "rectangle.3.group") {
+            ForEach(["General Notes", "New Project Notes", "Girlfriend Important Details"], id: \.self) { title in
+                Button(title) {
+                    editingCollection = PersonalCollection(title: title, kind: .board,
+                        icon: title == "Girlfriend Important Details" ? .heart : .notes)
                 }
             }
         }
     }
 
-    private var weekExamplesMenu: some View {
+    private var examplesMenu: some View {
         Menu("Examples", systemImage: "sparkles") {
+            Button("Browse all examples", systemImage: "books.vertical") { showsExamples = true }
+            listExamplesMenu
             Menu("Board examples", systemImage: "rectangle.3.group") {
                 ForEach(PersonalBoardExample.allCases) { example in
                     Button(example.rawValue, systemImage: "plus") {
@@ -5069,17 +5067,19 @@ struct BoardListsView: View {
                     }
                 }
             }
-            Button("Browse all examples", systemImage: "books.vertical") { showsExamples = true }
-            Divider()
+            weekExamplesMenu
+        }
+    }
+
+    private var weekExamplesMenu: some View {
+        Menu("Week View examples", systemImage: "calendar") {
+            Button("Preview Work Week Board") {
+                examplePreview = LibraryExamplePreview(title: "Work Week Board", summary: "A separate seven-list Week View example.", lists: SampleData.lists)
+            }
             Button("Use Week View", systemImage: "plus") {
                 editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title))
             }
-            Menu("Week View example boards") {
-                Button("Work Week Board") {
-                    examplePreview = LibraryExamplePreview(title: "Work Week Board", summary: "A separate seven-list Week View example.", lists: SampleData.lists)
-                }
-            }
-            Menu("Week View example cards") {
+            Menu("Example cards") {
                 ForEach(SampleData.lists) { list in
                     Menu(list.title) {
                         ForEach(list.cards.filter { !$0.isSectionDivider }) { card in
@@ -5094,21 +5094,21 @@ struct BoardListsView: View {
         }
     }
 
-    private var suggestedMenu: some View {
-        Menu("Suggested", systemImage: "lightbulb") {
+    private var listExamplesMenu: some View {
+        Menu("List examples", systemImage: "list.bullet") {
             ForEach(PersonalListExample.allCases) { example in
-                suggestedExampleMenu(example)
+                listExampleMenu(example)
             }
         }
     }
 
-    private func suggestedExampleMenu(_ example: PersonalListExample) -> some View {
+    private func listExampleMenu(_ example: PersonalListExample) -> some View {
         let draft = example.makeCollection(existingTitles: [])
         return Menu(example.rawValue) {
-            Button("\(example.rawValue) example list") {
+            Button("Preview list") {
                 examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
             }
-            Menu("\(example.rawValue) example cards") {
+            Menu("Example cards") {
                 ForEach(draft.lists[0].cards) { card in
                     Button(card.word) {
                         examplePreview = LibraryExamplePreview(title: card.word, summary: example.summary,
@@ -5124,7 +5124,7 @@ struct BoardListsView: View {
 
     private var templatesMenu: some View {
         Menu("Templates", systemImage: "square.stack.3d.up") {
-            ForEach(MixedListTemplate.allCases) { template in
+            ForEach([MixedListTemplate.planDay, .startProject, .exploreIdea]) { template in
                 Button(template.rawValue) {
                     editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
                 }

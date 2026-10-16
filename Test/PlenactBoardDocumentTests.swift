@@ -21,6 +21,107 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testFullMonthExampleCoversPastTodayAndSparseFuture() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        calendar.firstWeekday = 2
+        let today = calendar.date(from: DateComponents(year: 2026, month: 10, day: 15))!
+        let example = FullMonthExample.make(now: today, calendar: calendar)
+        XCTAssertEqual(example.document.firstWeekday, 2)
+        var futureCount = 0
+        var ids = Set<Int>()
+        for day in 1...31 {
+            let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: day))!
+            let week = try XCTUnwrap(example.document.week(for: date))
+            let listID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+            let cards = try XCTUnwrap(week.collection.lists.first { $0.id == listID }).cards
+            if day < 15 { XCTAssertGreaterThanOrEqual(cards.count, 3); XCTAssertTrue(cards.contains(where: \.isTitleChecked)) }
+            if day == 15 { XCTAssertEqual(cards.count, 4) }
+            if day > 15 { futureCount += cards.count; XCTAssertLessThanOrEqual(cards.count, 1) }
+            for card in cards {
+                XCTAssertTrue(ids.insert(card.id).inserted)
+                if let due = card.dueDate { XCTAssertTrue(calendar.isDate(due, inSameDayAs: date)) }
+            }
+        }
+        XCTAssertGreaterThan(futureCount, 0)
+        XCTAssertLessThanOrEqual(futureCount, 5)
+        XCTAssertEqual(Set(example.previewLists.map(\.id)).count, example.previewLists.count)
+        for components in [(2028, 2, 29), (2026, 3, 8), (2026, 12, 31), (2027, 1, 1)] {
+            let date = calendar.date(from: DateComponents(year: components.0, month: components.1, day: components.2))!
+            let value = FullMonthExample.make(now: date, calendar: calendar)
+            XCTAssertNotNil(value.document.week(for: date))
+            XCTAssertEqual(value.document.weeks.first { $0.startKey == value.document.currentWeekKey }?.collection.lists.count, 7)
+        }
+    }
+
+    func testFullMonthBackupRestoresAllPreferencesAndLocalFilesAndKeepsOriginal() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let name = "PlenactTests.Month." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name); try? FileManager.default.removeItem(at: folder) }
+        let store = FullMonthExampleStore(root: folder.appendingPathComponent("Backup"), documents: folder.appendingPathComponent("Documents"), support: folder.appendingPathComponent("Support"), domainName: name)
+        try FileManager.default.createDirectory(at: store.documents, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: store.support, withIntermediateDirectories: true)
+        let attachment = store.documents.appendingPathComponent("photo.bin")
+        let background = store.support.appendingPathComponent("background.bin")
+        try Data([1, 2, 3]).write(to: attachment)
+        try Data([4, 5, 6]).write(to: background)
+        let original: [String: Any] = ["Plenact.PersonalCollections.v1": Data([9]), "Plenact.CustomSetting": "original", "AnUnknownFutureKey": ["one", "two"]]
+        defaults.setPersistentDomain(original, forName: name)
+        let example = FullMonthExample.make()
+        try store.loadExample(example)
+        XCTAssertTrue(store.hasUserData)
+        XCTAssertNotNil(try PlanningCalendarStore.load(from: defaults))
+        defaults.set("example edit", forKey: "Plenact.CustomSetting")
+        try FileManager.default.removeItem(at: attachment)
+        try Data([7]).write(to: background)
+        try store.loadExample(example)
+        try store.restoreUserData()
+        XCTAssertFalse(store.hasUserData)
+        XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: original))
+        XCTAssertEqual(try Data(contentsOf: attachment), Data([1, 2, 3]))
+        XCTAssertEqual(try Data(contentsOf: background), Data([4, 5, 6]))
+        // A later session creates a new backup of the newly current user workspace.
+        defaults.set("new user edit", forKey: "Plenact.CustomSetting")
+        try store.loadExample(example)
+        try store.restoreUserData()
+        XCTAssertEqual(defaults.string(forKey: "Plenact.CustomSetting"), "new user edit")
+    }
+
+    func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let name = "PlenactTests.Month." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name); try? FileManager.default.removeItem(at: folder) }
+        let store = FullMonthExampleStore(root: folder.appendingPathComponent("Backup"), documents: folder.appendingPathComponent("Documents"), support: folder.appendingPathComponent("Support"), domainName: name)
+        try FileManager.default.createDirectory(at: store.documents, withIntermediateDirectories: true)
+        let file = store.documents.appendingPathComponent("original.bin")
+        try Data([1]).write(to: file)
+        defaults.set("user data", forKey: "Plenact.Protected")
+        try store.loadExample(FullMonthExample.make())
+        let snapshot = store.root.appendingPathComponent("UserData")
+        let transaction = store.root.appendingPathComponent("Transition")
+        try FileManager.default.copyItem(at: snapshot, to: transaction)
+        defaults.set("partial switch", forKey: "Plenact.Protected")
+        try FileManager.default.removeItem(at: file)
+        try store.recoverInterruptedSwitch()
+        XCTAssertEqual(defaults.string(forKey: "Plenact.Protected"), "user data")
+        XCTAssertEqual(try Data(contentsOf: file), Data([1]))
+        XCTAssertTrue(store.hasUserData)
+        try Data([99]).write(to: snapshot.appendingPathComponent("Documents/original.bin"))
+        let previous = defaults.persistentDomain(forName: name) ?? [:]
+        XCTAssertThrowsError(try store.restoreUserData())
+        XCTAssertThrowsError(try store.loadExample(FullMonthExample.make()))
+        XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
+        XCTAssertTrue(store.hasUserData)
+        // An unavailable backup location must prevent replacement as well.
+        let blocked = folder.appendingPathComponent("blocked")
+        try Data([0]).write(to: blocked)
+        let failed = FullMonthExampleStore(root: blocked, documents: store.documents, support: store.support, domainName: name)
+        XCTAssertThrowsError(try failed.loadExample(FullMonthExample.make()))
+        XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
+    }
+
     func testDailySlogansStayStableAndRotateThroughSixtyLocalDays() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))

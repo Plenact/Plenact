@@ -1,4 +1,5 @@
 import SwiftUI
+import CryptoKit
 
 /// Stable local date keys avoid timestamp shifts when a user changes time zone.
 enum PlanningDate {
@@ -1077,5 +1078,225 @@ struct PlanningSelectedDayView: View {
                     week = updated
                 }
             }
+    }
+}
+
+// Full-month examples use a separate, verified offline snapshot of the entire local workspace.
+struct FullMonthExampleStore: Sendable {
+    let root: URL
+    let documents: URL
+    let support: URL
+    let domainName: String
+    private var defaults: UserDefaults {
+        domainName == Bundle.main.bundleIdentifier ? .standard : UserDefaults(suiteName: domainName)!
+    }
+    private var userData: URL { root.appendingPathComponent("UserData", isDirectory: true) }
+    private var transition: URL { root.appendingPathComponent("Transition", isDirectory: true) }
+    private var fm: FileManager { .default }
+    private struct Manifest: Codable {
+        var version = 1
+        var createdAt = Date()
+        let hashes: [String: String]
+    }
+    static func live() throws -> Self {
+        let fm = FileManager.default
+        let library = try fm.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        return Self(root: library.appendingPathComponent("PlenactDatasetBackup", isDirectory: true),
+                    documents: try fm.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true),
+                    support: try fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true),
+                    domainName: Bundle.main.bundleIdentifier!)
+    }
+    var needsRecovery: Bool { fm.fileExists(atPath: transition.path) && committedOperation() == nil }
+    var hasUserData: Bool {
+        fm.fileExists(atPath: userData.path) && committedOperation() != "restore"
+    }
+    private func committedOperation() -> String? {
+        try? String(contentsOf: transition.appendingPathComponent("Committed"), encoding: .utf8)
+    }
+    private func digest(_ url: URL) throws -> String {
+        // Stream large attachments rather than loading an entire video into memory.
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var hash = SHA256()
+        while let data = try handle.read(upToCount: 1_048_576), !data.isEmpty { hash.update(data: data) }
+        return hash.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+    private func hashes(in directory: URL) throws -> [String: String] {
+        var result: [String: String] = [:]
+        var enumerationError: Error?
+        guard let entries = fm.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey],
+                                          errorHandler: { _, error in enumerationError = error; return false }) else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        for case let url as URL in entries {
+            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true else { throw CocoaError(.fileReadUnsupportedScheme) }
+            if values.isRegularFile == true {
+                let key = String(url.path.dropFirst(directory.path.count + 1))
+                if key != "Manifest.json" { result[key] = try digest(url) }
+            }
+        }
+        if let enumerationError { throw enumerationError }
+        return result
+    }
+    private func verify(_ directory: URL) throws {
+        let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: directory.appendingPathComponent("Manifest.json")))
+        guard manifest.version == 1, try hashes(in: directory) == manifest.hashes else { throw CocoaError(.fileReadCorruptFile) }
+        _ = try savedDomain(in: directory)
+    }
+    private func savedDomain(in directory: URL) throws -> [String: Any] {
+        let data = try Data(contentsOf: directory.appendingPathComponent("Defaults.plist"))
+        guard let domain = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return domain
+    }
+    private func capture(to destination: URL) throws {
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        let staging = root.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? fm.removeItem(at: staging) }
+        try fm.createDirectory(at: staging, withIntermediateDirectories: true)
+        guard defaults.synchronize() else { throw CocoaError(.fileWriteUnknown) }
+        let domain = defaults.persistentDomain(forName: domainName) ?? [:]
+        let data = try PropertyListSerialization.data(fromPropertyList: domain, format: .binary, options: 0)
+        try data.write(to: staging.appendingPathComponent("Defaults.plist"), options: .atomic)
+        for (name, source) in [("Documents", documents), ("ApplicationSupport", support)] {
+            let target = staging.appendingPathComponent(name, isDirectory: true)
+            if fm.fileExists(atPath: source.path) { try fm.copyItem(at: source, to: target) }
+            else { try fm.createDirectory(at: target, withIntermediateDirectories: true) }
+        }
+        let manifest = Manifest(hashes: try hashes(in: staging))
+        try JSONEncoder().encode(manifest).write(to: staging.appendingPathComponent("Manifest.json"), options: .atomic)
+        try verify(staging)
+        try fm.moveItem(at: staging, to: destination)
+        var local = destination
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try local.setResourceValues(values)
+    }
+    private func setDomain(_ domain: [String: Any]) throws {
+        defaults.setPersistentDomain(domain, forName: domainName)
+        guard defaults.synchronize(), NSDictionary(dictionary: defaults.persistentDomain(forName: domainName) ?? [:]).isEqual(to: domain) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+    private func installFiles(from snapshot: URL) throws {
+        // Each immutable source survives interrupted installation and can be retried at launch.
+        for (name, target) in [("Documents", documents), ("ApplicationSupport", support)] {
+            let staged = root.appendingPathComponent("install-" + UUID().uuidString, isDirectory: true)
+            defer { try? fm.removeItem(at: staged) }
+            try fm.copyItem(at: snapshot.appendingPathComponent(name), to: staged)
+            if fm.fileExists(atPath: target.path) { try fm.removeItem(at: target) }
+            try fm.moveItem(at: staged, to: target)
+        }
+    }
+    private func finishCommitted() throws {
+        if committedOperation() == "restore", fm.fileExists(atPath: userData.path) { try fm.removeItem(at: userData) }
+        try fm.removeItem(at: transition)
+    }
+    /// Run before constructing any view or loading any saved model after an interrupted switch.
+    func recoverInterruptedSwitch() throws {
+        guard fm.fileExists(atPath: transition.path) else { return }
+        if committedOperation() != nil { try finishCommitted(); return }
+        try verify(transition)
+        try installFiles(from: transition)
+        try setDomain(savedDomain(in: transition))
+        try fm.removeItem(at: transition)
+    }
+    func loadExample(_ example: FullMonthExample) throws {
+        try recoverInterruptedSwitch()
+        if !hasUserData { try capture(to: userData) }
+        try verify(userData)
+        let domain = try example.defaultsDomain(preserving: defaults.persistentDomain(forName: domainName) ?? [:])
+        try capture(to: transition)
+        do {
+            try setDomain(domain)
+            try Data("load".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        } catch {
+            try recoverInterruptedSwitch()
+            throw error
+        }
+        try? finishCommitted()
+    }
+    func restoreUserData() throws {
+        try recoverInterruptedSwitch()
+        guard hasUserData else { throw CocoaError(.fileNoSuchFile) }
+        try verify(userData)
+        try capture(to: transition)
+        do {
+            try installFiles(from: userData)
+            try setDomain(savedDomain(in: userData))
+            try Data("restore".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        } catch {
+            try recoverInterruptedSwitch()
+            throw error
+        }
+        try? finishCommitted()
+    }
+}
+
+struct FullMonthExample: Sendable {
+    let document: PlanningCalendarDocument
+    let collections: [PersonalCollection]
+    static func make(now: Date = .now, calendar: Calendar = .current) -> Self {
+        let today = calendar.startOfDay(for: now)
+        let month = calendar.dateInterval(of: .month, for: today)!
+        let days = calendar.range(of: .day, in: .month, for: today)!
+        var document = PlanningCalendarDocument(currentWeekKey: PlanningDate.weekKey(today, calendar: calendar),
+                                                firstWeekday: calendar.firstWeekday, weeks: [])
+        var nextID = 0
+        for offset in 0..<days.count {
+            let date = calendar.date(byAdding: .day, value: offset, to: month.start)!
+            var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: calendar)
+            let listID = week.dayListIDs[PlanningDate.key(date, calendar: calendar)]!
+            let index = week.collection.lists.firstIndex { $0.id == listID }!
+            let past = date < today
+            let isToday = calendar.isDate(date, inSameDayAs: today)
+            let count = past ? 3 + offset % 3 : (isToday ? 4 : (offset % 4 == 0 ? 1 : 0))
+            let titles = SampleData.cardTitlesByDay[(calendar.component(.weekday, from: date) + 5) % 7]
+            week.collection.lists[index].cards = (0..<count).map { item in
+                let timed = item == 1 || (!past && !isToday)
+                let start = calendar.date(bySettingHour: 9 + item * 2, minute: 0, second: 0, of: date)!
+                let end = calendar.date(byAdding: .minute, value: 45, to: start)!
+                let note = item == 3
+                let card = KanbanCard(id: nextID, word: note ? "A moment from today" : titles[item % titles.count],
+                    listTitle: week.collection.lists[index].title, isTitleChecked: (past && item != 2) || (isToday && item == 0),
+                    startDate: timed ? start : nil, dueDate: timed ? end : date,
+                    checklists: item == 0 ? [KanbanChecklist(title: "Small steps", items: ["Choose a starting point", "Take the next step", "Review the result"])] : [],
+                    members: [], labelIDs: [LabelLibrary.starterLabelIDs[item % LabelLibrary.starterLabelIDs.count]],
+                    attachments: [], descriptionOverride: note ? "A little progress, a useful discovery, and room to begin again tomorrow.\n\nThis is fictional example content." : "One manageable step toward a calmer, more intentional day. Example content you can edit freely.",
+                    subtitleOverride: "", presentation: note ? .note : .card, createdAt: date,
+                    startDateKind: timed ? .dateAndTime : .date, dueDateKind: timed ? .dateAndTime : .date)
+                nextID += 1
+                return card
+            }
+            document.upsert(week)
+        }
+        // Example Library content is independent of every dated week.
+        let collections = [PersonalListExample.onTheTable, .inTheQueue, .scheduled].map { $0.makeCollection(existingTitles: []) }
+        return Self(document: document, collections: collections)
+    }
+    var previewLists: [KanbanList] {
+        document.weeks.enumerated().flatMap { weekIndex, week in
+            week.collection.lists.enumerated().compactMap { listIndex, list in
+                guard !list.cards.isEmpty else { return nil }
+                let key = week.dayListIDs.first { $0.value == list.id }?.key
+                let date = key.flatMap { PlanningDate.date($0, calendar: document.calendar) }
+                let title = date.map { PlanningDate.listTitle(list.title, on: $0, calendar: document.calendar) } ?? list.title
+                return KanbanList(id: weekIndex * 100 + listIndex, title: title, cards: list.cards)
+            }
+        }
+    }
+    func defaultsDomain(preserving original: [String: Any]) throws -> [String: Any] {
+        guard let current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { throw CocoaError(.coderInvalidValue) }
+        // Keep non-Plenact platform preferences; all app-owned data/settings remain in the backup.
+        var result = original.filter { !$0.key.hasPrefix("Plenact.") }
+        let encoder = JSONEncoder()
+        result[PlanningCalendarStore.key] = try encoder.encode(document)
+        result["Plenact.Board.v1"] = try encoder.encode(current.collection.lists)
+        result["Plenact.PersonalCollections.v1"] = try encoder.encode(collections)
+        result["Plenact.SavedCardIDs.v1"] = [Int]()
+        result[TodayListPins.key] = TodayListPins.encode(collections.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) })
+        return result
     }
 }

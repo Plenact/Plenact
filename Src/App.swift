@@ -36,6 +36,15 @@ import SwiftUI
 ///
 @main
 struct Plenact: App {
+    @State private var recoveryError: String?
+    init() {
+        do {
+            try FullMonthExampleStore.live().recoverInterruptedSwitch()
+            _recoveryError = State(initialValue: nil)
+        } catch {
+            _recoveryError = State(initialValue: error.localizedDescription)
+        }
+    }
 
     ///
     /// @fcn        Plenact.body
@@ -49,7 +58,16 @@ struct Plenact: App {
     var body: some Scene { /* Root window scene */
 
         WindowGroup {
-            AppRootView()
+            if let recoveryError {
+                VStack(spacing: 20) {
+                    Text("Your saved data needs recovery").font(.headline)
+                    Text(recoveryError).foregroundStyle(.secondary)
+                    Button("Retry recovery") {
+                        do { try FullMonthExampleStore.live().recoverInterruptedSwitch(); self.recoveryError = nil }
+                        catch { self.recoveryError = error.localizedDescription }
+                    }
+                }.padding()
+            } else { AppRootView() }
         }
     }
 
@@ -520,6 +538,13 @@ struct PlenactLoadingView: View {
 private struct AppRootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
+    @State private var isSwitchingWorkspace = false
+    @State private var isRestoringWorkspace = false
+    @State private var workspaceRecoveryError: String?
+    @State private var workspaceGeneration = UUID()
+    @State private var confirmsExampleMonth = false
+    @State private var confirmsRestoreUserData = false
+    @State private var workspaceNotice: String?
     @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
     @State private var collections                         = TodayListPins.loadInitialCollections()	/* Device-local personal collections                   */
     @State private var calendarDocument: PlanningCalendarDocument?
@@ -559,9 +584,20 @@ private struct AppRootView: View {
     var body: some View {           /* Primary Today and Board navigation shell */
 
         Group {
-            if hasLoadedBoard {
+            if let workspaceRecoveryError {
+                VStack(spacing: 20) {
+                    Text("Your saved data needs recovery").font(.headline)
+                    Text(workspaceRecoveryError).foregroundStyle(.secondary)
+                    Button("Retry recovery") { recoverWorkspace() }.disabled(isSwitchingWorkspace)
+                }.padding()
+            } else if isSwitchingWorkspace {
+                ProgressView("Preparing your workspace…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .task { await performMonthExampleSwitch(restoring: isRestoringWorkspace) }
+            } else if hasLoadedBoard {
 
                 navigationContent
+                    .id(workspaceGeneration)
                     .transition(.opacity)
             } else {
                 PlenactLoadingView(progress: launchProgress)
@@ -571,6 +607,21 @@ private struct AppRootView: View {
 
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .databaseActivityOverlay()
+        .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible) {
+            Button("Back Up and Load Example Month") { switchMonthExample(restoring: false) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your current Plenact data and local files will first be copied to an offline backup. The example month will replace your active plans. To return, choose Library + → Examples → Restore User Data. An existing original backup will be kept.")
+        }
+        .confirmationDialog("Restore your saved data?", isPresented: $confirmsRestoreUserData, titleVisibility: .visible) {
+            Button("Restore User Data") { switchMonthExample(restoring: true) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Restores the complete offline copy saved before the example month. Changes made in the example workspace will be replaced.")
+        }
+        .alert("Plenact workspace", isPresented: Binding(get: { workspaceNotice != nil }, set: { if !$0 { workspaceNotice = nil } })) {
+            Button("OK") { workspaceNotice = nil }
+        } message: { Text(workspaceNotice ?? "") }
         .onChange(of: scenePhase) { _, phase in if phase == .active { advancePlanningWeekIfNeeded() } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             advancePlanningWeekIfNeeded()
@@ -877,7 +928,7 @@ private struct AppRootView: View {
     }
 
     private func advancePlanningWeekIfNeeded() {
-        guard hasLoadedBoard, var document = calendarDocument,
+        guard !isSwitchingWorkspace, hasLoadedBoard, var document = calendarDocument,
               document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar) else { return }
         let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs)
         do {
@@ -1066,6 +1117,9 @@ private struct AppRootView: View {
             onOpenSaved:         openSavedDestination,
             onLoadExampleWeek:   loadExampleWeek,
             onUndoExampleWeek:   undoExampleWeek,
+            onLoadExampleMonth: { confirmsExampleMonth = true },
+            onRestoreUserData: { confirmsRestoreUserData = true },
+            hasUserDataBackup: (try? FullMonthExampleStore.live().hasUserData) ?? false,
             savedPersonalCardTarget: savedPersonalCardTarget,
             onClearSavedPersonalCardTarget: { savedPersonalCardTarget = nil }
         )
@@ -1074,6 +1128,78 @@ private struct AppRootView: View {
         }
         .tag(AppDestination.lists)
         .toolbar(.hidden, for: .tabBar)
+    }
+
+    private func switchMonthExample(restoring: Bool) {
+        guard !isSwitchingWorkspace else { return }
+        isRestoringWorkspace = restoring
+        isSwitchingWorkspace = true
+    }
+
+    @MainActor
+    private func performMonthExampleSwitch(restoring: Bool) async {
+        // Runs only after the navigation tree has disappeared and flushed its saved state.
+        do {
+            guard var savedDocument = calendarDocument,
+                  let currentIndex = savedDocument.weeks.firstIndex(where: { $0.startKey == savedDocument.currentWeekKey }) else { throw CocoaError(.fileReadCorruptFile) }
+            savedDocument.weeks[currentIndex].collection.lists = lists
+            savedDocument.weeks[currentIndex].collection.savedCardIDs = savedCardIDs
+            try PlanningCalendarStore.save(savedDocument)
+            calendarDocument = savedDocument
+            try KanbanBoardPersistence.saveListsChecked(lists)
+            try PersonalCollectionStore.saveChecked(collections)
+            SavedCardPersistence.save(savedCardIDs)
+            let store = try FullMonthExampleStore.live()
+            let example = FullMonthExample.make(calendar: calendarDocument?.calendar ?? .current)
+            try await Task.detached(priority: .userInitiated) {
+                if restoring { try store.restoreUserData() }
+                else { try store.loadExample(example) }
+            }.value
+            try reloadWorkspaceFromStorage()
+            workspaceNotice = restoring
+                ? "Your saved Plenact data and local files have been restored. Changes made while exploring the example month have been replaced."
+                : "Your original Plenact data is saved offline on this device. Explore the example month, then return to Library + → Examples → Restore User Data to bring it back. Loading another example month will keep that original backup."
+        } catch {
+            if (try? FullMonthExampleStore.live().needsRecovery) == true {
+                workspaceRecoveryError = error.localizedDescription
+            }
+            workspaceNotice = "The data switch could not finish: \(error.localizedDescription) Your saved data and any existing offline backup have been retained. Please retry."
+        }
+        isSwitchingWorkspace = false
+    }
+
+    private func reloadWorkspaceFromStorage() throws {
+        let document = try PlanningCalendarStore.load()
+        guard let current = document?.weeks.first(where: { $0.startKey == document?.currentWeekKey }) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        calendarDocument = document
+        lists = current.collection.lists
+        savedCardIDs = SavedCardPersistence.load()
+        collections = PersonalCollectionStore.load()
+        profile = LocalProfileStore.load()
+        displayedPlanningWeek = nil
+        displayedPlanningListID = nil
+        boardTargetListID = nil
+        boardTargetCardID = nil
+        savedPersonalCardTarget = nil
+        activePersonalListNewNote = nil
+        visibleNoteIDs = []
+        selectedDestination = .lists
+        workspaceGeneration = UUID()
+    }
+
+    private func recoverWorkspace() {
+        isSwitchingWorkspace = true
+        Task { @MainActor in
+            do {
+                let store = try FullMonthExampleStore.live()
+                try await Task.detached(priority: .userInitiated) { try store.recoverInterruptedSwitch() }.value
+                try reloadWorkspaceFromStorage()
+                workspaceRecoveryError = nil
+            } catch { workspaceRecoveryError = error.localizedDescription }
+            isSwitchingWorkspace = false
+        }
     }
 
     private func loadExampleWeek() -> Bool {
@@ -1385,7 +1511,7 @@ private struct AppRootView: View {
     ///
     private func cleanDeletedMedia(_ candidates: Set<String>) {
 
-        guard !candidates.isEmpty else {
+        guard !isSwitchingWorkspace, !candidates.isEmpty else {
 
             return
         }
@@ -4146,6 +4272,9 @@ struct BoardListsView: View {
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
     var onLoadExampleWeek: (() -> Bool)? = nil
     var onUndoExampleWeek: (() -> Bool)? = nil
+    var onLoadExampleMonth: (() -> Void)? = nil
+    var onRestoreUserData: (() -> Void)? = nil
+    var hasUserDataBackup = false
     var savedPersonalCardTarget: PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation */
     var onClearSavedPersonalCardTarget: () -> Void = {} /* Acknowledge a handled or invalid Saved request */
     @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
@@ -5068,6 +5197,25 @@ struct BoardListsView: View {
                 }
             }
             weekExamplesMenu
+            fullMonthExamplesMenu
+            if hasUserDataBackup, let onRestoreUserData {
+                Divider()
+                Button("Restore User Data", systemImage: "arrow.uturn.backward") { onRestoreUserData() }
+            }
+        }
+    }
+
+    private var fullMonthExamplesMenu: some View {
+        Menu("Full-month examples", systemImage: "calendar") {
+            Menu("A month in motion") {
+                Button("Preview month") {
+                    let example = FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
+                    examplePreview = LibraryExamplePreview(title: "A month in motion", summary: "Fictional plans for this month: fuller days through today, with a few upcoming plans. Previewing does not change your data.", lists: example.previewLists)
+                }
+                if let onLoadExampleMonth {
+                    Button("Use example month", systemImage: "plus") { onLoadExampleMonth() }
+                }
+            }
         }
     }
 

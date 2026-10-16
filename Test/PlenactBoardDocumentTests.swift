@@ -185,6 +185,115 @@ final class PlenactBoardDocumentTests: XCTestCase {
         previous?.makeKey()
     }
 
+    @MainActor
+    func testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate() throws {
+        let suite = "Plenact.ViewportTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = BoardViewportMemory(owner: "first", defaults: defaults)
+        first.state.scale = 0.48; first.state.panoramic = true; first.state.gallery = true
+        first.state.presentation = "overview"; first.state.visibleListID = 8
+        first.record(430, for: "horizontal"); first.record(680, for: "list:8"); first.flush()
+        let reopened = BoardViewportMemory(owner: "first", defaults: defaults)
+        XCTAssertEqual(reopened.state, first.state)
+        let other = BoardViewportMemory(owner: "second", defaults: defaults)
+        XCTAssertEqual(other.state.scale, 1)
+        XCTAssertTrue(other.state.offsets.isEmpty)
+        first.record(510, for: "list:9"); first.flush()
+        XCTAssertEqual(BoardViewportMemory(owner: "first", defaults: defaults).state.offsets["list:8"], 680)
+        first.record(.infinity, for: "horizontal")
+        XCTAssertEqual(first.state.offsets["horizontal"], 430)
+    }
+
+    @MainActor
+    func testViewportProbeRestoresNativeOffsetsInBothDirections() async throws {
+        let suite = "Plenact.ScrollRestoreTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        defer { previous?.makeKey() }
+        func nativeScroll(_ view: UIView, horizontal: Bool) -> UIScrollView? {
+            if let scroll = view as? UIScrollView,
+               horizontal ? scroll.contentSize.width > scroll.bounds.width + 1 : scroll.contentSize.height > scroll.bounds.height + 1 { return scroll }
+            for child in view.subviews { if let found = nativeScroll(child, horizontal: horizontal) { return found } }
+            return nil
+        }
+        for horizontal in [true, false] {
+            let owner = horizontal ? "horizontal-board" : "vertical-list"
+            for reopening in [false, true] {
+                let memory = BoardViewportMemory(owner: owner, defaults: defaults)
+                let host = UIHostingController(rootView: ScrollView(horizontal ? .horizontal : .vertical) {
+                    Color.gray.frame(width: horizontal ? 2200 : 220, height: horizontal ? 120 : 3000)
+                        .background(BoardViewportScrollProbe(memory: memory, key: "position", horizontal: horizontal))
+                }.frame(width: 260, height: 230))
+                let window = UIWindow(windowScene: scene)
+                window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+                window.rootViewController = host; window.makeKeyAndVisible()
+                defer { window.isHidden = true; window.rootViewController = nil }
+                try await Task.sleep(for: .milliseconds(250))
+                host.view.layoutIfNeeded()
+                let scroll = try XCTUnwrap(nativeScroll(host.view, horizontal: horizontal))
+                if reopening {
+                    let offset = horizontal ? scroll.contentOffset.x + scroll.adjustedContentInset.left : scroll.contentOffset.y + scroll.adjustedContentInset.top
+                    XCTAssertEqual(offset, 470, accuracy: 2)
+                } else {
+                    scroll.setContentOffset(horizontal ? CGPoint(x: 470, y: 0) : CGPoint(x: 0, y: 470), animated: false)
+                    try await Task.sleep(for: .milliseconds(50))
+                    memory.flush()
+                    XCTAssertEqual(memory.state.offsets["position"], 470)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    func testZoomedBoardRestoresItsRealHorizontalViewport() async throws {
+        let owner = UUID()
+        let key = BoardViewportMemory.prefix + owner.uuidString
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        let initial = BoardViewportMemory(owner: owner.uuidString)
+        initial.state.scale = 0.62; initial.state.panoramic = true; initial.state.presentation = "standard"
+        initial.flush()
+        var lists = (0..<10).map { KanbanList(id: $0, title: "List \($0)", cards: []) }
+        lists[0].cards = (0..<30).map { KanbanCard(id: $0, word: "Card \($0)", listTitle: lists[0].title) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        defer { previous?.makeKey() }
+        func scrolls(_ view: UIView) -> [UIScrollView] {
+            ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
+        }
+        for reopening in [false, true] {
+            let window = UIWindow(windowScene: scene)
+            let host = UIHostingController(rootView: ContentView(lists: .constant(lists), boardTitle: "Viewport test",
+                onListsChanged: { _ in }, personalCollectionID: owner))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(500))
+            host.view.layoutIfNeeded()
+            let scroll = try XCTUnwrap(scrolls(host.view).first { !($0 is UICollectionView) && $0.contentSize.width > $0.bounds.width + 100 })
+            if reopening {
+                XCTAssertEqual(scroll.contentOffset.x + scroll.adjustedContentInset.left, 420, accuracy: 3)
+                scroll.setContentOffset(CGPoint(x: -scroll.adjustedContentInset.left, y: scroll.contentOffset.y), animated: false)
+                try await Task.sleep(for: .milliseconds(300))
+                let vertical = scrolls(host.view).compactMap { $0 as? UICollectionView }.first { $0.contentSize.height > $0.bounds.height + 100 }
+                let list = try XCTUnwrap(vertical)
+                XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 350, accuracy: 3)
+            } else {
+                let vertical = scrolls(host.view).compactMap { $0 as? UICollectionView }.first { $0.contentSize.height > $0.bounds.height + 100 }
+                let list = try XCTUnwrap(vertical)
+                list.setContentOffset(CGPoint(x: list.contentOffset.x, y: 350 - list.adjustedContentInset.top), animated: false)
+                try await Task.sleep(for: .milliseconds(450))
+                XCTAssertEqual(BoardViewportMemory(owner: owner.uuidString).state.offsets["list:0"] ?? -1, 350, accuracy: 3)
+                scroll.setContentOffset(CGPoint(x: 420 - scroll.adjustedContentInset.left, y: scroll.contentOffset.y), animated: false)
+                try await Task.sleep(for: .milliseconds(450))
+                XCTAssertEqual(BoardViewportMemory(owner: owner.uuidString).state.offsets["horizontal"] ?? -1, 420, accuracy: 3)
+            }
+            window.isHidden = true; window.rootViewController = nil
+            try await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
     func testFreshInstallationSeedsEmptyListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

@@ -697,8 +697,10 @@ private struct AppRootView: View {
                 onDeleteBoard:     deleteWeekContents,
                 deleteBoardTitle:  "Delete Week contents",
                 onCommitDeletion:  commitWeekDeletion,
-                onListsChanged:    { _ in }
+                onListsChanged:    { _ in },
+                viewportOwnerID: calendarDocument?.weeks.first { $0.startKey == calendarDocument?.currentWeekKey }?.id
             )
+            .id(calendarDocument?.currentWeekKey ?? "week.current")
                 }
             }
                 .tabItem {

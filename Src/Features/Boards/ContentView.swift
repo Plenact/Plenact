@@ -89,6 +89,169 @@ enum BoardPanoramicZoom {
         return clamped(start * magnification)
     }
 }
+/// Per-owner viewport preferences are kept separate from the user's planning content.
+struct BoardViewportState: Codable, Equatable {
+    var scale: Double = 1
+    var panoramic = false
+    var gallery = false
+    var presentation: String? = nil
+    var visibleListID: Int? = nil
+    var offsets: [String: Double] = [:]
+}
+
+@MainActor
+final class BoardViewportMemory {
+    static let prefix = "Plenact.BoardViewport.v1."
+    let key: String
+    private let defaults: UserDefaults
+    var state: BoardViewportState
+    private var pendingSave: DispatchWorkItem?
+    var horizontalRestoreAllowed = true
+
+    init(owner: String, defaults: UserDefaults = .standard) {
+        key = Self.prefix + owner
+        self.defaults = defaults
+        state = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(BoardViewportState.self, from: $0) } ?? BoardViewportState()
+        state.scale = state.scale.isFinite ? Double(BoardPanoramicZoom.clamped(CGFloat(state.scale))) : 1
+        state.offsets = state.offsets.filter { $0.value.isFinite && $0.value >= 0 }
+    }
+    func record(_ offset: Double, for key: String) {
+        guard offset.isFinite else { return }
+        state.offsets[key] = max(0, offset)
+        scheduleSave()
+    }
+    func scheduleSave() {
+        pendingSave?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.flush() }
+        pendingSave = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+    }
+    func flush() {
+        pendingSave?.cancel(); pendingSave = nil
+        guard let data = try? JSONEncoder().encode(state), defaults.data(forKey: key) != data else { return }
+        defaults.set(data, forKey: key)
+    }
+}
+private struct BoardViewportMemoryKey: EnvironmentKey {
+    static let defaultValue: BoardViewportMemory? = nil
+}
+extension EnvironmentValues {
+    var boardViewportMemory: BoardViewportMemory? {
+        get { self[BoardViewportMemoryKey.self] }
+        set { self[BoardViewportMemoryKey.self] = newValue }
+    }
+}
+
+/// Observe native offsets without publishing per-frame changes through SwiftUI's Board body.
+struct BoardViewportScrollProbe: UIViewRepresentable {
+    let memory: BoardViewportMemory?
+    let key: String
+    var horizontal = false
+    final class Marker: UIView {
+        var attached: (() -> Void)?
+        override func didMoveToWindow() { super.didMoveToWindow(); if window != nil { attached?() } }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeUIView(context: Context) -> Marker {
+        let view = Marker(); view.isUserInteractionEnabled = false
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
+        view.attached = { [weak view, weak coordinator = context.coordinator] in
+            if let view { coordinator?.findScroll(from: view) }
+        }
+        return view
+    }
+    func updateUIView(_ view: Marker, context: Context) {
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
+        if view.window != nil { context.coordinator.findScroll(from: view) }
+    }
+    static func dismantleUIView(_ view: Marker, coordinator: Coordinator) { coordinator.finish() }
+    @MainActor
+    final class Coordinator {
+        private var memory: BoardViewportMemory?
+        private var key = ""
+        private var horizontal = false
+        private weak var scroll: UIScrollView?
+        private var observation: NSKeyValueObservation?
+        private var restored = false
+        private var desired: Double?
+        private var attempts = 0
+        private var finding = false
+        func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool) {
+            guard self.memory !== memory || self.key != key else { return }
+            finish()
+            self.memory = memory; self.key = key; self.horizontal = horizontal
+            desired = memory?.state.offsets[key]
+            restored = false; attempts = 0
+        }
+        private func matches(_ view: UIScrollView) -> Bool {
+            if horizontal { return view.alwaysBounceHorizontal || view.contentSize.width > view.bounds.width + 1 }
+            return view is UICollectionView || view is UITableView || view.alwaysBounceVertical || view.contentSize.height > view.bounds.height + 1
+        }
+        private func descendant(in view: UIView) -> UIScrollView? {
+            for child in view.subviews {
+                if let scroll = child as? UIScrollView {
+                    if matches(scroll) { return scroll }
+                } else if let found = descendant(in: child) { return found }
+            }
+            return nil
+        }
+        func findScroll(from marker: UIView) {
+            guard memory != nil, scroll == nil, !finding, attempts < 16 else { return }
+            finding = true
+            DispatchQueue.main.async { [weak self, weak marker] in
+                guard let self else { return }
+                self.finding = false
+                guard let marker, marker.window != nil else { return }
+                self.attempts += 1
+                var parent = marker.superview
+                for _ in 0..<10 {
+                    guard let view = parent else { break }
+                    if let native = view as? UIScrollView {
+                        if self.matches(native) { self.attach(native); return }
+                        break // Never pick a different column beyond the enclosing Board scroll.
+                    }
+                    if let native = self.descendant(in: view) { self.attach(native); return }
+                    parent = view.superview
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self, weak marker] in
+                    if let marker { self?.findScroll(from: marker) }
+                }
+            }
+        }
+        private func attach(_ scroll: UIScrollView) {
+            self.scroll = scroll
+            observation = scroll.observe(\.contentOffset, options: [.new]) { [weak self] _, _ in
+                MainActor.assumeIsolated { self?.capture() }
+            }
+            DispatchQueue.main.async { [weak self] in self?.restore() }
+        }
+        private func restore() {
+            guard let scroll else { return }
+            scroll.layoutIfNeeded()
+            if let desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging {
+                let inset = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
+                let endInset = horizontal ? scroll.adjustedContentInset.right : scroll.adjustedContentInset.bottom
+                let content = horizontal ? scroll.contentSize.width : scroll.contentSize.height
+                let length = horizontal ? scroll.bounds.width : scroll.bounds.height
+                let value = min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
+                var point = scroll.contentOffset
+                if horizontal { point.x = value } else { point.y = value }
+                scroll.setContentOffset(point, animated: false)
+            }
+            restored = true
+        }
+        private func capture() {
+            guard restored, let scroll, let memory else { return }
+            let offset = horizontal ? scroll.contentOffset.x + scroll.adjustedContentInset.left : scroll.contentOffset.y + scroll.adjustedContentInset.top
+            memory.record(Double(offset), for: key)
+        }
+        func finish() {
+            capture(); observation?.invalidate(); observation = nil; scroll = nil
+            memory?.flush()
+        }
+    }
+}
+
 /// Drag hit-testing needs fresh geometry, but passive scrolling must not redraw the board.
 final class BoardDragGeometryCache {
     var centers: [Int: CGFloat] = [:]
@@ -144,6 +307,8 @@ struct BoardGalleryGroup: Identifiable {
 }
 
 struct BoardGalleryView: View {
+    @Environment(\.boardViewportMemory) private var viewportMemory
+
     let lists: [KanbanList]
     let listTitle: (KanbanList) -> String
     let onOpen: (KanbanCard, Int) -> Void
@@ -182,6 +347,7 @@ struct BoardGalleryView: View {
                 }
                 if lists.isEmpty { Text("Add a list to start your gallery.").foregroundStyle(.white.opacity(0.8)) }
             }.padding(16).padding(.bottom, 16)
+                .background(BoardViewportScrollProbe(memory: viewportMemory, key: "gallery"))
         }
     }
 }
@@ -1350,6 +1516,7 @@ struct ContentView: View {
     @State private var listDragGrabOffset: CGFloat = 0 /* Offset between the initial pointer and grabbed list center */
     @State private var listDragInitialCenter: CGFloat? // Center before the temporary drag overview.
     @State private var listDragTilt: Double = 0
+    @State private var viewportMemory: BoardViewportMemory
     @State private var isPanoramic = false
     @State private var isGallery = false
     @State private var boardScale: CGFloat = 1
@@ -1371,6 +1538,15 @@ struct ContentView: View {
                 boardScale = BoardPanoramicZoom.scale(start: boardScale, magnification: value.magnification)
             }
     }
+    private func persistViewport() {
+        viewportMemory.state.scale = Double(boardScale)
+        viewportMemory.state.panoramic = isPanoramic
+        viewportMemory.state.gallery = isGallery
+        viewportMemory.state.presentation = presentation.rawValue
+        viewportMemory.state.visibleListID = visibleListID
+        viewportMemory.flush()
+    }
+
     private func resetBoardZoom() {
         guard draggedListID == nil, draggedCardID == nil else { return }
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) { boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic) }
@@ -1403,7 +1579,7 @@ struct ContentView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category informing Board dimensions */
     @Environment(\.scenePhase) private var scenePhase /* Scene lifecycle used to cancel interrupted drag sessions */
     /// Locally persisted choice between Standard and Overview Board layouts.
-    @AppStorage(BoardPresentation.storageKey) private var presentation = BoardPresentation.standard /* Persisted Standard or Overview layout selection */
+    @State private var presentation = BoardPresentation.standard /* Persisted Standard or Overview layout selection */
     @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
     @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
     @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
@@ -1470,9 +1646,18 @@ struct ContentView: View {
         onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
-        boardAppearance: Binding<BoardAppearance?>? = nil
+        boardAppearance: Binding<BoardAppearance?>? = nil,
+        viewportOwnerID: UUID? = nil
     ) {
 
+        let memory = BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current")
+        _viewportMemory = State(initialValue: memory)
+        _boardScale = State(initialValue: CGFloat(memory.state.scale))
+        _isPanoramic = State(initialValue: memory.state.panoramic)
+        _isGallery = State(initialValue: memory.state.gallery)
+        let savedList = memory.state.visibleListID.flatMap { id in lists.wrappedValue.contains(where: { $0.id == id }) ? id : nil }
+        _visibleListID = State(initialValue: savedList)
+        _presentation = State(initialValue: BoardPresentation(rawValue: memory.state.presentation ?? UserDefaults.standard.string(forKey: BoardPresentation.storageKey) ?? "") ?? .standard)
         _lists                       = lists
         _archivedLists               = archivedLists
         _boardTargetListID           = boardTargetListID
@@ -1526,6 +1711,7 @@ struct ContentView: View {
             return
         }
 
+        viewportMemory.horizontalRestoreAllowed = false
         visibleListID = targetListID
         listProxy.scrollTo(targetListID, anchor: presentation == .standard ? .center : .leading)
 
@@ -2638,6 +2824,7 @@ struct ContentView: View {
                                 navigationPath.append(card)
                             })
                             .environment(\.cardMovementSource, personalCollectionID)
+                            .environment(\.boardViewportMemory, viewportMemory)
                         } else {
                         GeometryReader { listArea in
                         let columnWidth = presentation.columnWidth(
@@ -2736,6 +2923,7 @@ struct ContentView: View {
                                             width: presentation.columnWidth(viewportWidth: listArea.size.width, accessibilitySize: dynamicTypeSize.isAccessibilitySize, fillsAvailableWidth: fillsAvailableListWidth)
                                         )
                                         .environment(\.cardMovementSource, personalCollectionID)
+                                        .environment(\.boardViewportMemory, viewportMemory)
                                         .scaleEffect(listDragScale * (draggedListID == list.id && !reducesMotion ? 1.04 : 1), anchor: .top)
                                         .frame(width: columnWidth * listDragScale, height: (listArea.size.height / boardZoomScale) * listDragScale, alignment: .top)
                                         .rotationEffect(.degrees(draggedListID == list.id ? listDragTilt : 0), anchor: .top)
@@ -2777,6 +2965,7 @@ struct ContentView: View {
 
                                 .frame(maxHeight: .infinity, alignment: .top)
                                 .scrollTargetLayout()
+                                .background(BoardViewportScrollProbe(memory: viewportMemory, key: "horizontal", horizontal: true))
                             }
 
                             .contentMargins(.horizontal, horizontalInset, for: .scrollContent)
@@ -2997,6 +3186,13 @@ struct ContentView: View {
             }
 
             .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: boardScale) { _, value in viewportMemory.state.scale = Double(value); viewportMemory.scheduleSave() }
+            .onChange(of: isPanoramic) { _, value in viewportMemory.state.panoramic = value; viewportMemory.scheduleSave() }
+            .onChange(of: isGallery) { _, value in viewportMemory.state.gallery = value; viewportMemory.scheduleSave() }
+            .onChange(of: presentation) { _, value in viewportMemory.state.presentation = value.rawValue; viewportMemory.scheduleSave() }
+            .onChange(of: visibleListID) { _, value in viewportMemory.state.visibleListID = value; viewportMemory.scheduleSave() }
+            .onChange(of: scenePhase) { _, value in if value != .active { persistViewport() } }
+            .onDisappear { persistViewport() }
             .onChange(of: navigationPath.count) { old, new in
                 if openedDirectItem && old > 0 && new == 0 {
                     openedDirectItem = false
@@ -4034,6 +4230,8 @@ private struct MemberColorEditorSheet: View {
 ///     Keep a list title, list metadata, add-card action, and vertically scrollable card collection together
 ///
 struct KanbanListView: View {
+    @Environment(\.boardViewportMemory) private var viewportMemory
+
     @Environment(\.cardMovementSource) private var draftCollectionID
 
 
@@ -4501,6 +4699,7 @@ struct KanbanListView: View {
             .contentMargins(.bottom, cardCollectionContentHeight > cardCollectionHeight ? 80 : 0, for: .scrollContent)
             .background(.clear)
             .frame(height: cardCollectionHeight)
+            .background(BoardViewportScrollProbe(memory: viewportMemory, key: "list:\(list.id)"))
             .onPreferenceChange(BoardCardHeightPreferenceKey.self) { heights in
                 var updated = measuredCardHeights
                 updated.merge(heights, uniquingKeysWith: { _, latest in latest })
@@ -5871,6 +6070,7 @@ struct TodayListDetailView: View {
     @Environment(\.cardMovementSource) private var dayMovementSource
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
+    @State private var focusedViewportMemory: BoardViewportMemory?
     @State private var showsDaySearch = false
     @State private var showsDaySelector = false
     @State private var selectedDay: PlanningDaySelection?
@@ -6204,6 +6404,17 @@ struct TodayListDetailView: View {
                     .scrollContentBackground(.hidden)
                     .contentMargins(.top, 14, for: .scrollContent)
                     .background(.clear)
+                    .background(BoardViewportScrollProbe(memory: focusedViewportMemory, key: "vertical"))
+                    .onAppear {
+                        if focusedViewportMemory == nil {
+                            let currentWeekID = planningCalendarAccess?.document.weeks.first { $0.startKey == planningCalendarAccess?.document.currentWeekKey }?.id
+                            let owner = (dayMovementSource ?? currentWeekID)?.uuidString ?? "week.current"
+                            let location = representedDate.map { PlanningDate.key($0) } ?? String(listID)
+                            focusedViewportMemory = BoardViewportMemory(owner: owner + ".focused." + location)
+                        }
+                    }
+                    .onDisappear { focusedViewportMemory?.flush() }
+
                     .background {
                         GeometryReader { geometry in
                             Color.clear.preference(key: BoardListFramePreferenceKey.self,

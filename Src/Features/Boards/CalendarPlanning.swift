@@ -390,6 +390,22 @@ private struct PlanningWeekRoute: Identifiable {
     var id: UUID { week.id }
 }
 
+/// Shared membership rules keep Calendar and Choose week indicators in agreement.
+enum PlanningCalendarContent {
+    static func items(on date: Date, document: PlanningCalendarDocument, sources: [PlanningSearchResult]) -> [PlanningSearchResult] {
+        let calendar = document.calendar
+        let week = document.week(for: date)
+        let listID = week?.list(on: date)?.id
+        return sources.filter { item in
+            let planned = week.map { item.weekKey == $0.startKey && item.collectionID == $0.id && item.listID == listID } ?? false
+            let scheduled = [item.card.startDateKind.includesDate ? item.card.startDate : nil,
+                             item.card.dueDateKind.includesDate ? item.card.dueDate : nil]
+                .compactMap { $0 }.contains { calendar.isDate($0, inSameDayAs: date) }
+            return planned || scheduled
+        }
+    }
+}
+
 struct PlanningCalendarView: View {
     var onLeaveForHome: () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
@@ -426,16 +442,9 @@ struct PlanningCalendarView: View {
     }
     private func items(on date: Date) -> [PlanningSearchResult] {
         guard let access else { return [] }
-        let plannedWeek = week(on: date)
-        let plannedID = plannedWeek.list(on: date)?.id
-        return access.searchableItems.filter { item in
-            let planned = item.weekKey == plannedWeek.startKey && item.listID == plannedID
-            let scheduled = [item.card.startDateKind.includesDate ? item.card.startDate : nil, item.card.dueDateKind.includesDate ? item.card.dueDate : nil].compactMap { $0 }.contains {
-                Calendar.current.isDate($0, inSameDayAs: date)
-            }
-            return planned || scheduled
-        }
+        return PlanningCalendarContent.items(on: date, document: access.document, sources: access.searchableItems)
     }
+
     private func open(_ result: PlanningSearchResult) {
         if let key = result.weekKey, let savedWeek = access?.document.weeks.first(where: { $0.startKey == key }) {
             route = PlanningWeekRoute(week: savedWeek, dayID: result.listID, cardID: result.card.id)
@@ -887,6 +896,7 @@ struct PlanningChecklistLink: View {
 /// Direct week selection changes the browsed board without changing Today's active week.
 struct PlanningWeekSelector: View {
     let document: PlanningCalendarDocument
+    let sources: [PlanningSearchResult]
     let onSelect: (DatedPlanningWeek, Date) -> Void
     @State private var referenceDate: Date
     @State private var selectedDate: Date
@@ -895,10 +905,11 @@ struct PlanningWeekSelector: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String,
+    init(initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String, sources: [PlanningSearchResult] = [],
          onSelect: @escaping (DatedPlanningWeek, Date) -> Void) {
         self.document = document
         self.onSelect = onSelect
+        self.sources = sources
         _referenceDate = State(initialValue: initialDate)
         _selectedDate = State(initialValue: initialDate)
         _highlightedWeekKey = State(initialValue: selectedWeekKey)
@@ -949,52 +960,64 @@ struct PlanningWeekSelector: View {
     }
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                HStack {
-                    Text(referenceDate.formatted(.dateTime.month(.wide).year())).font(.headline)
-                    Spacer()
-                    Button { changeMonth(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
-                        .accessibilityLabel("Previous month")
-                    Button { changeMonth(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }
-                        .accessibilityLabel("Next month")
-                }
-                .foregroundStyle(.primary)
-                HStack(spacing: 0) {
-                    ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
-                        Text(symbol.uppercased()).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text(referenceDate.formatted(.dateTime.month(.wide).year())).font(.headline)
+                        Spacer()
+                        Button { changeMonth(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
+                            .accessibilityLabel("Previous month")
+                        Button { changeMonth(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }
+                            .accessibilityLabel("Next month")
                     }
-                }
-                VStack(spacing: 4) {
-                    ForEach(rows.indices, id: \.self) { row in
-                        let dates = rows[row]
-                        let highlighted = dates.first.map { PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey } ?? false
-                        HStack(spacing: 0) {
-                            ForEach(dates, id: \.self) { date in
-                                let selected = document.calendar.isDate(date, inSameDayAs: selectedDate)
-                                let inMonth = document.calendar.isDate(date, equalTo: referenceDate, toGranularity: .month)
-                                Button { select(date) } label: {
-                                    Text(String(document.calendar.component(.day, from: date)))
-                                        .font(.body.weight(selected ? .semibold : .regular))
-                                        .foregroundStyle(selected ? Color.white : (inMonth ? Color.primary : Color.secondary))
-                                        .frame(width: 36, height: 36)
+                    .foregroundStyle(.primary)
+                    HStack(spacing: 0) {
+                        ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
+                            Text(symbol.uppercased()).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                        }
+                    }
+                    VStack(spacing: 4) {
+                        ForEach(rows.indices, id: \.self) { row in
+                            let dates = rows[row]
+                            let highlighted = dates.first.map { PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey } ?? false
+                            HStack(spacing: 0) {
+                                ForEach(dates, id: \.self) { date in
+                                    let selected = document.calendar.isDate(date, inSameDayAs: selectedDate)
+                                    let inMonth = document.calendar.isDate(date, equalTo: referenceDate, toGranularity: .month)
+                                    let count = PlanningCalendarContent.items(on: date, document: document, sources: sources).count
+                                    Button { select(date) } label: {
+                                        VStack(spacing: 2) {
+                                            Text(String(document.calendar.component(.day, from: date)))
+                                                .font(.body.weight(selected ? .semibold : .regular))
+                                                .foregroundStyle(selected ? Color.white : (inMonth ? Color.primary : Color.secondary))
+                                            Circle()
+                                                .fill(count > 0 ? (selected ? Color.white : Color.blue) : Color.clear)
+                                                .frame(width: 5, height: 5)
+                                                .accessibilityHidden(true)
+                                        }
+                                        .frame(width: 36, height: 44)
                                         .background(selected ? Color.blue : Color.clear, in: Circle())
                                         .frame(maxWidth: .infinity, minHeight: 44)
                                         .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("\(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())), \(count) items")
+                                    .accessibilityHint("Show the week containing this day")
+                                    .accessibilityAddTraits(selected ? .isSelected : [])
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
-                                .accessibilityHint("Show the week containing this day")
-                                .accessibilityAddTraits(selected ? .isSelected : [])
                             }
+                            .background(highlighted ? Color.blue.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                         }
-                        .background(highlighted ? Color.blue.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                     }
+                    HStack(spacing: 5) {
+                        Circle().fill(Color.blue).frame(width: 5, height: 5).accessibilityHidden(true)
+                        Text("Items planned or scheduled").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text("Tap any day to show its week.").font(.footnote).foregroundStyle(.secondary)
                 }
-                Text("Tap any day to show its week.").font(.footnote).foregroundStyle(.secondary)
-                Spacer(minLength: 0)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
             .disabled(isSelecting)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemBackground))

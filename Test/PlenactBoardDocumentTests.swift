@@ -1467,17 +1467,53 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+    func testCalendarContentMatchesPlannedAndScheduledItemsAcrossWeekBoundaries() throws {
+        for firstWeekday in [1, 2] {
+            var calendar = Calendar.current; calendar.firstWeekday = firstWeekday
+            let date = try XCTUnwrap(PlanningDate.date("2026-10-17", calendar: calendar))
+            let nextDate = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: date))
+            var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+            let listID = try XCTUnwrap(week.list(on: date)?.id)
+            let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == listID })
+            week.collection.lists[index].cards = [KanbanCard(id: 1, word: "Planned and scheduled", listTitle: "Saturday", startDate: date, dueDate: date, checklists: [], startDateKind: .date, dueDateKind: .date)]
+            var library = PersonalCollection(title: "Scheduled", kind: .list)
+            library.lists[0].cards = [
+                KanbanCard(id: 1, word: "Note due tomorrow", listTitle: "Scheduled", dueDate: nextDate, checklists: [], presentation: .note, dueDateKind: .date),
+                KanbanCard(id: 2, word: "Time only", listTitle: "Scheduled", startDate: date, dueDate: nextDate, checklists: [], startDateKind: .time, dueDateKind: .time),
+                KanbanCard(id: 3, word: "Starts today", listTitle: "Scheduled", startDate: date, checklists: [], startDateKind: .dateAndTime)
+            ]
+            library.lists[0].archivedCards = [KanbanCard(id: 4, word: "Archived", listTitle: "Scheduled", dueDate: date, checklists: [], dueDateKind: .date)]
+            let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: firstWeekday, weeks: [week])
+            let access = PlanningCalendarAccess(document: document, library: [library], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+            let sources = access.searchableItems
+            let today = PlanningCalendarContent.items(on: date, document: document, sources: sources)
+            XCTAssertEqual(Set(today.map { $0.card.word }), ["Planned and scheduled", "Starts today"])
+            XCTAssertEqual(today.count, 2) // A Card with both dates and day membership still counts once.
+            XCTAssertEqual(PlanningCalendarContent.items(on: nextDate, document: document, sources: sources).map { $0.card.word }, ["Note due tomorrow"])
+            let empty = try XCTUnwrap(calendar.date(byAdding: .month, value: 1, to: date))
+            XCTAssertTrue(PlanningCalendarContent.items(on: empty, document: document, sources: sources).isEmpty)
+            XCTAssertEqual(access.document, document)
+            XCTAssertEqual(access.library, [library])
+        }
+    }
+
     @MainActor
     func testWeekCalendarPickerRendersSelectedWeekAndDay() async throws {
         let date = try XCTUnwrap(PlanningDate.date("2026-10-14"))
         var calendar = Calendar(identifier: .gregorian)
         calendar.firstWeekday = 1
-        let week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == week.list(on: date)?.id })
+        week.collection.lists[index].cards = [KanbanCard(id: 1, word: "Planned work", listTitle: "Wednesday", checklists: [])]
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: date))
+        let nextIndex = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == week.list(on: tomorrow)?.id })
+        week.collection.lists[nextIndex].cards = [KanbanCard(id: 2, word: "Tomorrow's work", listTitle: "Thursday", checklists: [])]
         let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 1, weeks: [week])
+        let access = PlanningCalendarAccess(document: document, library: [], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: PlanningWeekSelector(initialDate: date, document: document, selectedWeekKey: week.startKey) { _, _ in })
+        let host = UIHostingController(rootView: PlanningWeekSelector(initialDate: date, document: document, selectedWeekKey: week.startKey, sources: access.searchableItems) { _, _ in })
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 480)
         window.makeKeyAndVisible()

@@ -3347,7 +3347,7 @@ struct ContentView: View {
                 if let access = planningCalendarAccess {
                     PlanningWeekSelector(initialDate: dayDate(for: visibleListID ?? lists.first?.id ?? -1) ?? calendarOpeningDate, document: access.document,
                         selectedWeekKey: personalCollectionID.flatMap { id in access.document.weeks.first { $0.id == id }?.startKey }
-                            ?? PlanningDate.weekKey(calendarOpeningDate, calendar: access.document.calendar)) { week, date in
+                            ?? PlanningDate.weekKey(calendarOpeningDate, calendar: access.document.calendar), sources: access.searchableItems) { week, date in
                         showsWeekSelector = false
                         if let open = access.openWeekOnDay { open(week, date) }
                         else { access.openWeek(week) }

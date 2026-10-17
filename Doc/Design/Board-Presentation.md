@@ -124,3 +124,8 @@ Adjust the appropriate device preset to tune its geometry without changing the o
 A Week List mapped to the actual current date receives a warm gold four-point frame, a lightly tinted header, and a Today badge. This compares full dates using the planning calendar, not weekday names. Other weeks and undated personal Lists do not receive the treatment. The badge is included in the header's accessible opening label; decorations do not intercept touches. Drag/drop accent remains visible above the normal gold treatment
 
 The anchor follows existing zoom and retains viewport position. Refresh occurs each minute, on foregrounding, and on significant time changes. No Card, List appearance preference, or stored date mapping is edited. Cards retain their existing surfaces
+
+
+## Week picker content indicators — October 17, 2026
+
+Choose week now marks dates with active planned Cards/Notes or matching start/due dates, using the same membership rules as Today’s Calendar. A blue dot appears beneath each populated date, turning white on the selected date. The week-row highlight and tap-to-open behavior are retained. The legend explains the dots, and VoiceOver announces the item count for each date. Time-only fields and archived items do not populate dates; an item matching multiple rules counts once. The calendar scrolls in short sheets to keep month navigation and all dates reachable. Browsing does not create weeks or mutate source content.

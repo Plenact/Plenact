@@ -2174,8 +2174,7 @@ private struct TodayHomeView: View {
             .accessibilityLabel(profile == nil ? "Create local profile" : "Open Account and Settings")
         }
 
-        .frame(maxWidth: 560)
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
 
@@ -2194,7 +2193,7 @@ private struct TodayHomeView: View {
             .padding(.horizontal, 20)
             .padding(.top, 4)
             .padding(.bottom, 8)
-            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
             .background {
                 GeometryReader { geometry in
                     ZStack(alignment: .top) {
@@ -2560,7 +2559,6 @@ private struct TodayHomeView: View {
                     browseListsAction
                 }
                         .padding(20)
-                        .frame(maxWidth: 560, alignment: .leading)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, 112)
             }
@@ -2572,7 +2570,6 @@ private struct TodayHomeView: View {
                         Spacer(minLength: 0)
                     }
 
-                    .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity)
                     .zIndex(1)
                 }

@@ -98,6 +98,14 @@ enum BoardTabletSizing {
     }
 }
 
+enum WeekDayHighlight {
+    static func isToday(_ assignedDate: Date?, now: Date, calendar: Calendar) -> Bool {
+        guard let assignedDate else { return false }
+        return calendar.isDate(assignedDate, inSameDayAs: now)
+    }
+    static let gold = Color(red: 0.72, green: 0.49, blue: 0.12)
+}
+
 /// Per-owner viewport preferences are kept separate from the user's planning content.
 struct BoardViewportState: Codable, Equatable {
     var scale: Double = 1
@@ -1552,6 +1560,7 @@ struct ContentView: View {
     @State private var viewportMemory: BoardViewportMemory
     @State private var isPanoramic = false
     @State private var isGallery = false
+    @State private var todayHighlightDate = Date.now
     @State private var boardScale: CGFloat = 1
     @GestureState private var boardPinch = BoardPinchState()
     private var boardZoomScale: CGFloat {
@@ -2959,6 +2968,8 @@ struct ContentView: View {
                                             onAppearance: { appearance in
                                                 setListAppearance(list.id, appearance: appearance, in: &lists)
                                             },
+                                            isCurrentDay: WeekDayHighlight.isToday(dayDate(for: list.id), now: todayHighlightDate,
+                                                calendar: planningCalendarAccess?.document.calendar ?? .current),
                                             assignedDate: dayDate(for: list.id),
                                             datedTitle: dayDate(for: list.id).map { PlanningDate.listTitle(list.title, on: $0) },
                                             hidesPanelHeader: isStandaloneListView,
@@ -3232,12 +3243,14 @@ struct ContentView: View {
             }
 
             .toolbar(.hidden, for: .navigationBar)
+            .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { todayHighlightDate = $0 }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in todayHighlightDate = .now }
             .onChange(of: boardScale) { _, value in viewportMemory.state.scale = Double(value); viewportMemory.scheduleSave() }
             .onChange(of: isPanoramic) { _, value in viewportMemory.state.panoramic = value; viewportMemory.scheduleSave() }
             .onChange(of: isGallery) { _, value in viewportMemory.state.gallery = value; viewportMemory.scheduleSave() }
             .onChange(of: presentation) { _, value in viewportMemory.state.presentation = value.rawValue; viewportMemory.scheduleSave() }
             .onChange(of: visibleListID) { _, value in viewportMemory.state.visibleListID = value; viewportMemory.scheduleSave() }
-            .onChange(of: scenePhase) { _, value in if value != .active { persistViewport() } }
+            .onChange(of: scenePhase) { _, value in if value != .active { persistViewport() } else { todayHighlightDate = .now } }
             .onDisappear { persistViewport() }
             .onChange(of: navigationPath.count) { old, new in
                 if openedDirectItem && old > 0 && new == 0 {
@@ -4352,6 +4365,7 @@ struct KanbanListView: View {
     @State private var opensDayAfterDismissal = false
     var boardAppearance: BoardAppearance = BoardAppearance()
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    var isCurrentDay = false
     var assignedDate: Date? = nil
     var datedTitle: String? = nil
     var hidesPanelHeader = false
@@ -4399,7 +4413,7 @@ struct KanbanListView: View {
     ///
     private var canOpenDatedDay: Bool { assignedDate != nil && onOpenDayView != nil }
     private var dayOpeningLabel: String {
-        assignedDate.map { "Open " + $0.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) } ?? list.title
+        assignedDate.map { (isCurrentDay ? "Today. Open " : "Open ") + $0.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) } ?? list.title
     }
     @ViewBuilder private var listSubtitle: some View {
         if canOpenDatedDay {
@@ -4544,7 +4558,17 @@ struct KanbanListView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
+                    if isCurrentDay {
+                        Text("Today")
+                            .font(.caption2.weight(.bold))
+                            .lineLimit(1).fixedSize()
+                            .foregroundStyle(Color(red: 0.39, green: 0.25, blue: 0.05))
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(WeekDayHighlight.gold.opacity(0.25), in: Capsule())
+                            .accessibilityHidden(true)
+                    }
                     Text("\(list.cards.filter { !$0.isSectionDivider }.count)")
+                        .fixedSize()
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -4614,6 +4638,7 @@ struct KanbanListView: View {
             .padding(.horizontal, 14)
             .padding(.top, 10)
             .padding(.bottom, 4)
+            .background(isCurrentDay ? WeekDayHighlight.gold.opacity(0.16) : Color.clear)
             .itemBannerBackground(effectiveAppearance)
             .background {
                 GeometryReader { header in
@@ -4796,6 +4821,13 @@ struct KanbanListView: View {
                 .accessibilityHidden(true)
         }
 
+        .overlay {
+            if isCurrentDay && !hidesPanelHeader {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(isCardDropTarget ? Color.accentColor : WeekDayHighlight.gold, lineWidth: 4)
+                    .allowsHitTesting(false).accessibilityHidden(true)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
         .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(

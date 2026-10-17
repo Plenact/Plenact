@@ -118,3 +118,9 @@ Standard multi-List Boards on iPad scale the full List surface proportionally to
 `BottomToolbarLayout` in `Src/App.swift` defines explicit iPhone regular/compact and iPad regular/compact presets. Each separately owns toolbar height, safe-area allowance, row spacing, horizontal/vertical padding, tab/New offsets, minimum tap height, icon and New-button sizes, label spacing/style, label arrangement, and decorative background inset. Device selection uses interface idiom; compact height selects the matching device's compact preset. The initial values preserve the restored original toolbar appearance
 
 Adjust the appropriate device preset to tune its geometry without changing the other device. Navigation and creation actions remain shared. Bottom safe-area compensation is calculated from the selected preset, including Home-button iPads
+
+## Current-day Week anchor — October 17, 2026
+
+A Week List mapped to the actual current date receives a warm gold four-point frame, a lightly tinted header, and a Today badge. This compares full dates using the planning calendar, not weekday names. Other weeks and undated personal Lists do not receive the treatment. The badge is included in the header's accessible opening label; decorations do not intercept touches. Drag/drop accent remains visible above the normal gold treatment
+
+The anchor follows existing zoom and retains viewport position. Refresh occurs each minute, on foregrounding, and on significant time changes. No Card, List appearance preference, or stored date mapping is edited. Cards retain their existing surfaces

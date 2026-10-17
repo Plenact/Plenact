@@ -1969,6 +1969,49 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws {
+        let date = Date.now
+        let week = DatedPlanningWeek.make(for: date)
+        let target = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date)])
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let owner = UUID()
+        let key = BoardViewportMemory.prefix + owner.uuidString
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        var state = BoardViewportState()
+        state.scale = 0.62; state.panoramic = true; state.presentation = BoardPresentation.standard.rawValue; state.visibleListID = target
+        UserDefaults.standard.set(try JSONEncoder().encode(state), forKey: key)
+        let host = UIHostingController(rootView: ContentView(lists: .constant(week.collection.lists), boardTargetListID: .constant(target), onListsChanged: { _ in }, viewportOwnerID: owner).environment(\.planningCalendarAccess, access))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(400))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-week-today-highlight.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("TODAY_HIGHLIGHT_RENDER=\(url.path)")
+        XCTAssertEqual(access.document.weeks[0], week)
+    }
+
+    func testWeekTodayHighlightUsesExactDateAcrossWeeksAndTimeZones() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let today = try XCTUnwrap(PlanningDate.date("2026-10-17", calendar: calendar))
+        XCTAssertTrue(WeekDayHighlight.isToday(today, now: today, calendar: calendar))
+        XCTAssertFalse(WeekDayHighlight.isToday(nil, now: today, calendar: calendar))
+        for key in ["2026-10-10", "2026-10-16", "2026-10-18", "2026-10-24"] {
+            XCTAssertFalse(WeekDayHighlight.isToday(PlanningDate.date(key, calendar: calendar), now: today, calendar: calendar))
+        }
+        let beforeMidnight = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 17, hour: 23, minute: 59)))
+        let afterMidnight = try XCTUnwrap(calendar.date(byAdding: .minute, value: 2, to: beforeMidnight))
+        XCTAssertTrue(WeekDayHighlight.isToday(today, now: beforeMidnight, calendar: calendar))
+        XCTAssertFalse(WeekDayHighlight.isToday(today, now: afterMidnight, calendar: calendar))
+        XCTAssertTrue(WeekDayHighlight.isToday(PlanningDate.date("2026-10-18", calendar: calendar), now: afterMidnight, calendar: calendar))
+    }
+
+    @MainActor
     func testTabletTodayPlanSummaryRendersSavedAndEmptyStatesWithoutWriting() async throws {
         let name = "PlenactTests.TodaySummary." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!

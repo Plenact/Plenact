@@ -74,3 +74,8 @@ The initial transfer action recognizes the default standalone List names. Missin
 ## iPad Today's Plan panel — October 17, 2026
 
 On iPad, the Today sequence is Today's Plan, slogan/Quick capture, Today's Focus, List shortcuts, and Browse this week. The plan summary replaces the large upper spacer and makes chosen priorities distinct from items in the dated day List. Show saved intention, live status for up to three ordered priorities, optional next focus, and an explicit route to the complete plan. A missing plan prompts “What would make today meaningful?” with Plan today. Saved state comes from the existing daily-plan store; no second plan is created. iPhone retains its existing layout
+
+
+### iPad lower content spacing — October 17
+
+The iPad plan summary has 36 points of bottom padding before the slogan/Quick capture group, replacing the earlier -24-point overlap. This moves the slogan, Quick capture, Today's Focus, and shortcuts down together by 60 points to restore the lower labels near the toolbar after the compact-header adjustment. In the standard portrait layout, Browse this week starts below the toolbar and remains reachable by scrolling. The iPhone spacing and toolbar geometry are unchanged. Longer plan summaries, larger accessibility text, or additional shortcuts can extend the scrollable content further.

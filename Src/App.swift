@@ -2582,8 +2582,9 @@ private struct TodayHomeView: View {
                                 sources: planningCalendarAccess?.searchableItems ?? [], onOpen: { showsTodayPlan = true })
                                 .padding(16)
                         }
-                        // Lift the entire following group together, retaining its internal spacing.
-                        .padding(.bottom, -24)
+                        // Keep the iPad capture/focus/shortcut group near the toolbar after the compact header.
+                        // Move the group together so its internal spacing and the iPhone layout stay unchanged.
+                        .padding(.bottom, 36)
                     }
                     VStack(spacing: 0) {
                         TodaySloganView()

@@ -536,6 +536,43 @@ struct PlenactLoadingView: View {
     }
 }
 
+/// Independent device-specific toolbar geometry. Keep each preset explicit when tuning a device.
+struct BottomToolbarLayout {
+    var height: CGFloat
+    var safeAreaAllowance: CGFloat
+    var rowSpacing: CGFloat
+    var horizontalPadding: CGFloat
+    var topPadding: CGFloat
+    var bottomPadding: CGFloat
+    var tabsOffset: CGFloat
+    var newOffset: CGFloat
+    var tabMinimumHeight: CGFloat
+    var tabIconSize: CGFloat
+    var newButtonSize: CGFloat
+    var newIconSize: CGFloat
+    var tabLabelSpacing: CGFloat
+    var newLabelSpacing: CGFloat
+    var backgroundTopInset: CGFloat
+    var horizontalLabels: Bool
+    var labelStyle: Font.TextStyle
+
+    // iPhone layouts: edits here do not affect iPad.
+    static let phoneRegular = Self(height: 74, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 25, newOffset: 14, tabMinimumHeight: 54, tabIconSize: 23, newButtonSize: 68, newIconSize: 24, tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 28, horizontalLabels: false, labelStyle: .caption)
+    static let phoneCompact = Self(height: 52, safeAreaAllowance: 0, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 0, newOffset: 0, tabMinimumHeight: 44, tabIconSize: 23, newButtonSize: 44, newIconSize: 24, tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
+
+    // iPad layouts: independently configurable, including compact-height windows.
+    static let padRegular = Self(height: 74, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 25, newOffset: 14, tabMinimumHeight: 54, tabIconSize: 23, newButtonSize: 68, newIconSize: 24, tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 20, horizontalLabels: false, labelStyle: .caption)
+    static let padCompact = Self(height: 52, safeAreaAllowance: 0, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 0, newOffset: 0, tabMinimumHeight: 44, tabIconSize: 23, newButtonSize: 44, newIconSize: 24, tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
+
+    static func configuration(isTablet: Bool, compact: Bool) -> Self {
+        if isTablet { return compact ? padCompact : padRegular }
+        return compact ? phoneCompact : phoneRegular
+    }
+    func reservedHeight(bottomInset: CGFloat) -> CGFloat {
+        height + max(0, safeAreaAllowance - bottomInset)
+    }
+}
+
 private struct AppRootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
@@ -556,6 +593,13 @@ private struct AppRootView: View {
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
     @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
+    @State private var bottomNavigationSafeInset: CGFloat = 34
+    private var bottomToolbarLayout: BottomToolbarLayout {
+        .configuration(isTablet: UIDevice.current.userInterfaceIdiom == .pad, compact: verticalSizeClass == .compact)
+    }
+    private var bottomNavigationHeight: CGFloat {
+        bottomToolbarLayout.reservedHeight(bottomInset: bottomNavigationSafeInset)
+    }
     @State private var visibleNoteIDs: Set<UUID> = []
     private var isNotePresented: Bool { !visibleNoteIDs.isEmpty }
     @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
@@ -792,14 +836,18 @@ private struct AppRootView: View {
 
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear
-                .frame(height: isNotePresented ? 0 : (verticalSizeClass == .compact ? 52 : 74))
+                .frame(height: isNotePresented ? 0 : bottomNavigationHeight)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
         .overlay {
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                if !isNotePresented { bottomNavigationBar }
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    if !isNotePresented { bottomNavigationBar }
+                }
+                .onAppear { bottomNavigationSafeInset = geometry.safeAreaInsets.bottom }
+                .onChange(of: geometry.safeAreaInsets.bottom) { _, inset in bottomNavigationSafeInset = inset }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
@@ -807,7 +855,7 @@ private struct AppRootView: View {
         .environment(\.workspaceNoteVisibility, { id, visible in
             if visible { visibleNoteIDs.insert(id) } else { visibleNoteIDs.remove(id) }
         })
-        .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : (verticalSizeClass == .compact ? 52 : 74))
+        .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : bottomNavigationHeight)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
         .environment(\.calendar, calendarDocument?.calendar ?? .current)
@@ -1380,7 +1428,7 @@ private struct AppRootView: View {
     /// @brief      Build the custom destination bar and central New control
     /// @details    Honors navigation-label preferences and remains anchored at the screen bottom
     ///             while the keyboard overlays it. The decorative background extends through the
-    ///             bottom safe area independently of the fixed-height controls. In portrait,
+    ///             bottom safe area independently of the measured controls. In portrait,
     ///             its top edge is inset 20 points so New overlaps it without moving any controls.
     ///             New requests Today capture, a Library Note, or a Week-card destination picker;
     ///             a long press arms Week-list creation and shake feedback
@@ -1389,30 +1437,31 @@ private struct AppRootView: View {
     /// @post       Button and gesture callbacks update navigation and creation-request state
     ///
     private var bottomNavigationBar: some View { /* Shared tab and quick-creation controls */
-        let isCompact = verticalSizeClass == .compact /* Landscape-height navigation layout */
+        let layout = bottomToolbarLayout
+        let isCompact = layout.horizontalLabels /* Landscape-height navigation layout */
 
         return ZStack(alignment: isCompact ? .center : .top) {
-            HStack(spacing: 4) {
+            HStack(spacing: layout.rowSpacing) {
                 tabButton(.today, title: "Today", systemImage: "sun.max.fill")
                 tabButton(.board, title: "Week", systemImage: "rectangle.3.group.fill")
 
                 Color.clear
-                    .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 54)
+                    .frame(maxWidth: .infinity, minHeight: layout.tabMinimumHeight)
                     .accessibilityHidden(true)
 
                 tabButton(.lists, title: "Plans", systemImage: "books.vertical.fill")
                 tabButton(.saved, title: "Activity", systemImage: "clock.arrow.circlepath")
             }
 
-            .padding(.horizontal, 12)
-            .padding(.top, 4)
-            .padding(.bottom, 4)
+            .padding(.horizontal, layout.horizontalPadding)
+            .padding(.top, layout.topPadding)
+            .padding(.bottom, layout.bottomPadding)
             .frame(maxWidth: .infinity)
-            .offset(y: isCompact ? 0 : 25)
+            .offset(y: layout.tabsOffset)
 
             let newLayout = isCompact /* Adaptive arrangement of creation actions */
-                ? AnyLayout(HStackLayout(spacing: 6))
-                : AnyLayout(VStackLayout(spacing: 6))
+                ? AnyLayout(HStackLayout(spacing: layout.newLabelSpacing))
+                : AnyLayout(VStackLayout(spacing: layout.newLabelSpacing))
             newLayout {
                 Button {
                     if isWeekListRequestArmed {
@@ -1428,10 +1477,10 @@ private struct AppRootView: View {
                     }
                 } label: {
                     Image(systemName: "rectangle.stack.badge.plus")
-                        .font(.system(size: 24, weight: .medium))
+                        .font(.system(size: layout.newIconSize, weight: .medium))
                         .foregroundStyle(.white)
                         .rotationEffect(.degrees(-7))
-                        .frame(width: isCompact ? 44 : 68, height: isCompact ? 44 : 68)
+                        .frame(width: layout.newButtonSize, height: layout.newButtonSize)
                         .background(Color.accentColor, in: Circle())
                         .shadow(color: Color.black.opacity(0.22), radius: 8, x: 2, y: 4)
                         .contentShape(Circle())
@@ -1461,17 +1510,17 @@ private struct AppRootView: View {
                     if profile?.preferences.showsNavigationLabels ?? true {
 
                         Text("New")
-                            .font(.caption)
+                            .font(.system(layout.labelStyle))
                             .foregroundStyle(.white.opacity(0.92))
                     }
             }
 
-            .offset(y: isCompact ? 0 : 14)
+            .offset(y: layout.newOffset)
             .zIndex(2)
         }
 
         .frame(maxWidth: .infinity)
-        .frame(height: isCompact ? 52 : 74)
+        .frame(height: bottomNavigationHeight, alignment: isCompact ? .center : .top)
         .background(alignment: .bottom) {
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
@@ -1487,7 +1536,7 @@ private struct AppRootView: View {
                 }
             }
 
-            .padding(.top, isCompact ? 0 : 20)
+            .padding(.top, layout.backgroundTopInset)
             .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
             .allowsHitTesting(false)
         }
@@ -1513,6 +1562,7 @@ private struct AppRootView: View {
     ///
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
+        let geometry = bottomToolbarLayout
         let isSelected = selectedDestination == destination /* Current tab selection */
 
         return Button {
@@ -1532,22 +1582,22 @@ private struct AppRootView: View {
 
         } label: {
 
-            let layout = verticalSizeClass == .compact /* Adaptive quick-creation action layout */
-                ? AnyLayout(HStackLayout(spacing: 6))
-                : AnyLayout(VStackLayout(spacing: 4))
+            let layout = geometry.horizontalLabels /* Adaptive quick-creation action layout */
+                ? AnyLayout(HStackLayout(spacing: geometry.tabLabelSpacing))
+                : AnyLayout(VStackLayout(spacing: geometry.tabLabelSpacing))
             layout {
 
                 Image(systemName: systemImage)
-                    .font(.system(size: 23, weight: .semibold))
+                    .font(.system(size: geometry.tabIconSize, weight: .semibold))
 
                 if profile?.preferences.showsNavigationLabels ?? true {
 
                     Text(title)
-                        .font(.caption)
+                        .font(.system(geometry.labelStyle))
                 }
             }
 
-            .frame(maxWidth: .infinity, minHeight: verticalSizeClass == .compact ? 44 : 54)
+            .frame(maxWidth: .infinity, minHeight: geometry.tabMinimumHeight)
             .contentShape(Rectangle())
         }
 

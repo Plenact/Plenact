@@ -22,7 +22,7 @@ Today's Plan provides Start/Resume/Revisit today's vision. The three steps revie
 
 Candidates exclude completed, divider, and Reference-labelled content. Scheduling suggestions use date mappings and explicit dates, including spanning ranges. The optional Scheduled → On the Table transfer uses the root move callback and updates the current priority reference from the actual destination result. Root checked writes restore previous preference values on a reported store-write failure. This is not a crash-safe multi-store operation journal: termination between a committed move and plan save can leave an unavailable old link requiring manual repair, while the item remains at its saved destination
 
-Default working roles currently recognize standalone Lists by their names. Missing Lists are not recreated automatically. Named-role configuration, durable reference repair across all plans, and a full review history remain future work
+Default working roles currently recognize standalone Lists by their names. Missing Lists are not recreated automatically. Named-role configuration, durable reference repair across all plans, and a history of every review edit remain future work; submitted Check-in history is available in Daily review
 
 ## Today's Review
 
@@ -32,9 +32,11 @@ Each confirmed action saves its source change and review decision together using
 
 ## Today's Check-in
 
-Start/revisit the midday check-in from Today's Plan. Live progress separates tasks, Notes, and unavailable references. Edit reorders or sets priority links aside; Choose/Add reuse the existing pickers/composer. A selected unfinished Card or Note may be the optional next focus, displayed in Today's Plan. Completed, removed, or unavailable focus links are not presented as current focus
+Start a fresh Check-in with Check in now from Today's Plan. Live progress separates tasks, Notes, and unavailable references. Edit reorders or sets priority links aside; Choose/Add reuse the existing pickers/composer. A selected unfinished Card or Note may be the optional next focus, displayed in Today's Plan. Completed, removed, or unavailable focus links are not presented as current focus
 
-Save updates the same plan, preserving Vision and Review metadata, recording optional changed circumstances and the latest check-in timestamp. Return to Plan retains open edits for Save/discard. Explicitly added canonical items remain saved even if later plan edits are discarded. There is no automatic source movement or historical sequence of check-ins; revisiting updates the latest check-in
+Each Save appends a timestamped Check-in with its note, next focus, plan fields, ordered priority snapshots, and progress counts, while updating the shared plan and preserving Vision/Review metadata. A new Check-in starts with an empty note and carries forward the current plan/focus. Save the note before leaving; leaving a nonempty unsaved note requires explicit discard. Explicitly added canonical items remain saved even if plan edits are discarded. No automatic source movement occurs
+
+Daily review sits immediately above Weekly review. It reads saved plans, shows live progress and next focus for today, and retains Check-in snapshots and evening reflections for earlier days via Review day and Saved days. Browsing never saves or creates records. Optional `checkIns` extends the existing v1 document; legacy single Check-ins are presented without writing, then retained exactly once on the first new Check-in save. Legacy progress/plan snapshots are unavailable and labeled explicitly. `checkIn` remains the latest summary for current-focus compatibility. Existing same-day conflict protection prevents stale sheets overwriting newer Check-ins
 
 ## Weekly Review
 
@@ -63,3 +65,8 @@ The Library owns article presentation so sheets remain stable while rows scroll.
 Today on iPad presents a read-only Today's Plan panel beneath the heading, replacing the former large adaptive upper spacer. It shows the saved intention, up to three ordered priority links with live completion/Note/unavailable states, and a valid next focus from Check-in. Additional priorities are disclosed with a count. Open today's plan uses the existing editor and Planning Rhythm entry points; the empty state offers Plan today
 
 The panel observes the daily-plan preference data, reloads on foregrounding and local date changes, and resolves sources through the current calendar access. It does not create or save a plan merely by appearing. Unreadable saved data produces an explicit message and remains unchanged. iPhone's panel order and spacing are unchanged; overflowing iPad content scrolls naturally
+
+
+### Check-in moods
+
+Each Check-in optionally records a `CheckInMood` value (emoji and label) on its history entry. The menu offers Great, Good, Okay, Low, Struggling, and Custom. Custom accepts one emoji grapheme and a nonempty trimmed feeling of up to 40 characters; Save waits for both fields. New Check-ins always start with no mood selection. Mood-only entries are valid; leaving unsaved mood input prompts for explicit discard. Daily review shows the saved mood next to the entry time. Optional decoding preserves earlier entries without a mood, and mood values remain independent of future preset changes. No mood score or inferred assessment is recorded.

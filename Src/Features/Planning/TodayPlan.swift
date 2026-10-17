@@ -29,6 +29,7 @@ struct DailyPlan: Codable, Equatable, Identifiable {
     var priorities: [DailyPlanPriority] = []
     var updatedAt: Date? = nil
     var checkIn: DailyCheckIn? = nil
+    var checkIns: [DailyCheckInEntry]? = nil
     var eveningReview: DailyEveningReview? = nil
     var visionStep: Int? = nil
     var visionCompletedAt: Date? = nil
@@ -67,6 +68,7 @@ enum DailyPlanStore {
             guard key == plan.id, key.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil,
                   TimeZone(identifier: plan.timeZoneID) != nil,
                   Set(plan.priorities.map(\.id)).count == plan.priorities.count,
+                  Set((plan.checkIns ?? []).map(\.id)).count == (plan.checkIns ?? []).count,
                   (plan.visionStep.map({ (0...2).contains($0) }) ?? true),
                   (plan.eveningReview.map({ (0...2).contains($0.step) && Set($0.decisions.map(\.id)).count == $0.decisions.count }) ?? true) else { throw Failure.corrupt }
         }
@@ -77,7 +79,8 @@ enum DailyPlanStore {
     static func save(_ plan: DailyPlan, replacing expected: DailyPlan?, to defaults: UserDefaults = .standard) throws -> DailyPlan {
         var document = try load(from: defaults)
         guard document.plans[plan.id] == expected else { throw Failure.conflict }
-        guard Set(plan.priorities.map(\.id)).count == plan.priorities.count else { throw Failure.corrupt }
+        guard Set(plan.priorities.map(\.id)).count == plan.priorities.count,
+              Set((plan.checkIns ?? []).map(\.id)).count == (plan.checkIns ?? []).count else { throw Failure.corrupt }
         var saved = plan
         saved.updatedAt = .now
         document.plans[saved.id] = saved
@@ -107,6 +110,7 @@ struct TodayPlanView: View {
     @State private var showsVision = false
     @State private var showsReview = false
     @State private var showsCheckIn = false
+    @State private var showsDailyReview = false
     @State private var showsWeeklyReview = false
     @State private var showsPeriodicReview = false
     @State private var confirmsDiscard = false
@@ -198,21 +202,26 @@ struct TodayPlanView: View {
                         .font(.headline).frame(minHeight: 44)
                 }.disabled(access == nil)
                 Button { showsCheckIn = true } label: {
-                    Label(draft.checkIn?.savedAt == nil ? "Start today's check-in" : "Revisit today's check-in", systemImage: "sun.max")
+                    Label("Check in now", systemImage: "sun.max")
                         .font(.headline).frame(minHeight: 44)
                 }.disabled(access == nil)
                 Button { showsReview = true } label: {
                     Label(draft.eveningReview?.completedAt != nil ? "Revisit today's review" : (draft.eveningReview == nil ? "Start today's review" : "Resume today's review"), systemImage: "moon.stars")
                         .font(.headline).frame(minHeight: 44)
                 }.disabled(access == nil)
+            } footer: {
+                Text("Plan your morning, adjust during the day, and reflect in the evening. Save within each flow to keep your progress.")
+            }
+            Section {
+                Button { showsDailyReview = true } label: {
+                    Label("Daily review", systemImage: "list.bullet.clipboard").font(.headline).frame(minHeight: 44)
+                }
                 Button { showsWeeklyReview = true } label: {
                     Label("Weekly review", systemImage: "calendar.badge.clock").font(.headline).frame(minHeight: 44)
                 }.disabled(access == nil)
                 Button { showsPeriodicReview = true } label: {
                     Label("Periodic review", systemImage: "flag.checkered").font(.headline).frame(minHeight: 44)
                 }.disabled(access == nil)
-                Text("Plan your morning, adjust during the day, and reflect in the evening. Save within each flow to keep your progress.")
-                    .font(.footnote).foregroundStyle(.secondary)
             }
             Section {
                 if draft.priorities.isEmpty {
@@ -270,6 +279,7 @@ struct TodayPlanView: View {
             .task { if !loaded { load() } }
             .sheet(isPresented: $showsPeriodicReview) { PeriodicReviewView(calendar: access?.document.calendar ?? planCalendar) }
             .sheet(isPresented: $showsWeeklyReview) { WeeklyReviewView(calendar: access?.document.calendar ?? planCalendar) }
+            .sheet(isPresented: $showsDailyReview) { DailyHistoryReviewView(date: date, calendar: planCalendar, defaults: defaults) }
             .sheet(isPresented: $showsCheckIn) { TodayCheckInView(plan: $draft, date: date, onSave: saveVisionProgress) }
             .sheet(isPresented: $showsVision) { TodayVisionView(plan: $draft, date: date, onSave: saveVisionProgress) }
             .sheet(isPresented: $showsReview) {
@@ -618,6 +628,213 @@ struct DailyCheckIn: Codable, Equatable {
     var savedAt: Date? = nil
 }
 
+/// Stored as values so custom feelings and future preset changes preserve the original entry.
+struct CheckInMood: Codable, Equatable {
+    let emoji: String
+    let label: String
+    var display: String { emoji + " " + label }
+    static func custom(emoji: String, label: String) -> CheckInMood? {
+        let emoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let scalars = emoji.unicodeScalars
+        let isEmoji = scalars.contains { $0.properties.isEmojiPresentation }
+            || (scalars.contains { $0.value == 0xFE0F } && scalars.contains { $0.properties.isEmoji })
+        guard emoji.count == 1, isEmoji, !label.isEmpty, label.count <= 40 else { return nil }
+        return CheckInMood(emoji: emoji, label: label)
+    }
+}
+
+enum CheckInMoodChoice: String, CaseIterable, Identifiable {
+    case none, great, good, okay, low, struggling, custom
+    var id: Self { self }
+    var mood: CheckInMood? {
+        switch self {
+        case .none, .custom: nil
+        case .great: CheckInMood(emoji: "😊", label: "Great")
+        case .good: CheckInMood(emoji: "🙂", label: "Good")
+        case .okay: CheckInMood(emoji: "😐", label: "Okay")
+        case .low: CheckInMood(emoji: "😔", label: "Low")
+        case .struggling: CheckInMood(emoji: "😣", label: "Struggling")
+        }
+    }
+    var title: String {
+        switch self {
+        case .none: "Not selected"
+        case .custom: "Custom…"
+        default: mood?.display ?? ""
+        }
+    }
+}
+
+/// A submitted moment retains its own context even as the shared plan changes.
+struct DailyCheckInEntry: Codable, Equatable, Identifiable {
+    let id: String
+    let savedAt: Date
+    let changed: String
+    let focus: DailyPlanPriority?
+    let intention: String
+    let constraints: String
+    let concerns: String
+    let priorities: [DailyPlanPriority]
+    let completedTasks: Int?
+    let totalTasks: Int?
+    let notes: Int?
+    let unavailable: Int?
+    let legacy: Bool
+    var mood: CheckInMood? = nil
+}
+
+extension DailyPlan {
+    /// Legacy records have no historical plan/progress snapshot. Do not invent one.
+    var checkInHistory: [DailyCheckInEntry] {
+        if let checkIns { return checkIns }
+        guard let saved = checkIn, let timestamp = saved.savedAt else { return [] }
+        return [.init(id: "legacy:" + id, savedAt: timestamp, changed: saved.changed,
+                      focus: saved.focus, intention: "", constraints: "", concerns: "", priorities: [],
+                      completedTasks: nil, totalTasks: nil, notes: nil, unavailable: nil, legacy: true)]
+    }
+    mutating func recordCheckIn(changed: String, sources: [PlanningSearchResult], at timestamp: Date = .now, mood: CheckInMood? = nil) {
+        var entries = checkInHistory
+        let focus = DailyCheckInProgress.focus(plan: self, sources: sources)
+        let progress = DailyCheckInProgress.counts(plan: self, sources: sources)
+        entries.append(.init(id: UUID().uuidString, savedAt: timestamp, changed: changed, focus: focus,
+                             intention: intention, constraints: constraints, concerns: concerns, priorities: priorities,
+                             completedTasks: progress.completed, totalTasks: progress.tasks,
+                             notes: progress.notes, unavailable: progress.unavailable, legacy: false, mood: mood))
+        checkIns = entries
+        checkIn = DailyCheckIn(focus: focus, changed: changed, savedAt: timestamp)
+    }
+}
+
+/// Saved records only: opening or browsing this view never writes a plan.
+struct DailyHistoryReviewView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.planningCalendarAccess) private var access
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var date: Date
+    @State private var document = DailyPlanStore.Document()
+    @State private var loadError: String?
+    @AppStorage private var storedData: Data
+    private let calendar: Calendar
+    private let defaults: UserDefaults
+    init(date: Date, calendar: Calendar, defaults: UserDefaults = .standard) {
+        _date = State(initialValue: date)
+        self.calendar = calendar; self.defaults = defaults
+        _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
+    }
+    private var plan: DailyPlan? { document.plans[PlanningDate.key(date, calendar: calendar)] }
+    private var isToday: Bool { calendar.isDateInToday(date) }
+    private func reload() {
+        do { document = try DailyPlanStore.load(from: defaults); loadError = nil }
+        catch { loadError = error.localizedDescription }
+    }
+    private func checkInTime(_ timestamp: Date, timeZoneID: String) -> String {
+        var style = Date.FormatStyle(date: .omitted, time: .shortened)
+        style.timeZone = TimeZone(identifier: timeZoneID) ?? calendar.timeZone
+        return timestamp.formatted(style)
+    }
+    private func text(_ title: String, _ value: String) -> some View {
+        Group {
+            if !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.caption).foregroundStyle(.secondary)
+                    Text(value)
+                }
+            }
+        }
+    }
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    DatePicker("Review day", selection: $date, displayedComponents: .date)
+                    Text("Saved records only. Save an open Check-in or plan before reviewing its changes here.").font(.caption).foregroundStyle(.secondary)
+                    Menu("Saved days") {
+                        ForEach(document.plans.keys.sorted(by: >), id: \.self) { key in
+                            if let day = PlanningDate.date(key, calendar: calendar) {
+                                Button(day.formatted(date: .abbreviated, time: .omitted)) { date = day }
+                            }
+                        }
+                    }.disabled(document.plans.isEmpty)
+                }
+                if let loadError {
+                    Section("Your records couldn't be opened") {
+                        Text(loadError)
+                        Button("Try again", action: reload)
+                    }
+                } else if let plan {
+                    Section(isToday ? "Your day so far" : "Saved daily plan") {
+                        text("Intention", plan.intention)
+                        if isToday {
+                            let counts = DailyCheckInProgress.counts(plan: plan, sources: access?.searchableItems ?? [])
+                            Text("\(counts.completed) of \(counts.tasks) priority tasks complete").font(.headline)
+                            if counts.tasks > 0 { ProgressView(value: Double(counts.completed), total: Double(counts.tasks)) }
+                            Text("\(counts.notes) Notes · \(counts.unavailable) unavailable links").font(.caption).foregroundStyle(.secondary)
+                            Text("Progress reflects your linked items now.").font(.caption).foregroundStyle(.secondary)
+                        }
+                        Text("\(plan.checkInHistory.count) saved Check-ins")
+                        if isToday, let focus = DailyCheckInProgress.focus(plan: plan, sources: access?.searchableItems ?? []) {
+                            text("Your next focus", focus.resolve(in: access?.searchableItems ?? [])?.card.word ?? focus.title)
+                        }
+                        text("Make room for", plan.constraints)
+                        text("Risks or concerns", plan.concerns)
+                        ForEach(plan.priorities) { priority in Text(priority.title) }
+                        if !isToday { Text("Saved priorities are context; completion at each Check-in is recorded below.").font(.caption).foregroundStyle(.secondary) }
+                    }
+                    Section("Check-ins · " + plan.timeZoneID) {
+                        if plan.checkInHistory.isEmpty { Text("No saved Check-ins for this day.").foregroundStyle(.secondary) }
+                        ForEach(plan.checkInHistory.sorted { $0.savedAt < $1.savedAt }) { entry in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(checkInTime(entry.savedAt, timeZoneID: plan.timeZoneID)).font(.headline)
+                                    if let mood = entry.mood { Text(mood.display).font(.subheadline) }
+                                }.accessibilityElement(children: .combine)
+                                if entry.changed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Text("Checked in without a note").foregroundStyle(.secondary)
+                                } else { Text(entry.changed) }
+                                if let completed = entry.completedTasks, let total = entry.totalTasks {
+                                    Text("\(completed) of \(total) priority tasks complete at this Check-in").font(.subheadline)
+                                    Text("\(entry.notes ?? 0) Notes · \(entry.unavailable ?? 0) unavailable links").font(.caption).foregroundStyle(.secondary)
+                                }
+                                if let focus = entry.focus { text("Next focus", focus.title) }
+                                if entry.legacy {
+                                    Text("Retained from the original Check-in. A plan and progress snapshot was not recorded at that time.").font(.caption).foregroundStyle(.secondary)
+                                } else {
+                                    DisclosureGroup("Plan at this Check-in") {
+                                        text("Intention", entry.intention)
+                                        text("Make room for", entry.constraints)
+                                        text("Risks or concerns", entry.concerns)
+                                        ForEach(entry.priorities) { priority in Text(priority.title) }
+                                    }
+                                }
+                            }.padding(.vertical, 6)
+                        }
+                    }
+                    if let review = plan.eveningReview {
+                        Section("Evening review") {
+                            Text(review.completedAt == nil ? "In progress" : "Completed")
+                            text("What helped", review.helped)
+                            text("What was difficult", review.difficult)
+                            text("Carry into tomorrow", review.tomorrow)
+                            ForEach(review.achievements) { item in Text(item.title) }
+                        }
+                    }
+                } else {
+                    Section { Text("No saved plan or Check-ins for this day.").foregroundStyle(.secondary) }
+                }
+            }
+            .textSelection(.enabled)
+            .navigationTitle("Daily review").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .task { reload() }
+            .onChange(of: storedData) { _, _ in reload() }
+            .onChange(of: scenePhase) { _, phase in if phase == .active { reload() } }
+        }
+        .environment(\.calendar, calendar)
+        .environment(\.timeZone, calendar.timeZone)
+    }
+}
+
 /// Live progress counts tasks only; Notes and unavailable links remain separate context.
 enum DailyCheckInProgress {
     static func counts(plan: DailyPlan, sources: [PlanningSearchResult]) -> (completed: Int, tasks: Int, notes: Int, unavailable: Int) {
@@ -649,20 +866,39 @@ struct TodayCheckInView: View {
     @State private var saveFailed = false
     private var sources: [PlanningSearchResult] { access?.searchableItems ?? [] }
     private var checkIn: DailyCheckIn { plan.checkIn ?? DailyCheckIn() }
-    private var changed: Binding<String> {
-        Binding(get: { checkIn.changed }, set: { value in var updated = checkIn; updated.changed = value; plan.checkIn = updated })
+    @State private var changed = ""
+    @State private var moodChoice: CheckInMoodChoice = .none
+    @State private var customEmoji = ""
+    @State private var customFeeling = ""
+    private var selectedMood: CheckInMood? {
+        moodChoice == .custom ? CheckInMood.custom(emoji: customEmoji, label: customFeeling) : moodChoice.mood
     }
+    private var hasUnsavedCheckIn: Bool {
+        !changed.isEmpty || moodChoice != .none || !customEmoji.isEmpty || !customFeeling.isEmpty
+    }
+    @State private var didSave = false
+    @State private var selectedFocus: DailyPlanPriority?
+    init(plan: Binding<DailyPlan>, date: Date, onSave: @escaping () -> Bool) {
+        _plan = plan; self.date = date; self.onSave = onSave
+        _selectedFocus = State(initialValue: plan.wrappedValue.checkIn?.focus)
+    }
+    private var focusPlan: DailyPlan {
+        var result = plan
+        var latest = checkIn; latest.focus = selectedFocus; result.checkIn = latest
+        return result
+    }
+    @State private var confirmsLeaving = false
     private func selectFocus(_ priority: DailyPlanPriority?) {
-        var updated = checkIn; updated.focus = priority; plan.checkIn = updated
+        selectedFocus = priority
     }
     private func save() {
-        let previous = plan.checkIn
-        var updated = checkIn
-        updated.focus = DailyCheckInProgress.focus(plan: plan, sources: sources)
-        updated.savedAt = .now
-        plan.checkIn = updated
-        if onSave() { dismiss() }
-        else { plan.checkIn = previous; saveFailed = true }
+        guard !didSave, moodChoice != .custom || selectedMood != nil else { return }
+        let previous = plan
+        plan.checkIns = plan.checkInHistory
+        plan.checkIn = focusPlan.checkIn
+        plan.recordCheckIn(changed: changed, sources: sources, mood: selectedMood)
+        if onSave() { didSave = true; dismiss() }
+        else { plan = previous; saveFailed = true }
     }
     var body: some View {
         NavigationStack {
@@ -690,7 +926,7 @@ struct TodayCheckInView: View {
                                 Text(source?.card.word ?? priority.title).font(.headline)
                                 Text(source == nil ? "Unavailable · remove this link and choose the item again if needed" : (source?.card.presentation == .note ? "Note" : (source?.card.isTitleChecked == true ? "Complete" : "Not complete"))).font(.caption).foregroundStyle(.secondary)
                                 if let source, source.card.presentation == .note || !source.card.isTitleChecked {
-                                    let focused = DailyCheckInProgress.focus(plan: plan, sources: sources)?.id == priority.id
+                                    let focused = DailyCheckInProgress.focus(plan: focusPlan, sources: sources)?.id == priority.id
                                     Button(focused ? "Next focus ✓" : "Focus on this next") { selectFocus(focused ? nil : priority) }
                                         .accessibilityValue(focused ? "Selected" : "Not selected")
                                 }
@@ -703,21 +939,39 @@ struct TodayCheckInView: View {
                     Button("Add priority", systemImage: "square.and.pencil") { showsNew = true }
                 } header: { Text("What matters next?") }
                 footer: { Text("Use Edit to reorder or set a priority aside. Removing a link keeps the original item in place. Your next focus is optional.") }
-                Section("What changed?") { TextField("New information, a small win, or a change of plan (optional)", text: changed, axis: .vertical).lineLimit(2...5) }
+                Section {
+                    Picker("Mood", selection: $moodChoice) {
+                        ForEach(CheckInMoodChoice.allCases) { choice in Text(choice.title).tag(choice) }
+                    }.pickerStyle(.menu)
+                    if moodChoice == .custom {
+                        TextField("Emoji", text: $customEmoji)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                            .accessibilityHint("Enter one emoji using the emoji keyboard")
+                        TextField("Feeling, such as quietly hopeful", text: $customFeeling)
+                            .onChange(of: customFeeling) { _, value in customFeeling = String(value.prefix(40)) }
+                        if selectedMood == nil {
+                            Text("Enter one emoji and a feeling of up to 40 characters.").font(.caption).foregroundStyle(.secondary)
+                        } else if let selectedMood {
+                            Text(selectedMood.display).accessibilityLabel("Your mood: " + selectedMood.display)
+                        }
+                    }
+                } header: { Text("How are you feeling?") }
+                footer: { Text("Optional. Choose what fits this moment; each new Check-in starts fresh.") }
+                Section("What changed?") { TextField("New information, a small win, or a change of plan (optional)", text: $changed, axis: .vertical).lineLimit(2...5) }
                 Section("Is this still realistic?") {
                     TextField("Your intention", text: $plan.intention, axis: .vertical).lineLimit(2...5)
                     TextField("Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical).lineLimit(2...5)
                     TextField("Risks or concerns", text: $plan.concerns, axis: .vertical).lineLimit(2...5)
                 }
                 Section {
-                    Button("Save today's check-in", action: save).font(.headline).frame(maxWidth: .infinity, minHeight: 44)
+                    Button("Save check-in", action: save).disabled(moodChoice == .custom && selectedMood == nil).font(.headline).frame(maxWidth: .infinity, minHeight: 44)
                     if let saved = checkIn.savedAt { Text("Last check-in " + saved.formatted(date: .omitted, time: .shortened)).font(.caption).foregroundStyle(.secondary) }
-                    Text("Save updates the same Today's Plan used by your morning vision and evening review. Returning to Plan keeps your edits open until you save or discard them.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Each Save adds a timestamped entry to Daily review and updates your shared daily plan. Plan adjustments stay open when returning to Plan; an unsaved Check-in note or mood must be saved here.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Today's Check-in").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Plan", systemImage: "chevron.left") { dismiss() }.accessibilityLabel("Back to Today's Plan") }
+                ToolbarItem(placement: .cancellationAction) { Button("Plan", systemImage: "chevron.left") { if hasUnsavedCheckIn { confirmsLeaving = true } else { dismiss() } }.accessibilityLabel("Back to Today's Plan") }
                 ToolbarItem(placement: .confirmationAction) { EditButton() }
             }
             .sheet(isPresented: $showsPicker) { DailyPriorityPicker(sources: sources, priorities: $plan.priorities) }
@@ -725,6 +979,11 @@ struct TodayCheckInView: View {
                 let priority = DailyPlanPriority(source)
                 if !plan.priorities.contains(where: { $0.id == priority.id }) { plan.priorities.append(priority) }
             } }
+            .interactiveDismissDisabled(hasUnsavedCheckIn)
+            .confirmationDialog("Leave without saving this Check-in?", isPresented: $confirmsLeaving, titleVisibility: .visible) {
+                Button("Discard Check-in and return to Plan", role: .destructive) { dismiss() }
+                Button("Keep editing", role: .cancel) {}
+            }
             .alert("Check-in not saved", isPresented: $saveFailed) { Button("OK", role: .cancel) {} }
                 message: { Text("Your edits are still open. The saved plan may have changed, or saving failed. Return to Plan to save or reopen it before retrying.") }
         }

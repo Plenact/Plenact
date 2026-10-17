@@ -189,6 +189,155 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testCheckInMoodsRoundTripWithoutCarryingForwardOrChangingOlderEntries() throws {
+        let name = "PlenactTests.Moods." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var plan = DailyPlan(date: .now)
+        plan.recordCheckIn(changed: "Before moods existed", sources: [])
+        let old = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        let bytes = try XCTUnwrap(defaults.data(forKey: DailyPlanStore.key))
+        XCTAssertFalse(String(decoding: bytes, as: UTF8.self).contains("\"mood\""))
+        XCTAssertNil(try DailyPlanStore.load(from: defaults).plans[plan.id]?.checkInHistory.first?.mood)
+        let custom = try XCTUnwrap(CheckInMood.custom(emoji: " 🌤️ ", label: " Quietly hopeful "))
+        XCTAssertEqual(custom.label, "Quietly hopeful")
+        XCTAssertEqual(custom.emoji, "🌤️")
+        for choice in CheckInMoodChoice.allCases where choice.mood != nil {
+            plan.recordCheckIn(changed: "", sources: [], mood: choice.mood)
+        }
+        plan.recordCheckIn(changed: "", sources: [], mood: custom)
+        plan.recordCheckIn(changed: "A fresh Check-in without mood", sources: [])
+        let saved = try DailyPlanStore.save(plan, replacing: old, to: defaults)
+        let restored = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
+        XCTAssertEqual(restored, saved)
+        XCTAssertEqual(restored.checkInHistory.count, 8)
+        XCTAssertEqual(restored.checkInHistory[0], old.checkInHistory[0])
+        XCTAssertEqual(restored.checkInHistory[6].mood, custom)
+        XCTAssertNil(restored.checkInHistory[7].mood)
+        XCTAssertEqual(restored.checkInHistory[1].mood?.display, "😊 Great")
+        XCTAssertNil(CheckInMoodChoice.none.mood)
+        XCTAssertNil(CheckInMoodChoice.custom.mood)
+    }
+
+    func testCustomMoodRequiresOneEmojiAndMeaningfulShortText() {
+        for emoji in ["🌤️", "👩🏽‍💻", "🇺🇸", "❤️", "🫶🏽", "😊"] {
+            XCTAssertNotNil(CheckInMood.custom(emoji: emoji, label: "Feeling focused"), emoji)
+        }
+        for emoji in ["", "  ", "a", "1", "😊😊", "hello"] {
+            XCTAssertNil(CheckInMood.custom(emoji: emoji, label: "Focused"), emoji)
+        }
+        XCTAssertNil(CheckInMood.custom(emoji: "😊", label: "  "))
+        XCTAssertNil(CheckInMood.custom(emoji: "😊", label: String(repeating: "a", count: 41)))
+        XCTAssertNotNil(CheckInMood.custom(emoji: "😊", label: String(repeating: "a", count: 40)))
+    }
+
+    @MainActor
+    func testCheckInHistoryRetainsLegacySnapshotsAndOtherDays() throws {
+        let name = "PlenactTests.CheckInHistory." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let today = Date.now
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        var legacy = DailyPlan(date: yesterday)
+        legacy.checkIn = DailyCheckIn(changed: "Original note", savedAt: yesterday)
+        let first = try DailyPlanStore.save(legacy, replacing: nil, to: defaults)
+        // Real old documents omit the new optional key entirely.
+        let bytes = try XCTUnwrap(defaults.data(forKey: DailyPlanStore.key))
+        XCTAssertFalse(String(decoding: bytes, as: UTF8.self).contains("checkIns"))
+        var restored = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[first.id])
+        XCTAssertEqual(restored.checkInHistory.count, 1)
+        XCTAssertEqual(restored.checkInHistory.first?.id, "legacy:" + first.id)
+        XCTAssertTrue(restored.checkInHistory[0].legacy)
+        XCTAssertNil(restored.checkInHistory[0].completedTasks)
+        XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)
+        restored.intention = "A smaller plan"
+        restored.recordCheckIn(changed: "Less time", sources: [], at: yesterday.addingTimeInterval(60))
+        let second = try DailyPlanStore.save(restored, replacing: first, to: defaults)
+        restored.intention = "The next step"
+        restored.recordCheckIn(changed: "", sources: [], at: yesterday.addingTimeInterval(120))
+        let third = try DailyPlanStore.save(restored, replacing: second, to: defaults)
+        XCTAssertEqual(third.checkInHistory.map(\.changed), ["Original note", "Less time", ""])
+        XCTAssertEqual(third.checkInHistory.map(\.intention), ["", "A smaller plan", "The next step"])
+        XCTAssertEqual(Set(third.checkInHistory.map(\.id)).count, 3)
+        XCTAssertEqual(third.checkIn?.changed, "")
+        var current = DailyPlan(date: today)
+        current.recordCheckIn(changed: "Today", sources: [])
+        _ = try DailyPlanStore.save(current, replacing: nil, to: defaults)
+        let beforeConflict = defaults.data(forKey: DailyPlanStore.key)
+        var stale = second; stale.recordCheckIn(changed: "Stale", sources: [])
+        XCTAssertThrowsError(try DailyPlanStore.save(stale, replacing: second, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), beforeConflict)
+        let document = try DailyPlanStore.load(from: defaults)
+        XCTAssertEqual(document.plans[first.id], third)
+        XCTAssertEqual(document.plans[current.id]?.checkInHistory.count, 1)
+        var duplicate = third
+        duplicate.checkIns?.append(third.checkInHistory[0])
+        XCTAssertThrowsError(try DailyPlanStore.save(duplicate, replacing: third, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), beforeConflict)
+    }
+
+    @MainActor
+    func testCheckInSnapshotsDoNotFollowLaterCompletionOrPlanEdits() throws {
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        table.lists[0].cards = [KanbanCard(id: 0, word: "Make a useful start", listTitle: table.title, checklists: [])]
+        let week = DatedPlanningWeek.make(for: .now)
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        var sources = access.searchableItems
+        var plan = DailyPlan(date: .now)
+        plan.priorities = sources.map(DailyPlanPriority.init)
+        plan.checkIn = DailyCheckIn(focus: plan.priorities.first)
+        plan.recordCheckIn(changed: "Starting", sources: sources)
+        let first = plan.checkInHistory[0]
+        XCTAssertEqual(first.completedTasks, 0)
+        XCTAssertEqual(first.totalTasks, 1)
+        XCTAssertEqual(first.focus, plan.priorities.first)
+        let old = try XCTUnwrap(sources.first)
+        var card = old.card; card.isTitleChecked = true; card.word = "Renamed after finishing"
+        sources[0] = PlanningSearchResult(weekKey: old.weekKey, collectionID: old.collectionID, collectionTitle: old.collectionTitle, listID: old.listID, listTitle: old.listTitle, card: card)
+        plan.intention = "Now rest"
+        plan.recordCheckIn(changed: "Finished", sources: sources)
+        XCTAssertEqual(plan.checkInHistory[0], first)
+        XCTAssertEqual(first.priorities.first?.title, "Make a useful start")
+        XCTAssertEqual(plan.checkInHistory[1].completedTasks, 1)
+        XCTAssertNil(plan.checkInHistory[1].focus)
+        XCTAssertNil(plan.checkIn?.focus)
+    }
+
+    @MainActor
+    func testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting() async throws {
+        let name = "PlenactTests.DailyHistoryRender." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let calendar = Calendar.current
+        let today = Date.now
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let missing = calendar.date(byAdding: .day, value: -2, to: today)!
+        for date in [today, yesterday] {
+            var plan = DailyPlan(date: date)
+            plan.intention = "Leave room for real life"
+            plan.recordCheckIn(changed: "A useful start", sources: [], at: date, mood: CheckInMoodChoice.good.mood)
+            plan.recordCheckIn(changed: "Adjusted my plan", sources: [], at: date.addingTimeInterval(60), mood: CheckInMood.custom(emoji: "🌤️", label: "Quietly hopeful"))
+            _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        }
+        let bytes = defaults.data(forKey: DailyPlanStore.key)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        for (index, date) in [today, yesterday, missing].enumerated() {
+            let host = UIHostingController(rootView: DailyHistoryReviewView(date: date, calendar: calendar, defaults: defaults))
+            window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 744, height: 1133); window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-daily-history-\(index).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("DAILY_HISTORY_RENDER=\(url.path)")
+            XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)
+        }
+    }
+
+    @MainActor
     func testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes() throws {
         let name = "PlenactTests.CheckIn." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!

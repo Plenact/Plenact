@@ -397,7 +397,9 @@ struct WeeklyReviewView: View {
                                     if !review.difficult.isEmpty { Text("What was difficult: " + review.difficult) }
                                     if !review.tomorrow.isEmpty { Text("Carried forward: " + review.tomorrow) }
                                 }
-                                if let changed = day.checkIn?.changed, !changed.isEmpty { Text("Check-in: " + changed) }
+                                ForEach(day.checkInHistory) { entry in
+                                    if !entry.changed.isEmpty { Text("Check-in: " + entry.changed) }
+                                }
                             }.padding(.vertical, 4)
                         }
                     }

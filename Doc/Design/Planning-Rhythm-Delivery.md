@@ -118,13 +118,13 @@ Plans use explicit Save; Cancel/discard and interactive-dismiss guards protect u
 
 The three-step morning flow now saves progress on the shared daily plan, resumes saved steps, offers existing/new priorities, and saves completion after optional daily context. It includes user-confirmed Scheduled-to-On-the-Table moves through root coordination, returning the actual moved Card identity to the current plan
 
-Stage 1 is still incomplete: durable review-history browsing and configurable working-List identities remain to be implemented; evening actions now have a crash-recovery journal. In-memory/store-error rollback is not proof of recovery after termination between source transfer and daily-plan save. Existing source data remains discoverable, but an older link can require deliberate repair in that interruption window
+Stage 1 is still incomplete: configurable working-List identities and durable reference repair remain to be implemented. Daily review now provides read-only daily-history browsing; evening actions have a crash-recovery journal. In-memory/store-error rollback is not proof of recovery after termination between source transfer and daily-plan save. Existing source data remains discoverable, but an older link can require deliberate repair in that interruption window
 
 ## Implemented midday check-in — October 16
 
 Today's Plan now opens Today's Check-in at any time, including without a morning plan. It reports live priority task completion separately from Notes/unavailable links, supports choosing/adding/reordering/removing priority links, and records optional changed circumstances and one next focus. Intention, constraints, concerns, and priorities are the shared daily-plan fields. Explicit Save persists the adjustments and latest check-in timestamp with the existing same-day conflict check; leaving the sheet retains edits in the parent plan until saved or discarded
 
-Check-in metadata is optional in version-1 plans. Focus is valid only for a still-selected, available Note or unfinished Card; a completed/removed/unavailable focus is no longer displayed and is cleared on the next check-in save. No automatic task moves, check-in schedule, notifications, or separate check-in history are introduced
+Check-in metadata is optional in version-1 plans. Focus is valid only for a still-selected, available Note or unfinished Card; a completed/removed/unavailable focus is no longer displayed and is cleared on the next check-in save. No automatic task moves, check-in schedule, or notifications are introduced. The October 17 increment below adds separate Check-in history
 
 ## Implemented Weekly Review — October 16
 
@@ -144,7 +144,7 @@ Justin will use Plenact 1.0 on his iPhone over the next few days, returning with
 
 Keep the following items open for future review and completion:
 
-- Add a daily-history date selector to reopen past saved plans and reflections
+- Daily-history browsing is available in Daily review; editing past plans remains future work
 - Extend interruption recovery to morning transfers so source moves and priority-link saves recover together
 - Let users assign working roles to custom Lists by stable identity instead of relying on default names
 - Complete physical-device validation of all five flows: accessibility, Dynamic Type, keyboard behavior, navigation, explicit save/discard, reopening, and interruption/resume
@@ -155,3 +155,17 @@ For each real-use finding, capture the flow, expected behavior, actual behavior,
 ## First-use Help — October 16
 
 Library → selector → Help now provides bundled, searchable guidance for using Plenact in life, individual app operations, all five Planning Rhythm flows, and the first v1.0 trial week. Guides include save/immediate-action semantics, source-link behavior, objective carry-forward, live Queue handling in historical reviews, local storage, and offline example restoration. Relevant articles open Today's Plan. This supports the trial without altering user data; revise guidance with real-use feedback
+
+
+## Multiple Check-ins and Daily review — October 17
+
+Check in now always opens a fresh note with the current shared plan and optional next focus. Every explicit Save adds a timestamped Check-in, retaining intention, constraints, concerns, ordered priorities, and task/Note/unavailable counts at that moment. It also updates the shared daily plan. There is no daily Check-in limit. Existing single Check-ins remain available without rewriting their stored data during browsing; the first new save retains the legacy entry once, clearly labeled as lacking a historical plan/progress snapshot.
+
+Daily review appears immediately above Weekly review, alongside the separate evening Today’s Review flow. It shows saved daily context, today's live priority progress/next focus, chronological Check-ins, and available evening reflections. Review day and Saved days retain access to previous days. Historical snapshots use saved titles/counts instead of reconstructing old completion from current Cards. Browsing is read-only; unsaved parent edits appear only after Save. Weekly review includes all saved Check-in notes.
+
+Storage remains `Plenact.DailyPlans.v1` with optional `checkIns`; the latest `checkIn` summary preserves existing focus behavior. Conflict detection still protects against stale saves and other days are preserved. Existing full-workspace backup/restore includes these records. This is submitted Check-in history, not every intermediate edit, and remains local to the device.
+
+
+### Optional mood for each Check-in — October 17
+
+The Check-in form includes an optional How are you feeling? menu above What changed? with 😊 Great, 🙂 Good, 😐 Okay, 😔 Low, 😣 Struggling, and Custom…. Custom records one emoji and a short feeling description (up to 40 characters), with an inline preview. Each new Check-in begins unselected. Save retains the mood with that timestamped entry; a note is not required. Daily review displays saved moods alongside entry times for today and previous days. Existing entries without moods stay readable and are not assigned a mood retroactively. Unsaved mood input is protected by the Check-in discard confirmation.

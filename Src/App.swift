@@ -573,7 +573,103 @@ struct BottomToolbarLayout {
     }
 }
 
+/// One greeting per process launch, then only after a meaningful foreground absence.
+@MainActor
+final class TodayWelcomeCue: ObservableObject {
+    enum Target: Equatable { case profile, plan }
+    static let lastDepartureKey = "Plenact.Welcome.lastDeparture.v1"
+    static let returnInterval: TimeInterval = 4 * 60 * 60
+    @Published private(set) var requestID = 0
+    @Published private(set) var target: Target?
+    @Published private(set) var illuminated = false
+    private(set) var pending = false
+    private var hasActivated = false
+    private var departure: Date?
+    private var generation = 0
+    private let defaults: UserDefaults
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+
+    func becameActive(at now: Date = .now) {
+        let shouldGreet = !hasActivated || departure.map { now.timeIntervalSince($0) >= Self.returnInterval } == true
+        hasActivated = true
+        departure = nil
+        if shouldGreet { pending = true; requestID += 1 }
+    }
+    func leftForeground(at now: Date = .now) {
+        if departure == nil {
+            departure = now
+            defaults.set(now.timeIntervalSince1970, forKey: Self.lastDepartureKey)
+        }
+        cancel()
+    }
+    func cancel() {
+        generation += 1
+        pending = false
+        var transaction = Transaction(); transaction.disablesAnimations = true
+        withTransaction(transaction) { illuminated = false; target = nil }
+    }
+    func highlights(_ candidate: Target) -> Bool { target == candidate && illuminated }
+
+    func play(reduceMotion: Bool, planPulseSpeed: Double = 1, pause: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) async {
+        guard pending else { return }
+        pending = false
+        let token = generation
+        func current() -> Bool { token == generation && !Task.isCancelled }
+        func light(_ value: Bool) {
+            if reduceMotion { illuminated = value }
+            else { withAnimation(.easeInOut(duration: 0.5 / (target == .plan ? planPulseSpeed : 1))) { illuminated = value } }
+        }
+        defer { if token == generation { illuminated = false; target = nil } }
+        do {
+            try await pause(.milliseconds(650))
+            for cue in [Target.profile, .plan] {
+                guard current() else { return }
+                target = cue
+                if reduceMotion {
+                    light(true)
+                    try await pause(.milliseconds(1000))
+                    guard current() else { return }
+                    light(false)
+                } else {
+                    for _ in 0..<2 {
+                        guard current() else { return }
+                        light(true)
+                        try await pause(.seconds(0.6 / (cue == .plan ? planPulseSpeed : 1)))
+                        guard current() else { return }
+                        light(false)
+                        try await pause(.seconds(0.6 / (cue == .plan ? planPulseSpeed : 1)))
+                    }
+                }
+                guard current() else { return }
+                target = nil
+                if cue == .profile { try await pause(.milliseconds(500)) }
+            }
+        } catch { /* View disappearance/backgrounding cancels the finite sequence. */ }
+    }
+}
+
+/// Decoration only: does not change layout, intercept gestures, or add accessibility elements.
+struct TodayWelcomeGlow: ViewModifier {
+    let highlighted: Bool
+    var circular = false
+    private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: circular ? 100 : 10)
+                    .fill(softGold.opacity(highlighted ? 0.12 : 0))
+                    .padding(-5)
+                    .blur(radius: 8)
+                    .allowsHitTesting(false).accessibilityHidden(true)
+            }
+            .shadow(color: softGold.opacity(highlighted ? 0.32 : 0), radius: highlighted ? 14 : 0)
+            .scaleEffect(highlighted && !reduceMotion ? 1.035 : 1, anchor: circular ? .center : .leading)
+    }
+}
+
 private struct AppRootView: View {
+    @StateObject private var welcomeCue = TodayWelcomeCue()
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
     @State private var isSwitchingWorkspace = false
@@ -651,6 +747,7 @@ private struct AppRootView: View {
         }
 
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
+        .environmentObject(welcomeCue)
         .databaseActivityOverlay()
         .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible) {
             Button("Back Up and Load Example Month") { switchMonthExample(restoring: false) }
@@ -667,11 +764,15 @@ private struct AppRootView: View {
         .alert("Plenact workspace", isPresented: Binding(get: { workspaceNotice != nil }, set: { if !$0 { workspaceNotice = nil } })) {
             Button("OK") { workspaceNotice = nil }
         } message: { Text(workspaceNotice ?? "") }
-        .onChange(of: scenePhase) { _, phase in if phase == .active { advancePlanningWeekIfNeeded() } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { welcomeCue.becameActive(); advancePlanningWeekIfNeeded() }
+            else { welcomeCue.leftForeground() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             advancePlanningWeekIfNeeded()
         }
         .task {
+            if scenePhase == .active { welcomeCue.becameActive() }
             guard !hasLoadedBoard else {
 
                 return
@@ -2103,6 +2204,8 @@ private struct AppRootView: View {
 /// @note   The selected list is stored locally for the current calendar date
 ///
 private struct TodayHomeView: View {
+    @EnvironmentObject private var welcomeCue: TodayWelcomeCue
+    @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     private func calendarDayList(_ date: Date) -> KanbanList? {
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
@@ -2194,6 +2297,7 @@ private struct TodayHomeView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .modifier(TodayWelcomeGlow(highlighted: UIDevice.current.userInterfaceIdiom != .pad && welcomeCue.highlights(.plan)))
                 .accessibilityLabel("Today's Plan, " + Date.now.formatted(date: .complete, time: .omitted))
                 .accessibilityHint("Opens your saved priorities and context for today")
                 .accessibilityIdentifier("today.plan")
@@ -2221,6 +2325,7 @@ private struct TodayHomeView: View {
                 showsAccountSettings = true
             } label: {
                 ProfileAvatarView(profile: profile, size: 44)
+                    .modifier(TodayWelcomeGlow(highlighted: welcomeCue.highlights(.profile), circular: true))
             }
 
             .buttonStyle(.plain)
@@ -2579,7 +2684,7 @@ private struct TodayHomeView: View {
                     if UIDevice.current.userInterfaceIdiom == .pad {
                         TimelineView(.everyMinute) { context in
                             TodayPlanSummaryPanel(date: context.date, calendar: planningCalendarAccess?.document.calendar ?? .current,
-                                sources: planningCalendarAccess?.searchableItems ?? [], onOpen: { showsTodayPlan = true })
+                                sources: planningCalendarAccess?.searchableItems ?? [], welcomesPlan: welcomeCue.highlights(.plan), onOpen: { showsTodayPlan = true })
                                 .padding(16)
                         }
                         // Keep the iPad capture/focus/shortcut group near the toolbar after the compact header.
@@ -2635,6 +2740,12 @@ private struct TodayHomeView: View {
                     .frame(maxWidth: .infinity)
                     .zIndex(1)
                 }
+            .task(id: welcomeCue.requestID) { await welcomeCue.play(reduceMotion: reduceWelcomeMotion, planPulseSpeed: UIDevice.current.userInterfaceIdiom == .pad ? 1 : 1.3) }
+            .onDisappear { welcomeCue.cancel() }
+            .onChange(of: reduceWelcomeMotion) { _, _ in welcomeCue.cancel() }
+            .simultaneousGesture(TapGesture().onEnded { welcomeCue.cancel() })
+            .simultaneousGesture(DragGesture(minimumDistance: 4).onChanged { _ in welcomeCue.cancel() })
+            .onChange(of: quickCaptureTitle) { _, _ in welcomeCue.cancel() }
             .scrollBounceBehavior(.always, axes: .vertical)
             .scrollIndicators(.hidden)
             .background {

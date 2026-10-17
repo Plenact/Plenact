@@ -999,12 +999,14 @@ struct TodayPlanSummaryPanel: View {
     let calendar: Calendar
     let sources: [PlanningSearchResult]
     let onOpen: () -> Void
+    let welcomesPlan: Bool
     private let defaults: UserDefaults
     @AppStorage private var storedData: Data
     @Environment(\.scenePhase) private var scenePhase
     @State private var plan: DailyPlan?
     @State private var readFailed = false
-    init(date: Date, calendar: Calendar, sources: [PlanningSearchResult], defaults: UserDefaults = .standard, onOpen: @escaping () -> Void) {
+    init(date: Date, calendar: Calendar, sources: [PlanningSearchResult], defaults: UserDefaults = .standard, welcomesPlan: Bool = false, onOpen: @escaping () -> Void) {
+        self.welcomesPlan = welcomesPlan
         self.date = date; self.calendar = calendar; self.sources = sources; self.defaults = defaults; self.onOpen = onOpen
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
     }
@@ -1021,6 +1023,7 @@ struct TodayPlanSummaryPanel: View {
                 Text("Today's Plan")
             }
             .font(.system(size: headingSize, weight: .semibold))
+            .modifier(TodayWelcomeGlow(highlighted: welcomesPlan))
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             if readFailed {

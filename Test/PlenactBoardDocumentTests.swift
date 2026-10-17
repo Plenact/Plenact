@@ -1655,6 +1655,67 @@ final class PlenactBoardDocumentTests: XCTestCase {
                        "Copied ‘Ideas’ to Home.")
     }
 
+    @MainActor
+    func testWelcomeCueLaunchAndFourHourReturnPolicy() {
+        let name = "PlenactTests.WelcomePolicy." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let cue = TodayWelcomeCue(defaults: defaults)
+        cue.becameActive(at: start)
+        XCTAssertTrue(cue.pending); XCTAssertEqual(cue.requestID, 1)
+        cue.cancel()
+        cue.becameActive(at: start.addingTimeInterval(1))
+        XCTAssertFalse(cue.pending); XCTAssertEqual(cue.requestID, 1)
+        cue.leftForeground(at: start)
+        cue.leftForeground(at: start.addingTimeInterval(10)) // inactive → background records one departure
+        XCTAssertEqual(defaults.double(forKey: TodayWelcomeCue.lastDepartureKey), start.timeIntervalSince1970)
+        cue.becameActive(at: start.addingTimeInterval(TodayWelcomeCue.returnInterval - 1))
+        XCTAssertFalse(cue.pending)
+        cue.leftForeground(at: start)
+        cue.becameActive(at: start.addingTimeInterval(TodayWelcomeCue.returnInterval))
+        XCTAssertTrue(cue.pending); XCTAssertEqual(cue.requestID, 2)
+        let freshProcess = TodayWelcomeCue(defaults: defaults)
+        freshProcess.becameActive(at: start.addingTimeInterval(2))
+        XCTAssertTrue(freshProcess.pending) // Every launch is intentionally testable.
+    }
+
+    @MainActor
+    func testWelcomeCuePulsesInOrderAndSettlesWithoutRepeating() async {
+        let cue = TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeSequence")!)
+        cue.becameActive()
+        var highlights: [TodayWelcomeCue.Target] = []
+        await cue.play(reduceMotion: false) { _ in
+            if cue.illuminated, let target = cue.target { highlights.append(target) }
+        }
+        XCTAssertEqual(highlights, [.profile, .profile, .plan, .plan])
+        XCTAssertNil(cue.target); XCTAssertFalse(cue.illuminated); XCTAssertFalse(cue.pending)
+        await cue.play(reduceMotion: false) { _ in XCTFail("A completed greeting must not repeat") }
+        cue.becameActive()
+        XCTAssertFalse(cue.pending)
+    }
+
+    @MainActor
+    func testWelcomeCueReduceMotionAndInteractionCancellation() async {
+        let cue = TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeCancellation")!)
+        cue.becameActive()
+        var highlights: [TodayWelcomeCue.Target] = []
+        await cue.play(reduceMotion: true) { _ in
+            if cue.illuminated, let target = cue.target { highlights.append(target) }
+        }
+        XCTAssertEqual(highlights, [.profile, .plan]) // One static highlight each, no repeated pulses.
+        cue.leftForeground(at: .distantPast); cue.becameActive()
+        highlights = []
+        await cue.play(reduceMotion: false) { _ in
+            if cue.illuminated, let target = cue.target { highlights.append(target); cue.cancel() }
+        }
+        XCTAssertEqual(highlights, [.profile])
+        XCTAssertNil(cue.target); XCTAssertFalse(cue.illuminated)
+        cue.leftForeground(at: .distantPast); cue.becameActive()
+        await cue.play(reduceMotion: false) { _ in throw CancellationError() }
+        XCTAssertNil(cue.target); XCTAssertFalse(cue.illuminated)
+    }
+
     func testLaunchPacingRevealsEvenlyAndWaitsForReadiness() {
         let ready = PlenactLaunchProgress(stage: .welcome, finished: true)
         for (time, stage) in [(0.0, PlenactLaunchStage.restore), (0.23, .plans), (0.45, .ready), (0.67, .welcome)] {

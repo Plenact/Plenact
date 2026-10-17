@@ -79,3 +79,12 @@ On iPad, the Today sequence is Today's Plan, slogan/Quick capture, Today's Focus
 ### iPad lower content spacing — October 17
 
 The iPad plan summary has 36 points of bottom padding before the slogan/Quick capture group, replacing the earlier -24-point overlap. This moves the slogan, Quick capture, Today's Focus, and shortcuts down together by 60 points to restore the lower labels near the toolbar after the compact-header adjustment. In the standard portrait layout, Browse this week starts below the toolbar and remains reachable by scrolling. The iPhone spacing and toolbar geometry are unchanged. Longer plan summaries, larger accessibility text, or additional shortcuts can extend the scrollable content further.
+
+
+### Launch and return welcome cue — October 17
+
+The cue uses a muted pale-gold tint with a low-opacity fill and diffuse halo. On each process launch, Today softly glows the profile avatar twice, pauses half a second, then glows the Today's Plan heading twice on iPad or the tappable date subtitle on iPhone. A brief initial delay lets Today settle after loading. Within the same process, another greeting is eligible after at least four hours away from the foreground. Inactive/background transitions record one departure timestamp in `Plenact.Welcome.lastDeparture.v1`; brief app switches and returning to the Today tab do not replay a consumed cue. A pending greeting waits for Today to be visible.
+
+Tapping, dragging/scrolling, typing in Quick capture, leaving Today, or backgrounding cancels the sequence. It finishes without repeating or changing saved planning data, toolbar spacing, or target hit areas. Reduce Motion uses one brief static highlight per target without scaling or pulsing. No notifications or mood/plan completion conditions are involved. Launch playback is enabled by default for the initial trial.
+
+The iPhone date subtitle pulses at 1.3× the original speed: fade duration and pulse intervals are divided by 1.3. Profile pulses, iPad plan-heading pulses, the half-second inter-target pause, and Reduce Motion highlight durations retain their existing timing.

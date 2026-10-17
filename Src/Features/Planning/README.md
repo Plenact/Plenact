@@ -57,3 +57,9 @@ Weekly references are read live and include entire overlapping weeks, clearly di
 `LibraryHelp.swift` bundles searchable offline reference articles grouped into life planning, individual app use, the five Planning Rhythm flows, and first-week v1.0 guidance. LibraryBrowseFilter.help excludes user collections and uses the same selection/checkmark/dismissal behavior as the other filters. Help hides the recent/Coming Soon shelves and searches guide bodies instead of user Cards
 
 The Library owns article presentation so sheets remain stable while rows scroll. Articles use native text with scalable fonts, selectable paragraphs, headings, and an optional Today’s Plan entry point. Reading/searching Help does not mutate planning records or create tutorial content. Update the guide catalog alongside feature behavior
+
+## iPad Today plan summary — October 17
+
+Today on iPad presents a read-only Today's Plan panel beneath the heading, replacing the former large adaptive upper spacer. It shows the saved intention, up to three ordered priority links with live completion/Note/unavailable states, and a valid next focus from Check-in. Additional priorities are disclosed with a count. Open today's plan uses the existing editor and Planning Rhythm entry points; the empty state offers Plan today
+
+The panel observes the daily-plan preference data, reloads on foregrounding and local date changes, and resolves sources through the current calendar access. It does not create or save a plan merely by appearing. Unreadable saved data produces an explicit message and remains unchanged. iPhone's panel order and spacing are unchanged; overflowing iPad content scrolls naturally

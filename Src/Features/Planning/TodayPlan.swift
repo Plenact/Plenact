@@ -730,3 +730,84 @@ struct TodayCheckInView: View {
         }
     }
 }
+
+/// Read-only front door to the same saved daily plan used by every daily review.
+struct TodayPlanSummaryPanel: View {
+    @ScaledMetric(relativeTo: .title2) private var headingSize: CGFloat = 26
+    @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 19
+    let date: Date
+    let calendar: Calendar
+    let sources: [PlanningSearchResult]
+    let onOpen: () -> Void
+    private let defaults: UserDefaults
+    @AppStorage private var storedData: Data
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var plan: DailyPlan?
+    @State private var readFailed = false
+    init(date: Date, calendar: Calendar, sources: [PlanningSearchResult], defaults: UserDefaults = .standard, onOpen: @escaping () -> Void) {
+        self.date = date; self.calendar = calendar; self.sources = sources; self.defaults = defaults; self.onOpen = onOpen
+        _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
+    }
+    private func reload() {
+        do {
+            plan = try DailyPlanStore.load(from: defaults).plans[PlanningDate.key(date, calendar: calendar)]
+            readFailed = false
+        } catch { plan = nil; readFailed = true }
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Text("☀️").accessibilityHidden(true)
+                Text("Today's Plan")
+            }
+            .font(.system(size: headingSize, weight: .semibold))
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            if readFailed {
+                Text("Your saved plan couldn't be read. Open Today's Plan to review the issue. Your records have been kept unchanged.").foregroundStyle(.secondary)
+            } else if let plan {
+                if !plan.intention.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(plan.intention).font(.system(size: subtitleSize, weight: .semibold)).fixedSize(horizontal: false, vertical: true)
+                }
+                if let focus = DailyCheckInProgress.focus(plan: plan, sources: sources), let source = focus.resolve(in: sources) {
+                    Label("Next focus · " + source.card.word, systemImage: "scope").font(.system(size: bodySize)).foregroundStyle(.blue)
+                }
+                if plan.priorities.isEmpty {
+                    Text("What deserves your attention today? Choose a Card or Note, or add a new priority in your plan.").foregroundStyle(.secondary)
+                } else {
+                    Text("Your chosen priorities").font(.system(size: bodySize)).foregroundStyle(.secondary)
+                    ForEach(Array(plan.priorities.prefix(3))) { priority in
+                        let source = priority.resolve(in: sources)
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: source == nil ? "link.badge.plus" : (source?.card.presentation == .note ? "note.text" : (source?.card.isTitleChecked == true ? "checkmark.circle.fill" : "circle")))
+                                .foregroundStyle(source?.card.isTitleChecked == true ? Color.green : Color.secondary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(source?.card.word ?? priority.title).font(.system(size: bodySize, weight: .semibold))
+                                Text(source == nil ? "Unavailable · saved context retained" : (source?.card.presentation == .note ? "Note" : (source?.card.isTitleChecked == true ? "Complete" : "Not complete")))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                        }.accessibilityElement(children: .combine)
+                    }
+                    if plan.priorities.count > 3 {
+                        Text("\(plan.priorities.count - 3) more priorities in your plan").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Text("What would make today meaningful?").font(.system(size: subtitleSize, weight: .semibold))
+                Text("Choose a few priorities, leave room for real life, and take one useful step. Your morning vision, check-in, and evening review all connect here.").foregroundStyle(.secondary)
+            }
+            Button(action: onOpen) {
+                Label(plan == nil && !readFailed ? "Plan today" : "Open today's plan", systemImage: "arrow.up.right")
+                    .frame(minHeight: 44, alignment: .leading)
+            }.buttonStyle(.plain).foregroundStyle(.blue)
+                .accessibilityHint("Opens Today's Plan and the Planning Rhythm reviews")
+        }
+        .font(.system(size: bodySize))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .task(id: PlanningDate.key(date, calendar: calendar)) { reload() }
+        .onChange(of: storedData) { _, _ in reload() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { reload() } }
+    }
+}

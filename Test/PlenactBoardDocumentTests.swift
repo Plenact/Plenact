@@ -1969,6 +1969,48 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testTabletTodayPlanSummaryRendersSavedAndEmptyStatesWithoutWriting() async throws {
+        let name = "PlenactTests.TodaySummary." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let date = Date.now
+        let week = DatedPlanningWeek.make(for: date)
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        table.lists[0].cards = [
+            KanbanCard(id: 0, word: "Finish a meaningful step", listTitle: table.title, isTitleChecked: true, checklists: []),
+            KanbanCard(id: 1, word: "Make room for a walk", listTitle: table.title, checklists: []),
+            KanbanCard(id: 2, word: "Ideas for later", listTitle: table.title, checklists: [], presentation: .note)
+        ]
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let sources = access.searchableItems
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var opens = 0
+        for saved in [false, true] {
+            if saved {
+                var plan = DailyPlan(date: date)
+                plan.intention = "A little focus, with room to breathe"
+                plan.priorities = sources.map(DailyPlanPriority.init)
+                plan.checkIn = DailyCheckIn(focus: plan.priorities.first { $0.title == "Make room for a walk" }, changed: "", savedAt: .now)
+                _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+            }
+            let before = defaults.data(forKey: DailyPlanStore.key)
+            let host = UIHostingController(rootView: TodayPlanSummaryPanel(date: date, calendar: .current, sources: sources, defaults: defaults, onOpen: { opens += 1 }).padding(24).background(Color(.systemGroupedBackground)))
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-summary-\(saved).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("TODAY_SUMMARY_RENDER=\(url.path)")
+            XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), before)
+        }
+        XCTAssertEqual(opens, 0)
+    }
+
+    @MainActor
     func testTabletBoardRendersProportionalLists() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)

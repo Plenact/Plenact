@@ -70,3 +70,7 @@ Open Today’s Plan from Today’s date, then choose Start/Resume/Revisit today�
 Dated suggestions include the selected Day List and active items whose start/due date matches or spans today. Completed and Reference/tutorial items are excluded. Users can choose any other existing Card/Note in step two or create a new one. Movement is separate from selection: a Scheduled item offers an explicit confirmation before moving to an available On the Table List and replacing its priority link with the returned destination identity
 
 The initial transfer action recognizes the default standalone List names. Missing destinations leave items in place. Configurable working-List roles remain future work. Confirmed moves are immediate; leaving the flow does not undo them. If saving the plan after a move fails, its link remains in the open draft and the user is told to review/retry
+
+## iPad Today's Plan panel — October 17, 2026
+
+On iPad, the Today sequence is Today's Plan, slogan/Quick capture, Today's Focus, List shortcuts, and Browse this week. The plan summary replaces the large upper spacer and makes chosen priorities distinct from items in the dated day List. Show saved intention, live status for up to three ordered priorities, optional next focus, and an explicit route to the complete plan. A missing plan prompts “What would make today meaningful?” with Plan today. Saved state comes from the existing daily-plan store; no second plan is created. iPhone retains its existing layout

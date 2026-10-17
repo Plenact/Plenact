@@ -2244,7 +2244,7 @@ private struct TodayHomeView: View {
 
         todayHeader
             .padding(.horizontal, 20)
-            .padding(.top, 4)
+            .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? -22 : 4)
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background {
@@ -2576,7 +2576,15 @@ private struct TodayHomeView: View {
                     .frame(height: 0)
 
                     VStack(alignment: .leading, spacing: 16) {
-
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        TimelineView(.everyMinute) { context in
+                            TodayPlanSummaryPanel(date: context.date, calendar: planningCalendarAccess?.document.calendar ?? .current,
+                                sources: planningCalendarAccess?.searchableItems ?? [], onOpen: { showsTodayPlan = true })
+                                .padding(16)
+                        }
+                        // Lift the entire following group together, retaining its internal spacing.
+                        .padding(.bottom, -24)
+                    }
                     VStack(spacing: 0) {
                         TodaySloganView()
                             .frame(minHeight: 40)

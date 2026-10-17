@@ -4382,6 +4382,25 @@ struct KanbanListView: View {
     /// @return     (some Gesture) hold/drag sequence with transient holding-state updates
     /// @post       Successful holds report optional drag values; ending calls onListDragEnded
     ///
+    private var canOpenDatedDay: Bool { assignedDate != nil && onOpenDayView != nil }
+    private var dayOpeningLabel: String {
+        assignedDate.map { "Open " + $0.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) } ?? list.title
+    }
+    @ViewBuilder private var listSubtitle: some View {
+        if canOpenDatedDay {
+            Button { onOpenDayView?() } label: {
+                Text(list.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(dayOpeningLabel)
+            .accessibilityHint("Opens this day's Day view. Back returns to this Week.")
+        } else {
+            Text(list.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        }
+    }
+
     private var listReorderGesture: some Gesture { /* Long-press then drag sequence for reordering this list */
         LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
             .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("WeekListsViewport")))
@@ -4516,8 +4535,12 @@ struct KanbanListView: View {
                 }
                 .contentShape(Rectangle())
                 .gesture(listReorderGesture)
+                .simultaneousGesture(TapGesture().onEnded {
+                    if canOpenDatedDay && !isHoldingList { onOpenDayView?() }
+                })
                 .accessibilityElement(children: .combine)
-                .accessibilityHint("Touch and hold to drag this list. Keep holding near either screen edge to move across the board.")
+                .modifier(DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenDatedDay ? onOpenDayView : nil))
+                .accessibilityHint(canOpenDatedDay ? "Opens this day. Touch and hold to drag this list instead." : "Touch and hold to drag this list. Keep holding near either screen edge to move across the board.")
                 .accessibilityAction(named: "Move earlier") {
                     if canMoveEarlier {
 
@@ -4545,10 +4568,7 @@ struct KanbanListView: View {
 
                     if presentation == .standard {
 
-                        Text(list.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        listSubtitle
                     }
                 }
 
@@ -7166,5 +7186,16 @@ struct MoveListDestinationSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+    }
+}
+
+
+private struct DayHeaderAccessibility: ViewModifier {
+    let label: String
+    let action: (() -> Void)?
+    @ViewBuilder func body(content: Content) -> some View {
+        if let action {
+            content.accessibilityLabel(label).accessibilityAddTraits(.isButton).accessibilityAction { action() }
+        } else { content }
     }
 }

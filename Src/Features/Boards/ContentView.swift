@@ -89,6 +89,15 @@ enum BoardPanoramicZoom {
         return clamped(start * magnification)
     }
 }
+/// Scale the entire Standard List, including its text and Cards, to retain phone proportions.
+enum BoardTabletSizing {
+    static func scale(viewportWidth: CGFloat, columnWidth: CGFloat, isTablet: Bool, enabled: Bool) -> CGFloat {
+        guard isTablet, enabled, viewportWidth.isFinite, columnWidth.isFinite, columnWidth > 0 else { return 1 }
+        // Ease back ten percent from the near-full-width tablet baseline.
+        return max(1, 0.9 * (viewportWidth - 30) / (columnWidth + 34))
+    }
+}
+
 /// Per-owner viewport preferences are kept separate from the user's planning content.
 struct BoardViewportState: Codable, Equatable {
     var scale: Double = 1
@@ -2860,21 +2869,27 @@ struct ContentView: View {
                             accessibilitySize: dynamicTypeSize.isAccessibilitySize,
                             fillsAvailableWidth: fillsAvailableListWidth
                         )
+                        let tabletScale = BoardTabletSizing.scale(
+                            viewportWidth: listArea.size.width, columnWidth: columnWidth,
+                            isTablet: UIDevice.current.userInterfaceIdiom == .pad,
+                            enabled: presentation == .standard && !fillsAvailableListWidth && !dynamicTypeSize.isAccessibilitySize)
+                        let layoutZoomScale = boardZoomScale * tabletScale
+                        let layoutListScale = listDragScale * tabletScale
                         let horizontalInset = presentation == .standard && !isPanoramic
-                            ? max(14, (listArea.size.width - columnWidth * listDragScale) / 2)
+                            ? max(14, (listArea.size.width - columnWidth * layoutListScale) / 2)
                             : 14
                         ScrollViewReader { listProxy in
 
                             ScrollView(.horizontal, showsIndicators: false) {
 
-                                LazyHStack(alignment: .top, spacing: (presentation == .standard ? 17 : 12) * (usesFreeBoardScrolling ? boardZoomScale : 1)) {
+                                LazyHStack(alignment: .top, spacing: (presentation == .standard ? 17 : 12) * (usesFreeBoardScrolling ? layoutZoomScale : tabletScale)) {
 
                                     ForEach(Array(lists.enumerated()), id: \.element.id) { listIndex, list in
 
                                         ZStack {
                                         KanbanListView(
                                             list:                  list,
-                                            availableListHeight:   listArea.size.height / boardZoomScale,
+                                            availableListHeight:   listArea.size.height / layoutZoomScale,
                                             displaySettings:       displaySettings,
                                             presentation:          presentation,
                                             labelLibrary:          labelLibrary,
@@ -2955,14 +2970,14 @@ struct ContentView: View {
                                         )
                                         .environment(\.cardMovementSource, personalCollectionID)
                                         .environment(\.boardViewportMemory, viewportMemory)
-                                        .scaleEffect(listDragScale * (draggedListID == list.id && !reducesMotion ? 1.04 : 1), anchor: .top)
-                                        .frame(width: columnWidth * listDragScale, height: (listArea.size.height / boardZoomScale) * listDragScale, alignment: .top)
+                                        .scaleEffect(layoutListScale * (draggedListID == list.id && !reducesMotion ? 1.04 : 1), anchor: .top)
+                                        .frame(width: columnWidth * layoutListScale, height: (listArea.size.height / layoutZoomScale) * layoutListScale, alignment: .top)
                                         .rotationEffect(.degrees(draggedListID == list.id ? listDragTilt : 0), anchor: .top)
                                         .shadow(color: .black.opacity(draggedListID == list.id ? 0.4 : 0), radius: 18, y: 8)
                                         .offset(x: listDragOffset(for: list.id))
                                         }
 
-                                        .frame(width: columnWidth * listDragScale)
+                                        .frame(width: columnWidth * layoutListScale)
                                         .background {
                                             GeometryReader { geometry in
                                                 Color.clear.preference(
@@ -2988,7 +3003,7 @@ struct ContentView: View {
                                                 .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
                                         }
                                         .buttonStyle(.plain)
-                                        .frame(width: columnWidth * listDragScale)
+                                        .frame(width: columnWidth * layoutListScale)
                                         .accessibilityIdentifier("board.addList")
                                         .id(Int.min)
                                     }

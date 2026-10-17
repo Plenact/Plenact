@@ -135,6 +135,24 @@ struct PlanningCalendarDocument: Hashable, Codable {
 
 
 extension PlanningCalendarDocument {
+    /// Legacy Monday–Sunday boards were initially dated using the device's Sunday-start calendar.
+    /// Repartition by existing date associations; never relabel the old Sunday's content.
+    @discardableResult
+    mutating func repairLegacyMondayFirstLayout(now: Date = .now) throws -> Bool {
+        guard firstWeekday == 1,
+              let current = weeks.first(where: { $0.startKey == currentWeekKey }) else { return false }
+        let dated = current.collection.lists.filter { list in
+            !list.isArchived && current.dayListIDs.values.contains(list.id)
+        }
+        let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        guard dated.map(\.title) == names,
+              let monday = current.dayListIDs.first(where: { $0.value == dated[0].id })?.key,
+              let sunday = current.dayListIDs.first(where: { $0.value == dated[6].id })?.key,
+              sunday < monday else { return false }
+        try changeFirstWeekday(to: 2, now: now)
+        return true
+    }
+
     /// Repartition dated lists without changing their dates or dropping archived content.
     /// Undated lists and board appearance stay with the middle of their original week.
     mutating func changeFirstWeekday(to weekday: Int, now: Date = .now) throws {

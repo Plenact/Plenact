@@ -1968,6 +1968,70 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LibraryRecentStore.load(from: defaults).first?.cardID, 12)
     }
 
+    @MainActor
+    func testTabletBoardRendersProportionalLists() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let owner = UUID()
+        let fixture = ["Monday", "Tuesday", "Wednesday"].enumerated().map { index, title in
+            KanbanList(id: index, title: title, cards: (0..<6).map { number in
+                KanbanCard(id: index * 10 + number, word: "Take one useful step", listTitle: title, checklists: [])
+            })
+        }
+        let host = UIHostingController(rootView: ContentView(lists: .constant(fixture), onListsChanged: { _ in }, viewportOwnerID: owner))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(400))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-tablet-board-scale.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("TABLET_BOARD_RENDER=\(url.path)")
+    }
+
+    func testTabletStandardZoomPreservesProportionsAndNeighborPreviews() {
+        for viewport: CGFloat in [744, 820, 1180] {
+            let column = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+            let scale = BoardTabletSizing.scale(viewportWidth: viewport, columnWidth: column, isTablet: true, enabled: true)
+            XCTAssertGreaterThan(scale, 1)
+            let preview = (viewport - column * scale) / 2 - 17 * scale
+            XCTAssertEqual(preview, viewport * 0.05 + 13.5, accuracy: 0.01)
+            XCTAssertEqual(column * scale / column, scale, accuracy: 0.001)
+        }
+        XCTAssertEqual(BoardTabletSizing.scale(viewportWidth: 852, columnWidth: 360, isTablet: false, enabled: true), 1)
+        XCTAssertEqual(BoardTabletSizing.scale(viewportWidth: 820, columnWidth: 792, isTablet: true, enabled: false), 1)
+        XCTAssertEqual(BoardTabletSizing.scale(viewportWidth: 320, columnWidth: 256, isTablet: true, enabled: true), 1)
+        XCTAssertEqual(BoardTabletSizing.scale(viewportWidth: .infinity, columnWidth: 360, isTablet: true, enabled: true), 1)
+    }
+
+    func testLegacyMondayFirstBoardUsesFollowingSundayWithoutRelabellingOldWork() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!; calendar.firstWeekday = 1
+        let saturday = try XCTUnwrap(PlanningDate.date("2026-10-17", calendar: calendar))
+        let oldSunday = try XCTUnwrap(PlanningDate.date("2026-10-11", calendar: calendar))
+        let nextSunday = try XCTUnwrap(PlanningDate.date("2026-10-18", calendar: calendar))
+        let titles = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        let lists = titles.enumerated().map { KanbanList(id: $0.offset, title: $0.element, cards: []) }
+        var legacy = DatedPlanningWeek.make(for: saturday, lists: lists, calendar: calendar)
+        legacy.collection.lists[6].cards = [KanbanCard(id: 42, word: "October 11 work", listTitle: "Sunday", checklists: [])]
+        var document = PlanningCalendarDocument(currentWeekKey: legacy.startKey, firstWeekday: 1, weeks: [legacy])
+        XCTAssertTrue(try document.repairLegacyMondayFirstLayout(now: saturday))
+        XCTAssertEqual(document.firstWeekday, 2)
+        XCTAssertEqual(document.currentWeekKey, "2026-10-12")
+        let current = try XCTUnwrap(document.week(for: saturday))
+        XCTAssertEqual(current.collection.lists.map(\.title), titles)
+        XCTAssertEqual(current.dayListIDs.first { $0.value == current.collection.lists[5].id }?.key, "2026-10-17")
+        XCTAssertEqual(current.dayListIDs.first { $0.value == current.collection.lists[6].id }?.key, "2026-10-18")
+        XCTAssertTrue(try XCTUnwrap(current.list(on: nextSunday)).cards.isEmpty)
+        XCTAssertEqual(document.week(for: oldSunday)?.list(on: oldSunday)?.cards.first?.word, "October 11 work")
+        XCTAssertFalse(try document.repairLegacyMondayFirstLayout(now: saturday))
+        var sundayFirst = PlanningCalendarDocument(currentWeekKey: legacy.startKey, firstWeekday: 1, weeks: [DatedPlanningWeek.make(for: saturday, calendar: calendar)])
+        let before = sundayFirst
+        XCTAssertFalse(try sundayFirst.repairLegacyMondayFirstLayout(now: saturday))
+        XCTAssertEqual(sundayFirst, before)
+    }
+
     func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws {
         let today = try XCTUnwrap(PlanningDate.date("2026-10-11"))
         var calendar = Calendar.current

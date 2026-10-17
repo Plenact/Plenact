@@ -53,3 +53,7 @@ Support explicit controls alongside drag/swipe gestures, Dynamic Type, VoiceOver
 - [Today UI](Today-View-UI.md)
 - [Architecture](Today-View-Architecture.md)
 - [Board presentation history](Board-Presentation.md)
+
+## Legacy Sunday date repair — October 17, 2026
+
+A legacy Monday-through-Sunday List order could be initialized using the device's Sunday-start calendar, placing the preceding Sunday's date at the end of the displayed Week. Startup detects that exact dated order and repartitions the calendar to Monday-start using existing date associations. The current Saturday/Sunday sequence is then October 17/18 in the reported case; October 11 records remain in the preceding week instead of being relabelled. Canonical Sunday-first calendars remain unchanged. New initial Week workspaces use Monday-start; the existing week-start setting can still choose Sunday

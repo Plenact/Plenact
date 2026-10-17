@@ -108,3 +108,7 @@ Before calling this release-verified, check on compact and large supported iPhon
 8. Relaunch and confirm the presentation preference and unchanged user content.
 
 Continuous zoom, per-Board density preferences, and pinch interactions remain deferred rather than implied by this feature.
+
+## Tablet Standard zoom baseline — October 17, 2026
+
+Standard multi-List Boards on iPad scale the full List surface proportionally to the current window width, retaining Card/text proportions. Normal zoom uses ninety percent of the near-full-width tablet baseline, giving the centered List more breathing room and slightly larger neighboring previews. Saved pinch zoom remains relative to this adaptive baseline; resizing the window recomputes the baseline without rewriting stored zoom preferences. Phone layouts, full-width standalone Lists, Gallery/Overview modes, and accessibility text sizing retain their existing sizing rules. Panoramic zoom continues to provide a broader overview relative to the tablet baseline

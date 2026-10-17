@@ -642,6 +642,7 @@ private struct AppRootView: View {
             var preparedWeek: DatedPlanningWeek?
             do {
                 if var document = try PlanningCalendarStore.load() {
+                    try document.repairLegacyMondayFirstLayout()
                     let previous = document.weeks.first { $0.startKey == document.currentWeekKey }!
                     preparedWeek = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs)
                     preparedDocument = document
@@ -649,9 +650,11 @@ private struct AppRootView: View {
                     if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
                         _ = try JSONDecoder().decode([KanbanList].self, from: data)
                     }
-                    let current = DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs)
+                    var calendar = Calendar.current
+                    calendar.firstWeekday = 2
+                    let current = DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs, calendar: calendar)
                     preparedWeek = current
-                    preparedDocument = PlanningCalendarDocument(currentWeekKey: current.startKey, weeks: [current])
+                    preparedDocument = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: 2, weeks: [current])
                 }
             } catch {
                 lists = legacy
@@ -7019,7 +7022,6 @@ private struct SavedCardsView: View {
                 }
 
                 .padding(20)
-                .frame(maxWidth: 560, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
 

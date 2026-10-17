@@ -1,47 +1,49 @@
-This directory holds Plenact's product, UX, architecture, demonstration, and coding-style material. Documents should distinguish current app behavior from proposed work
+# Plenact Documentation
 
-## Start Here
+Product, UX, architecture, demonstrations, and engineering references. Current behavior and future direction are identified explicitly
 
-- [`Production-Preparation-Handoff.md`](Production-Preparation-Handoff.md) - verified product, architecture, data-safety, and release-preparation handoff for the next production agent
+## Start here
 
-- [`Life-Planning-Model.md`](Life-Planning-Model.md) - product-model reference for Lists, Cards, checklist actions, the Library/personal-collections hub, planning views, and the proposed weekly review
+- [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
+- [Planning Rhythm delivery plan](Design/Planning-Rhythm-Delivery.md) — staged delivery, source identity, local persistence, interruption safety, and acceptance gates
+- [Life planning model](Design/Life-Planning-Model.md) — current organizing model, default Lists, and the connection between daily action and reflection
+- [Today interaction design](Design/Today-View-UI.md) — current Today experience and proposed Today's Plan evolution
+- [Application architecture](Design/Today-View-Architecture.md) — current ownership and proposed shared review foundation
+- [Board and scheduled planning](Design/Board-and-Scheduled-Views.md) — dated views, the Scheduled List, and the separate agenda proposal
 
-- [`Board-Presentation.md`](Board-Presentation.md) - implemented Standard/Overview presets, portrait/landscape layout, local preferences, and remaining device acceptance checks
+## Supporting references
 
-- [`Today-View-Architecture.md`](Today-View-Architecture.md) - current app boundaries and incremental architecture direction
+- [Board presentation](Design/Board-Presentation.md) — historical implementation detail with a current-context note
+- [Checklist actions](Design/Checklist-Actions-Architecture.md) — action identity and detail boundaries
+- [Local profile](Design/Local-Profile-Architecture.md) — device-local identity, settings, and session boundary
+- [Users](Users/README.md) — separate shared-demo user/account direction
+- [Database](Database/README.md) — shared-demo data and import contracts, not review storage
+- [Server](../Server/README.md) — separate API and SQL work
+- [Organization profile source](GitHub-Organization-Profile/README.md) — repository-maintained public-facing copy; editing it does not publish remotely
+- [Demo recordings](Demo/README.md), [coding style](Style/README.md), and [legacy source pointers](Src/README.md)
 
-- [`Today-View-UI.md`](Today-View-UI.md) - Today screen behavior and interaction proposal
+## Historical release handoffs
 
-- [`Board-and-Scheduled-Views.md`](Board-and-Scheduled-Views.md) - implemented Board behavior and the proposed Scheduled view
+These are October 4, 2026 audit snapshots, not current implementation inventories. Preserve their dated evidence and consult the updated design documents for subsequent direction
 
-- [`Checklist-Actions-Architecture.md`](Checklist-Actions-Architecture.md) - stable checklist-item migration and proposed linked/detail action types
+- [Agent One handoff](Establishment/Production-Preparation-Handoff_AgentOne.md)
+- [Agent Two handoff](Establishment/Production-Preparation-Handoff_AgentTwo.md)
 
-- [`Local-Profile-Architecture.md`](Local-Profile-Architecture.md) - local identity, personalization, persistence, and future session boundary
+## Status at October 16, 2026
 
-- [`Users/`](Users/README.md) - proposed shared Plenact user directory, registration, and card assignment design
+The app has local Today/Week/Day/Calendar planning, personal Lists and Boards, Cards and Notes, labels, Activity, Appearance, starter tutorials, and offline example workspace restoration. Today's date opens a saved Today's Plan with linked priorities and optional intention, constraints, and concerns
 
-- [`Database/`](Database/README.md) - Bluehost setup gates, Plenact data contract, and initial demo import plan
+Today's Check-in, Today's Review, Weekly Review, Periodic Review, saved review summaries, optional objectives/milestones, and review cadence preferences are approved direction. They are not implemented by this documentation change
 
-- [`../Server/`](../Server/README.md) - Plenact-owned API and SQL migration work, separate from the reference project
+## Documentation rules
 
-- [`GitHub-Organization-Profile/`](GitHub-Organization-Profile/README.md) - maintained source for the public Plenact organization landing page
+- Label implemented, approved/proposed, exploratory, and historical material explicitly
+- Keep one shared operating vision and link supporting docs to it
+- Distinguish local Calendar planning from external-calendar synchronization
+- Distinguish the separate shared-demo client/server from private production accounts or synchronization
+- Do not describe planned reviews, notifications, cloud/team sync, or web/desktop clients as available
+- Preserve historical verification dates; documentation changes are not new runtime test evidence
+- Avoid medical, treatment, clinical-validation, privacy-compliance, or regulatory claims
+- Keep examples respectful and update documentation as implementation is validated
 
-- [`Demo/`](Demo/README.md) - product walkthrough recordings
-
-- [`Style/`](Style/README.md) - Swift documentation and formatting references
-
-- [`Src/`](Src/README.md) - legacy documentation-source pointer material, not app implementation
-
-## Audience
-
-Developers should use these documents to understand product boundaries before changing navigation, persistence, or stored models. Customers and prospective customers can use them to understand the intended workflow, while paying attention to each document's status statement
-
-## Documentation Rules
-
-- Label implemented, proposed, and exploratory behavior explicitly
-- Do not describe calendar sync, accounts, cloud/team sync, a database, or web/desktop clients as available
-- Do not make medical, treatment, clinical-validation, privacy-compliance, or regulatory claims
-- Keep examples respectful and avoid personal health details
-- Update documentation when a proposal becomes implemented or its behavior changes
-
-The `.webloc` files are local shortcuts to project resources. They are conveniences, not source dependencies
+The `.webloc` files are local resource shortcuts, not source dependencies. This update publishes Markdown within the repository; it does not deploy a website or modify remote services

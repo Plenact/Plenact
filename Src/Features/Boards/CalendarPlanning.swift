@@ -322,6 +322,9 @@ struct PlanningCalendarAccess {
     var openToday: () -> Void
     var openLibraryCard: (PersonalSavedCardTarget) -> Void
     var saveLibrary: (PersonalCollection) -> Bool
+    var applyWeeklyReview: ((PlanningSearchResult, DailyReviewAction, WeeklyReviewRecord, WeeklyReviewRecord?) -> WeeklyReviewRecord?)? = nil
+    var applyDailyReview: ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = nil
+    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)? = nil
     var setFirstWeekday: (Int) -> Bool = { _ in false }
     var openWeek: (DatedPlanningWeek) -> Void = { _ in }
     var moveList: ((Int, UUID, UUID?) -> Bool)? = nil

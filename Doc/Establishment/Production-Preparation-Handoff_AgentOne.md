@@ -1,5 +1,8 @@
 # Plenact Production-Preparation Handoff
 
+> **Historical audit:** This handoff records the October 4, 2026 repository snapshot. Its feature inventory, paths, and verification results are historical. The October 16 [Planning Rhythm vision](../Design/Planning-Rhythm.md), [delivery plan](../Design/Planning-Rhythm-Delivery.md), and [current documentation index](../README.md) supersede its future product-direction assumptions. The first guided Today's Vision flow is implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
+
+
 **Prepared:** 2026-10-04  
 **Purpose:** Give the next product/engineering agent an evidence-based starting point for taking Plenact from its current local-first development build toward a responsible iOS release.  
 **Repository snapshot audited:** `main` at `5a39025` (`comment updates`), clean and synchronized with `origin/main` at the time of audit.
@@ -396,23 +399,23 @@ Do not market the shared-demo API as private cloud sync. It stores one shared-de
 ## 15. Useful Links Within This Repository
 
 - [Root README](../README.md)
-- [Architecture index](README.md)
-- [Today architecture](Today-View-Architecture.md)
-- [Today UI](Today-View-UI.md)
-- [Board and Scheduled proposal](Board-and-Scheduled-Views.md)
-- [Checklist action architecture](Checklist-Actions-Architecture.md)
-- [Local profile architecture](Local-Profile-Architecture.md)
-- [Board feature guide](../Src/Features/Boards/README.md)
-- [Profile feature guide](../Src/Features/Profile/README.md)
-- [Labels feature guide](../Src/Features/Labels/README.md)
-- [Attachments feature guide](../Src/Features/Attachments/README.md)
-- [Sync feature guide](../Src/Features/Sync/README.md)
-- [Data contract](Database/Plenact-Data-Contract.md)
-- [Demo seed plan](Database/Initial-Demo-Import-Plan.md)
-- [Server implementation](../Server/README.md)
-- [Server API contract](../Server/api/README.md)
-- [Server SQL migrations](../Server/SQL/README.md)
-- [Test guide](../Test/README.md)
+- [Architecture index](../README.md)
+- [Today architecture](../Design/Today-View-Architecture.md)
+- [Today UI](../Design/Today-View-UI.md)
+- [Board and Scheduled proposal](../Design/Board-and-Scheduled-Views.md)
+- [Checklist action architecture](../Design/Checklist-Actions-Architecture.md)
+- [Local profile architecture](../Design/Local-Profile-Architecture.md)
+- [Board feature guide](../../Src/Features/Boards/README.md)
+- [Profile feature guide](../../Src/Features/Profile/README.md)
+- [Labels feature guide](../../Src/Features/Labels/README.md)
+- [Attachments feature guide](../../Src/Features/Attachments/README.md)
+- [Sync feature guide](../../Src/Features/Sync/README.md)
+- [Data contract](../Database/Plenact-Data-Contract.md)
+- [Demo seed plan](../Database/Initial-Demo-Import-Plan.md)
+- [Server implementation](../../Server/README.md)
+- [Server API contract](../../Server/api/README.md)
+- [Server SQL migrations](../../Server/SQL/README.md)
+- [Test guide](../../Test/README.md)
 
 ---
 

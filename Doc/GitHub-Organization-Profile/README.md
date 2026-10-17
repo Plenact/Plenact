@@ -24,7 +24,13 @@ Plenact is in early iOS development. The current app includes:
 - Card details with completion, dates, checklists, comments, members, labels, and attachments.
 - Local persistence on the current app installation.
 
-Calendar synchronization, accounts, cloud/team synchronization, a remote database, and web or desktop clients are not currently implemented.
+Local Calendar planning is available; external-calendar synchronization and private production account/cloud/team synchronization are not. Separate shared-demo client/server material is not a private customer-data service. Web and desktop clients are not implemented.
+
+## The Next Direction: Your Planning Rhythm
+
+Plenact's approved next direction connects Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review. Together they support choosing a direction, taking action, adjusting, reflecting, and beginning again
+
+These experiences are planned, not currently implemented. They will build on existing Cards, Notes, and Lists, with explicit user decisions and optional routines. See the [operating vision](https://github.com/Plenact/Plenact/blob/main/Doc/Design/Planning-Rhythm.md) and [delivery plan](https://github.com/Plenact/Plenact/blob/main/Doc/Design/Planning-Rhythm-Delivery.md)
 
 ## Repositories
 
@@ -41,6 +47,6 @@ Calendar synchronization, accounts, cloud/team synchronization, a remote databas
 
 ## Follow the Work
 
-Explore the [active iOS repository](https://github.com/Plenact/Plenact), including its [Today architecture](https://github.com/Plenact/Plenact/blob/main/Doc/Today-View-Architecture.md) and [Board and Scheduled view direction](https://github.com/Plenact/Plenact/blob/main/Doc/Board-and-Scheduled-Views.md).
+Explore the [active iOS repository](https://github.com/Plenact/Plenact), including its [Today architecture](https://github.com/Plenact/Plenact/blob/main/Doc/Design/Today-View-Architecture.md) and [Board and Scheduled view direction](https://github.com/Plenact/Plenact/blob/main/Doc/Design/Board-and-Scheduled-Views.md).
 
 Plenact does not provide medical treatment and does not claim clinical validation or regulatory compliance.

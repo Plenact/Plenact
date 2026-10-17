@@ -1,5 +1,11 @@
 # Product Demos
 
+## Review vision and recording status
+
+The [Planning Rhythm vision](../Design/Planning-Rhythm.md) describes approved future work, not behavior established by these recordings. Today's Plan now saves linked priorities and optional daily context; morning, midday, and evening flows are available, while weekly and periodic workflows and saved session histories remain planned
+
+Future walkthroughs should show confirmed changes, pause/resume, and a gentle return after skipped reviews. Do not use existing recordings as evidence that those flows already work
+
 This directory contains video demonstrations of Plenact's user experience at particular points in development.
 
 ## Current Material
@@ -9,7 +15,7 @@ This directory contains video demonstrations of Plenact's user experience at par
 
 ## For Viewers
 
-Videos are snapshots, not promises of current behavior. Compare them with the app and the status statements in [`../Today-View-UI.md`](../Today-View-UI.md) and [`../Board-and-Scheduled-Views.md`](../Board-and-Scheduled-Views.md).
+Videos are snapshots, not promises of current behavior. Compare them with the app and the status statements in [`../Today-View-UI.md`](../Design/Today-View-UI.md) and [`../Board-and-Scheduled-Views.md`](../Design/Board-and-Scheduled-Views.md).
 
 ## For Contributors
 

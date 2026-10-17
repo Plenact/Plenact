@@ -1,3 +1,9 @@
+## Planning Rhythm storage boundary — October 16, 2026
+
+The [five review experiences](../Design/Planning-Rhythm.md) are approved direction. Today's Plan, morning progress, and evening review decisions/reflections use versioned local daily-plan storage; evening mutations have a recovery journal. Midday, weekly, and periodic workflows remain planned; the existing shared-demo schema is not their storage contract
+
+No database deployment, remote review endpoint, schema migration, or user-data upload is authorized by the [delivery plan](../Design/Planning-Rhythm-Delivery.md). Extend local example-workspace restoration coverage before new review stores ship
+
 **Status:** Planning and local schema draft. No Plenact application database migration has been applied and no user-registration API has been deployed. This folder is not connected to, imported from, or dependent on the separate Database Demo project
 
 ## Goal

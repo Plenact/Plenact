@@ -1,3 +1,9 @@
+## Planning Rhythm and examples — October 16, 2026
+
+This remote demo import plan is separate from local Full-month examples and from the [proposed review system](../Design/Planning-Rhythm.md). No review history, objectives, or private reflection is included in this import contract
+
+If fictional review examples are introduced later, mark them as demonstrations and keep them within the local workspace backup/restore boundary. They must not merge into restored user history. See the [delivery plan](../Design/Planning-Rhythm-Delivery.md)
+
 **Status:** Initial synthetic seed completed on 2026-10-03. Migration `001` is applied and recorded in the dedicated `justirl2_plenact` database; the Board-editor account was provisioned and the iOS app published `SampleData` as revision 1. Database readback confirms schema version 1, `demo_seed`, a completed import batch, 49 source/result cards, 7 lists, and 13 labels. Both editor and member sign-in/readback succeed, and the app reported that local data was unchanged. Assignment authorization, stale-write, seed-retry, and restore checks remain
 
 ## Goal

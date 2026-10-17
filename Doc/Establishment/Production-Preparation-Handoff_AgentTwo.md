@@ -1,5 +1,8 @@
 # Plenact: Production Preparation and Release Handoff
 
+> **Historical audit:** This handoff records the October 4, 2026 repository snapshot. Its feature inventory, paths, and verification results are historical. The October 16 [Planning Rhythm vision](../Design/Planning-Rhythm.md), [delivery plan](../Design/Planning-Rhythm-Delivery.md), and [current documentation index](../README.md) supersede its future product-direction assumptions. The first guided Today's Vision flow is implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
+
+
 **Prepared:** October 4, 2026  
 **Purpose:** Give the next production-preparation agent a comprehensive, actionable transfer of product intent, implementation knowledge, accepted behavior, engineering lessons, verification evidence, and release-preparation work.  
 **Repository:** `Plenact/Plenact`  
@@ -102,7 +105,7 @@ The owner requested a detailed Markdown handoff. Preparing it does not authorize
 
 The previous implementation and the large function-header documentation changes had been committed by the owner. `HEAD` was `5a39025`.
 
-There was one existing unstaged edit in [Doc/README.md](README.md), adding a link to this very filename. That edit was preserved rather than rewritten. This handoff supplies the linked document.
+There was one existing unstaged edit in [Doc/README.md](../README.md), adding a link to this very filename. That edit was preserved rather than rewritten. This handoff supplies the linked document.
 
 This preparation changed documentation, not application behavior. If more changes exist when you start, inspect them; do not assume this snapshot still describes the worktree.
 
@@ -323,7 +326,7 @@ Production preparation is not permission to:
 | Item | Verified value / state |
 |---|---|
 | Repository | `Plenact/Plenact` |
-| Application project | [Plenact.xcodeproj](../Plenact.xcodeproj/) |
+| Application project | [Plenact.xcodeproj](../../Plenact.xcodeproj) |
 | Shared scheme | `Plenact` |
 | Application target | `Plenact` |
 | Unit-test target | `PlenactTests` |
@@ -336,7 +339,7 @@ Production preparation is not permission to:
 | Marketing version | `1.0` |
 | Build number | `1` |
 | Signing style | Automatic |
-| Info file | [Src/Info.plist](../Src/Info.plist) |
+| Info file | [Src/Info.plist](../../Src/Info.plist) |
 | API base build setting | `https://plenact.com/api/` |
 | Toolchain observed for this handoff | Xcode 27.0, build `27A266a` |
 | Fresh-test runtime | iOS Simulator 27.0 |
@@ -386,9 +389,9 @@ The three heavily documented active files currently have approximately:
 
 | File | Physical lines observed during this handoff |
 |---|---:|
-| [App.swift](../Src/App.swift) | 3,412 |
-| [Board ContentView.swift](../Src/Features/Boards/ContentView.swift) | 3,054 |
-| [Board CardDetailView.swift](../Src/Features/Boards/CardDetailView.swift) | 3,060 |
+| [App.swift](../../Src/App.swift) | 3,412 |
+| [Board ContentView.swift](../../Src/Features/Boards/ContentView.swift) | 3,054 |
+| [Board CardDetailView.swift](../../Src/Features/Boards/CardDetailView.swift) | 3,060 |
 
 Their size includes substantial documentation. Do not use line count alone to justify a risky rewrite.
 
@@ -400,28 +403,28 @@ Their size includes substantial documentation. Do not use line count alone to ju
 
 | File | Primary responsibility |
 |---|---|
-| [Src/App.swift](../Src/App.swift) | Entry point; Today/Week/Lists/Saved shell; root state; Today capture/search/labels/calendar; personal collection directory and archive restore |
-| [Boards/ContentView.swift](../Src/Features/Boards/ContentView.swift) | Shared Board; list/card rows; Board/member settings; archives; drag ordering; focused Today list |
-| [Boards/CardDetailView.swift](../Src/Features/Boards/CardDetailView.swift) | Full card editor; checklists; reduced action editor; members; dates; attachments; activity and reusable rows |
-| [Boards/Models.swift](../Src/Features/Boards/Models.swift) | Codable model tree; migration; local Board/collection/undo stores; sample data; reorder helpers |
-| [Attachments/PhotoAttachments.swift](../Src/Features/Attachments/PhotoAttachments.swift) | Attachment metadata, local file storage, source chooser, links, thumbnails, previews |
-| [Labels/LabelModels.swift](../Src/Features/Labels/LabelModels.swift) | Reusable labels/categories/colors, local library store, label chip |
-| [Labels/CardLabelsSheet.swift](../Src/Features/Labels/CardLabelsSheet.swift) | Card label/catalog editing sheet |
-| [Profile/ProfileModels.swift](../Src/Features/Profile/ProfileModels.swift) | Local profile, preferences, avatar tokens/colors, compatibility decoding |
-| [Profile/LocalProfileStore.swift](../Src/Features/Profile/LocalProfileStore.swift) | Profile preferences storage and avatar photo file store |
-| [Profile/AccountSettingsView.swift](../Src/Features/Profile/AccountSettingsView.swift) | Profile/settings UI, avatar editing/cropping, Load Example/Undo |
-| [Sync/DatabaseActivity.swift](../Src/Features/Sync/DatabaseActivity.swift) | Shared busy tracking and persistent dismissible error banner |
-| [Sync/PlenactBoardDocument.swift](../Src/Features/Sync/PlenactBoardDocument.swift) | Versioned remote document, validation, response provenance |
-| [Sync/PlenactAPIClient.swift](../Src/Features/Sync/PlenactAPIClient.swift) | HTTPS transport, remote identity/session, Keychain, body limits, demo seed/write/assignments |
-| [Sync/PlenactDemoAccountSection.swift](../Src/Features/Sync/PlenactDemoAccountSection.swift) | Shared-demo account/read/assignment UI source; currently not mounted in normal settings |
+| [Src/App.swift](../../Src/App.swift) | Entry point; Today/Week/Lists/Saved shell; root state; Today capture/search/labels/calendar; personal collection directory and archive restore |
+| [Boards/ContentView.swift](../../Src/Features/Boards/ContentView.swift) | Shared Board; list/card rows; Board/member settings; archives; drag ordering; focused Today list |
+| [Boards/CardDetailView.swift](../../Src/Features/Boards/CardDetailView.swift) | Full card editor; checklists; reduced action editor; members; dates; attachments; activity and reusable rows |
+| [Boards/Models.swift](../../Src/Features/Boards/Models.swift) | Codable model tree; migration; local Board/collection/undo stores; sample data; reorder helpers |
+| [Attachments/PhotoAttachments.swift](../../Src/Features/Attachments/PhotoAttachments.swift) | Attachment metadata, local file storage, source chooser, links, thumbnails, previews |
+| [Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift) | Reusable labels/categories/colors, local library store, label chip |
+| [Labels/CardLabelsSheet.swift](../../Src/Features/Labels/CardLabelsSheet.swift) | Card label/catalog editing sheet |
+| [Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift) | Local profile, preferences, avatar tokens/colors, compatibility decoding |
+| [Profile/LocalProfileStore.swift](../../Src/Features/Profile/LocalProfileStore.swift) | Profile preferences storage and avatar photo file store |
+| [Profile/AccountSettingsView.swift](../../Src/Features/Profile/AccountSettingsView.swift) | Profile/settings UI, avatar editing/cropping, Load Example/Undo |
+| [Sync/DatabaseActivity.swift](../../Src/Features/Sync/DatabaseActivity.swift) | Shared busy tracking and persistent dismissible error banner |
+| [Sync/PlenactBoardDocument.swift](../../Src/Features/Sync/PlenactBoardDocument.swift) | Versioned remote document, validation, response provenance |
+| [Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift) | HTTPS transport, remote identity/session, Keychain, body limits, demo seed/write/assignments |
+| [Sync/PlenactDemoAccountSection.swift](../../Src/Features/Sync/PlenactDemoAccountSection.swift) | Shared-demo account/read/assignment UI source; currently not mounted in normal settings |
 
 ### 6.2 Noncompiled Swift files
 
 The repository also contains:
 
-- [Src/CardDetailView.swift](../Src/CardDetailView.swift).
-- [Src/Models.swift](../Src/Models.swift).
-- [Doc/Style/style.swift](Style/style.swift).
+- [Src/CardDetailView.swift](../../Src/CardDetailView.swift).
+- [Src/Models.swift](../../Src/Models.swift).
+- [Doc/Style/style.swift](../Style/style.swift).
 
 The first two are legacy/root duplicates. The active application uses the **Features/Boards** versions.
 
@@ -431,20 +434,20 @@ Do not delete legacy sources casually. Removing them is a separate cleanup decis
 
 ### 6.3 Active tests
 
-- [ChecklistMigrationTests.swift](../Test/ChecklistMigrationTests.swift).
-- [LocalProfileStoreTests.swift](../Test/LocalProfileStoreTests.swift).
-- [PlenactBoardDocumentTests.swift](../Test/PlenactBoardDocumentTests.swift).
+- [ChecklistMigrationTests.swift](../../Test/ChecklistMigrationTests.swift).
+- [LocalProfileStoreTests.swift](../../Test/LocalProfileStoreTests.swift).
+- [PlenactBoardDocumentTests.swift](../../Test/PlenactBoardDocumentTests.swift).
 
 ### 6.4 Server source
 
-- [Server/api/common.php](../Server/api/common.php): shared transport/configuration/validation/database helpers.
-- [Server/api/auth.php](../Server/api/auth.php): login/logout.
-- [Server/api/users.php](../Server/api/users.php): registered-user directory and editor-created members.
-- [Server/api/board.php](../Server/api/board.php): shared Board read/write.
-- [Server/api/assignments.php](../Server/api/assignments.php): assignment-only mutations.
-- [Server/cli/provision_board_editor.php](../Server/cli/provision_board_editor.php): private operator provisioning.
-- [Server/SQL/001_plenact_demo_core.sql](../Server/SQL/001_plenact_demo_core.sql): initial shared-demo migration.
-- [Server/tests/board_contract_test.php](../Server/tests/board_contract_test.php): local pure contract checks.
+- [Server/api/common.php](../../Server/api/common.php): shared transport/configuration/validation/database helpers.
+- [Server/api/auth.php](../../Server/api/auth.php): login/logout.
+- [Server/api/users.php](../../Server/api/users.php): registered-user directory and editor-created members.
+- [Server/api/board.php](../../Server/api/board.php): shared Board read/write.
+- [Server/api/assignments.php](../../Server/api/assignments.php): assignment-only mutations.
+- [Server/cli/provision_board_editor.php](../../Server/cli/provision_board_editor.php): private operator provisioning.
+- [Server/SQL/001_plenact_demo_core.sql](../../Server/SQL/001_plenact_demo_core.sql): initial shared-demo migration.
+- [Server/tests/board_contract_test.php](../../Server/tests/board_contract_test.php): local pure contract checks.
 
 Server source is part of the repository. It is not part of the iOS compilation target.
 
@@ -643,7 +646,7 @@ That ordering deliberately favors retaining a recovery copy, but it is not a tra
 
 ### 9.1 Model tree
 
-The active [Models.swift](../Src/Features/Boards/Models.swift) owns the principal Board model tree:
+The active [Models.swift](../../Src/Features/Boards/Models.swift) owns the principal Board model tree:
 
 - `KanbanList`.
 - `KanbanCard`.
@@ -1654,7 +1657,7 @@ The known starter manual assignment is mapped to the editor's verified user ID t
 
 ### 20.6 Repository-reported deployment
 
-The newer [Server README](../Server/README.md), [SQL README](../Server/SQL/README.md), and [initial import record](Database/Initial-Demo-Import-Plan.md) report:
+The newer [Server README](../../Server/README.md), [SQL README](../../Server/SQL/README.md), and [initial import record](../Database/Initial-Demo-Import-Plan.md) report:
 
 - Initial migration applied on October 3, 2026 after a disposable-database compatibility test.
 - Seven expected InnoDB tables.
@@ -1744,7 +1747,7 @@ For each:
 
 ### 21.3 Style and headers
 
-The owner requested detailed file/function documentation following [style.swift](Style/style.swift).
+The owner requested detailed file/function documentation following [style.swift](../Style/style.swift).
 
 Completed header work:
 
@@ -2668,50 +2671,50 @@ A useful first outcome is a trustworthy scope and a validated recovery improveme
 ### Product and architecture
 
 - [Repository README](../README.md).
-- [Documentation index](README.md).
-- [Today architecture](Today-View-Architecture.md).
-- [Today UI proposal](Today-View-UI.md).
-- [Board and Scheduled views](Board-and-Scheduled-Views.md).
-- [Checklist actions architecture](Checklist-Actions-Architecture.md).
-- [Local profile architecture](Local-Profile-Architecture.md).
-- [Historical product opens](../Work/Opens.md).
+- [Documentation index](../README.md).
+- [Today architecture](../Design/Today-View-Architecture.md).
+- [Today UI proposal](../Design/Today-View-UI.md).
+- [Board and Scheduled views](../Design/Board-and-Scheduled-Views.md).
+- [Checklist actions architecture](../Design/Checklist-Actions-Architecture.md).
+- [Local profile architecture](../Design/Local-Profile-Architecture.md).
+- [Historical product opens](../../Work/Opens.md).
 
 Read status caveats in this handoff when older proposals conflict with current source.
 
 ### Feature documentation
 
 - [Source guide](../Src/README.md).
-- [Feature guide](../Src/Features/README.md).
-- [Boards](../Src/Features/Boards/README.md).
-- [Attachments](../Src/Features/Attachments/README.md).
-- [Labels](../Src/Features/Labels/README.md).
-- [Profiles](../Src/Features/Profile/README.md).
-- [Sync and activity](../Src/Features/Sync/README.md).
-- [Tests](../Test/README.md).
+- [Feature guide](../../Src/Features/README.md).
+- [Boards](../../Src/Features/Boards/README.md).
+- [Attachments](../../Src/Features/Attachments/README.md).
+- [Labels](../../Src/Features/Labels/README.md).
+- [Profiles](../../Src/Features/Profile/README.md).
+- [Sync and activity](../../Src/Features/Sync/README.md).
+- [Tests](../../Test/README.md).
 
 ### Server and data contract
 
-- [Server overview](../Server/README.md).
-- [API route contract](../Server/api/README.md).
-- [SQL migration status](../Server/SQL/README.md).
-- [Database overview](Database/README.md).
-- [Board data contract](Database/Plenact-Data-Contract.md).
-- [Initial seed execution record](Database/Initial-Demo-Import-Plan.md).
-- [Users/account design](Users/README.md).
+- [Server overview](../../Server/README.md).
+- [API route contract](../../Server/api/README.md).
+- [SQL migration status](../../Server/SQL/README.md).
+- [Database overview](../Database/README.md).
+- [Board data contract](../Database/Plenact-Data-Contract.md).
+- [Initial seed execution record](../Database/Initial-Demo-Import-Plan.md).
+- [Users/account design](../Users/README.md).
 
 The newer deployment records report applied/deployed demo state; several older status introductions still need reconciliation.
 
 ### Implementation and conventions
 
-- [Application shell](../Src/App.swift).
-- [Active Board view](../Src/Features/Boards/ContentView.swift).
-- [Active card detail](../Src/Features/Boards/CardDetailView.swift).
-- [Active Board models](../Src/Features/Boards/Models.swift).
-- [Database activity](../Src/Features/Sync/DatabaseActivity.swift).
-- [Swift style template](Style/style.swift).
-- [Style guide](Style/README.md).
-- [Xcode project](../Plenact.xcodeproj/).
-- [Shared scheme](../Plenact.xcodeproj/xcshareddata/xcschemes/Plenact.xcscheme).
+- [Application shell](../../Src/App.swift).
+- [Active Board view](../../Src/Features/Boards/ContentView.swift).
+- [Active card detail](../../Src/Features/Boards/CardDetailView.swift).
+- [Active Board models](../../Src/Features/Boards/Models.swift).
+- [Database activity](../../Src/Features/Sync/DatabaseActivity.swift).
+- [Swift style template](../Style/style.swift).
+- [Style guide](../Style/README.md).
+- [Xcode project](../../Plenact.xcodeproj).
+- [Shared scheme](../../Plenact.xcodeproj/xcshareddata/xcschemes/Plenact.xcscheme).
 
 ---
 

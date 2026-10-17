@@ -1,5 +1,11 @@
 # Local Profile Architecture
 
+## Planning Rhythm preferences — proposed
+
+The [Planning Rhythm vision](Planning-Rhythm.md) introduces optional morning/evening, weekly and periodic review experiences. Cadence and working-List preferences are proposed settings; no such settings are implemented by this documentation update
+
+Daily plans, drafts, decisions, and saved summaries belong to planning data, not identity credentials. Keep them usable without creating a Local Profile. Removing the profile must not implicitly remove review history. Notification permissions and delivery are separate future decisions. See the [delivery plan](Planning-Rhythm-Delivery.md)
+
 **Status:** Implemented as a local-only profile and personalization feature. It is not online authentication.
 
 ## Product Intent

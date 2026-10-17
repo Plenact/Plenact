@@ -1,73 +1,86 @@
-# Plenact Application Architecture
+# Plenact Application Architecture and Planning Rhythm
 
-**Status:** Today and Board navigation are implemented. This document records the current architecture and proposed follow-up work.
+**Status:** Current ownership reference and proposed review architecture, updated October 16, 2026. Today's Plan and the first Today's Vision flow are implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 
-## Product Intent
+## Product intent
 
-Plenact helps a person plan a day, capture tasks and ideas, and organize work over time. The launch experience should orient the person to today's plan while keeping the full board and its lists one clear action away.
+Plenact helps users turn intentions into action, notice progress, and begin again with a clear plan. Today is the daily home; dated planning weeks and personal collections remain canonical owners of Cards and Notes
 
-The originating workflow is a weekly kanban board: one list per day, ordered cards for that day's routine and work, divider cards between parts of the day, and a separate open-work list. Today makes this existing list-based method easier to enter; it does not replace it with a separate focus-task system. Plenact is not a treatment product, and this design makes no clinical or regulatory claims.
+The approved [Planning Rhythm](Planning-Rhythm.md) adds morning intention, midday adjustment, evening reflection, weekly direction, and periodic assessment. It must connect existing content rather than create another task system
 
-The product model is **Lists organize; Cards describe activities; checklist items express actions**. Today and future views should project canonical records, not create competing task stores. A weekly review is a proposed way to help people reconsider plans while retaining control of changes; it is not currently implemented. See [Plenact Life Planning & Management Model](Life-Planning-Model.md) for the product-level reference.
+## Current source and state boundaries
 
-## Current Foundation
+- `App.swift`: root Today/Week/Plans/Activity navigation, New capture, personal collections, current dated planning document, shortcuts, bookmarks, and cross-owner coordination
+- `Src/Features/Boards/ContentView.swift`: Board and focused List presentation, Card previews, source navigation, and editing interactions
+- `Src/Features/Boards/Models.swift`: canonical Cards, Lists, personal collections, Appearance, creation-only tutorials, and Board persistence
+- `Src/Features/Boards/CalendarPlanning.swift`: local date keys, dated weeks and date-to-List mappings, Calendar browsing, and full-month example workspace backup/restore
+- `Src/Features/Labels/`: local shared label catalog, including Reference guidance labeling
+- `Src/Features/Attachments/`: attachment handling, covers, and personal background assets/imports
+- `Src/Features/Profile/`: device-local identity and settings, independent from remote authentication
+- `Src/Features/Sync/` and `Server/`: separate shared-demo client/server material; not a production private planning sync system
 
-- `App.swift` installs a tab root with Today and Board destinations. Today can select a board list for the current date or browse all lists; opening a list switches to Board and targets its stable ID.
-- `Src/Features/Profile/` provides the local Today avatar, Account & Settings, personalization, and profile persistence without online authentication.
-- `Src/Features/Boards/ContentView.swift` implements the Board destination and owns board interactions, label state, and navigation to card details. Board lists are shared with the root view and persisted through the existing local store.
-- `Src/Features/Boards/Models.swift` defines Codable lists, cards, checklists, comments, and board persistence. Cards have stable IDs, list membership, optional start and due dates, and a title-completion flag.
-- The board is stored as a JSON snapshot in local `UserDefaults`; the label library is also local. Photo files live in the app's private Documents directory, with attachment metadata on cards.
-- There is no implemented calendar integration, standalone notes feature, online account system, team sync, or remote database.
-- The supplied Trello screenshot and JSON export illustrate the user's planning method. They are reference material, not data currently imported by Plenact. New installations receive Monday-through-Sunday starter lists, but `KanbanList` still has no structured weekday or date property.
+Cards and Notes share a canonical record with different presentation. They are not separate task and writing databases. Optional dates and times on Cards do not establish external calendar events, recurrence, or reminders
 
-These existing persistence formats are user-data contracts. New work should preserve them or include a deliberate, tested migration. Do not silently replace unreadable saved data with sample content or delete attachment files as a migration shortcut.
+## Current persistence
 
-## Proposed App Shape
+Dated planning weeks, current-Week compatibility data, personal collections, labels, bookmarks, profile, and UI preferences are stored locally in versioned preferences. Local attachments and avatars live under Documents; imported background photos live under Application Support. Bundled backgrounds are app resources
 
-Keep the existing SwiftUI app and add navigation incrementally:
+The full-month example switch preserves an offline snapshot of app preferences and local Documents/Application Support before replacing active planning data. Restore reloads the workspace. That feature is not cloud backup or synchronization
+
+Existing formats are compatibility contracts. Preserve unsupported/corrupt data and report errors rather than replacing it with samples. Source mutations and media deletion must honor all retained references
+
+## Proposed architecture increment
 
 ```text
-PlenactApp
-└── AppRootView
-    ├── TodayView                 implemented launch view
-    ├── BoardView                 current kanban experience (`ContentView` in code)
-    └── ScheduledView             proposed agenda projection (not implemented)
+AppRootView
+├── Today, Week, Plans / Library, Activity          current
+├── Today's Plan with local saved priorities       current
+└── Planning Rhythm                               proposed
+    ├── Review integration with Today's Plan
+    ├── Today's Vision / Check-in / Review
+    ├── Weekly Review
+    ├── Periodic Review
+    └── Draft sessions and saved summaries
 ```
 
-Today and Board are implemented as complementary ways into the existing planning data. Today stores the selected list ID under a date-specific local preference key and provides a picker for every board list. Scheduled remains a documented direction, not an app destination yet. Add Projects, Notes, or Team navigation only when those destinations have real data and workflows; do not ship navigation to placeholders.
+Exact view names and presentation controls remain open. The proposal does not require a new root tab
 
-### Responsibilities
+### Presentation
 
-**Presentation:** SwiftUI views render state and send explicit user actions. Today presents the selected day list and direct links into all board lists. Board remains the place to browse and organize lists and cards. Scheduled is a proposed ordered agenda projection. A future review flow should also act on the existing source records rather than maintain separate review copies.
+Render existing source status and a resumable session. Collect optional reflection, show proposed actions, and require confirmation before mutation. Do not place storage, source movement, or duplicate eligibility rules in each of the five views
 
-**Application state:** Introduce a small observable planner store when extracting state from `ContentView` becomes necessary. It should coordinate board mutations, Today preferences, and persistence. Keep it focused on app state; do not add a networking or generic repository framework before there is a concrete need.
+### Application coordination
 
-**Domain:** Continue using `KanbanList` and `KanbanCard` as the source of truth for board tasks. Today and Scheduled should project those records, not create second copies. Use each list's stable `id` for navigation; do not deep-link by list title or array index.
+Reuse or extract a focused service from current root coordination for source resolution, eligibility, confirmed decisions, and persistence. Coordinate session progress with source writes using operation identity and recovery; UI callbacks alone cannot establish exactly-once behavior
 
-**Persistence:** Initially reuse the local board and label stores. Store Today preferences locally. Evaluate a more suitable on-device store only with a documented migration plan and round-trip tests for existing board data and attachment references. No cloud storage or synchronization is part of this proposal.
+### Domain
 
-## Today and Schedule Data Boundaries
+Proposed Daily Plan and Review Session concepts record priorities, periods, reflection, decisions, and draft/completed state. Objectives and milestones are optional later additions. References require owner context plus item identity; update references explicitly when a cross-owner move remaps IDs
 
-Today should orient around the list used for the current day. Because the current model has no day/date assignment and list titles are user-editable, do not silently guess from a title. Provide a simple way to choose today's list from existing `KanbanList` values, then offer a visible “Open today's list” action into Board. Include an explicit “Browse all lists” route that can open any existing list by stable ID. If a day-to-list convention is added later, selection may be suggested, but the user must be able to correct it.
+Saved summaries retain dated context separate from live tasks. Missing or deleted sources remain identifiable as unavailable, not recreated from summary text
 
-The selected day's list is the plan: preserve its card ordering and divider rows. A Scheduled view can present the same cards as an agenda while keeping their order. Some card titles contain human-entered time text, but the current model does not parse or validate it. A card's `dueDate` is a date, not a time slot or event. Do not invent event times or claim calendar integration.
+### Persistence
 
-If structured scheduling is later needed, add an explicit event model with its own stable ID, date, start and end time, time zone, and optional link to a task. Define recurrence and all-day behavior only when required by the user workflow. Calendar access and synchronization require separate product and privacy approval.
+Choose a versioned local session/plan format after the write/recovery boundary is designed. Do not silently add review fields to the shared-demo transport. Extend example backup/restore coverage and in-memory reset behavior before new review state ships
 
-Notes and ideas should have their own model and persistence rules when that feature is designed. Do not store private notes in card descriptions merely to populate a Today preview. Keep personal and shared/team ownership explicit before implementing collaboration; shared views should not expose personal content by default.
+## Navigation, dates, and scope
 
-## First Increment
+- Resolve Day/Week dates using `PlanningCalendarDocument`, its first weekday, and `PlanningDate`
+- Use explicit date kinds; do not infer timed appointments from a title or Scheduled List membership
+- Retain the actual source owner when opening a priority from Today or a saved review
+- Back returns to the presenting review or source context without unintended tab changes
+- Allow selected historical periods without altering the current-day plan silently
+- Configure working List roles by identity so renamed/removed defaults have a repair path
+- Keep notification delivery, remote sync, and external-calendar permissions outside this implementation plan
 
-1. Today as the launch destination, Board access, per-date list selection, and list browsing are implemented.
-2. Add an active test target and cover board Codable round trips, Today list selection, list-specific navigation, and behavior when a selected list is removed.
-3. Implement Scheduled only after its ordered-list projection and interaction design are validated.
-4. Keep true calendar events, standalone notes, ideas, and team features out of scope until their data models and workflows are separately designed.
-5. Treat a weekly review as a separate product-design proposal; agree on its scope and user-controlled behavior before adding a review surface.
+## Delivery and verification
 
-## Quality and Privacy Principles
+Build daily planning and evening carry-forward first, then midday adjustment, weekly direction, and periodic objectives. See [Planning Rhythm delivery plan](Planning-Rhythm-Delivery.md) for failure handling, compatibility requirements, open decisions, and acceptance scenarios
 
-- Keep local-only behavior clear in product copy. Do not describe local persistence as sync, backup, or secure sharing.
-- Preserve user data through decoding failures and model changes; provide recoverable errors and tested migrations.
-- Support Dynamic Type, VoiceOver labels and order, high contrast, and comfortable touch targets. Do not make swipe gestures the only way to complete an action.
-- Respect a reduced-motion preference and keep the Today layout predictable.
-- Keep personal and shared content visibly distinct if collaboration is later designed. Do not make clinical efficacy, compliance, or treatment claims.
+Tests must establish persistence and mutation safety; hosted rendering alone does not prove drafts, gestures, accessibility, or recovery on a physical device
+
+## Daily-plan source and storage
+
+`Src/Features/Planning/TodayPlan.swift` provides the first daily planning increment. `DailyPlanStore` reads/writes a versioned `Plenact.DailyPlans.v1` document, retains corrupt/unsupported data, merges other days, and detects conflicting same-day saves. Priorities retain owner-qualified source links and display context rather than copying tasks. The view opens original items through existing presenter-preserving wrappers
+
+The local example workspace already captures this preference key; restoration remounts Today and discards demo view state. Daily-plan round-trip, source ownership, current completion, corrupt-data retention, conflict, example restoration, and hosted rendering checks cover this increment. Review drafts, decisions, summaries, and cadence still require their staged design

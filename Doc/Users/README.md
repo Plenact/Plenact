@@ -1,3 +1,9 @@
+## Local Planning Rhythm boundary — October 16, 2026
+
+The [Planning Rhythm vision](../Design/Planning-Rhythm.md) is an approved local-first product direction, not a change to shared-demo account authorization or directory visibility. Its reflections, objectives, priorities, and summaries must not be uploaded or exposed to shared-demo users as an incidental extension of registration or assignment
+
+Users can plan and review without an online account. Remote review sharing, tenant ownership, consent, and synchronization require a separate design. See [delivery boundaries](../Design/Planning-Rhythm-Delivery.md)
+
 **Status:** Local Profile remains device-only. Source now includes an HTTPS shared-demo login/directory/Board client and Keychain session, but no Bluehost migration or API deployment has occurred. The demo is shared only with authenticated registered users; production privacy, tenant isolation, and organization ownership are deferred
 
 ## Intent
@@ -88,3 +94,11 @@ Do not use real or sensitive personal data in the shared demo. Never put passwor
 - How inactive accounts remain recognizable in existing assignments
 - Whether a local-only profile should link to a demo account
 - Which production identity, tenant ownership, and access-control model will replace the demo boundary
+
+## In-app Help
+
+Open Library's selector beside the heading and choose Help after All, Lists, Boards, and Labels. Help is an offline, searchable guide library; it creates no Cards or example data. Start with planning for your life and your first useful plan, then read the five Planning Rhythm walkthroughs and first-week testing guidance
+
+Search matches guide titles, summaries, headings, and instructions. Open an article to read it, use Done to return, and use Open Today's Plan in relevant guides to try the workflows. Help describes explicit saves, immediate confirmed actions, local records, unavailable source links, and example-data restoration. Reminders, cloud sync, and a daily-history browser remain future work
+
+Content lives in `Src/Features/Planning/LibraryHelp.swift`. Keep it aligned with actual behavior as the first-use trial produces feedback

@@ -1,137 +1,91 @@
-# Plenact Life Planning & Management Model
+# Plenact Life Planning and Management Model
 
-**Status:** Product-model reference and approved direction for exploration. The model describes how Plenact's existing planning concepts fit together; a weekly-review workflow is proposed, not implemented. This document is not a commitment to a new screen, data store, or release milestone.
+**Status:** Current product foundation and approved future direction, updated October 16, 2026. Today's Plan and the first guided Today's Vision flow are implemented; Today's Review is also implemented; weekly and periodic experiences remain approved direction
 
 ## Purpose
 
-Plenact should help a person move between capturing what matters, giving it a useful place, understanding the activity, choosing manageable actions, focusing on the present, and reviewing plans over time.
+**Help people turn intentions into action, notice their progress, and begin again with a clear plan**
 
-The product should make this possible without requiring every idea to be a dated task, every activity to have checklist steps, or every list to follow a prescribed set of “life areas.”
+Lists organize, Cards and Notes hold useful content, and checklist items express manageable actions. People can use undated ideas, personal subjects, or dated plans without adopting a fixed hierarchy of life areas
 
-## Information hierarchy
+## Current organizing model
 
-Plenact's organizing model is:
+| Concept | Current role |
+| --- | --- |
+| List | Ordered Cards, Notes, and dividers in a personal collection or dated planning week |
+| Board | A collection of Lists with user-controlled order and presentation |
+| Card / Note | One canonical record with an action-oriented Card or writing-oriented Note interface; presentation is not a second data store |
+| Checklist item | An action within an item, optionally linked or detailed according to existing contracts |
+| Today | Daily capture, focus, shortcuts, and access to the current Day List |
+| Day / Week / Calendar | Views over local dated planning weeks and their date-to-List mappings |
+| Plans / Library | Plans is the lower-toolbar destination; Library is its on-screen title and collection/label browsing hub |
+| Activity | Recent work, saved bookmarks, due-soon and label browsing, plus retained-content access |
+| Planning Rhythm | Proposed connected review experiences, daily priorities, reflections, and summaries |
 
-> **Lists organize. Cards describe activities. Checklist items express actions.**
+Owner context matters: Card IDs are collection-local, not globally unique. Views open or mutate the original item with its owner context rather than copying it into a separate Today or review task store
 
-| Concept | Role in the model | Current boundary |
+## The three working Lists
+
+| List | Purpose | Future review relationship |
 | --- | --- | --- |
-| **List** | Organizes related cards in a meaningful context, such as a day, project, or personal subject. | A Week list belongs to the Week Board. Personal collections are stored separately. |
-| **Card** | Describes an activity, plan, intention, or useful context. | A card can have optional dates and supporting details. A date is not a calendar event or a requirement. |
-| **Checklist item** | Expresses a concrete action that can move a card forward. | Checklist items belong to their card; they are not a separate task database. |
-| **Today** | Helps focus on a selected existing Week list for a particular date. | It projects canonical Board records and does not own duplicate cards. |
-| **Week / Board** | Shows and organizes the larger ordered planning workspace. | Existing card and list order remains user-controlled. |
-| **Library** | Provides access to the Week Board and the person's own collections. | Personal collections remain local lists or Boards, not a standalone Notes store. |
-| **Saved** | Provides access to locally bookmarked Week and active personal-collection items, plus archived personal collections. | Bookmark stores remain independent and local; archive retains discoverable, restorable content, while confirmed Delete is permanent and archives are not backups. |
-| **Review** | Offers a deliberate opportunity to reconsider plans and choose what to do next. | A weekly-review workflow is a proposed direction, not an implemented feature. |
+| On the Table | Things the user hopes to accomplish today, time permitting | Morning selection, midday adjustment, evening carry-forward decisions |
+| In the Queue | Waiting, unfinished, and repeatedly deferred backburner work worth keeping | Daily deferral and deliberate weekly reconsideration |
+| Scheduled | Commitments or tasks with a chosen date or time | Morning candidates and explicit scheduling decisions |
 
-These are complementary ways to organize and view work, not a set of required lifecycle states. A card can remain an idea, have no date, or have no checklist. People may use personal collections as their context without adopting a fixed set of “life areas.”
+Fresh installations and creation through Starter Lists provide one editable tutorial Card in each of these Lists, with a Reference label, a List-specific subtitle, and a Try it checklist. Existing Lists are not reseeded when emptied. Default personal List banners, Today shortcuts, Library identities, and offline photos provide visual continuity; custom choices take precedence
 
-## Library and personal collections
+These names are starting points, not required lifecycle states. Users can rename or remove Lists. Future review setup must use selected identities and offer repair instead of relying on these names as permanent identifiers
 
-The former Lists tab is now **Library**, with a books-style navigation icon. Its Week Board entry remains separate from **Personal collections**. Collection rows use the person's chosen title, icon, and color, with an explicit active-card count; Board subtitles count active lists. Search, list/Board creation, editing, ordering, and opening the existing content remain available. The empty state explains personal spaces and offers the existing list-creation form. Archived Boards and personal lists remain in Saved's **Archived Collections** section.
+Scheduled is a personal List, not an external calendar or reminder service. Being placed there does not assign a date, time, recurrence, or notification
 
-This is a presentation update, not a new hierarchy or migration. Lists still organize cards. In an open personal List, the center New action opens a sheet-style explicit-save Note draft scoped to that List; Cancel creates nothing. From the Library directory, New opens the immersive full-screen Note composer and targets the most recently opened active personal List, falling back to the first visible active personal List. A Note's location label opens a destination picker for active personal Lists; moving preserves its content and bookmark and leaves the editor open. Personal Boards and other destinations retain the Week composer. Collection names or note-like icons do not establish standalone notes.
+## Planning loop and review direction
 
-Saved includes bookmarks from active personal collections alongside Week bookmarks. Personal bookmark IDs remain collection-local; each Saved row retains collection and List provenance and opens the original record in place. Archived collections and archived Lists are not included as active bookmark rows; archived collections remain available through the separate restore section.
+Capture → organize → choose a useful next step → act → adjust → reflect → begin again
 
-Collection titles wrap, card counts include text rather than color-only cues, and accessibility text sizes place counts below the title. Validation on October 5, 2026: `xcodebuild test -project Plenact.xcodeproj -scheme Plenact -destination 'platform=iOS Simulator,name=iPhone 15 Pro Max' -parallel-testing-enabled NO -only-testing:PlenactTests/PlenactBoardDocumentTests` passed **45 tests, 0 failures**, including hosted Library rows at portrait/landscape widths and accessibility text sizes. The earlier iPhone 17 destination was unavailable. Physical-device appearance, full create/edit/reorder/navigation interactions, and VoiceOver remain acceptance checks, not established by row measurements.
+The [Planning Rhythm vision](Planning-Rhythm.md) connects five moments:
 
-**Notes and Cards:** an item now chooses its own Card or writing-first Note interface while retaining the same underlying Card record. Library collection settings can choose a new-item default for each list without converting existing content. Make into Note/Card is an explicit, in-place presentation change that preserves supporting data; Note Details keeps action-oriented fields available. Before saving a new personal Note, its List label selects any active personal List without creating or moving stored content. After creation, the Note location label moves that record between active personal Lists and remains open at the destination. Existing records remain Cards when the optional preference is absent. This is not a standalone Notes store or bulk migration. Moving a personal Note into Week remains a separate, deferred data-safety milestone. See [Note behavior and compatibility](../Src/Features/Boards/README.md#notes-and-cards-one-record-two-interfaces).
+- Today's Vision: choose a realistic daily plan
+- Today's Check-in: adjust to progress and changed circumstances
+- Today's Review: recognize progress and decide where unfinished work belongs
+- Weekly Review: reconsider the Queue and establish next-week direction
+- Periodic Review: assess and revise objectives at selected dates or checkpoints
 
-The saved Note's bottom toolbar separates navigation, Details, attachments, user-initiated text sharing, and Add actions from the writing area. Its upper toolbar retains the single bookmark and lifecycle/presentation menu. Sharing exports only the current title, written body, and attached web links through the system share sheet; it does not enable synchronization or send hidden Card metadata or local media.
+Processing and clearing means giving items deliberate decisions, not forcing empty Lists. Keep and Leave in place are valid. A user should be able to return after missed reviews without review debt, punitive messaging, or automatic rescheduling
 
-New items retain their actual creation timestamp, shown below a Note's title as localized date/time. New Note displays the draft's creation time before saving and retains that same time in the saved Note, including after destination changes or save retries. Cancel creates no record. Existing undated records remain undated rather than being assigned an estimated or opening date. Creation time is not a scheduled start/due date and does not change when an item is edited, moved, or restored.
+Today's Plan now saves daily priorities linked to existing items, together with optional intention, constraints, and concerns. It replaces the static targets preview and shows live item status. Today's Vision now guides morning planning with saved step progress and confirmed transfers. The four remaining review flows, review histories, objectives, and cadence preferences do not yet exist
 
-### Optional personal-list examples
+## Content lifecycle and data boundaries
 
-**Examples** appears beside **Create a list** in the empty Library state and remains available from Library's upper **+** menu after collections exist. The buttons stack when horizontal space or larger text requires it.
+- A confirmed move changes one canonical item's location while preserving content and relevant links; a priority reference does not create another task
+- Personal collections and dated weeks remain separate owners, even when shown together in Search, Calendar, Activity, or a future review
+- Date-only and date-with-time values retain their explicit meanings; titles are not parsed into appointments
+- Archive retains discoverable content; permanent Delete requires confirmation and persistence before removal is published
+- Media cleanup must account for all retained references. Cover selection, hiding covers, and removing a cover are distinct from deleting an attachment
+- The full-month example feature saves a verified offline workspace copy before replacement and exposes Restore User Data while active. This purpose-specific local recovery copy is not multi-device sync or protection against device loss
+- Reference/tutorial Cards and dividers should be excluded from automatic unfinished-work review candidates; Notes are not presumed incomplete tasks
+- Saved reviews will retain dated reflection and decision context separately from live source content, with a deliberate versioned model
 
-The chooser offers **On the Table**, **In the Queue**, **Scheduled**, **Shopping**, **Up for Brew**, and **Misc.**, each with eight synthetic cards and supporting descriptions. Expand a preview, choose **Use …**, then review the existing collection form and its included-card list. Only **Save** adds a new personal list; canceling the chooser or form does not add it. Each selection receives a fresh collection identity and an initially collision-safe title. The person can edit the title, icon, or color before saving.
+## Optional starter and example content
 
-These examples do not replace Week or existing collections, reference personal attachment files, assign people, create bookmarks, or automatically set dates/reminders. On the Table, In the Queue, and Up for Brew each include one original bundled illustration as an optional cover; previewing or canceling a draft writes no media files. Scheduled is a planning context, not a calendar service. Misc. demonstrates reference-style cards, not a separate Notes type. After saving, the cards are ordinary editable local content. This feature is separate from Today's **Load Example**, which has different Week replacement/undo semantics.
+The Library + menu separates New List / New Board, Starter Lists / Starter Boards, Templates, and Examples. Starter guidance and populated examples have different purposes
 
-Validation: the same targeted iPhone 15 Pro Max command above passed **47 tests, 0 failures** after adding the examples. New tests check all six names, card-count bounds, identities, optional-field safety, round trips, no writes during draft creation, collision-safe names, and preservation of existing collection/Week snapshots after an explicit append/save. The actual chooser-to-form transition, Cancel/Save interaction, both entry points, and adaptive button appearance remain hands-on acceptance checks.
-
-## User-directed content lifecycle
-
-Card covers are an optional visual aid, not a new content type. People explicitly choose an attached photo or add a photo as a cover. Removing a cover keeps its attachment; a device display preference can hide all row covers without changing their selections. Existing saved work is not automatically given images. Details and behavior are documented in [Optional Card Covers](../Src/Features/Boards/README.md#optional-card-covers).
-
-The offline **Cover Library** offers 48 original illustrations in six artwork categories, eight per category, plus All Covers browsing. Categories do not classify or restrict cards. Choosing is explicit, Cancel leaves content unchanged, and no card analysis or network service is involved. Color customization, search, and recommendations remain proposed follow-ups.
-
-Cards, lists, and collections offer confirmed permanent deletion alongside their existing archive controls, including retained-content browsers. Archive means keep for later; Delete removes the selected record, its contained content, and its owning bookmarks. Other retained copies remain independent. Week can be archived or have its contents deleted, but its workspace remains available.
-
-Deletion operates on the canonical local records, saves before publishing removal, and protects media still referenced by other retained content or the existing Load Example undo snapshot. It does not introduce remote synchronization or change the hierarchy. See the [lifecycle action matrix and safety boundaries](../Src/Features/Boards/README.md#archive-and-permanent-deletion).
-
-Hands-on acceptance still needs confirmation/Cancel, restoration, deletion followed by relaunch, focused-editor failure/dismissal, photo import during deletion, shared attachments, both landscape directions, large text, and VoiceOver. Helper tests alone do not establish those interactions.
-
-## Planning loop
-
-The model can be understood as a flexible loop:
-
-1. **Capture** an activity or idea when it comes to mind.
-2. **Organize** it in a list or board that gives it context.
-3. **Describe** it with a card and add useful details when needed.
-4. **Choose actions** by adding checklist items if that makes the work more manageable.
-5. **Focus** through Today or the Week Board without copying the underlying records.
-6. **Review** plans periodically and decide whether to keep, change, complete, or set aside work.
-
-This is a way to explain the product, not a required sequence. A person may start with a list, add details later, skip checklist actions, or leave an item undated.
-
-## Weekly review direction
-
-A weekly review is a high-value workflow to explore because it could connect day-to-day planning with longer-term organization while reusing the existing Lists, Cards, actions, and archive behavior.
-
-The initial direction is a calm, user-invoked review of the Week Board. For each item the person chooses to consider, the app could make it easy to:
-
-- Leave it where it is.
-- Move it to another list.
-- Add or revise a checklist action.
-- Add or change an optional date.
-- Mark it complete.
-- Archive it when it should be set aside but retained.
-
-Any future design should preserve user control:
-
-- Do not move, archive, complete, or reschedule content automatically.
-- Do not treat missed dates as failure or use scores, streaks, or guilt-based prompts.
-- Make it clear what a proposed action will change and where the content will remain.
-- Allow the person to stop and return without implying that unfinished review work is lost.
-- Keep archived content discoverable and restorable; do not describe an archive as a backup.
-
-These interaction details remain proposals. Review scope, cadence, entry point, progress/resume behavior, and whether personal collections participate should be decided before implementing a review UI.
-
-## Views are projections, not competing stores
-
-Today and future planning views should use the canonical records they present. They must not introduce a parallel Today task list or copy cards into a review-only store. Moving or editing an item through a view should update the same record, preserve its stable identity, and respect its owning Week Board or personal collection.
-
-Personal collections remain distinct from Week data. A review should not silently merge their contents, and card IDs from different Boards must not be treated as globally unique. Cross-collection search, linked-card navigation, or review would need to preserve the source collection context.
-
-Optional card dates remain dates on planning content. A date does not establish a time of day, recurrence, reminder, external calendar event, or synchronization.
+Ordinary examples create independent editable collection drafts; canceling adds nothing. Full-month examples offer a read-only preview or an explicitly confirmed workspace replacement with offline restoration. Do not describe all examples as append-only or all Load Example flows as equivalent
 
 ## Product principles
 
-- **Clarity over ceremony:** use familiar Lists, Cards, and actions instead of adding hierarchy for its own sake.
-- **Choice over prescription:** allow different planning styles and undated work.
-- **Continuity over duplication:** Today, Week, Search, and any future review surface should point to existing records.
-- **Retention over disappearance:** archive means retained, discoverable, restorable content.
-- **Manageable next steps:** checklist actions can help break down an activity but are optional.
-- **Predictability and accessibility:** keep navigation understandable, state changes explicit, and important actions available without relying only on gestures.
-- **Honest boundaries:** local storage is not synchronization, private cloud storage, or a guaranteed backup. Do not make medical, treatment, clinical-validation, or regulatory claims.
-
-## What this model does not imply
-
-This product direction does not establish or promise:
-
-- A new task, goal, event, note, or review data store.
-- Automatic scheduling, prioritization, reminders, recurrence, or task movement.
-- Calendar integration, accounts, team collaboration, cloud synchronization, or backup.
-- That all users need the same life categories or weekly routine.
-- Medical, treatment, clinical-efficacy, recovery-outcome, or regulatory benefits.
+- Clarity over ceremony: familiar content, visible next steps, and optional structure
+- Choice over prescription: no mandatory goal hierarchy, dates, cadence, or empty Lists
+- Continuity over duplication: source-owned edits and explicit navigation
+- Retention over disappearance: archive is distinct from delete and from backup
+- Reflection without judgment: recorded facts and user interpretation are different
+- Predictability and accessibility: readable content, comfortable controls, explicit alternatives to gestures, and respect for Reduce Motion
+- Honest boundaries: local planning is not external-calendar sync, private cloud storage, or a claim of medical benefit
 
 ## Related references
 
-- [Today View Architecture](Today-View-Architecture.md) — current ownership and projection boundaries.
-- [Today View UI](Today-View-UI.md) — implemented Today experience and possible follow-ups.
-- [Board and Scheduled Views](Board-and-Scheduled-Views.md) — Board source of truth and proposed time-oriented projection.
-- [Checklist Actions Architecture](Checklist-Actions-Architecture.md) — action identity and detail boundaries.
+- [Operating vision](Planning-Rhythm.md)
+- [Delivery and engineering plan](Planning-Rhythm-Delivery.md)
+- [Today interaction design](Today-View-UI.md)
+- [Application architecture](Today-View-Architecture.md)
+- [Board and scheduled planning](Board-and-Scheduled-Views.md)
+- [Board feature guide](../../Src/Features/Boards/README.md)

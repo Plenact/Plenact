@@ -1,5 +1,7 @@
 # Plenact for iOS
 
+Version: 1.0   (10/16/19)
+
 Plenact is an iPhone planning and organization app being built around a calm, list-based daily workflow. The current revision provides a Today front door and a horizontally navigable kanban Board for tasks, routines, ideas, and open work
 
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
@@ -9,6 +11,14 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
 
 # Opens
+
+Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
+
+!
+
+- Begin a published revision history document
+
+- Activity sections for init reference cards on On the Table, In the Queue and Scheduled have the Activity section removed or hidden by default
 
 - text starts lowercase sometimes on new card creation
 

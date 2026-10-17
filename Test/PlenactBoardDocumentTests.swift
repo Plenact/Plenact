@@ -21,6 +21,589 @@ import SwiftUI
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+
+
+    func testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections() throws {
+        XCTAssertEqual(LibraryBrowseFilter.allCases.map(\.rawValue), ["All", "Lists", "Boards", "Labels", "Help"])
+        let collection = PersonalCollection(title: "Help", kind: .list)
+        XCTAssertFalse(LibraryBrowseFilter.help.includes(collection))
+        XCTAssertEqual(LibraryBrowseFilter.help.searchPrompt, "Find in Help")
+        let articles = PlenactHelpCatalog.articles
+        XCTAssertEqual(Set(articles.map(\.id)).count, articles.count)
+        XCTAssertTrue(["vision", "check-in", "evening", "weekly", "periodic"].allSatisfy { id in articles.contains { $0.id == id && $0.opensPlan } })
+        XCTAssertTrue(PlenactHelpCatalog.results(for: "carry objectives").contains { $0.id == "periodic" })
+        XCTAssertTrue(PlenactHelpCatalog.results(for: "RESTORE DATA").contains { $0.id == "data" })
+        XCTAssertTrue(PlenactHelpCatalog.results(for: "no-such-help-topic-9876").isEmpty)
+        XCTAssertEqual(PlenactHelpCatalog.results(for: "  ").count, articles.count)
+        XCTAssertTrue(PlenactHelpCatalog.groups.allSatisfy { group in articles.contains { $0.group == group } })
+    }
+
+    @MainActor
+    func testLibraryHelpRendersGuidesWithoutChangingPlanningData() async throws {
+        let keys = [DailyPlanStore.key, WeeklyReviewStore.key, PeriodicReviewStore.key, PlanningCalendarStore.key, "Plenact.PersonalCollections.v1"]
+        let before = keys.map { UserDefaults.standard.data(forKey: $0) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        let article = try XCTUnwrap(PlenactHelpCatalog.articles.first { $0.id == "rhythm" })
+        let views: [AnyView] = [AnyView(NavigationStack { List { LibraryHelpRows(query: "") } }), AnyView(PlenactHelpArticleView(article: article))]
+        for (index, view) in views.enumerated() {
+            let host = UIHostingController(rootView: view)
+            window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852); window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-help-\(index).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("HELP_RENDER=\(url.path)")
+        }
+        XCTAssertEqual(keys.map { UserDefaults.standard.data(forKey: $0) }, before)
+    }
+
+    @MainActor
+    func testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints() throws {
+        let name = "PlenactTests.Periodic." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        func date(_ key: String) -> Date { PlanningDate.date(key, calendar: calendar)! }
+        var prior = PeriodicReviewRecord(title: "First quarter", start: date("2026-01-01"), end: date("2026-03-31"), calendar: calendar)
+        prior.objectives = [ReviewObjective(title: "Build a sustainable routine", progress: "Found a useful morning rhythm", nextStep: "Protect time to reflect")]
+        let saved = try PeriodicReviewStore.save(prior, replacing: nil, to: defaults)
+        let document = try PeriodicReviewStore.load(from: defaults)
+        let inherited = try XCTUnwrap(PeriodicReviewStore.previous(before: "2026-04-01", in: document))
+        var next = PeriodicReviewRecord(title: "Second quarter", start: date("2026-04-01"), end: date("2026-06-30"), calendar: calendar, previous: inherited)
+        XCTAssertEqual(next.startingObjectives, saved.objectives)
+        XCTAssertEqual(next.objectives[0].id, saved.objectives[0].id)
+        XCTAssertEqual(next.objectives[0].progress, "")
+        next.objectives[0].status = .achieved; next.step = 2; next.completedAt = .now
+        let nextSaved = try PeriodicReviewStore.save(next, replacing: nil, to: defaults)
+        XCTAssertEqual(try PeriodicReviewStore.load(from: defaults).records[saved.id.uuidString], saved)
+        XCTAssertEqual(try PeriodicReviewStore.load(from: defaults).records[next.id.uuidString], nextSaved)
+        XCTAssertThrowsError(try PeriodicReviewStore.save(next, replacing: nil, to: defaults))
+        XCTAssertNil(PeriodicReviewStore.previous(before: "2026-01-01", in: document))
+        var invalid = nextSaved; invalid.title = " "
+        let bytes = defaults.data(forKey: PeriodicReviewStore.key)
+        XCTAssertThrowsError(try PeriodicReviewStore.save(invalid, replacing: nextSaved, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), bytes)
+        var weeks = WeeklyReviewStore.Document()
+        let overlap = WeeklyReviewRecord(date: date("2026-03-30"), calendar: calendar)
+        let outside = WeeklyReviewRecord(date: date("2026-07-12"), calendar: calendar)
+        weeks.records[overlap.id] = overlap; weeks.records[outside.id] = outside
+        XCTAssertEqual(next.weeks(in: weeks).map(\.id), [overlap.id])
+        defaults.set(Data("corrupt".utf8), forKey: PeriodicReviewStore.key)
+        XCTAssertThrowsError(try PeriodicReviewStore.load(from: defaults))
+        XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), Data("corrupt".utf8))
+    }
+
+    @MainActor
+    func testPeriodicReviewRendersSetupAndAllStepsWithoutWriting() async throws {
+        let name = "PlenactTests.PeriodicRender." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var baseline: PeriodicReviewRecord?
+        for step in -1...2 {
+            if step >= 0 {
+                var record = baseline ?? PeriodicReviewRecord(title: "A meaningful quarter", start: .now, end: .now, calendar: .current)
+                record.step = step
+                if record.objectives.isEmpty { record.objectives = [ReviewObjective(title: "Build a sustainable routine")] }
+                baseline = try PeriodicReviewStore.save(record, replacing: baseline, to: defaults)
+            }
+            let bytes = defaults.data(forKey: PeriodicReviewStore.key)
+            let host = UIHostingController(rootView: PeriodicReviewView(calendar: .current, defaults: defaults, initialReviewID: step < 0 ? nil : baseline?.id))
+            window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852); window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-periodic-\(step).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("PERIODIC_RENDER=\(url.path)")
+            XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), bytes)
+        }
+    }
+
+    @MainActor
+    func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws {
+        let name = "PlenactTests.Weekly." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!; calendar.firstWeekday = 2
+        let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: 18))!
+        var review = WeeklyReviewRecord(date: date, calendar: calendar)
+        XCTAssertEqual(review.startKey, "2026-10-12")
+        var days = DailyPlanStore.Document()
+        for key in ["2026-10-11", "2026-10-12", "2026-10-18", "2026-10-19"] {
+            let day = DailyPlan(date: PlanningDate.date(key, calendar: calendar)!, calendar: calendar)
+            days.plans[key] = day
+        }
+        XCTAssertEqual(review.dailyPlans(in: days).map(\.id), ["2026-10-12", "2026-10-18"])
+        review.highlights = "Made room for important work"; review.step = 2
+        let saved = try WeeklyReviewStore.save(review, replacing: nil, to: defaults)
+        var other = WeeklyReviewRecord(date: calendar.date(byAdding: .day, value: 7, to: date)!, calendar: calendar)
+        other.direction = "A calmer week"
+        _ = try WeeklyReviewStore.save(other, replacing: nil, to: defaults)
+        XCTAssertEqual(try WeeklyReviewStore.load(from: defaults).records.count, 2)
+        XCTAssertEqual(try WeeklyReviewStore.load(from: defaults).records[saved.id], saved)
+        XCTAssertThrowsError(try WeeklyReviewStore.save(review, replacing: nil, to: defaults))
+        let before = defaults.data(forKey: WeeklyReviewStore.key)
+        _ = try DailyReviewTransaction.begin(in: defaults)
+        defaults.removeObject(forKey: WeeklyReviewStore.key)
+        try DailyReviewTransaction.recover(in: defaults)
+        XCTAssertEqual(defaults.data(forKey: WeeklyReviewStore.key), before)
+        defaults.set(Data("broken".utf8), forKey: WeeklyReviewStore.key)
+        XCTAssertThrowsError(try WeeklyReviewStore.load(from: defaults))
+        XCTAssertEqual(defaults.data(forKey: WeeklyReviewStore.key), Data("broken".utf8))
+    }
+
+    @MainActor
+    func testWeeklyReviewRendersAllStepsAndPreservesSavedRecord() async throws {
+        let name = "PlenactTests.WeeklyRender." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var baseline: WeeklyReviewRecord?
+        for step in 0...2 {
+            var record = baseline ?? WeeklyReviewRecord(date: .now, calendar: .current)
+            record.step = step
+            baseline = try WeeklyReviewStore.save(record, replacing: baseline, to: defaults)
+            let bytes = defaults.data(forKey: WeeklyReviewStore.key)
+            let host = UIHostingController(rootView: WeeklyReviewView(calendar: .current, defaults: defaults))
+            window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852); window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-weekly-\(step).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("WEEKLY_RENDER=\(url.path)")
+            XCTAssertEqual(defaults.data(forKey: WeeklyReviewStore.key), bytes)
+        }
+    }
+
+    @MainActor
+    func testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes() throws {
+        let name = "PlenactTests.CheckIn." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        table.lists[0].cards = [
+            KanbanCard(id: 0, word: "Next task", listTitle: table.title, checklists: []),
+            KanbanCard(id: 1, word: "Finished", listTitle: table.title, isTitleChecked: true, checklists: []),
+            KanbanCard(id: 2, word: "Context", listTitle: table.title, checklists: [], presentation: .note)
+        ]
+        let week = DatedPlanningWeek.make(for: .now)
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let sources = access.searchableItems
+        var plan = DailyPlan(date: .now)
+        plan.priorities = sources.map(DailyPlanPriority.init)
+        plan.visionCompletedAt = .now; plan.eveningReview = DailyEveningReview()
+        let initial = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        XCTAssertNil(try DailyPlanStore.load(from: defaults).plans[plan.id]?.checkIn)
+        let next = try XCTUnwrap(plan.priorities.first { $0.title == "Next task" })
+        plan.checkIn = DailyCheckIn(focus: next, changed: "Less time available", savedAt: .now)
+        plan.constraints = "Only one hour"
+        let saved = try DailyPlanStore.save(plan, replacing: initial, to: defaults)
+        let restored = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
+        XCTAssertEqual(restored, saved)
+        XCTAssertEqual(restored.visionCompletedAt, initial.visionCompletedAt)
+        XCTAssertEqual(restored.eveningReview, initial.eveningReview)
+        let counts = DailyCheckInProgress.counts(plan: restored, sources: sources)
+        XCTAssertEqual(counts.tasks, 2); XCTAssertEqual(counts.completed, 1); XCTAssertEqual(counts.notes, 1)
+        XCTAssertEqual(DailyCheckInProgress.focus(plan: restored, sources: sources), next)
+        var removed = restored; removed.priorities.removeAll { $0.id == next.id }
+        XCTAssertNil(DailyCheckInProgress.focus(plan: removed, sources: sources))
+        XCTAssertNil(DailyCheckInProgress.focus(plan: restored, sources: []))
+        var completed = sources
+        let index = try XCTUnwrap(completed.firstIndex { $0.card.word == "Next task" })
+        var card = completed[index].card; card.isTitleChecked = true
+        let old = completed[index]
+        completed[index] = PlanningSearchResult(weekKey: old.weekKey, collectionID: old.collectionID, collectionTitle: old.collectionTitle, listID: old.listID, listTitle: old.listTitle, card: card)
+        XCTAssertNil(DailyCheckInProgress.focus(plan: restored, sources: completed))
+        XCTAssertEqual(DailyCheckInProgress.counts(plan: restored, sources: completed).completed, 2)
+        XCTAssertEqual(access.library[0], table)
+        XCTAssertThrowsError(try DailyPlanStore.save(plan, replacing: initial, to: defaults))
+    }
+
+    @MainActor
+    func testCheckInRendersWithoutSavingOrChangingSources() async throws {
+        let week = DatedPlanningWeek.make(for: .now)
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var saves = 0
+        let host = UIHostingController(rootView: TodayCheckInView(plan: .constant(DailyPlan(date: .now)), date: .now, onSave: { saves += 1; return true }).environment(\.planningCalendarAccess, access))
+        window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852); window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-checkin.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("CHECKIN_RENDER=\(url.path)")
+        XCTAssertEqual(saves, 0)
+    }
+
+    @MainActor
+    func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws {
+        let name = "PlenactTests.Review." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        for key in DailyReviewTransaction.keys { defaults.set(Data(key.utf8), forKey: key) }
+        defaults.removeObject(forKey: DailyPlanStore.key)
+        enum Forced: Error { case failure }
+        XCTAssertThrowsError(try DailyReviewTransaction.perform(in: defaults) {
+            for key in DailyReviewTransaction.keys { defaults.set("changed", forKey: key) }
+            throw Forced.failure
+        })
+        for key in DailyReviewTransaction.keys where key != DailyPlanStore.key { XCTAssertEqual(defaults.data(forKey: key), Data(key.utf8)) }
+        XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))
+        _ = try DailyReviewTransaction.begin(in: defaults)
+        defaults.set("interrupted", forKey: DailyPlanStore.key)
+        try DailyReviewTransaction.recover(in: defaults)
+        XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))
+        try DailyReviewTransaction.perform(in: defaults) { defaults.set("committed", forKey: DailyPlanStore.key) }
+        XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "committed")
+        XCTAssertNil(defaults.object(forKey: DailyReviewTransaction.key))
+        let corrupt = Data("invalid journal".utf8)
+        defaults.set(corrupt, forKey: DailyReviewTransaction.key)
+        XCTAssertThrowsError(try DailyReviewTransaction.recover(in: defaults))
+        XCTAssertEqual(defaults.data(forKey: DailyReviewTransaction.key), corrupt)
+        XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "committed")
+    }
+
+    @MainActor
+    func testEveningReviewPersistsReflectionAndSkipsDecidedAndReferenceItems() throws {
+        let name = "PlenactTests.Evening." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let week = DatedPlanningWeek.make(for: .now)
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        table.lists[0].cards = [
+            KanbanCard(id: 0, word: "Keep", listTitle: table.title, checklists: []),
+            KanbanCard(id: 1, word: "Reference", listTitle: table.title, checklists: [], labelIDs: ["reference"]),
+            KanbanCard(id: 2, word: "Finished", listTitle: table.title, isTitleChecked: true, checklists: [])
+        ]
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        var plan = DailyPlan(date: .now)
+        let legacy = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        XCTAssertNil(try DailyPlanStore.load(from: defaults).plans[plan.id]?.eveningReview)
+        let items = TodayReviewSelection.items(plan: plan, date: .now, access: access, referenceLabelIDs: ["reference"], calendar: .current)
+        XCTAssertEqual(Set(items.map { $0.card.word }), ["Keep", "Finished"])
+        let keep = DailyPlanPriority(try XCTUnwrap(items.first { $0.card.word == "Keep" }))
+        var review = DailyEveningReview()
+        review.step = 2; review.helped = "A small step"; review.tomorrow = "Begin gently"
+        review.decisions = [DailyReviewDecision(source: keep, result: keep, action: .keep)]
+        plan.eveningReview = review
+        let saved = try DailyPlanStore.save(plan, replacing: legacy, to: defaults)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[plan.id]?.eveningReview, review)
+        XCTAssertTrue(TodayReviewSelection.pending(items, review: review).isEmpty)
+        XCTAssertEqual(access.library[0].lists[0].cards.count, 3, "Leaving in place does not delete source content")
+        var invalid = saved; invalid.eveningReview?.step = 8
+        _ = try DailyPlanStore.save(invalid, replacing: saved, to: defaults)
+        XCTAssertThrowsError(try DailyPlanStore.load(from: defaults))
+    }
+
+    @MainActor
+    func testEveningReviewRendersAllStepsWithoutSaving() async throws {
+        let week = DatedPlanningWeek.make(for: .now)
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var saves = 0
+        for step in 0...2 {
+            var plan = DailyPlan(date: .now)
+            plan.eveningReview = DailyEveningReview(); plan.eveningReview?.step = step
+            let host = UIHostingController(rootView: TodayReviewView(plan: .constant(plan), date: .now, baseline: nil, onSave: { saves += 1; return true }, onCommitted: { _ in saves += 1 }).environment(\.planningCalendarAccess, access))
+            window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852); window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(150))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-review-step-\(step).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("REVIEW_RENDER=\(url.path)")
+        }
+        XCTAssertEqual(saves, 0)
+    }
+
+    @MainActor
+    func testTodayVisionRendersMorningAndRealityStepsWithoutSaving() async throws {
+        let week = DatedPlanningWeek.make(for: .now)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        let access = PlanningCalendarAccess(document: document, library: [], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var saves = 0
+        for step in [0, 2] {
+            var plan = DailyPlan(date: .now); plan.visionStep = step
+            plan.intention = "One useful step"
+            let host = UIHostingController(rootView: TodayVisionView(plan: .constant(plan), date: .now, onSave: { saves += 1; return true }).environment(\.planningCalendarAccess, access))
+            window.rootViewController = host
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(150))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-vision-step-\(step).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("VISION_RENDER=\(url.path)")
+        }
+        XCTAssertEqual(saves, 0, "Opening a morning review must not save or move anything")
+    }
+    func testTodayVisionCandidatesUseRealDatesAndExcludeReferenceAndCompletedItems() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: 16))!
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let listID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+        let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == listID })
+        week.collection.lists[index].cards = [
+            KanbanCard(id: 0, word: "Day priority", listTitle: "Renamed day", checklists: []),
+            KanbanCard(id: 1, word: "Reference", listTitle: "Renamed day", checklists: [], labelIDs: ["reference"]),
+            KanbanCard(id: 2, word: "Already finished", listTitle: "Renamed day", isTitleChecked: true, checklists: [])
+        ]
+        var scheduled = PersonalCollection(title: "Scheduled", kind: .list)
+        scheduled.lists[0].cards = [
+            KanbanCard(id: 0, word: "Due today", listTitle: scheduled.title, dueDate: date, checklists: []),
+            KanbanCard(id: 1, word: "Undated", listTitle: scheduled.title, checklists: []),
+            KanbanCard(id: 2, word: "Tomorrow", listTitle: scheduled.title, dueDate: calendar.date(byAdding: .day, value: 1, to: date), checklists: []),
+            KanbanCard(id: 3, word: "Spans today", listTitle: scheduled.title, startDate: calendar.date(byAdding: .day, value: -1, to: date), dueDate: calendar.date(byAdding: .day, value: 1, to: date), checklists: [])
+        ]
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        let access = PlanningCalendarAccess(document: document, library: [scheduled], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let found = TodayVisionSelection.candidates(date: date, access: access, referenceLabelIDs: ["reference"], calendar: calendar)
+        XCTAssertEqual(Set(found.map { $0.card.word }), ["Day priority", "Due today", "Spans today"])
+        XCTAssertEqual(Set(found.map(\.id)).count, 3)
+        XCTAssertEqual(access.library[0], scheduled)
+    }
+
+    @MainActor
+    func testTodayVisionProgressResumesAndLegacyDailyPlansStayCompatible() throws {
+        let name = "PlenactTests.Vision." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let plan = DailyPlan(date: .now)
+        let saved = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(defaults.data(forKey: DailyPlanStore.key))) as? [String: Any])
+        var plans = try XCTUnwrap(json["plans"] as? [String: [String: Any]])
+        plans[plan.id]?.removeValue(forKey: "visionStep")
+        plans[plan.id]?.removeValue(forKey: "visionCompletedAt")
+        json["plans"] = plans
+        defaults.set(try JSONSerialization.data(withJSONObject: json), forKey: DailyPlanStore.key)
+        let legacy = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
+        XCTAssertNil(legacy.visionStep)
+        XCTAssertNil(legacy.visionCompletedAt)
+        var progress = legacy
+        progress.visionStep = 2
+        progress.intention = "A manageable morning"
+        let resumed = try DailyPlanStore.save(progress, replacing: legacy, to: defaults)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[plan.id]?.visionStep, 2)
+        var complete = resumed
+        complete.visionStep = nil
+        complete.visionCompletedAt = Date(timeIntervalSince1970: 100)
+        _ = try DailyPlanStore.save(complete, replacing: resumed, to: defaults)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[plan.id]?.visionCompletedAt, complete.visionCompletedAt)
+        XCTAssertThrowsError(try DailyPlanStore.save(saved, replacing: legacy, to: defaults))
+    }
+
+    func testMorningTransferPreservesDetailsAndReturnsOneNewDestinationIdentity() throws {
+        var source = PersonalCollection(title: "Scheduled", kind: .list)
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        let card = KanbanCard(id: 7, word: "Scheduled work", listTitle: source.title, startDate: Date(timeIntervalSince1970: 100), dueDate: Date(timeIntervalSince1970: 200), checklists: [KanbanChecklist(title: "Steps", items: ["One", "Two"])], descriptionOverride: "Keep my details", presentation: .note, createdAt: Date(timeIntervalSince1970: 50), startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+        source.lists[0].cards = [card]
+        table.lists[0].cards = [KanbanCard(id: 7, word: "Already here", listTitle: table.title)]
+        let before = Set(table.lists[0].cards.map(\.id))
+        var collections = [source, table]
+        var week: [KanbanList] = []
+        var saved = Set<Int>()
+        let destination = CardMoveDestination(collectionID: table.id, listID: 0, title: table.title, group: "Plans")
+        try CrossBoardCardMovement.move(card, from: source.id, to: destination, week: &week, collections: &collections, saved: &saved)
+        XCTAssertTrue(collections[0].lists[0].cards.isEmpty)
+        let moved = try XCTUnwrap(collections[1].lists[0].cards.first { !before.contains($0.id) && $0.createdAt == card.createdAt })
+        XCTAssertEqual(collections[1].lists[0].cards.count, 2)
+        XCTAssertEqual(moved.descriptionOverride, card.descriptionOverride)
+        XCTAssertEqual(moved.startDate, card.startDate)
+        XCTAssertEqual(moved.dueDate, card.dueDate)
+        XCTAssertEqual(moved.startDateKind, .dateAndTime)
+        XCTAssertEqual(moved.presentation, .note)
+        XCTAssertEqual(moved.checklists, card.checklists)
+    }
+    @MainActor
+    func testAddingDailyPrioritySavesCanonicalCardOrNoteAndRejectsFailedDestinations() throws {
+        let week = DatedPlanningWeek.make(for: .now)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        var owner = PersonalCollection(title: "On the Table", kind: .list)
+        owner.lists[0].archivedCards = [KanbanCard(id: 90, word: "Archived", listTitle: owner.title)]
+        let target = WorkspaceListReference(ownerID: owner.id, listID: owner.lists[0].id)
+        for kind in [ItemPresentation.card, .note] {
+            var savedOwner: PersonalCollection?
+            let access = PlanningCalendarAccess(document: document, library: [owner], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { savedOwner = $0; return true })
+            let source = try XCTUnwrap(DailyPriorityCreation.create(title: "  New priority  ", body: "Useful context", presentation: kind, destination: target, access: access))
+            XCTAssertEqual(source.card.id, 91)
+            XCTAssertEqual(source.card.word, "New priority")
+            XCTAssertEqual(source.card.descriptionOverride, "Useful context")
+            XCTAssertEqual(source.card.presentation, kind)
+            XCTAssertNotNil(source.card.createdAt)
+            XCTAssertEqual(source.collectionID, owner.id)
+            XCTAssertEqual(savedOwner?.lists[0].cards, [source.card])
+            XCTAssertTrue(owner.lists[0].cards.isEmpty)
+            XCTAssertEqual(DailyPlanPriority(source).resolve(in: [source])?.card, source.card)
+            XCTAssertNil(DailyPriorityCreation.create(title: " ", body: "", presentation: kind, destination: target, access: access))
+        }
+        let failed = PlanningCalendarAccess(document: document, library: [owner], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        XCTAssertNil(DailyPriorityCreation.create(title: "Keep draft", body: "", presentation: .card, destination: target, access: failed))
+        let missing = WorkspaceListReference(ownerID: UUID(), listID: target.listID)
+        XCTAssertNil(DailyPriorityCreation.create(title: "Missing", body: "", presentation: .card, destination: missing, access: failed))
+        var savedWeek: DatedPlanningWeek?
+        let access = PlanningCalendarAccess(document: document, library: [], saveWeek: { savedWeek = $0; return true }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        let datedTarget = WorkspaceListReference(ownerID: week.id, listID: week.collection.lists[0].id)
+        let dated = try XCTUnwrap(DailyPriorityCreation.create(title: "Day priority", body: "", presentation: .card, destination: datedTarget, access: access))
+        XCTAssertEqual(savedWeek?.collection.lists[0].cards.first, dated.card)
+        XCTAssertEqual(dated.weekKey, week.startKey)
+    }
+
+    @MainActor
+    func testDailyPlanRoundTripsAndPreservesOtherDaysAndConflictingEdits() throws {
+        let name = "PlenactTests.DailyPlan." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let today = calendar.date(from: DateComponents(year: 2026, month: 10, day: 16))!
+        var first = DailyPlan(date: today, calendar: calendar)
+        first.intention = "Make a useful start"
+        first.constraints = "One focused hour"
+        first.concerns = "Leave room for a late appointment"
+        XCTAssertEqual(first.id, "2026-10-16")
+        XCTAssertEqual(first.timeZoneID, "America/Chicago")
+        XCTAssertTrue(try DailyPlanStore.load(from: defaults).plans.isEmpty)
+        let saved = try DailyPlanStore.save(first, replacing: nil, to: defaults)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[first.id], saved)
+        let tomorrow = DailyPlan(date: calendar.date(byAdding: .day, value: 1, to: today)!, calendar: calendar)
+        _ = try DailyPlanStore.save(tomorrow, replacing: nil, to: defaults)
+        var update = saved; update.intention = "A revised intention"
+        let revised = try DailyPlanStore.save(update, replacing: saved, to: defaults)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans.count, 2)
+        XCTAssertThrowsError(try DailyPlanStore.save(first, replacing: saved, to: defaults))
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[first.id], revised)
+        for offset in [-220, -1, 0, 1, 80] {
+            let date = calendar.date(byAdding: .day, value: offset, to: today)!
+            XCTAssertEqual(DailyPlan(date: date, calendar: calendar).id, PlanningDate.key(date, calendar: calendar))
+        }
+    }
+
+    @MainActor
+    func testDailyPlanPreservesUnreadableAndUnsupportedStoredData() throws {
+        let name = "PlenactTests.DailyPlan." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        for bytes in [Data("broken".utf8), Data(#"{"version":99,"plans":{}}"#.utf8)] {
+            defaults.set(bytes, forKey: DailyPlanStore.key)
+            XCTAssertThrowsError(try DailyPlanStore.load(from: defaults))
+            XCTAssertThrowsError(try DailyPlanStore.save(DailyPlan(date: .now), replacing: nil, to: defaults))
+            XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)
+        }
+        defaults.set("unexpected preference type", forKey: DailyPlanStore.key)
+        XCTAssertThrowsError(try DailyPlanStore.load(from: defaults))
+        XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "unexpected preference type")
+    }
+
+    func testDailyPlanPrioritiesResolveLiveOwnerAndWithinBoardMovesWithoutCopyingCards() throws {
+        let first = UUID(), other = UUID()
+        let card = KanbanCard(id: 5, word: "A useful priority", listTitle: "Before", createdAt: Date(timeIntervalSince1970: 123))
+        let source = PlanningSearchResult(weekKey: nil, collectionID: first, collectionTitle: "Projects", listID: 1, listTitle: "Before", card: card)
+        let reference = DailyPlanPriority(source)
+        XCTAssertEqual(reference.title, card.word)
+        XCTAssertNil(reference.resolve(in: []))
+        let wrong = PlanningSearchResult(weekKey: nil, collectionID: other, collectionTitle: "Other", listID: 1, listTitle: "Before", card: card)
+        XCTAssertNil(reference.resolve(in: [wrong]))
+        var updated = card; updated.isTitleChecked = true
+        let moved = PlanningSearchResult(weekKey: nil, collectionID: first, collectionTitle: "Projects", listID: 7, listTitle: "After", card: updated)
+        XCTAssertEqual(reference.resolve(in: [wrong, moved])?.listID, 7)
+        XCTAssertEqual(reference.resolve(in: [moved])?.card.isTitleChecked, true)
+        XCTAssertFalse(card.isTitleChecked)
+        let reused = KanbanCard(id: card.id, word: card.word, listTitle: card.listTitle, createdAt: Date(timeIntervalSince1970: 456))
+        let replacement = PlanningSearchResult(weekKey: nil, collectionID: first, collectionTitle: "Projects", listID: 1, listTitle: "Before", card: reused)
+        XCTAssertNil(reference.resolve(in: [replacement]))
+        let decoded = try JSONDecoder().decode(DailyPlanPriority.self, from: JSONEncoder().encode(reference))
+        XCTAssertEqual(decoded, reference)
+    }
+
+    @MainActor
+    func testDailyPlanIsIncludedInExampleWorkspaceBackupAndRestore() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let name = "PlenactTests.DailyPlanBackup." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name); try? FileManager.default.removeItem(at: folder) }
+        let store = FullMonthExampleStore(root: folder.appendingPathComponent("Backup"), documents: folder.appendingPathComponent("Documents"), support: folder.appendingPathComponent("Support"), domainName: name)
+        var plan = DailyPlan(date: .now); plan.intention = "My original plan"
+        _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        let originalBytes = try XCTUnwrap(defaults.data(forKey: DailyPlanStore.key))
+        var weekly = WeeklyReviewRecord(date: .now, calendar: .current); weekly.highlights = "Original weekly reflection"
+        _ = try WeeklyReviewStore.save(weekly, replacing: nil, to: defaults)
+        let weeklyBytes = defaults.data(forKey: WeeklyReviewStore.key)
+        let periodic = PeriodicReviewRecord(title: "Original checkpoint", start: .now, end: .now, calendar: .current)
+        _ = try PeriodicReviewStore.save(periodic, replacing: nil, to: defaults)
+        let periodicBytes = defaults.data(forKey: PeriodicReviewStore.key)
+        try store.loadExample(FullMonthExample.make())
+        XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))
+        XCTAssertNil(defaults.object(forKey: WeeklyReviewStore.key))
+        XCTAssertNil(defaults.object(forKey: PeriodicReviewStore.key))
+        plan.intention = "Example workspace plan"
+        _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        try store.restoreUserData()
+        XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), periodicBytes)
+        XCTAssertEqual(defaults.data(forKey: WeeklyReviewStore.key), weeklyBytes)
+        XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), originalBytes)
+        XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[plan.id]?.intention, "My original plan")
+    }
+
+    @MainActor
+    func testTodayPlanRendersSavedContextAndLivePrioritiesWithoutSourceMutations() async throws {
+        let name = "PlenactTests.DailyPlanRender." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let week = DatedPlanningWeek.make(for: .now)
+        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        var library = PersonalCollection(title: "On the Table", kind: .list)
+        library.lists[0].cards = [KanbanCard(id: 42, word: "Finish one meaningful step", listTitle: library.title, isTitleChecked: true, checklists: [], descriptionOverride: "Keep a little room for the unexpected")]
+        let access = PlanningCalendarAccess(document: document, library: [library], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { _ in false })
+        var plan = DailyPlan(date: .now)
+        plan.priorities = access.searchableItems.map(DailyPlanPriority.init)
+        plan.intention = "Small steps, with room to breathe"
+        plan.constraints = "One focused hour before lunch"
+        _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
+        let saved = defaults.data(forKey: DailyPlanStore.key)
+        let originalSource = library
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: TodayPlanView(defaults: defaults).environment(\.planningCalendarAccess, access))
+        window.rootViewController = host; window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        try await Task.sleep(for: .milliseconds(180))
+        host.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-plan-saved.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("DAILY_PLAN_RENDER=\(url.path)")
+        XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), saved)
+        XCTAssertEqual(access.library.first, originalSource)
+    }
+
     func testFullMonthExampleCoversPastTodayAndSparseFuture() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -645,12 +1228,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
-    func testTodayTargetsPreviewRendersWithoutChangingStoredPlans() async throws {
+    func testTodayPlanRendersWithoutChangingStoredPlans() async throws {
         let before = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: TodayTargetsView())
+        let host = UIHostingController(rootView: TodayPlanView())
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.makeKeyAndVisible()
@@ -658,9 +1241,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(150))
         host.view.layoutIfNeeded()
         let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
-        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-targets-preview.png")
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-plan.png")
         try XCTUnwrap(image.pngData()).write(to: path)
-        print("Targets preview: " + path.path)
+        print("Today plan: " + path.path)
         let after = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }
         XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))
     }

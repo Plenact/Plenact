@@ -1,3 +1,9 @@
+## Planning Rhythm compatibility note — October 16, 2026
+
+The [approved review direction](../Design/Planning-Rhythm.md) does not extend this shared-demo payload. Proposed session/plan records must reference canonical content with owner-qualified identity, preserve existing Card and checklist contracts, and keep reflection separate from live source data
+
+Any future remote representation needs its own approved versioned contract and authorization model. Do not attach local review history or objectives to demo transport implicitly. See [local persistence and recovery requirements](../Design/Planning-Rhythm-Delivery.md)
+
 **Status:** Confirmed v1 contract. The local SQL draft is not deployed; no Bluehost database has received this schema or Board content
 
 ## Scope

@@ -1,5 +1,11 @@
 # Checklist Actions Architecture
 
+## Planning Rhythm integration — approved direction
+
+The [five reviews](Planning-Rhythm.md) and [delivery plan](Planning-Rhythm-Delivery.md) must reuse canonical Card/Note and checklist identities. Reviewing a checklist does not create a second action store or implicitly complete its parent Card. Checklist completion and Card completion are different recorded facts
+
+Review suggestions require explicit confirmation before editing actions. Preserve linked-card ownership, reduced Action Detail content, ordering, and source references through moves. A tutorial's Try it checklist is guidance and should not enter the automatic unfinished-task review queue
+
 **Status:** Stable action persistence, linked-card navigation, reduced Action Detail editing, and seeded demonstrations are implemented. User-facing controls to create or convert rich action types are not yet implemented.
 
 ## Product Model

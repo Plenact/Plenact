@@ -1,5 +1,11 @@
 # Board Presentation: Orientation and Density
 
+## Current context — October 16, 2026
+
+The detailed October 4 geometry, test counts, and limitations below are historical implementation notes. Subsequent work added continuous zoom, per-owner viewport memory, Gallery, optional Board/List/item display profiles and preview text colors, standalone List heading cleanup, and personal backgrounds. The earlier statements that zoom/per-Board memory are deferred are superseded by this note. Toolbar naming is now Today, Week, New, Plans, and Activity; Plans opens Library
+
+The [Planning Rhythm vision](Planning-Rhythm.md) and [delivery plan](Planning-Rhythm-Delivery.md) define the next product direction. Reviews must preserve source navigation, ordering, custom Appearance, and viewport context; overview/zoom is not itself a review workflow
+
 **Status:** Implemented first version, October 4, 2026. Standard and Overview are local Board-presentation presets. Automated geometry and hosted-view checks are available; physical-device rotation, gesture, sheet-draft, and VoiceOver acceptance checks remain necessary before release.
 
 ## Purpose
@@ -49,7 +55,7 @@ Dynamic Type continues to control text size. At accessibility text sizes, both p
 
 The focused **Open today's list** screen continues to use Standard-style summaries, now with a content-fitting 112-point minimum instead of a viewport-height proportion. It does not become a multi-column overview.
 
-**Board Settings → Show card covers** stores a separate device-only preference under `Plenact.CardCovers.enabled` (default on). It hides row images, not attachment records or cover selections. Existing cards remain text-only until explicitly selected. Card detail provides Add Photo as Cover, a visual attached-photo chooser, and Remove Cover; removing a cover never deletes the photo. See [Card Covers](../Src/Features/Boards/README.md#optional-card-covers).
+**Board Settings → Show card covers** stores a separate device-only preference under `Plenact.CardCovers.enabled` (default on). It hides row images, not attachment records or cover selections. Existing cards remain text-only until explicitly selected. Card detail provides Add Photo as Cover, a visual attached-photo chooser, and Remove Cover; removing a cover never deletes the photo. See [Card Covers](../../Src/Features/Boards/README.md#optional-card-covers).
 
 ## Content and state safety
 
@@ -59,7 +65,7 @@ The focused **Open today's list** screen continues to use Standard-style summari
 - The Board uses stable list/card identities and an ID-bound scroll position so re-layout can retain the visible list rather than rebuilding a different Board.
 - Card detail navigation and list/card editing sheets are not deliberately dismissed or recreated by rotation or preset changes. Their draft retention still needs hands-on verification.
 - A list drag ends if presentation or viewport size changes, because its previous drag coordinates no longer describe the new layout. Ordinary menu and VoiceOver movement alternatives remain available.
-- A card drag cancels on re-layout, preset changes, backgrounding, or leaving the Board. Its record stays unchanged until a valid drop. Native whole-card drag sources support same-Board movement in both presets; horizontal edge scrolling reveals neighboring lists without reordering them. See [Dragging Cards Between Lists](../Src/Features/Boards/README.md#dragging-cards-between-lists).
+- A card drag cancels on re-layout, preset changes, backgrounding, or leaving the Board. Its record stays unchanged until a valid drop. Native whole-card drag sources support same-Board movement in both presets; horizontal edge scrolling reveals neighboring lists without reordering them. See [Dragging Cards Between Lists](../../Src/Features/Boards/README.md#dragging-cards-between-lists).
 - This feature does not reset saved Boards, load examples, migrate stored content, synchronize data, or require a backend.
 
 Exact pixel offsets and the number of visible cards can change on rotation. Preserving context means retaining the same source list/card and edits, not freezing the old geometry.

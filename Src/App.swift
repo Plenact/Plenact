@@ -39,6 +39,7 @@ struct Plenact: App {
     @State private var recoveryError: String?
     init() {
         do {
+            try DailyReviewTransaction.recover()
             try FullMonthExampleStore.live().recoverInterruptedSwitch()
             _recoveryError = State(initialValue: nil)
         } catch {
@@ -63,7 +64,7 @@ struct Plenact: App {
                     Text("Your saved data needs recovery").font(.headline)
                     Text(recoveryError).foregroundStyle(.secondary)
                     Button("Retry recovery") {
-                        do { try FullMonthExampleStore.live().recoverInterruptedSwitch(); self.recoveryError = nil }
+                        do { try DailyReviewTransaction.recover(); try FullMonthExampleStore.live().recoverInterruptedSwitch(); self.recoveryError = nil }
                         catch { self.recoveryError = error.localizedDescription }
                     }
                 }.padding()
@@ -865,7 +866,7 @@ private struct AppRootView: View {
                 var snapshot = collections; snapshot[index] = collection
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
                 catch { DatabaseActivity.shared.report("Could not save this Plans collection: \(error.localizedDescription)"); return false }
-            }, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
+            }, applyWeeklyReview: applyWeeklyReview, applyDailyReview: applyDailyReview, moveForDailyPlan: movePriorityForVision, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
                 displayedPlanningListID = nil
                 weekRootRequest += 1
                 displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
@@ -1063,6 +1064,131 @@ private struct AppRootView: View {
         }
     }
 
+    private func mutateReviewItem(_ live: PlanningSearchResult, action: DailyReviewAction, anchor: String) throws -> PlanningSearchResult {
+        var result = live
+        switch action {
+        case .keep: break
+        case .queue:
+            guard let queue = collections.first(where: { $0.isActive && $0.kind == .list && $0.title == "In the Queue" }),
+                  let list = queue.lists.first(where: { !$0.isArchived }) else { throw CocoaError(.fileNoSuchFile) }
+            if queue.id != live.collectionID || list.id != live.listID {
+                guard let moved = movePriorityForVision(live, destination: WorkspaceListReference(ownerID: queue.id, listID: list.id)) else { throw CocoaError(.fileWriteUnknown) }
+                result = moved
+            }
+        case .tomorrow, .date:
+            guard var document = calendarDocument else { throw CocoaError(.fileReadCorruptFile) }
+            let targetDate: Date
+            if case .date(let key) = action {
+                guard let date = PlanningDate.date(key, calendar: document.calendar) else { throw CocoaError(.coderInvalidValue) }
+                targetDate = date
+            } else {
+                guard let date = PlanningDate.date(anchor, calendar: document.calendar),
+                      let next = document.calendar.date(byAdding: .day, value: 1, to: date) else { throw CocoaError(.coderInvalidValue) }
+                targetDate = next
+            }
+            var week = document.week(for: targetDate) ?? DatedPlanningWeek.make(for: targetDate, calendar: document.calendar)
+            let targetID = week.prepareDay(targetDate)
+            if week.id != live.collectionID || targetID != live.listID {
+                let before = Set(week.collection.lists.first { $0.id == targetID }!.cards.map(\.id))
+                document.upsert(week)
+                let target = CardMoveDestination(collectionID: week.id, listID: targetID, title: week.rangeTitle, group: "Calendar")
+                guard movePlanningCard(live.card, source: live.collectionID, destination: target, documentOverride: document),
+                      let updated = calendarDocument?.weeks.first(where: { $0.id == week.id }),
+                      let list = updated.collection.lists.first(where: { $0.id == targetID }),
+                      let moved = list.cards.first(where: { !before.contains($0.id) && $0.createdAt == live.card.createdAt }) else { throw CocoaError(.fileWriteUnknown) }
+                result = PlanningSearchResult(weekKey: updated.startKey, collectionID: updated.id, collectionTitle: updated.rangeTitle, listID: list.id, listTitle: list.title, card: moved)
+            }
+        case .complete, .archive:
+            let dated = calendarDocument?.weeks.first { $0.id == live.collectionID }
+            guard var owner = dated?.collection ?? collections.first(where: { $0.id == live.collectionID && $0.isActive }),
+                  let index = owner.lists.firstIndex(where: { $0.id == live.listID && !$0.isArchived }),
+                  let cardIndex = owner.lists[index].cards.firstIndex(where: { $0.id == live.card.id }) else { throw CocoaError(.fileNoSuchFile) }
+            if action == .archive { owner.lists[index].archiveCard(id: live.card.id) }
+            else {
+                guard live.card.presentation == .card else { throw CocoaError(.coderInvalidValue) }
+                owner.lists[index].cards[cardIndex].isTitleChecked = true
+                result = PlanningSearchResult(weekKey: live.weekKey, collectionID: owner.id, collectionTitle: live.collectionTitle, listID: live.listID, listTitle: live.listTitle, card: owner.lists[index].cards[cardIndex])
+            }
+            if var week = dated, var document = calendarDocument {
+                week.collection = owner; document.upsert(week)
+                try PlanningCalendarStore.save(document)
+                if week.startKey == document.currentWeekKey { try KanbanBoardPersistence.saveListsChecked(owner.lists) }
+                calendarDocument = document
+                if week.startKey == document.currentWeekKey { lists = owner.lists }
+            } else {
+                guard let index = collections.firstIndex(where: { $0.id == owner.id }) else { throw CocoaError(.fileNoSuchFile) }
+                var updated = collections; updated[index] = owner
+                try PersonalCollectionStore.saveChecked(updated)
+                collections = updated
+            }
+        }
+        return result
+    }
+
+    private func applyWeeklyReview(_ source: PlanningSearchResult, action: DailyReviewAction, draft: WeeklyReviewRecord, baseline: WeeklyReviewRecord?) -> WeeklyReviewRecord? {
+        let oldDocument = calendarDocument, oldLists = lists, oldCollections = collections, oldSaved = savedCardIDs
+        do {
+            guard let live = planningCalendarAccess?.searchableItems.first(where: { $0.collectionID == source.collectionID && $0.card.id == source.card.id && $0.card.createdAt == source.card.createdAt }),
+                  collections.contains(where: { $0.id == live.collectionID && $0.isActive && $0.kind == .list && $0.title == "In the Queue" }),
+                  try WeeklyReviewStore.load().records[draft.id] == baseline,
+                  !draft.decisions.contains(where: { $0.source.resolve(in: [live]) != nil }) else { throw DailyPlanStore.Failure.conflict }
+            return try DailyReviewTransaction.perform {
+                let result = try mutateReviewItem(live, action: action, anchor: draft.startKey)
+                var updated = draft
+                updated.decisions.append(DailyReviewDecision(source: DailyPlanPriority(live), result: DailyPlanPriority(result), action: action))
+                if let index = updated.priorities.firstIndex(where: { $0.resolve(in: [live]) != nil }) { updated.priorities[index] = DailyPlanPriority(result) }
+                return try WeeklyReviewStore.save(updated, replacing: baseline)
+            }
+        } catch {
+            calendarDocument = oldDocument; lists = oldLists; collections = oldCollections; savedCardIDs = oldSaved
+            if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil { workspaceRecoveryError = error.localizedDescription }
+            return nil
+        }
+    }
+
+    private func applyDailyReview(_ source: PlanningSearchResult, action: DailyReviewAction, draft: DailyPlan, baseline: DailyPlan?) -> DailyPlan? {
+        let previousDocument = calendarDocument
+        let previousLists = lists
+        let previousCollections = collections
+        let previousSaved = savedCardIDs
+        do {
+            guard let live = planningCalendarAccess?.searchableItems.first(where: {
+                $0.collectionID == source.collectionID && $0.card.id == source.card.id && $0.card.createdAt == source.card.createdAt
+            }), try DailyPlanStore.load().plans[draft.id] == baseline else { throw DailyPlanStore.Failure.conflict }
+            return try DailyReviewTransaction.perform {
+                let result = try mutateReviewItem(live, action: action, anchor: draft.id)
+                var updatedPlan = draft
+                let original = DailyPlanPriority(live)
+                let destination = DailyPlanPriority(result)
+                if let index = updatedPlan.priorities.firstIndex(where: { $0.resolve(in: [live]) != nil }) { updatedPlan.priorities[index] = destination }
+                var review = updatedPlan.eveningReview ?? DailyEveningReview()
+                guard !review.decisions.contains(where: { $0.source == original }) else { throw DailyPlanStore.Failure.conflict }
+                review.decisions.append(DailyReviewDecision(source: original, result: destination, action: action))
+                updatedPlan.eveningReview = review
+                return try DailyPlanStore.save(updatedPlan, replacing: baseline)
+            }
+        } catch {
+            calendarDocument = previousDocument; lists = previousLists; collections = previousCollections; savedCardIDs = previousSaved
+            if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil { workspaceRecoveryError = error.localizedDescription }
+            return nil
+        }
+    }
+
+    private func movePriorityForVision(_ source: PlanningSearchResult, destination: WorkspaceListReference) -> PlanningSearchResult? {
+        guard let live = planningCalendarAccess?.searchableItems.first(where: {
+            $0.collectionID == source.collectionID && $0.card.id == source.card.id && $0.card.createdAt == source.card.createdAt
+        }), let owner = collections.first(where: { $0.id == destination.ownerID && $0.isActive }),
+              let target = owner.lists.first(where: { $0.id == destination.listID && !$0.isArchived }) else { return nil }
+        let before = Set(target.cards.map(\.id))
+        let route = CardMoveDestination(collectionID: owner.id, listID: target.id, title: owner.title, group: "Plans", columnTitle: target.title)
+        guard movePlanningCard(live.card, source: live.collectionID, destination: route),
+              let updatedOwner = collections.first(where: { $0.id == owner.id }),
+              let updatedList = updatedOwner.lists.first(where: { $0.id == target.id }),
+              let moved = updatedList.cards.first(where: { !before.contains($0.id) && $0.createdAt == live.card.createdAt }) else { return nil }
+        return PlanningSearchResult(weekKey: nil, collectionID: owner.id, collectionTitle: updatedOwner.title,
+                                    listID: updatedList.id, listTitle: updatedList.title, card: moved)
+    }
+
     private func movePlanningCard(_ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
                                   documentOverride: PlanningCalendarDocument? = nil) -> Bool {
         do {
@@ -1092,10 +1218,20 @@ private struct AppRootView: View {
             if let document { _ = try JSONEncoder().encode(document); _ = try PlanningCalendarStore.load() }
             if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") { _ = try JSONDecoder().decode([KanbanList].self, from: data) }
             if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") { _ = try JSONDecoder().decode([PersonalCollection].self, from: data) }
-            if let document { try PlanningCalendarStore.save(document) }
-            try KanbanBoardPersistence.saveListsChecked(updatedWeek)
-            try PersonalCollectionStore.saveChecked(updatedLibrary)
-            SavedCardPersistence.save(updatedSaved)
+            let defaults = UserDefaults.standard
+            let keys = [PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1"]
+            let previous = keys.map { defaults.object(forKey: $0) }
+            do {
+                if let document { try PlanningCalendarStore.save(document) }
+                try KanbanBoardPersistence.saveListsChecked(updatedWeek)
+                try PersonalCollectionStore.saveChecked(updatedLibrary)
+                SavedCardPersistence.save(updatedSaved)
+            } catch {
+                for (key, value) in zip(keys, previous) {
+                    if let value { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) }
+                }
+                throw error
+            }
             calendarDocument = document
             lists = updatedWeek; collections = updatedLibrary; savedCardIDs = updatedSaved
             if normalizedSource != normalizedDestination.collectionID {
@@ -1193,6 +1329,7 @@ private struct AppRootView: View {
         isSwitchingWorkspace = true
         Task { @MainActor in
             do {
+                try DailyReviewTransaction.recover()
                 let store = try FullMonthExampleStore.live()
                 try await Task.detached(priority: .userInitiated) { try store.recoverInterruptedSwitch() }.value
                 try reloadWorkspaceFromStorage()
@@ -1941,7 +2078,7 @@ private struct TodayHomeView: View {
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @State private var showsTodayList = false               /* Focused single-list presentation         */
-    @State private var showsTodayTargets = false
+    @State private var showsTodayPlan = false
     @AppStorage(TodayListPins.key) private var listPinData = Data()
     @State private var openedShortcut: WorkspaceListReference?
 
@@ -1996,7 +2133,7 @@ private struct TodayHomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Today")
                     .font(.largeTitle.weight(.bold))
-                Button { showsTodayTargets = true } label: {
+                Button { showsTodayPlan = true } label: {
                     Text(Date.now.formatted(date: .complete, time: .omitted))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -2004,9 +2141,9 @@ private struct TodayHomeView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Today's targets, " + Date.now.formatted(date: .complete, time: .omitted))
-                .accessibilityHint("Opens a preview of today's targets and commitments")
-                .accessibilityIdentifier("today.targets")
+                .accessibilityLabel("Today's Plan, " + Date.now.formatted(date: .complete, time: .omitted))
+                .accessibilityHint("Opens your saved priorities and context for today")
+                .accessibilityIdentifier("today.plan")
             }
 
             Spacer()
@@ -2459,8 +2596,8 @@ private struct TodayHomeView: View {
             .fullScreenCover(item: $openedShortcut) { reference in
                 WorkspacePinnedListView(reference: reference)
             }
-            .sheet(isPresented: $showsTodayTargets) {
-                TodayTargetsView()
+            .sheet(isPresented: $showsTodayPlan) {
+                TodayPlanView(calendar: planningCalendarAccess?.document.calendar ?? .current)
             }
             .sheet(isPresented: $showsAccountSettings) {
 
@@ -3761,7 +3898,7 @@ enum ActivityRecentStore {
 }
 
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
-    case all = "All", lists = "Lists", boards = "Boards", labels = "Labels"
+    case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", help = "Help"
     var id: String { rawValue }
     var searchPrompt: String {
         switch self {
@@ -3769,16 +3906,17 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
         case .lists: "Find in your Lists"
         case .boards: "Find in your Boards"
         case .labels: "Find in your Labels"
+        case .help: "Find in Help"
         }
     }
     var symbol: String {
-        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1"; case .labels: "tag" }
+        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1"; case .labels: "tag"; case .help: "questionmark.circle" }
     }
     var accent: Color {
-        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple }
+        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple; case .help: .teal }
     }
     func includes(_ collection: PersonalCollection) -> Bool {
-        collection.isActive && self != .labels && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
+        collection.isActive && self != .labels && self != .help && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
 }
 
@@ -4266,6 +4404,7 @@ private struct CollectionFilterPopover: View {
 }
 
 struct BoardListsView: View {
+    @State private var openedHelpArticle: PlenactHelpArticle?
     @Environment(\.planningCalendarAccess) private var planningAccess
     @State private var browsedLabel: KanbanLabel?
     @State private var browseLabelLibrary = LabelLibraryStore.load()
@@ -4954,7 +5093,7 @@ struct BoardListsView: View {
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
     private var showsPlateShelf: Bool {
-        browseFilter != .labels && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
+        browseFilter != .labels && browseFilter != .help && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
     }
 
     private var plateSection: some View {
@@ -5062,7 +5201,7 @@ struct BoardListsView: View {
         .textCase(nil)
         .accessibilityLabel("Filter collections")
         .accessibilityValue(browseFilter.rawValue)
-        .accessibilityHint("Choose All, Lists, Boards, or Labels. Your search text is kept.")
+        .accessibilityHint("Choose All, Lists, Boards, Labels, or Help. Your search text is kept.")
         .accessibilityIdentifier("library.collectionFilter")
     }
 
@@ -5110,7 +5249,7 @@ struct BoardListsView: View {
                     .autocorrectionDisabled()
                     .submitLabel(.search)
                     .accessibilityLabel(browseFilter.searchPrompt)
-                    .accessibilityHint("Search your personal collections, cards, and notes")
+                    .accessibilityHint(browseFilter == .help ? "Search help titles and instructions" : "Search your personal collections, cards, and notes")
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                         .accessibilityLabel("Clear Plans search")
@@ -5120,11 +5259,11 @@ struct BoardListsView: View {
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
             if isLibrarySearchFocused || !searchText.isEmpty {
-                Text(browseFilter == .labels ? "Labels · Active cards across Week and Plans" : "Your Plans · Collections, cards, and notes")
+                Text(browseFilter == .help ? "Help · Guides and reference" : (browseFilter == .labels ? "Labels · Active cards across Week and Plans" : "Your Plans · Collections, cards, and notes"))
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if showsRecentShelf && browseFilter != .labels {
+            if showsRecentShelf && browseFilter != .labels && browseFilter != .help {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Recently added or viewed").font(.subheadline.weight(.semibold))
@@ -5305,7 +5444,9 @@ struct BoardListsView: View {
         NavigationStack {
 
             List {
-                if browseFilter == .labels {
+                if browseFilter == .help {
+                    LibraryHelpRows(query: searchText) { openedHelpArticle = $0 }
+                } else if browseFilter == .labels {
                     libraryLabelRows
                 } else {
                 Section {
@@ -5393,6 +5534,7 @@ struct BoardListsView: View {
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 
+            .sheet(item: $openedHelpArticle) { article in PlenactHelpArticleView(article: article) }
             .sheet(item: $browsedLabel) { label in
                 LibraryLabelMatchesView(label: label)
             }
@@ -7333,126 +7475,6 @@ private struct LibraryExamplePreviewView: View {
     }
 }
 
-
-/// Read-only examples for the future daily targets workspace; no card or preference writes.
-struct TodayTargetsView: View {
-    @Environment(\.dismiss) private var dismiss
-    var date: Date = .now
-
-    private func target(_ number: String, title: String, detail: String, cue: String,
-                        symbol: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: symbol)
-                .font(.system(size: 21, weight: .medium))
-                .foregroundStyle(color)
-                .frame(width: 44, height: 44)
-                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
-            VStack(alignment: .leading, spacing: 6) {
-                Text("TARGET " + number).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                Text(title).font(.headline).foregroundStyle(.primary)
-                Text(detail).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                Text(cue).font(.caption.weight(.medium)).foregroundStyle(color).padding(.top, 2)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-        .overlay(alignment: .leading) {
-            Capsule().fill(color.opacity(0.7)).frame(width: 3).padding(.vertical, 20)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func commitment(_ time: String, title: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            Text(time).font(.subheadline.weight(.semibold)).monospacedDigit()
-                .foregroundStyle(.secondary).frame(width: 68, alignment: .leading)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.subheadline.weight(.medium))
-                Text(detail).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Label("Sample plan", systemImage: "sparkles")
-                                .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 10).padding(.vertical, 6)
-                                .background(Color(.secondarySystemGroupedBackground), in: Capsule())
-                            Spacer()
-                        }
-                        Text(date.formatted(date: .complete, time: .omitted))
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        Text("A clear plan for today")
-                            .font(.largeTitle.weight(.bold)).fixedSize(horizontal: false, vertical: true)
-                        Text("Make progress on one priority, care for the everyday, and leave room to recharge.")
-                            .font(.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                        Text("Example targets and commitments for this preview.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("What matters today").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-                        target("1", title: "Finish the project outline",
-                               detail: "A clear first draft, ready to share for feedback.", cue: "One focused hour · Before lunch",
-                               symbol: "scope", color: .blue)
-                        target("2", title: "Tend to the garden",
-                               detail: "Water what needs it and choose the next small improvement.", cue: "20 minutes · While it's light",
-                               symbol: "leaf", color: .green)
-                        target("3", title: "Make time for a walk",
-                               detail: "Step away, get some fresh air, and give the day a quieter finish.", cue: "20 minutes · Before dinner",
-                               symbol: "figure.walk", color: .orange)
-                    }
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Make room for").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-                        VStack(spacing: 16) {
-                            commitment("9:30 AM", title: "Morning check-in", detail: "Agree on the next useful step")
-                            Divider()
-                            commitment("12:30 PM", title: "Lunch break", detail: "A real pause between work blocks")
-                            Divider()
-                            commitment("5:30 PM", title: "Wrap up the day", detail: "Capture what's next, then step away")
-                        }
-                        .padding(18)
-                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-                    }
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("What I need").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-                        VStack(alignment: .leading, spacing: 14) {
-                            Label("A calm start before jumping into tasks", systemImage: "sun.max")
-                            Label("A proper lunch and water nearby", systemImage: "cup.and.saucer")
-                            Label("Some breathing room when plans change", systemImage: "wind")
-                        }
-                        .font(.subheadline)
-                        .padding(18)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: 560)
-                .frame(maxWidth: .infinity)
-            }
-            .background(Color(.systemGroupedBackground))
-            .toolbarBackground(Color(.systemGroupedBackground), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .navigationTitle("Today's targets")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-            }
-        }
-        .presentationBackground(Color(.systemGroupedBackground))
-        .presentationDetents([.fraction(0.7)])
-        .presentationDragIndicator(.visible)
-    }
-}
 
 // Shared owner-qualified browsing prevents card/list IDs on different boards from colliding.
 struct WorkspaceListReference: Hashable, Codable, Identifiable {

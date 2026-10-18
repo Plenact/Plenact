@@ -124,3 +124,13 @@ Automated checks cover editable-stroke/metadata round trips, dual-file retention
 Quick capture omits its visible heading and “Adding to…” destination caption; the input placeholder provides the context. Its accessibility label and destination hint remain, and a missing destination still shows Choose today's list first. Quick capture and Today's Focus use the shared material panel at 50% background opacity on both iPhone and iPad; text, icons, input controls and other panels retain their existing opacity. Removing the redundant labels lets subsequent Today content move upward naturally.
 
 The iPhone Today content stack adds 50 points of top spacing relative to the compact-capture revision (top adjustment -40 → 10). This moves the slogan, capture, focus and shortcuts down together, bringing the shortcut count labels close to the raised New button again, with a final 6-point upward nudge for a little breathing room. The header, toolbar and iPad spacing are unchanged; content remains scrollable.
+
+### Today focus preview preference — October 18
+
+Account & Settings → Settings → Today provides Items in Today's Focus (1–12 or All open items). The default remains four for new and existing profiles. The setting follows normal profile Save/Cancel behavior, applies to both devices, and controls only the ordered unfinished-item preview. Progress continues to count the whole day. The focus panel grows naturally with longer previews; no toolbar offsets change.
+
+
+The Today header gear replaces its Calendar shortcut and opens Plan Settings.
+The adjacent avatar continues to open Account & Settings. Plan Settings includes
+Today preview count/default list, week start, new-card due date defaults, display
+preferences, and links to shortcut and template management.

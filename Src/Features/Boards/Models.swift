@@ -985,7 +985,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     }
 
     static func defaultDueDateVisibility(from defaults: UserDefaults = .standard) -> Bool {
-        LocalProfileStore.load(from: defaults)?.preferences.showsDueDatesOnNewCards ?? true
+        PlanPreferencesStore.load(from: defaults).showsDueDatesOnNewCards
     }
 
     /// Humorous context paragraph shown in the card detail view

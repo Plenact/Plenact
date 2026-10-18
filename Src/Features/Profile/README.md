@@ -27,3 +27,10 @@ A segmented Account / Settings control sits directly below the sheet's navigatio
 - Larger controls increase the height of primary Today actions.
 
 System Dynamic Type, VoiceOver, contrast, and Reduce Motion behavior remains authoritative.
+The Settings tab includes a Today section with **Items in Today's Focus**: 1–12 or All open items. The local profile stores `todayFocusItemCount` (0 means All); older profiles default to 4. Save commits the draft; Cancel leaves the existing preference intact. Today uses this limit on both device layouts, preserving list order and excluding completed items/dividers. The day's total progress remains unchanged; longer previews scroll naturally.
+
+
+Plan Settings opens from the gear in Today’s header. It shares planning and display
+preferences with Account & Settings, including Today’s Focus count. Preferences also
+save without creating a profile and survive profile removal. Shortcuts and day/week
+templates open their existing editors with separate save controls.

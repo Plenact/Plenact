@@ -67,6 +67,7 @@ enum LocalProfileStore {
         }
 
         defaults.set(data, forKey: storageKey)
+        PlanPreferencesStore.save(profile.preferences, to: defaults)
     }
 
 
@@ -180,5 +181,20 @@ enum ProfileAvatarPhotoStore {
               fileName == URL(fileURLWithPath: fileName).lastPathComponent,
               let directory = try? directory() /* Avatar-photo directory, when available */ else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
+    }
+}
+
+
+/// Planning preferences are available even before a local profile is created.
+enum PlanPreferencesStore {
+    static let key = "Plenact.PlanPreferences.v1"
+    static func load(from defaults: UserDefaults = .standard) -> LocalProfilePreferences {
+        if let data = defaults.data(forKey: key),
+           let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: data) { return value }
+        return LocalProfileStore.load(from: defaults)?.preferences ?? LocalProfilePreferences()
+    }
+    static func save(_ value: LocalProfilePreferences, to defaults: UserDefaults = .standard) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        defaults.set(data, forKey: key)
     }
 }

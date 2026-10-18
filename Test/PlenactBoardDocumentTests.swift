@@ -23,6 +23,61 @@ import PencilKit
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+
+    func testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits() throws {
+        let suite = "PlanSettingsTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults).todayFocusItemCount, 4)
+        var preferences = LocalProfilePreferences()
+        preferences.todayFocusItemCount = 8
+        preferences.showsDueDatesOnNewCards = false
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+        XCTAssertFalse(KanbanCard.defaultDueDateVisibility(from: defaults))
+        preferences.todayFocusItemCount = 2
+        let profile = LocalProfile(displayName: "Test", preferences: preferences)
+        LocalProfileStore.save(profile, to: defaults)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+        LocalProfileStore.remove(from: defaults)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+    }
+
+
+    func testTodayFocusPreferenceDefaultsAndPersistsWithoutChangingOlderSettings() throws {
+        let legacy = Data(#"{"defaultListID":3,"usesReducedContent":true,"showsDueDatesOnNewCards":false}"#.utf8)
+        let restored = try JSONDecoder().decode(LocalProfilePreferences.self, from: legacy)
+        XCTAssertEqual(restored.todayFocusItemCount, 4)
+        XCTAssertEqual(restored.defaultListID, 3)
+        XCTAssertTrue(restored.usesReducedContent)
+        XCTAssertFalse(restored.showsDueDatesOnNewCards)
+        for count in 0...12 {
+            var preferences = restored
+            preferences.todayFocusItemCount = count
+            let decoded = try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(preferences))
+            XCTAssertEqual(decoded, preferences)
+        }
+        XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: -1).todayFocusItemCount, 4)
+        XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 500).todayFocusItemCount, 4)
+    }
+
+    func testTodayFocusPreferenceLimitsOnlyTheOrderedUnfinishedPreview() throws {
+        var cards = (0..<16).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Monday", isTitleChecked: $0 == 0 || $0 == 5, checklists: []) }
+        cards.insert(KanbanCard(id: 99, word: "Break", listTitle: "Monday", isDivider: true, checklists: []), at: 3)
+        let original = cards
+        let open = cards.filter { !$0.isSectionDivider && !$0.isTitleChecked }
+        XCTAssertEqual(open.count, 14)
+        XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), Array(open.prefix(4)).map(\.id))
+        for count in 1...12 {
+            XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: count).todayFocusItems(in: cards).map(\.id), Array(open.prefix(count)).map(\.id))
+        }
+        XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 0).todayFocusItems(in: cards), open)
+        XCTAssertTrue(LocalProfilePreferences().todayFocusItems(in: []).isEmpty)
+        XCTAssertEqual(cards, original)
+    }
+
+
     func testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes() throws {
         let template = PlanningRoutineLibrary.jmr
         XCTAssertEqual(template.name, "Jmr")

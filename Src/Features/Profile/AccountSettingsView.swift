@@ -237,6 +237,7 @@ struct AccountSettingsView: View {
     @State private var usesReducedContent:  Bool                     /* Draft content density  */
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
     @State private var showsDueDatesOnNewCards: Bool
+    @State private var todayFocusItemCount: Int
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false                  /* Whether the nested avatar picker is visible */
@@ -281,7 +282,7 @@ struct AccountSettingsView: View {
         onRemove: @escaping ()             -> Void
     ) {
 
-        let preferences = profile?.preferences ?? LocalProfilePreferences()   /* Initial settings */
+        let preferences = PlanPreferencesStore.load()   /* Initial settings */
 
         self.profile  = profile
         self.lists    = lists
@@ -304,6 +305,7 @@ struct AccountSettingsView: View {
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
         _showsDueDatesOnNewCards = State(initialValue: preferences.showsDueDatesOnNewCards)
+        _todayFocusItemCount = State(initialValue: preferences.todayFocusItemCount)
     }
 
 
@@ -358,7 +360,8 @@ struct AccountSettingsView: View {
                 usesReducedContent:    usesReducedContent,
                 usesLargeControls:     usesLargeControls,
                 showsNavigationLabels: showsNavigationLabels,
-                showsDueDatesOnNewCards: showsDueDatesOnNewCards
+                showsDueDatesOnNewCards: showsDueDatesOnNewCards,
+                todayFocusItemCount: todayFocusItemCount
             )
         )
 
@@ -498,6 +501,19 @@ struct AccountSettingsView: View {
                             Text("Planning")
                         } footer: {
                             Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
+                        }
+
+                        Section {
+                            Picker("Items in Today's Focus", selection: $todayFocusItemCount) {
+                                ForEach(1...12, id: \.self) { count in
+                                    Text("\(count)").tag(count)
+                                }
+                                Text("All open items").tag(0)
+                            }
+                        } header: {
+                            Text("Today")
+                        } footer: {
+                            Text("Choose how many unfinished items appear in Today's Focus. The default is 4. Progress still counts the entire day's list. Showing more items makes Today scroll farther.")
                         }
 
                         Section {
@@ -1891,5 +1907,86 @@ private struct ProfileColorMapSurface: View {
         }
 
         .frame(height: 240)
+    }
+}
+
+/// A dedicated entry point for planning controls, independent of profile creation.
+struct PlanSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.planningCalendarAccess) private var access
+    @State private var preferences = PlanPreferencesStore.load()
+    @State private var firstWeekday = 1
+    @State private var loaded = false
+    @State private var showsTemplates = false
+    @State private var showsShortcuts = false
+    @AppStorage(TodayListPins.key) private var pinData = Data()
+    let lists: [KanbanList]
+    let onSaveProfile: (LocalProfile) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Items in Today's Focus", selection: $preferences.todayFocusItemCount) {
+                        ForEach(1...12, id: \.self) { Text("\($0)").tag($0) }
+                        Text("All open items").tag(0)
+                    }
+                    Picker("Default Today list", selection: $preferences.defaultListID) {
+                        Text("Choose each day").tag(nil as Int?)
+                        ForEach(lists) { Text($0.title).tag(Optional($0.id)) }
+                    }
+                } header: { Text("Today") } footer: {
+                    Text("Focus shows unfinished items; progress counts the entire day's list. Showing more items makes Today scroll farther.")
+                }
+                Section {
+                    Picker("Week starts on", selection: $firstWeekday) {
+                        Text("Sunday").tag(1)
+                        Text("Monday").tag(2)
+                    }
+                    Toggle("Show due dates on new cards", isOn: $preferences.showsDueDatesOnNewCards)
+                } header: { Text("Planning") } footer: {
+                    Text("Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card.")
+                }
+                Section {
+                    Button("My shortcuts", systemImage: "square.grid.3x2") { showsShortcuts = true }
+                    Button("Day & Week Templates", systemImage: "doc.on.doc") { showsTemplates = true }
+                } footer: { Text("Shortcuts and templates have their own save controls. Choose the default for new weeks in Templates.") }
+                Section("Display") {
+                    Toggle("Reduce supporting content", isOn: $preferences.usesReducedContent)
+                    Toggle("Use larger primary controls", isOn: $preferences.usesLargeControls)
+                    Toggle("Show navigation labels", isOn: $preferences.showsNavigationLabels)
+                }
+            }
+            .navigationTitle("Plan Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        guard access?.setFirstWeekday(firstWeekday) != false else { return }
+                        PlanPreferencesStore.save(preferences)
+                        if var profile = LocalProfileStore.load() {
+                            profile.preferences = preferences
+                            onSaveProfile(profile)
+                        }
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                guard !loaded else { return }
+                firstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
+                loaded = true
+            }
+            .sheet(isPresented: $showsTemplates) { PlanningTemplatesView() }
+            .sheet(isPresented: $showsShortcuts) {
+                TodayShortcutEditor(pins: TodayListPins.decode(pinData),
+                    owners: WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])) {
+                    pinData = TodayListPins.encode($0)
+                }
+            }
+            .databaseActivityOverlay()
+        }
+        .presentationDetents([.large])
     }
 }

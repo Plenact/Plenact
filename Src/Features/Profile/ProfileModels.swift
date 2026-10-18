@@ -332,6 +332,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     var usesReducedContent:  Bool   /* Hide supporting copy   */
     var usesLargeControls:   Bool   /* Use taller key actions */
     var showsDueDatesOnNewCards: Bool
+    var todayFocusItemCount: Int /* Zero shows all open items; otherwise 1...12 */
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
 
 
@@ -346,6 +347,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         case usesReducedContent
         case usesLargeControls
         case showsDueDatesOnNewCards
+        case todayFocusItemCount
         case showsNavigationLabels
     }
 
@@ -369,7 +371,8 @@ struct LocalProfilePreferences: Hashable, Codable {
         usesReducedContent: Bool = false,
         usesLargeControls: Bool = false,
         showsNavigationLabels: Bool = true,
-        showsDueDatesOnNewCards: Bool = true
+        showsDueDatesOnNewCards: Bool = true,
+        todayFocusItemCount: Int = 4
     ) {
 
         self.defaultListID      = defaultListID
@@ -377,6 +380,15 @@ struct LocalProfilePreferences: Hashable, Codable {
         self.usesLargeControls  = usesLargeControls
         self.showsNavigationLabels = showsNavigationLabels
         self.showsDueDatesOnNewCards = showsDueDatesOnNewCards
+        self.todayFocusItemCount = (0...12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
+    }
+
+
+    /// Keep canonical order and exclude completed items and section dividers from the preview.
+    func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard] {
+        let open = cards.filter { !$0.isSectionDivider && !$0.isTitleChecked }
+        let count = (0...12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
+        return count == 0 ? open : Array(open.prefix(count))
     }
 
 
@@ -403,7 +415,8 @@ struct LocalProfilePreferences: Hashable, Codable {
             usesReducedContent:    try container.decodeIfPresent(Bool.self, forKey: .usesReducedContent) ?? false,
             usesLargeControls:     try container.decodeIfPresent(Bool.self, forKey: .usesLargeControls) ?? false,
             showsNavigationLabels: try container.decodeIfPresent(Bool.self, forKey: .showsNavigationLabels) ?? true,
-            showsDueDatesOnNewCards: try container.decodeIfPresent(Bool.self, forKey: .showsDueDatesOnNewCards) ?? true
+            showsDueDatesOnNewCards: try container.decodeIfPresent(Bool.self, forKey: .showsDueDatesOnNewCards) ?? true,
+            todayFocusItemCount: try container.decodeIfPresent(Int.self, forKey: .todayFocusItemCount) ?? 4
         )
     }
 }

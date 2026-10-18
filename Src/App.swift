@@ -672,6 +672,7 @@ struct TodayWelcomeGlow: ViewModifier {
 }
 
 private struct AppRootView: View {
+    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
     @StateObject private var welcomeCue = TodayWelcomeCue()
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
 
@@ -1003,7 +1004,7 @@ private struct AppRootView: View {
         .sheet(isPresented: $showsCenterNewCardSheet) {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
-                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: profile?.preferences.defaultListID)
+                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID)
             ) { listID, title, description, subtitle, presentation, actions in
                 addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
             }
@@ -1639,7 +1640,7 @@ private struct AppRootView: View {
                         : "Creates a Note in the open personal List, or the most recently opened personal List from Plans. Touch and hold until New shakes, then release to add a Week list."
                 )
 
-                    if profile?.preferences.showsNavigationLabels ?? true {
+                    if PlanPreferencesStore.load().showsNavigationLabels {
 
                         Text("New")
                             .font(.system(layout.labelStyle))
@@ -1722,7 +1723,7 @@ private struct AppRootView: View {
                 Image(systemName: systemImage)
                     .font(.system(size: geometry.tabIconSize, weight: .semibold))
 
-                if profile?.preferences.showsNavigationLabels ?? true {
+                if PlanPreferencesStore.load().showsNavigationLabels {
 
                     Text(title)
                         .font(.system(geometry.labelStyle))
@@ -2259,6 +2260,7 @@ private struct AppRootView: View {
 /// @note   The selected list is stored locally for the current calendar date
 ///
 private struct TodayHomeView: View {
+    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
     @EnvironmentObject private var welcomeCue: TodayWelcomeCue
     @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
@@ -2302,7 +2304,7 @@ private struct TodayHomeView: View {
     @State private var pendingTemplate: QuickCaptureTemplate?
     @State private var composerTemplate: QuickCaptureTemplate?
     @State private var captureAction: TodayCaptureAction?
-    @State private var showsCalendar = false
+    @State private var showsPlanSettings = false
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
     @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
@@ -2371,12 +2373,12 @@ private struct TodayHomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Search Plenact")
 
-            Button { showsCalendar = true } label: {
-                WorkspaceHeaderIcon(systemName: "calendar")
+            Button { showsPlanSettings = true } label: {
+                WorkspaceHeaderIcon(systemName: "gearshape")
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open This Month")
-            .accessibilityHint("Opens Calendar at the current month")
+            .accessibilityLabel("Plan Settings")
+            .accessibilityHint("Configure Today, planning, and templates")
 
             Button {
                 showsAccountSettings = true
@@ -2776,7 +2778,7 @@ private struct TodayHomeView: View {
                         TodayFocusSection(
                             list:            focus,
                             cards:           cards,
-                            openCards:       Array(cards.filter { !$0.isTitleChecked }.prefix(4)),
+                            openCards:       PlanPreferencesStore.load().todayFocusItems(in: cards),
                             onToggleCard:    { cardID in
                                 if let focus { /* Weekday list available for navigation */
 
@@ -2926,9 +2928,8 @@ private struct TodayHomeView: View {
             }
 
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch))
-            .sheet(isPresented: $showsCalendar) {
-                PlanningCalendarView(initialDate: .now)
-                    .presentationDetents([.large])
+            .sheet(isPresented: $showsPlanSettings) {
+                PlanSettingsView(lists: lists, onSaveProfile: onSaveProfile)
             }
 
 
@@ -8075,7 +8076,7 @@ private struct TodayFocusSection: View {
 
     let list: KanbanList? /* Canonical Week list matching the current local weekday */
     let cards: [KanbanCard] /* Non-divider cards on that list */
-    let openCards: [KanbanCard] /* First three incomplete cards */
+    let openCards: [KanbanCard] /* Incomplete items limited by the Today profile preference */
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 

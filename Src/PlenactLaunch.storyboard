@@ -14,8 +14,8 @@
             </subviews>
             <color key="backgroundColor" name="LaunchBackground"/>
             <constraints>
-                <constraint firstItem="launch-shadow" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" constant="4" id="shadow-center-x"/>
-                <constraint firstItem="launch-shadow" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" multiplier="0.75" constant="12" id="shadow-center-y"/>
+                <constraint firstItem="launch-shadow" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" constant="14" id="shadow-center-x"/>
+                <constraint firstItem="launch-shadow" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" multiplier="0.75" constant="14" id="shadow-center-y"/>
                 <constraint firstItem="launch-logo" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="logo-center-x"/>
                 <constraint firstItem="launch-logo" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" multiplier="0.75" id="logo-center-y"/>
                 <constraint firstItem="launch-title" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="title-center"/>

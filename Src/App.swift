@@ -500,6 +500,7 @@ struct PlenactLaunchSequence: View {
 struct PlenactLoadingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var animatesLogo = true
+    var fadesShadow = false
     var progress = PlenactLaunchProgress()
 
     var body: some View {
@@ -509,8 +510,9 @@ struct PlenactLoadingView: View {
                 Image("LaunchShadow")
                     .resizable().scaledToFit()
                     .frame(width: 240, height: 240)
-                    .opacity(0.8)
-                    .offset(x: 4, y: 12)
+                    .opacity(fadesShadow ? 0 : 0.8)
+                    .animation(.easeOut(duration: 1), value: fadesShadow)
+                    .offset(x: 14, y: 14)
                 Image("LaunchLogo")
                     .resizable().scaledToFit()
                     .frame(width: 136, height: 136)
@@ -695,6 +697,7 @@ private struct AppRootView: View {
     @State private var displayedPlanningWeek: DatedPlanningWeek?
     @State private var displayedPlanningListID: Int?
     @Environment(\.scenePhase) private var scenePhase
+    @State private var launchShadowFading = false
     @State private var launchProgress = PlenactLaunchProgress()
     @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
     @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
@@ -752,7 +755,7 @@ private struct AppRootView: View {
                     .id(workspaceGeneration)
                     .transition(.opacity)
             } else {
-                PlenactLoadingView(progress: launchProgress)
+                PlenactLoadingView(fadesShadow: launchShadowFading, progress: launchProgress)
                     .transition(.opacity)
             }
         }
@@ -791,6 +794,7 @@ private struct AppRootView: View {
 
             let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(900))
             launchProgress = PlenactLaunchProgress()
+            launchShadowFading = false
             let legacy = await KanbanBoardPersistence.loadListsInBackground()
             launchProgress.stage = .plans
             await Task.yield()
@@ -841,6 +845,13 @@ private struct AppRootView: View {
             // Preparation is complete; keep the steady icons visible during the existing minimum launch time.
             launchProgress.finished = true
             do { try await ContinuousClock().sleep(until: launchDeadline) }
+            catch { return }
+            // Finish with a full second of shadow fade before revealing the workspace.
+            launchShadowFading = true
+            do { try await Task.sleep(for: .seconds(1)) }
+            catch { return }
+            // Briefly hold the shadow-free logo before revealing the workspace.
+            do { try await Task.sleep(for: .milliseconds(250)) }
             catch { return }
             hasLoadedBoard = true
         }

@@ -204,3 +204,12 @@ The central New button creates a Card from Today, Week and Activity, regardless
 of the destination List's default item format. From Plans it opens a new personal
 List draft in the existing Library creation form. Cancel creates nothing. Existing
 quick-capture formats and the long-press Week-list shortcut remain available.
+
+Single-list screens offer View as → Cards / Note List in their options. Day views
+apply it to the represented day's list, including past and future dates. Standalone
+Library Lists offer the same selection in their options and Library edit form.
+The per-list choice defaults to Cards and is shared across entry points. Note List
+uses flat separated rows, Card checkboxes, Note symbols, short text previews,
+optional dates and cover thumbnails. Row taps open the existing editors; archive,
+confirmed deletion, reorder and checkmark reset continue using their canonical owners.
+Switching presentation never converts, reorders or duplicates saved items.

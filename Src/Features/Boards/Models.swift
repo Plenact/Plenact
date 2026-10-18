@@ -319,6 +319,12 @@ enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
     var title: String { rawValue.capitalized }
 }
 
+enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable {
+    case cards, noteList
+    var id: String { rawValue }
+    var title: String { self == .cards ? "Cards" : "Note List" }
+}
+
 struct ItemAppearance: Hashable, Codable, Sendable {
     var accent: ItemAccent?
     var icon: PersonalCollectionIcon?
@@ -328,6 +334,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var cardTextColor: ListPreviewTextColor? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
+    var listViewMode: SingleListViewMode? = nil
     var iconColor: ProfileColor? = nil
     var showsIconInHeader: Bool? = nil
     var listBackgroundOpacity: Double? = nil
@@ -339,7 +346,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 ///
@@ -1069,6 +1076,12 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
+    var singleListViewMode: SingleListViewMode { appearance?.listViewMode ?? .cards }
+    mutating func setSingleListViewMode(_ mode: SingleListViewMode) {
+        var value = appearance ?? ItemAppearance()
+        value.listViewMode = mode
+        appearance = value
+    }
     static func defaultHeaderIcon(for title: String) -> PersonalCollectionIcon? {
         switch title {
         case "On the Table": .tasks

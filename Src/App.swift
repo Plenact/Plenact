@@ -7048,6 +7048,19 @@ private struct PersonalCollectionSettingsView: View {
                     }
                 }
 
+                if draft.kind == .list, !draft.lists.isEmpty {
+                    Section("View as") {
+                        Picker("List layout", selection: Binding(
+                            get: { draft.lists[0].singleListViewMode },
+                            set: { draft.lists[0].setSingleListViewMode($0) }
+                        )) {
+                            ForEach(SingleListViewMode.allCases) { Text($0.title).tag($0) }
+                        }
+                        Text("Changes only this List's presentation. Cards, Notes and their contents stay the same.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("New item defaults") {
                     ForEach($draft.lists) { $list in
                         Picker(list.title, selection: $list.newItemPresentation) {

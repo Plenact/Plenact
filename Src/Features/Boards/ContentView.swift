@@ -1432,6 +1432,14 @@ struct ContentView: View {
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
     @State private var standaloneListActionsRequest = 0
     private var isStandaloneListView: Bool { fillsAvailableListWidth && lists.count == 1 }
+    private var standaloneViewMode: Binding<SingleListViewMode>? {
+        guard isStandaloneListView else { return nil }
+        return Binding(get: { lists.first?.singleListViewMode ?? .cards }, set: { mode in
+            guard !lists.isEmpty else { return }
+            lists[0].setSingleListViewMode(mode)
+            isGallery = false
+        })
+    }
     private var standaloneSubtitle: String {
         guard isStandaloneListView, let description = lists.first?.subtitleOverride,
               !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return boardSubtitle }
@@ -2843,6 +2851,7 @@ struct ContentView: View {
                             deleteBoardTitle:    deleteBoardTitle,
                             onJumpToFirstList:   !isGallery && lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    !isGallery && lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
+                            listViewMode: standaloneViewMode,
                             titleAppearance: isStandaloneListView ? lists.first?.headerAppearance(
                                 collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon,
                                 collectionColor: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.color) : nil,
@@ -3458,6 +3467,7 @@ struct BoardHeader: View {
     /// Navigates to the last active list when more than one list exists.
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
+    var listViewMode: Binding<SingleListViewMode>? = nil
     var titleAppearance: ItemAppearance? = nil
     var onAppearance: (() -> Void)? = nil
     var onListActions: (() -> Void)? = nil
@@ -3623,7 +3633,7 @@ struct BoardHeader: View {
                 BoardOptionsPopover(canJumpFirst: onJumpToFirstList != nil,
                     canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
                     canArchive: onArchiveBoard != nil, canDelete: onDeleteBoard != nil,
-                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery, canResetZoom: onResetZoom != nil, hasListActions: onListActions != nil) { action in
+                    deleteTitle: deleteBoardTitle, hasGallery: onToggleGallery != nil, isGallery: isGallery, canResetZoom: onResetZoom != nil, hasListActions: onListActions != nil, listViewMode: listViewMode) { action in
                         pendingBoardAction = action
                         showsBoardOptions = false
                     }
@@ -4409,6 +4419,7 @@ struct KanbanListView: View {
     @State private var opensNewCardAfterDismissal = false /* Deferred creation request after another sheet closes */
     @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
     private var effectiveAppearance: ItemAppearance { boardAppearance.resolved(list.appearance) }
+    private var usesNoteList: Bool { hidesPanelHeader && list.singleListViewMode == .noteList }
     private var listTint: KanbanListTint { effectiveAppearance.listBackground ?? .neutral }
     @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
     @State private var deletingCard: KanbanCard? /* Swipe deletion awaiting confirmation */
@@ -4497,7 +4508,7 @@ struct KanbanListView: View {
     ///
     private var cardCollectionContentHeight: CGFloat { /* Total card content height including row spacing */
         let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in /* Accumulated measured or estimated card heights */
-            height + (card.isSectionDivider ? 44 : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card)) + 8)
+            height + (card.isSectionDivider ? 44 : (usesNoteList ? (measuredCardHeights[card.id] ?? 72) : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card))) + (usesNoteList ? 0 : 8))
         }
 
         return max(88, rowHeight + 64)
@@ -4708,13 +4719,18 @@ struct KanbanListView: View {
                         }
 
                         .accessibilityAction(named: "Delete Divider") { deletingCard = card }
-                            .listRowInsets(EdgeInsets(top: boardAppearance.cardDetail == .compact ? 2 : 4, leading: 4, bottom: boardAppearance.cardDetail == .compact ? 2 : 4, trailing: 4))
+                            .listRowInsets(usesNoteList ? EdgeInsets() : EdgeInsets(top: boardAppearance.cardDetail == .compact ? 2 : 4, leading: 4, bottom: boardAppearance.cardDetail == .compact ? 2 : 4, trailing: 4))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                     } else {
 
                             NavigationLink(value: card) {
 
+                                Group {
+                                if usesNoteList {
+                                    SingleListNoteRow(card: card, onToggle: { toggleCardTitle(card.id) },
+                                        onArchive: { onArchiveCard(card.id) }, onDelete: { onDeleteCard(card.id) })
+                                } else {
                                 KanbanCardView(
                                     card:            card,
                                     height:          cardHeight(for: card),
@@ -4731,6 +4747,8 @@ struct KanbanListView: View {
                                     onArchiveCard:   { onArchiveCard(card.id) }
                                 ) {
                                     toggleCardTitle(card.id)
+                                }
+                                }
                                 }
                                 .background {
                                     GeometryReader { geometry in
@@ -4833,7 +4851,7 @@ struct KanbanListView: View {
             .padding(.bottom, 24)
         }
 
-        .background(listTint.color.opacity(effectiveAppearance.resolvedListBackgroundOpacity))
+        .background((usesNoteList ? Color(.systemBackground) : listTint.color).opacity(effectiveAppearance.resolvedListBackgroundOpacity))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(isCardDropTarget ? Color.accentColor : .clear, lineWidth: 3)
@@ -4849,7 +4867,7 @@ struct KanbanListView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 10, y: 5)
+        .shadow(color: .black.opacity(usesNoteList ? 0 : 0.18), radius: 10, y: 5)
         .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
             get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
         ), titleVisibility: .visible) {
@@ -6363,7 +6381,12 @@ struct TodayListDetailView: View {
         usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
+    @ViewBuilder
     private func cardPreview(_ card: KanbanCard) -> some View {
+        if focusedList?.singleListViewMode == .noteList {
+            SingleListNoteRow(card: card, onToggle: { toggleCard(card.id) },
+                onArchive: { archiveCard(card.id) }, onDelete: { _ = deleteCard(card.id) })
+        } else {
         KanbanCardView(
             card:            card,
             height:          cardPreviewHeight(card),
@@ -6379,6 +6402,7 @@ struct TodayListDetailView: View {
             onArchiveCard:   { archiveCard(card.id) }
         ) {
             toggleCard(card.id)
+        }
         }
     }
 
@@ -6489,7 +6513,7 @@ struct TodayListDetailView: View {
                                     .contentShape(Rectangle())
                                     .background { cardDragSource(for: card.id) }
                                     .opacity(draggedCardID == card.id ? 0.45 : 1)
-                                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                                    .listRowInsets(focusedList.singleListViewMode == .noteList ? EdgeInsets() : EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
                                     .background {
@@ -6519,7 +6543,7 @@ struct TodayListDetailView: View {
                                 }
                                 .background { cardDropSurface }
                                 .overlay(alignment: .top) { insertionMarker(before: card.id) }
-                                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                                .listRowInsets(focusedList.singleListViewMode == .noteList ? EdgeInsets() : EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                             }
@@ -6566,7 +6590,8 @@ struct TodayListDetailView: View {
                     .environment(\.editMode, $editMode)
                     .scrollContentBackground(.hidden)
                     .contentMargins(.top, 14, for: .scrollContent)
-                    .background(.clear)
+                    .background(focusedList.singleListViewMode == .noteList
+                        ? Color(.systemBackground).opacity(focusedList.appearance?.resolvedListBackgroundOpacity ?? 1) : .clear)
                     // Explicit task focus takes priority over restoring an old viewport.
                     .background(BoardViewportScrollProbe(memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical"))
                     .onAppear {
@@ -6700,6 +6725,15 @@ struct TodayListDetailView: View {
                     }
                     .accessibilityLabel("Open this week")
                     Menu {
+                        Picker("View as", selection: Binding(
+                            get: { focusedList?.singleListViewMode ?? .cards },
+                            set: { mode in
+                                guard let index = lists.firstIndex(where: { $0.id == listID }) else { return }
+                                lists[index].setSingleListViewMode(mode)
+                            }
+                        )) {
+                            ForEach(SingleListViewMode.allCases) { Text($0.title).tag($0) }
+                        }
                         if let focusedList {
                             ListCheckmarkResetControl(list: focusedList, session: $checkmarkReset, confirmsClear: $confirmsCheckmarkReset, onUpdateCard: updateCard)
                         }
@@ -7097,6 +7131,7 @@ struct BoardOptionsPopover: View {
     var isGallery = false
     var canResetZoom = false
     var hasListActions = false
+    var listViewMode: Binding<SingleListViewMode>? = nil
     let onAction: (BoardOptionsAction) -> Void
 
     private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
@@ -7115,6 +7150,15 @@ struct BoardOptionsPopover: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if let listViewMode {
+                Picker("View as", selection: listViewMode) {
+                    ForEach(SingleListViewMode.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(12)
+                .accessibilityIdentifier("list.viewMode")
+                Divider()
+            }
             HStack {
                 icon("backward.end", name: "Jump to First List", action: .first, enabled: canJumpFirst)
                 Spacer()
@@ -7336,5 +7380,76 @@ private struct ListCheckmarkResetConfirmation: ViewModifier {
         } message: {
             Text("This unchecks cards and nested checklist items. You can restore these checkmarks until you change a checkmark or leave this list.")
         }
+    }
+}
+
+
+/// A denser presentation of the same Card/Note record, with no model conversion.
+struct SingleListNoteRow: View {
+    let card: KanbanCard
+    let onToggle: () -> Void
+    var onArchive: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
+    @State private var confirmsDelete = false
+    private var preview: String {
+        let subtitle = card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !subtitle.isEmpty { return subtitle }
+        return PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private func dateText(_ date: Date, kind: CardDateKind) -> String {
+        switch kind {
+        case .date: date.formatted(date: .abbreviated, time: .omitted)
+        case .time: date.formatted(date: .omitted, time: .shortened)
+        case .dateAndTime: date.formatted(date: .abbreviated, time: .shortened)
+        }
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 10) {
+                if card.displayFormat == .note {
+                    Image(systemName: "note.text").foregroundStyle(.secondary)
+                        .frame(width: 36, height: 44).accessibilityHidden(true)
+                } else {
+                    Button(action: onToggle) {
+                        Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
+                            .font(.title3).foregroundStyle(card.isTitleChecked ? Color.green : .secondary)
+                            .frame(width: 36, height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(card.isTitleChecked ? "Mark \(card.word) unfinished" : "Mark \(card.word) complete")
+                }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(card.word).font(.body.weight(.medium)).foregroundStyle(.primary)
+                        .lineLimit(2).strikethrough(card.isTitleChecked)
+                    if !preview.isEmpty { Text(preview).font(.subheadline).foregroundStyle(.secondary).lineLimit(2) }
+                    if card.showsDueDateInList {
+                        if let start = card.startDate {
+                            Text("Start · " + dateText(start, kind: card.startDateKind)).font(.caption).foregroundStyle(.secondary)
+                        }
+                        if let due = card.dueDate {
+                            Text("Due · " + dateText(due, kind: card.dueDateKind)).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                if let cover = card.coverAttachment,
+                   let url = CardAttachmentStore.imageURL(for: cover),
+                   let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image).resizable().scaledToFill().frame(width: 64, height: 64)
+                        .clipped().clipShape(RoundedRectangle(cornerRadius: 6)).accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            Divider().padding(.leading, 58)
+        }
+        .contentShape(Rectangle())
+        .contextMenu {
+            if let onArchive { Button("Archive", systemImage: "archivebox", action: onArchive) }
+            if onDelete != nil { Button("Delete", systemImage: "trash", role: .destructive) { confirmsDelete = true } }
+        }
+        .confirmationDialog("Delete \(card.word)?", isPresented: $confirmsDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) { onDelete?() }
+            Button("Cancel", role: .cancel) { }
+        } message: { Text("Permanently deletes this item and its details. This cannot be undone.") }
     }
 }

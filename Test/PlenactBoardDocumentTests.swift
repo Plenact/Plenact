@@ -62,6 +62,62 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(ItemAppearance(listBackgroundOpacity: .nan).resolvedListBackgroundOpacity, 1)
     }
 
+    @MainActor
+    func testNoteListDayLayoutRendersAtPhoneAndTabletWidths() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var list = KanbanList(id: 8, title: "Wednesday", cards: [
+            KanbanCard(id: 1, word: "Plan the next useful step", listTitle: "Wednesday", checklists: [], descriptionOverride: "Make room for a focused morning"),
+            KanbanCard(id: 2, word: "Capture a thought", listTitle: "Wednesday", checklists: [], descriptionOverride: "Writing stays in its original Note", presentation: .note),
+            KanbanCard(id: 3, word: "A completed task", listTitle: "Wednesday", isTitleChecked: true, checklists: [])
+        ])
+        list.setSingleListViewMode(.noteList)
+        for width: CGFloat in [393, 820] {
+            let view = TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
+                savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {}, onOpenWeek: {},
+                onPermanentDelete: { _ in false }, representedDate: Date(timeIntervalSince1970: 1791936000))
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: width, height: width < 500 ? 852 : 1180)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(300))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-note-list-\(Int(width)).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("NOTE_LIST_RENDER=" + url.path)
+            XCTAssertGreaterThan(host.view.bounds.height, 0)
+        }
+    }
+
+    func testSingleListViewModePersistsWithoutConvertingOrReorderingContent() throws {
+        var list = KanbanList(id: 4, title: "Wednesday", cards: [
+            KanbanCard(id: 1, word: "Task", listTitle: "Wednesday", isTitleChecked: true,
+                checklists: [KanbanChecklist(title: "Steps", items: [KanbanChecklistItem(title: "Done", isCompleted: true)])]),
+            KanbanCard(id: 2, word: "A note", listTitle: "Wednesday", checklists: [],
+                descriptionOverride: "Keep this writing", presentation: .note)
+        ])
+        list.appearance = ItemAppearance(icon: .tasks)
+        let original = list
+        XCTAssertEqual(list.singleListViewMode, .cards)
+        list.setSingleListViewMode(.noteList)
+        let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(restored.singleListViewMode, .noteList)
+        XCTAssertEqual(restored.cards, original.cards)
+        XCTAssertEqual(restored.archivedCards, original.archivedCards)
+        XCTAssertEqual(restored.appearance?.icon, original.appearance?.icon)
+        list.setSingleListViewMode(.cards)
+        XCTAssertEqual(list.cards, original.cards)
+        XCTAssertEqual(list.singleListViewMode, .cards)
+        XCTAssertFalse(ItemAppearance(listViewMode: .noteList).isEmpty)
+        XCTAssertNil(try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8)).listViewMode)
+        var anotherDay = KanbanList(id: 5, title: "Thursday", cards: [])
+        XCTAssertEqual(anotherDay.singleListViewMode, .cards)
+        anotherDay.setSingleListViewMode(.noteList)
+        XCTAssertEqual(anotherDay.singleListViewMode, .noteList)
+    }
+
     func testListIconColorsPersistAndMainListColorsRemainFixed() throws {
         var list = KanbanList(id: 1, title: "Custom", cards: [])
         list.appearance = ItemAppearance(iconColor: .blue, showsIconInHeader: true)

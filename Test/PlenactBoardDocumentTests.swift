@@ -23,6 +23,172 @@ import PencilKit
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    func testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes() throws {
+        let template = PlanningRoutineLibrary.jmr
+        XCTAssertEqual(template.name, "Jmr")
+        XCTAssertEqual(template.kind, .week)
+        XCTAssertEqual(template.itemCount, 28)
+        XCTAssertEqual(template.collection.lists.count, 7)
+        XCTAssertEqual(PlanningRoutineLibrary.seeded.defaultWeekID, template.id)
+        for firstWeekday in [1, 2] {
+            let calendar = routineCalendar(firstWeekday: firstWeekday)
+            let targetDate = try XCTUnwrap(PlanningDate.date("2026-11-01", calendar: calendar))
+            let target = DatedPlanningWeek.make(for: targetDate, calendar: calendar)
+            let applied = try PlanningTemplateApplication.apply(template, to: target, date: targetDate, calendar: calendar, mode: .add)
+            for day in PlanningDate.days(in: applied.startKey, calendar: calendar) {
+                let weekday = calendar.component(.weekday, from: day)
+                let cards = try XCTUnwrap(applied.list(on: day)?.cards)
+                let expected: [(String, Int, Int, Int, Int)]
+                if weekday == 7 {
+                    expected = [("Wake", 5, 0, 5, 30), ("Morning Starbucks Pow-wow", 6, 0, 7, 30), ("Gym", 9, 0, 11, 0), ("Car Wash", 12, 0, 12, 30)]
+                } else if weekday == 1 {
+                    expected = [("Wake", 4, 0, 4, 30), ("Morning Starbucks Pow-wow", 5, 0, 6, 30), ("Gym", 7, 0, 8, 30), ("Church", 9, 0, 12, 30)]
+                } else {
+                    expected = [("Wake", 4, 0, 4, 30), ("Morning Starbucks Pow-wow", 5, 0, 6, 30), ("Work", 7, 0, 17, 0), ("Gym", 17, 0, 18, 0)]
+                }
+                XCTAssertEqual(cards.count, expected.count)
+                for (card, slot) in zip(cards, expected) {
+                    XCTAssertEqual(card.word, slot.0)
+                    let start = try XCTUnwrap(card.startDate), stop = try XCTUnwrap(card.dueDate)
+                    XCTAssertTrue(calendar.isDate(start, inSameDayAs: day))
+                    XCTAssertTrue(calendar.isDate(stop, inSameDayAs: day))
+                    XCTAssertEqual(calendar.component(.hour, from: start), slot.1)
+                    XCTAssertEqual(calendar.component(.minute, from: start), slot.2)
+                    XCTAssertEqual(calendar.component(.hour, from: stop), slot.3)
+                    XCTAssertEqual(calendar.component(.minute, from: stop), slot.4)
+                    XCTAssertLessThan(start, stop)
+                    XCTAssertEqual(card.startDateKind, .dateAndTime)
+                    XCTAssertEqual(card.dueDateKind, .dateAndTime)
+                    XCTAssertTrue(card.showsDueDateInList)
+                    XCTAssertTrue(card.usesTimeOnlySchedule(on: day, calendar: calendar))
+                    XCTAssertFalse(card.isTitleChecked)
+                    XCTAssertTrue(card.checklists.isEmpty)
+                    if card.word == "Gym" {
+                        XCTAssertTrue(card.funParagraph.contains("meditation, walking, or massage"))
+                    } else { XCTAssertEqual(card.descriptionOverride, "") }
+                }
+            }
+        }
+    }
+
+    func testJmrUpgradeKeepsSavedTemplatesAndDoesNotRewriteScheduledWeeks() throws {
+        let name = "Plenact.JmrUpgradeTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        var legacy = PlanningRoutineLibrary.seeded
+        legacy.templates.removeAll { $0.id == PlanningRoutineLibrary.jmrID }
+        legacy.defaultWeekID = legacy.templates[0].id
+        legacy.templates[0].name = "My edited Work Week"
+        legacy.bundledRoutineRevision = nil
+        let oldBytes = try JSONEncoder().encode(legacy)
+        defaults.set(oldBytes, forKey: PlanningRoutineStore.key)
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
+        let existing = DatedPlanningWeek.make(for: date, lists: SampleData.lists, calendar: calendar)
+        let document = PlanningCalendarDocument(currentWeekKey: existing.startKey, firstWeekday: 2, weeks: [existing])
+        try PlanningCalendarStore.save(document, to: defaults)
+        let weekBytes = defaults.data(forKey: PlanningCalendarStore.key)
+        let upgraded = try PlanningRoutineStore.load(from: defaults)
+        XCTAssertEqual(upgraded.templates.count, 3)
+        XCTAssertEqual(upgraded.templates[0], legacy.templates[0])
+        XCTAssertEqual(upgraded.templates[1], legacy.templates[1])
+        XCTAssertEqual(upgraded.defaultWeekID, PlanningRoutineLibrary.jmrID)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 1)
+        XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), oldBytes)
+        XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
+        var customChoice = upgraded; customChoice.defaultWeekID = nil
+        try PlanningRoutineStore.save(customChoice, baseline: upgraded, to: defaults)
+        XCTAssertNil(try PlanningRoutineStore.load(from: defaults).defaultWeekID)
+        var deleted = customChoice; deleted.templates.removeAll { $0.id == PlanningRoutineLibrary.jmrID }
+        try PlanningRoutineStore.save(deleted, baseline: customChoice, to: defaults)
+        XCTAssertFalse(try PlanningRoutineStore.load(from: defaults).templates.contains { $0.id == PlanningRoutineLibrary.jmrID })
+        XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
+    }
+
+
+    func testLibraryStarterFiltersScopeSearchAndExcludePersonalCollections() throws {
+        let list = PersonalCollection(title: "Vacation private plans", kind: .list)
+        let board = PersonalCollection(title: "Example private work", kind: .board)
+        for filter in [LibraryBrowseFilter.templates, .examples, .labels, .help] {
+            XCTAssertFalse(filter.browsesCollections)
+            XCTAssertFalse(filter.includes(list))
+            XCTAssertFalse(filter.includes(board))
+        }
+        XCTAssertTrue(LibraryBrowseFilter.all.includes(list))
+        XCTAssertTrue(LibraryBrowseFilter.boards.includes(board))
+        XCTAssertEqual(LibraryBrowseFilter.templates.searchPrompt, "Find in Templates")
+        XCTAssertEqual(LibraryBrowseFilter.examples.searchPrompt, "Find in Examples")
+        XCTAssertTrue(LibraryStarterSearch.matches("VACATION day", texts: ["Vacation Day", "Day template"]))
+        XCTAssertFalse(LibraryStarterSearch.matches("vacation nonexistent", texts: ["Vacation Day"]))
+        XCTAssertTrue(LibraryStarterSearch.matches("", texts: []))
+        XCTAssertTrue(LibraryStarterSearch.matches("month motion", texts: ["A month in motion", "Full-month example"]))
+        XCTAssertFalse(LibraryStarterSearch.matches("private plans", texts: ["A month in motion"]))
+    }
+
+    func testLibraryTemplateCaptureUsesLiveWeekAndReservesArchivedIDs() throws {
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let listID = try XCTUnwrap(week.dayListIDs["2026-10-12"])
+        let index = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == listID })
+        week.collection.lists[index].cards = [KanbanCard(id: 2, word: "Keep my work", listTitle: "Monday", isTitleChecked: true, checklists: [])]
+        week.collection.lists[index].archivedCards = [KanbanCard(id: 99, word: "Keep archive", listTitle: "Monday", checklists: [])]
+        let template = QuickCaptureTemplate.smallPlan
+        let capture = QuickCaptureSubmission(listID: listID, title: "My custom title", body: template.body,
+            subtitle: "", presentation: template.presentation, actions: template.actions, attachments: [],
+            schedule: QuickCaptureSchedule(start: date, stop: nil))
+        let result = try LibraryTemplateCapture.adding(capture, to: week)
+        XCTAssertEqual(result.id, week.id)
+        XCTAssertEqual(result.collection.lists[index].cards.count, 2)
+        XCTAssertEqual(result.collection.lists[index].cards[0], week.collection.lists[index].cards[0])
+        XCTAssertEqual(result.collection.lists[index].archivedCards, week.collection.lists[index].archivedCards)
+        let added = try XCTUnwrap(result.collection.lists[index].cards.last)
+        XCTAssertEqual(added.id, 100)
+        XCTAssertEqual(added.word, "My custom title")
+        XCTAssertEqual(added.descriptionOverride, template.body)
+        XCTAssertEqual(added.checklists.flatMap(\.items).map(\.title), template.actions)
+        XCTAssertFalse(added.isTitleChecked)
+        let richBody = PlanRichText.prefix + (try JSONEncoder().encode([PlanRichText.Run(text: "Keep the formatting", bold: true)])).base64EncodedString()
+        let note = QuickCaptureSubmission(listID: listID, title: "My note", body: richBody, subtitle: "", presentation: .note,
+            actions: nil, attachments: [], schedule: nil)
+        XCTAssertEqual(try LibraryTemplateCapture.adding(note, to: result).collection.lists[index].cards.last?.descriptionOverride, richBody)
+        let missing = QuickCaptureSubmission(listID: 98765, title: "No target", body: "", subtitle: "", presentation: .card,
+            actions: nil, attachments: [], schedule: nil)
+        XCTAssertThrowsError(try LibraryTemplateCapture.adding(missing, to: week))
+        XCTAssertEqual(week.collection.lists[index].cards.count, 1)
+    }
+
+    @MainActor
+    func testLibraryTemplatesAndExamplesFiltersRenderAndSearchWithoutWriting() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let keys = [PlanningRoutineStore.key, PlanningCalendarStore.key, "Plenact.PersonalCollections.v1", "Plenact.Board.v1"]
+        let before = keys.map { UserDefaults.standard.data(forKey: $0) }
+        var saved = 0
+        let privateCollection = PersonalCollection(title: "Private unrelated project", kind: .list)
+        for width in [393.0, 744.0] {
+            for (filter, query) in [(LibraryBrowseFilter.templates, ""), (.examples, ""), (.templates, "vacation"), (.examples, "month motion")] {
+                let host = UIHostingController(rootView: BoardListsView(retainedWeekLists: [], collections: .constant([privateCollection]),
+                    registerListNewNote: { _ in }, onOpenSaved: { saved += 1 },
+                    onLoadExampleWeek: { saved += 1; return true }, onLoadExampleMonth: { saved += 1 },
+                    browseFilter: filter, searchText: query))
+                window.frame = CGRect(x: 0, y: 0, width: width, height: 1024)
+                window.rootViewController = host; window.makeKeyAndVisible()
+                try await Task.sleep(for: .milliseconds(300))
+                host.view.layoutIfNeeded()
+                let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-library-\(filter.rawValue)-\(Int(width))-\(query.isEmpty ? "all" : "search").png")
+                try XCTUnwrap(image.pngData()).write(to: url)
+                print("LIBRARY_FILTER_RENDER=" + url.path)
+            }
+        }
+        XCTAssertEqual(saved, 0)
+        XCTAssertEqual(keys.map { UserDefaults.standard.data(forKey: $0) }, before)
+    }
+
+
     @MainActor
     func testPlanningTemplateMediaRetentionAndWorkspaceBackup() throws {
         let name = "Plenact.RoutineBackupTests." + UUID().uuidString
@@ -82,8 +248,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: name) }
         let baseline = try PlanningRoutineStore.load(from: defaults)
         XCTAssertNil(defaults.data(forKey: PlanningRoutineStore.key))
-        XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day"])
-        XCTAssertEqual(baseline.defaultWeekID, baseline.templates[0].id)
+        XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day", "Jmr"])
+        XCTAssertEqual(baseline.defaultWeekID, PlanningRoutineLibrary.jmrID)
         XCTAssertEqual(try PlanningRoutineStore.load(from: defaults), baseline)
         var updated = baseline; updated.templates[0].name = "My work routine"; updated.defaultWeekID = nil
         try PlanningRoutineStore.save(updated, baseline: baseline, to: defaults)
@@ -244,7 +410,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     func testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections() throws {
-        XCTAssertEqual(LibraryBrowseFilter.allCases.map(\.rawValue), ["All", "Lists", "Boards", "Labels", "Help"])
+        XCTAssertEqual(LibraryBrowseFilter.allCases.map(\.rawValue), ["All", "Lists", "Boards", "Labels", "Examples", "Templates", "Help"])
         let collection = PersonalCollection(title: "Help", kind: .list)
         XCTAssertFalse(LibraryBrowseFilter.help.includes(collection))
         XCTAssertEqual(LibraryBrowseFilter.help.searchPrompt, "Find in Help")

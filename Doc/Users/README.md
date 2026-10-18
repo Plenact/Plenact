@@ -97,8 +97,12 @@ Do not use real or sensitive personal data in the shared demo. Never put passwor
 
 ## In-app Help
 
-Open Library's selector beside the heading and choose Help after All, Lists, Boards, and Labels. Help is an offline, searchable guide library; it creates no Cards or example data. Start with planning for your life and your first useful plan, then read the five Planning Rhythm walkthroughs and first-week testing guidance
+Open Library's selector beside the heading and choose Help alongside All, Lists, Boards, Labels, Examples, and Templates. Help is an offline, searchable guide library; it creates no Cards or example data. Start with planning for your life and your first useful plan, then read the five Planning Rhythm walkthroughs and first-week testing guidance
 
 Search matches guide titles, summaries, headings, and instructions. Open an article to read it, use Done to return, and use Open Today's Plan in relevant guides to try the workflows. Help describes explicit saves, immediate confirmed actions, local records, unavailable source links, and example-data restoration. Reminders, cloud sync, and a daily-history browser remain future work
 
 Content lives in `Src/Features/Planning/LibraryHelp.swift`. Keep it aligned with actual behavior as the first-use trial produces feedback
+
+### Templates and Examples in Library
+
+Choose **Templates** from Library's selector for saved Day/Week routines, default Week selection, List templates and Card/Note starting points. Choose **Examples** for grouped List, Board, Week and full-month previews. Library's search field searches the selected catalog. The + menu's Browse all templates / Browse all examples shortcuts open these same filters. Previewing changes nothing; Use opens a draft or the existing confirmed load flow.

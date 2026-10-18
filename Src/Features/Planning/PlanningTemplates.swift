@@ -71,6 +71,51 @@ struct PlanningRoutineLibrary: Codable, Equatable {
     var version = 1
     var templates: [PlanningRoutineTemplate]
     var defaultWeekID: UUID?
+    /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr.
+    var bundledRoutineRevision: Int? = nil
+    static let jmrID = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
+    static let jmr: PlanningRoutineTemplate = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        calendar.firstWeekday = 2
+        let anchor = PlanningDate.date("2026-10-12", calendar: calendar)!
+        var week = DatedPlanningWeek.make(for: anchor, calendar: calendar)
+        typealias Slot = (title: String, startHour: Int, startMinute: Int, stopHour: Int, stopMinute: Int)
+        let weekdays: [Slot] = [
+            ("Wake", 4, 0, 4, 30),
+            ("Morning Starbucks Pow-wow", 5, 0, 6, 30),
+            ("Work", 7, 0, 17, 0),
+            ("Gym", 17, 0, 18, 0)]
+        let saturday: [Slot] = [
+            ("Wake", 5, 0, 5, 30),
+            ("Morning Starbucks Pow-wow", 6, 0, 7, 30),
+            ("Gym", 9, 0, 11, 0),
+            ("Car Wash", 12, 0, 12, 30)]
+        let sunday: [Slot] = [
+            ("Wake", 4, 0, 4, 30),
+            ("Morning Starbucks Pow-wow", 5, 0, 6, 30),
+            ("Gym", 7, 0, 8, 30),
+            ("Church", 9, 0, 12, 30)]
+        var nextID = 0
+        for day in PlanningDate.days(in: week.startKey, calendar: calendar) {
+            let weekday = calendar.component(.weekday, from: day)
+            let slots = weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
+            let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
+            let index = week.collection.lists.firstIndex { $0.id == listID }!
+            week.collection.lists[index].subtitleOverride = ""
+            week.collection.lists[index].cards = slots.map { slot in
+                defer { nextID += 1 }
+                return KanbanCard(id: nextID, word: slot.title, listTitle: week.collection.lists[index].title,
+                    startDate: calendar.date(bySettingHour: slot.startHour, minute: slot.startMinute, second: 0, of: day),
+                    dueDate: calendar.date(bySettingHour: slot.stopHour, minute: slot.stopMinute, second: 0, of: day),
+                    checklists: [], descriptionOverride: slot.title == "Gym" ? "Choose what fits today: gym, meditation, walking, or massage." : "",
+                    subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+            }
+        }
+        var template = try! PlanningRoutineTemplate.capture(name: "Jmr", week: week, calendar: calendar)
+        template.id = jmrID
+        return template
+    }()
     static let seeded: Self = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -87,14 +132,15 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])])
         list.subtitleOverride = "Leave room for the unexpected"
         vacation.collection.lists = [list]; vacation.weekdays = [2: 0]
-        return Self(templates: [work, vacation], defaultWeekID: work.id)
+        return Self(templates: [work, vacation, jmr], defaultWeekID: jmrID, bundledRoutineRevision: 1)
     }()
 }
 
 enum PlanningRoutineStore {
     static let key = "Plenact.PlanningTemplates.v1"
     static func validate(_ value: PlanningRoutineLibrary) throws {
-        guard value.version == 1, Set(value.templates.map(\.id)).count == value.templates.count,
+        guard value.version == 1, (0...1).contains(value.bundledRoutineRevision ?? 0),
+              Set(value.templates.map(\.id)).count == value.templates.count,
               value.defaultWeekID == nil || value.templates.contains(where: { $0.id == value.defaultWeekID && $0.kind == .week }) else { throw CocoaError(.coderReadCorrupt) }
         for template in value.templates {
             let lists = template.collection.lists
@@ -112,8 +158,17 @@ enum PlanningRoutineStore {
     }
     static func load(from defaults: UserDefaults = .standard) throws -> PlanningRoutineLibrary {
         guard let data = defaults.data(forKey: key) else { return .seeded }
-        let result = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
+        var result = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
         try validate(result)
+        if (result.bundledRoutineRevision ?? 0) == 0 {
+            // Upgrade in memory only. Explicit template saves persist the marker; scheduled weeks are untouched.
+            if !result.templates.contains(where: { $0.id == PlanningRoutineLibrary.jmrID }) {
+                result.templates.append(PlanningRoutineLibrary.jmr)
+            }
+            result.defaultWeekID = PlanningRoutineLibrary.jmrID
+            result.bundledRoutineRevision = 1
+            try validate(result)
+        }
         return result
     }
     static func save(_ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard) throws {

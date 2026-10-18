@@ -2798,7 +2798,7 @@ private struct TodayHomeView: View {
                 }
                         .padding(20)
                         // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone.
-                        .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 16)
+                        .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 10)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, 112)
             }
@@ -4585,7 +4585,7 @@ enum ActivityRecentStore {
 }
 
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
-    case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", help = "Help"
+    case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", examples = "Examples", templates = "Templates", help = "Help"
     var id: String { rawValue }
     var searchPrompt: String {
         switch self {
@@ -4593,17 +4593,38 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
         case .lists: "Find in your Lists"
         case .boards: "Find in your Boards"
         case .labels: "Find in your Labels"
+        case .templates: "Find in Templates"
+        case .examples: "Find in Examples"
         case .help: "Find in Help"
         }
     }
     var symbol: String {
-        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1"; case .labels: "tag"; case .help: "questionmark.circle" }
+        switch self { case .all: "books.vertical"; case .lists: "list.bullet"; case .boards: "rectangle.split.3x1"; case .labels: "tag"; case .templates: "square.stack.3d.up"; case .examples: "sparkles"; case .help: "questionmark.circle" }
     }
     var accent: Color {
-        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple; case .help: .teal }
+        switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple; case .templates: .orange; case .examples: .pink; case .help: .teal }
+    }
+    var browsesCollections: Bool { self == .all || self == .lists || self == .boards }
+    var searchHint: String {
+        switch self {
+        case .templates: "Search saved routines and template starting points"
+        case .examples: "Search example names, descriptions, and previews"
+        case .help: "Search help titles and instructions"
+        case .labels: "Search labels assigned to active items"
+        default: "Search your personal collections, cards, and notes"
+        }
+    }
+    var searchContext: String {
+        switch self {
+        case .templates: "Templates · Routines and reusable starting points"
+        case .examples: "Examples · Explore before adding"
+        case .help: "Help · Guides and reference"
+        case .labels: "Labels · Active cards across Week and Plans"
+        default: "Your Plans · Collections, cards, and notes"
+        }
     }
     func includes(_ collection: PersonalCollection) -> Bool {
-        collection.isActive && self != .labels && self != .help && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
+        collection.isActive && browsesCollections && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
 }
 
@@ -5122,9 +5143,9 @@ struct BoardListsView: View {
     @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
     @State private var showsCollectionFilter = false
-    @State private var browseFilter: LibraryBrowseFilter = .all
+    @State var browseFilter: LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
-    @State private var searchText = ""                         /* Directory search query                      */
+    @State var searchText = ""                                 /* Directory search query                      */
     @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
     @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
     @State private var boardTargetListID: Int?                 /* Exact collection list requested from Saved    */
@@ -5132,10 +5153,10 @@ struct BoardListsView: View {
     @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
     @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
-    @State private var showsPlanningTemplates = false
-    @State private var showsExamples = false                   /* Present the synthetic list chooser          */
+    @State private var libraryQuickTemplate: QuickCaptureTemplate?
+    @State private var weekExampleAction: String?
+    @State private var libraryStarterError: String?
     @State private var examplePreview: LibraryExamplePreview?
-    @State private var pendingExample: PersonalCollection?     /* Unsaved draft waiting for chooser dismissal */
 
 
     ///
@@ -5781,7 +5802,7 @@ struct BoardListsView: View {
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
     private var showsPlateShelf: Bool {
-        browseFilter != .labels && browseFilter != .help && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
+        browseFilter.browsesCollections && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && libraryEditMode != .active
     }
 
     private var plateSection: some View {
@@ -5889,7 +5910,7 @@ struct BoardListsView: View {
         .textCase(nil)
         .accessibilityLabel("Filter collections")
         .accessibilityValue(browseFilter.rawValue)
-        .accessibilityHint("Choose All, Lists, Boards, Labels, or Help. Your search text is kept.")
+        .accessibilityHint("Choose All, Lists, Boards, Labels, Templates, Examples, or Help. Your search text is kept.")
         .accessibilityIdentifier("library.collectionFilter")
     }
 
@@ -5937,7 +5958,7 @@ struct BoardListsView: View {
                     .autocorrectionDisabled()
                     .submitLabel(.search)
                     .accessibilityLabel(browseFilter.searchPrompt)
-                    .accessibilityHint(browseFilter == .help ? "Search help titles and instructions" : "Search your personal collections, cards, and notes")
+                    .accessibilityHint(browseFilter.searchHint)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                         .accessibilityLabel("Clear Plans search")
@@ -5947,11 +5968,11 @@ struct BoardListsView: View {
             .frame(minHeight: 48)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
             if isLibrarySearchFocused || !searchText.isEmpty {
-                Text(browseFilter == .help ? "Help · Guides and reference" : (browseFilter == .labels ? "Labels · Active cards across Week and Plans" : "Your Plans · Collections, cards, and notes"))
+                Text(browseFilter.searchContext)
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if showsRecentShelf && browseFilter != .labels && browseFilter != .help {
+            if showsRecentShelf && browseFilter.browsesCollections {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Recently added or viewed").font(.subheadline.weight(.semibold))
@@ -6023,7 +6044,7 @@ struct BoardListsView: View {
 
     private var examplesMenu: some View {
         Menu("Examples", systemImage: "sparkles") {
-            Button("Browse all examples", systemImage: "books.vertical") { showsExamples = true }
+            Button("Browse all examples", systemImage: "books.vertical") { browseFilter = .examples; searchText = "" }
             listExamplesMenu
             Menu("Board examples", systemImage: "rectangle.3.group") {
                 ForEach(PersonalBoardExample.allCases) { example in
@@ -6106,9 +6127,132 @@ struct BoardListsView: View {
         }
     }
 
+    @ViewBuilder
+    private var libraryTemplateRows: some View {
+        PlanningTemplateLibraryRows(query: searchText)
+        let listTemplates = MixedListTemplate.allCases.filter {
+            LibraryStarterSearch.matches(searchText, texts: [$0.rawValue, $0.summary, "List template"] + $0.items.flatMap { [$0.0, $0.1] })
+        }
+        if !listTemplates.isEmpty {
+            Section("List templates") {
+                ForEach(listTemplates) { template in
+                    DisclosureGroup {
+                        Text(template.summary).foregroundStyle(.secondary)
+                        ForEach(template.items.indices, id: \.self) { index in
+                            Label(template.items[index].0, systemImage: template.items[index].2.symbol)
+                        }
+                        Button("Use " + template.rawValue, systemImage: "plus") {
+                            editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
+                        }
+                    } label: { Label(template.rawValue, systemImage: "list.bullet.rectangle") }
+                }
+            }
+        }
+        let quickTemplates = QuickCaptureTemplate.allCases.filter {
+            LibraryStarterSearch.matches(searchText, texts: [$0.title, $0.summary, $0.body, $0.presentation.title] + $0.actions)
+        }
+        if !quickTemplates.isEmpty {
+            Section {
+                ForEach(quickTemplates) { template in
+                    DisclosureGroup {
+                        Text(template.summary).foregroundStyle(.secondary)
+                        if !template.body.isEmpty { Text(template.body).font(.subheadline) }
+                        ForEach(Array(template.actions.enumerated()), id: \.offset) { _, action in Label(action, systemImage: "square") }
+                        Button("Use " + template.title, systemImage: "plus") { libraryQuickTemplate = template }
+                    } label: {
+                        Label(template.title, systemImage: template.presentation == .note ? "note.text" : "rectangle")
+                    }
+                }
+            } header: { Text("Card & Note starting points") } footer: {
+                Text("Opens an editable draft with a Week list destination. Nothing is added until you tap Add.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var libraryExampleRows: some View {
+        let listExamples = PersonalListExample.allCases.filter {
+            LibraryStarterSearch.matches(searchText, texts: [$0.rawValue, $0.summary, "List example"] + $0.cards.flatMap { [$0.0, $0.1] })
+        }
+        let boardExamples = PersonalBoardExample.allCases.filter {
+            LibraryStarterSearch.matches(searchText, texts: [$0.rawValue, $0.summary, "Board example"] + $0.listSummaries.map(\.title))
+        }
+        let weekMatches = LibraryStarterSearch.matches(searchText, texts: ["Example Week Work Week Board calendar seven days"] + SampleData.lists.flatMap { [$0.title] + $0.cards.map(\.word) })
+        let monthMatches = LibraryStarterSearch.matches(searchText, texts: ["A month in motion Full-month example calendar fictional plans"])
+        if listExamples.isEmpty && boardExamples.isEmpty && !weekMatches && !monthMatches {
+            ContentUnavailableView("No matching examples", systemImage: "sparkles", description: Text("Try a different name, topic, or example type."))
+        }
+        if !listExamples.isEmpty {
+            Section("List examples") {
+                ForEach(listExamples) { example in
+                    DisclosureGroup {
+                        Text(example.summary).foregroundStyle(.secondary)
+                        ForEach(example.cards.indices, id: \.self) { index in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(example.cards[index].0).font(.headline)
+                                Text(example.cards[index].1).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                        }
+                        Button("Preview " + example.rawValue, systemImage: "eye") {
+                            let draft = example.makeCollection(existingTitles: collections.map(\.title))
+                            examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
+                        }
+                        Button("Use " + example.rawValue, systemImage: "plus") { editingCollection = example.makeCollection(existingTitles: collections.map(\.title)) }
+                    } label: { Label(example.rawValue, systemImage: "list.bullet") }
+                }
+            }
+        }
+        if !boardExamples.isEmpty {
+            Section("Board examples") {
+                ForEach(boardExamples) { example in
+                    DisclosureGroup {
+                        Text(example.summary).foregroundStyle(.secondary)
+                        ForEach(Array(example.listSummaries.enumerated()), id: \.offset) { _, list in
+                            Text("\(list.title) · \(list.count) items").font(.subheadline)
+                        }
+                        Button("Preview " + example.rawValue, systemImage: "eye") {
+                            let draft = example.makeCollection(existingTitles: collections.map(\.title))
+                            examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
+                        }
+                        Button("Use " + example.rawValue, systemImage: "plus") { editingCollection = example.makeCollection(existingTitles: collections.map(\.title)) }
+                    } label: { Label(example.rawValue, systemImage: "rectangle.3.group") }
+                }
+            }
+        }
+        if weekMatches {
+            Section {
+                Button("Preview Example Week", systemImage: "eye") {
+                    examplePreview = LibraryExamplePreview(title: "Example Week", summary: "Seven dated-day lists from Plenact's original Work Week example. Previewing changes nothing.", lists: SampleData.lists)
+                }
+                Button("Use as a new Board", systemImage: "plus") { editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title)) }
+                LibraryExampleWeekTemplateButton()
+                if onLoadExampleWeek != nil {
+                    Button("Load into current Week", systemImage: "calendar") { weekExampleAction = "load" }
+                }
+                if ExampleLoadUndoStore.load() != nil, onUndoExampleWeek != nil {
+                    Button("Undo Last Load", systemImage: "arrow.uturn.backward") { weekExampleAction = "undo" }
+                }
+            } header: { Text("Week example") } footer: {
+                Text("Use as a new Board creates a draft. Loading into the current Week requires confirmation and retains the previous Week for undo.")
+            }
+        }
+        if monthMatches {
+            Section {
+                Button("Preview A month in motion", systemImage: "eye") {
+                    let example = FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
+                    examplePreview = LibraryExamplePreview(title: "A month in motion", summary: "Fictional plans across this month. Previewing does not change your data.", lists: example.previewLists)
+                }
+                if let onLoadExampleMonth { Button("Use example month", systemImage: "calendar.badge.plus", action: onLoadExampleMonth) }
+                if hasUserDataBackup, let onRestoreUserData { Button("Restore User Data", systemImage: "arrow.uturn.backward", action: onRestoreUserData) }
+            } header: { Text("Full-month example") } footer: {
+                Text("Using the example month asks for confirmation and backs up your workspace first. Use Restore User Data to return.")
+            }
+        }
+    }
+
     private var templatesMenu: some View {
         Menu("Templates", systemImage: "square.stack.3d.up") {
-            Button("Day & Week Templates", systemImage: "calendar") { showsPlanningTemplates = true }
+            Button("Browse all templates", systemImage: "square.stack.3d.up") { browseFilter = .templates; searchText = "" }
             Divider()
             ForEach([MixedListTemplate.planDay, .startProject, .exploreIdea]) { template in
                 Button(template.rawValue) {
@@ -6138,6 +6282,10 @@ struct BoardListsView: View {
                     LibraryHelpRows(query: searchText) { openedHelpArticle = $0 }
                 } else if browseFilter == .labels {
                     libraryLabelRows
+                } else if browseFilter == .templates {
+                    libraryTemplateRows
+                } else if browseFilter == .examples {
+                    libraryExampleRows
                 } else {
                 Section {
 
@@ -6230,6 +6378,7 @@ struct BoardListsView: View {
             }
             .onAppear { browseLabelLibrary = LabelLibraryStore.load() }
             .onChange(of: browseFilter) { _, filter in
+                libraryEditMode = .inactive
                 if filter == .labels { browseLabelLibrary = LabelLibraryStore.load() }
             }
             .sheet(item: $examplePreview) { preview in
@@ -6244,32 +6393,20 @@ struct BoardListsView: View {
                 )
             }
 
-            .sheet(isPresented: $showsPlanningTemplates) { PlanningTemplatesView() }
-            .sheet(isPresented: $showsExamples, onDismiss: {
-                if let pendingExample { /* Example selected for collection creation */
-
-                    editingCollection = pendingExample
-                    self.pendingExample = nil
+            .sheet(item: $libraryQuickTemplate) { template in LibraryQuickTemplateComposer(template: template) }
+            .confirmationDialog(weekExampleAction == "undo" ? "Restore the previous Week?" : "Load the example Week?", isPresented: Binding(get: { weekExampleAction != nil }, set: { if !$0 { weekExampleAction = nil } }), titleVisibility: .visible) {
+                Button(weekExampleAction == "undo" ? "Undo Last Load" : "Load Example Week", role: .destructive) {
+                    let success = weekExampleAction == "undo" ? onUndoExampleWeek?() : onLoadExampleWeek?()
+                    if success != true { libraryStarterError = "The Week could not be updated. Your saved data has been retained." }
+                    weekExampleAction = nil
                 }
-            }) {
-                PersonalListExamplesView(
-                    onLoadExampleWeek: onLoadExampleWeek,
-                    onUndoExampleWeek: onUndoExampleWeek,
-                    hasUndoableWeek: ExampleLoadUndoStore.load() != nil,
-                    onSelectBoardExample: { example in
-                        pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
-                        showsExamples = false
-                    },
-                    onSelectMixedTemplate: { template in
-                        pendingExample = template.makeCollection(existingTitles: collections.map(\.title))
-                        showsExamples = false
-                    }
-                ) { example in
-                    pendingExample = example.makeCollection(existingTitles: collections.map(\.title))
-                    showsExamples = false
-                }
+                Button("Cancel", role: .cancel) { weekExampleAction = nil }
+            } message: {
+                Text(weekExampleAction == "undo" ? "Replaces current active and archived Week content with the snapshot from before the example load." : "Replaces current active and archived Week content. The previous Week is retained for Undo Last Load. Personal collections stay unchanged.")
             }
-
+            .alert("Library", isPresented: Binding(get: { libraryStarterError != nil }, set: { if !$0 { libraryStarterError = nil } })) {
+                Button("OK", role: .cancel) { libraryStarterError = nil }
+            } message: { Text(libraryStarterError ?? "") }
             .fullScreenCover(item: $newNoteDraftDestination) { collection in
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
@@ -6399,7 +6536,8 @@ struct BoardListsView: View {
             }
 
             Button("Examples", systemImage: "plus") {
-                showsExamples = true
+                browseFilter = .examples
+                searchText = ""
             }
         }
 

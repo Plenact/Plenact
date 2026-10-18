@@ -1,8 +1,21 @@
 import SwiftUI
 
+/// The standalone shortcut and Library filter share the same stateful rows and editing sheets.
 struct PlanningTemplatesView: View {
-    @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            List { PlanningTemplateLibraryRows() }
+                .navigationTitle("Day & Week Templates")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+        }.presentationDetents([.large])
+    }
+}
+
+struct PlanningTemplateLibraryRows: View {
+    var query = ""
+    @Environment(\.planningCalendarAccess) private var access
     @State private var library: PlanningRoutineLibrary?
     @State private var sourceDate = Date.now
     @State private var editing: PlanningRoutineTemplate?
@@ -29,9 +42,9 @@ struct PlanningTemplatesView: View {
         } catch { message = "That day has no active list to save as a template." }
     }
     var body: some View {
-        NavigationStack {
-            List {
-                if let library {
+        Group {
+            if let library {
+                if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Section {
                         Picker("New weeks use", selection: Binding(get: { self.library?.defaultWeekID }, set: { value in _ = update { $0.defaultWeekID = value } })) {
                             Text("Empty week").tag(nil as UUID?)
@@ -42,29 +55,33 @@ struct PlanningTemplatesView: View {
                     } header: { Text("Default Week") } footer: {
                         Text("Applied once when a new week is created. Existing weeks keep their plans. Editing a template affects future applications only.")
                     }
-                    Section("Your templates") {
-                        ForEach(library.templates) { template in
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack {
-                                    Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
-                                        .font(.headline)
-                                    Spacer()
-                                    if template.id == library.defaultWeekID { Text("Default").font(.caption).foregroundStyle(.secondary) }
-                                    Menu {
-                                        Button("Edit template", systemImage: "pencil") { editing = template }
-                                        Button("Duplicate", systemImage: "plus.square.on.square") {
-                                            var copy = template; copy.id = UUID(); copy.name += " Copy"; editing = copy
-                                        }
-                                        Button("Delete template", systemImage: "trash", role: .destructive) { deleting = template }
-                                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
-                                    .accessibilityLabel(template.name + " actions")
-                                }
-                                Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption).foregroundStyle(.secondary)
-                                Button("Preview & apply", systemImage: "calendar.badge.plus") { applying = template }
-                                    .frame(minHeight: 44)
-                            }.padding(.vertical, 4)
-                        }
+                }
+                Section("Day & Week templates") {
+                    let matches = library.templates.filter { LibraryStarterSearch.matches(query, texts: [$0.name, $0.kind.rawValue] + $0.collection.lists.flatMap { [$0.title] + $0.cards.map(\.word) }) }
+                    if matches.isEmpty { Text("No matching Day or Week templates").foregroundStyle(.secondary) }
+                    ForEach(matches) { template in
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
+                                    .font(.headline)
+                                Spacer()
+                                if template.id == library.defaultWeekID { Text("Default").font(.caption).foregroundStyle(.secondary) }
+                                Menu {
+                                    Button("Edit template", systemImage: "pencil") { editing = template }
+                                    Button("Duplicate", systemImage: "plus.square.on.square") {
+                                        var copy = template; copy.id = UUID(); copy.name += " Copy"; editing = copy
+                                    }
+                                    Button("Delete template", systemImage: "trash", role: .destructive) { deleting = template }
+                                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                                .accessibilityLabel(template.name + " actions")
+                            }
+                            Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption).foregroundStyle(.secondary)
+                            Button("Preview & apply", systemImage: "calendar.badge.plus") { applying = template }
+                                .frame(minHeight: 44)
+                        }.padding(.vertical, 4)
                     }
+                }
+                if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Section {
                         DatePicker("Source day / week", selection: $sourceDate, displayedComponents: .date)
                         Button("Save day as template", systemImage: "sun.max") { capture(.day) }
@@ -72,25 +89,15 @@ struct PlanningTemplatesView: View {
                     } header: { Text("Save your layout") } footer: {
                         Text("Includes active lists, Cards, Notes, checklists and media. New copies start unchecked, with dates shifted to their destination. Archives and activity history are excluded.")
                     }
-                    Section("Examples") {
-                        Button("Preview Example Week", systemImage: "sparkles") {
-                            var example = PlanningRoutineLibrary.seeded.templates[0]
-                            example.id = UUID(); example.name = "Example Week"; editing = example
-                        }
-                        Text("Work Week starts from Plenact's example layout. Customize it here or save your own planned week.")
-                            .font(.footnote).foregroundStyle(.secondary)
+                    Section {
+                        Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
                     }
-                } else {
-                    ContentUnavailableView("Templates unavailable", systemImage: "square.stack.3d.up")
-                    Button("Retry", action: reload)
                 }
+            } else {
+                ContentUnavailableView("Templates unavailable", systemImage: "square.stack.3d.up")
+                Button("Retry", action: reload)
             }
-            .navigationTitle("Day & Week Templates")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
-                ToolbarItem(placement: .primaryAction) { Button("Reload", systemImage: "arrow.clockwise", action: reload) }
-            }
+        }
             .task { reload() }
             .sheet(item: $editing) { template in
                 PlanningTemplateEditor(template: template) { updated in
@@ -116,8 +123,6 @@ struct PlanningTemplatesView: View {
             .alert("Templates", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("OK", role: .cancel) { message = nil }
             } message: { Text(message ?? "") }
-        }
-        .presentationDetents([.large])
     }
 }
 
@@ -329,5 +334,96 @@ struct PlanningTemplateApplyView: View {
                 Button("OK", role: .cancel) { message = nil }
             } message: { Text(message ?? "") }
         }.presentationDetents([.large])
+    }
+}
+
+/// Token matching is shared by saved routines and all built-in starting points.
+enum LibraryStarterSearch {
+    static func matches(_ query: String, texts: [String]) -> Bool {
+        let content = texts.joined(separator: " ")
+        return query.split(whereSeparator: \.isWhitespace).allSatisfy {
+            content.localizedStandardContains(String($0))
+        }
+    }
+}
+
+/// Use the same item factory as Quick capture, reserving archived identities and retaining the live week.
+enum LibraryTemplateCapture {
+    static func adding(_ capture: QuickCaptureSubmission, to source: DatedPlanningWeek) throws -> DatedPlanningWeek {
+        guard let index = source.collection.lists.firstIndex(where: { $0.id == capture.listID && !$0.isArchived }),
+              capture.schedule?.isValid() != false else { throw CocoaError(.validationMissingMandatoryProperty) }
+        var next = source
+        let nextID = (source.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        var created = source.collection.lists[index].makeItems(startingAt: nextID, titles: capture.title,
+            description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation, actions: capture.actions)
+        guard !created.isEmpty else { throw CocoaError(.validationMissingMandatoryProperty) }
+        for index in created.indices { capture.schedule?.apply(to: &created[index]) }
+        if !capture.attachments.isEmpty {
+            created[0].attachments = capture.attachments
+            created[0].coverAttachmentID = capture.attachments.first { $0.kind == .photo }?.id
+        }
+        next.collection.lists[index].cards.append(contentsOf: created)
+        return next
+    }
+}
+
+struct LibraryQuickTemplateComposer: View {
+    let template: QuickCaptureTemplate
+    @Environment(\.planningCalendarAccess) private var access
+    @Environment(\.dismiss) private var dismiss
+    @State private var originalWeek: DatedPlanningWeek?
+    private func save(_ capture: QuickCaptureSubmission) -> Bool {
+        guard let access, let originalWeek,
+              let current = access.document.weeks.first(where: { $0.id == originalWeek.id }) else { return false }
+        do { return access.saveWeek(try LibraryTemplateCapture.adding(capture, to: current)) }
+        catch { return false }
+    }
+    var body: some View {
+        Group {
+            if let originalWeek {
+                QuickNoteComposer(lists: .constant(originalWeek.collection.lists.filter { !$0.isArchived }),
+                    initialListID: originalWeek.dayListIDs[PlanningDate.key(.now, calendar: access?.document.calendar ?? .current)],
+                    template: template, onSaveCapture: save) { _, _, _, _, _, _ in }
+            } else {
+                NavigationStack {
+                    ContentUnavailableView("No Week destination", systemImage: "calendar", description: Text("Open your current Week, then try this starting point again."))
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+                }
+            }
+        }
+        .task {
+            guard originalWeek == nil, let access else { return }
+            originalWeek = access.document.weeks.first { $0.startKey == access.document.currentWeekKey }
+        }
+        .presentationDetents([.large])
+    }
+}
+
+/// Keep the original Example Week -> editable template path available in the Examples catalog.
+struct LibraryExampleWeekTemplateButton: View {
+    @State private var editing: PlanningRoutineTemplate?
+    @State private var baseline: PlanningRoutineLibrary?
+    @State private var message: String?
+    var body: some View {
+        Button("Save as a Week template", systemImage: "square.stack.3d.up") {
+            do {
+                baseline = try PlanningRoutineStore.load()
+                var example = PlanningRoutineLibrary.seeded.templates[0]
+                example.id = UUID(); example.name = "Example Week"
+                editing = example
+            } catch { message = "Saved templates couldn't be read. Your data has been retained; please retry." }
+        }
+        .sheet(item: $editing) { template in
+            PlanningTemplateEditor(template: template) { updated in
+                guard let baseline else { return false }
+                var next = baseline
+                next.templates.append(updated)
+                do { try PlanningRoutineStore.save(next, baseline: baseline); return true }
+                catch { return false }
+            }
+        }
+        .alert("Templates", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+            Button("OK", role: .cancel) { message = nil }
+        } message: { Text(message ?? "") }
     }
 }

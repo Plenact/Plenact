@@ -4293,6 +4293,8 @@ private struct MemberColorEditorSheet: View {
 ///     Keep a list title, list metadata, add-card action, and vertically scrollable card collection together
 ///
 struct KanbanListView: View {
+    @State private var checkmarkReset: ListCheckmarkReset?
+    @State private var confirmsCheckmarkReset = false
     @Environment(\.boardViewportMemory) private var viewportMemory
 
     @Environment(\.cardMovementSource) private var draftCollectionID
@@ -4852,6 +4854,10 @@ struct KanbanListView: View {
             activeSheet = .listActions
             onConsumeListActions()
         }
+        .onChange(of: ListCheckmarkReset.values(in: list)) { _, _ in
+            if checkmarkReset?.canRestore(list) == false { checkmarkReset = nil }
+        }
+        .onDisappear { checkmarkReset = nil }
         .sheet(item: $activeSheet, onDismiss: {
             if opensDayAfterDismissal {
                 opensDayAfterDismissal = false
@@ -4868,6 +4874,8 @@ struct KanbanListView: View {
             switch presentedSheet {
             case .listActions:
                 KanbanListActionsSheet(
+                    checkmarkReset:        $checkmarkReset,
+                    onUpdateCard:          onUpdateCard,
                     list:                  list,
                     canMoveEarlier:        canMoveEarlier,
                     canMoveLater:          canMoveLater,
@@ -5142,6 +5150,9 @@ struct NewKanbanCardSheet: View {
 ///
 private struct KanbanListActionsSheet: View {
 
+    @State private var confirmsCheckmarkReset = false
+    @Binding var checkmarkReset: ListCheckmarkReset?
+    let onUpdateCard: (KanbanCard) -> Void
     let list: KanbanList                   /* The Kanban list this sheet is associated with                                 */
     let canMoveEarlier: Bool               /* Indicates if the list can be moved earlier                                    */
     let canMoveLater: Bool                 /* Indicates if the list can be moved later                                      */
@@ -5221,6 +5232,7 @@ private struct KanbanListActionsSheet: View {
                 }
 
                 Section("Organize") {
+                    ListCheckmarkResetControl(list: list, session: $checkmarkReset, confirmsClear: $confirmsCheckmarkReset, onUpdateCard: onUpdateCard)
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             cardEditMode = cardEditMode == .active ? .inactive : .active
@@ -5344,6 +5356,8 @@ private struct KanbanListActionsSheet: View {
                     onDelete: onDeleteArchivedCard
                 )
             }
+            .modifier(ListCheckmarkResetConfirmation(list: list, session: $checkmarkReset,
+                confirmsClear: $confirmsCheckmarkReset, onUpdateCard: onUpdateCard))
             .confirmationDialog("Archive \(list.title)?", isPresented: $confirmingArchive, titleVisibility: .visible) {
                 Button("Archive list", role: .destructive) {
                     onArchiveList()
@@ -6190,6 +6204,8 @@ private struct CardInfoEditorSheet: View {
 ///     Provide focused-list capture and card actions against the shared Board snapshot
 ///
 struct TodayListDetailView: View {
+    @State private var checkmarkReset: ListCheckmarkReset?
+    @State private var confirmsCheckmarkReset = false
     @Environment(\.cardMovementSource) private var dayMovementSource
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
@@ -6449,6 +6465,7 @@ struct TodayListDetailView: View {
                                 }
                                     .buttonStyle(.plain)
                                     .modifier(HideNavigationLinkIndicator())
+                                    .id(card.id)
                                     .accessibilityLabel(card.sectionHeading.map { "Edit section heading: " + $0 } ?? "Edit section divider")
                                     .contextMenu { ItemDisplayFormatMenu(card: card, onUpdate: updateCard) }
                                     .modifier(ContentLifecycleActions(
@@ -6477,6 +6494,7 @@ struct TodayListDetailView: View {
 
                                 .buttonStyle(.plain)
                                 .modifier(HideNavigationLinkIndicator())
+                                    .id(card.id)
                                 .background { cardDragSource(for: card.id) }
                                 .opacity(draggedCardID == card.id ? 0.45 : 1)
                                 .background {
@@ -6535,7 +6553,8 @@ struct TodayListDetailView: View {
                     .scrollContentBackground(.hidden)
                     .contentMargins(.top, 14, for: .scrollContent)
                     .background(.clear)
-                    .background(BoardViewportScrollProbe(memory: focusedViewportMemory, key: "vertical"))
+                    // Explicit task focus takes priority over restoring an old viewport.
+                    .background(BoardViewportScrollProbe(memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical"))
                     .onAppear {
                         if focusedViewportMemory == nil {
                             let currentWeekID = planningCalendarAccess?.document.weeks.first { $0.startKey == planningCalendarAccess?.document.currentWeekKey }?.id
@@ -6577,13 +6596,16 @@ struct TodayListDetailView: View {
                             .accessibilityHidden(true)
                     }
 
-                    .task(id: listID) {
-                        guard focusesFirstUncheckedTask, !didApplyInitialTaskFocus else { return }
-                        didApplyInitialTaskFocus = true
-                        guard let target = focusedList.firstUncheckedTaskID else { return }
-                        await Task.yield()
+                    .task(id: cardViewport.size) {
+                        guard focusesFirstUncheckedTask, !didApplyInitialTaskFocus,
+                              cardViewport.height > 0, cardViewport.width > 0,
+                              let target = focusedList.firstUncheckedTaskID else { return }
+                        // List registers its row IDs after its first layout pass.
+                        do { try await Task.sleep(for: .milliseconds(150)) }
+                        catch { return }
                         guard !Task.isCancelled else { return }
                         scrollProxy.scrollTo(target, anchor: .top)
+                        didApplyInitialTaskFocus = true
                     }
                     }
 
@@ -6592,6 +6614,13 @@ struct TodayListDetailView: View {
                 }
             }
 
+            .onChange(of: focusedList.map { ListCheckmarkReset.values(in: $0) }) { _, _ in
+                if let focusedList, checkmarkReset?.canRestore(focusedList) == false { checkmarkReset = nil }
+            }
+            .onChange(of: listID) { _, _ in checkmarkReset = nil }
+            .onDisappear { checkmarkReset = nil }
+            .modifier(ListCheckmarkResetConfirmation(list: focusedList, session: $checkmarkReset,
+                confirmsClear: $confirmsCheckmarkReset, onUpdateCard: updateCard))
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
@@ -6655,6 +6684,9 @@ struct TodayListDetailView: View {
                     }
                     .accessibilityLabel("Open this week")
                     Menu {
+                        if let focusedList {
+                            ListCheckmarkResetControl(list: focusedList, session: $checkmarkReset, confirmsClear: $confirmsCheckmarkReset, onUpdateCard: updateCard)
+                        }
                         Button("Appearance", systemImage: "paintpalette") { isEditingAppearance = true }
                         Button("Edit list", systemImage: "pencil") {
                             isEditingList = true
@@ -7244,5 +7276,49 @@ private struct DayHeaderAccessibility: ViewModifier {
         if let action {
             content.accessibilityLabel(label).accessibilityAddTraits(.isButton).accessibilityAction { action() }
         } else { content }
+    }
+}
+
+
+/// Menu action shared by Day and list options; the owning list retains the undo session.
+private struct ListCheckmarkResetControl: View {
+    let list: KanbanList
+    @Binding var session: ListCheckmarkReset?
+    @Binding var confirmsClear: Bool
+    let onUpdateCard: (KanbanCard) -> Void
+
+    var body: some View {
+        Button(session?.canRestore(list) == true ? "Restore previous checkmarks" : "Clear all checkmarks…",
+               systemImage: session?.canRestore(list) == true ? "arrow.uturn.backward" : "checkmark.circle") {
+            if let session, let cards = session.restoring(list) {
+                self.session = nil
+                apply(cards)
+            } else { confirmsClear = true }
+        }
+        .disabled(session?.canRestore(list) != true && !ListCheckmarkReset.values(in: list).values.contains(true))
+
+    }
+    private func apply(_ cards: [KanbanCard]) {
+        for card in cards where list.cards.first(where: { $0.id == card.id }) != card { onUpdateCard(card) }
+    }
+}
+
+private struct ListCheckmarkResetConfirmation: ViewModifier {
+    let list: KanbanList?
+    @Binding var session: ListCheckmarkReset?
+    @Binding var confirmsClear: Bool
+    let onUpdateCard: (KanbanCard) -> Void
+    func body(content: Content) -> some View {
+        content.confirmationDialog("Clear all checkmarks in \(list?.title ?? "this list")?", isPresented: $confirmsClear, titleVisibility: .visible) {
+            Button("Clear all checkmarks", role: .destructive) {
+                guard let list else { return }
+                let (snapshot, cards) = ListCheckmarkReset.reset(list)
+                session = snapshot
+                for card in cards where list.cards.first(where: { $0.id == card.id }) != card { onUpdateCard(card) }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This unchecks cards and nested checklist items. You can restore these checkmarks until you change a checkmark or leave this list.")
+        }
     }
 }

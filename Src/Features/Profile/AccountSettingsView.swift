@@ -513,7 +513,7 @@ struct AccountSettingsView: View {
                         } header: {
                             Text("Today")
                         } footer: {
-                            Text("Choose how many unfinished items appear in Today's Focus. The default is 4. Progress still counts the entire day's list. Showing more items makes Today scroll farther.")
+                            Text("Choose how many unfinished items appear in Today's Focus. The default is 4. Progress still counts the entire day's list. Up to 4 rows are visible at once. Extra spacing below the panel keeps Today’s shortcuts in place when fewer items are shown. With a higher limit, scroll inside Today's Focus to see the remaining items.")
                         }
 
                         Section {
@@ -1936,7 +1936,7 @@ struct PlanSettingsView: View {
                         ForEach(lists) { Text($0.title).tag(Optional($0.id)) }
                     }
                 } header: { Text("Today") } footer: {
-                    Text("Focus shows unfinished items; progress counts the entire day's list. Showing more items makes Today scroll farther.")
+                    Text("Focus shows unfinished items; progress counts the entire day's list. Up to 4 rows are visible at once. Extra spacing below the panel keeps Today’s shortcuts in place when fewer items are shown. With a higher limit, scroll inside Today's Focus to see the remaining items.")
                 }
                 Section {
                     Picker("Week starts on", selection: $firstWeekday) {

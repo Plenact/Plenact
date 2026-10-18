@@ -4334,3 +4334,54 @@ enum DefaultListTutorial {
         return collection
     }
 }
+
+
+/// A temporary, checkmarks-only undo snapshot; never replaces card content.
+struct ListCheckmarkReset: Equatable {
+    let previous: [String: Bool]
+    let cleared: [String: Bool]
+
+    static func values(in list: KanbanList) -> [String: Bool] {
+        var values: [String: Bool] = [:]
+        _ = transform(list.cards) { key, value in values[key] = value; return value }
+        return values
+    }
+    static func reset(_ list: KanbanList) -> (ListCheckmarkReset, [KanbanCard]) {
+        let previous = values(in: list)
+        let cards = transform(list.cards) { _, _ in false }
+        var cleared = list; cleared.cards = cards
+        return (Self(previous: previous, cleared: values(in: cleared)), cards)
+    }
+    func canRestore(_ list: KanbanList) -> Bool { Self.values(in: list) == cleared }
+    func restoring(_ list: KanbanList) -> [KanbanCard]? {
+        guard canRestore(list) else { return nil }
+        return Self.transform(list.cards) { key, value in previous[key] ?? value }
+    }
+    private static func transform(_ cards: [KanbanCard], change: (String, Bool) -> Bool) -> [KanbanCard] {
+        cards.map { original in
+            guard !original.isSectionDivider else { return original }
+            var card = original
+            let key = "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
+            card.isTitleChecked = change(key, card.isTitleChecked)
+            card.checklists = transform(card.checklists, path: key, change: change)
+            return card
+        }
+    }
+    private static func transform(_ lists: [KanbanChecklist], path: String, change: (String, Bool) -> Bool) -> [KanbanChecklist] {
+        lists.map { checklist in
+            KanbanChecklist(id: checklist.id, title: checklist.title, items: checklist.items.map { original in
+                var item = original
+                let key = path + "/\(checklist.id)/\(item.id)"
+                item.isCompleted = change(key, item.isCompleted)
+                if case .actionDetail(var detail) = item.content {
+                    detail.checklists = transform(detail.checklists, path: key, change: change)
+                    item.content = .actionDetail(detail)
+                } else if var detail = item.retainedDetail {
+                    detail.checklists = transform(detail.checklists, path: key + "/retained", change: change)
+                    item.retainedDetail = detail
+                }
+                return item
+            })
+        }
+    }
+}

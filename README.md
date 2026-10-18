@@ -6,6 +6,19 @@ Plenact is an iPhone planning and organization app being built around a calm, li
 
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
 
+# Next
+
+Today’s Focus is the main action area on Today, so I’d give it a little more breathing room while keeping it compact.
+
+My first pass would be:
+
+- Larger task text, with slightly taller rows so items are easier to read and tap
+- A clearer progress header, placing “2 of 6 complete” beside the title and keeping the thin progress bar below
+- A quieter “Open today” footer, with less empty space around it
+- Independent iPhone and iPad sizing, so the iPad can feel more generous without crowding the phone
+
+With the new item-count setting, I’d let the section grow naturally as users choose more items, and keep Today scrolling as one page.
+
 ## Query
 
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please

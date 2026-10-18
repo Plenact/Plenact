@@ -45,6 +45,34 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws {
+        let nested = KanbanChecklist(title: "Nested", items: [KanbanChecklistItem(title: "Nested done", isCompleted: true)])
+        let detail = KanbanChecklistActionDetail(description: "Keep details", checklists: [nested])
+        let checklist = KanbanChecklist(title: "Steps", items: [
+            KanbanChecklistItem(title: "Done", isCompleted: true, content: .actionDetail(detail)),
+            KanbanChecklistItem(title: "Still open")
+        ])
+        var list = KanbanList(id: 1, title: "Sunday", cards: [
+            KanbanCard(id: 1, word: "Done card", listTitle: "Sunday", isTitleChecked: true, checklists: [checklist]),
+            KanbanCard(id: 2, word: "Open card", listTitle: "Sunday", checklists: [])
+        ])
+        list.archivedCards = [KanbanCard(id: 99, word: "Archived", listTitle: "Sunday", isTitleChecked: true, checklists: [])]
+        let original = list
+        let (snapshot, cards) = ListCheckmarkReset.reset(list)
+        list.cards = cards
+        XCTAssertFalse(ListCheckmarkReset.values(in: list).values.contains(true))
+        XCTAssertEqual(list.archivedCards, original.archivedCards)
+        XCTAssertTrue(snapshot.canRestore(list))
+        XCTAssertEqual(snapshot.restoring(list), original.cards)
+        list.cards[0].word = "Edited title survives restore"
+        let restored = try XCTUnwrap(snapshot.restoring(list))
+        XCTAssertEqual(restored[0].word, "Edited title survives restore")
+        XCTAssertTrue(restored[0].isTitleChecked)
+        list.cards[1].isTitleChecked = true
+        XCTAssertFalse(snapshot.canRestore(list))
+        XCTAssertNil(snapshot.restoring(list))
+    }
+
     func testTodayFocusPreferenceDefaultsAndPersistsWithoutChangingOlderSettings() throws {
         let legacy = Data(#"{"defaultListID":3,"usesReducedContent":true,"showsDueDatesOnNewCards":false}"#.utf8)
         let restored = try JSONDecoder().decode(LocalProfilePreferences.self, from: legacy)

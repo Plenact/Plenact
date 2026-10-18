@@ -134,3 +134,19 @@ The Today header gear replaces its Calendar shortcut and opens Plan Settings.
 The adjacent avatar continues to open Account & Settings. Plan Settings includes
 Today preview count/default list, week start, new-card due date defaults, display
 preferences, and links to shortcut and template management.
+
+Today's Focus grows to four visible task rows. Higher preview limits scroll only the
+task listing; the title, progress and Open today link stay fixed. Row height scales
+with Dynamic Type. Both Plan Settings and Profile Settings explain this behavior.
+
+The Focus panel fits its visible content. Compensating padding outside and below
+the panel reserves the remaining space up to four rows, including empty and
+completed lists, keeping the shortcut icons below it in place.
+
+Tap the Focus completion count to open Today’s list at its first unchecked task.
+If all items are complete, the same action opens the list without a task target.
+
+Day options and list actions offer Clear all checkmarks with confirmation. It
+resets active card and nested checklist completion only, retaining archived items.
+The action becomes Restore previous checkmarks until a checkmark changes or the
+user leaves the list. Restore applies only completion flags, preserving other edits.

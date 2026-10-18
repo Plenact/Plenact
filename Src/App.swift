@@ -2264,7 +2264,8 @@ private struct TodayHomeView: View {
     @EnvironmentObject private var welcomeCue: TodayWelcomeCue
     @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
-    private func calendarDayList(_ date: Date) -> KanbanList? {
+    private func calendarDayList(_ date: Date, in snapshot: [KanbanList]? = nil) -> KanbanList? {
+        let lists = snapshot ?? self.lists
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
            let list = lists.first(where: { $0.id == id && !$0.isArchived }) { return list }
         return TodayListSelection.currentDayList(in: lists, date: date)
@@ -2771,8 +2772,11 @@ private struct TodayHomeView: View {
                             .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
                     }
 
+                    // Capture the current binding value outside TimelineView so list edits
+                    // invalidate its content as well as its minute-based date updates.
+                    let focusLists = lists
                     TimelineView(.everyMinute) { context in
-                        let focus = calendarDayList(context.date) /* Active list matching the current weekday */
+                        let focus = calendarDayList(context.date, in: focusLists) /* Active list matching the current weekday */
                         let cards = focus?.cards.filter { !$0.isSectionDivider } ?? [] /* Actionable records in the weekday list */
 
                         TodayFocusSection(
@@ -2794,6 +2798,9 @@ private struct TodayHomeView: View {
                             ensureCurrentWeekdayList()
                         }
                     }
+                    // A covered TimelineView can retain its last rendered completion state.
+                    // Recreate the preview on return without resetting the outer Today scroll.
+                    .id(showsTodayList)
 
                     yourShortcutsSection
                     browseListsAction
@@ -8080,6 +8087,61 @@ private struct TodayFocusSection: View {
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 42
+    @Environment(\.displayScale) private var displayScale
+    @State private var measuredListingHeight: CGFloat?
+
+    private var listingCapacity: CGFloat { rowHeight * 4 + 3 / displayScale }
+    private var listingHeight: CGFloat {
+        measuredListingHeight ?? (rowHeight * CGFloat(min(openCards.count, 4))
+            + CGFloat(max(0, min(openCards.count, 4) - 1)) / displayScale)
+    }
+
+    private var focusRows: some View {
+        VStack(spacing: 0) {
+            ForEach(openCards) { card in
+                HStack(spacing: 8) {
+                    Button {
+                        onToggleCard(card.id)
+                    } label: {
+                        Image(systemName: "square")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 36, height: rowHeight)
+                            .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Mark \(card.word) complete")
+
+                    Button(action: onOpenTodayList) {
+                        HStack {
+                            ItemAppearanceMark(appearance: card.appearance)
+                            Text(card.word)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        .frame(maxWidth: .infinity, minHeight: rowHeight)
+                        .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(card.word) in today's list")
+                }
+
+                if card.id != openCards.last?.id {
+
+                    Divider()
+                }
+            }
+        }
+    }
+
 
     ///
     /// @fcn        TodayFocusSection.body
@@ -8102,70 +8164,53 @@ private struct TodayFocusSection: View {
 
                 HStack {
                     Spacer()
-                    Text("\(completedCount) of \(cards.count) complete")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Button(action: onOpenTodayList) {
+                        Text("\(completedCount) of \(cards.count) complete")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(completedCount) of \(cards.count) complete")
+                    .accessibilityHint(completedCount < cards.count
+                        ? "Opens today's list at the first unfinished item"
+                        : "Opens today's completed list")
+                    .accessibilityIdentifier("today.focus.progress")
                 }
 
-                if !cards.isEmpty {
+                ProgressView(value: Double(completedCount), total: Double(max(cards.count, 1)))
+                    .tint(.accentColor)
+                    .opacity(cards.isEmpty ? 0 : 1)
+                    .accessibilityHidden(cards.isEmpty)
 
-                    ProgressView(value: Double(completedCount), total: Double(cards.count))
-                        .tint(.accentColor)
-                }
+                Group {
+                    if cards.isEmpty {
 
-                if cards.isEmpty {
-
-                    Text("This list is ready for its first card.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else if openCards.isEmpty {
-                    Label("Everything on this list is complete", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(minHeight: 40, alignment: .leading)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(openCards) { card in
-                            HStack(spacing: 8) {
-                                Button {
-                                    onToggleCard(card.id)
-                                } label: {
-                                    Image(systemName: "square")
-                                        .font(.title3)
-                                        .foregroundStyle(.secondary)
-                                        .frame(width: 36, height: 42)
-                                        .contentShape(Rectangle())
-                                }
-
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Mark \(card.word) complete")
-
-                                Button(action: onOpenTodayList) {
-                                    HStack {
-                                        ItemAppearanceMark(appearance: card.appearance)
-                                        Text(card.word)
-                                            .foregroundStyle(.primary)
-                                            .lineLimit(1)
-                                        Spacer(minLength: 8)
-                                        Image(systemName: "arrow.up.right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.tertiary)
-                                    }
-
-                                    .frame(maxWidth: .infinity, minHeight: 42)
-                                    .contentShape(Rectangle())
-                                }
-
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Open \(card.word) in today's list")
+                        Text("This list is ready for its first card.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else if openCards.isEmpty {
+                        Label("Everything on this list is complete", systemImage: "checkmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(minHeight: 40, alignment: .leading)
+                    } else {
+                        if openCards.count > 4 {
+                            ScrollView(.vertical) {
+                                focusRows
                             }
-
-                            if card.id != openCards.last?.id {
-
-                                Divider()
-                            }
+                            .frame(height: rowHeight * 4 + 3 / displayScale)
+                            .accessibilityLabel("Today's Focus items")
+                            .accessibilityHint("Scroll to see more unfinished items")
+                        } else {
+                            focusRows
                         }
                     }
+                }
+                .onGeometryChange(for: CGFloat.self) { geometry in
+                    geometry.size.height
+                } action: { height in
+                    measuredListingHeight = height
                 }
 
                 Button(action: onOpenTodayList) {
@@ -8185,6 +8230,7 @@ private struct TodayFocusSection: View {
 
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
+        .padding(.bottom, list == nil ? 0 : max(0, listingCapacity - listingHeight))
     }
 }
 

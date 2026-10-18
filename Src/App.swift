@@ -786,6 +786,7 @@ private struct AppRootView: View {
             advancePlanningWeekIfNeeded()
         }
         .task {
+            PlenactKeyboard.shared.install()
             if scenePhase == .active { welcomeCue.becameActive() }
             guard !hasLoadedBoard else {
 
@@ -1023,7 +1024,12 @@ private struct AppRootView: View {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
                 initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID),
-                initialPresentation: .card
+                initialPresentation: .card,
+                onSaveCapture: { capture in
+                    addCard(to: capture.listID, title: capture.title, description: capture.body,
+                        subtitle: capture.subtitle, presentation: capture.presentation, actions: capture.actions,
+                        attachments: capture.attachments, schedule: capture.schedule, checkedSave: true)
+                }
             ) { listID, title, description, subtitle, presentation, actions in
                 addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
             }
@@ -3474,6 +3480,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable {
 
 struct QuickNoteComposer: View {
 
+    @State private var keyboardContextID = UUID()
     @Binding var lists: [KanbanList]                         /* Current destination lists */
     let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     let template: QuickCaptureTemplate?
@@ -3697,6 +3704,20 @@ struct QuickNoteComposer: View {
         catch { mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here." }
     }
 
+    private func registerKeyboardDraft() {
+        PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
+            exit: { dismiss() },
+            attachment: onSaveCapture == nil ? nil : {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                showsPhotoSources = true
+            },
+            checklist: presentation == .card ? {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                actions.append(KanbanChecklistItem(title: ""))
+            } : nil
+        ))
+    }
+
     var body: some View { /* New-card form and destination controls */
 
         NavigationStack {
@@ -3709,9 +3730,9 @@ struct QuickNoteComposer: View {
                             TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                                 .font(.largeTitle.weight(.bold))
                             NoteCreationDateLabel(createdAt: createdAt)
-                            if captureAction == .photo { photoControls }
+                            if captureAction == .photo || !photos.isEmpty { photoControls }
                             if captureAction == .voice { voiceControls }
-                            if captureAction == .drawing { drawingControls }
+                            if captureAction == .drawing || !drawings.isEmpty { drawingControls }
                             if onSaveCapture != nil {
                                 DisclosureGroup("Start and stop dates") { dateControls }
                             }
@@ -3739,9 +3760,9 @@ struct QuickNoteComposer: View {
                     }
                 }
 
-                if captureAction == .photo { Section("Photos") { photoControls } }
+                if captureAction == .photo || !photos.isEmpty { Section("Photos") { photoControls } }
                 if captureAction == .voice { Section("Voice capture") { voiceControls } }
-                if captureAction == .drawing { Section("Drawings") { drawingControls } }
+                if captureAction == .drawing || !drawings.isEmpty { Section("Drawings") { drawingControls } }
                 if onSaveCapture != nil {
                     Section("Dates") {
                         DisclosureGroup("Start and stop dates") { dateControls }
@@ -3787,7 +3808,7 @@ struct QuickNoteComposer: View {
                         let editedActions = actions.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
                         let originalBody = presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines)
                         let body = captureAction == .voice ? voiceSaveOption.body(existing: originalBody, transcript: voice.transcript) : originalBody
-                        let actionTitles: [String]? = template != nil || captureAction == .checklist ? editedActions : nil
+                        let actionTitles: [String]? = template != nil || captureAction == .checklist || !editedActions.isEmpty ? editedActions : nil
                         if let onSaveCapture {
                             guard voiceReady, schedule.isValid() else { return }
                             do {
@@ -3809,6 +3830,9 @@ struct QuickNoteComposer: View {
             }
         }
 
+        .onAppear { registerKeyboardDraft() }
+        .onChange(of: presentation) { _, _ in registerKeyboardDraft() }
+        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
         .task {
             if captureAction == .drawing && !offeredDrawing { offeredDrawing = true; drawingToEdit = DrawingCaptureDraft() }
             if captureAction == .photo && !offeredPhotoSources { offeredPhotoSources = true; showsPhotoSources = true }
@@ -3820,9 +3844,10 @@ struct QuickNoteComposer: View {
                 return true
             }
         }
-        .confirmationDialog("Add a photo", isPresented: $showsPhotoSources, titleVisibility: .visible) {
+        .confirmationDialog("Add an attachment", isPresented: $showsPhotoSources, titleVisibility: .visible) {
             Button("Take photo") { Task { await openCamera() } }
             Button("Photo library") { showsPhotoLibrary = true }
+            if onSaveCapture != nil { Button("Drawing") { drawingToEdit = DrawingCaptureDraft() } }
             Button("Cancel", role: .cancel) {}
         }
         .photosPicker(isPresented: $showsPhotoLibrary, selection: $photoSelection, maxSelectionCount: max(1, 6 - photos.count), matching: .images)
@@ -8750,6 +8775,7 @@ struct TodayShortcutGrid: View {
 
 /// A direct Focus destination: dismissing the detail returns to Today, without a Day screen.
 private struct TodayFocusCardDetailView: View {
+    @State private var keyboardCard: KanbanCard?
     let card: KanbanCard
     @Binding var lists: [KanbanList]
     @Binding var labelLibrary: LabelLibrary
@@ -8757,7 +8783,14 @@ private struct TodayFocusCardDetailView: View {
     let currentUserName: String
     let onDelete: (Int) -> Bool
 
+    private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation {
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+        return CardKeyboardNavigation(
+            previous: neighbors.previous == nil ? nil : { keyboardCard = CardKeyboardNeighbors.resolve(card, in: lists).previous },
+            next: neighbors.next == nil ? nil : { keyboardCard = CardKeyboardNeighbors.resolve(card, in: lists).next })
+    }
     var body: some View {
+        let card = keyboardCard ?? self.card
         NavigationStack {
             CardDetailView(card: card, labelLibrary: $labelLibrary,
                 currentUserName: currentUserName, savedCardIDs: $savedCardIDs,
@@ -8771,6 +8804,8 @@ private struct TodayFocusCardDetailView: View {
                     lists[owner].archiveCard(id: card.id)
                 },
                 onDelete: { onDelete(card.id) }, listedOnDate: .now)
+                .id(card.id)
+                .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
         }
     }
 }

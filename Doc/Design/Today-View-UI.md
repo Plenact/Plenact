@@ -213,3 +213,15 @@ uses flat separated rows, Card checkboxes, Note symbols, short text previews,
 optional dates and cover thumbnails. Row taps open the existing editors; archive,
 confirmed deletion, reorder and checkmark reset continue using their canonical owners.
 Switching presentation never converts, reorders or duplicates saved items.
+
+Text inputs share a native keyboard accessory with Return, previous/next item,
+focused-field undo/redo, attachments, checklist, font/formatting and keyboard dismiss.
+Return and Dismiss stay visible; middle actions scroll on narrow screens. Card and
+Note editors provide contextual actions; unrelated forms disable unavailable actions.
+Previous/Next follows active item order in the same list, skipping section dividers
+and stopping at boundaries, synchronizing edits before switching. Week/Board, Day
+and direct Today Focus details supply their owner-specific navigation callbacks.
+Rich-text areas persist font family, size, bold, italic and color using optional
+backwards-compatible run fields; plain titles and specialized inputs stay plain.
+New Card drafts also support keyboard checklist creation and photo/drawing capture;
+media is committed only when Add succeeds. Formatting changes support undo/redo.

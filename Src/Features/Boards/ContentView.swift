@@ -2609,6 +2609,19 @@ struct ContentView: View {
     /// @pre        updatedCard must contain a valid id that exists within the board state
     /// @post       The matching card in the list state reflects the updated values
     ///
+    private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation {
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+        return CardKeyboardNavigation(
+            previous: neighbors.previous == nil ? nil : {
+                guard let target = CardKeyboardNeighbors.resolve(card, in: lists).previous else { return }
+                var path = NavigationPath(); path.append(target); navigationPath = path
+            },
+            next: neighbors.next == nil ? nil : {
+                guard let target = CardKeyboardNeighbors.resolve(card, in: lists).next else { return }
+                var path = NavigationPath(); path.append(target); navigationPath = path
+            })
+    }
+
     private func updateCard(_ updatedCard: KanbanCard) {
 
         for listIndex in lists.indices {
@@ -3307,6 +3320,8 @@ struct ContentView: View {
                     },
                     listedOnDate: lists.first(where: { $0.cards.contains(where: { $0.id == card.id }) }).flatMap { dayDate(for: $0.id) }
                 )
+                .id(card.id)
+                .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
                 .environment(\.cardMovementSource, personalCollectionID)
             }
 
@@ -6236,6 +6251,7 @@ private struct CardInfoEditorSheet: View {
 ///     Provide focused-list capture and card actions against the shared Board snapshot
 ///
 struct TodayListDetailView: View {
+    @State private var keyboardDetailPath: [KanbanCard] = []
     @State private var checkmarkReset: ListCheckmarkReset?
     @State private var confirmsCheckmarkReset = false
     @Environment(\.cardMovementSource) private var dayMovementSource
@@ -6458,9 +6474,20 @@ struct TodayListDetailView: View {
         selectedDay = selection
     }
 
+    private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation {
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+        return CardKeyboardNavigation(
+            previous: neighbors.previous == nil ? nil : {
+                if let target = CardKeyboardNeighbors.resolve(card, in: lists).previous { keyboardDetailPath = [target] }
+            },
+            next: neighbors.next == nil ? nil : {
+                if let target = CardKeyboardNeighbors.resolve(card, in: lists).next { keyboardDetailPath = [target] }
+            })
+    }
+
     private var dayContent: some View { /* Focused-list Board surface and card-detail navigation */
 
-        NavigationStack {
+        NavigationStack(path: $keyboardDetailPath) {
             ZStack {
                 if let personalListBackground {
                     CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
@@ -6798,6 +6825,8 @@ struct TodayListDetailView: View {
                     },
                     listedOnDate: representedDate
                 )
+                .id(card.id)
+                .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
             }
 
             .onChange(of: labelLibrary) { _, updatedLibrary in

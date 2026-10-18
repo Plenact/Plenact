@@ -57,6 +57,8 @@ extension EnvironmentValues {
 }
 
 struct CardDetailView: View {
+    @Environment(\.cardKeyboardNavigation) private var keyboardNavigation
+    @State private var keyboardContextID = UUID()
     @Environment(\.workspaceNoteVisibility) private var workspaceNoteVisibility
     @State private var noteVisibilityID = UUID()
     @Environment(\.planningCalendarAccess) private var checklistTypePlanningAccess
@@ -2887,6 +2889,16 @@ struct CardDetailView: View {
             let owner = checklistCollectionID ?? checklistTypePlanningAccess?.document.weeks.first(where: { $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey })?.id
             if let owner { ActivityRecentStore.remember(LibraryRecentItem(collectionID: owner, cardID: card.id)) }
         }
+        .onAppear {
+            PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
+                exit: { dismissEditing(); syncCardState(); dismiss() },
+                previous: keyboardNavigation.previous.map { action in { dismissEditing(); syncCardState(); action() } },
+                next: keyboardNavigation.next.map { action in { dismissEditing(); syncCardState(); action() } },
+                attachment: { dismissEditing(); activeSheet = .attachmentSources },
+                checklist: { dismissEditing(); showsNoteDetails = true; addChecklist(using: scrollProxy) }
+            ))
+        }
+        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
         .onAppear { workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }
         .onDisappear { workspaceNoteVisibility(noteVisibilityID, false) }
         .onChange(of: displayFormat) { _, _ in workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider) }
@@ -4512,6 +4524,8 @@ enum PlanRichText {
         var bold: Bool = false
         var italic: Bool = false
         var color: String? = nil
+        var fontName: String? = nil
+        var fontSize: Double? = nil
     }
     static let colors: [(String, UIColor)] = [
         ("Default", .label), ("Blue", .systemBlue), ("Green", .systemGreen),
@@ -4528,13 +4542,17 @@ enum PlanRichText {
             var traits: UIFontDescriptor.SymbolicTraits = []
             if run.bold { traits.insert(.traitBold) }
             if run.italic { traits.insert(.traitItalic) }
-            let font = UIFont.preferredFont(forTextStyle: .body)
+            let base = UIFont.preferredFont(forTextStyle: .body)
+            let size = run.fontSize.map { CGFloat(min(48, max(10, $0))) } ?? base.pointSize
+            let font = run.fontName == "System" ? UIFont.systemFont(ofSize: size) : (run.fontName.flatMap { UIFont(name: $0, size: size) } ?? base.withSize(size))
             let styledFont = UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor, size: font.pointSize)
             var attributes: [NSAttributedString.Key: Any] = [.font: styledFont, .foregroundColor: UIColor.label]
             if let name = run.color, let color = colors.first(where: { $0.0 == name })?.1 {
                 attributes[.foregroundColor] = color
                 attributes[NSAttributedString.Key("PlenactColor")] = name
             }
+            if let name = run.fontName { attributes[NSAttributedString.Key("PlenactFontName")] = name }
+            if let size = run.fontSize { attributes[NSAttributedString.Key("PlenactFontSize")] = size }
             result.append(NSAttributedString(string: run.text, attributes: attributes))
         }
         return result
@@ -4544,9 +4562,13 @@ enum PlanRichText {
         value.enumerateAttributes(in: NSRange(location: 0, length: value.length)) { attributes, range, _ in
             let traits = (attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits ?? []
             runs.append(Run(text: (value.string as NSString).substring(with: range), bold: traits.contains(.traitBold),
-                            italic: traits.contains(.traitItalic), color: attributes[NSAttributedString.Key("PlenactColor")] as? String))
+                            italic: traits.contains(.traitItalic), color: attributes[NSAttributedString.Key("PlenactColor")] as? String,
+                            fontName: attributes[NSAttributedString.Key("PlenactFontName")] as? String,
+                            fontSize: attributes[NSAttributedString.Key("PlenactFontSize")] as? Double))
         }
-        guard runs.contains(where: { $0.bold || $0.italic || $0.color != nil }), let data = try? JSONEncoder().encode(runs) else { return value.string }
+        guard runs.contains(where: { $0.bold || $0.italic || $0.color != nil || $0.fontName != nil || $0.fontSize != nil }) else { return value.string }
+        let encoder = JSONEncoder(); encoder.outputFormatting = .sortedKeys
+        guard let data = try? encoder.encode(runs) else { return value.string }
         return prefix + data.base64EncodedString()
     }
     static func display(_ value: String) -> AttributedString {
@@ -4555,7 +4577,9 @@ enum PlanRichText {
             result = AttributedString()
             for run in runs {
                 var part = AttributedString(run.text)
-                var font = Font.body
+                let family = run.fontName == "System" ? nil : run.fontName
+                var font: Font = family.map { .custom($0, size: run.fontSize ?? 17) }
+                    ?? run.fontSize.map { .system(size: $0) } ?? .body
                 if run.bold { font = font.bold() }
                 if run.italic { font = font.italic() }
                 part.font = font
@@ -4597,22 +4621,12 @@ struct RichTextEditor: UIViewRepresentable {
         NSLayoutConstraint.activate([hint.leadingAnchor.constraint(equalTo: view.leadingAnchor), hint.topAnchor.constraint(equalTo: view.topAnchor, constant: verticalInset)])
         context.coordinator.hint = hint
         hint.isHidden = !PlanRichText.plain(text).isEmpty
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        func button(_ title: String, _ symbol: String, _ handler: @escaping () -> Void) -> UIBarButtonItem {
-            let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction(title: title) { _ in handler() })
-            item.accessibilityLabel = title
-            return item
-        }
-        let bold = button("Bold", "bold") { [weak coordinator = context.coordinator] in coordinator?.toggle(.traitBold) }
-        let italic = button("Italic", "italic") { [weak coordinator = context.coordinator] in coordinator?.toggle(.traitItalic) }
-        let color = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: UIMenu(title: "Text color", children: PlanRichText.colors.map { name, color in
-            UIAction(title: name, image: UIImage(systemName: "circle.fill")?.withTintColor(color, renderingMode: .alwaysOriginal)) { [weak coordinator = context.coordinator] _ in coordinator?.color(name) }
-        }))
-        color.accessibilityLabel = "Text color"
-        let done = button("Hide keyboard", "chevron.down") { [weak view] in view?.resignFirstResponder() }
-        toolbar.items = [bold, italic, color, .flexibleSpace(), done]
-        view.inputAccessoryView = toolbar
+        let coordinator = context.coordinator
+        view.inputAccessoryView = PlenactKeyboardToolbar(input: view, formatting: KeyboardFormatting(
+            toggle: { [weak coordinator] in coordinator?.toggle($0) },
+            color: { [weak coordinator] in coordinator?.color($0) },
+            font: { [weak coordinator] name, size in coordinator?.font(name: name, size: size) }
+        ))
         return view
     }
     func updateUIView(_ view: UITextView, context: Context) {
@@ -4658,6 +4672,7 @@ struct RichTextEditor: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             parent.text = PlanRichText.encode(textView.attributedText)
             hint?.isHidden = !textView.text.isEmpty
+            PlenactKeyboard.shared.refreshActive()
         }
         func textViewDidBeginEditing(_ textView: UITextView) {
             if !applyingFocus, parent.focus?.wrappedValue == false { parent.focus?.wrappedValue = true }
@@ -4665,9 +4680,23 @@ struct RichTextEditor: UIViewRepresentable {
         func textViewDidEndEditing(_ textView: UITextView) {
             if !applyingFocus, parent.focus?.wrappedValue == true { parent.focus?.wrappedValue = false }
         }
+        func restore(_ text: NSAttributedString, selection: NSRange, typing: [NSAttributedString.Key: Any]) {
+            guard let view else { return }
+            let previous = NSAttributedString(attributedString: view.attributedText)
+            let oldSelection = view.selectedRange
+            let oldTyping = view.typingAttributes
+            view.undoManager?.registerUndo(withTarget: self) { $0.restore(previous, selection: oldSelection, typing: oldTyping) }
+            view.attributedText = text
+            view.selectedRange = NSRange(location: min(selection.location, text.length), length: min(selection.length, max(0, text.length - selection.location)))
+            view.typingAttributes = typing
+            textViewDidChange(view)
+        }
         func apply(_ change: ([NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any]) {
             guard let view else { return }
+            let previous = NSAttributedString(attributedString: view.attributedText)
             let selection = view.selectedRange
+            let typing = view.typingAttributes
+            view.undoManager?.registerUndo(withTarget: self) { $0.restore(previous, selection: selection, typing: typing) }
             if selection.length == 0 { view.typingAttributes = change(view.typingAttributes); return }
             let copy = NSMutableAttributedString(attributedString: view.attributedText)
             copy.enumerateAttributes(in: selection) { attributes, range, _ in copy.setAttributes(change(attributes), range: range) }
@@ -4685,6 +4714,18 @@ struct RichTextEditor: UIViewRepresentable {
                 var traits = font.fontDescriptor.symbolicTraits
                 if enabled { traits.insert(trait) } else { traits.remove(trait) }
                 attributes[.font] = UIFont(descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor, size: font.pointSize)
+                return attributes
+            }
+        }
+        func font(name: String?, size: Double?) {
+            apply { attributes in
+                var attributes = attributes
+                let old = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
+                let pointSize = size.map { CGFloat($0) } ?? old.pointSize
+                let base = name == "System" ? UIFont.systemFont(ofSize: pointSize) : (name.flatMap { UIFont(name: $0, size: pointSize) } ?? old.withSize(pointSize))
+                attributes[.font] = UIFont(descriptor: base.fontDescriptor.withSymbolicTraits(old.fontDescriptor.symbolicTraits) ?? base.fontDescriptor, size: pointSize)
+                if let name { attributes[NSAttributedString.Key("PlenactFontName")] = name }
+                if let size { attributes[NSAttributedString.Key("PlenactFontSize")] = size }
                 return attributes
             }
         }
@@ -4927,5 +4968,198 @@ struct ChecklistItemTypeEditor: View {
                 }
             }
         }
+    }
+}
+
+// Shared accessory actions are scoped to the visible editor, never persisted.
+struct CardKeyboardNavigation {
+    var previous: (() -> Void)? = nil
+    var next: (() -> Void)? = nil
+}
+private struct CardKeyboardNavigationKey: EnvironmentKey { static let defaultValue = CardKeyboardNavigation() }
+extension EnvironmentValues {
+    var cardKeyboardNavigation: CardKeyboardNavigation {
+        get { self[CardKeyboardNavigationKey.self] }
+        set { self[CardKeyboardNavigationKey.self] = newValue }
+    }
+}
+enum CardKeyboardNeighbors {
+    static func resolve(_ card: KanbanCard, in lists: [KanbanList]) -> (previous: KanbanCard?, next: KanbanCard?) {
+        guard let list = lists.first(where: { !$0.isArchived && $0.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt }) }) else { return (nil, nil) }
+        let items = list.cards.filter { !$0.isSectionDivider }
+        guard let index = items.firstIndex(where: { $0.id == card.id }) else { return (nil, nil) }
+        return (index > 0 ? items[index - 1] : nil, index + 1 < items.count ? items[index + 1] : nil)
+    }
+}
+struct KeyboardCardActions {
+    var exit: (() -> Void)? = nil
+    var previous: (() -> Void)? = nil
+    var next: (() -> Void)? = nil
+    var attachment: (() -> Void)? = nil
+    var checklist: (() -> Void)? = nil
+}
+struct KeyboardFormatting {
+    let toggle: (UIFontDescriptor.SymbolicTraits) -> Void
+    let color: (String) -> Void
+    let font: (String?, Double?) -> Void
+}
+
+@MainActor
+final class PlenactKeyboard {
+    static let shared = PlenactKeyboard()
+    private var observers: [NSObjectProtocol] = []
+    private var contexts: [(UUID, KeyboardCardActions)] = []
+    private weak var activeInput: UIView?
+    var actions: KeyboardCardActions { contexts.last?.1 ?? KeyboardCardActions() }
+    func setContext(_ id: UUID, actions: KeyboardCardActions) {
+        contexts.removeAll { $0.0 == id }; contexts.append((id, actions)); refreshActive()
+    }
+    func removeContext(_ id: UUID) { contexts.removeAll { $0.0 == id }; refreshActive() }
+    func install() {
+        guard observers.isEmpty else { return }
+        for name in [UITextField.textDidBeginEditingNotification, UITextView.textDidBeginEditingNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] notice in
+                MainActor.assumeIsolated {
+                    guard let view = notice.object as? UIView else { return }
+                    self?.activate(view)
+                }
+            })
+        }
+        for name in [UITextField.textDidChangeNotification, UITextView.textDidChangeNotification,
+                     .NSUndoManagerDidUndoChange, .NSUndoManagerDidRedoChange,
+                     .NSUndoManagerDidCloseUndoGroup] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refreshActive() }
+            })
+        }
+    }
+    private func activate(_ view: UIView) {
+        activeInput = view
+        if let field = view as? UITextField {
+            if !(field.inputAccessoryView is PlenactKeyboardToolbar) { field.inputAccessoryView = PlenactKeyboardToolbar(input: field) }
+            (field.inputAccessoryView as? PlenactKeyboardToolbar)?.rebuild()
+            field.reloadInputViews()
+        } else if let text = view as? UITextView {
+            if !(text.inputAccessoryView is PlenactKeyboardToolbar) { text.inputAccessoryView = PlenactKeyboardToolbar(input: text) }
+            (text.inputAccessoryView as? PlenactKeyboardToolbar)?.rebuild()
+            text.reloadInputViews()
+        }
+    }
+    func refreshActive() {
+        let toolbar = (activeInput as? UITextField)?.inputAccessoryView ?? (activeInput as? UITextView)?.inputAccessoryView
+        (toolbar as? PlenactKeyboardToolbar)?.updateAvailability()
+    }
+}
+
+@MainActor
+final class PlenactKeyboardToolbar: UIView {
+    private weak var input: UIView?
+    private let formatting: KeyboardFormatting?
+    private var buttonViews: [(UIBarButtonItem, UIButton)] = []
+    private var undoButton: UIBarButtonItem?
+    private var redoButton: UIBarButtonItem?
+    private var contextualButtons: [(UIBarButtonItem, KeyPath<KeyboardCardActions, (() -> Void)?>)] = []
+    init(input: UIView, formatting: KeyboardFormatting? = nil) {
+        self.input = input; self.formatting = formatting
+        super.init(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
+        autoresizingMask = [.flexibleWidth]
+        backgroundColor = .secondarySystemBackground
+        rebuild()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> UIBarButtonItem {
+        let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction(title: title) { _ in run() })
+        item.accessibilityLabel = title
+        item.width = 30
+        return item
+    }
+    private func contextual(_ title: String, symbol: String, key: KeyPath<KeyboardCardActions, (() -> Void)?>) -> UIBarButtonItem {
+        let item = action(title, symbol: symbol) { PlenactKeyboard.shared.actions[keyPath: key]?() }
+        contextualButtons.append((item, key))
+        return item
+    }
+    func rebuild() {
+        contextualButtons = []
+        let exit = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
+        let previous = contextual("Previous item in this list", symbol: "arrow.left", key: \.previous)
+        let next = contextual("Next item in this list", symbol: "arrow.right", key: \.next)
+        let undo = action("Undo text edit", symbol: "arrow.uturn.backward") { [weak self] in self?.performUndo(redo: false) }
+        let redo = action("Redo text edit", symbol: "arrow.uturn.forward") { [weak self] in self?.performUndo(redo: true) }
+        undoButton = undo; redoButton = redo
+        let attachment = contextual("Add attachment", symbol: "paperclip", key: \.attachment)
+        let checklist = contextual("Add checklist", symbol: "checklist", key: \.checklist)
+        let format = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
+        format.accessibilityLabel = "Font and formatting"; format.width = 30; format.isEnabled = formatting != nil
+        let done = action("Hide keyboard", symbol: "chevron.down") { [weak input] in input?.resignFirstResponder() }
+        let models = [exit, previous, next, undo, redo, attachment, checklist, format, done]
+        buttonViews = models.map { item in
+            let button = UIButton(type: .system, primaryAction: item.primaryAction)
+            button.setTitle(nil, for: .normal)
+            button.setImage(item.image, for: .normal)
+            button.menu = item.menu; button.showsMenuAsPrimaryAction = item.menu != nil
+            button.accessibilityLabel = item.accessibilityLabel
+            button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+            button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+            return (item, button)
+        }
+        let middle = UIStackView(arrangedSubviews: buttonViews.dropFirst().dropLast().map { $0.1 })
+        let scroll = UIScrollView(); scroll.showsHorizontalScrollIndicator = false
+        scroll.accessibilityLabel = "Editor actions"
+        scroll.accessibilityHint = "Scroll horizontally for additional keyboard actions"
+        if #available(iOS 26.0, *) {
+            // A 44pt accessory has no space for automatic scroll-edge blur.
+            scroll.topEdgeEffect.isHidden = true; scroll.bottomEdgeEffect.isHidden = true
+            scroll.leftEdgeEffect.isHidden = true; scroll.rightEdgeEffect.isHidden = true
+        }
+        scroll.addSubview(middle); middle.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            middle.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
+            middle.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
+            middle.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
+            middle.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
+            middle.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
+        ])
+        let strip = UIStackView(arrangedSubviews: [buttonViews[0].1, scroll, buttonViews[8].1])
+        subviews.forEach { $0.removeFromSuperview() }
+        addSubview(strip); strip.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            strip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            strip.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+            strip.topAnchor.constraint(equalTo: topAnchor),
+            strip.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+        updateAvailability()
+    }
+    override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: 44) }
+    func updateAvailability() {
+        undoButton?.isEnabled = input?.undoManager?.canUndo == true
+        redoButton?.isEnabled = input?.undoManager?.canRedo == true
+        for (button, key) in contextualButtons { button.isEnabled = PlenactKeyboard.shared.actions[keyPath: key] != nil }
+        for (item, button) in buttonViews { button.isEnabled = item.isEnabled }
+    }
+    private func performUndo(redo: Bool) {
+        if redo { input?.undoManager?.redo() } else { input?.undoManager?.undo() }
+        if let view = input as? UITextView { view.delegate?.textViewDidChange?(view) }
+        if let field = input as? UITextField {
+            field.sendActions(for: .editingChanged)
+            NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
+        }
+        updateAvailability()
+    }
+    private func formattingMenu() -> UIMenu {
+        let style = UIMenu(title: "Style", options: .displayInline, children: [
+            UIAction(title: "Bold", image: UIImage(systemName: "bold")) { [weak self] _ in self?.formatting?.toggle(.traitBold) },
+            UIAction(title: "Italic", image: UIImage(systemName: "italic")) { [weak self] _ in self?.formatting?.toggle(.traitItalic) }
+        ])
+        let fonts = UIMenu(title: "Font", children: [("System", "System"), ("Serif", "Georgia"), ("Sans serif", "AvenirNext-Regular"), ("Monospaced", "Menlo-Regular")].map { title, name in
+            UIAction(title: title) { [weak self] _ in self?.formatting?.font(name, nil) }
+        })
+        let sizes = UIMenu(title: "Size", children: [12.0, 14, 17, 20, 24, 28, 34].map { size in
+            UIAction(title: "\(Int(size)) pt") { [weak self] _ in self?.formatting?.font(nil, size) }
+        })
+        let colors = UIMenu(title: "Color", children: PlanRichText.colors.map { name, color in
+            UIAction(title: name, image: UIImage(systemName: "circle.fill")?.withTintColor(color, renderingMode: .alwaysOriginal)) { [weak self] _ in self?.formatting?.color(name) }
+        })
+        return UIMenu(title: "Text formatting", children: [style, fonts, sizes, colors])
     }
 }

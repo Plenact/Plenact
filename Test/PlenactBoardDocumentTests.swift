@@ -5267,6 +5267,84 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(stored, "Before selected after")
     }
 
+    func testKeyboardNeighborsStayWithinActiveListAndSkipDividers() {
+        let a = KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
+        let divider = KanbanCard(id: 2, word: "Section", listTitle: "Today", isDivider: true, checklists: [])
+        let b = KanbanCard(id: 3, word: "B", listTitle: "Today", checklists: [], presentation: .note)
+        let lists = [KanbanList(id: 1, title: "Today", cards: [a, divider, b]), KanbanList(id: 2, title: "Other", cards: [])]
+        XCTAssertNil(CardKeyboardNeighbors.resolve(a, in: lists).previous)
+        XCTAssertEqual(CardKeyboardNeighbors.resolve(a, in: lists).next, b)
+        XCTAssertEqual(CardKeyboardNeighbors.resolve(b, in: lists).previous, a)
+        XCTAssertNil(CardKeyboardNeighbors.resolve(b, in: lists).next)
+        var archived = lists; archived[0].isArchived = true
+        XCTAssertNil(CardKeyboardNeighbors.resolve(a, in: archived).next)
+    }
+
+    @MainActor
+    func testKeyboardRichFontsPersistAndFormattingSupportsUndoRedo() throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let controller = UIViewController(); window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKeyAndVisible() }
+        var stored = "Keep all these words"
+        let editor = RichTextEditor(placeholder: "Body", text: Binding(get: { stored }, set: { stored = $0 }))
+        let coordinator = editor.makeCoordinator()
+        let text = UITextView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+        controller.view.addSubview(text)
+        text.attributedText = PlanRichText.attributed(stored)
+        coordinator.view = text
+        text.becomeFirstResponder()
+        let undo = try XCTUnwrap(text.undoManager)
+        undo.removeAllActions(); undo.groupsByEvent = false
+        text.selectedRange = NSRange(location: 0, length: text.textStorage.length)
+        undo.beginUndoGrouping()
+        coordinator.font(name: "Georgia", size: 24)
+        coordinator.toggle(.traitBold)
+        coordinator.color("Blue")
+        undo.endUndoGrouping()
+        let formatted = stored
+        let attributes = PlanRichText.attributed(stored).attributes(at: 0, effectiveRange: nil)
+        XCTAssertEqual((attributes[.font] as? UIFont)?.pointSize, 24)
+        XCTAssertEqual(attributes[NSAttributedString.Key("PlenactFontName")] as? String, "Georgia")
+        XCTAssertEqual(PlanRichText.plain(stored), "Keep all these words")
+        XCTAssertTrue(undo.canUndo)
+        undo.undo()
+        XCTAssertEqual(stored, "Keep all these words")
+        XCTAssertTrue(undo.canRedo)
+        undo.redo()
+        XCTAssertEqual(PlanRichText.runs(stored), PlanRichText.runs(formatted))
+        let legacy = Data(#"[{"text":"Old writing","bold":true,"italic":false}]"#.utf8)
+        XCTAssertEqual(PlanRichText.plain(PlanRichText.prefix + legacy.base64EncodedString()), "Old writing")
+    }
+
+    @MainActor
+    func testSharedKeyboardAttachesToPlainFieldsAndRendersNarrowAndWide() throws {
+        PlenactKeyboard.shared.install()
+        let field = UITextField(); field.keyboardType = .emailAddress
+        NotificationCenter.default.post(name: UITextField.textDidBeginEditingNotification, object: field)
+        XCTAssertTrue(field.inputAccessoryView is PlenactKeyboardToolbar)
+        XCTAssertEqual(field.keyboardType, .emailAddress)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let controller = UIViewController(); window.rootViewController = controller; window.makeKeyAndVisible()
+        let token = UUID()
+        PlenactKeyboard.shared.setContext(token, actions: KeyboardCardActions(exit: {}, previous: {}, next: {}, attachment: {}, checklist: {}))
+        defer { PlenactKeyboard.shared.removeContext(token); window.isHidden = true; previous?.makeKeyAndVisible() }
+        for width: CGFloat in [320, 393, 820] {
+            let toolbar = PlenactKeyboardToolbar(input: field, formatting: KeyboardFormatting(toggle: { _ in }, color: { _ in }, font: { _, _ in }))
+            toolbar.frame = CGRect(x: 0, y: 0, width: width, height: 44)
+            controller.view.addSubview(toolbar); toolbar.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: toolbar.bounds).image { _ in toolbar.drawHierarchy(in: toolbar.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-keyboard-\(Int(width)).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("KEYBOARD_RENDER=" + url.path)
+            toolbar.removeFromSuperview()
+        }
+    }
+
     @MainActor
     func testRichTextEditorProvidesAccessibleKeyboardToolbar() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5284,11 +5362,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
         }
         let text = try XCTUnwrap(editor(in: host.view))
-        let toolbar = try XCTUnwrap(text.inputAccessoryView as? UIToolbar)
-        XCTAssertEqual(toolbar.items?.compactMap(\.accessibilityLabel), ["Bold", "Italic", "Text color", "Hide keyboard"])
+        let toolbar = try XCTUnwrap(text.inputAccessoryView as? PlenactKeyboardToolbar)
+        func buttons(in view: UIView) -> [UIButton] {
+            (view as? UIButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
+        }
+        let controls = buttons(in: toolbar)
+        XCTAssertEqual(controls.compactMap(\.accessibilityLabel), ["Return from Card or Note", "Previous item in this list", "Next item in this list", "Undo text edit", "Redo text edit", "Add attachment", "Add checklist", "Font and formatting", "Hide keyboard"])
+        XCTAssertNotNil(controls.first(where: { $0.accessibilityLabel == "Font and formatting" })?.menu)
         XCTAssertEqual(text.text, "A multiline description\nwith a second line")
         XCTAssertGreaterThan(text.sizeThatFits(CGSize(width: 300, height: 1000)).height, 40)
-        XCTAssertNotNil(toolbar.items?[2].menu)
     }
 
     @MainActor

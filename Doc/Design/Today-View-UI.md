@@ -150,3 +150,6 @@ Day options and list actions offer Clear all checkmarks with confirmation. It
 resets active card and nested checklist completion only, retaining archived items.
 The action becomes Restore previous checkmarks until a checkmark changes or the
 user leaves the list. Restore applies only completion flags, preserving other edits.
+
+Focus task titles open the Card or Note directly; its return arrow dismisses to Today.
+Checkboxes still toggle completion; progress and Open today still open the Day list.

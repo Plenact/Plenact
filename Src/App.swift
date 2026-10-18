@@ -2292,6 +2292,7 @@ private struct TodayHomeView: View {
     @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
+    @State private var openedFocusCard: KanbanCard?
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayPlan = false
     @AppStorage(TodayListPins.key) private var listPinData = Data()
@@ -2789,6 +2790,7 @@ private struct TodayHomeView: View {
                                     onToggleCardCompletion(focus.id, cardID)
                                 }
                             },
+                            onOpenCard: { card in openedFocusCard = card },
                             onOpenTodayList: {
                                 focusedListID = focus?.id
                                 showsTodayList = focus != nil
@@ -2800,7 +2802,7 @@ private struct TodayHomeView: View {
                     }
                     // A covered TimelineView can retain its last rendered completion state.
                     // Recreate the preview on return without resetting the outer Today scroll.
-                    .id(showsTodayList)
+                    .id(showsTodayList || openedFocusCard != nil)
 
                     yourShortcutsSection
                     browseListsAction
@@ -2861,6 +2863,12 @@ private struct TodayHomeView: View {
                 )
             }
 
+            .fullScreenCover(item: $openedFocusCard) { card in
+                TodayFocusCardDetailView(card: card, lists: $lists, labelLibrary: $labelLibrary,
+                    savedCardIDs: $savedCardIDs, currentUserName: profile?.displayName ?? "Justin Reina",
+                    onDelete: onDeleteCard)
+                    .environment(\.workspaceBottomBarHeight, 0)
+            }
             .fullScreenCover(isPresented: $showsTodayList) {
                 if let focusedList = lists.first(where: { $0.id == focusedListID }) { /* Current list associated with the focus selection */
 
@@ -8085,6 +8093,7 @@ private struct TodayFocusSection: View {
     let cards: [KanbanCard] /* Non-divider cards on that list */
     let openCards: [KanbanCard] /* Incomplete items limited by the Today profile preference */
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
+    let onOpenCard: (KanbanCard) -> Void
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 42
@@ -8114,7 +8123,7 @@ private struct TodayFocusSection: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Mark \(card.word) complete")
 
-                    Button(action: onOpenTodayList) {
+                    Button { onOpenCard(card) } label: {
                         HStack {
                             ItemAppearanceMark(appearance: card.appearance)
                             Text(card.word)
@@ -8131,7 +8140,7 @@ private struct TodayFocusSection: View {
                     }
 
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(card.word) in today's list")
+                    .accessibilityLabel("Open \(card.word)")
                 }
 
                 if card.id != openCards.last?.id {
@@ -8627,5 +8636,33 @@ struct TodayShortcutGrid: View {
                 }
 
             }
+    }
+}
+
+
+/// A direct Focus destination: dismissing the detail returns to Today, without a Day screen.
+private struct TodayFocusCardDetailView: View {
+    let card: KanbanCard
+    @Binding var lists: [KanbanList]
+    @Binding var labelLibrary: LabelLibrary
+    @Binding var savedCardIDs: Set<Int>
+    let currentUserName: String
+    let onDelete: (Int) -> Bool
+
+    var body: some View {
+        NavigationStack {
+            CardDetailView(card: card, labelLibrary: $labelLibrary,
+                currentUserName: currentUserName, savedCardIDs: $savedCardIDs,
+                onTitleToggle: { updated in
+                    guard let owner = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt }) }),
+                          let index = lists[owner].cards.firstIndex(where: { $0.id == card.id }) else { return }
+                    lists[owner].cards[index] = updated
+                },
+                onArchive: {
+                    guard let owner = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt }) }) else { return }
+                    lists[owner].archiveCard(id: card.id)
+                },
+                onDelete: { onDelete(card.id) }, listedOnDate: .now)
+        }
     }
 }

@@ -164,3 +164,15 @@ off for ordinary lists and on for On the Table, In the Queue and Scheduled,
 including older saved lists without an explicit choice. Explicit choices persist.
 The option controls the opened standalone List and Day headers; Library and Today
 shortcut icons remain independent.
+
+List Appearance includes a 0–100% background opacity slider and an illustrative
+live preview. It changes only the List panel surface behind its cards, revealing
+the workspace background at 0%. Cards, text, controls and the independent banner
+remain opaque. Existing lists default to 100%; Save/Cancel use the appearance draft.
+
+Library personal List settings expose the same per-list opacity value and preview,
+including On the Table, In the Queue and Scheduled. Both entry points edit the
+same appearance property using Save/Cancel drafts.
+
+Opened standalone Library Lists also expose this same opacity value directly in
+their main Appearance sheet under List surface, alongside the workspace background.

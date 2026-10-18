@@ -20,7 +20,6 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 And hey, what if we updated the 'New Button' helps the User create a card when selected from the Today and Week views, and a List when selected from the Plans view and a Card when selected from the Activity view?
 
-
 !
 
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request

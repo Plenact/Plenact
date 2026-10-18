@@ -1658,6 +1658,12 @@ struct ItemAppearanceSheet: View {
                             }
                         }
                         .accessibilityIdentifier("appearance.listBackground")
+                        ListSurfaceOpacityPicker(title: title, tint: draft.listBackground ?? .neutral, opacity: Binding(
+                            get: { draft.resolvedListBackgroundOpacity },
+                            set: { draft.listBackgroundOpacity = $0 }
+                        ))
+                        Text("Only the List surface fades. Cards, text and controls stay fully visible. Save applies your choice; Cancel discards it.")
+                            .font(.caption).foregroundStyle(.secondary)
                         Text("A subtle color behind the items in this Board’s list. Use Board default inherits the Board’s choice; Default keeps a neutral background.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -2289,6 +2295,9 @@ struct BoardAppearanceSheet: View {
     let allowsCollectionBackground: Bool
     var defaultCollectionBackground: CollectionBackground? = nil
     @State private var draft: BoardAppearance
+    let listSurface: KanbanList?
+    let onSaveListSurfaceOpacity: ((Double) -> Void)?
+    @State private var draftSurfaceOpacity: Double
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
     let onSavePresentation: ((BoardPresentation) -> Void)?
@@ -2299,7 +2308,12 @@ struct BoardAppearanceSheet: View {
          onSavePresentation: ((BoardPresentation) -> Void)? = nil,
          allowsCollectionBackground: Bool = false,
          defaultCollectionBackground: CollectionBackground? = nil,
+         listSurface: KanbanList? = nil,
+         onSaveListSurfaceOpacity: ((Double) -> Void)? = nil,
          onSave: @escaping (BoardAppearance, Bool) -> Bool) {
+        self.listSurface = listSurface
+        self.onSaveListSurfaceOpacity = onSaveListSurfaceOpacity
+        _draftSurfaceOpacity = State(initialValue: listSurface?.appearance?.resolvedListBackgroundOpacity ?? 1)
         self.allowsCollectionBackground = allowsCollectionBackground
         self.defaultCollectionBackground = defaultCollectionBackground
         _draft = State(initialValue: appearance)
@@ -2312,6 +2326,15 @@ struct BoardAppearanceSheet: View {
         NavigationStack {
             Form {
                 if allowsCollectionBackground { collectionBackgroundSection }
+                if let listSurface {
+                    Section("List surface") {
+                        ListSurfaceOpacityPicker(title: listSurface.title,
+                            tint: listSurface.appearance?.listBackground ?? draft.listBackground ?? .neutral,
+                            opacity: $draftSurfaceOpacity)
+                        Text("Fades only the surface behind this List's cards. Cards and controls stay fully visible. Save applies your choice; Cancel discards it.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
                 if onSavePresentation != nil {
                     Section("Display") {
                         Picker("Board presentation", selection: $draftPresentation) {
@@ -2366,7 +2389,7 @@ struct BoardAppearanceSheet: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Board Appearance")
+            .navigationTitle(listSurface == nil ? "Board Appearance" : "List Appearance")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -2447,6 +2470,7 @@ struct BoardAppearanceSheet: View {
                 updated.collectionBackground?.photoFileName = name
             }
             if onSave(updated, applyToAll) {
+                if listSurface != nil { onSaveListSurfaceOpacity?(draftSurfaceOpacity) }
                 onSavePresentation?(draftPresentation)
                 dismiss()
             } else if let importedName { CollectionBackgroundPhotoStore.remove(importedName) }
@@ -2724,5 +2748,48 @@ struct DrawingCaptureEditor: View {
         }
         .onDisappear { if exportFile == nil { cleanExport() } }
         .presentationDetents([.large])
+    }
+}
+
+
+/// Shared draft-only opacity preview for List Appearance and Library List settings.
+struct ListSurfaceOpacityPicker: View {
+    let title: String
+    var tint: KanbanListTint = .neutral
+    @Binding var opacity: Double
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Background opacity")
+                    Spacer()
+                    Text(opacity, format: .percent.precision(.fractionLength(0)))
+                        .monospacedDigit().foregroundStyle(.secondary)
+                }
+                Slider(value: $opacity, in: 0...1, step: 0.05)
+                .accessibilityLabel("List background opacity")
+                .accessibilityValue(opacity.formatted(.percent.precision(.fractionLength(0))))
+                .accessibilityIdentifier("appearance.listBackgroundOpacity")
+                HStack {
+                    Text("Transparent")
+                    Spacer()
+                    Text("Solid")
+                }.font(.caption).foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title).font(.headline)
+                Label("Example item", systemImage: "square")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .padding(12)
+            .background(tint.color.opacity(opacity),
+                in: RoundedRectangle(cornerRadius: 14))
+            .padding(8)
+            .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+            .accessibilityLabel("List background preview")
+
+        }
     }
 }

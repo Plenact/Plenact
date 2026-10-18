@@ -7001,6 +7001,23 @@ private struct PersonalCollectionSettingsView: View {
                     .pickerStyle(.menu)
                 }
                 
+                if draft.kind == .list, !draft.lists.isEmpty {
+                    Section("List background") {
+                        ListSurfaceOpacityPicker(title: draft.title,
+                            tint: draft.lists[0].appearance?.listBackground ?? draft.boardAppearance?.listBackground ?? .neutral,
+                            opacity: Binding(
+                                get: { draft.lists[0].appearance?.resolvedListBackgroundOpacity ?? 1 },
+                                set: { value in
+                                    var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                    appearance.listBackgroundOpacity = value
+                                    draft.lists[0].appearance = appearance
+                                }
+                            ))
+                        Text("Only the surface behind the List's cards fades. Save applies this choice; Cancel keeps the current background.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("New item defaults") {
                     ForEach($draft.lists) { $list in
                         Picker(list.title, selection: $list.newItemPresentation) {

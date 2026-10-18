@@ -3342,6 +3342,13 @@ struct ContentView: View {
                     onSavePresentation: { presentation = $0 },
                     allowsCollectionBackground: allowsCollectionBackground,
                     defaultCollectionBackground: isStandaloneListView ? CollectionBackground.defaultListBackground(for: lists.first?.title ?? boardTitle) : nil,
+                    listSurface: isStandaloneListView ? lists.first : nil,
+                    onSaveListSurfaceOpacity: { value in
+                        guard isStandaloneListView, !lists.isEmpty else { return }
+                        var appearance = lists[0].appearance ?? ItemAppearance()
+                        appearance.listBackgroundOpacity = value
+                        lists[0].appearance = appearance
+                    },
                     onSave: saveBoardAppearance)
             }
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
@@ -4821,7 +4828,7 @@ struct KanbanListView: View {
             .padding(.bottom, 24)
         }
 
-        .background(listTint.color)
+        .background(listTint.color.opacity(effectiveAppearance.resolvedListBackgroundOpacity))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(isCardDropTarget ? Color.accentColor : .clear, lineWidth: 3)

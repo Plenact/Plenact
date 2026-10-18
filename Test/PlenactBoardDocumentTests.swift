@@ -45,6 +45,23 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testListBackgroundOpacityDefaultsClampsAndPersistsIndependently() throws {
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)
+        for value in [0.0, 0.5, 1.0] {
+            let appearance = ItemAppearance(listBackgroundOpacity: value)
+            XCTAssertFalse(appearance.isEmpty)
+            let restored = try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(appearance))
+            XCTAssertEqual(restored.resolvedListBackgroundOpacity, value)
+            XCTAssertEqual(BoardAppearance().resolved(restored).resolvedListBackgroundOpacity, value)
+            XCTAssertNil(restored.background)
+            XCTAssertNil(restored.cardTitleColor)
+        }
+        XCTAssertEqual(ItemAppearance(listBackgroundOpacity: -1).resolvedListBackgroundOpacity, 0)
+        XCTAssertEqual(ItemAppearance(listBackgroundOpacity: 2).resolvedListBackgroundOpacity, 1)
+        XCTAssertEqual(ItemAppearance(listBackgroundOpacity: .nan).resolvedListBackgroundOpacity, 1)
+    }
+
     func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws {
         var custom = KanbanList(id: 7, title: "Custom list", cards: [])
         custom.appearance = ItemAppearance(icon: .tasks)

@@ -329,11 +329,16 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
     var showsIconInHeader: Bool? = nil
+    var listBackgroundOpacity: Double? = nil
+    var resolvedListBackgroundOpacity: Double {
+        guard let value = listBackgroundOpacity, value.isFinite else { return 1 }
+        return min(1, max(0, value))
+    }
     func hidesSubtitle(_ text: String) -> Bool {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 ///

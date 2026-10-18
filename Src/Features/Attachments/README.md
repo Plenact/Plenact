@@ -87,3 +87,5 @@ Quick capture Drawing uses PencilKit with finger/Pencil input. A drawing is a ph
 Edit drawing exposes PNG (white or transparent) and JPEG (white) export through the system share sheet. Raster output is cropped with padding and capped at 4096 pixels per edge; the editable original is unchanged. Temporary exports are removed after sharing.
 
 Existing Cards and Notes also offer **Add Attachment → Drawing**. It opens the same editable canvas and image export options as Quick capture. Done appends a drawing attachment while keeping the item's current content and cover; Cancel adds nothing. A rejected update removes the newly prepared preview and stroke files and keeps the canvas open for retry.
+
+Day/Week templates retain attachment references, including drawing stroke sidecars. Both targeted deletion and general pruning consult the template store before deleting files. If templates cannot be decoded, cleanup retains media rather than guessing. Applied copies use new attachment identities and immutable shared files; editing a drawing writes new files.

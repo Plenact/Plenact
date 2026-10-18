@@ -118,7 +118,7 @@ struct PlanningCalendarDocument: Hashable, Codable {
         weeks.sort { $0.startKey < $1.startKey }
     }
     mutating func rollForward(to date: Date, currentLists: [KanbanList], saved: Set<Int>,
-                              calendar suppliedCalendar: Calendar? = nil) -> DatedPlanningWeek {
+                              calendar suppliedCalendar: Calendar? = nil, newWeek: DatedPlanningWeek? = nil) -> DatedPlanningWeek {
         let calendar = suppliedCalendar ?? self.calendar
         if var previous = weeks.first(where: { $0.startKey == currentWeekKey }) {
             previous.collection.lists = currentLists
@@ -126,7 +126,7 @@ struct PlanningCalendarDocument: Hashable, Codable {
             upsert(previous)
         }
         let key = PlanningDate.weekKey(date, calendar: calendar)
-        let next = weeks.first { $0.startKey == key } ?? DatedPlanningWeek.make(for: date, calendar: calendar)
+        let next = weeks.first { $0.startKey == key } ?? newWeek ?? DatedPlanningWeek.make(for: date, calendar: calendar)
         upsert(next)
         currentWeekKey = key
         return next
@@ -696,6 +696,18 @@ struct PlanningCalendarWeekView: View {
         .task {
             guard !didOpenInitialTarget else { return }
             didOpenInitialTarget = true
+            if !isStored, let access {
+                do {
+                    let date = PlanningDate.date(week.startKey, calendar: access.document.calendar)!
+                    let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: access.document.calendar)
+                    guard access.saveWeek(prepared) else { dismiss(); return }
+                    isRevertingEdit = true
+                    week = prepared
+                } catch {
+                    DatabaseActivity.shared.report("Could not create this week from its template. Your saved plans were retained.")
+                    dismiss(); return
+                }
+            }
             if let initialBoardListID { targetListID = initialBoardListID }
             if let initialDayID {
                 if let initialCardID { targetListID = initialDayID; targetCardID = initialCardID }
@@ -1113,6 +1125,18 @@ struct PlanningSelectedDayView: View {
             representedDate: selection.date)
             .environment(\.cardMovementSource, week.id)
             .environment(\.planningDisplayedWeekKey, week.startKey)
+            .task {
+                guard let access, access.document.week(for: selection.date) == nil else { return }
+                do {
+                    let prepared = try PlanningRoutineStore.newWeek(for: selection.date, calendar: access.document.calendar)
+                    guard access.saveWeek(prepared) else { onClose(); return }
+                    isRevertingEdit = true
+                    week = prepared
+                } catch {
+                    DatabaseActivity.shared.report("Could not create this day from its week template. Your saved plans were retained.")
+                    onClose()
+                }
+            }
             .onChange(of: week) { old, updated in
                 if isRevertingEdit { isRevertingEdit = false; return }
                 if access?.saveWeek(updated) != true { isRevertingEdit = true; week = old }

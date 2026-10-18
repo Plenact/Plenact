@@ -70,3 +70,13 @@ The panel observes the daily-plan preference data, reloads on foregrounding and 
 ### Check-in moods
 
 Each Check-in optionally records a `CheckInMood` value (emoji and label) on its history entry. The menu offers Great, Good, Okay, Low, Struggling, and Custom. Custom accepts one emoji grapheme and a nonempty trimmed feeling of up to 40 characters; Save waits for both fields. New Check-ins always start with no mood selection. Mood-only entries are valid; leaving unsaved mood input prompts for explicit discard. Daily review shows the saved mood next to the entry time. Optional decoding preserves earlier entries without a mood, and mood values remain independent of future preset changes. No mood score or inferred assessment is recorded.
+
+## Day and Week templates
+
+Library + → Templates → Day & Week Templates manages local routines. `PlanningTemplates.swift` stores versioned independent snapshots under `Plenact.PlanningTemplates.v1`; `PlanningTemplatesView.swift` provides capture, edit, duplicate/delete, default selection, and preview/apply. The default is Work Week (a reusable copy of the original example layout); Vacation Day is another editable starting point. Example Week remains available separately. An absent store reads bundled starting points without writing; choosing Empty week persists automatic loading off. Existing content is never migrated or refilled.
+
+Capturing excludes archived content and activity, resets completion, and retains list/board appearance, mixed Card/Note presentation, checklists and attachment references. Applying assigns fresh item/checklist/action/attachment identities, remaps local links, removes external card links, shifts date-bearing schedules using source and destination calendars, and preserves time-only values. Drawing preview/stroke files remain editable and protected by template-aware media cleanup.
+
+Default routines apply only when creating an unsaved week (rollover, Week selection, Calendar or Day navigation). Existing weeks take precedence, including saved empty weeks. Manual preview is read-only; Add preserves active items, while Replace requires confirmation and clears only active items in the selected dated day/week. Archives and undated destination lists remain. Preview detects target changes before saving; calendar/current-Board publication uses the existing recovery journal. Template edits use optimistic store comparison and preserve corrupt bytes. Full workspace backup/restore includes templates and media.
+
+Template edits affect future applications; planned days/weeks are independent. Use the item editor for template text, kind, dates and checklists, or capture a planned day/week for richer layout/media changes.

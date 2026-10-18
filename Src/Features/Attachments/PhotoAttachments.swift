@@ -850,6 +850,7 @@ enum CardAttachmentStore {
     ///
     static func removeDeletedFiles(_ candidates: Set<String>, keeping retained: Set<String>) throws {
 
+        let retained = retained.union(try PlanningRoutineStore.retainedFiles())
         for name in candidates.subtracting(retained) {
 
             guard name == (name as NSString).lastPathComponent,
@@ -1010,6 +1011,8 @@ enum CardAttachmentStore {
     ///
     static func removeUnreferencedFiles(keeping fileNames: Set<String>) {
 
+        guard let templateFiles = try? PlanningRoutineStore.retainedFiles() else { return }
+        let fileNames = fileNames.union(templateFiles)
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { /* App Documents directory */
 
             return

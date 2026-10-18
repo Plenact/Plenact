@@ -23,6 +23,224 @@ import PencilKit
 ///     Protect document validation, retained local content, and presentation-only behavior
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
+    @MainActor
+    func testPlanningTemplateMediaRetentionAndWorkspaceBackup() throws {
+        let name = "Plenact.RoutineBackupTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { defaults.removePersistentDomain(forName: name); try? FileManager.default.removeItem(at: folder) }
+        let baseline = try PlanningRoutineStore.load(from: defaults)
+        var library = baseline
+        var attachment = KanbanAttachment(fileName: "routine-preview.png", mediaKind: .photo)
+        attachment.drawingFileName = "routine-strokes.drawing"
+        library.templates[1].collection.lists[0].cards[0].attachments = [attachment]
+        try PlanningRoutineStore.save(library, baseline: baseline, to: defaults)
+        XCTAssertEqual(try PlanningRoutineStore.retainedFiles(from: defaults), ["routine-preview.png", "routine-strokes.drawing"])
+        let bytes = try XCTUnwrap(defaults.data(forKey: PlanningRoutineStore.key))
+        let documents = folder.appendingPathComponent("Documents")
+        let media = documents.appendingPathComponent("CardAttachments")
+        try FileManager.default.createDirectory(at: media, withIntermediateDirectories: true)
+        let preview = Data("saved PNG preview".utf8), strokes = Data("editable native strokes".utf8)
+        try preview.write(to: media.appendingPathComponent("routine-preview.png"))
+        try strokes.write(to: media.appendingPathComponent("routine-strokes.drawing"))
+        let store = FullMonthExampleStore(root: folder.appendingPathComponent("Backup"), documents: documents,
+            support: folder.appendingPathComponent("Support"), domainName: name)
+        try store.loadExample(FullMonthExample.make())
+        XCTAssertNil(defaults.object(forKey: PlanningRoutineStore.key))
+        try store.restoreUserData()
+        XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), bytes)
+        XCTAssertEqual(try Data(contentsOf: media.appendingPathComponent("routine-preview.png")), preview)
+        XCTAssertEqual(try Data(contentsOf: media.appendingPathComponent("routine-strokes.drawing")), strokes)
+    }
+
+    func testPlanningWeekReplacementPreservesUndatedAndArchivedContent() throws {
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
+        var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let monday = try XCTUnwrap(week.collection.lists.firstIndex { $0.id == week.dayListIDs["2026-11-02"] })
+        week.collection.lists[monday].cards = [KanbanCard(id: 100, word: "Replace this", listTitle: "Monday", checklists: [])]
+        week.collection.lists[monday].archivedCards = [KanbanCard(id: 101, word: "Retain archive", listTitle: "Monday", checklists: [])]
+        let undated = KanbanList(id: 50, title: "Other plans", cards: [KanbanCard(id: 102, word: "Keep undated", listTitle: "Other plans", checklists: [])])
+        week.collection.lists.append(undated)
+        let applied = try PlanningTemplateApplication.apply(PlanningRoutineLibrary.seeded.templates[0], to: week, date: date, calendar: calendar, mode: .replace)
+        XCTAssertEqual(applied.collection.lists.first { $0.id == 50 }, undated)
+        XCTAssertEqual(applied.collection.lists[monday].archivedCards, week.collection.lists[monday].archivedCards)
+        XCTAssertFalse(applied.collection.lists.flatMap(\.cards).contains { $0.word == "Replace this" })
+        XCTAssertEqual(applied.collection.lists.flatMap(\.cards).filter { !$0.isSectionDivider }.count, 43)
+    }
+
+    private func routineCalendar(firstWeekday: Int = 2) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        calendar.firstWeekday = firstWeekday
+        return calendar
+    }
+
+    func testPlanningTemplatesSeedStoreConflictAndCorruptDataRetention() throws {
+        let name = "Plenact.RoutineTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let baseline = try PlanningRoutineStore.load(from: defaults)
+        XCTAssertNil(defaults.data(forKey: PlanningRoutineStore.key))
+        XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day"])
+        XCTAssertEqual(baseline.defaultWeekID, baseline.templates[0].id)
+        XCTAssertEqual(try PlanningRoutineStore.load(from: defaults), baseline)
+        var updated = baseline; updated.templates[0].name = "My work routine"; updated.defaultWeekID = nil
+        try PlanningRoutineStore.save(updated, baseline: baseline, to: defaults)
+        XCTAssertEqual(try PlanningRoutineStore.load(from: defaults), updated)
+        XCTAssertThrowsError(try PlanningRoutineStore.save(baseline, baseline: baseline, to: defaults))
+        let retained = Data("retained damaged template bytes".utf8)
+        defaults.set(retained, forKey: PlanningRoutineStore.key)
+        XCTAssertThrowsError(try PlanningRoutineStore.load(from: defaults))
+        XCTAssertThrowsError(try PlanningRoutineStore.save(updated, baseline: baseline, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), retained)
+    }
+
+    func testPlanningWeekTemplateCopiesResetCompletionAndRemapLinks() throws {
+        let calendar = routineCalendar()
+        let sourceDate = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
+        var source = DatedPlanningWeek.make(for: sourceDate, calendar: calendar)
+        let mondayID = try XCTUnwrap(source.dayListIDs["2026-10-12"])
+        let index = try XCTUnwrap(source.collection.lists.firstIndex { $0.id == mondayID })
+        let attachment = KanbanAttachment(fileName: "drawing-preview.png", mediaKind: .photo)
+        var drawing = attachment; drawing.drawingFileName = "drawing-strokes.drawing"
+        let linked = KanbanChecklistItem(title: "Linked", isCompleted: true, content: .linkedCard(cardID: 20))
+        source.collection.lists[index].cards = [
+            KanbanCard(id: 10, word: "Work", listTitle: "Monday", isTitleChecked: true,
+                checklists: [KanbanChecklist(title: "Steps", items: [linked], completedItemIndices: [0])],
+                comments: [KanbanComment(author: "Me", body: "Old activity")], attachments: [drawing], coverAttachmentID: drawing.id, createdAt: sourceDate),
+            KanbanCard(id: 20, word: "Supporting note", listTitle: "Monday", checklists: [], presentation: .note)]
+        source.collection.lists[index].archivedCards = [KanbanCard(id: 99, word: "Archive", listTitle: "Monday")]
+        let template = try PlanningRoutineTemplate.capture(name: "Work", week: source, calendar: calendar)
+        XCTAssertTrue(template.collection.lists[index].archivedCards.isEmpty)
+        XCTAssertTrue(template.collection.lists[index].cards[0].comments.isEmpty)
+        let targetDate = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
+        var target = DatedPlanningWeek.make(for: targetDate, calendar: calendar)
+        let targetIndex = try XCTUnwrap(target.collection.lists.firstIndex { $0.id == target.dayListIDs["2026-11-02"] })
+        target.collection.lists[targetIndex].cards = [KanbanCard(id: 100, word: "Already planned", listTitle: "Monday", checklists: [])]
+        let result = try PlanningTemplateApplication.apply(template, to: target, date: targetDate, calendar: calendar, mode: .add, now: targetDate)
+        let copied = result.collection.lists[targetIndex].cards
+        XCTAssertEqual(copied.map(\.word), ["Already planned", "Work", "Supporting note"])
+        XCTAssertFalse(copied[1].isTitleChecked)
+        XCTAssertFalse(copied[1].checklists[0].items[0].isCompleted)
+        XCTAssertTrue(copied[1].checklists[0].completedItemIndices.isEmpty)
+        XCTAssertNotEqual(copied[1].checklists[0].id, source.collection.lists[index].cards[0].checklists[0].id)
+        XCTAssertNotEqual(copied[1].checklists[0].items[0].id, linked.id)
+        if case .linkedCard(let id) = copied[1].checklists[0].items[0].content { XCTAssertEqual(id, copied[2].id) }
+        else { XCTFail("Internal checklist links must target the copied card") }
+        XCTAssertTrue(copied[1].comments.isEmpty)
+        XCTAssertEqual(copied[1].createdAt, targetDate)
+        XCTAssertEqual(copied[1].funParagraph, source.collection.lists[index].cards[0].funParagraph)
+        XCTAssertEqual(copied[1].subtitle, source.collection.lists[index].cards[0].subtitle)
+        XCTAssertNotEqual(copied[1].attachments?.first?.id, drawing.id)
+        XCTAssertEqual(copied[1].attachments?.first?.drawingFileName, drawing.drawingFileName)
+        XCTAssertEqual(copied[1].coverAttachmentID, copied[1].attachments?.first?.id)
+        XCTAssertEqual(copied[2].presentation, .note)
+        XCTAssertEqual(source.collection.lists[index].cards[0].isTitleChecked, true)
+        var edited = template; edited.collection.lists[index].cards[0].word = "New routine"
+        XCTAssertEqual(copied[1].word, "Work")
+    }
+
+    func testPlanningTemplatesShiftDaysAcrossWeekStartAndDaylightSaving() throws {
+        let sourceCalendar = routineCalendar(firstWeekday: 1)
+        let sourceDate = try XCTUnwrap(PlanningDate.date("2026-10-25", calendar: sourceCalendar))
+        var source = DatedPlanningWeek.make(for: sourceDate, calendar: sourceCalendar)
+        let monday = try XCTUnwrap(PlanningDate.date("2026-10-26", calendar: sourceCalendar))
+        let mondayID = try XCTUnwrap(source.dayListIDs["2026-10-26"])
+        let index = try XCTUnwrap(source.collection.lists.firstIndex { $0.id == mondayID })
+        let start = try XCTUnwrap(sourceCalendar.date(bySettingHour: 9, minute: 30, second: 0, of: monday))
+        let due = try XCTUnwrap(sourceCalendar.date(byAdding: .day, value: 1, to: start))
+        source.collection.lists[index].cards = [KanbanCard(id: 7, word: "Timed", listTitle: "Monday", startDate: start, dueDate: due, checklists: [], startDateKind: .dateAndTime, dueDateKind: .dateAndTime)]
+        let template = try PlanningRoutineTemplate.capture(name: "Week", week: source, calendar: sourceCalendar)
+        let destinationCalendar = routineCalendar()
+        let targetDate = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: destinationCalendar))
+        let target = DatedPlanningWeek.make(for: targetDate, calendar: destinationCalendar)
+        let applied = try PlanningTemplateApplication.apply(template, to: target, date: targetDate, calendar: destinationCalendar, mode: .add)
+        let copy = try XCTUnwrap(applied.list(on: targetDate)?.cards.first)
+        XCTAssertEqual(PlanningDate.key(try XCTUnwrap(copy.startDate), calendar: destinationCalendar), "2026-11-02")
+        XCTAssertEqual(destinationCalendar.component(.hour, from: try XCTUnwrap(copy.startDate)), 9)
+        XCTAssertEqual(destinationCalendar.component(.minute, from: try XCTUnwrap(copy.startDate)), 30)
+        let dayTemplate = try PlanningRoutineTemplate.capture(name: "Vacation", week: source, day: monday, calendar: sourceCalendar)
+        let saturday = try XCTUnwrap(PlanningDate.date("2026-10-31", calendar: destinationCalendar))
+        let saturdayTarget = DatedPlanningWeek.make(for: saturday, calendar: destinationCalendar)
+        let day = try PlanningTemplateApplication.apply(dayTemplate, to: saturdayTarget, date: saturday, calendar: destinationCalendar, mode: .add)
+        let dayCopy = try XCTUnwrap(day.list(on: saturday)?.cards.first)
+        XCTAssertEqual(PlanningDate.key(try XCTUnwrap(dayCopy.startDate), calendar: destinationCalendar), "2026-10-31")
+        XCTAssertEqual(PlanningDate.key(try XCTUnwrap(dayCopy.dueDate), calendar: destinationCalendar), "2026-11-01")
+        XCTAssertEqual(destinationCalendar.component(.hour, from: try XCTUnwrap(dayCopy.dueDate)), 9)
+    }
+
+    func testPlanningDayReplacementKeepsOtherDaysArchivesAndBookmarks() throws {
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
+        var target = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let monday = try XCTUnwrap(target.collection.lists.firstIndex { $0.id == target.dayListIDs["2026-11-02"] })
+        let tuesday = try XCTUnwrap(target.collection.lists.firstIndex { $0.id == target.dayListIDs["2026-11-03"] })
+        target.collection.lists[monday].cards = [KanbanCard(id: 50, word: "Old Monday", listTitle: "Monday", checklists: [])]
+        target.collection.lists[monday].archivedCards = [KanbanCard(id: 60, word: "Kept archive", listTitle: "Monday", checklists: [])]
+        target.collection.lists[tuesday].cards = [KanbanCard(id: 70, word: "Keep Tuesday", listTitle: "Tuesday", checklists: [])]
+        target.collection.savedCardIDs = [50, 60, 70]
+        let day = PlanningRoutineLibrary.seeded.templates[1]
+        let result = try PlanningTemplateApplication.apply(day, to: target, date: date, calendar: calendar, mode: .replace)
+        XCTAssertEqual(result.collection.lists[monday].cards.map(\.word), day.collection.lists[0].cards.map(\.word))
+        XCTAssertTrue(result.collection.lists[monday].cards.allSatisfy { $0.id > 70 })
+        XCTAssertEqual(result.collection.lists[tuesday], target.collection.lists[tuesday])
+        XCTAssertEqual(result.collection.lists[monday].archivedCards, target.collection.lists[monday].archivedCards)
+        XCTAssertEqual(result.collection.savedCardIDs, [60, 70])
+        XCTAssertEqual(target.collection.lists[monday].cards[0].word, "Old Monday")
+    }
+
+    func testPlanningDefaultWeekAppliesOnceAndCanBeDisabled() throws {
+        let name = "Plenact.RoutineDefaultTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let calendar = routineCalendar()
+        let currentDate = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
+        let nextDate = try XCTUnwrap(PlanningDate.date("2026-10-19", calendar: calendar))
+        let current = DatedPlanningWeek.make(for: currentDate, calendar: calendar)
+        var document = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: 2, weeks: [current])
+        let prepared = try PlanningRoutineStore.newWeek(for: nextDate, calendar: calendar, defaults: defaults)
+        XCTAssertTrue(prepared.hasContent)
+        XCTAssertTrue(prepared.collection.lists.flatMap(\.cards).allSatisfy { !$0.isTitleChecked && $0.comments.isEmpty })
+        let rolled = document.rollForward(to: nextDate, currentLists: current.collection.lists, saved: [], calendar: calendar, newWeek: prepared)
+        XCTAssertEqual(rolled, prepared)
+        let repeated = document.rollForward(to: nextDate, currentLists: rolled.collection.lists, saved: [], calendar: calendar,
+            newWeek: try PlanningRoutineStore.newWeek(for: nextDate, calendar: calendar, defaults: defaults))
+        XCTAssertEqual(repeated, rolled)
+        XCTAssertEqual(document.weeks.count, 2)
+        let baseline = try PlanningRoutineStore.load(from: defaults)
+        var disabled = baseline; disabled.defaultWeekID = nil
+        try PlanningRoutineStore.save(disabled, baseline: baseline, to: defaults)
+        XCTAssertFalse(try PlanningRoutineStore.newWeek(for: nextDate, calendar: calendar, defaults: defaults).hasContent)
+    }
+
+    @MainActor
+    func testPlanningTemplateScreensRenderWithoutSaving() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let before = UserDefaults.standard.data(forKey: PlanningRoutineStore.key)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var saves = 0
+        for width in [393.0, 744.0] {
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 1024)
+            let host = UIHostingController(rootView: PlanningTemplatesView())
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(350))
+            host.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-routines-\(Int(width)).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("ROUTINE_RENDER=" + url.path)
+        }
+        let editor = UIHostingController(rootView: PlanningTemplateEditor(template: PlanningRoutineLibrary.seeded.templates[0]) { _ in saves += 1; return true })
+        window.rootViewController = editor; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(saves, 0)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: PlanningRoutineStore.key), before)
+    }
+
+
 
 
     func testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections() throws {

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        DA7E20261017000000000001 /* PlanningTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000002 /* PlanningTemplates.swift */; };
+        DA7E20261017000000000003 /* PlanningTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000004 /* PlanningTemplatesView.swift */; };
 		290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D254D2B426422D8D5F0495 /* Models.swift */; };
 		354B6C37BBEC4A4F98B58F97 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC15405D865C4534ACD974D9 /* Assets.xcassets */; };
 		A202610120000000000000001 /* PlenactLaunch.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A202610120000000000000002 /* PlenactLaunch.storyboard */; };
@@ -45,6 +47,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+        DA7E20261017000000000002 /* PlanningTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/PlanningTemplates.swift; sourceTree = "<group>"; };
+        DA7E20261017000000000004 /* PlanningTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/PlanningTemplatesView.swift; sourceTree = "<group>"; };
 		1DFF35304A1B4FA18AB05E4F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		30C25D35D8C349EDB8B7AFEF /* Plenact.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plenact.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88D254D2B426422D8D5F0495 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -116,6 +120,8 @@
 			isa = PBXGroup;
 			children = (
 				DA1620260000000000000002 /* Planning/TodayPlan.swift */,
+                DA7E20261017000000000002 /* PlanningTemplates.swift */,
+                DA7E20261017000000000004 /* PlanningTemplatesView.swift */,
 				DA1620260000000000000008 /* Planning/LibraryHelp.swift */,
 				DA1620260000000000000006 /* Planning/PeriodicReview.swift */,
 				DA1620260000000000000004 /* Planning/TodayReview.swift */,
@@ -304,6 +310,8 @@
 				290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */,
 				CADA20261010000000000001 /* CalendarPlanning.swift in Sources */,
 				DA1620260000000000000001 /* Planning/TodayPlan.swift in Sources */,
+                DA7E20261017000000000001 /* PlanningTemplates.swift in Sources */,
+                DA7E20261017000000000003 /* PlanningTemplatesView.swift in Sources */,
 				DA1620260000000000000007 /* Planning/LibraryHelp.swift in Sources */,
 				DA1620260000000000000005 /* Planning/PeriodicReview.swift in Sources */,
 				DA1620260000000000000003 /* Planning/TodayReview.swift in Sources */,

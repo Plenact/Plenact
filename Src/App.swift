@@ -792,7 +792,8 @@ private struct AppRootView: View {
                 if var document = try PlanningCalendarStore.load() {
                     try document.repairLegacyMondayFirstLayout()
                     let previous = document.weeks.first { $0.startKey == document.currentWeekKey }!
-                    preparedWeek = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs)
+                    let newWeek = document.week(for: .now) == nil ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
+                    preparedWeek = document.rollForward(to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs, newWeek: newWeek)
                     preparedDocument = document
                 } else {
                     if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") {
@@ -800,7 +801,9 @@ private struct AppRootView: View {
                     }
                     var calendar = Calendar.current
                     calendar.firstWeekday = 2
-                    let current = DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs, calendar: calendar)
+                    let current = UserDefaults.standard.data(forKey: "Plenact.Board.v1") == nil
+                        ? try PlanningRoutineStore.newWeek(for: .now, calendar: calendar)
+                        : DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs, calendar: calendar)
                     preparedWeek = current
                     preparedDocument = PlanningCalendarDocument(currentWeekKey: current.startKey, firstWeekday: 2, weeks: [current])
                 }
@@ -812,11 +815,13 @@ private struct AppRootView: View {
             await Task.yield()
             if let document = preparedDocument, let current = preparedWeek {
                 do {
-                    try PlanningCalendarStore.save(document)
+                    try DailyReviewTransaction.perform {
+                        try PlanningCalendarStore.save(document)
+                        try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
+                    }
                     lists = current.collection.lists
                     savedCardIDs = current.collection.savedCardIDs
                     calendarDocument = document
-                    try KanbanBoardPersistence.saveListsChecked(lists)
                 } catch {
                     lists = legacy
                     DatabaseActivity.shared.report("Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained.")
@@ -1024,13 +1029,15 @@ private struct AppRootView: View {
                 var snapshot = collections; snapshot[index] = collection
                 do { try PersonalCollectionStore.saveChecked(snapshot); collections = snapshot; return true }
                 catch { DatabaseActivity.shared.report("Could not save this Plans collection: \(error.localizedDescription)"); return false }
-            }, applyWeeklyReview: applyWeeklyReview, applyDailyReview: applyDailyReview, moveForDailyPlan: movePriorityForVision, setFirstWeekday: setPlanningFirstWeekday, openWeek: { week in
+            }, applyWeeklyReview: applyWeeklyReview, applyDailyReview: applyDailyReview, moveForDailyPlan: movePriorityForVision, setFirstWeekday: setPlanningFirstWeekday, openWeek: { requestedWeek in
+                guard let week = preparePlanningWeek(requestedWeek) else { return }
                 displayedPlanningListID = nil
                 weekRootRequest += 1
                 displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
                 boardTargetListID = nil; boardTargetCardID = nil
                 selectedDestination = .board
-            }, moveList: movePlanningList, openWeekOnDay: { week, date in
+            }, moveList: movePlanningList, openWeekOnDay: { requestedWeek, date in
+                guard let week = preparePlanningWeek(requestedWeek) else { return }
                 let listID = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)]
                 weekRootRequest += 1
                 displayedPlanningListID = listID
@@ -1089,15 +1096,31 @@ private struct AppRootView: View {
     private func advancePlanningWeekIfNeeded() {
         guard !isSwitchingWorkspace, hasLoadedBoard, var document = calendarDocument,
               document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar) else { return }
-        let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs)
         do {
-            try PlanningCalendarStore.save(document)
-            try KanbanBoardPersistence.saveListsChecked(next.collection.lists)
+            let newWeek = document.week(for: .now) == nil ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
+            let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs, newWeek: newWeek)
+            try DailyReviewTransaction.perform {
+                try PlanningCalendarStore.save(document)
+                try KanbanBoardPersistence.saveListsChecked(next.collection.lists)
+            }
             calendarDocument = document
             lists = next.collection.lists; savedCardIDs = next.collection.savedCardIDs
             boardTargetListID = nil; boardTargetCardID = nil
             weekRootRequest += 1
         } catch { DatabaseActivity.shared.report("Could not advance this week: \(error.localizedDescription)") }
+    }
+
+    private func preparePlanningWeek(_ requested: DatedPlanningWeek) -> DatedPlanningWeek? {
+        guard let document = calendarDocument else { return nil }
+        if let existing = document.weeks.first(where: { $0.startKey == requested.startKey }) { return existing }
+        do {
+            guard let date = PlanningDate.date(requested.startKey, calendar: document.calendar) else { return nil }
+            let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar)
+            return savePlanningWeek(prepared) ? prepared : nil
+        } catch {
+            DatabaseActivity.shared.report("Could not prepare this week from its template. Your saved plans were retained.")
+            return nil
+        }
     }
 
     private func savePlanningWeek(_ week: DatedPlanningWeek) -> Bool {
@@ -1106,8 +1129,10 @@ private struct AppRootView: View {
         document.upsert(week)
         if document == calendarDocument { return true }
         do {
-            try PlanningCalendarStore.save(document)
-            if week.startKey == document.currentWeekKey { try KanbanBoardPersistence.saveListsChecked(week.collection.lists) }
+            try DailyReviewTransaction.perform {
+                try PlanningCalendarStore.save(document)
+                if week.startKey == document.currentWeekKey { try KanbanBoardPersistence.saveListsChecked(week.collection.lists) }
+            }
             calendarDocument = document
             if week.startKey == document.currentWeekKey {
                 lists = week.collection.lists; savedCardIDs = week.collection.savedCardIDs
@@ -5107,6 +5132,7 @@ struct BoardListsView: View {
     @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
     @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
+    @State private var showsPlanningTemplates = false
     @State private var showsExamples = false                   /* Present the synthetic list chooser          */
     @State private var examplePreview: LibraryExamplePreview?
     @State private var pendingExample: PersonalCollection?     /* Unsaved draft waiting for chooser dismissal */
@@ -6082,6 +6108,8 @@ struct BoardListsView: View {
 
     private var templatesMenu: some View {
         Menu("Templates", systemImage: "square.stack.3d.up") {
+            Button("Day & Week Templates", systemImage: "calendar") { showsPlanningTemplates = true }
+            Divider()
             ForEach([MixedListTemplate.planDay, .startProject, .exploreIdea]) { template in
                 Button(template.rawValue) {
                     editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
@@ -6216,6 +6244,7 @@ struct BoardListsView: View {
                 )
             }
 
+            .sheet(isPresented: $showsPlanningTemplates) { PlanningTemplatesView() }
             .sheet(isPresented: $showsExamples, onDismiss: {
                 if let pendingExample { /* Example selected for collection creation */
 

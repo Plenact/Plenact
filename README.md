@@ -1,6 +1,6 @@
 # Plenact for iOS
 
-Version: 1.1   (10/17/26)
+Version: 1.2   (10/18/26)
 
 Plenact is an iPhone planning and organization app being built around a calm, list-based daily workflow. The current revision provides a Today front door and a horizontally navigable kanban Board for tasks, routines, ideas, and open work
 
@@ -12,15 +12,7 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 
 This is beautiful, thank you Alex!! Can you help me with a good git commit message for these updates? :)
 
-<consider posting 1.2!!!?>
-
 # Opens
-
-- Great!! Thank you Alex, this work today has been awesome
-
-And hey, what if we updated the 'New Button' helps the User create a card when selected from the Today and Week views, and a List when selected from the Plans view and a Card when selected from the Activity view?
-
-!
 
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
@@ -37,6 +29,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 - Website Go!!! Android & Desktop applications too
 
   - Full app representation!! Win/Lin/Apple/Android/Web-Desktop/Web-Mobile
+
+- Widget Extensions!
 
 ### Carryover
 

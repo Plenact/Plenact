@@ -711,6 +711,7 @@ private struct AppRootView: View {
     @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
     @State private var savedCardIDs                        = SavedCardPersistence.load()    /* Device-local saved cards                            */
     @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                    /* Personal bookmark requested from Saved             */
+    @State private var newLibraryListRequest = 0
     @State private var quickCreateRequest                  = 0                              /* Center-bar quick-create request                     */
     @State private var showsCenterNewCardSheet             = false                          /* Destination picker for New outside Today            */
     @State private var isWeekListRequestArmed              = false                          /* Whether New's long press will create a Week list    */
@@ -1010,7 +1011,8 @@ private struct AppRootView: View {
         .sheet(isPresented: $showsCenterNewCardSheet) {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
-                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID)
+                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID),
+                initialPresentation: .card
             ) { listID, title, description, subtitle, presentation, actions in
                 addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
             }
@@ -1439,6 +1441,7 @@ private struct AppRootView: View {
         BoardListsView(
             retainedWeekLists:   lists + (calendarDocument?.weeks.flatMap { $0.collection.lists } ?? []),
             collections:         $collections,
+            newListRequest: newLibraryListRequest,
             registerListNewNote: registerPersonalListNewNote,
             onOpenSaved:         openSavedDestination,
             onLoadExampleWeek:   loadExampleWeek,
@@ -1569,7 +1572,7 @@ private struct AppRootView: View {
     ///             while the keyboard overlays it. The decorative background extends through the
     ///             bottom safe area independently of the measured controls. In portrait,
     ///             its top edge is inset 20 points so New overlaps it without moving any controls.
-    ///             New requests Today capture, a Library Note, or a Week-card destination picker;
+    ///             New creates Cards from Today, Week and Activity, or a List from Plans;
     ///             a long press arms Week-list creation and shake feedback
     ///
     /// @return     (some View) paper-backed navigation controls
@@ -1609,8 +1612,8 @@ private struct AppRootView: View {
                         addWeekList()
                     } else if selectedDestination == .today {
                         quickCreateRequest += 1
-                    } else if selectedDestination == .lists, let activePersonalListNewNote { /* Registered List-scoped Note action */
-                        activePersonalListNewNote()
+                    } else if selectedDestination == .lists {
+                        newLibraryListRequest += 1
                     } else {
                         showsCenterNewCardSheet = true
                     }
@@ -1639,12 +1642,10 @@ private struct AppRootView: View {
                     .easeInOut(duration: 0.07)
                 }
 
-                .accessibilityLabel(activePersonalListNewNote == nil ? "Create a new card" : "Create a new Note")
-                .accessibilityHint(
-                    activePersonalListNewNote == nil
-                        ? "Tap to create a card. Touch and hold until New shakes, then release to add a Week list."
-                        : "Creates a Note in the open personal List, or the most recently opened personal List from Plans. Touch and hold until New shakes, then release to add a Week list."
-                )
+                .accessibilityLabel(selectedDestination == .lists ? "Create a new List" : "Create a new Card")
+                .accessibilityHint(selectedDestination == .lists
+                    ? "Creates a new personal List in Plans. Touch and hold until New shakes, then release to add a Week list."
+                    : "Creates a new Card. Touch and hold until New shakes, then release to add a Week list.")
 
                     if PlanPreferencesStore.load().showsNavigationLabels {
 
@@ -2310,6 +2311,7 @@ private struct TodayHomeView: View {
     @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
     @State private var showsTemplates = false
     @State private var pendingTemplate: QuickCaptureTemplate?
+    @State private var composerInitialPresentation: ItemPresentation?
     @State private var composerTemplate: QuickCaptureTemplate?
     @State private var captureAction: TodayCaptureAction?
     @State private var showsPlanSettings = false
@@ -2909,6 +2911,7 @@ private struct TodayHomeView: View {
 
                 quickComposerInitialTitle = ""
                 composerTemplate = nil
+                composerInitialPresentation = nil
                 captureAction = nil
             }) {
 
@@ -2920,6 +2923,7 @@ private struct TodayHomeView: View {
                         initialTitle:  quickComposerInitialTitle,
                         template:      composerTemplate,
                         captureAction: captureAction,
+                        initialPresentation: composerInitialPresentation,
                         onSaveCapture: { capture in
                             let saved = onAddCapture(capture)
                             if saved { quickComposerInitialTitle = "" }
@@ -2960,6 +2964,7 @@ private struct TodayHomeView: View {
             }
 
             .onChange(of: quickCreateRequest) { _, _ in
+                composerInitialPresentation = .card
                 openQuickNoteEditor()
             }
 
@@ -3523,12 +3528,13 @@ struct QuickNoteComposer: View {
         initialTitle: String = "",
         template: QuickCaptureTemplate? = nil,
         captureAction: TodayCaptureAction? = nil,
+        initialPresentation: ItemPresentation? = nil,
         onSaveCapture: ((QuickCaptureSubmission) -> Bool)? = nil,
         onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     ) {
 
         _lists = lists
-        _presentation = State(initialValue: captureAction?.presentation ?? template?.presentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
+        _presentation = State(initialValue: captureAction?.presentation ?? template?.presentation ?? initialPresentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
         _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? initialTitle)
         _description = State(initialValue: template?.body ?? "")
         _actions = State(initialValue: captureAction == .checklist ? [KanbanChecklistItem(title: "")] : (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
@@ -5147,6 +5153,7 @@ struct BoardListsView: View {
     let retainedWeekLists: [KanbanList]                        /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
+    var newListRequest = 0
     let registerListNewNote: ((() -> Void)?) -> Void /* Registers the directory's scoped Note action */
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
     var onLoadExampleWeek: (() -> Bool)? = nil
@@ -6499,6 +6506,9 @@ struct BoardListsView: View {
                 Text("Keeps all content on this device. Restore it from Saved.")
             }
 
+        }
+        .onChange(of: newListRequest) { _, _ in
+            editingCollection = PersonalCollection(title: "", kind: .list)
         }
         .onChange(of: libraryRecentData) { _, _ in recentItems = LibraryRecentStore.load() }
         .onAppear {

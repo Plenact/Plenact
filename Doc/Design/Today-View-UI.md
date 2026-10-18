@@ -199,3 +199,8 @@ their existing burgundy, teal and graphite identities, independent of saved over
 
 On the Table uses a soft gold header icon for contrast against its burgundy banner.
 Its Today shortcut and Library icon retain their burgundy identity.
+
+The central New button creates a Card from Today, Week and Activity, regardless
+of the destination List's default item format. From Plans it opens a new personal
+List draft in the existing Library creation form. Cancel creates nothing. Existing
+quick-capture formats and the long-press Week-list shortcut remain available.

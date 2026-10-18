@@ -505,14 +505,20 @@ struct PlenactLoadingView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-            Image("LaunchLogo")
-                .resizable().scaledToFit()
-                .frame(width: 136, height: 136)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            ZStack {
+                Image("LaunchShadow")
+                    .resizable().scaledToFit()
+                    .frame(width: 240, height: 240)
+                    .opacity(0.8)
+                    .offset(x: 4, y: 12)
+                Image("LaunchLogo")
+                    .resizable().scaledToFit()
+                    .frame(width: 136, height: 136)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            }
                 .phaseAnimator(reduceMotion || !animatesLogo ? [false] : [false, true]) { logo, expanded in
                     logo.scaleEffect(expanded ? 1.035 : 1)
                         .opacity(expanded ? 1 : 0.94)
-                        .shadow(color: .black.opacity(expanded ? 0.25 : 0.20), radius: expanded ? 20 : 18, x: 0, y: 8)
                 } animation: { _ in .easeInOut(duration: 1.8) }
                 .accessibilityHidden(true)
             VStack(spacing: 8) {

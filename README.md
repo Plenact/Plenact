@@ -10,6 +10,8 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
 
+This is beautiful, thank you Alex!! Can you help me with a good git commit message for these updates? :)
+
 # Opens
 
 - Slightest dim fade behind the launch screen logo?

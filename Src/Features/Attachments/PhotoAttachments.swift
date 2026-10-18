@@ -1075,6 +1075,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
     case qrCode
     case camera
     case photoOrVideo
+    case drawing
     case link
     case clipboard
 
@@ -1105,6 +1106,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
             case .qrCode:         "QR code"
             case .camera:         "Camera"
             case .photoOrVideo:   "Photo or video"
+            case .drawing:        "Drawing"
             case .link:           "Link"
             case .clipboard:      "Clipboard"
         }
@@ -1128,6 +1130,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable {
             case .qrCode:         "qrcode.viewfinder"
             case .camera:         "camera"
             case .photoOrVideo:   "photo.on.rectangle"
+            case .drawing:        "pencil.tip"
             case .link:           "link"
             case .clipboard:      "doc.on.clipboard"
         }
@@ -1148,6 +1151,7 @@ struct CardAttachmentSourceSheet: View {
     let onAddLink: ()          -> Void /* Callback opening manual link entry */
     let onPasteClipboard: ()   -> Void /* Callback importing clipboard images or a link */
     let onComingSoon: (String) -> Void /* Callback reporting unsupported source */
+    var onAddDrawing: (() -> Void)? = nil /* Opens the editable canvas when supported by the owner */
 
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
 
@@ -1169,6 +1173,9 @@ struct CardAttachmentSourceSheet: View {
 
         switch source {
 
+            case .drawing:
+                if let onAddDrawing { onAddDrawing() }
+                else { onComingSoon(source.title) }
             case .link:
                 onAddLink()
             case .clipboard:

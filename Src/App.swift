@@ -2741,7 +2741,7 @@ private struct TodayHomeView: View {
                         TodaySloganView()
                             .frame(minHeight: 40)
                         quickCaptureSection
-                            .modifier(TodayPanelSurface())
+                            .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
                     }
 
                     TimelineView(.everyMinute) { context in
@@ -3000,8 +3000,8 @@ private struct TodayHomeView: View {
     ///
     /// @fcn        TodayHomeView.quickCaptureSection
     /// @brief      Build inline card capture and full-editor access
-    /// @details    Disables submission for whitespace-only titles and identifies the selected
-    ///             Today destination, or prompts the user to choose one
+    /// @details    Disables submission for whitespace-only titles and prompts for a missing
+    ///             destination. The field's accessibility hint identifies the selected Today list
     ///
     /// @return     (some View) title field, composer button, and quick-add controls
     /// @post       Submission and selection actions delegate to the Today capture helpers
@@ -3009,9 +3009,6 @@ private struct TodayHomeView: View {
     private var quickCaptureSection: some View { /* Inline capture controls for the selected list */
 
         VStack(alignment: .leading, spacing: 8) {
-
-            Text("Quick capture")
-                .font(.title2.weight(.semibold))
 
             HStack(spacing: 8) {
 
@@ -3031,6 +3028,7 @@ private struct TodayHomeView: View {
                     .submitLabel(.done)
                     .onSubmit(addQuickCard)
                     .accessibilityLabel("Quick capture card title")
+                    .accessibilityHint(selectedTodayList.map { "Adds to \($0.title)." } ?? "Choose today's list before adding a card.")
                     .offset(x: -31)
 
                 HStack(spacing: 0) {
@@ -3070,13 +3068,7 @@ private struct TodayHomeView: View {
 
             TodayCaptureActions(onSelect: openCapture)
 
-            if let selectedTodayList { /* Selected list available for quick capture */
-
-                Text("Adding to \(selectedTodayList.title)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-            } else {
+            if selectedTodayList == nil { /* Keep an explicit way to choose a missing destination */
 
                 Button("Choose today's list first") {
                     listPickerMode = .chooseToday
@@ -8023,7 +8015,7 @@ private struct TodayFocusSection: View {
         }
 
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(TodayPanelSurface())
+        .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
     }
 }
 
@@ -8069,6 +8061,8 @@ private struct TodayPaperBackground: View {
 ///
 private struct TodayPanelSurface: ViewModifier {
 
+    var backgroundOpacity: Double = 1
+
 
     ///
     /// @fcn        TodayPanelSurface.body(content:)
@@ -8089,6 +8083,7 @@ private struct TodayPanelSurface: ViewModifier {
             .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(.regularMaterial)
+                    .opacity(backgroundOpacity)
                     .allowsHitTesting(false)
             }
             .overlay {

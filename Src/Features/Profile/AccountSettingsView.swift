@@ -207,6 +207,12 @@ struct ProfileAvatarView: View {
 ///
 struct AccountSettingsView: View {
 
+    private enum SettingsTab: String, CaseIterable {
+        case account = "Account"
+        case settings = "Settings"
+    }
+    @State private var selectedTab: SettingsTab = .account
+
     let profile:  LocalProfile?                  /* Existing local profile */
     let lists:    [KanbanList]                   /* Default-list choices   */
     let onSave:   (LocalProfile) -> Void         /* Profile save callback  */
@@ -377,139 +383,146 @@ struct AccountSettingsView: View {
 
         NavigationStack {
 
-            TabView {
-                Form {
-                    Section("Profile") {
-                        NavigationLink {
-                            ProfileAvatarIconPicker(
-                                selection:       $avatarIcon,
-                                avatarColor:     $avatarColor,
-                                foregroundColor: $avatarForegroundColor,
-                                photoData:       $avatarPhotoData,
-                                displayName:     trimmedDisplayName
-                            )
-                            .onAppear {
-                                isChoosingAvatarIcon = true
-                                profileSheetDetent = .height(620)
-                            }
-                            .onDisappear {
-                                isChoosingAvatarIcon = false
-                                profileSheetDetent = .large
-                            }
-                        } label: {
-                            HStack(spacing: 14) {
-                                ProfileAvatarView(
-                                    profile:   LocalProfile(
-                                        id:                    profileID,
-                                        createdAt:             createdAt,
-                                        displayName:           trimmedDisplayName,
-                                        avatarColor:           avatarColor,
-                                        avatarIcon:            avatarIcon,
-                                        avatarForegroundColor: avatarForegroundColor
-                                    ),
-                                    size:      52,
-                                    photoData: avatarPhotoData
+            VStack(spacing: 0) {
+                Picker("Account and settings", selection: $selectedTab) {
+                    ForEach(SettingsTab.allCases, id: \.self) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+                if selectedTab == .account {
+                    Form {
+                        Section("Profile") {
+                            NavigationLink {
+                                ProfileAvatarIconPicker(
+                                    selection:       $avatarIcon,
+                                    avatarColor:     $avatarColor,
+                                    foregroundColor: $avatarForegroundColor,
+                                    photoData:       $avatarPhotoData,
+                                    displayName:     trimmedDisplayName
                                 )
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(trimmedDisplayName.isEmpty ? "Local profile" : trimmedDisplayName)
-                                        .font(.headline)
-
-                                    Text("Stored on this device")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                .onAppear {
+                                    isChoosingAvatarIcon = true
+                                    profileSheetDetent = .height(620)
                                 }
+                                .onDisappear {
+                                    isChoosingAvatarIcon = false
+                                    profileSheetDetent = .large
+                                }
+                            } label: {
+                                HStack(spacing: 14) {
+                                    ProfileAvatarView(
+                                        profile:   LocalProfile(
+                                            id:                    profileID,
+                                            createdAt:             createdAt,
+                                            displayName:           trimmedDisplayName,
+                                            avatarColor:           avatarColor,
+                                            avatarIcon:            avatarIcon,
+                                            avatarForegroundColor: avatarForegroundColor
+                                        ),
+                                        size:      52,
+                                        photoData: avatarPhotoData
+                                    )
 
-                                Spacer()
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(trimmedDisplayName.isEmpty ? "Local profile" : trimmedDisplayName)
+                                            .font(.headline)
+
+                                        Text("Stored on this device")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer()
+                                }
                             }
+
+                            .accessibilityLabel("Choose profile icon")
+                            .accessibilityHint("Choose an icon or use your initials.")
+
+                            TextField("Display name", text: $displayName)
+                                .textContentType(.name)
+
+                            TextField("Email (optional)", text: $email)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+
+                            TextField("Planning context (optional)", text: $context)
+
                         }
 
-                        .accessibilityLabel("Choose profile icon")
-                        .accessibilityHint("Choose an icon or use your initials.")
+                        if let profile { /* Existing profile being edited */
 
-                        TextField("Display name", text: $displayName)
-                            .textContentType(.name)
+                            Section {
+                                LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
 
-                        TextField("Email (optional)", text: $email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-
-                        TextField("Planning context (optional)", text: $context)
-
+                                Button("Remove local profile", role: .destructive) {
+                                    confirmsRemoval = true
+                                }
+                            } header: {
+                                Text("Local Profile")
+                            } footer: {
+                                Text("Removing this profile keeps all Board cards, labels, and attachments.")
+                            }
+                        }
                     }
-
-                    if let profile { /* Existing profile being edited */
-
+                } else {
+                    Form {
                         Section {
-                            LabeledContent("Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
+                            Button { showsShortcutEditor = true } label: {
+                                Label("My shortcuts", systemImage: "square.grid.3x2")
+                            }
+                            Picker("Week starts on", selection: $firstWeekday) {
+                                Text("Sunday").tag(1)
+                                Text("Monday").tag(2)
+                            }
+                            .onAppear {
+                                guard !didLoadWeekStart else { return }
+                                firstWeekday = planningAccess?.document.firstWeekday ?? Calendar.current.firstWeekday
+                                didLoadWeekStart = true
+                            }
+                            Toggle("Show due dates on new cards", isOn: $showsDueDatesOnNewCards)
+                            Picker("Default Today list", selection: $defaultListID) {
+                                Text("Choose each day").tag(nil as Int?)
 
-                            Button("Remove local profile", role: .destructive) {
-                                confirmsRemoval = true
+                                ForEach(lists) { list in
+                                    Text(list.title).tag(Optional(list.id))
+                                }
                             }
                         } header: {
-                            Text("Local Profile")
+                            Text("Planning")
                         } footer: {
-                            Text("Removing this profile keeps all Board cards, labels, and attachments.")
+                            Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
+                        }
+
+                        Section {
+                            Toggle("Reduce supporting content", isOn: $usesReducedContent)
+                            Toggle("Use larger primary controls", isOn: $usesLargeControls)
+                            Toggle("Show navigation labels", isOn: $showsNavigationLabels)
+                        } header: {
+                            Text("Accessibility")
+                        } footer: {
+                            Text("Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
+                        }
+
+                        Section("Privacy & Data") {
+                            LabeledContent("Profile storage", value: "This device")
+                            LabeledContent("Online account", value: "None")
+                            LabeledContent("Network access", value: "Not used")
+
+                            Text("Profile settings are separate from your Board, labels, and attachments.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                }
-                .tabItem {
-                    Label("Account", systemImage: "person.crop.circle")
-                }
-
-                Form {
-                    Section {
-                        Button { showsShortcutEditor = true } label: {
-                            Label("My shortcuts", systemImage: "square.grid.3x2")
-                        }
-                        Picker("Week starts on", selection: $firstWeekday) {
-                            Text("Sunday").tag(1)
-                            Text("Monday").tag(2)
-                        }
-                        .onAppear {
-                            guard !didLoadWeekStart else { return }
-                            firstWeekday = planningAccess?.document.firstWeekday ?? Calendar.current.firstWeekday
-                            didLoadWeekStart = true
-                        }
-                        Toggle("Show due dates on new cards", isOn: $showsDueDatesOnNewCards)
-                        Picker("Default Today list", selection: $defaultListID) {
-                            Text("Choose each day").tag(nil as Int?)
-
-                            ForEach(lists) { list in
-                                Text(list.title).tag(Optional(list.id))
-                            }
-                        }
-                    } header: {
-                        Text("Planning")
-                    } footer: {
-                        Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
-                    }
-
-                    Section {
-                        Toggle("Reduce supporting content", isOn: $usesReducedContent)
-                        Toggle("Use larger primary controls", isOn: $usesLargeControls)
-                        Toggle("Show navigation labels", isOn: $showsNavigationLabels)
-                    } header: {
-                        Text("Accessibility")
-                    } footer: {
-                        Text("Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings.")
-                    }
-
-                    Section("Privacy & Data") {
-                        LabeledContent("Profile storage", value: "This device")
-                        LabeledContent("Online account", value: "None")
-                        LabeledContent("Network access", value: "Not used")
-
-                        Text("Profile settings are separate from your Board, labels, and attachments.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
                 }
             }
+            .background(Color(.systemGroupedBackground))
 
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
             .sheet(isPresented: $showsShortcutEditor) {

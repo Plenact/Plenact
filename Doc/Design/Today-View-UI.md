@@ -118,3 +118,7 @@ Each saved drawing is a photo attachment with a PNG preview and an optional `dra
 Saved previews open in the attachment viewer; Edit drawing reopens the strokes. The editor Export menu offers PNG with white or transparent background and JPEG with white background. Exports crop to the marks plus padding and cap the longest raster edge at 4096 pixels. The system share sheet handles Files, Photos and sharing; export never changes the stored strokes. Temporary exports are removed after sharing. Date fields remain available in the capture editor.
 
 Automated checks cover editable-stroke/metadata round trips, dual-file retention and rejected/partial-save cleanup, legacy photo decoding, PNG/JPEG output and transparency, and hosted phone/tablet layouts without saving. Physical finger/Pencil interaction and destination share activities require device acceptance.
+
+### Compact capture and lighter panels — October 17
+
+Quick capture omits its visible heading and “Adding to…” destination caption; the input placeholder provides the context. Its accessibility label and destination hint remain, and a missing destination still shows Choose today's list first. Quick capture and Today's Focus use the shared material panel at 50% background opacity on both iPhone and iPad; text, icons, input controls and other panels retain their existing opacity. Removing the redundant labels lets subsequent Today content move upward naturally.

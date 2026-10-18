@@ -1,6 +1,6 @@
 # Plenact for iOS
 
-Version: 1.0   (10/16/19)
+Version: 1.1   (10/17/26)
 
 Plenact is an iPhone planning and organization app being built around a calm, list-based daily workflow. The current revision provides a Today front door and a horizontally navigable kanban Board for tasks, routines, ideas, and open work
 

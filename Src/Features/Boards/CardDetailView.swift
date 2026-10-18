@@ -133,6 +133,7 @@ struct CardDetailView: View {
         case noteAttachments
         case appearance
         case cover
+        case addDrawing(DrawingCaptureDraft)         /* New drawing attached only after Done */
         case addLink                                /* Manual web-link entry sheet                         */
         case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
         case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
@@ -158,6 +159,7 @@ struct CardDetailView: View {
                 case .cover: "cover"
                 case .appearance:                        "appearance"
                 case .addLink:                           "add-link"
+                case .addDrawing(let draft):             "add-drawing-\(draft.id.uuidString)"
                 case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
                 case .actionDetail(let checklistID, let itemID): /* Owning checklist and action IDs */
                     "action-detail-\(checklistID.uuidString)-\(itemID.uuidString)"
@@ -879,6 +881,26 @@ struct CardDetailView: View {
 
             attachmentNoticeMessage = "One or more selected photos or videos could not be added. Please try again."
             showingAttachmentNotice = true
+        }
+    }
+
+
+    /// Attach both the preview and editable strokes, publishing only after the owner accepts the update.
+    private func addDrawingAttachment(_ draft: DrawingCaptureDraft) -> Bool {
+        guard !hasDeletedCard, !hasMovedCard else { return false }
+        let previous = attachments
+        do {
+            return try QuickCaptureMediaCommit.save([], drawings: [draft]) { imported in
+                attachments.append(contentsOf: imported)
+                guard syncCardState(attachments: attachments) else {
+                    attachments = previous
+                    return false
+                }
+                return true
+            }
+        } catch {
+            attachments = previous
+            return false
         }
     }
 
@@ -2944,7 +2966,8 @@ struct CardDetailView: View {
                         photoSelection:   $selectedPhotoItems,
                         onAddLink:        { activeSheet = .addLink },
                         onPasteClipboard: addClipboardAttachment,
-                        onComingSoon:     showAttachmentSourceComingSoon
+                        onComingSoon:     showAttachmentSourceComingSoon,
+                        onAddDrawing:     { activeSheet = .addDrawing(DrawingCaptureDraft()) }
                     )
                     .databaseActivityOverlay()
 
@@ -2978,6 +3001,10 @@ struct CardDetailView: View {
 
                 case .cover:
                     cardCoverPanel { activeSheet = nil }
+
+                case .addDrawing(let draft):
+                    DrawingCaptureEditor(initial: draft, onSave: addDrawingAttachment)
+                        .databaseActivityOverlay()
 
                 case .addLink:
                     CardLinkAttachmentSheet(onSave: addWebLink)

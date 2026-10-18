@@ -16,6 +16,10 @@ The profile is stored in local `UserDefaults` under `Plenact.LocalProfile.v1`. R
 
 No password, token, Sign in with Apple credential, analytics identifier, or remote account is created. Future authentication should replace or wrap the store boundary rather than changing the local profile into a pretend online account.
 
+## Account & Settings navigation
+
+A segmented Account / Settings control sits directly below the sheet's navigation bar on iPhone and iPad. Account opens by default. Each tab has its own scrolling form; the selector stays above the form. Profile and preference drafts live in the parent view, so switching tabs preserves edits until the existing Save or Cancel action. Avatar editing and shortcut selection keep their existing navigation and save behavior.
+
 ## Personalization
 
 - A preferred Board list may fill Today when no date-specific choice exists.

@@ -2772,7 +2772,8 @@ private struct TodayHomeView: View {
                     browseListsAction
                 }
                         .padding(20)
-                        .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : -40)
+                        // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone.
+                        .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 16)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, 112)
             }

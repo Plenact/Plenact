@@ -122,3 +122,5 @@ Automated checks cover editable-stroke/metadata round trips, dual-file retention
 ### Compact capture and lighter panels — October 17
 
 Quick capture omits its visible heading and “Adding to…” destination caption; the input placeholder provides the context. Its accessibility label and destination hint remain, and a missing destination still shows Choose today's list first. Quick capture and Today's Focus use the shared material panel at 50% background opacity on both iPhone and iPad; text, icons, input controls and other panels retain their existing opacity. Removing the redundant labels lets subsequent Today content move upward naturally.
+
+The iPhone Today content stack adds 56 points of top spacing relative to the compact-capture revision (top adjustment -40 → 16). This moves the slogan, capture, focus and shortcuts down together, bringing the shortcut count labels close to the raised New button again. The header, toolbar and iPad spacing are unchanged; content remains scrollable.

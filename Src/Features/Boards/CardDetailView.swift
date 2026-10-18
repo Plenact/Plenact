@@ -2124,7 +2124,7 @@ struct CardDetailView: View {
 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     ItemAppearanceMark(appearance: appearance)
-                    TextField("Note title", text: $titleText, axis: .vertical)
+                    TextField("Note title", text: $titleText, axis: .vertical).textInputAutocapitalization(.sentences)
                         .font(.largeTitle.weight(.bold))
                         .focused($focusedField, equals: .title)
                         .accessibilityLabel("Note title")
@@ -2617,7 +2617,7 @@ struct CardDetailView: View {
 
                 VStack(alignment: .leading) {
 
-                    TextField("Section heading (optional)", text: $titleText, axis: .vertical)
+                    TextField("Section heading (optional)", text: $titleText, axis: .vertical).textInputAutocapitalization(.sentences)
                         .font(.title2.weight(.bold))
                         .focused($focusedField, equals: .title)
                         .submitLabel(.done)
@@ -2678,9 +2678,8 @@ struct CardDetailView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 ItemAppearanceMark(appearance: appearance)
-                                TextField("Card title", text: $titleText)
+                                TextField("Card title", text: $titleText).textInputAutocapitalization(.sentences)
                                     .font(.title2.weight(.bold))
-                                    .textInputAutocapitalization(.never)
                                     .focused($focusedField, equals: .title)
                                     .submitLabel(.done)
                                     .onSubmit { dismissEditing() }
@@ -2694,9 +2693,8 @@ struct CardDetailView: View {
                                 }
 
                             if appearance?.hidesSubtitle(subtitleText) != true || focusedField == .subtitle {
-                            TextField("Card subtitle", text: $subtitleText)
+                            TextField("Card subtitle", text: $subtitleText).textInputAutocapitalization(.sentences)
                                 .font(.subheadline)
-                                .textInputAutocapitalization(.never)
                                 .foregroundColor(focusedField == .subtitle ? Color.secondary : Color.clear)
                                 .focused($focusedField, equals: .subtitle)
                                 .submitLabel(.done)
@@ -3495,8 +3493,7 @@ private struct CardMembersSheet: View {
                                 TextField("Name or email", text: Binding(
                                     get: { members[index].displayName },
                                     set: { members[index].displayName = $0 }
-                                ))
-                                .textInputAutocapitalization(.never)
+                                )).textInputAutocapitalization(.sentences)
                             } else {
                                 Text(members[index].displayName)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -3519,8 +3516,7 @@ private struct CardMembersSheet: View {
 
                     HStack {
 
-                        TextField("Name or email", text: $memberDraft)
-                            .textInputAutocapitalization(.never)
+                        TextField("Name or email", text: $memberDraft).textInputAutocapitalization(.sentences)
                             .onSubmit(addMember)
 
                         Button(action: addMember) {
@@ -4047,7 +4043,7 @@ struct ChecklistBlock: View {
                 }
 
                 HStack {
-                    TextField("Add item...", text: $newItemText, axis: .vertical)
+                    TextField("Add item...", text: $newItemText, axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(1...6)
                         .submitLabel(.done)
                         .onSubmit(submitNewItems)
@@ -4077,7 +4073,7 @@ struct ChecklistBlock: View {
             }
         }
         .alert("Rename Checklist", isPresented: $isRenaming) {
-            TextField("Checklist title", text: $titleDraft)
+            TextField("Checklist title", text: $titleDraft).textInputAutocapitalization(.sentences)
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 onRename(titleDraft)
@@ -4581,6 +4577,7 @@ struct RichTextEditor: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> UITextView {
         let view = UITextView()
+        view.autocapitalizationType = .sentences
         view.backgroundColor = .clear
         view.isScrollEnabled = false
         view.adjustsFontForContentSizeCategory = true
@@ -4778,6 +4775,7 @@ struct ChecklistTextField: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
+        field.autocapitalizationType = .sentences
         field.placeholder = "Item"
         field.font = .preferredFont(forTextStyle: .subheadline)
         field.adjustsFontForContentSizeCategory = true

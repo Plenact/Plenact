@@ -205,9 +205,9 @@ struct TodayReviewView: View {
                         }
                     }
                 } else {
-                    Section("What helped?") { TextField("A useful step, a person, or a small win (optional)", text: text(\.helped), axis: .vertical).lineLimit(2...5) }
-                    Section("What was difficult?") { TextField("Something to learn from, without judgment (optional)", text: text(\.difficult), axis: .vertical).lineLimit(2...5) }
-                    Section("One thought for tomorrow") { TextField("Leave yourself a gentle starting point (optional)", text: text(\.tomorrow), axis: .vertical).lineLimit(2...5) }
+                    Section("What helped?") { TextField("A useful step, a person, or a small win (optional)", text: text(\.helped), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("What was difficult?") { TextField("Something to learn from, without judgment (optional)", text: text(\.difficult), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("One thought for tomorrow") { TextField("Leave yourself a gentle starting point (optional)", text: text(\.tomorrow), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                     if let completed = review.completedAt { Text("Last reviewed " + completed.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary) }
                 }
                 Section {
@@ -403,8 +403,8 @@ struct WeeklyReviewView: View {
                             }.padding(.vertical, 4)
                         }
                     }
-                    Section("Your highlights") { TextField("Wins, meaningful moments, or progress (optional)", text: binding(\.highlights), axis: .vertical).lineLimit(2...5) }
-                    Section("What did you learn?") { TextField("What worked, and what would you change? (optional)", text: binding(\.learned), axis: .vertical).lineLimit(2...5) }
+                    Section("Your highlights") { TextField("Wins, meaningful moments, or progress (optional)", text: binding(\.highlights), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("What did you learn?") { TextField("What worked, and what would you change? (optional)", text: binding(\.learned), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                 } else if draft.step == 1 {
                     Section("Review In the Queue") {
                         Text("Keep worthwhile work for later. The Queue does not have to be empty. These are today's live Queue items, even when reviewing a past week.").foregroundStyle(.secondary)
@@ -425,14 +425,14 @@ struct WeeklyReviewView: View {
                         ForEach(draft.decisions) { decision in VStack(alignment: .leading) { Text(decision.source.title); Text(decision.action.title).font(.caption).foregroundStyle(.secondary) } }
                     }
                 } else {
-                    Section("Next week's direction") { TextField("What deserves your attention? (optional)", text: binding(\.direction), axis: .vertical).lineLimit(2...5) }
+                    Section("Next week's direction") { TextField("What deserves your attention? (optional)", text: binding(\.direction), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                     Section {
                         ForEach(draft.priorities) { priority in Text(priority.resolve(in: sources)?.card.word ?? priority.title) }
                             .onDelete { draft.priorities.remove(atOffsets: $0) }.onMove { draft.priorities.move(fromOffsets: $0, toOffset: $1) }
                         Button("Choose next week's priorities", systemImage: "plus.circle") { showsPicker = true }
                     } header: { Text("Priorities for next week") } footer: { Text("These links guide next week; they do not automatically move items or replace daily plans. Use Edit to reorder or remove links.") }
-                    Section("Make room for") { TextField("Time, energy, or commitments (optional)", text: binding(\.constraints), axis: .vertical).lineLimit(2...5) }
-                    Section("Risks to consider") { TextField("What might get in the way? (optional)", text: binding(\.risks), axis: .vertical).lineLimit(2...5) }
+                    Section("Make room for") { TextField("Time, energy, or commitments (optional)", text: binding(\.constraints), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("Risks to consider") { TextField("What might get in the way? (optional)", text: binding(\.risks), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                 }
                 if !loadFailed {
                     Section {

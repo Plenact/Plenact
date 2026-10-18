@@ -3066,7 +3066,7 @@ private struct TodayHomeView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Browse templates")
 
-                TextField("Add a card to today…", text: $quickCaptureTitle)
+                TextField("Add a card to today…", text: $quickCaptureTitle).textInputAutocapitalization(.sentences)
                     .submitLabel(.done)
                     .onSubmit(addQuickCard)
                     .accessibilityLabel("Quick capture card title")
@@ -3621,7 +3621,7 @@ struct QuickNoteComposer: View {
                     Button(voice.transcript.isEmpty ? "Transcribe recording" : "Transcribe again", systemImage: "text.bubble") { Task { await voice.transcribe() } }
                         .disabled(voice.isRecording)
                 }
-                TextField("Transcript · review or edit before saving", text: $voice.transcript, axis: .vertical)
+                TextField("Transcript · review or edit before saving", text: $voice.transcript, axis: .vertical).textInputAutocapitalization(.sentences)
                     .lineLimit(3...10).disabled(voice.isRecording || voice.isTranscribing)
             }
             if let error = voice.errorMessage { Text(error).font(.callout).foregroundStyle(.secondary) }
@@ -3683,7 +3683,7 @@ struct QuickNoteComposer: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
                             destinationPicker
-                            TextField("Note title", text: $title, axis: .vertical)
+                            TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                                 .font(.largeTitle.weight(.bold))
                             NoteCreationDateLabel(createdAt: createdAt)
                             if captureAction == .photo { photoControls }
@@ -3698,16 +3698,16 @@ struct QuickNoteComposer: View {
                 } else {
             Form {
                 Section(presentation.title) {
-                    TextField("Title", text: $title, axis: .vertical)
+                    TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(1...6)
-                    TextField("Subtitle (optional)", text: $subtitle)
+                    TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
                     RichTextEditor(placeholder: "Details (optional)", text: $description)
                 }
 
                 if (template != nil || captureAction == .checklist || !actions.isEmpty) && presentation == .card {
                     Section("Actions") {
                         ForEach($actions) { $action in
-                            TextField("Action", text: $action.title)
+                            TextField("Action", text: $action.title).textInputAutocapitalization(.sentences)
                         }
                         .onDelete { actions.remove(atOffsets: $0) }
                         Button("Add action", systemImage: "plus") {
@@ -3949,8 +3949,8 @@ private struct NewPersonalNoteComposer: View {
                 if presentation == .card {
                     Form {
                         Section("Card") {
-                            TextField("Title", text: $draft.title, axis: .vertical).lineLimit(1...6)
-                            TextField("Subtitle (optional)", text: $subtitle)
+                            TextField("Title", text: $draft.title, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(1...6)
+                            TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
                             RichTextEditor(placeholder: "Details (optional)", text: $draft.body)
                         }
                         Section("Add to") { destinationMenu }
@@ -3959,7 +3959,7 @@ private struct NewPersonalNoteComposer: View {
             ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 destinationMenu
-                TextField("Note title", text: $draft.title, axis: .vertical)
+                TextField("Note title", text: $draft.title, axis: .vertical).textInputAutocapitalization(.sentences)
                     .font(.largeTitle.weight(.bold))
                     .focused($focusedField, equals: .title)
                     .accessibilityLabel("Note title")
@@ -6954,11 +6954,11 @@ private struct PersonalCollectionSettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Name", text: $draft.title)
+                    TextField("Name", text: $draft.title).textInputAutocapitalization(.sentences)
                     TextField("Description (optional)", text: Binding(
                         get: { draft.collectionDescription ?? "" },
                         set: { draft.collectionDescription = $0 }
-                    ), axis: .vertical)
+                    ), axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(1...3)
                     LabeledContent("Type", value: draft.kind.rawValue)
                     Picker("Icon", selection: $draft.icon) {
@@ -8096,7 +8096,12 @@ private struct TodayFocusSection: View {
     let onOpenCard: (KanbanCard) -> Void
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
-    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 42
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    @ScaledMetric(relativeTo: .body) private var phoneRowHeight: CGFloat = 48
+    @ScaledMetric(relativeTo: .body) private var padRowHeight: CGFloat = 54
+    @ScaledMetric(relativeTo: .body) private var phoneTaskSize: CGFloat = 18
+    @ScaledMetric(relativeTo: .body) private var padTaskSize: CGFloat = 20
+    private var rowHeight: CGFloat { isPad ? padRowHeight : phoneRowHeight }
     @Environment(\.displayScale) private var displayScale
     @State private var measuredListingHeight: CGFloat?
 
@@ -8104,6 +8109,27 @@ private struct TodayFocusSection: View {
     private var listingHeight: CGFloat {
         measuredListingHeight ?? (rowHeight * CGFloat(min(openCards.count, 4))
             + CGFloat(max(0, min(openCards.count, 4) - 1)) / displayScale)
+    }
+
+    private var focusTitle: some View {
+        Text("Today's Focus")
+            .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
+    }
+
+    private var completionButton: some View {
+        let completedCount = cards.filter(\.isTitleChecked).count
+        return Button(action: onOpenTodayList) {
+            Text("\(completedCount) of \(cards.count) complete")
+                .font(isPad ? .subheadline : .caption)
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(completedCount) of \(cards.count) complete")
+        .accessibilityHint(completedCount < cards.count
+            ? "Opens today's list at the first unfinished item"
+            : "Opens today's completed list")
+        .accessibilityIdentifier("today.focus.progress")
     }
 
     private var focusRows: some View {
@@ -8116,7 +8142,7 @@ private struct TodayFocusSection: View {
                         Image(systemName: "square")
                             .font(.title3)
                             .foregroundStyle(.secondary)
-                            .frame(width: 36, height: rowHeight)
+                            .frame(width: isPad ? 48 : 44, height: rowHeight)
                             .contentShape(Rectangle())
                     }
 
@@ -8127,6 +8153,7 @@ private struct TodayFocusSection: View {
                         HStack {
                             ItemAppearanceMark(appearance: card.appearance)
                             Text(card.word)
+                                .font(.system(size: isPad ? padTaskSize : phoneTaskSize))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer(minLength: 8)
@@ -8164,28 +8191,20 @@ private struct TodayFocusSection: View {
     ///
     var body: some View { /* Weekday-list progress and unfinished-card shortcuts */
         VStack(alignment: .leading, spacing: 10) {
-            Text("Today's Focus")
-                .font(.title2.weight(.semibold))
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    focusTitle.fixedSize()
+                    Spacer(minLength: 0)
+                    if list != nil { completionButton.fixedSize() }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    focusTitle
+                    if list != nil { completionButton }
+                }
+            }
 
             if list != nil {
-
-                let completedCount = cards.filter(\.isTitleChecked).count /* Completed records counted for Today's progress */
-
-                HStack {
-                    Spacer()
-                    Button(action: onOpenTodayList) {
-                        Text("\(completedCount) of \(cards.count) complete")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(completedCount) of \(cards.count) complete")
-                    .accessibilityHint(completedCount < cards.count
-                        ? "Opens today's list at the first unfinished item"
-                        : "Opens today's completed list")
-                    .accessibilityIdentifier("today.focus.progress")
-                }
+                let completedCount = cards.filter(\.isTitleChecked).count
 
                 ProgressView(value: Double(completedCount), total: Double(max(cards.count, 1)))
                     .tint(.accentColor)
@@ -8224,8 +8243,8 @@ private struct TodayFocusSection: View {
 
                 Button(action: onOpenTodayList) {
                     Label("Open today", systemImage: "arrow.right")
-                        .font(.subheadline.weight(.medium))
-                        .frame(minHeight: 36)
+                        .font(.subheadline)
+                        .frame(minHeight: 32)
                 }
 
                 .buttonStyle(.plain)

@@ -153,3 +153,8 @@ user leaves the list. Restore applies only completion flags, preserving other ed
 
 Focus task titles open the Card or Note directly; its return arrow dismisses to Today.
 Checkboxes still toggle completion; progress and Open today still open the Day list.
+
+Focus typography uses separate iPhone/iPad values: task text 18/20 points and
+rows 48/54 points before Dynamic Type scaling. Title and tappable progress share
+a header row, stacking when space is constrained. The thin progress bar remains
+below, with a quieter footer. Four-row scrolling and exterior balancing space remain.

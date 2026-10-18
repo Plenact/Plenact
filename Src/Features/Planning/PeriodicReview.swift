@@ -188,35 +188,35 @@ struct PeriodicReviewView: View {
                                     }.padding(.vertical, 4)
                                 }
                             } header: { Text("Saved weekly reflections") } footer: { Text("Weeks overlapping the chosen dates are included in full. These are current saved weekly reflections, not a frozen historical summary.") }
-                            Section("Highlights and achievements") { TextField("What mattered during this period? (optional)", text: text(\.highlights), axis: .vertical).lineLimit(2...5) }
-                            Section("What changed or became clear?") { TextField("Lessons to take forward (optional)", text: text(\.learned), axis: .vertical).lineLimit(2...5) }
+                            Section("Highlights and achievements") { TextField("What mattered during this period? (optional)", text: text(\.highlights), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                            Section("What changed or became clear?") { TextField("Lessons to take forward (optional)", text: text(\.learned), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                         } else if review.step == 1 {
                             Section { Text("Objectives carry forward from the latest saved checkpoint ending before this period. Changes here belong to this checkpoint; earlier reviews keep their original record.").foregroundStyle(.secondary) }
                             ForEach(review.objectives) { item in
                                 Section {
                                     let value = objective(item.id)
-                                    TextField("Objective", text: value.title, axis: .vertical)
+                                    TextField("Objective", text: value.title, axis: .vertical).textInputAutocapitalization(.sentences)
                                     if let previous = review.startingObjectives.first(where: { $0.id == item.id }) {
                                         Text("Carried forward: " + previous.title + " · " + previous.status.rawValue).font(.caption).foregroundStyle(.secondary)
                                         if !previous.progress.isEmpty { Text("Previous progress: " + previous.progress).font(.caption).foregroundStyle(.secondary) }
                                     }
                                     Picker("Status", selection: value.status) { ForEach(ObjectiveStatus.allCases) { Text($0.rawValue).tag($0) } }
-                                    TextField("Progress and evidence (optional)", text: value.progress, axis: .vertical).lineLimit(2...5)
-                                    TextField("Next useful step (optional)", text: value.nextStep, axis: .vertical).lineLimit(2...5)
+                                    TextField("Progress and evidence (optional)", text: value.progress, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5)
+                                    TextField("Next useful step (optional)", text: value.nextStep, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5)
                                 }
                             }
                             Section {
-                                TextField("Something you want to work toward", text: $objectiveTitle, axis: .vertical)
+                                TextField("Something you want to work toward", text: $objectiveTitle, axis: .vertical).textInputAutocapitalization(.sentences)
                                 Button("Add objective", systemImage: "plus.circle", action: addObjective).disabled(objectiveTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             } header: { Text("Add an objective") } footer: { Text("Pause or let go of an objective when it no longer fits. No objective is required to finish a review.") }
                         } else {
-                            Section("Direction for the next period") { TextField("What deserves your attention now? (optional)", text: text(\.direction), axis: .vertical).lineLimit(2...5) }
+                            Section("Direction for the next period") { TextField("What deserves your attention now? (optional)", text: text(\.direction), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                             Section {
                                 ForEach(review.priorities) { priority in Text(priority.resolve(in: sources)?.card.word ?? priority.title) }
                                     .onDelete { draft?.priorities.remove(atOffsets: $0) }.onMove { draft?.priorities.move(fromOffsets: $0, toOffset: $1) }
                                 Button("Choose priorities", systemImage: "plus.circle") { showsPicker = true }.disabled(access == nil)
                             } header: { Text("Connect to your work") } footer: { Text("These links support your direction without moving items or replacing weekly or daily plans. Use Edit to reorder or remove links.") }
-                            Section("Risks and constraints ahead") { TextField("What needs preparation or room? (optional)", text: text(\.risks), axis: .vertical).lineLimit(2...5) }
+                            Section("Risks and constraints ahead") { TextField("What needs preparation or room? (optional)", text: text(\.risks), axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                         }
                         Section {
                             if review.step > 0 { Button("Previous step") { draft?.step -= 1 } }
@@ -226,7 +226,7 @@ struct PeriodicReviewView: View {
                         }
                     } else {
                         Section("Choose a period or checkpoint") {
-                            TextField("Name this checkpoint", text: $title)
+                            TextField("Name this checkpoint", text: $title).textInputAutocapitalization(.sentences)
                             DatePicker("From", selection: $start, displayedComponents: .date)
                             DatePicker("Through", selection: $end, displayedComponents: .date)
                             Text("Use the same date for a single-day checkpoint. The dates stay fixed after you begin.").font(.footnote).foregroundStyle(.secondary)

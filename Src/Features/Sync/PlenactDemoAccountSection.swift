@@ -170,7 +170,7 @@ struct PlenactDemoAccountSection: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
 
-                        TextField("Display name", text: $newMemberDisplayName)
+                        TextField("Display name", text: $newMemberDisplayName).textInputAutocapitalization(.sentences)
 
                         SecureField("Temporary password", text: $newMemberPassword)
                             .textContentType(.newPassword)
@@ -497,7 +497,7 @@ struct PlenactDemoAccountSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 if isEditor, let cardBinding = cardBinding(cardID: card.id) { /* Editable remote-card binding */
 
-                    TextField("Card title", text: cardBinding.word)
+                    TextField("Card title", text: cardBinding.word).textInputAutocapitalization(.sentences)
                     Toggle("Complete", isOn: cardBinding.isTitleChecked)
                         .font(.caption)
                 } else {
@@ -522,7 +522,7 @@ struct PlenactDemoAccountSection: View {
                             get: { manualAssigneeDrafts[card.id, default: ""] },
                             set: { manualAssigneeDrafts[card.id] = $0 }
                         )
-                    )
+                    ).textInputAutocapitalization(.sentences)
                     HStack {
                         ForEach(card.members.filter { $0.kind == .manual }) { assignee in
                             Button {

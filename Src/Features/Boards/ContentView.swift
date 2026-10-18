@@ -4106,8 +4106,7 @@ private struct BoardSettingsView: View {
 
             .alert("Edit member", isPresented: $isRenamingMember) {
 
-                TextField("Name or email", text: $memberNameDraft)
-                    .textInputAutocapitalization(.never)
+                TextField("Name or email", text: $memberNameDraft).textInputAutocapitalization(.sentences)
 
                 Button("Cancel", role: .cancel) {}
 
@@ -5084,10 +5083,9 @@ struct NewKanbanCardSheet: View {
             Form {
 
                 Section {
-                    TextField("Title (or --- Ideas for a section)", text: draft.binding(\.title), axis: .vertical)
+                    TextField("Title (or --- Ideas for a section)", text: draft.binding(\.title), axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(1...6)
-                        .textInputAutocapitalization(.never)
-                    TextField("Subtitle (optional)", text: draft.binding(\.subtitle))
+                    TextField("Subtitle (optional)", text: draft.binding(\.subtitle)).textInputAutocapitalization(.sentences)
                     RichTextEditor(placeholder: "Description (optional)", text: draft.binding(\.description))
                 } header: {
                     Text("\(presentation.title) details")
@@ -5474,11 +5472,11 @@ struct ListInfoEditorSheet: View {
         NavigationStack {
             Form {
                 Section("Title") {
-                    TextField("List title", text: $title)
+                    TextField("List title", text: $title).textInputAutocapitalization(.sentences)
                         .accessibilityIdentifier("list-editor-title")
                 }
                 Section {
-                    TextField("Subtitle", text: $subtitle, axis: .vertical)
+                    TextField("Subtitle", text: $subtitle, axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(2...5)
                         .accessibilityIdentifier("list-editor-subtitle")
                 } header: {
@@ -5962,8 +5960,7 @@ struct KanbanCardView: View {
         .padding(.horizontal, 4)
         .alert("Rename \(card.displayFormat.title)", isPresented: $isRenaming) {
             
-            TextField("\(card.displayFormat.title) title", text: $renameDraft)
-                .textInputAutocapitalization(.never)
+            TextField("\(card.displayFormat.title) title", text: $renameDraft).textInputAutocapitalization(.sentences)
             
             Button("Cancel", role: .cancel) {}
             
@@ -6159,11 +6156,9 @@ private struct CardInfoEditorSheet: View {
             Form {
                 Section("Card details") {
                     
-                    TextField("Title", text: $title)
-                        .textInputAutocapitalization(.never)
+                    TextField("Title", text: $title).textInputAutocapitalization(.sentences)
                     
-                    TextField("Subtitle", text: $subtitle)
-                        .textInputAutocapitalization(.never)
+                    TextField("Subtitle", text: $subtitle).textInputAutocapitalization(.sentences)
                 }
 
                 Section("Description") {

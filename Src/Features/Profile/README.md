@@ -34,3 +34,10 @@ Plan Settings opens from the gear in Today’s header. It shares planning and di
 preferences with Account & Settings, including Today’s Focus count. Preferences also
 save without creating a profile and survive profile removal. Shortcuts and day/week
 templates open their existing editors with separate save controls.
+
+
+Ordinary writing fields explicitly request sentence capitalization, including titles,
+subtitles, planning reflections, captions, checklist text and rich-text bodies.
+Search, email, URLs, usernames and emoji retain their existing input behavior;
+label/category names retain word capitalization and color hex input stays uppercase.
+These keyboard traits do not rewrite existing content.

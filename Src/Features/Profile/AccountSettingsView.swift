@@ -447,7 +447,7 @@ struct AccountSettingsView: View {
                             .accessibilityLabel("Choose profile icon")
                             .accessibilityHint("Choose an icon or use your initials.")
 
-                            TextField("Display name", text: $displayName)
+                            TextField("Display name", text: $displayName).textInputAutocapitalization(.sentences)
                                 .textContentType(.name)
 
                             TextField("Email (optional)", text: $email)
@@ -455,7 +455,7 @@ struct AccountSettingsView: View {
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
 
-                            TextField("Planning context (optional)", text: $context)
+                            TextField("Planning context (optional)", text: $context).textInputAutocapitalization(.sentences)
 
                         }
 

@@ -1878,7 +1878,7 @@ struct CardPhotoCaptionSheet: View {
                     CardCoverPreview(attachment: photo, height: 180, unavailableTitle: "Photo unavailable")
                 }
                 Section("Caption") {
-                    TextField("Optional caption", text: $caption, axis: .vertical)
+                    TextField("Optional caption", text: $caption, axis: .vertical).textInputAutocapitalization(.sentences)
                         .accessibilityIdentifier("photoGallery.captionField")
                     Text("Shown over the bottom of the photo. Clear the text to remove its caption.")
                         .font(.caption)

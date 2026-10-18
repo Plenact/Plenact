@@ -141,7 +141,7 @@ struct PlanningTemplateEditor: View {
         NavigationStack {
             Form {
                 Section("Template") {
-                    TextField("Name", text: $template.name)
+                    TextField("Name", text: $template.name).textInputAutocapitalization(.sentences)
                     LabeledContent("Kind", value: template.kind.rawValue)
                     Text("These are reusable items. Completion and activity history reset when applied.")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -206,7 +206,7 @@ private struct PlanningTemplateCardEditor: View {
     var body: some View {
         Form {
             Section("Item") {
-                TextField("Title", text: $card.word, axis: .vertical)
+                TextField("Title", text: $card.word, axis: .vertical).textInputAutocapitalization(.sentences)
                 ContentCreationKindPicker(presentation: $card.presentation)
                 RichTextEditor(placeholder: "Details", text: Binding(get: { card.descriptionOverride ?? "" }, set: { card.descriptionOverride = $0 }))
             }
@@ -248,8 +248,8 @@ private struct PlanningTemplateChecklistEditor: View {
         Section {
             TextField("Checklist name", text: Binding(get: { checklist.title }, set: { title in
                 checklist = KanbanChecklist(id: checklist.id, title: title, items: checklist.items, completedItemIndices: [])
-            }))
-            ForEach(items) { $item in TextField("Action", text: $item.title) }
+            })).textInputAutocapitalization(.sentences)
+            ForEach(items) { $item in TextField("Action", text: $item.title).textInputAutocapitalization(.sentences) }
                 .onDelete { offsets in
                     var values = items.wrappedValue; values.remove(atOffsets: offsets); items.wrappedValue = values
                 }

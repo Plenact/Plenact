@@ -239,13 +239,13 @@ struct TodayPlanView: View {
             } header: { Text("What matters today") }
             footer: { Text("Priorities link to existing items. Choosing, reordering, or removing a priority does not move or delete the original. Swipe to remove a link; use Edit to reorder.") }
             Section("Your intention") {
-                TextField("What would make today meaningful? (optional)", text: $draft.intention, axis: .vertical).lineLimit(2...6)
+                TextField("What would make today meaningful? (optional)", text: $draft.intention, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...6)
             }
             Section("Make room for") {
-                TextField("Time, energy, or other constraints (optional)", text: $draft.constraints, axis: .vertical).lineLimit(2...6)
+                TextField("Time, energy, or other constraints (optional)", text: $draft.constraints, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...6)
             }
             Section("Risks or concerns") {
-                TextField("Anything that could get in the way? (optional)", text: $draft.concerns, axis: .vertical).lineLimit(2...6)
+                TextField("Anything that could get in the way? (optional)", text: $draft.concerns, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...6)
             }
             Section {
                 if let saved = baseline?.updatedAt {
@@ -409,8 +409,8 @@ private struct NewDailyPriorityView: View {
                         Text("Card").tag(ItemPresentation.card)
                         Text("Note").tag(ItemPresentation.note)
                     }.pickerStyle(.segmented)
-                    TextField("Title", text: $title, axis: .vertical)
-                    TextField(presentation == .note ? "Start writing…" : "Details (optional)", text: $bodyText, axis: .vertical).lineLimit(4...10)
+                    TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
+                    TextField(presentation == .note ? "Start writing…" : "Details (optional)", text: $bodyText, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(4...10)
                 }
                 Section("Save in") {
                     Picker("List", selection: $destination) {
@@ -576,9 +576,9 @@ struct TodayVisionView: View {
                     } header: { Text("In the order that matters") }
                     footer: { Text("Use Edit to reorder or remove links. The original items stay where they are.") }
                 } else {
-                    Section("Your intention") { TextField("What would make today meaningful?", text: $plan.intention, axis: .vertical).lineLimit(2...5) }
-                    Section("Make room for") { TextField("Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical).lineLimit(2...5) }
-                    Section("Risks or concerns") { TextField("Anything that might get in the way?", text: $plan.concerns, axis: .vertical).lineLimit(2...5) }
+                    Section("Your intention") { TextField("What would make today meaningful?", text: $plan.intention, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("Make room for") { TextField("Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
+                    Section("Risks or concerns") { TextField("Anything that might get in the way?", text: $plan.concerns, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                     Section { Text("These reflections are optional. Choose a plan that fits the day you have.").foregroundStyle(.secondary) }
                 }
                 Section {
@@ -947,7 +947,7 @@ struct TodayCheckInView: View {
                         TextField("Emoji", text: $customEmoji)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                             .accessibilityHint("Enter one emoji using the emoji keyboard")
-                        TextField("Feeling, such as quietly hopeful", text: $customFeeling)
+                        TextField("Feeling, such as quietly hopeful", text: $customFeeling).textInputAutocapitalization(.sentences)
                             .onChange(of: customFeeling) { _, value in customFeeling = String(value.prefix(40)) }
                         if selectedMood == nil {
                             Text("Enter one emoji and a feeling of up to 40 characters.").font(.caption).foregroundStyle(.secondary)
@@ -957,11 +957,11 @@ struct TodayCheckInView: View {
                     }
                 } header: { Text("How are you feeling?") }
                 footer: { Text("Optional. Choose what fits this moment; each new Check-in starts fresh.") }
-                Section("What changed?") { TextField("New information, a small win, or a change of plan (optional)", text: $changed, axis: .vertical).lineLimit(2...5) }
+                Section("What changed?") { TextField("New information, a small win, or a change of plan (optional)", text: $changed, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5) }
                 Section("Is this still realistic?") {
-                    TextField("Your intention", text: $plan.intention, axis: .vertical).lineLimit(2...5)
-                    TextField("Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical).lineLimit(2...5)
-                    TextField("Risks or concerns", text: $plan.concerns, axis: .vertical).lineLimit(2...5)
+                    TextField("Your intention", text: $plan.intention, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5)
+                    TextField("Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5)
+                    TextField("Risks or concerns", text: $plan.concerns, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(2...5)
                 }
                 Section {
                     Button("Save check-in", action: save).disabled(moodChoice == .custom && selectedMood == nil).font(.headline).frame(maxWidth: .infinity, minHeight: 44)

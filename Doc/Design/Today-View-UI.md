@@ -176,3 +176,12 @@ same appearance property using Save/Cancel drafts.
 
 Opened standalone Library Lists also expose this same opacity value directly in
 their main Appearance sheet under List surface, alongside the workspace background.
+
+All lists support the header icon option, including custom Lists created in Plans.
+The opened standalone List's main Appearance sheet includes visibility and icon
+selection alongside opacity. Day headers and Board list headers honor the same
+flag; enabled lists without a selected or collection icon use the Notes symbol.
+
+On the Table, In the Queue and Scheduled always show their header icons. Header
+icon visibility controls are hidden in Library settings, List Appearance and Day
+Appearance for these three names. Other Lists retain editable visibility controls.

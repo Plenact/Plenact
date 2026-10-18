@@ -6974,7 +6974,7 @@ private struct PersonalCollectionSettingsView: View {
                     }
 
                     .pickerStyle(.menu)
-                    if draft.kind == .list, !draft.lists.isEmpty {
+                    if draft.kind == .list, let list = draft.lists.first, !list.hasFixedHeaderIcon {
                         Toggle("Show icon in title bar", isOn: Binding(
                             get: { draft.lists[0].showsIconInHeader },
                             set: { value in

@@ -1630,7 +1630,7 @@ struct ItemAppearanceSheet: View {
                         Text(title).font(.headline)
                     }
                 }
-                if showsListBackground {
+                if showsListBackground && KanbanList.defaultHeaderIcon(for: title) == nil {
                     Section("List header") {
                         Toggle("Show icon in title bar", isOn: Binding(
                             get: { draft.showsIconInHeader ?? (KanbanList.defaultHeaderIcon(for: title) != nil) },
@@ -2296,8 +2296,10 @@ struct BoardAppearanceSheet: View {
     var defaultCollectionBackground: CollectionBackground? = nil
     @State private var draft: BoardAppearance
     let listSurface: KanbanList?
-    let onSaveListSurfaceOpacity: ((Double) -> Void)?
+    let onSaveListSurface: ((Double, Bool, PersonalCollectionIcon) -> Void)?
     @State private var draftSurfaceOpacity: Double
+    @State private var draftShowsHeaderIcon: Bool
+    @State private var draftHeaderIcon: PersonalCollectionIcon
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
     let onSavePresentation: ((BoardPresentation) -> Void)?
@@ -2309,10 +2311,13 @@ struct BoardAppearanceSheet: View {
          allowsCollectionBackground: Bool = false,
          defaultCollectionBackground: CollectionBackground? = nil,
          listSurface: KanbanList? = nil,
-         onSaveListSurfaceOpacity: ((Double) -> Void)? = nil,
+         listHeaderIcon: PersonalCollectionIcon? = nil,
+         onSaveListSurface: ((Double, Bool, PersonalCollectionIcon) -> Void)? = nil,
          onSave: @escaping (BoardAppearance, Bool) -> Bool) {
+        _draftShowsHeaderIcon = State(initialValue: listSurface?.showsIconInHeader ?? false)
+        _draftHeaderIcon = State(initialValue: listSurface?.appearance?.icon ?? listHeaderIcon ?? KanbanList.defaultHeaderIcon(for: listSurface?.title ?? "") ?? .notes)
         self.listSurface = listSurface
-        self.onSaveListSurfaceOpacity = onSaveListSurfaceOpacity
+        self.onSaveListSurface = onSaveListSurface
         _draftSurfaceOpacity = State(initialValue: listSurface?.appearance?.resolvedListBackgroundOpacity ?? 1)
         self.allowsCollectionBackground = allowsCollectionBackground
         self.defaultCollectionBackground = defaultCollectionBackground
@@ -2327,6 +2332,17 @@ struct BoardAppearanceSheet: View {
             Form {
                 if allowsCollectionBackground { collectionBackgroundSection }
                 if let listSurface {
+                    if !listSurface.hasFixedHeaderIcon {
+                        Section("List header") {
+                            Toggle("Show icon in title bar", isOn: $draftShowsHeaderIcon)
+                            Picker("Header icon", selection: $draftHeaderIcon) {
+                                ForEach(PersonalCollectionIcon.allCases, id: \.self) { icon in
+                                    Label(icon.title, systemImage: icon.rawValue).tag(icon)
+                                }
+                            }
+                            .disabled(!draftShowsHeaderIcon)
+                        }
+                    }
                     Section("List surface") {
                         ListSurfaceOpacityPicker(title: listSurface.title,
                             tint: listSurface.appearance?.listBackground ?? draft.listBackground ?? .neutral,
@@ -2470,7 +2486,7 @@ struct BoardAppearanceSheet: View {
                 updated.collectionBackground?.photoFileName = name
             }
             if onSave(updated, applyToAll) {
-                if listSurface != nil { onSaveListSurfaceOpacity?(draftSurfaceOpacity) }
+                if listSurface != nil { onSaveListSurface?(draftSurfaceOpacity, draftShowsHeaderIcon, draftHeaderIcon) }
                 onSavePresentation?(draftPresentation)
                 dismiss()
             } else if let importedName { CollectionBackgroundPhotoStore.remove(importedName) }

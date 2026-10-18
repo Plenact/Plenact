@@ -80,12 +80,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertNotNil(legacy.headerAppearance()?.icon)
             legacy.appearance = explicitOff
             let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(legacy))
-            XCTAssertFalse(restored.showsIconInHeader)
-            XCTAssertNil(restored.headerAppearance())
+            XCTAssertTrue(restored.hasFixedHeaderIcon)
+            XCTAssertTrue(restored.showsIconInHeader)
+            XCTAssertNotNil(restored.headerAppearance())
             XCTAssertTrue(DefaultListTutorial.makeStarter(title: title).lists[0].showsIconInHeader)
         }
         custom.appearance = ItemAppearance(showsIconInHeader: true)
         XCTAssertEqual(custom.headerAppearance(collectionIcon: .upcoming)?.icon, .upcoming)
+        XCTAssertEqual(custom.headerAppearance()?.icon, .notes)
+        custom.appearance?.showsIconInHeader = false
+        XCTAssertNil(custom.headerAppearance(collectionIcon: .upcoming))
     }
 
     func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws {

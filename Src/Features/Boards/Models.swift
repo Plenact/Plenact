@@ -1076,14 +1076,15 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         default: nil
         }
     }
-    /// Missing flags in older lists preserve the three built-in shortcut identities.
+    var hasFixedHeaderIcon: Bool { Self.defaultHeaderIcon(for: title) != nil }
+    /// The three built-in shortcut Lists always retain their header identity.
     var showsIconInHeader: Bool {
-        appearance?.showsIconInHeader ?? (Self.defaultHeaderIcon(for: title) != nil)
+        hasFixedHeaderIcon || appearance?.showsIconInHeader == true
     }
     func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil) -> ItemAppearance? {
         guard showsIconInHeader else { return nil }
         var value = appearance ?? ItemAppearance()
-        value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title)
+        value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title) ?? .notes
         return value
     }
 
@@ -4329,6 +4330,9 @@ enum DefaultListTutorial {
         default: icon = .tasks; color = .teal
         }
         var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+        if KanbanList.defaultHeaderIcon(for: title) != nil {
+            collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
+        }
         switch title {
         case "On the Table": collection.boardAppearance = BoardAppearance(bannerBackground: .coral)
         case "In the Queue": collection.boardAppearance = BoardAppearance(bannerBackground: .teal)

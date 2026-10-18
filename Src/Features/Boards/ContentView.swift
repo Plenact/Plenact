@@ -3343,10 +3343,13 @@ struct ContentView: View {
                     allowsCollectionBackground: allowsCollectionBackground,
                     defaultCollectionBackground: isStandaloneListView ? CollectionBackground.defaultListBackground(for: lists.first?.title ?? boardTitle) : nil,
                     listSurface: isStandaloneListView ? lists.first : nil,
-                    onSaveListSurfaceOpacity: { value in
+                    listHeaderIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon,
+                    onSaveListSurface: { value, showsHeaderIcon, icon in
                         guard isStandaloneListView, !lists.isEmpty else { return }
                         var appearance = lists[0].appearance ?? ItemAppearance()
                         appearance.listBackgroundOpacity = value
+                        appearance.showsIconInHeader = showsHeaderIcon
+                        appearance.icon = icon
                         lists[0].appearance = appearance
                     },
                     onSave: saveBoardAppearance)
@@ -4567,7 +4570,7 @@ struct KanbanListView: View {
             if !hidesPanelHeader {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    ItemAppearanceMark(appearance: list.appearance)
+                    ItemAppearanceMark(appearance: list.headerAppearance())
                     Text(styledListTitle)
                         .font(.title3.weight(.bold))
                         .fixedSize(horizontal: false, vertical: true)

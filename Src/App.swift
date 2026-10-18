@@ -6974,6 +6974,16 @@ private struct PersonalCollectionSettingsView: View {
                     }
 
                     .pickerStyle(.menu)
+                    if draft.kind == .list, !draft.lists.isEmpty {
+                        Toggle("Show icon in title bar", isOn: Binding(
+                            get: { draft.lists[0].showsIconInHeader },
+                            set: { value in
+                                var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                appearance.showsIconInHeader = value
+                                draft.lists[0].appearance = appearance
+                            }
+                        ))
+                    }
                     Picker("Color", selection: $draft.color) {
                         ForEach([
                             ("Teal", ProfileColor.teal), ("Blue", .blue), ("Green", .green),

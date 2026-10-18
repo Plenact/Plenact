@@ -1630,6 +1630,16 @@ struct ItemAppearanceSheet: View {
                         Text(title).font(.headline)
                     }
                 }
+                if showsListBackground {
+                    Section("List header") {
+                        Toggle("Show icon in title bar", isOn: Binding(
+                            get: { draft.showsIconInHeader ?? (KanbanList.defaultHeaderIcon(for: title) != nil) },
+                            set: { draft.showsIconInHeader = $0 }
+                        ))
+                        Text("Show this List's icon beside its title when opening the List or Day view.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
                 Section("Leading icon") {
                     Picker("Icon", selection: $draft.icon) {
                         Text("None").tag(Optional<PersonalCollectionIcon>.none)

@@ -328,11 +328,12 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var cardTextColor: ListPreviewTextColor? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
+    var showsIconInHeader: Bool? = nil
     func hidesSubtitle(_ text: String) -> Bool {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 ///
@@ -1062,6 +1063,25 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var cards:     [KanbanCard]     /* Cards contained within the list       */
     var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
     var isArchived: Bool = false    /* Whether this list is in the board archive */
+    static func defaultHeaderIcon(for title: String) -> PersonalCollectionIcon? {
+        switch title {
+        case "On the Table": .tasks
+        case "In the Queue": .project
+        case "Scheduled": .upcoming
+        default: nil
+        }
+    }
+    /// Missing flags in older lists preserve the three built-in shortcut identities.
+    var showsIconInHeader: Bool {
+        appearance?.showsIconInHeader ?? (Self.defaultHeaderIcon(for: title) != nil)
+    }
+    func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil) -> ItemAppearance? {
+        guard showsIconInHeader else { return nil }
+        var value = appearance ?? ItemAppearance()
+        value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title)
+        return value
+    }
+
     /// Today focuses the first actionable Card in saved order without moving records.
     var firstUncheckedTaskID: Int? {
         guard !isArchived else { return nil }
@@ -2652,7 +2672,10 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
         }
 
         let title      = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles) /* Example name made unique within the directory */
-        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color) /* New personal List populated from the example */
+        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+        if KanbanList.defaultHeaderIcon(for: title) != nil {
+            collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
+        } /* New personal List populated from the example */
         collection.collectionDescription = summary
 
         collection.lists[0].cards = cards.enumerated().map { index, content in

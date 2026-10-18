@@ -45,6 +45,32 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws {
+        var custom = KanbanList(id: 7, title: "Custom list", cards: [])
+        custom.appearance = ItemAppearance(icon: .tasks)
+        XCTAssertFalse(custom.showsIconInHeader)
+        XCTAssertNil(custom.headerAppearance())
+        custom.appearance?.showsIconInHeader = true
+        XCTAssertEqual(custom.headerAppearance()?.icon, .tasks)
+        custom.appearance?.showsIconInHeader = false
+        let roundTrip = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(custom))
+        XCTAssertFalse(roundTrip.showsIconInHeader)
+        let explicitOff = ItemAppearance(showsIconInHeader: false)
+        XCTAssertFalse(explicitOff.isEmpty)
+        for title in ["On the Table", "In the Queue", "Scheduled"] {
+            var legacy = KanbanList(id: 1, title: title, cards: [])
+            XCTAssertTrue(legacy.showsIconInHeader)
+            XCTAssertNotNil(legacy.headerAppearance()?.icon)
+            legacy.appearance = explicitOff
+            let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(legacy))
+            XCTAssertFalse(restored.showsIconInHeader)
+            XCTAssertNil(restored.headerAppearance())
+            XCTAssertTrue(DefaultListTutorial.makeStarter(title: title).lists[0].showsIconInHeader)
+        }
+        custom.appearance = ItemAppearance(showsIconInHeader: true)
+        XCTAssertEqual(custom.headerAppearance(collectionIcon: .upcoming)?.icon, .upcoming)
+    }
+
     func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws {
         let nested = KanbanChecklist(title: "Nested", items: [KanbanChecklistItem(title: "Nested done", isCompleted: true)])
         let detail = KanbanChecklistActionDetail(description: "Keep details", checklists: [nested])

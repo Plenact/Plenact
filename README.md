@@ -12,15 +12,14 @@ This work today has been great, thank you, Alex. Hey how many lines of .swift so
 
 This is beautiful, thank you Alex!! Can you help me with a good git commit message for these updates? :)
 
+<consider posting 1.2!!!?>
+
 # Opens
 
-- Slightest dim fade behind the launch screen logo?
+- Great!! Thank you Alex, this work today has been awesome
 
-- Lists have the option to display their icon in their view too! Default is disabled, but is enabled for On the Table, In the Queue and also Scheduled
+And hey, what if we updated the 'New Button' helps the User create a card when selected from the Today and Week views, and a List when selected from the Plans view and a Card when selected from the Activity view?
 
-- Reset zoom level on Board submenu
-
-- What if in the List view, the list's background was transparent and so all you saw was the List view's background behind it?
 
 !
 

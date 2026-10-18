@@ -2843,6 +2843,8 @@ struct ContentView: View {
                             deleteBoardTitle:    deleteBoardTitle,
                             onJumpToFirstList:   !isGallery && lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    !isGallery && lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
+                            titleAppearance: isStandaloneListView ? lists.first?.headerAppearance(
+                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon) : nil,
                             onAppearance:        { showsBoardAppearance = true },
                             onListActions: isStandaloneListView ? { isGallery = false; standaloneListActionsRequest += 1 } : nil,
                             onSearch: { showsSharedSearch = true },
@@ -3444,6 +3446,7 @@ struct BoardHeader: View {
     /// Navigates to the last active list when more than one list exists.
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
+    var titleAppearance: ItemAppearance? = nil
     var onAppearance: (() -> Void)? = nil
     var onListActions: (() -> Void)? = nil
     var onSearch: (() -> Void)? = nil
@@ -3495,11 +3498,15 @@ struct BoardHeader: View {
 
         VStack(alignment: .leading, spacing: 2) {
 
-            Text(title)
-                .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+            HStack(spacing: 8) {
+                ItemAppearanceMark(appearance: titleAppearance)
+                    .font(.title2)
+                Text(title)
+                    .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
 
             if let onSubtitleTap {
                 Button(action: onSubtitleTap) {
@@ -6634,7 +6641,8 @@ struct TodayListDetailView: View {
                     .accessibilityLabel("Back to \(returnDestinationTitle)")
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 8) {
-                            ItemAppearanceMark(appearance: focusedList?.appearance)
+                            ItemAppearanceMark(appearance: focusedList?.headerAppearance(
+                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.icon))
                             Text((includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
                                 .font(.title2.weight(.bold))
                                 .lineLimit(1)

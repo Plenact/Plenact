@@ -158,3 +158,9 @@ Focus typography uses separate iPhone/iPad values: task text 18/20 points and
 rows 48/54 points before Dynamic Type scaling. Title and tappable progress share
 a header row, stacking when space is constrained. The thin progress bar remains
 below, with a quieter footer. Four-row scrolling and exterior balancing space remain.
+
+List Appearance and personal List settings include Show icon in title bar. It is
+off for ordinary lists and on for On the Table, In the Queue and Scheduled,
+including older saved lists without an explicit choice. Explicit choices persist.
+The option controls the opened standalone List and Day headers; Library and Today
+shortcut icons remain independent.

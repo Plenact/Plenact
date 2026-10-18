@@ -5281,7 +5281,7 @@ struct BoardListsView: View {
                 openedCollection = collection
             } label: {
                 row(title: collection.title, subtitle: collectionSubtitle,
-                    icon: collection.icon.rawValue, color: collection.libraryIdentityColor, count: collection.cardCount, preview: collectionPreview(collection))
+                    icon: collection.icon.rawValue, color: (collection.kind == .list ? collection.lists.first?.resolvedIconColor(collectionColor: collection.color)?.color : nil) ?? collection.libraryIdentityColor, count: collection.cardCount, preview: collectionPreview(collection))
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens this personal collection")
@@ -6440,8 +6440,15 @@ struct BoardListsView: View {
             }
 
             .fullScreenCover(item: $openedCollection, onDismiss: registerDirectoryNewNote) { collection in
-                presentedCollectionBoard(collection)
-                    .environment(\.workspaceBottomBarHeight, 0)
+                Group {
+                    if let listID = collection.preferredFocusedListID, boardTargetCardID == nil {
+                        WorkspacePinnedListView(reference: WorkspaceListReference(ownerID: collection.id, listID: listID),
+                            returnDestinationTitle: "Plans")
+                    } else {
+                        presentedCollectionBoard(collection)
+                    }
+                }
+                .environment(\.workspaceBottomBarHeight, 0)
             }
 
             .alert("Delete \(deletingCollection?.kind.rawValue ?? "item")?", isPresented: Binding(
@@ -7015,6 +7022,19 @@ private struct PersonalCollectionSettingsView: View {
                             ))
                         Text("Only the surface behind the List's cards fades. Save applies this choice; Cancel keeps the current background.")
                             .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+
+                if draft.kind == .list, !draft.lists.isEmpty {
+                    Section("Icon color") {
+                        ListIconColorPicker(selection: Binding(
+                            get: { draft.lists[0].appearance?.iconColor },
+                            set: { value in
+                                var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                appearance.iconColor = value
+                                draft.lists[0].appearance = appearance
+                            }
+                        ), fixedColor: KanbanList.fixedIconColor(for: draft.lists[0].title))
                     }
                 }
 
@@ -8600,6 +8620,7 @@ struct LibraryLabelMatchesView: View {
 
 struct WorkspacePinnedListView: View {
     let reference: WorkspaceListReference
+    var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     var body: some View {
@@ -8607,10 +8628,10 @@ struct WorkspacePinnedListView: View {
            week.collection.lists.contains(where: { $0.id == reference.listID && !$0.isArchived }) {
             PinnedListDayContent(collection: week.collection, reference: reference,
                 date: week.dayListIDs.first(where: { $0.value == reference.listID }).flatMap { PlanningDate.date($0.key) },
-                week: week, onClose: { dismiss() })
+                week: week, onClose: { dismiss() }, returnDestinationTitle: returnDestinationTitle)
         } else if let collection = access?.library.first(where: { $0.id == reference.ownerID && $0.isActive }),
                   collection.lists.contains(where: { $0.id == reference.listID && !$0.isArchived }) {
-            PinnedListDayContent(collection: collection, reference: reference, date: nil, week: nil, onClose: { dismiss() })
+            PinnedListDayContent(collection: collection, reference: reference, date: nil, week: nil, onClose: { dismiss() }, returnDestinationTitle: returnDestinationTitle)
         } else {
             NavigationStack {
                 Text("This list is archived or no longer available.").foregroundStyle(.secondary).padding()
@@ -8625,6 +8646,7 @@ private struct PinnedListDayContent: View {
     let date: Date?
     let week: DatedPlanningWeek?
     let onClose: () -> Void
+    var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
     @State private var labels = LabelLibraryStore.load()
     @State private var reverting = false
@@ -8645,8 +8667,8 @@ private struct PinnedListDayContent: View {
                 BoardContentDeletion.card(cardID, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
                 guard save(updated) else { return false }
                 collection = updated; return true
-            }, boardAppearance: collection.boardAppearance, returnDestinationTitle: "Today",
-            boardViewActionTitle: week == nil ? "Back to Today" : "Switch to Week View", representedDate: date)
+            }, boardAppearance: collection.boardAppearance, returnDestinationTitle: returnDestinationTitle,
+            boardViewActionTitle: week == nil ? "Back to \(returnDestinationTitle)" : "Switch to Week View", representedDate: date)
             .environment(\.cardMovementSource, collection.id)
             .onChange(of: collection) { old, updated in
                 if reverting { reverting = false; return }
@@ -8675,7 +8697,7 @@ struct TodayShortcutGrid: View {
                         VStack(spacing: usesLargeIcons ? 12 : 8) {
                             Image(systemName: destination.list.appearance?.icon?.rawValue ?? destination.owner.icon.rawValue)
                                 .font(.system(size: usesLargeIcons ? 40 : 25, weight: .medium))
-                                .foregroundStyle((destination.list.appearance?.accent?.color ?? destination.owner.libraryIdentityColor))
+                                .foregroundStyle((destination.list.resolvedIconColor(collectionColor: destination.owner.color)?.color ?? destination.owner.libraryIdentityColor))
                                 .frame(width: usesLargeIcons ? 60 : 44, height: usesLargeIcons ? 60 : 44)
                             Text(destination.list.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                                 .foregroundStyle(.primary).multilineTextAlignment(.center)

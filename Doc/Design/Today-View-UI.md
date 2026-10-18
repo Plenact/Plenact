@@ -185,3 +185,17 @@ flag; enabled lists without a selected or collection icon use the Notes symbol.
 On the Table, In the Queue and Scheduled always show their header icons. Header
 icon visibility controls are hidden in Library settings, List Appearance and Day
 Appearance for these three names. Other Lists retain editable visibility controls.
+
+Opening On the Table, In the Queue or Scheduled from Plans now uses the same
+focused List view as its Today shortcut: shared header, subtitle, card layout,
+background and Day options. Back returns to the originating Plans or Today view.
+Other collections and targeted Card navigation retain their existing routes.
+
+List Appearance and Library List settings include an independent icon-color picker.
+The choice persists with the List and applies to List/Day headers, Board columns,
+Today shortcuts and Library List icons. Default follows the collection color where
+available. On the Table, In the Queue and Scheduled show a read-only fixed color:
+their existing burgundy, teal and graphite identities, independent of saved overrides.
+
+On the Table uses a soft gold header icon for contrast against its burgundy banner.
+Its Today shortcut and Library icon retain their burgundy identity.

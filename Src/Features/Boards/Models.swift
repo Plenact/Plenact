@@ -328,6 +328,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var cardTextColor: ListPreviewTextColor? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
+    var iconColor: ProfileColor? = nil
     var showsIconInHeader: Bool? = nil
     var listBackgroundOpacity: Double? = nil
     var resolvedListBackgroundOpacity: Double {
@@ -338,7 +339,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 ///
@@ -1076,15 +1077,31 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         default: nil
         }
     }
+    static func fixedIconColor(for title: String) -> ProfileColor? {
+        switch title {
+        case "On the Table": ProfileColor(red: 0.48, green: 0.13, blue: 0.16)
+        case "In the Queue": .teal
+        case "Scheduled": .graphite
+        default: nil
+        }
+    }
+    static func fixedHeaderIconColor(for title: String) -> ProfileColor? {
+        // A warm highlight remains legible against On the Table's burgundy banner.
+        title == "On the Table" ? ProfileColor(red: 1, green: 0.84, blue: 0.55) : fixedIconColor(for: title)
+    }
+    func resolvedIconColor(collectionColor: ProfileColor? = nil) -> ProfileColor? {
+        Self.fixedIconColor(for: title) ?? appearance?.iconColor ?? collectionColor
+    }
     var hasFixedHeaderIcon: Bool { Self.defaultHeaderIcon(for: title) != nil }
     /// The three built-in shortcut Lists always retain their header identity.
     var showsIconInHeader: Bool {
         hasFixedHeaderIcon || appearance?.showsIconInHeader == true
     }
-    func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil) -> ItemAppearance? {
+    func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil, collectionColor: ProfileColor? = nil) -> ItemAppearance? {
         guard showsIconInHeader else { return nil }
         var value = appearance ?? ItemAppearance()
         value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title) ?? .notes
+        value.iconColor = Self.fixedHeaderIconColor(for: title) ?? resolvedIconColor(collectionColor: collectionColor)
         return value
     }
 
@@ -2741,6 +2758,13 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     var isArchived: Bool? = nil          /* Optional archive state for older saved data */
     var boardAppearance: BoardAppearance? = nil /* Independent persisted List color defaults */
     var collectionDescription: String? = nil
+
+    /// The three shortcut Lists share their focused layout across Today and Plans.
+    var preferredFocusedListID: Int? {
+        let active = lists.filter { !$0.isArchived }
+        guard kind == .list, active.count == 1, active[0].hasFixedHeaderIcon else { return nil }
+        return active[0].id
+    }
 
     var contentPreview: String {
         let description = collectionDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

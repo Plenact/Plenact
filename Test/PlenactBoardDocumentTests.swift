@@ -62,6 +62,38 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(ItemAppearance(listBackgroundOpacity: .nan).resolvedListBackgroundOpacity, 1)
     }
 
+    func testListIconColorsPersistAndMainListColorsRemainFixed() throws {
+        var list = KanbanList(id: 1, title: "Custom", cards: [])
+        list.appearance = ItemAppearance(iconColor: .blue, showsIconInHeader: true)
+        let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(restored.resolvedIconColor(collectionColor: .orange), .blue)
+        XCTAssertEqual(restored.headerAppearance()?.iconColor, .blue)
+        XCTAssertNil(restored.appearance?.background)
+        XCTAssertFalse(ItemAppearance(iconColor: .blue).isEmpty)
+        list.appearance?.iconColor = nil
+        XCTAssertEqual(list.resolvedIconColor(collectionColor: .orange), .orange)
+        XCTAssertNotEqual(KanbanList.fixedHeaderIconColor(for: "On the Table"), KanbanList.fixedIconColor(for: "On the Table"))
+        for title in ["On the Table", "In the Queue", "Scheduled"] {
+            var main = DefaultListTutorial.makeStarter(title: title).lists[0]
+            main.appearance?.iconColor = .blue
+            XCTAssertEqual(main.resolvedIconColor(collectionColor: .green), KanbanList.fixedIconColor(for: title))
+            XCTAssertEqual(main.headerAppearance()?.iconColor, KanbanList.fixedHeaderIconColor(for: title))
+        }
+    }
+
+    func testMainLibraryListsUseTheSameFocusedDestinationAsToday() {
+        for title in ["On the Table", "In the Queue", "Scheduled"] {
+            let collection = DefaultListTutorial.makeStarter(title: title)
+            XCTAssertEqual(collection.preferredFocusedListID, collection.lists[0].id)
+            XCTAssertEqual(WorkspaceListReference(ownerID: collection.id, listID: collection.preferredFocusedListID!).listID, collection.lists[0].id)
+        }
+        XCTAssertNil(PersonalCollection(title: "Custom", kind: .list).preferredFocusedListID)
+        XCTAssertNil(PersonalCollection(title: "On the Table", kind: .board).preferredFocusedListID)
+        var archived = DefaultListTutorial.makeStarter(title: "On the Table")
+        archived.lists[0].isArchived = true
+        XCTAssertNil(archived.preferredFocusedListID)
+    }
+
     func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws {
         var custom = KanbanList(id: 7, title: "Custom list", cards: [])
         custom.appearance = ItemAppearance(icon: .tasks)

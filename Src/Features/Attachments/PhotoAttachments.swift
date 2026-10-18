@@ -1414,7 +1414,7 @@ struct ItemAppearanceMark: View {
     var body: some View {
         if let icon = appearance?.icon {
             Image(systemName: icon.rawValue)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(appearance?.iconColor?.color ?? Color.secondary)
                 .accessibilityHidden(true)
         }
     }
@@ -1638,6 +1638,11 @@ struct ItemAppearanceSheet: View {
                         ))
                         Text("Show this List's icon beside its title when opening the List or Day view.")
                             .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                if showsListBackground {
+                    Section("Icon color") {
+                        ListIconColorPicker(selection: $draft.iconColor, fixedColor: KanbanList.fixedHeaderIconColor(for: title))
                     }
                 }
                 Section("Leading icon") {
@@ -2296,9 +2301,10 @@ struct BoardAppearanceSheet: View {
     var defaultCollectionBackground: CollectionBackground? = nil
     @State private var draft: BoardAppearance
     let listSurface: KanbanList?
-    let onSaveListSurface: ((Double, Bool, PersonalCollectionIcon) -> Void)?
+    let onSaveListSurface: ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)?
     @State private var draftSurfaceOpacity: Double
     @State private var draftShowsHeaderIcon: Bool
+    @State private var draftIconColor: ProfileColor?
     @State private var draftHeaderIcon: PersonalCollectionIcon
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
@@ -2312,10 +2318,11 @@ struct BoardAppearanceSheet: View {
          defaultCollectionBackground: CollectionBackground? = nil,
          listSurface: KanbanList? = nil,
          listHeaderIcon: PersonalCollectionIcon? = nil,
-         onSaveListSurface: ((Double, Bool, PersonalCollectionIcon) -> Void)? = nil,
+         onSaveListSurface: ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? = nil,
          onSave: @escaping (BoardAppearance, Bool) -> Bool) {
         _draftShowsHeaderIcon = State(initialValue: listSurface?.showsIconInHeader ?? false)
         _draftHeaderIcon = State(initialValue: listSurface?.appearance?.icon ?? listHeaderIcon ?? KanbanList.defaultHeaderIcon(for: listSurface?.title ?? "") ?? .notes)
+        _draftIconColor = State(initialValue: listSurface?.appearance?.iconColor)
         self.listSurface = listSurface
         self.onSaveListSurface = onSaveListSurface
         _draftSurfaceOpacity = State(initialValue: listSurface?.appearance?.resolvedListBackgroundOpacity ?? 1)
@@ -2342,6 +2349,10 @@ struct BoardAppearanceSheet: View {
                             }
                             .disabled(!draftShowsHeaderIcon)
                         }
+                    }
+                    Section("Icon color") {
+                        ListIconColorPicker(selection: $draftIconColor,
+                            fixedColor: KanbanList.fixedHeaderIconColor(for: listSurface.title))
                     }
                     Section("List surface") {
                         ListSurfaceOpacityPicker(title: listSurface.title,
@@ -2486,7 +2497,7 @@ struct BoardAppearanceSheet: View {
                 updated.collectionBackground?.photoFileName = name
             }
             if onSave(updated, applyToAll) {
-                if listSurface != nil { onSaveListSurface?(draftSurfaceOpacity, draftShowsHeaderIcon, draftHeaderIcon) }
+                if listSurface != nil { onSaveListSurface?(draftSurfaceOpacity, draftShowsHeaderIcon, draftHeaderIcon, draftIconColor) }
                 onSavePresentation?(draftPresentation)
                 dismiss()
             } else if let importedName { CollectionBackgroundPhotoStore.remove(importedName) }
@@ -2806,6 +2817,40 @@ struct ListSurfaceOpacityPicker: View {
             .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
             .accessibilityLabel("List background preview")
 
+        }
+    }
+}
+
+
+/// Icon tint is independent of the banner and card text. Main shortcut Lists are read-only.
+struct ListIconColorPicker: View {
+    @Binding var selection: ProfileColor?
+    var fixedColor: ProfileColor? = nil
+    private let presets: [(String, ProfileColor)] = [
+        ("Teal", .teal), ("Blue", .blue), ("Green", .green), ("Orange", .orange),
+        ("Coral", .coral), ("Graphite", .graphite), ("White", .white),
+        ("Charcoal", .charcoal), ("Yellow", .lemon), ("Sky", .sky)
+    ]
+    var body: some View {
+        if let fixedColor {
+            LabeledContent("Icon color") {
+                HStack {
+                    Circle().fill(fixedColor.color).frame(width: 18, height: 18)
+                    Text("Fixed").foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityLabel("Icon color, fixed for this List")
+        } else {
+            Picker("Icon color", selection: $selection) {
+                Text("Default").tag(Optional<ProfileColor>.none)
+                ForEach(presets.indices, id: \.self) { index in
+                    HStack {
+                        Circle().fill(presets[index].1.color).frame(width: 18, height: 18)
+                        Text(presets[index].0)
+                    }.tag(Optional(presets[index].1))
+                }
+            }
+            .accessibilityIdentifier("appearance.listIconColor")
         }
     }
 }

@@ -2844,7 +2844,8 @@ struct ContentView: View {
                             onJumpToFirstList:   !isGallery && lists.count > 1 ? { requestBoundaryJump(.first) } : nil,
                             onJumpToLastList:    !isGallery && lists.count > 1 ? { requestBoundaryJump(.last) } : nil,
                             titleAppearance: isStandaloneListView ? lists.first?.headerAppearance(
-                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon) : nil,
+                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon,
+                                collectionColor: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.color) : nil,
                             onAppearance:        { showsBoardAppearance = true },
                             onListActions: isStandaloneListView ? { isGallery = false; standaloneListActionsRequest += 1 } : nil,
                             onSearch: { showsSharedSearch = true },
@@ -3344,12 +3345,13 @@ struct ContentView: View {
                     defaultCollectionBackground: isStandaloneListView ? CollectionBackground.defaultListBackground(for: lists.first?.title ?? boardTitle) : nil,
                     listSurface: isStandaloneListView ? lists.first : nil,
                     listHeaderIcon: planningCalendarAccess?.library.first(where: { $0.id == personalCollectionID })?.icon,
-                    onSaveListSurface: { value, showsHeaderIcon, icon in
+                    onSaveListSurface: { value, showsHeaderIcon, icon, iconColor in
                         guard isStandaloneListView, !lists.isEmpty else { return }
                         var appearance = lists[0].appearance ?? ItemAppearance()
                         appearance.listBackgroundOpacity = value
                         appearance.showsIconInHeader = showsHeaderIcon
                         appearance.icon = icon
+                        appearance.iconColor = iconColor
                         lists[0].appearance = appearance
                     },
                     onSave: saveBoardAppearance)
@@ -6652,7 +6654,8 @@ struct TodayListDetailView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 8) {
                             ItemAppearanceMark(appearance: focusedList?.headerAppearance(
-                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.icon))
+                                collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.icon,
+                                collectionColor: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.color))
                             Text((includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
                                 .font(.title2.weight(.bold))
                                 .lineLimit(1)

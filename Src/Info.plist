@@ -20,6 +20,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record spoken thoughts to save as audio, text, or both in your Cards and Notes.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turn your recordings into editable text using Apple’s speech recognition. Some languages may require Apple’s servers.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save drawings you export to your photo library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos to attach to the Cards and Notes you capture in Plenact.</string>
 	<key>PLENACT_API_BASE_URL</key>
 	<string>$(PLENACT_API_BASE_URL)</string>
 	<key>UIApplicationSceneManifest</key>

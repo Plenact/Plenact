@@ -2647,7 +2647,7 @@ struct ContentView: View {
             (lists + archivedLists + retainedAttachmentLists() + (planningCalendarAccess?.allRetainedLists ?? []))
                 .flatMap(\.allCards)
                 .flatMap { $0.attachments ?? [] }
-                .compactMap(\.fileName)
+                .flatMap(\.storedFileNames)
         )
 
         CardAttachmentStore.removeUnreferencedFiles(keeping: referencedFileNames)

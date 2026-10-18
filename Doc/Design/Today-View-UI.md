@@ -88,3 +88,33 @@ The cue uses a muted pale-gold tint with a low-opacity fill and diffuse halo. On
 Tapping, dragging/scrolling, typing in Quick capture, leaving Today, or backgrounding cancels the sequence. It finishes without repeating or changing saved planning data, toolbar spacing, or target hit areas. Reduce Motion uses one brief static highlight per target without scaling or pulsing. No notifications or mood/plan completion conditions are involved. Launch playback is enabled by default for the initial trial.
 
 The iPhone date subtitle pulses at 1.3× the original speed: fade duration and pulse intervals are divided by 1.3. Profile pulses, iPad plan-heading pulses, the half-second inter-target pause, and Reduce Motion highlight durations retain their existing timing.
+
+
+### Quick capture actions — October 17
+
+An icon-only Note, Checklist, Photo, Voice, and Drawing row sits below the title input on iPhone and iPad. Each icon retains its spoken accessibility label and 44-point minimum tap height. Each action carries the current typed title into the existing composer and retains the Today destination. Note opens writing-first presentation; Checklist opens a Card with an editable blank action and Add action. Template and full-editor entry points remain available. Cancelling restores the original inline title; no item is created merely by opening an action.
+
+Photo opens a composer with Take photo and Photo library choices, supports up to six images with previews/removal, and retains media when changing Card/Note presentation. Camera access is requested only after Take photo; unavailable/denied access offers explanatory feedback and the library remains available. Photos stay in memory until explicit Add. A checked, journaled save commits the current Week and compatibility Board together; rejected saves retain the draft and clean the new attachment files. The first created Card receives the media/cover when a multiline title creates multiple items, matching existing title-splitting behavior. Hardware camera acceptance still requires a physical device. Voice and dates are implemented below. Drawing replaces the Date shortcut; scheduling stays in the editor.
+
+The extra action row increases the Quick capture panel's height by 52 points at standard text size. That space is reclaimed above capture: iPad summary bottom padding changes from 36 to -16, and iPhone content starts 40 points higher, retaining room for the slogan below the header. Internal spacing below capture and toolbar geometry are preserved. Longer plan summaries and accessibility text can still extend the scrollable content.
+
+
+### Date and Voice capture — October 17
+
+The capture editor offers independent optional Start and Stop toggles, plus optional times. Stop maps to the existing due date, so dates remain visible in Calendar and item details. A Stop before Start is rejected; date-only comparisons use the local calendar day. Other Today capture modes offer the same dates in a collapsed section. Dates apply to all items created by a multiline title. Typed titles, writing, and destination selection carry forward.
+
+Voice records up to 60 seconds to a temporary AAC/M4A file after explicit microphone permission. Audio, Text, and Both determine whether Add retains a playable local attachment, appends the reviewed transcript to existing writing, or saves both. Styled writing is preserved when appending. Text/Both attempt transcription after stopping while active; retry and editable transcript controls remain available. Recording again explicitly confirms replacement. Speech authorization is requested only for transcription; on-device recognition is requested where supported, otherwise the system recognizer may use Apple’s service and require connectivity. Denied/unavailable recognition leaves Audio and manual transcript entry available. Recording/playback stop on backgrounding. Dismissal cleans temporary recording and cancels transcription; generation checks reject late permission/delegate/recognition callbacks.
+
+Date, Photo, and Voice saves use a typed capture submission and the checked Week/Board transaction. Audio files share the existing attachment directory, backup, retained-reference cleanup, and Card/Note media gallery. Audio is excluded from covers and photo decoding. Saved recordings have a waveform thumbnail and playback controls. The five shortcuts retain a 44-point minimum hit height.
+
+Automated checks cover all capture layouts without requesting permissions, optional date combinations and ordering across daylight-saving boundaries, Audio/Text/Both content selection with styled writing, playable AAC persistence and cleanup on rejected saves, and existing transaction recovery. Live microphone quality, speech availability/permissions, and interruption behavior require physical-device acceptance testing.
+
+### Editable drawing capture — October 17
+
+Drawing replaces the Date shortcut on both devices without changing the action row height. It opens a PencilKit canvas using finger or Apple Pencil, with native tools, colors and widths. Undo/redo and confirmed Clear are in the actions menu. Done inserts the drawing into the pending Card or Note; Cancel discards only after confirmation when changed. The original typed title and destination remain intact. Up to six drawings can be added, edited or removed before Add.
+
+Each saved drawing is a photo attachment with a PNG preview and an optional `drawingFileName` referencing native PencilKit strokes. Legacy photo records decode without that field. Reference retention, deletion and backup include both files. Failed capture commits remove both new files. Editing a saved drawing writes new files before replacing metadata, retaining identity and old files until normal reference cleanup. Opening/rendering does not save.
+
+Saved previews open in the attachment viewer; Edit drawing reopens the strokes. The editor Export menu offers PNG with white or transparent background and JPEG with white background. Exports crop to the marks plus padding and cap the longest raster edge at 4096 pixels. The system share sheet handles Files, Photos and sharing; export never changes the stored strokes. Temporary exports are removed after sharing. Date fields remain available in the capture editor.
+
+Automated checks cover editable-stroke/metadata round trips, dual-file retention and rejected/partial-save cleanup, legacy photo decoding, PNG/JPEG output and transparency, and hosted phone/tablet layouts without saving. Physical finger/Pencil interaction and destination share activities require device acceptance.

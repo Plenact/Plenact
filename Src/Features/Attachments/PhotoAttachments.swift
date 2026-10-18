@@ -15,6 +15,7 @@ import AVKit
 import Foundation
 import ImageIO
 import PhotosUI
+import PencilKit
 import SwiftUI
 import UIKit
 
@@ -28,6 +29,7 @@ import UIKit
 enum KanbanAttachmentKind: String, Codable, Sendable {
     case photo
     case video
+    case audio
     case link
 }
 
@@ -727,6 +729,8 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
     let addedAt:   Date                     /* Attachment creation time       */
     let exampleImage: ExampleCoverImage?    /* Immutable original example illustration, never user media */
+    var drawingFileName: String? = nil     /* Editable PencilKit strokes, absent in legacy photos */
+    var storedFileNames: [String] { [fileName, drawingFileName].compactMap { $0 } }
     var caption: String?                   /* Optional photo text; absent in legacy attachment records */
 
     ///
@@ -827,7 +831,7 @@ enum CardAttachmentStore {
     ///
     static func fileNames(in lists: [KanbanList]) -> Set<String> {
 
-        Set(lists.flatMap(\.allCards).flatMap { $0.attachments ?? [] }.compactMap(\.fileName))
+        Set(lists.flatMap(\.allCards).flatMap { $0.attachments ?? [] }.flatMap(\.storedFileNames))
     }
 
 
@@ -892,7 +896,7 @@ enum CardAttachmentStore {
 
         let attachmentID        = UUID() /* Stable identity for the new media file */
         let normalizedExtension = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ". ")) /* Clean extension input */
-        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : "jpg") : normalizedExtension /* Valid file extension */
+        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg")) : normalizedExtension /* Valid file extension */
         let fileName            = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename */
         let directoryURL        = try attachmentsDirectory() /* App-local media directory */
         let fileURL             = directoryURL.appendingPathComponent(fileName, isDirectory: false) /* Destination file URL */
@@ -1966,6 +1970,12 @@ struct CardAttachmentThumbnail: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.secondarySystemGroupedBackground))
                 
+            } else if attachment.kind == .audio {
+                Image(systemName: "waveform")
+                    .font(.title2).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .accessibilityLabel("Voice recording")
             } else if attachment.kind == .video {
                 
                 Image(systemName: "play.rectangle.fill")
@@ -2007,10 +2017,57 @@ struct CardAttachmentThumbnail: View {
 /// @section    Purpose
 ///     Allow users to inspect local media after opening its card-detail thumbnail
 ///
+@MainActor
+final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate {
+    @Published private(set) var isPlaying = false
+    private var player: AVAudioPlayer?
+    func toggle(url: URL) {
+        if isPlaying { stop(); return }
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio)
+            try session.setActive(true)
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.delegate = self; self.player = player
+            isPlaying = player.play()
+        } catch { isPlaying = false; errorMessage = "This recording couldn't be played. The file may be unavailable." }
+    }
+    @Published var errorMessage: String?
+    func stop() {
+        guard player != nil else { isPlaying = false; return }
+        player?.stop(); player = nil; isPlaying = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor [weak self] in self?.stop() }
+    }
+}
+
+struct AudioAttachmentPlayer: View {
+    let url: URL
+    @StateObject private var playback = CaptureAudioPlayback()
+    @Environment(\.scenePhase) private var scenePhase
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "waveform").font(.largeTitle).foregroundStyle(.secondary)
+            Button(playback.isPlaying ? "Stop playback" : "Play recording", systemImage: playback.isPlaying ? "stop.circle" : "play.circle") { playback.toggle(url: url) }
+                .frame(minHeight: 44)
+            if let error = playback.errorMessage { Text(error).foregroundStyle(.secondary) }
+        }
+        .onDisappear { playback.stop() }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { playback.stop() } }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("Plenact.StopAudioPreview"))) { _ in playback.stop() }
+    }
+}
+
 struct CardAttachmentPreview: View {
 
     let attachment: KanbanAttachment        /* The media attachment to preview */
 
+    var onSaveDrawing: ((KanbanAttachment) -> Bool)? = nil
+    @State private var editedAttachment: KanbanAttachment?
+    @State private var showsDrawingEditor = false
+    private var currentAttachment: KanbanAttachment { editedAttachment ?? attachment }
     @Environment(\.dismiss) private var dismiss /* Preview dismissal action */
 
     ///
@@ -2029,15 +2086,17 @@ struct CardAttachmentPreview: View {
         NavigationStack {
             Group {
 
-                if attachment.kind == .video,
+                if attachment.kind == .audio, let url = CardAttachmentStore.fileURL(for: currentAttachment) {
+                    AudioAttachmentPlayer(url: url).padding()
+                } else if attachment.kind == .video,
                    
-                   let videoURL = CardAttachmentStore.fileURL(for: attachment) { /* Local video file URL */
+                   let videoURL = CardAttachmentStore.fileURL(for: currentAttachment) { /* Local video file URL */
                     VideoPlayer(player: AVPlayer(url: videoURL))
                     
                 } else {
                     ScrollView {
                         VStack(spacing: 12) {
-                            if let imageURL = CardAttachmentStore.imageURL(for: attachment),
+                            if let imageURL = CardAttachmentStore.imageURL(for: currentAttachment),
                                let image = UIImage(contentsOfFile: imageURL.path) {
                                 Image(uiImage: image)
                                     .resizable()
@@ -2062,6 +2121,11 @@ struct CardAttachmentPreview: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 
+                ToolbarItem(placement: .topBarLeading) {
+                    if currentAttachment.drawingFileName != nil {
+                        Button("Edit drawing", systemImage: "pencil.tip") { showsDrawingEditor = true }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     
                     Button("Done") {
@@ -2071,6 +2135,24 @@ struct CardAttachmentPreview: View {
             }
         }
 
+        .sheet(isPresented: $showsDrawingEditor) {
+            if let draft = try? DrawingAttachmentStore.load(currentAttachment) {
+                DrawingCaptureEditor(initial: draft) { drawing in
+                    guard let onSaveDrawing else { return false }
+                    do {
+                        let replacement = try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
+                        guard onSaveDrawing(replacement) else {
+                            try? CardAttachmentStore.removeDeletedFiles(Set(replacement.storedFileNames), keeping: Set(currentAttachment.storedFileNames))
+                            return false
+                        }
+                        editedAttachment = replacement
+                        return true
+                    } catch { return false }
+                }
+            } else {
+                ContentUnavailableView("Drawing unavailable", systemImage: "pencil.tip", description: Text("The image preview is still available, but its editable strokes could not be read."))
+            }
+        }
         .presentationDetents([.large])
     }
 }
@@ -2380,5 +2462,247 @@ struct PreviewTextColorsSection: View {
             }.padding(.vertical, 8)
             Text(explanation).font(.footnote).foregroundStyle(.secondary)
         }
+    }
+}
+
+// MARK: - Editable drawing capture
+
+struct DrawingCaptureDraft: Identifiable {
+    let id: UUID
+    let drawing: PKDrawing
+    let preview: UIImage
+    init(id: UUID = UUID(), drawing: PKDrawing = PKDrawing()) {
+        self.id = id
+        self.drawing = drawing
+        // Cache a bounded preview so typing in the composer never rerenders every drawing.
+        preview = DrawingImageExport.image(drawing, transparent: false, maximumDimension: 960)
+    }
+}
+
+enum DrawingImageFormat: String, CaseIterable {
+    case png, jpeg
+}
+
+enum DrawingImageExport {
+    /// Crop to the marks with a small margin; cap raster size without changing editable strokes.
+    static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage {
+        let bounds = drawing.bounds
+        let rect = bounds.isNull || bounds.isEmpty ? CGRect(x: 0, y: 0, width: 600, height: 800) : bounds.insetBy(dx: -24, dy: -24)
+        let scale = min(2, maximumDimension / max(rect.width, rect.height))
+        let ink = drawing.image(from: rect, scale: scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = !transparent
+        return UIGraphicsImageRenderer(size: rect.size, format: format).image { context in
+            if !transparent { UIColor.white.setFill(); context.fill(CGRect(origin: .zero, size: rect.size)) }
+            ink.draw(in: CGRect(origin: .zero, size: rect.size))
+        }
+    }
+    static func data(_ drawing: PKDrawing, format: DrawingImageFormat, transparent: Bool = false) throws -> Data {
+        guard !drawing.strokes.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+        let image = image(drawing, transparent: format == .png && transparent)
+        guard let data = format == .png ? image.pngData() : image.jpegData(compressionQuality: 0.95) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        return data
+    }
+}
+
+enum DrawingAttachmentStore {
+    /// New files are written before publishing metadata. Previous files remain safe until normal pruning.
+    static func save(_ draft: DrawingCaptureDraft, replacing previous: KanbanAttachment? = nil) throws -> KanbanAttachment {
+        guard !draft.drawing.strokes.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+        let png = try DrawingImageExport.data(draft.drawing, format: .png)
+        let preview = try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
+        guard let previewURL = CardAttachmentStore.fileURL(for: preview) else { throw CocoaError(.fileWriteUnknown) }
+        let strokesURL = previewURL.deletingPathExtension().appendingPathExtension("drawing")
+        do {
+            try draft.drawing.dataRepresentation().write(to: strokesURL, options: .atomic)
+        } catch {
+            try? FileManager.default.removeItem(at: previewURL)
+            throw error
+        }
+        var attachment = KanbanAttachment(id: previous?.id ?? preview.id, fileName: preview.fileName,
+            mediaKind: .photo, addedAt: previous?.addedAt ?? preview.addedAt, caption: previous?.caption)
+        attachment.drawingFileName = strokesURL.lastPathComponent
+        return attachment
+    }
+    static func load(_ attachment: KanbanAttachment) throws -> DrawingCaptureDraft {
+        guard let name = attachment.drawingFileName, name == URL(fileURLWithPath: name).lastPathComponent,
+              let previewURL = CardAttachmentStore.fileURL(for: attachment) else { throw CocoaError(.fileReadNoSuchFile) }
+        let data = try Data(contentsOf: previewURL.deletingLastPathComponent().appendingPathComponent(name))
+        return DrawingCaptureDraft(id: attachment.id, drawing: try PKDrawing(data: data))
+    }
+}
+
+@MainActor
+final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate {
+    let canvas = DrawingCanvasView()
+    @Published var hasMarks: Bool
+    @Published var canUndo = false
+    @Published var canRedo = false
+    init(drawing: PKDrawing) {
+        hasMarks = !drawing.strokes.isEmpty
+        super.init()
+        canvas.drawing = drawing
+        canvas.delegate = self
+        canvas.drawingPolicy = .anyInput
+        canvas.backgroundColor = .white
+        canvas.overrideUserInterfaceStyle = .light
+        canvas.tool = PKInkingTool(.pen, color: .black, width: 3)
+        canvas.contentSize = CGSize(width: 1200, height: 1600)
+        canvas.maximumZoomScale = 3
+    }
+    func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+        hasMarks = !canvasView.drawing.strokes.isEmpty
+        // PencilKit registers undo after its drawing-change delegate callback.
+        DispatchQueue.main.async { [weak self] in self?.refreshUndo() }
+    }
+    func refreshUndo() { canUndo = canvas.undoManager?.canUndo ?? false; canRedo = canvas.undoManager?.canRedo ?? false }
+    func undo() { canvas.undoManager?.undo(); refreshUndo() }
+    func redo() { canvas.undoManager?.redo(); refreshUndo() }
+    func clear() {
+        let previous = canvas.drawing
+        canvas.undoManager?.registerUndo(withTarget: self) { target in target.restore(previous) }
+        canvas.drawing = PKDrawing()
+        refreshUndo()
+    }
+    private func restore(_ drawing: PKDrawing) {
+        let previous = canvas.drawing
+        canvas.undoManager?.registerUndo(withTarget: self) { target in target.restore(previous) }
+        canvas.drawing = drawing
+        refreshUndo()
+    }
+}
+
+@MainActor
+final class DrawingCanvasView: PKCanvasView {
+    private let picker = PKToolPicker()
+    private var lastSize = CGSize.zero
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            picker.addObserver(self)
+            DispatchQueue.main.async { [weak self] in self?.showTools() }
+        } else {
+            picker.setVisible(false, forFirstResponder: self)
+            picker.removeObserver(self)
+        }
+    }
+    func showTools() {
+        guard window != nil else { return }
+        becomeFirstResponder()
+        picker.setVisible(true, forFirstResponder: self)
+    }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.size != lastSize, bounds.width > 0, bounds.height > 0 else { return }
+        lastSize = bounds.size
+        let fit = min(bounds.width / 1200, bounds.height / 1600)
+        minimumZoomScale = fit
+        zoomScale = fit
+    }
+}
+
+struct DrawingCanvas: UIViewRepresentable {
+    let state: DrawingCanvasState
+    func makeUIView(context: Context) -> DrawingCanvasView { state.canvas }
+    func updateUIView(_ view: DrawingCanvasView, context: Context) {}
+}
+
+private struct DrawingExportFile: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+private struct DrawingShareSheet: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+struct DrawingCaptureEditor: View {
+    let initial: DrawingCaptureDraft
+    let onSave: (DrawingCaptureDraft) -> Bool
+    @StateObject private var state: DrawingCanvasState
+    @State private var showsClear = false
+    @State private var showsDiscard = false
+    @State private var errorMessage: String?
+    @State private var exportFile: DrawingExportFile?
+    @State private var exportDirectory: URL?
+    @Environment(\.dismiss) private var dismiss
+    init(initial: DrawingCaptureDraft, onSave: @escaping (DrawingCaptureDraft) -> Bool) {
+        self.initial = initial; self.onSave = onSave
+        _state = StateObject(wrappedValue: DrawingCanvasState(drawing: initial.drawing))
+    }
+    private var changed: Bool { state.canvas.drawing.dataRepresentation() != initial.drawing.dataRepresentation() }
+    private func export(_ format: DrawingImageFormat, transparent: Bool = false) {
+        do {
+            let data = try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
+            cleanExport()
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Plenact-Drawing-" + UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            exportDirectory = directory
+            let url = directory.appendingPathComponent("Drawing." + (format == .png ? "png" : "jpg"))
+            try data.write(to: url, options: .atomic)
+            exportFile = DrawingExportFile(url: url)
+        } catch { cleanExport(); errorMessage = "The image couldn't be exported. Your drawing is still here; please try again." }
+    }
+    private func cleanExport() {
+        if let exportDirectory { try? FileManager.default.removeItem(at: exportDirectory) }
+        exportDirectory = nil
+    }
+    var body: some View {
+        NavigationStack {
+            DrawingCanvas(state: state)
+                .accessibilityLabel("Drawing canvas")
+                .navigationTitle("Drawing")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { if changed { showsDiscard = true } else { dismiss() } }
+                    }
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Menu {
+                            Button("Drawing tools", systemImage: "pencil.tip.crop.circle") { state.canvas.showTools() }
+                            Button("Undo", systemImage: "arrow.uturn.backward") { state.undo() }.disabled(!state.canUndo)
+                            Button("Redo", systemImage: "arrow.uturn.forward") { state.redo() }.disabled(!state.canRedo)
+                            Button("Clear drawing", systemImage: "trash", role: .destructive) { showsClear = true }.disabled(!state.hasMarks)
+                        } label: { Image(systemName: "ellipsis.circle") }.accessibilityLabel("Drawing actions")
+                        Menu {
+                            Button("PNG · White background") { export(.png) }
+                            Button("PNG · Transparent background") { export(.png, transparent: true) }
+                            Button("JPEG · White background") { export(.jpeg) }
+                        } label: { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Export drawing").disabled(!state.hasMarks)
+                        Button("Done") {
+                            let draft = DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
+                            if onSave(draft) { dismiss() }
+                            else { errorMessage = "The drawing couldn't be saved. Your changes are still here; please try again." }
+                        }.disabled(!state.hasMarks)
+                    }
+                }
+        }
+        .interactiveDismissDisabled(changed)
+        .confirmationDialog("Clear this drawing?", isPresented: $showsClear, titleVisibility: .visible) {
+            Button("Clear drawing", role: .destructive) { state.clear() }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Discard drawing changes?", isPresented: $showsDiscard, titleVisibility: .visible) {
+            Button("Discard changes", role: .destructive) { dismiss() }
+            Button("Keep drawing", role: .cancel) {}
+        }
+        .alert("Drawing", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: { Text(errorMessage ?? "") }
+        .sheet(item: $exportFile, onDismiss: cleanExport) { file in DrawingShareSheet(url: file.url) }
+        .task {
+            // Wait for the sheet's navigation controller to finish attaching its canvas.
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            state.canvas.showTools()
+        }
+        .onDisappear { if exportFile == nil { cleanExport() } }
+        .presentationDetents([.large])
     }
 }

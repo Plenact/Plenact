@@ -23,6 +23,9 @@
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
+import PhotosUI
+import AVFoundation
+import Speech
 
 
 // -------------------------------------- MARK: - Entry Point ----------------------------------- //
@@ -861,6 +864,9 @@ private struct AppRootView: View {
                 },
                 onAddCard:              { listID, title, description, subtitle, presentation, actions in
                     addCard(to: listID, title: title, description: description, subtitle: subtitle, presentation: presentation, actions: actions)
+                },
+                onAddCapture: { capture in
+                    addCard(to: capture.listID, title: capture.title, description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation, actions: capture.actions, attachments: capture.attachments, schedule: capture.schedule, checkedSave: true)
                 },
                 onToggleCardCompletion: toggleCardCompletion,
                 onOpenBoardList:        openBoardList,
@@ -2171,25 +2177,49 @@ private struct AppRootView: View {
         /// @pre        The caller has validated and trimmed the title
         /// @post       An absent list leaves the snapshot unchanged
         ///
-        private func addCard(to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil, actions: [String]? = nil) {
+        @discardableResult
+        private func addCard(to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil, actions: [String]? = nil, attachments: [KanbanAttachment] = [], schedule: QuickCaptureSchedule? = nil, checkedSave: Bool = false) -> Bool {
 
             guard let listIndex = lists.firstIndex(where: { /* Destination list index */
 
                 $0.id == listID
             }) else {
 
-                return
+                return false
             }
 
             let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
             var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
-            updatedList.cards.append(contentsOf: updatedList.makeItems(
+            var created = updatedList.makeItems(
                 startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
                 subtitle: subtitle, presentation: presentation, actions: actions
-            ))
-
-            lists[listIndex] = updatedList
+            )
+            guard !created.isEmpty, schedule?.isValid() != false else { return false }
+            for index in created.indices { schedule?.apply(to: &created[index]) }
+            if !attachments.isEmpty { created[0].attachments = attachments; created[0].coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id }
+            updatedList.cards.append(contentsOf: created)
+            var updatedLists = lists
+            updatedLists[listIndex] = updatedList
+            if checkedSave || !attachments.isEmpty || schedule != nil {
+                guard var document = calendarDocument,
+                      let weekIndex = document.weeks.firstIndex(where: { $0.startKey == document.currentWeekKey }) else { return false }
+                document.weeks[weekIndex].collection.lists = updatedLists
+                do {
+                    try DailyReviewTransaction.perform {
+                        try PlanningCalendarStore.save(document)
+                        try KanbanBoardPersistence.saveListsChecked(updatedLists)
+                    }
+                    calendarDocument = document
+                } catch {
+                    if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil {
+                        workspaceRecoveryError = "The capture could not be saved. Retry recovery before continuing."
+                    }
+                    return false
+                }
+            }
+            lists = updatedLists
+            return true
 
         }
 }
@@ -2221,6 +2251,7 @@ private struct TodayHomeView: View {
     let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
     let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
     let onAddCard: (Int, String, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records */
+    let onAddCapture: (QuickCaptureSubmission) -> Bool
     let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
     let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
     let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
@@ -2245,6 +2276,7 @@ private struct TodayHomeView: View {
     @State private var showsTemplates = false
     @State private var pendingTemplate: QuickCaptureTemplate?
     @State private var composerTemplate: QuickCaptureTemplate?
+    @State private var captureAction: TodayCaptureAction?
     @State private var showsCalendar = false
     @State private var showsSearch          = false         /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
@@ -2429,6 +2461,7 @@ private struct TodayHomeView: View {
         onSaveProfile:   @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
         onAddCard: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
+        onAddCapture: @escaping (QuickCaptureSubmission) -> Bool,
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
         onOpenBoardCard: @escaping (Int, Int) -> Void,
@@ -2446,6 +2479,7 @@ private struct TodayHomeView: View {
         self.onSaveProfile   = onSaveProfile
         self.onRemoveProfile = onRemoveProfile
         self.onAddCard       = onAddCard
+        self.onAddCapture = onAddCapture
         self.onToggleCardCompletion = onToggleCardCompletion
         self.onOpenBoardList = onOpenBoardList
         self.onOpenBoardCard = onOpenBoardCard
@@ -2563,6 +2597,7 @@ private struct TodayHomeView: View {
     private func openQuickNoteEditor() {
 
         composerTemplate = nil
+        captureAction = nil
         guard selectedTodayList != nil else {
 
             presentComposerAfterListChoice = true
@@ -2583,6 +2618,18 @@ private struct TodayHomeView: View {
     ///
     /// @return     (Void) opens the full editor with the current quick-capture title
     ///
+    private func openCapture(_ action: TodayCaptureAction) {
+        welcomeCue.cancel()
+        composerTemplate = nil
+        captureAction = action
+        guard selectedTodayList != nil else {
+            presentComposerAfterListChoice = true
+            listPickerMode = .chooseToday
+            return
+        }
+        presentQuickNoteEditor()
+    }
+
     private func presentQuickNoteEditor() {
 
         quickComposerInitialTitle = quickCaptureTitle
@@ -2687,9 +2734,8 @@ private struct TodayHomeView: View {
                                 sources: planningCalendarAccess?.searchableItems ?? [], welcomesPlan: welcomeCue.highlights(.plan), onOpen: { showsTodayPlan = true })
                                 .padding(16)
                         }
-                        // Keep the iPad capture/focus/shortcut group near the toolbar after the compact header.
-                        // Move the group together so its internal spacing and the iPhone layout stay unchanged.
-                        .padding(.bottom, 36)
+                        // Reclaim the action row’s 52 points from the space before capture.
+                        .padding(.bottom, -16)
                     }
                     VStack(spacing: 0) {
                         TodaySloganView()
@@ -2726,6 +2772,7 @@ private struct TodayHomeView: View {
                     browseListsAction
                 }
                         .padding(20)
+                        .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : -40)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, 112)
             }
@@ -2813,6 +2860,7 @@ private struct TodayHomeView: View {
 
                 quickComposerInitialTitle = ""
                 composerTemplate = nil
+                captureAction = nil
             }) {
 
                 if let selectedTodayList { /* Current list receiving the Today edit */
@@ -2821,7 +2869,13 @@ private struct TodayHomeView: View {
                         lists:         $lists,
                         initialListID: selectedTodayList.id,
                         initialTitle:  quickComposerInitialTitle,
-                        template:      composerTemplate
+                        template:      composerTemplate,
+                        captureAction: captureAction,
+                        onSaveCapture: { capture in
+                            let saved = onAddCapture(capture)
+                            if saved { quickComposerInitialTitle = "" }
+                            return saved
+                        }
                     ) { listID, title, description, subtitle, presentation, actions in
                         onAddCard(listID, title, description, subtitle, presentation, actions)
                         quickComposerInitialTitle = ""
@@ -2836,6 +2890,7 @@ private struct TodayHomeView: View {
                 pendingTemplate = nil
                 ensureCurrentWeekdayList()
                 composerTemplate = template
+                captureAction = nil
                 presentQuickNoteEditor()
             }) {
                 QuickCaptureTemplatesView { template in
@@ -3013,6 +3068,8 @@ private struct TodayHomeView: View {
                     .allowsHitTesting(false)
             }
 
+            TodayCaptureActions(onSelect: openCapture)
+
             if let selectedTodayList { /* Selected list available for quick capture */
 
                 Text("Adding to \(selectedTodayList.title)")
@@ -3132,11 +3189,269 @@ struct ContentCreationKindPicker: View {
     }
 }
 
+enum TodayCaptureAction: String, CaseIterable, Identifiable {
+    case note, checklist, photo, voice, drawing
+    var id: Self { self }
+    var title: String { switch self { case .note: "Note"; case .checklist: "Checklist"; case .photo: "Photo"; case .voice: "Voice"; case .drawing: "Drawing" } }
+    var symbol: String { switch self { case .note: "square.and.pencil"; case .checklist: "checklist"; case .photo: "camera"; case .voice: "mic"; case .drawing: "pencil.tip.crop.circle.badge.plus" } }
+    var presentation: ItemPresentation { self == .note ? .note : .card }
+}
+
+struct TodayCaptureActions: View {
+    let onSelect: (TodayCaptureAction) -> Void
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(TodayCaptureAction.allCases) { action in
+                Button { onSelect(action) } label: {
+                    Image(systemName: action.symbol)
+                        .font(.system(size: 19))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).foregroundStyle(.secondary)
+                .accessibilityLabel("Capture " + action.title.lowercased())
+            }
+        }
+    }
+}
+
+struct QuickCaptureSchedule: Equatable {
+    var start: Date?
+    var stop: Date?
+    var includesTime = false
+    func isValid(calendar: Calendar = .current) -> Bool {
+        guard let start, let stop else { return true }
+        return includesTime ? stop >= start : calendar.startOfDay(for: stop) >= calendar.startOfDay(for: start)
+    }
+    func apply(to card: inout KanbanCard, calendar: Calendar = .current) {
+        let kind: CardDateKind = includesTime ? .dateAndTime : .date
+        card.startDate = start.map { kind.normalized($0, calendar: calendar) }
+        card.dueDate = stop.map { kind.normalized($0, calendar: calendar) }
+        card.startDateKind = kind; card.dueDateKind = kind
+    }
+}
+
+struct QuickCaptureSubmission {
+    let listID: Int
+    let title: String
+    let body: String
+    let subtitle: String
+    let presentation: ItemPresentation
+    let actions: [String]?
+    let attachments: [KanbanAttachment]
+    let schedule: QuickCaptureSchedule?
+}
+
+enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable {
+    case audio = "Audio", text = "Text", both = "Both"
+    var id: Self { self }
+    var savesAudio: Bool { self != .text }
+    var savesText: Bool { self != .audio }
+    func body(existing: String, transcript: String) -> String {
+        let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard savesText, !text.isEmpty else { return existing }
+        let result = NSMutableAttributedString(attributedString: PlanRichText.attributed(existing))
+        result.append(NSAttributedString(string: (result.length == 0 ? "" : "\n\n") + text))
+        return PlanRichText.encode(result)
+    }
+}
+
+@MainActor
+final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelegate {
+    @Published private(set) var isRecording = false
+    @Published private(set) var isStarting = false
+    @Published private(set) var isTranscribing = false
+    @Published private(set) var recordingURL: URL?
+    @Published var transcript = ""
+    @Published var errorMessage: String?
+    private var recorder: AVAudioRecorder?
+    private var speechTask: SFSpeechRecognitionTask?
+    private var timeout: Task<Void, Never>?
+    private var generation = 0
+
+    func start() async {
+        guard !isStarting, !isRecording else { return }
+        isStarting = true
+        let permissionToken = generation
+        NotificationCenter.default.post(name: Notification.Name("Plenact.StopAudioPreview"), object: nil)
+        defer { isStarting = false }
+        let granted = await AVAudioApplication.requestRecordPermission()
+        guard granted else { errorMessage = "Microphone access is unavailable. You can allow it in Settings → Plenact."; return }
+        guard !Task.isCancelled, permissionToken == generation else { return }
+        cleanup()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-voice-" + UUID().uuidString + ".m4a")
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setActive(true)
+            let recorder = try AVAudioRecorder(url: url, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100, AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue])
+            recorder.delegate = self
+            guard recorder.record(forDuration: 60) else { throw CocoaError(.fileWriteUnknown) }
+            self.recorder = recorder; recordingURL = url; isRecording = true
+        } catch {
+            try? FileManager.default.removeItem(at: url)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            errorMessage = "Recording couldn't start. Your draft is still here; please try again."
+        }
+    }
+    func stop() {
+        guard isRecording else { return }
+        recorder?.stop(); recorder = nil; isRecording = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        Task { @MainActor [weak self] in
+            guard let self, self.isRecording, self.recordingURL == recorder.url else { return }
+            self.stop()
+            if !flag { self.errorMessage = "Recording was interrupted. Preview the recording before saving." }
+        }
+    }
+    func transcribe() async {
+        guard let url = recordingURL, !isRecording, !isTranscribing else { return }
+        isTranscribing = true; errorMessage = nil
+        generation += 1
+        let token = generation
+        let status = await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
+        }
+        guard !Task.isCancelled, token == generation, recordingURL == url else { return }
+        guard status == .authorized else {
+            isTranscribing = false
+            errorMessage = "Speech recognition is unavailable. You can enable it in Settings, keep the recording as Audio, or enter the transcript yourself."
+            return
+        }
+        guard let recognizer = SFSpeechRecognizer(locale: .current), recognizer.isAvailable else {
+            isTranscribing = false; errorMessage = "Speech recognition isn't available right now. Retry later or save Audio instead."; return
+        }
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = recognizer.supportsOnDeviceRecognition
+        speechTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            let text = result?.bestTranscription.formattedString
+            let final = result?.isFinal == true
+            let failed = error != nil
+            Task { @MainActor in
+                guard let self, self.generation == token else { return }
+                if let text { self.transcript = text }
+                if final || failed {
+                    self.generation += 1
+                    self.isTranscribing = false; self.speechTask = nil; self.timeout?.cancel()
+                    if failed && !final { self.errorMessage = "Transcription couldn't finish. Review any text below, retry, or save Audio instead." }
+                }
+            }
+        }
+        timeout?.cancel()
+        timeout = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(30)) } catch { return }
+            guard let self, self.generation == token, self.isTranscribing else { return }
+            self.cancelTranscription()
+            self.errorMessage = "Transcription took too long. Retry, enter text yourself, or save Audio instead."
+        }
+    }
+    func cancelTranscription() {
+        generation += 1; speechTask?.cancel(); speechTask = nil
+        timeout?.cancel(); timeout = nil; isTranscribing = false
+    }
+    func audioData() throws -> Data {
+        guard let recordingURL, !isRecording else { throw CocoaError(.fileReadNoSuchFile) }
+        return try Data(contentsOf: recordingURL)
+    }
+    func cleanup() {
+        cancelTranscription(); stop()
+        if let recordingURL { try? FileManager.default.removeItem(at: recordingURL) }
+        recordingURL = nil; transcript = ""
+    }
+}
+
+struct QuickCapturePhoto: Identifiable {
+    let id = UUID()
+    let data: Data
+    let fileExtension: String
+    var image: UIImage? { UIImage(data: data) }
+}
+
+/// Store media only on explicit Add; a failed handoff removes just this draft's files.
+@MainActor
+enum QuickCaptureMediaCommit {
+    static func save(_ photos: [QuickCapturePhoto], audio: Data? = nil, drawings: [DrawingCaptureDraft] = [], commit: ([KanbanAttachment]) -> Bool) throws -> Bool {
+        var saved: [KanbanAttachment] = []
+        do {
+            for photo in photos {
+                guard photo.image != nil else { throw CocoaError(.fileReadCorruptFile) }
+                saved.append(try CardAttachmentStore.saveMedia(photo.data, kind: .photo, fileExtension: photo.fileExtension))
+            }
+            for drawing in drawings { saved.append(try DrawingAttachmentStore.save(drawing)) }
+            if let audio {
+                guard !audio.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+                saved.append(try CardAttachmentStore.saveMedia(audio, kind: .audio, fileExtension: "m4a"))
+            }
+            if commit(saved) { return true }
+            try CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: [])
+            return false
+        } catch {
+            try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: [])
+            throw error
+        }
+    }
+}
+
+struct QuickCaptureCamera: UIViewControllerRepresentable {
+    let onPhoto: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera; picker.delegate = context.coordinator
+        return picker
+    }
+    func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: QuickCaptureCamera
+        init(parent: QuickCaptureCamera) { self.parent = parent }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage { parent.onPhoto(image) }
+            parent.dismiss()
+        }
+    }
+}
+
 struct QuickNoteComposer: View {
 
     @Binding var lists: [KanbanList]                         /* Current destination lists */
     let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     let template: QuickCaptureTemplate?
+    let captureAction: TodayCaptureAction?
+    let onSaveCapture: ((QuickCaptureSubmission) -> Bool)?
+    @State private var drawings: [DrawingCaptureDraft] = []
+    @State private var drawingToEdit: DrawingCaptureDraft?
+    @State private var offeredDrawing = false
+    @State private var photos: [QuickCapturePhoto] = []
+    @State private var photoSelection: [PhotosPickerItem] = []
+    @State private var showsPhotoSources = false
+    @State private var showsPhotoLibrary = false
+    @State private var showsCamera = false
+    @State private var offeredPhotoSources = false
+    @State private var importingPhotos = false
+    @State private var mediaError: String?
+    @StateObject private var voice = QuickCaptureVoice()
+    @State private var voiceSaveOption: VoiceCaptureSaveOption = .both
+    @State private var replaceRecording = false
+    @State private var hasStartDate = false
+    @State private var hasStopDate = false
+    @State private var startDate = Date.now
+    @State private var stopDate = Date.now
+    @State private var includesDateTime = false
+    @Environment(\.scenePhase) private var scenePhase
+    private var schedule: QuickCaptureSchedule {
+        QuickCaptureSchedule(start: hasStartDate ? startDate : nil, stop: hasStopDate ? stopDate : nil, includesTime: includesDateTime)
+    }
+    private var voiceReady: Bool {
+        guard captureAction == .voice else { return true }
+        return !voice.isStarting && !voice.isRecording && !voice.isTranscribing
+            && (!voiceSaveOption.savesAudio || voice.recordingURL != nil)
+            && (!voiceSaveOption.savesText || !voice.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
@@ -3167,16 +3482,20 @@ struct QuickNoteComposer: View {
         initialListID: Int?,
         initialTitle: String = "",
         template: QuickCaptureTemplate? = nil,
+        captureAction: TodayCaptureAction? = nil,
+        onSaveCapture: ((QuickCaptureSubmission) -> Bool)? = nil,
         onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     ) {
 
         _lists = lists
-        _presentation = State(initialValue: template?.presentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
+        _presentation = State(initialValue: captureAction?.presentation ?? template?.presentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
         _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? initialTitle)
         _description = State(initialValue: template?.body ?? "")
-        _actions = State(initialValue: (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
+        _actions = State(initialValue: captureAction == .checklist ? [KanbanChecklistItem(title: "")] : (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
         _selectedListID = State(initialValue: initialListID)
         self.template = template
+        self.captureAction = captureAction
+        self.onSaveCapture = onSaveCapture
         self.onSave = onSave
     }
 
@@ -3211,6 +3530,116 @@ struct QuickNoteComposer: View {
         }.pickerStyle(.menu)
     }
 
+    private var drawingControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(drawings) { drawing in
+                HStack {
+                    Button { drawingToEdit = drawing } label: {
+                        Image(uiImage: drawing.preview).resizable().scaledToFit().frame(maxHeight: 150)
+                    }.buttonStyle(.plain).accessibilityLabel("Edit drawing")
+                    Button("Remove drawing", systemImage: "trash", role: .destructive) { drawings.removeAll { $0.id == drawing.id } }
+                        .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                }
+            }
+            Button("Add drawing", systemImage: "pencil.tip") { drawingToEdit = DrawingCaptureDraft() }
+                .frame(minHeight: 44).disabled(drawings.count >= 6)
+            Text("Drawings stay editable. Tap a preview to edit or export it. They are attached when you tap Add.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+    private var dateControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle("Start date", isOn: $hasStartDate)
+            if hasStartDate {
+                DatePicker("Start", selection: $startDate, displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
+            }
+            Toggle("Stop date", isOn: $hasStopDate)
+            if hasStopDate {
+                DatePicker("Stop", selection: $stopDate, displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
+            }
+            Toggle("Include times", isOn: $includesDateTime)
+            Text("Both dates are optional. Stop sets the item's due date, so it appears in Calendar.")
+                .font(.caption).foregroundStyle(.secondary)
+            if !schedule.isValid() { Text("Stop must be on or after Start.").foregroundStyle(.red) }
+        }
+    }
+    private var voiceControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("Save as", selection: $voiceSaveOption) {
+                ForEach(VoiceCaptureSaveOption.allCases) { option in Text(option.rawValue).tag(option) }
+            }.pickerStyle(.segmented)
+            if voice.isRecording {
+                Label("Recording · up to 60 seconds", systemImage: "record.circle").foregroundStyle(.red)
+                Button("Stop recording", systemImage: "stop.circle") { voice.stop() }.frame(minHeight: 44)
+            } else {
+                Button(voice.recordingURL == nil ? "Record a thought" : "Record again", systemImage: "mic") {
+                    if voice.recordingURL != nil { replaceRecording = true }
+                    else { Task { await voice.start() } }
+                }.frame(minHeight: 44).disabled(voice.isStarting || voice.isTranscribing)
+                if voice.isStarting { ProgressView("Preparing microphone…") }
+                if let url = voice.recordingURL { AudioAttachmentPlayer(url: url) }
+            }
+            if voiceSaveOption.savesText {
+                if voice.isTranscribing {
+                    ProgressView("Transcribing…")
+                    Button("Cancel transcription") { voice.cancelTranscription() }
+                } else if voice.recordingURL != nil {
+                    Button(voice.transcript.isEmpty ? "Transcribe recording" : "Transcribe again", systemImage: "text.bubble") { Task { await voice.transcribe() } }
+                        .disabled(voice.isRecording)
+                }
+                TextField("Transcript · review or edit before saving", text: $voice.transcript, axis: .vertical)
+                    .lineLimit(3...10).disabled(voice.isRecording || voice.isTranscribing)
+            }
+            if let error = voice.errorMessage { Text(error).font(.callout).foregroundStyle(.secondary) }
+            Text("Audio keeps the recording; Text adds your reviewed transcript to the item's writing; Both keeps each. Transcription uses Apple’s speech recognition and may need an internet connection. Nothing is added to your List until you tap Add.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var photoControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if importingPhotos { ProgressView("Preparing photos…") }
+            ForEach(photos) { photo in
+                HStack {
+                    if let image = photo.image {
+                        Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 140)
+                            .accessibilityLabel("Photo to attach")
+                    }
+                    Button("Remove photo", systemImage: "trash", role: .destructive) { photos.removeAll { $0.id == photo.id } }
+                        .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
+                }
+            }
+            Button("Add photo", systemImage: "camera") { showsPhotoSources = true }
+                .frame(minHeight: 44).disabled(importingPhotos || photos.count >= 6)
+            Text("Photos are attached when you tap Add. Cancelling leaves your original Quick capture title in place.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+    @MainActor private func openCamera() async {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            mediaError = "A camera isn't available on this device. Choose Photo library instead."
+            return
+        }
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        var allowed = status == .authorized
+        if status == .notDetermined { allowed = await AVCaptureDevice.requestAccess(for: .video) }
+        if allowed { showsCamera = true }
+        else { mediaError = "Camera access is unavailable. You can allow it in Settings → Plenact, or choose Photo library." }
+    }
+    @MainActor private func importPhotos() async {
+        guard !photoSelection.isEmpty else { return }
+        importingPhotos = true
+        defer { importingPhotos = false; photoSelection = [] }
+        do {
+            for item in photoSelection.prefix(max(0, 6 - photos.count)) {
+                guard let data = try await item.loadTransferable(type: Data.self), UIImage(data: data) != nil else { throw CocoaError(.fileReadCorruptFile) }
+                try Task.checkCancellation()
+                photos.append(QuickCapturePhoto(data: data, fileExtension: item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"))
+            }
+        } catch is CancellationError { return }
+        catch { mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here." }
+    }
+
     var body: some View { /* New-card form and destination controls */
 
         NavigationStack {
@@ -3223,6 +3652,12 @@ struct QuickNoteComposer: View {
                             TextField("Note title", text: $title, axis: .vertical)
                                 .font(.largeTitle.weight(.bold))
                             NoteCreationDateLabel(createdAt: createdAt)
+                            if captureAction == .photo { photoControls }
+                            if captureAction == .voice { voiceControls }
+                            if captureAction == .drawing { drawingControls }
+                            if onSaveCapture != nil {
+                                DisclosureGroup("Start and stop dates") { dateControls }
+                            }
                             RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
                         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                     }.background(Color(.systemGroupedBackground))
@@ -3235,7 +3670,7 @@ struct QuickNoteComposer: View {
                     RichTextEditor(placeholder: "Details (optional)", text: $description)
                 }
 
-                if template != nil && presentation == .card {
+                if (template != nil || captureAction == .checklist || !actions.isEmpty) && presentation == .card {
                     Section("Actions") {
                         ForEach($actions) { $action in
                             TextField("Action", text: $action.title)
@@ -3244,6 +3679,15 @@ struct QuickNoteComposer: View {
                         Button("Add action", systemImage: "plus") {
                             actions.append(KanbanChecklistItem(title: ""))
                         }
+                    }
+                }
+
+                if captureAction == .photo { Section("Photos") { photoControls } }
+                if captureAction == .voice { Section("Voice capture") { voiceControls } }
+                if captureAction == .drawing { Section("Drawings") { drawingControls } }
+                if onSaveCapture != nil {
+                    Section("Dates") {
+                        DisclosureGroup("Start and stop dates") { dateControls }
                     }
                 }
 
@@ -3284,15 +3728,70 @@ struct QuickNoteComposer: View {
                         guard let selectedListID, /* Chosen Week destination identity */
                               lists.contains(where: { $0.id == selectedListID }) else { return }
                         let editedActions = actions.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                        onSave(selectedListID, trimmedTitle, presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines), subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation, template == nil ? nil : editedActions)
+                        let originalBody = presentation == .note ? description : description.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let body = captureAction == .voice ? voiceSaveOption.body(existing: originalBody, transcript: voice.transcript) : originalBody
+                        let actionTitles: [String]? = template != nil || captureAction == .checklist ? editedActions : nil
+                        if let onSaveCapture {
+                            guard voiceReady, schedule.isValid() else { return }
+                            do {
+                                let audio = captureAction == .voice && voiceSaveOption.savesAudio ? try voice.audioData() : nil
+                                guard try QuickCaptureMediaCommit.save(photos, audio: audio, drawings: drawings, commit: { attachments in
+                                    onSaveCapture(QuickCaptureSubmission(listID: selectedListID, title: trimmedTitle, body: body,
+                                        subtitle: subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation: presentation,
+                                        actions: actionTitles, attachments: attachments, schedule: hasStartDate || hasStopDate ? schedule : nil))
+                                }) else { mediaError = "This capture could not be saved. Your draft is still open; check its List and try again."; return }
+                            } catch { mediaError = "Your capture couldn't be saved. Your draft is still open; please try again."; return }
+                        } else {
+                            onSave(selectedListID, trimmedTitle, body, subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation, actionTitles)
+                        }
                         dismiss()
                     }
 
-                    .disabled(trimmedTitle.isEmpty || selectedListID == nil || !lists.contains(where: { $0.id == selectedListID }))
+                    .disabled(importingPhotos || !voiceReady || !schedule.isValid() || trimmedTitle.isEmpty || selectedListID == nil || !lists.contains(where: { $0.id == selectedListID }))
                 }
             }
         }
 
+        .task {
+            if captureAction == .drawing && !offeredDrawing { offeredDrawing = true; drawingToEdit = DrawingCaptureDraft() }
+            if captureAction == .photo && !offeredPhotoSources { offeredPhotoSources = true; showsPhotoSources = true }
+        }
+        .sheet(item: $drawingToEdit) { draft in
+            DrawingCaptureEditor(initial: draft) { updated in
+                if let index = drawings.firstIndex(where: { $0.id == updated.id }) { drawings[index] = updated }
+                else { drawings.append(updated) }
+                return true
+            }
+        }
+        .confirmationDialog("Add a photo", isPresented: $showsPhotoSources, titleVisibility: .visible) {
+            Button("Take photo") { Task { await openCamera() } }
+            Button("Photo library") { showsPhotoLibrary = true }
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showsPhotoLibrary, selection: $photoSelection, maxSelectionCount: max(1, 6 - photos.count), matching: .images)
+        .task(id: photoSelection) { await importPhotos() }
+        .sheet(isPresented: $showsCamera) {
+            QuickCaptureCamera { image in
+                if let data = image.jpegData(compressionQuality: 0.9) { photos.append(QuickCapturePhoto(data: data, fileExtension: "jpg")) }
+                else { mediaError = "This photo couldn't be prepared. Please try again." }
+            }.ignoresSafeArea()
+        }
+        .onChange(of: voice.isRecording) { wasRecording, recording in
+            if wasRecording && !recording && voice.recordingURL != nil && voiceSaveOption.savesText && scenePhase == .active {
+                Task { await voice.transcribe() }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in if phase != .active { voice.stop() } }
+        .onChange(of: voiceSaveOption) { _, option in if !option.savesText { voice.cancelTranscription() } }
+        .onDisappear { voice.cleanup() }
+        .interactiveDismissDisabled(voice.isRecording || voice.isStarting || voice.isTranscribing)
+        .confirmationDialog("Replace this recording and transcript?", isPresented: $replaceRecording, titleVisibility: .visible) {
+            Button("Record again", role: .destructive) { Task { await voice.start() } }
+            Button("Keep recording", role: .cancel) {}
+        }
+        .alert("Capture not saved", isPresented: Binding(get: { mediaError != nil }, set: { if !$0 { mediaError = nil } })) {
+            Button("OK", role: .cancel) { mediaError = nil }
+        } message: { Text(mediaError ?? "") }
         .presentationDetents([.large])
     }
 }
@@ -5082,7 +5581,7 @@ struct BoardListsView: View {
             + (ExampleLoadUndoStore.load()?.lists ?? [])
         let retainedFileNames = Set(retainedLists.flatMap(\.allCards) /* Attachment filenames still referenced by retained records */
             .flatMap { $0.attachments ?? [] }
-            .compactMap(\.fileName))
+            .flatMap(\.storedFileNames))
         CardAttachmentStore.removeUnreferencedFiles(keeping: retainedFileNames)
 
         return true

@@ -11,6 +11,8 @@
 // --------------------------------------------------------------------------------------------------
 import XCTest
 import SwiftUI
+import AVFoundation
+import PencilKit
 @testable import Plenact
 
 
@@ -4206,6 +4208,268 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertTrue(textValues().contains("Keep this idea"))
             XCTAssertTrue(textValues().contains(QuickCaptureTemplate.smallPlan.body))
         }
+    }
+
+    func testCaptureStartStopDatesAreOptionalValidatedAndPersistAsCalendarDates() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let start = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 10)))
+        let stop = try XCTUnwrap(calendar.date(byAdding: .day, value: 2, to: start))
+        for times in [false, true] {
+            for pair: (Date?, Date?) in [(nil, nil), (start, nil), (nil, stop), (start, stop)] {
+                let schedule = QuickCaptureSchedule(start: pair.0, stop: pair.1, includesTime: times)
+                XCTAssertTrue(schedule.isValid(calendar: calendar))
+                var card = KanbanCard(id: 1, word: "Scheduled capture", listTitle: "Today")
+                schedule.apply(to: &card, calendar: calendar)
+                let saved = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+                XCTAssertEqual(saved.startDate, pair.0.map { times ? $0 : calendar.startOfDay(for: $0) })
+                XCTAssertEqual(saved.dueDate, pair.1.map { times ? $0 : calendar.startOfDay(for: $0) })
+                XCTAssertEqual(saved.startDateKind, times ? .dateAndTime : .date)
+                XCTAssertEqual(saved.dueDateKind, times ? .dateAndTime : .date)
+            }
+        }
+        XCTAssertFalse(QuickCaptureSchedule(start: stop, stop: start).isValid(calendar: calendar))
+        let earlierToday = start.addingTimeInterval(-60)
+        XCTAssertTrue(QuickCaptureSchedule(start: start, stop: earlierToday).isValid(calendar: calendar))
+        XCTAssertFalse(QuickCaptureSchedule(start: start, stop: earlierToday, includesTime: true).isValid(calendar: calendar))
+    }
+
+    func testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting() throws {
+        let rich = PlanRichText.prefix + (try JSONEncoder().encode([PlanRichText.Run(text: "Keep this writing", bold: true)])).base64EncodedString()
+        let transcript = "  My reviewed spoken thought  "
+        XCTAssertEqual(VoiceCaptureSaveOption.audio.body(existing: rich, transcript: transcript), rich)
+        for option in [VoiceCaptureSaveOption.text, .both] {
+            let body = option.body(existing: rich, transcript: transcript)
+            XCTAssertEqual(PlanRichText.plain(body), "Keep this writing\n\nMy reviewed spoken thought")
+            XCTAssertEqual(PlanRichText.runs(body)?.first?.bold, true)
+            XCTAssertEqual(option.body(existing: "", transcript: transcript), "My reviewed spoken thought")
+            XCTAssertEqual(option.body(existing: rich, transcript: "   "), rich)
+        }
+        XCTAssertTrue(VoiceCaptureSaveOption.audio.savesAudio)
+        XCTAssertFalse(VoiceCaptureSaveOption.audio.savesText)
+        XCTAssertFalse(VoiceCaptureSaveOption.text.savesAudio)
+        XCTAssertTrue(VoiceCaptureSaveOption.text.savesText)
+        XCTAssertTrue(VoiceCaptureSaveOption.both.savesAudio && VoiceCaptureSaveOption.both.savesText)
+    }
+
+    @MainActor
+    func testVoiceAudioCommitRoundTripsPlaybackFileAndCleansRejectedSave() throws {
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
+        defer { try? FileManager.default.removeItem(at: source) }
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 4_410))
+        buffer.frameLength = 4_410
+        if let data = buffer.floatChannelData { data[0].initialize(repeating: 0, count: 4_410) }
+        do {
+            let file = try AVAudioFile(forWriting: source, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100, AVNumberOfChannelsKey: 1])
+            try file.write(from: buffer)
+        }
+        let audio = try Data(contentsOf: source)
+        var retained: [KanbanAttachment] = []
+        defer { try? CardAttachmentStore.removeDeletedFiles(Set(retained.compactMap(\.fileName)), keeping: []) }
+        XCTAssertTrue(try QuickCaptureMediaCommit.save([], audio: audio) { attachments in retained = attachments; return true })
+        let attachment = try XCTUnwrap(retained.first)
+        XCTAssertEqual(attachment.kind, .audio)
+        XCTAssertNil(CardAttachmentStore.imageURL(for: attachment))
+        let savedURL = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment))
+        XCTAssertEqual(try Data(contentsOf: savedURL), audio)
+        let player = try AVAudioPlayer(contentsOf: savedURL)
+        XCTAssertGreaterThan(player.duration, 0)
+        let card = KanbanCard(id: 1, word: "Voice", listTitle: "Today", attachments: retained, descriptionOverride: "Reviewed transcript")
+        let saved = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(saved.attachments?.first?.kind, .audio)
+        XCTAssertEqual(saved.descriptionOverride, "Reviewed transcript")
+        var rejected: [URL] = []
+        XCTAssertFalse(try QuickCaptureMediaCommit.save([], audio: audio) { attachments in rejected = attachments.compactMap(CardAttachmentStore.fileURL); return false })
+        XCTAssertTrue(rejected.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) })
+        XCTAssertThrowsError(try QuickCaptureMediaCommit.save([], audio: Data()) { _ in XCTFail("Empty audio must not commit"); return true })
+    }
+
+    @MainActor
+    func testQuickCapturePhotoCommitRetainsSuccessfulFilesAndCleansRejectedOrPartialImports() throws {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { context in
+            UIColor.systemBlue.setFill(); context.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+        }
+        let photo = QuickCapturePhoto(data: try XCTUnwrap(image.pngData()), fileExtension: "png")
+        var committed: [KanbanAttachment] = []
+        defer { try? CardAttachmentStore.removeDeletedFiles(Set(committed.compactMap(\.fileName)), keeping: []) }
+        XCTAssertTrue(try QuickCaptureMediaCommit.save([photo]) { attachments in
+            committed = attachments
+            XCTAssertEqual(attachments.count, 1)
+            return true
+        })
+        let attachment = try XCTUnwrap(committed.first)
+        let url = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment))
+        XCTAssertEqual(try Data(contentsOf: url), photo.data)
+        let card = KanbanCard(id: 9, word: "Captured title", listTitle: "Today", attachments: committed, coverAttachmentID: attachment.id)
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(restored.attachments, committed)
+        XCTAssertEqual(restored.coverAttachmentID, attachment.id)
+        var rejectedURLs: [URL] = []
+        XCTAssertFalse(try QuickCaptureMediaCommit.save([photo]) { attachments in
+            rejectedURLs = attachments.compactMap(CardAttachmentStore.fileURL)
+            return false
+        })
+        XCTAssertTrue(rejectedURLs.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) })
+        let directory = url.deletingLastPathComponent()
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
+        let invalid = QuickCapturePhoto(data: Data("not an image".utf8), fileExtension: "png")
+        XCTAssertThrowsError(try QuickCaptureMediaCommit.save([photo, invalid]) { _ in XCTFail("Invalid imports cannot commit"); return true })
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: directory.path)), before)
+    }
+
+    @MainActor
+    private func drawingFixture() -> PKDrawing {
+        let points = [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map { index, point in
+            PKStrokePoint(location: point, timeOffset: Double(index) * 0.1, size: CGSize(width: 8, height: 8), opacity: 1, force: 1, azimuth: 0, altitude: .pi / 2)
+        }
+        return PKDrawing(strokes: [PKStroke(ink: PKInk(.pen, color: .blue), path: PKStrokePath(controlPoints: points, creationDate: .now))])
+    }
+
+    @MainActor
+    func testDrawingCapturePersistsEditableStrokesAndRetainsBothFiles() throws {
+        let draft = DrawingCaptureDraft(drawing: drawingFixture())
+        var saved: [KanbanAttachment] = []
+        defer { try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: []) }
+        XCTAssertTrue(try QuickCaptureMediaCommit.save([], drawings: [draft]) { saved = $0; return true })
+        let attachment = try XCTUnwrap(saved.first)
+        XCTAssertEqual(attachment.kind, .photo)
+        XCTAssertEqual(attachment.storedFileNames.count, 2)
+        XCTAssertNotNil(UIImage(contentsOfFile: try XCTUnwrap(CardAttachmentStore.imageURL(for: attachment)).path))
+        let card = KanbanCard(id: 4, word: "Sketch", listTitle: "Today", attachments: saved, coverAttachmentID: attachment.id)
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        let restoredAttachment = try XCTUnwrap(restored.attachments?.first)
+        let editable = try DrawingAttachmentStore.load(restoredAttachment)
+        XCTAssertEqual(editable.drawing.strokes.count, draft.drawing.strokes.count)
+        XCTAssertEqual(editable.drawing.bounds, draft.drawing.bounds)
+        XCTAssertEqual(CardAttachmentStore.fileNames(in: [KanbanList(id: 4, title: "Today", cards: [restored])]), Set(attachment.storedFileNames))
+        let replacement = try DrawingAttachmentStore.save(editable, replacing: attachment)
+        saved.append(replacement)
+        XCTAssertEqual(replacement.id, attachment.id)
+        XCTAssertEqual(replacement.addedAt, attachment.addedAt)
+        XCTAssertNotEqual(replacement.fileName, attachment.fileName)
+        // Editing prepares new files and never overwrites strokes referenced by a saved snapshot.
+        XCTAssertNoThrow(try DrawingAttachmentStore.load(attachment))
+        XCTAssertNoThrow(try DrawingAttachmentStore.load(replacement))
+        let legacy = KanbanAttachment(fileName: "old-photo.jpg", mediaKind: .photo)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        object.removeValue(forKey: "drawingFileName")
+        let legacyRestored = try JSONDecoder().decode(KanbanAttachment.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(legacyRestored.drawingFileName)
+        XCTAssertEqual(legacyRestored.storedFileNames, ["old-photo.jpg"])
+    }
+
+    @MainActor
+    func testDrawingRejectedAndPartialSavesCleanBothFiles() throws {
+        let draft = DrawingCaptureDraft(drawing: drawingFixture())
+        var rejected: [KanbanAttachment] = []
+        XCTAssertFalse(try QuickCaptureMediaCommit.save([], drawings: [draft]) { rejected = $0; return false })
+        let attachment = try XCTUnwrap(rejected.first)
+        let directory = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment)).deletingLastPathComponent()
+        for name in attachment.storedFileNames { XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(name).path)) }
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
+        XCTAssertThrowsError(try QuickCaptureMediaCommit.save([], drawings: [draft, DrawingCaptureDraft()]) { _ in XCTFail("A partial drawing import must not commit"); return true })
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: directory.path)), before)
+    }
+
+    @MainActor
+    func testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes() throws {
+        let drawing = drawingFixture()
+        let original = drawing.dataRepresentation()
+        let transparent = try DrawingImageExport.data(drawing, format: .png, transparent: true)
+        let opaque = try DrawingImageExport.data(drawing, format: .png)
+        let jpeg = try DrawingImageExport.data(drawing, format: .jpeg)
+        XCTAssertEqual(Array(transparent.prefix(8)), [137, 80, 78, 71, 13, 10, 26, 10])
+        XCTAssertEqual(Array(jpeg.prefix(2)), [255, 216])
+        for data in [transparent, opaque, jpeg] {
+            let image = try XCTUnwrap(UIImage(data: data))
+            XCTAssertLessThanOrEqual(max(image.size.width * image.scale, image.size.height * image.scale), 4096)
+            XCTAssertGreaterThan(image.size.width, 0)
+        }
+        func cornerAlpha(_ data: Data) throws -> UInt8 {
+            let image = try XCTUnwrap(UIImage(data: data)?.cgImage)
+            var bytes = [UInt8](repeating: 0, count: 4)
+            let context = try XCTUnwrap(CGContext(data: &bytes, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            return bytes[3]
+        }
+        XCTAssertEqual(try cornerAlpha(transparent), 0)
+        XCTAssertEqual(try cornerAlpha(opaque), 255)
+        XCTAssertEqual(try cornerAlpha(jpeg), 255)
+        XCTAssertEqual(drawing.dataRepresentation(), original)
+        XCTAssertThrowsError(try DrawingImageExport.data(PKDrawing(), format: .png))
+        XCTAssertEqual(TodayCaptureAction.allCases.map(\.rawValue), ["note", "checklist", "photo", "voice", "drawing"])
+    }
+
+    @MainActor
+    func testDrawingEditorRendersOnPhoneAndTabletWithoutSaving() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var saves = 0
+        for size in [CGSize(width: 393, height: 852), CGSize(width: 744, height: 1133)] {
+            let host = UIHostingController(rootView: DrawingCaptureEditor(initial: DrawingCaptureDraft(drawing: drawingFixture())) { _ in saves += 1; return true })
+            window.frame = CGRect(origin: .zero, size: size)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(800))
+            host.view.layoutIfNeeded()
+            func canvases(_ view: UIView) -> [PKCanvasView] {
+                (view as? PKCanvasView).map { [$0] } ?? view.subviews.flatMap(canvases)
+            }
+            let canvas = try XCTUnwrap(canvases(host.view).first)
+            XCTAssertEqual(canvas.drawing.strokes.count, 1)
+            XCTAssertTrue(canvas.isFirstResponder)
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-drawing-\(Int(size.width)).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("DRAWING_RENDER=" + url.path)
+        }
+        XCTAssertEqual(saves, 0)
+    }
+
+    @MainActor
+    func testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func fields(_ view: UIView) -> [String] {
+            let value = (view as? UITextField)?.text ?? (view as? UITextView)?.text
+            return (value.map { [$0] } ?? []) + view.subviews.flatMap(fields)
+        }
+        let lists = [KanbanList(id: 4, title: "Today", cards: [])]
+        var saves = 0
+        for action in TodayCaptureAction.allCases {
+            let host = UIHostingController(rootView: QuickNoteComposer(lists: .constant(lists), initialListID: 4,
+                initialTitle: "Carry my thought forward", captureAction: action, onSaveCapture: { _ in saves += 1; return true }) { _, _, _, _, _, _ in saves += 1 })
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            host.view.layoutIfNeeded()
+            XCTAssertTrue(fields(host.view).contains("Carry my thought forward"))
+            if action == .checklist { XCTAssertTrue(fields(host.view).contains("")) }
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-capture-\(action.rawValue).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("CAPTURE_RENDER=" + url.path)
+            if action == .photo || action == .drawing { host.dismiss(animated: false); try await Task.sleep(for: .milliseconds(100)) }
+        }
+        for width in [393.0, 744.0] {
+            let host = UIHostingController(rootView: TodayCaptureActions { _ in XCTFail("Rendering must not activate a capture") }.padding().background(Color(.secondarySystemGroupedBackground)))
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 180)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(100))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-capture-row-\(Int(width)).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("CAPTURE_RENDER=" + url.path)
+        }
+        XCTAssertEqual(saves, 0)
+        XCTAssertTrue(lists[0].cards.isEmpty)
+        XCTAssertEqual(TodayCaptureAction.note.presentation, .note)
+        XCTAssertEqual(TodayCaptureAction.checklist.presentation, .card)
     }
 
     @MainActor

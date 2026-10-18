@@ -1,4 +1,4 @@
-Plenact cards can hold local photos, local videos, and web links. Attachment controls are presented from card details.
+Plenact cards can hold local photos, local videos, recorded audio, and web links. Attachment controls are presented from card details.
 
 ## User Experience
 
@@ -18,7 +18,7 @@ The optional `KanbanAttachment.caption` field is additive Codable metadata: olde
 
 Open **Card/Note actions → Appearance → Card Cover**, in its own section below Banner background, for a visual chooser of attached photos, **Add Photo as Cover**, and **Remove Cover**. Cover changes apply immediately, separately from the Appearance icon/background draft; Done returns to Appearance. Photo thumbnail menus also offer **Set as Cover**. Selection is explicit: attaching a photo normally never creates a cover. Removing a cover keeps the attachment and bytes; removing the selected attachment clears the cover without choosing a fallback.
 
-Covers reuse the selected attachment UUID; no second image file is saved. Videos and links are not cover choices. The device-only **Board Settings → Show card covers** switch hides row previews without altering content. Original bundled example photos use an optional typed `exampleImage` reference instead of a Documents filename, so canceled example drafts create no files and cleanup never treats these app resources as user media.
+Covers reuse the selected attachment UUID; no second image file is saved. Audio, videos, and links are not cover choices. The device-only **Board Settings → Show card covers** switch hides row previews without altering content. Original bundled example photos use an optional typed `exampleImage` reference instead of a Documents filename, so canceled example drafts create no files and cleanup never treats these app resources as user media.
 
 `CardCoverPreview` downscales local/bundled photos off the main actor before displaying bounded, decorative previews. Its decode path applies image orientation and limits the longest edge to 960 pixels. Missing images show a visible unavailable notice. It does not fetch images from external links.
 
@@ -74,3 +74,14 @@ Developers changing attachment Codable fields or paths must preserve existing me
 ### Picture display
 
 **Appearance → Display as → Picture → Save** displays the existing selected Card Cover as the item’s image in Board/focused Today rows. Picture rows show the full image at its natural proportions using the same background thumbnail decoder. A missing selection shows **Choose picture**; missing image bytes show **Picture unavailable**. The image fills the rounded List row with no internal padding, visible title/footer, or ellipsis. The stored title and caption identify it to VoiceOver, and tapping opens the same record for editing. In detail, tap the picture/placeholder to open Appearance and Card Cover. Switching formats retains all photo identities, captions, filenames, cover selection, and other content. Save a Divider’s new Picture format before choosing a cover. Cover selection remains immediate and separate from the cancelable format/icon/background draft.
+
+
+### Voice capture
+
+Today → Quick capture → Voice records temporary AAC/M4A audio with an explicit Audio/Text/Both save choice. Only Audio/Both create a `.audio` attachment; Text/Both append reviewed text to the item’s writing while retaining existing formatting. Audio files use `CardAttachmentStore`, so existing retained-reference cleanup, archives, and offline workspace backup include them. A waveform thumbnail opens a playback view; audio is never decoded as a photo or used as a cover. Draft files are removed on capture dismissal, and rejected commits remove newly created attachment files. Microphone and speech authorization are requested at their respective first uses. Speech availability is device/language dependent; on-device recognition is used where supported, with the system service otherwise potentially requiring a connection.
+
+## Editable drawings
+
+Quick capture Drawing uses PencilKit with finger/Pencil input. A drawing is a photo attachment with a PNG preview and optional `drawingFileName` sidecar containing editable strokes. Include `storedFileNames` when retaining or removing attachments so both files survive backup, archive retention and cleanup. Legacy photos omit the optional field. Draft cancellation writes no persistent files; capture failures clean both files. Saved edits prepare new files and preserve attachment identity before the existing Card/Note update callback publishes metadata. Old files remain until normal retention cleanup.
+
+Edit drawing exposes PNG (white or transparent) and JPEG (white) export through the system share sheet. Raster output is cropped with padding and capped at 4096 pixels per edge; the editable original is unchanged. Temporary exports are removed after sharing.

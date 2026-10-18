@@ -936,7 +936,7 @@ struct CardDetailView: View {
                 }
             } catch {
                 attachments = previous
-                try? CardAttachmentStore.removeDeletedFiles(Set(imported.compactMap(\.fileName)), keeping: Set(previous.compactMap(\.fileName)))
+                try? CardAttachmentStore.removeDeletedFiles(Set(imported.flatMap(\.storedFileNames)), keeping: Set(previous.flatMap(\.storedFileNames)))
                 attachmentNoticeMessage = "Could not add the clipboard image. Please try again."
                 showingAttachmentNotice = true
             }
@@ -2984,7 +2984,13 @@ struct CardDetailView: View {
                         .databaseActivityOverlay()
 
                 case .attachmentPreview(let attachment): /* Media selected for preview */
-                    CardAttachmentPreview(attachment: attachment)
+                    CardAttachmentPreview(attachment: attachment, onSaveDrawing: { replacement in
+                        guard let index = attachments.firstIndex(where: { $0.id == replacement.id }) else { return false }
+                        let previous = attachments
+                        attachments[index] = replacement
+                        guard syncCardState(attachments: attachments) else { attachments = previous; return false }
+                        return true
+                    })
                         .databaseActivityOverlay()
 
                 case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs */

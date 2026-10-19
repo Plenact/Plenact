@@ -330,6 +330,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var icon: PersonalCollectionIcon?
     var background: ItemAccent? = nil
     var listBackground: KanbanListTint? = nil
+    var cardBackground: KanbanListTint? = nil
     var cardTitleColor: ListPreviewTextColor? = nil
     var cardTextColor: ListPreviewTextColor? = nil
     var hideEmptySubtitle: Bool? = nil
@@ -346,7 +347,25 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+}
+
+/// Creation-only defaults; stored colors remain ordinary editable appearance fields.
+enum NewCardAppearanceDefaults {
+    static let headerPalette: [ItemAccent] = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
+    static let backgroundPalette: [KanbanListTint] = [.blue, .green, .orange, .red]
+    static func apply(to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load()) {
+        guard card.presentation == .card, !card.isSectionDivider,
+              preferences.randomizesNewCardHeaders || preferences.randomizesNewCardBackgrounds else { return }
+        var appearance = card.appearance ?? ItemAppearance()
+        if preferences.randomizesNewCardHeaders && appearance.background == nil {
+            appearance.background = headerPalette.randomElement()
+        }
+        if preferences.randomizesNewCardBackgrounds && appearance.cardBackground == nil {
+            appearance.cardBackground = backgroundPalette.randomElement()
+        }
+        card.appearance = appearance.isEmpty ? nil : appearance
+    }
 }
 
 ///
@@ -1147,7 +1166,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  actions      Template actions; nil preserves ordinary Card checklist defaults
     /// @return     (KanbanCard) new record without modifying the list
     ///
-    func makeItem(id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil) -> KanbanCard {
+    func makeItem(id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil, creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) -> KanbanCard {
 
         let isDivider = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
         let presentation = isDivider ? ItemPresentation.card : (presentationOverride ?? newItemPresentation) /* Item kind selected for the new record */
@@ -1155,7 +1174,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
             titles.isEmpty ? [] : [KanbanChecklist(title: "Actions", items: titles.map { KanbanChecklistItem(title: $0) })]
         }
 
-        return KanbanCard(
+        var card = KanbanCard(
             id: id, word: KanbanCard.namedDividerHeading(title) ?? title, listTitle: self.title, isDivider: isDivider,
             checklists:          checklists,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
@@ -1163,6 +1182,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
             presentation:        presentation,
             createdAt:           createdAt
         )
+        NewCardAppearanceDefaults.apply(to: &card, preferences: creationPreferences)
+        return card
     }
 
     ///
@@ -2962,7 +2983,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     /// @return     (Void) appends one Note while preserving every existing record
     /// @throws     CocoaError when the destination or title is invalid
     ///
-    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = []) throws {
+    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = [], creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) throws {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank Note heading used for creation */
 
@@ -2974,7 +2995,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
         let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond all retained collection records */
         var destination = lists[listIndex] /* Column snapshot receiving the new Note */
-        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt) /* New record carrying the draft's content and creation time */
+        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt, presentationOverride: presentation, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -4158,10 +4179,10 @@ enum MultilineEntry {
 
 extension KanbanList {
     func makeItems(startingAt id: Int, titles: String, description: String? = nil, subtitle: String = "",
-                   presentation: ItemPresentation? = nil, actions: [String]? = nil) -> [KanbanCard] {
+                   presentation: ItemPresentation? = nil, actions: [String]? = nil, creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) -> [KanbanCard] {
         MultilineEntry.titles(titles).enumerated().map { offset, title in
             makeItem(id: id + offset, title: title, description: description, subtitle: subtitle,
-                     presentationOverride: presentation, actions: actions)
+                     presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences)
         }
     }
 }

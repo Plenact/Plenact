@@ -331,6 +331,8 @@ struct LocalProfilePreferences: Hashable, Codable {
     var defaultListID:       Int?   /* Preferred Today list   */
     var usesReducedContent:  Bool   /* Hide supporting copy   */
     var usesLargeControls:   Bool   /* Use taller key actions */
+    var randomizesNewCardHeaders: Bool
+    var randomizesNewCardBackgrounds: Bool
     var showsDueDatesOnNewCards: Bool
     var todayFocusItemCount: Int /* Zero shows all open items; otherwise 1...12 */
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
@@ -346,6 +348,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         case defaultListID
         case usesReducedContent
         case usesLargeControls
+        case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
         case todayFocusItemCount
         case showsNavigationLabels
@@ -372,7 +375,9 @@ struct LocalProfilePreferences: Hashable, Codable {
         usesLargeControls: Bool = false,
         showsNavigationLabels: Bool = true,
         showsDueDatesOnNewCards: Bool = true,
-        todayFocusItemCount: Int = 4
+        todayFocusItemCount: Int = 4,
+        randomizesNewCardHeaders: Bool = false,
+        randomizesNewCardBackgrounds: Bool = false
     ) {
 
         self.defaultListID      = defaultListID
@@ -380,6 +385,8 @@ struct LocalProfilePreferences: Hashable, Codable {
         self.usesLargeControls  = usesLargeControls
         self.showsNavigationLabels = showsNavigationLabels
         self.showsDueDatesOnNewCards = showsDueDatesOnNewCards
+        self.randomizesNewCardHeaders = randomizesNewCardHeaders
+        self.randomizesNewCardBackgrounds = randomizesNewCardBackgrounds
         self.todayFocusItemCount = (0...12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
     }
 
@@ -416,7 +423,9 @@ struct LocalProfilePreferences: Hashable, Codable {
             usesLargeControls:     try container.decodeIfPresent(Bool.self, forKey: .usesLargeControls) ?? false,
             showsNavigationLabels: try container.decodeIfPresent(Bool.self, forKey: .showsNavigationLabels) ?? true,
             showsDueDatesOnNewCards: try container.decodeIfPresent(Bool.self, forKey: .showsDueDatesOnNewCards) ?? true,
-            todayFocusItemCount: try container.decodeIfPresent(Int.self, forKey: .todayFocusItemCount) ?? 4
+            todayFocusItemCount: try container.decodeIfPresent(Int.self, forKey: .todayFocusItemCount) ?? 4,
+            randomizesNewCardHeaders: try container.decodeIfPresent(Bool.self, forKey: .randomizesNewCardHeaders) ?? false,
+            randomizesNewCardBackgrounds: try container.decodeIfPresent(Bool.self, forKey: .randomizesNewCardBackgrounds) ?? false
         )
     }
 }

@@ -373,10 +373,11 @@ enum DailyPriorityCreation {
         guard var owner = week?.collection ?? access.library.first(where: { $0.id == destination.ownerID && $0.isActive }),
               let index = owner.lists.firstIndex(where: { $0.id == destination.listID && !$0.isArchived }) else { return nil }
         let id = (owner.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
-        let card = KanbanCard(id: id, word: title, listTitle: owner.lists[index].title,
+        var card = KanbanCard(id: id, word: title, listTitle: owner.lists[index].title,
             checklists: [], comments: [], members: [], labelIDs: [], attachments: attachments,
             coverAttachmentID: attachments.first(where: { $0.kind == .photo })?.id,
             descriptionOverride: body, subtitleOverride: "", presentation: presentation, createdAt: .now)
+        NewCardAppearanceDefaults.apply(to: &card)
         owner.lists[index].cards.append(card)
         let saved: Bool
         if var week { week.collection = owner; saved = access.saveWeek(week) }

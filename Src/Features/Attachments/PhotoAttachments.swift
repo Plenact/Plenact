@@ -1674,6 +1674,17 @@ struct ItemAppearanceSheet: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if !showsListBackground && draftDisplay != .divider {
+                    Section("Card background") {
+                        Picker("Background color", selection: $draft.cardBackground) {
+                            Text("Use Board default").tag(Optional<KanbanListTint>.none)
+                            ForEach(KanbanListTint.allCases) { tint in Text(tint.title).tag(Optional(tint)) }
+                        }
+                        .accessibilityIdentifier("appearance.cardBackground")
+                        Text("A soft color behind this item's list and Gallery preview. Default keeps the Card neutral; Use Board default follows its Board.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 Section("Banner background") {
                     Picker("Background color", selection: $draft.background) {
                         Text(showsListBackground ? "Use Board default" : "None").tag(Optional<ItemAccent>.none)

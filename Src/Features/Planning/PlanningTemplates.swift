@@ -248,13 +248,15 @@ enum PlanningTemplateApplication {
                 if source.id == card.coverAttachmentID { cover = copy.id }
                 return copy
             }
-            return KanbanCard(id: mapping[card.id]!, word: card.word, listTitle: title, isDivider: card.isDivider,
+            var created = KanbanCard(id: mapping[card.id]!, word: card.word, listTitle: title, isDivider: card.isDivider,
                 startDate: shifted(card.startDate, kind: card.startDateKind), dueDate: shifted(card.dueDate, kind: card.dueDateKind),
                 checklists: card.checklists.map(freshChecklist), members: card.members, labelIDs: card.labelIDs,
                 attachments: attachments, coverAttachmentID: cover, descriptionOverride: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph,
                 subtitleOverride: card.subtitle, presentation: card.presentation, createdAt: now, appearance: card.appearance,
                 listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout, showsDueDateInList: card.showsDueDateInList,
                 startDateKind: card.startDateKind, dueDateKind: card.dueDateKind)
+            NewCardAppearanceDefaults.apply(to: &created)
+            return created
         }
         if template.kind == .week && mode == .replace {
             for index in result.collection.lists.indices where result.dayListIDs.values.contains(result.collection.lists[index].id) && !result.collection.lists[index].isArchived {

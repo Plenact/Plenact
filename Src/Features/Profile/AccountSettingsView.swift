@@ -236,6 +236,8 @@ struct AccountSettingsView: View {
     @State private var defaultListID:       Int?                     /* Draft default list     */
     @State private var usesReducedContent:  Bool                     /* Draft content density  */
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
+    @State private var randomizesNewCardHeaders: Bool
+    @State private var randomizesNewCardBackgrounds: Bool
     @State private var showsDueDatesOnNewCards: Bool
     @State private var todayFocusItemCount: Int
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
@@ -305,6 +307,8 @@ struct AccountSettingsView: View {
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
         _showsDueDatesOnNewCards = State(initialValue: preferences.showsDueDatesOnNewCards)
+        _randomizesNewCardHeaders = State(initialValue: preferences.randomizesNewCardHeaders)
+        _randomizesNewCardBackgrounds = State(initialValue: preferences.randomizesNewCardBackgrounds)
         _todayFocusItemCount = State(initialValue: preferences.todayFocusItemCount)
     }
 
@@ -361,7 +365,9 @@ struct AccountSettingsView: View {
                 usesLargeControls:     usesLargeControls,
                 showsNavigationLabels: showsNavigationLabels,
                 showsDueDatesOnNewCards: showsDueDatesOnNewCards,
-                todayFocusItemCount: todayFocusItemCount
+                todayFocusItemCount: todayFocusItemCount,
+                randomizesNewCardHeaders: randomizesNewCardHeaders,
+                randomizesNewCardBackgrounds: randomizesNewCardBackgrounds
             )
         )
 
@@ -502,6 +508,8 @@ struct AccountSettingsView: View {
                         } footer: {
                             Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
                         }
+
+                        NewCardColorDefaultsSection(headers: $randomizesNewCardHeaders, backgrounds: $randomizesNewCardBackgrounds)
 
                         Section {
                             Picker("Items in Today's Focus", selection: $todayFocusItemCount) {
@@ -1947,6 +1955,8 @@ struct PlanSettingsView: View {
                 } header: { Text("Planning") } footer: {
                     Text("Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card.")
                 }
+                NewCardColorDefaultsSection(headers: $preferences.randomizesNewCardHeaders,
+                    backgrounds: $preferences.randomizesNewCardBackgrounds)
                 Section {
                     Button("My shortcuts", systemImage: "square.grid.3x2") { showsShortcuts = true }
                     Button("Day & Week Templates", systemImage: "doc.on.doc") { showsTemplates = true }
@@ -1988,5 +1998,21 @@ struct PlanSettingsView: View {
             .databaseActivityOverlay()
         }
         .presentationDetents([.large])
+    }
+}
+
+
+private struct NewCardColorDefaultsSection: View {
+    @Binding var headers: Bool
+    @Binding var backgrounds: Bool
+    var body: some View {
+        Section {
+            Toggle("Random header color", isOn: $headers)
+                .accessibilityIdentifier("settings.newCards.randomHeader")
+            Toggle("Random background color", isOn: $backgrounds)
+                .accessibilityIdentifier("settings.newCards.randomBackground")
+        } header: { Text("New Cards") } footer: {
+            Text("Give each new Card a saved color from a soft palette. The switches work independently. Existing items, Notes, and section dividers keep their colors. Change or reset an individual Card's colors in Appearance.")
+        }
     }
 }

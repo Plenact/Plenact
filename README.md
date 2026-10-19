@@ -10,13 +10,16 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
 
+Yes!! Great detail, can you help us implement this new feature? :)
+
 This is beautiful, thank you Alex!! Can you help me with a good git commit message for these updates? :)
 
 # Opens
 
-Nice!!!
+Thanks!! This work session today has been great, thank you Alex
 
-And what do you think if we had a setting for Plenact now, a boolean setting where the default setting for creation of new cards came with a random header color applied? And we could furthermore have an option for default random card background colors as well! Thoughts?
+
+Hey so for the Today's Focus list items in its listing, could we have swipe to delete work for each list item here as well?
 
 !
 

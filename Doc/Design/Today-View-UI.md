@@ -242,3 +242,6 @@ Day, single-list, Week, and Board column screens support swiping left directly o
 
 
 Within Week and Library Boards, native List pan recognizers receive priority over their enclosing horizontal Board pager. This lets row swipe actions begin before the Board moves, while retaining enabled vertical List scrolling, horizontal navigation outside rows, and native long-press dragging.
+
+
+Plan Settings and Account & Settings both include New Cards switches for Random header color and Random background color, independently off by default. Creation chooses a saved per-Card banner color and/or soft preview background from curated palettes. Normal, multiline, personal List, Quick Capture, and priority creation share the defaults; newly instantiated Day/Week template Cards receive missing defaults while explicit template colors are retained. Existing records, decoding, Notes, dividers, and copied/moved records are not recolored. Appearance can override or reset each Card's banner and preview background afterward. Header and preview surfaces use the existing adaptive palette in light/dark and increased-contrast appearances.

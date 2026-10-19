@@ -24,6 +24,100 @@ import PencilKit
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile() throws {
+        let old = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
+        XCTAssertFalse(old.randomizesNewCardHeaders)
+        XCTAssertFalse(old.randomizesNewCardBackgrounds)
+        let appearance = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(appearance.cardBackground)
+        XCTAssertTrue(appearance.isEmpty)
+        let name = "RandomCardColorTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        for headers in [false, true] {
+            for backgrounds in [false, true] {
+                let preferences = LocalProfilePreferences(randomizesNewCardHeaders: headers, randomizesNewCardBackgrounds: backgrounds)
+                PlanPreferencesStore.save(preferences, to: defaults)
+                XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+                XCTAssertNil(LocalProfileStore.load(from: defaults))
+            }
+        }
+    }
+
+    func testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers() throws {
+        let list = KanbanList(id: 1, title: "Ideas", cards: [])
+        for headers in [false, true] {
+            for backgrounds in [false, true] {
+                let preferences = LocalProfilePreferences(randomizesNewCardHeaders: headers, randomizesNewCardBackgrounds: backgrounds)
+                let card = list.makeItem(id: 1, title: "New Card", presentationOverride: .card, creationPreferences: preferences)
+                XCTAssertEqual(card.appearance?.background != nil, headers)
+                XCTAssertEqual(card.appearance?.cardBackground != nil, backgrounds)
+                if let header = card.appearance?.background { XCTAssertTrue(NewCardAppearanceDefaults.headerPalette.contains(header)) }
+                if let background = card.appearance?.cardBackground { XCTAssertTrue(NewCardAppearanceDefaults.backgroundPalette.contains(background)) }
+                var reopened = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+                XCTAssertEqual(reopened, card)
+                NewCardAppearanceDefaults.apply(to: &reopened, preferences: preferences)
+                XCTAssertEqual(reopened, card, "A saved color must never reroll")
+                XCTAssertNil(list.makeItem(id: 2, title: "Note", presentationOverride: .note, creationPreferences: preferences).appearance)
+                XCTAssertNil(list.makeItem(id: 3, title: "--- Section", creationPreferences: preferences).appearance)
+            }
+        }
+        let enabled = LocalProfilePreferences(randomizesNewCardHeaders: true, randomizesNewCardBackgrounds: true)
+        let batch = list.makeItems(startingAt: 10, titles: "First\nSecond\nThird", creationPreferences: enabled)
+        XCTAssertEqual(batch.count, 3)
+        XCTAssertTrue(batch.allSatisfy { $0.appearance?.background != nil && $0.appearance?.cardBackground != nil })
+        var owner = PersonalCollection(title: "Personal Notes", kind: .list)
+        try owner.addNote(title: "Choose Card", body: "Writing", presentation: .card, creationPreferences: enabled)
+        try owner.addNote(title: "Choose Note", body: "Writing", presentation: .note, creationPreferences: enabled)
+        XCTAssertNotNil(owner.lists[0].cards[0].appearance?.cardBackground)
+        XCTAssertNil(owner.lists[0].cards[1].appearance)
+        var custom = batch[0]
+        custom.appearance = ItemAppearance(icon: .notes, background: .purple, cardBackground: .green)
+        let original = custom
+        NewCardAppearanceDefaults.apply(to: &custom, preferences: enabled)
+        XCTAssertEqual(custom, original)
+    }
+
+    @MainActor
+    func testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let list = KanbanList(id: 1, title: "Color examples", cards: [])
+        let cards = [
+            list.makeItem(id: 1, title: "Random header only", creationPreferences: LocalProfilePreferences(randomizesNewCardHeaders: true)),
+            list.makeItem(id: 2, title: "Random background only", creationPreferences: LocalProfilePreferences(randomizesNewCardBackgrounds: true)),
+            list.makeItem(id: 3, title: "Both colors", creationPreferences: LocalProfilePreferences(randomizesNewCardHeaders: true, randomizesNewCardBackgrounds: true))
+        ]
+        let original = cards
+        for scheme in [ColorScheme.light, .dark] {
+            let view = VStack(spacing: 12) {
+                ForEach(cards) { card in
+                    KanbanCardView(card: card, height: 140, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
+                        onUpdateCard: { _ in XCTFail("Rendering must not edit") }, onDeleteCard: {}, onArchiveCard: {}, onToggle: {})
+                }
+                BoardGalleryTile(card: cards[2])
+            }.padding().background(Color(.systemGroupedBackground)).preferredColorScheme(scheme)
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-random-card-colors-\(scheme).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("RANDOM_CARD_COLORS_RENDER=" + url.path)
+            XCTAssertEqual(cards, original)
+        }
+        let settings = UIHostingController(rootView: PlanSettingsView(lists: [list], onSaveProfile: { _ in XCTFail("Rendering must not save") }))
+        window.rootViewController = settings
+        try await Task.sleep(for: .milliseconds(200))
+        let image = UIGraphicsImageRenderer(bounds: settings.view.bounds).image { _ in settings.view.drawHierarchy(in: settings.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-random-card-color-settings.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("RANDOM_CARD_COLORS_RENDER=" + url.path)
+    }
+
     func testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits() throws {
         let suite = "PlanSettingsTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

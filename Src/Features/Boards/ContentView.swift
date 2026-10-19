@@ -486,6 +486,7 @@ struct BoardGalleryTile: View {
                 Spacer(minLength: 0)
                 ImportantItemIndicator(cardID: card.id)
             }
+            .itemBannerBackground(card.appearance)
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
                 Text(excerpt).font(.subheadline).foregroundStyle(boardAppearance.resolvedTextColor(card: card.appearance, list: appearance)?.color ?? .secondary).lineLimit(3).lineSpacing(3)
             }
@@ -499,7 +500,12 @@ struct BoardGalleryTile: View {
             }
         }
         .padding(12).frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading)
-        .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 14))
+        .background {
+            RoundedRectangle(cornerRadius: 14).fill(Color(.systemBackground))
+            if let tint = card.appearance?.cardBackground ?? boardAppearance.cardBackground, tint != .neutral {
+                RoundedRectangle(cornerRadius: 14).fill(tint.color)
+            }
+        }
         .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.15)) }
     }
 }
@@ -6069,6 +6075,7 @@ struct KanbanCardView: View {
                         if showsHeaderTimes { headerTimes }
                     }
                 }
+                .itemBannerBackground(card.appearance)
 
                 if !compactCards && presentation == .standard && card.presentation == .note {
 
@@ -6146,8 +6153,8 @@ struct KanbanCardView: View {
                 if card.displayFormat != .title && card.displayFormat != .text {
                     Color(.systemBackground)
                 }
-                if ![.title, .text].contains(card.displayFormat) && (compactCards || card.displayFormat != .picture), let cardBackground, cardBackground != .neutral {
-                    cardBackground.color
+                if ![.title, .text].contains(card.displayFormat) && (compactCards || card.displayFormat != .picture), let tint = card.appearance?.cardBackground ?? cardBackground, tint != .neutral {
+                    tint.color
                 }
             }
         }

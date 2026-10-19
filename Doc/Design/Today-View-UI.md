@@ -233,3 +233,6 @@ Creating Cards and Notes now publishes a one-shot reveal request for the exact n
 
 
 All Card/Note creation forms now offer Add Attachment, including list-level and Day creation, Quick Capture/the central New composer, personal List Note creation, and Today's Plan priority creation. The shared source menu supports the same Photos/video, drawing, link, and clipboard sources as existing item details. Users can reopen the menu to add more attachments and remove individual draft entries before saving; picker batches do not impose a total draft attachment count. Existing unavailable source choices remain unavailable. Media remains in the unsaved draft until explicit Add/Save; failed commits remove only files written by that attempt and retain the draft for retry. Keyboard paperclip actions open the same menu. Existing typed camera, voice, and drawing capture actions continue to work alongside additional attachments. New items still reveal their saved destination through the existing creation navigation.
+
+
+Tapping the Today's Focus title opens the existing Today's Plan sheet, using the same route as the Today date and iPad plan summary. Its touch area is at least 44 points high without adding height to the compact focus header. The completion count still opens the Day list at its first unfinished item, and the Open today footer retains its Day navigation.

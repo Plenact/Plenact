@@ -2814,6 +2814,7 @@ private struct TodayHomeView: View {
                             list:            focus,
                             cards:           cards,
                             openCards:       PlanPreferencesStore.load().todayFocusItems(in: cards),
+                            onOpenPlan:      { showsTodayPlan = true },
                             onToggleCard:    { cardID in
                                 if let focus { /* Weekday list available for navigation */
 
@@ -8326,6 +8327,7 @@ private struct TodayFocusSection: View {
     let list: KanbanList? /* Canonical Week list matching the current local weekday */
     let cards: [KanbanCard] /* Non-divider cards on that list */
     let openCards: [KanbanCard] /* Incomplete items limited by the Today profile preference */
+    let onOpenPlan: () -> Void
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenCard: (KanbanCard) -> Void
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
@@ -8346,8 +8348,20 @@ private struct TodayFocusSection: View {
     }
 
     private var focusTitle: some View {
-        Text("Today's Focus")
-            .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
+        Button(action: onOpenPlan) {
+            Text("Today's Focus")
+                .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
+                .padding(.vertical, 10)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // Expand the title's touch area without adding height to the compact header.
+        .padding(.vertical, -10)
+        .accessibilityLabel("Today's Focus")
+        .accessibilityHint("Opens Today's Plan")
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityIdentifier("today.focus.openPlan")
     }
 
     private var completionButton: some View {

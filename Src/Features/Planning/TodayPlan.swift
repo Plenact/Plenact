@@ -366,7 +366,7 @@ struct DailyPriorityPicker: View {
 @MainActor
 enum DailyPriorityCreation {
     static func create(title: String, body: String, presentation: ItemPresentation,
-                       destination: WorkspaceListReference, access: PlanningCalendarAccess) -> PlanningSearchResult? {
+                       destination: WorkspaceListReference, access: PlanningCalendarAccess, attachments: [KanbanAttachment] = []) -> PlanningSearchResult? {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return nil }
         let week = access.document.weeks.first { $0.id == destination.ownerID }
@@ -374,7 +374,8 @@ enum DailyPriorityCreation {
               let index = owner.lists.firstIndex(where: { $0.id == destination.listID && !$0.isArchived }) else { return nil }
         let id = (owner.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
         let card = KanbanCard(id: id, word: title, listTitle: owner.lists[index].title,
-            checklists: [], comments: [], members: [], labelIDs: [], attachments: [],
+            checklists: [], comments: [], members: [], labelIDs: [], attachments: attachments,
+            coverAttachmentID: attachments.first(where: { $0.kind == .photo })?.id,
             descriptionOverride: body, subtitleOverride: "", presentation: presentation, createdAt: .now)
         owner.lists[index].cards.append(card)
         let saved: Bool
@@ -391,6 +392,8 @@ private struct NewDailyPriorityView: View {
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     let onCreate: (PlanningSearchResult) -> Void
+    @StateObject private var attachmentDraft = CreationAttachmentDraft()
+    @State private var keyboardContextID = UUID()
     @State private var title = ""
     @State private var bodyText = ""
     @State private var presentation: ItemPresentation = .card
@@ -400,6 +403,29 @@ private struct NewDailyPriorityView: View {
     @State private var confirmsDiscard = false
     private var destinations: [WorkspaceListDestination] {
         WorkspaceBrowseIndex.lists(in: WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? []))
+    }
+    private func saveDraft() {
+        guard let access, let destination else { return }
+        do {
+            guard try attachmentDraft.save(commit: { attachments in
+                guard let created = DailyPriorityCreation.create(title: title, body: bodyText, presentation: presentation,
+                    destination: destination, access: access, attachments: attachments) else { return false }
+                onCreate(created)
+                return true
+            }) else {
+                error = "The item could not be saved. Your draft and attachments are still here."
+                return
+            }
+        } catch { self.error = "Attachments couldn't be saved. Your draft is still here; please try again."; return }
+        dismiss()
+    }
+    private func initializeDestination() {
+        guard !initialized else { return }
+        initialized = true
+        for target in destinations where target.owner.kind == .list && target.owner.title == "On the Table" {
+            destination = target.reference
+            break
+        }
     }
     var body: some View {
         NavigationStack {
@@ -412,6 +438,7 @@ private struct NewDailyPriorityView: View {
                     TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                     TextField(presentation == .note ? "Start writing…" : "Details (optional)", text: $bodyText, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(4...10)
                 }
+                Section("Attachments") { CreationAttachmentList(draft: attachmentDraft) }
                 Section("Save in") {
                     Picker("List", selection: $destination) {
                         Text("Choose a List").tag(Optional<WorkspaceListReference>.none)
@@ -432,27 +459,24 @@ private struct NewDailyPriorityView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        if title.isEmpty && bodyText.isEmpty { dismiss() } else { confirmsDiscard = true }
+                        if title.isEmpty && bodyText.isEmpty && attachmentDraft.entries.isEmpty { dismiss() } else { confirmsDiscard = true }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        guard let access, let destination,
-                              let created = DailyPriorityCreation.create(title: title, body: bodyText, presentation: presentation, destination: destination, access: access) else {
-                            error = "The item could not be saved. Check that the selected List is still available and try again. Your draft is still here."
-                            return
-                        }
-                        onCreate(created)
-                        dismiss()
-                    }.disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || destination == nil || access == nil)
+                        saveDraft()
+                    }.disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || destination == nil || access == nil || attachmentDraft.isImporting)
                 }
             }
-            .onAppear {
-                guard !initialized else { return }; initialized = true
-                destination = destinations.first { $0.owner.kind == .list && $0.owner.title == "On the Table" }?.reference
-            }
+            .onAppear(perform: initializeDestination)
         }
-        .interactiveDismissDisabled(!title.isEmpty || !bodyText.isEmpty)
+        .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
+        .onAppear {
+            PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
+                exit: { confirmsDiscard = true }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
+        }
+        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
+        .interactiveDismissDisabled(!title.isEmpty || !bodyText.isEmpty || !attachmentDraft.entries.isEmpty)
         .confirmationDialog("Discard this priority draft?", isPresented: $confirmsDiscard, titleVisibility: .visible) {
             Button("Discard draft", role: .destructive) { dismiss() }
             Button("Keep editing", role: .cancel) {}

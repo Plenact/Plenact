@@ -1200,14 +1200,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         var owner = PersonalCollection(title: "On the Table", kind: .list)
         owner.lists[0].archivedCards = [KanbanCard(id: 90, word: "Archived", listTitle: owner.title)]
         let target = WorkspaceListReference(ownerID: owner.id, listID: owner.lists[0].id)
+        let link = KanbanAttachment(url: URL(string: "https://example.com/priority"), mediaKind: .link)
         for kind in [ItemPresentation.card, .note] {
             var savedOwner: PersonalCollection?
             let access = PlanningCalendarAccess(document: document, library: [owner], saveWeek: { _ in false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in }, saveLibrary: { savedOwner = $0; return true })
-            let source = try XCTUnwrap(DailyPriorityCreation.create(title: "  New priority  ", body: "Useful context", presentation: kind, destination: target, access: access))
+            let source = try XCTUnwrap(DailyPriorityCreation.create(title: "  New priority  ", body: "Useful context", presentation: kind, destination: target, access: access, attachments: [link]))
             XCTAssertEqual(source.card.id, 91)
             XCTAssertEqual(source.card.word, "New priority")
             XCTAssertEqual(source.card.descriptionOverride, "Useful context")
             XCTAssertEqual(source.card.presentation, kind)
+            XCTAssertEqual(source.card.attachments, [link])
             XCTAssertNotNil(source.card.createdAt)
             XCTAssertEqual(source.collectionID, owner.id)
             XCTAssertEqual(savedOwner?.lists[0].cards, [source.card])
@@ -1456,6 +1458,93 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let failed = FullMonthExampleStore(root: blocked, documents: store.documents, support: store.support, domainName: name)
         XCTAssertThrowsError(try failed.loadExample(FullMonthExample.make()))
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
+    }
+
+    func testPersonalNoteCreationPreservesMultipleAttachmentMetadata() throws {
+        var collection = PersonalCollection(title: "Attachment test", kind: .list)
+        let attachments = [KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link),
+                           KanbanAttachment(fileName: "test-photo.png", mediaKind: .photo),
+                           KanbanAttachment(fileName: "test-video.mov", mediaKind: .video)]
+        for kind in [ItemPresentation.card, .note] {
+            try collection.addNote(title: "New item", body: "Keep this writing", presentation: kind, attachments: attachments)
+            let item = try XCTUnwrap(collection.lists[0].cards.last)
+            XCTAssertEqual(item.attachments, attachments)
+            XCTAssertEqual(item.coverAttachmentID, attachments[1].id)
+            XCTAssertEqual(item.presentation, kind)
+        }
+        let restored = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection))
+        XCTAssertEqual(restored.lists[0].cards, collection.lists[0].cards)
+    }
+
+    @MainActor
+    func testCreationAttachmentListPresentsSharedMenuInLightAndDark() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let draft = CreationAttachmentDraft()
+            draft.entries = [.init(content: .link(try XCTUnwrap(URL(string: "https://example.com/plans")))),
+                             .init(content: .drawing(DrawingCaptureDraft(drawing: drawingFixture())))]
+            let view = NavigationStack {
+                Form { Section("Attachments") { CreationAttachmentList(draft: draft) } }.navigationTitle("New item")
+            }.modifier(CreationAttachmentPresentation(draft: draft))
+                .preferredColorScheme(style == .dark ? .dark : .light)
+            let host = UIHostingController(rootView: view)
+            host.overrideUserInterfaceStyle = style
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            draft.openSources()
+            try await Task.sleep(for: .milliseconds(400))
+            XCTAssertNotNil(host.presentedViewController)
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-creation-attachments-\(style.rawValue).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("CREATION_ATTACHMENTS_RENDER=" + url.path)
+            draft.sheet = nil
+            try await Task.sleep(for: .milliseconds(300))
+            XCTAssertEqual(draft.entries.count, 2, "Closing the menu must retain the draft attachments")
+            window.rootViewController = nil
+        }
+    }
+
+    @MainActor
+    func testCreationAttachmentDraftKeepsMultipleEntriesAndCleansRejectedFiles() throws {
+        let draft = CreationAttachmentDraft()
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { context in
+            UIColor.blue.setFill(); context.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
+        }
+        let data = try XCTUnwrap(image.pngData())
+        draft.entries = [.init(content: .media(data, .photo, "png")), .init(content: .media(data, .photo, "png"))]
+        for index in 0..<20 { draft.entries.append(.init(content: .link(try XCTUnwrap(URL(string: "https://example.com/\(index)"))))) }
+        draft.entries.append(.init(content: .drawing(DrawingCaptureDraft(drawing: drawingFixture()))))
+        var rejectedFiles: [URL] = []
+        XCTAssertFalse(try draft.save { attachments in
+            XCTAssertEqual(attachments.count, 23)
+            rejectedFiles = attachments.compactMap { CardAttachmentStore.fileURL(for: $0) }
+            XCTAssertTrue(rejectedFiles.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
+            return false
+        })
+        XCTAssertEqual(draft.entries.count, 23)
+        XCTAssertFalse(rejectedFiles.isEmpty)
+        XCTAssertTrue(rejectedFiles.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) })
+        var saved: [KanbanAttachment] = []
+        XCTAssertTrue(try draft.save { saved = $0; return true })
+        defer { try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: []) }
+        XCTAssertEqual(saved.count, 23)
+        XCTAssertEqual(saved.prefix(2).map(\.kind), [.photo, .photo])
+        XCTAssertEqual(saved.dropFirst(2).prefix(20).map(\.kind), Array(repeating: .link, count: 20))
+        XCTAssertTrue(saved.prefix(2).compactMap { CardAttachmentStore.fileURL(for: $0) }.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })
+        let drawing = try XCTUnwrap(saved.last)
+        XCTAssertEqual(try DrawingAttachmentStore.load(drawing).drawing.strokes.count, drawingFixture().strokes.count)
+        var thrownFiles: [URL] = []
+        XCTAssertThrowsError(try draft.save { attachments in
+            thrownFiles = attachments.compactMap { CardAttachmentStore.fileURL(for: $0) }
+            throw CocoaError(.fileWriteUnknown)
+        })
+        XCTAssertTrue(thrownFiles.allSatisfy { !FileManager.default.fileExists(atPath: $0.path) })
+        XCTAssertEqual(draft.entries.count, 23)
     }
 
     @MainActor
@@ -3121,7 +3210,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: NewKanbanCardSheet(listTitle: "List", presentation: .note, draftKey: key) { _, _, _ in })
+        let host = UIHostingController(rootView: NewKanbanCardSheet(listTitle: "List", presentation: .note, draftKey: key) { _, _, _, _ in true })
         window.rootViewController = host
         window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
@@ -5778,6 +5867,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 id:                  13, word: "Beach idea", listTitle: collection.title,
                 checklists:          [],
                 descriptionOverride: "First line\n\nSecond line  ",
+                subtitleOverride:    "",
                 presentation:        .note,
                 createdAt:           createdAt
             )
@@ -7636,7 +7726,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                         onArchive:                 { XCTFail("Layout must not archive") },
                         onDelete:                  { XCTFail("Layout must not delete") },
                         onCommitDeletion:          { _ in XCTFail("Layout must not commit deletion") },
-                        onCreateNote:              { _, _, _, _, _, _ in XCTFail("Layout must not create an item") },
+                        onCreateNote:              { _, _, _, _, _, _, _ in XCTFail("Layout must not create an item") },
                         onMoveNote:                { _, _, _ in throw CocoaError(.validationMissingMandatoryProperty) },
                         onUpdateMovedNote:         { _, _ in XCTFail("Layout must not update a moved Note"); return false },
                         onArchiveMovedNote:        { _, _ in XCTFail("Layout must not archive a moved Note"); return false },
@@ -8719,7 +8809,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let view = KanbanListView( /* Hosted view under test */
                 list: list, availableListHeight: 700, displaySettings: BoardDisplaySettings(),
                 presentation:         preset, labelLibrary: .starter, toggleCardTitle: { _ in },
-                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _, _, _ in },
+                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _, _, _, _ in true },
                 onCopyList:           {}, onMoveList: { _ in }, onSortList: { _ in }, onArchiveCompleted: {},
                 archivedCards:        .constant([]), onRestoreArchivedCard: { _ in },
                 onDeleteArchivedCard: { _ in }, onArchiveList: {}, onDeleteList: {},

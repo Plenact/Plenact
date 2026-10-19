@@ -2101,25 +2101,40 @@ struct ContentView: View {
     /// @pre        The caller validates and trims the title and description
     /// @post       The new card appears last; a missing destination leaves Board state unchanged
     ///
-    private func addCard(to listID: Int, title: String, description: String, subtitle: String) {
+    private func addCard(to listID: Int, title: String, description: String, subtitle: String, attachments: [KanbanAttachment]) -> Bool {
 
         guard let listIndex = lists.firstIndex(where: { /* Destination list index */
 
             $0.id == listID
         }) else {
 
-            return
+            return false
         }
 
         let nextCardID  = ((lists + archivedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
         var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
         /// Append the new card to the list's cards array
-        let created = updatedList.makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
+        var created = updatedList.makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
+        guard !created.isEmpty else { return false }
+        created[0].attachments = attachments
+        created[0].coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id
         updatedList.cards.append(contentsOf: created)
+        if !attachments.isEmpty {
+            var snapshot = lists
+            snapshot[listIndex] = updatedList
+            do {
+                if let onCommitDeletion { try onCommitDeletion(snapshot + archivedLists, savedCardIDs) }
+                else { try KanbanBoardPersistence.saveListsChecked(snapshot + archivedLists) }
+            } catch {
+                DatabaseActivity.shared.report("Could not save the new item. Your draft is still open.")
+                return false
+            }
+        }
 
         lists[listIndex] = updatedList
         if let card = created.first { CreatedContentReveal.shared.request(listID: listID, card: card) }
+        return true
     }
 
 
@@ -2992,7 +3007,7 @@ struct ContentView: View {
                                             },
                                             canMoveEarlier:        listIndex > 0,
                                             canMoveLater:          listIndex < lists.count - 1,
-                                            onAddCard:             { title, description, subtitle in addCard(to: list.id, title: title, description: description, subtitle: subtitle)
+                                            onAddCard:             { title, description, subtitle, attachments in addCard(to: list.id, title: title, description: description, subtitle: subtitle, attachments: attachments)
                                             },
                                             onCopyList:            {
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { listToCopy = list }
@@ -4444,7 +4459,7 @@ struct KanbanListView: View {
     let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
     let canMoveEarlier: Bool                    /* Indicates whether the list can be moved earlier in the board   */
     let canMoveLater:  Bool                     /* Indicates whether the list can be moved later in the board     */
-    let onAddCard: (String, String, String) -> Void     /* The action invoked to add a new card to the list               */
+    let onAddCard: (String, String, String, [KanbanAttachment]) -> Bool     /* The action invoked to add a new card to the list               */
     let onCopyList: () -> Void                  /* The action invoked to copy the list                            */
     var onMoveToBoard: (() -> Void)? = nil
     let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
@@ -5163,11 +5178,13 @@ struct NewKanbanCardSheet: View {
 
     let listTitle: String                               /* Title of the kanban list to which the new card will be added                             */
     let presentation: ItemPresentation /* Card or Note kind determining the creation form */
-    let onCreate: (String, String, String) -> Void              /* Callback invoked with the trimmed title and description when the user creates a new card */
+    let onCreate: (String, String, String, [KanbanAttachment]) -> Bool              /* Callback invoked with the trimmed title and description when the user creates a new card */
 
     @Environment(\.dismiss) private var dismiss         /* Environment variable to dismiss the current view */
     let draftKey: String
     @StateObject private var draft: ListCreationDraftModel
+    @StateObject private var attachmentDraft = CreationAttachmentDraft()
+    @State private var keyboardContextID = UUID()
 
 
     ///
@@ -5179,7 +5196,7 @@ struct NewKanbanCardSheet: View {
     /// @post       No card is created and draft text remains unchanged
     ///
 
-    init(listTitle: String, presentation: ItemPresentation, draftKey: String, onCreate: @escaping (String, String, String) -> Void) {
+    init(listTitle: String, presentation: ItemPresentation, draftKey: String, onCreate: @escaping (String, String, String, [KanbanAttachment]) -> Bool) {
         self.listTitle = listTitle
         self.presentation = presentation
         self.draftKey = draftKey
@@ -5218,6 +5235,7 @@ struct NewKanbanCardSheet: View {
                 } footer: {
                     Text("Add a section heading with --- Ideas, --- This week, or --- Later. Use --- alone for a plain divider.")
                 }
+                Section("Attachments") { CreationAttachmentList(draft: attachmentDraft) }
             }
 
             .navigationTitle("New \(presentation.title)")
@@ -5235,17 +5253,27 @@ struct NewKanbanCardSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     
                     Button("Add") {
-                        onCreate(trimmedTitle, presentation == .note ? draft.description : draft.description.trimmingCharacters(in: .whitespacesAndNewlines), draft.subtitle.trimmingCharacters(in: .whitespacesAndNewlines))
+                        do {
+                            guard try attachmentDraft.save(commit: { attachments in
+                                onCreate(trimmedTitle, presentation == .note ? draft.description : draft.description.trimmingCharacters(in: .whitespacesAndNewlines), draft.subtitle.trimmingCharacters(in: .whitespacesAndNewlines), attachments)
+                            }) else { attachmentDraft.notice = "The item couldn't be saved. Your draft and attachments are still here."; return }
+                        } catch { attachmentDraft.notice = "Attachments couldn't be saved. Your draft is still here; please try again."; return }
                         draft.finishSession()
                         dismiss()
                     }
 
-                    .disabled(trimmedTitle.isEmpty)
+                    .disabled(trimmedTitle.isEmpty || attachmentDraft.isImporting)
                 }
             }
         }
 
-        .onAppear { draft.beginSession() }
+        .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
+        .onAppear {
+            draft.beginSession()
+            PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
+                exit: { draft.finishSession(); dismiss() }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
+        }
+        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -6913,8 +6941,8 @@ struct TodayListDetailView: View {
         .environment(\.checklistLinkCandidates, lists.filter { !$0.isArchived }.flatMap(\.cards))
         .sheet(isPresented: $showsNewCard) {
             if let focusedList = lists.first(where: { $0.id == listID }) {
-                NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID)) { title, description, subtitle in
-                    addCard(title: title, description: description, subtitle: subtitle)
+                NewKanbanCardSheet(listTitle: focusedList.title, presentation: focusedList.newItemPresentation, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID)) { title, description, subtitle, attachments in
+                    addCard(title: title, description: description, subtitle: subtitle, attachments: attachments)
                 }
             }
         }
@@ -7103,7 +7131,7 @@ struct TodayListDetailView: View {
     /// @post       Blank input or an unavailable list leaves the Board unchanged;
     ///             persistence follows the caller's shared-state observation
     ///
-    private func addCard(title draftTitle: String, description: String, subtitle: String) {
+    private func addCard(title draftTitle: String, description: String, subtitle: String, attachments: [KanbanAttachment]) -> Bool {
 
         let title = draftTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank heading used to create the focused-list record */
 
@@ -7112,14 +7140,35 @@ struct TodayListDetailView: View {
             $0.id == listID
         }) else {
 
-            return
+            return false
         }
 
         let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond active and reserved retained records */
 
-        let created = lists[listIndex].makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
-        lists[listIndex].cards.append(contentsOf: created)
+        var created = lists[listIndex].makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
+        guard !created.isEmpty else { return false }
+        created[0].attachments = attachments
+        created[0].coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id
+        var updated = lists[listIndex]
+        updated.cards.append(contentsOf: created)
+        if !attachments.isEmpty {
+            guard let access = planningCalendarAccess else { return false }
+            if var week = access.document.weeks.first(where: { week in
+                if let dayMovementSource { return week.id == dayMovementSource }
+                let key = representedDate.flatMap { access.document.week(for: $0)?.startKey } ?? access.document.currentWeekKey
+                return week.startKey == key
+            }), let index = week.collection.lists.firstIndex(where: { $0.id == listID }) {
+                week.collection.lists[index] = updated
+                guard access.saveWeek(week) else { return false }
+            } else if var owner = access.library.first(where: { $0.id == dayMovementSource }),
+                      let index = owner.lists.firstIndex(where: { $0.id == listID }) {
+                owner.lists[index] = updated
+                guard access.saveLibrary(owner) else { return false }
+            } else { return false }
+        }
+        lists[listIndex] = updated
         if let card = created.first { CreatedContentReveal.shared.request(listID: listID, card: card) }
+        return true
     }
 }
 

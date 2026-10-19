@@ -2962,7 +2962,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     /// @return     (Void) appends one Note while preserving every existing record
     /// @throws     CocoaError when the destination or title is invalid
     ///
-    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "") throws {
+    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = []) throws {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank Note heading used for creation */
 
@@ -2979,6 +2979,10 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
         note.checklists = []
+        if !attachments.isEmpty {
+            note.attachments = attachments
+            note.coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id
+        }
         destination.cards.append(note)
         lists[listIndex] = destination
     }

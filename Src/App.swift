@@ -3486,6 +3486,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable {
 struct QuickNoteComposer: View {
 
     @State private var keyboardContextID = UUID()
+    @StateObject private var attachmentDraft = CreationAttachmentDraft()
     @Binding var lists: [KanbanList]                         /* Current destination lists */
     let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     let template: QuickCaptureTemplate?
@@ -3679,7 +3680,7 @@ struct QuickNoteComposer: View {
                 }
             }
             Button("Add photo", systemImage: "camera") { showsPhotoSources = true }
-                .frame(minHeight: 44).disabled(importingPhotos || photos.count >= 6)
+                .frame(minHeight: 44).disabled(importingPhotos)
             Text("Photos are attached when you tap Add. Cancelling leaves your original Quick capture title in place.")
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -3700,7 +3701,7 @@ struct QuickNoteComposer: View {
         importingPhotos = true
         defer { importingPhotos = false; photoSelection = [] }
         do {
-            for item in photoSelection.prefix(max(0, 6 - photos.count)) {
+            for item in photoSelection {
                 guard let data = try await item.loadTransferable(type: Data.self), UIImage(data: data) != nil else { throw CocoaError(.fileReadCorruptFile) }
                 try Task.checkCancellation()
                 photos.append(QuickCapturePhoto(data: data, fileExtension: item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"))
@@ -3712,10 +3713,7 @@ struct QuickNoteComposer: View {
     private func registerKeyboardDraft() {
         PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
             exit: { dismiss() },
-            attachment: onSaveCapture == nil ? nil : {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                showsPhotoSources = true
-            },
+            attachment: attachmentDraft.openSources,
             checklist: presentation == .card ? {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 actions.append(KanbanChecklistItem(title: ""))
@@ -3736,6 +3734,7 @@ struct QuickNoteComposer: View {
                             TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                                 .font(.largeTitle.weight(.bold))
                             NoteCreationDateLabel(createdAt: createdAt)
+                            CreationAttachmentList(draft: attachmentDraft)
                             if captureAction == .photo || !photos.isEmpty { photoControls }
                             if captureAction == .voice { voiceControls }
                             if captureAction == .drawing || !drawings.isEmpty { drawingControls }
@@ -3766,6 +3765,7 @@ struct QuickNoteComposer: View {
                     }
                 }
 
+                Section("Attachments") { CreationAttachmentList(draft: attachmentDraft) }
                 if captureAction == .photo || !photos.isEmpty { Section("Photos") { photoControls } }
                 if captureAction == .voice { Section("Voice capture") { voiceControls } }
                 if captureAction == .drawing || !drawings.isEmpty { Section("Drawings") { drawingControls } }
@@ -3819,23 +3819,27 @@ struct QuickNoteComposer: View {
                             guard voiceReady, schedule.isValid() else { return }
                             do {
                                 let audio = captureAction == .voice && voiceSaveOption.savesAudio ? try voice.audioData() : nil
-                                guard try QuickCaptureMediaCommit.save(photos, audio: audio, drawings: drawings, commit: { attachments in
-                                    onSaveCapture(QuickCaptureSubmission(listID: selectedListID, title: trimmedTitle, body: body,
-                                        subtitle: subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation: presentation,
-                                        actions: actionTitles, attachments: attachments, schedule: hasStartDate || hasStopDate ? schedule : nil))
+                                guard try attachmentDraft.save(commit: { additional in
+                                    try QuickCaptureMediaCommit.save(photos, audio: audio, drawings: drawings, commit: { attachments in
+                                        onSaveCapture(QuickCaptureSubmission(listID: selectedListID, title: trimmedTitle, body: body,
+                                            subtitle: subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation: presentation,
+                                            actions: actionTitles, attachments: attachments + additional, schedule: hasStartDate || hasStopDate ? schedule : nil))
+                                    })
                                 }) else { mediaError = "This capture could not be saved. Your draft is still open; check its List and try again."; return }
                             } catch { mediaError = "Your capture couldn't be saved. Your draft is still open; please try again."; return }
                         } else {
+                            guard attachmentDraft.entries.isEmpty else { mediaError = "This destination couldn't save attachments. Your draft is still open."; return }
                             onSave(selectedListID, trimmedTitle, body, subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation, actionTitles)
                         }
                         dismiss()
                     }
 
-                    .disabled(importingPhotos || !voiceReady || !schedule.isValid() || trimmedTitle.isEmpty || selectedListID == nil || !lists.contains(where: { $0.id == selectedListID }))
+                    .disabled(importingPhotos || attachmentDraft.isImporting || !voiceReady || !schedule.isValid() || trimmedTitle.isEmpty || selectedListID == nil || !lists.contains(where: { $0.id == selectedListID }))
                 }
             }
         }
 
+        .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
         .onAppear { registerKeyboardDraft() }
         .onChange(of: presentation) { _, _ in registerKeyboardDraft() }
         .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
@@ -3856,7 +3860,7 @@ struct QuickNoteComposer: View {
             if onSaveCapture != nil { Button("Drawing") { drawingToEdit = DrawingCaptureDraft() } }
             Button("Cancel", role: .cancel) {}
         }
-        .photosPicker(isPresented: $showsPhotoLibrary, selection: $photoSelection, maxSelectionCount: max(1, 6 - photos.count), matching: .images)
+        .photosPicker(isPresented: $showsPhotoLibrary, selection: $photoSelection, maxSelectionCount: 12, matching: .images)
         .task(id: photoSelection) { await importPhotos() }
         .sheet(isPresented: $showsCamera) {
             QuickCaptureCamera { image in
@@ -3894,12 +3898,14 @@ struct QuickNoteComposer: View {
 private struct NewPersonalNoteComposer: View {
 
     let availablePersonalLists: [PersonalCollection] /* Personal List destinations offered by the composer */
-    let onSave: (UUID, String, String, String, Date, ItemPresentation) throws -> Void /* Checked Note creation callback */
+    let onSave: (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void /* Checked Note creation callback */
 
     @Environment(\.dismiss) private var dismiss /* Composer dismissal action */
     @FocusState private var focusedField: Field? /* Input currently receiving keyboard focus */
     @State private var presentation: ItemPresentation = .note
     @State private var subtitle = ""
+    @StateObject private var attachmentDraft = CreationAttachmentDraft()
+    @State private var keyboardContextID = UUID()
     @State private var draft: PersonalListNoteDraft /* Unsaved Note content and destination */
 
 
@@ -3918,7 +3924,7 @@ private struct NewPersonalNoteComposer: View {
     init(
         initialCollectionID: UUID,
         availablePersonalLists: [PersonalCollection],
-        onSave: @escaping (UUID, String, String, String, Date, ItemPresentation) throws -> Void
+        onSave: @escaping (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void
     ) {
 
         _draft = State(initialValue: PersonalListNoteDraft(destinationID: initialCollectionID))
@@ -3957,9 +3963,12 @@ private struct NewPersonalNoteComposer: View {
 
         do {
 
-            try draft.save(in: availablePersonalLists) { destinationID, title, body, createdAt in
-                try onSave(destinationID, title, body, subtitle, createdAt, presentation)
-            }
+            guard try attachmentDraft.save(commit: { attachments in
+                try draft.save(in: availablePersonalLists) { destinationID, title, body, createdAt in
+                    try onSave(destinationID, title, body, subtitle, createdAt, presentation, attachments)
+                }
+                return true
+            }) else { return }
             dismiss()
         } catch {
 
@@ -4007,6 +4016,7 @@ private struct NewPersonalNoteComposer: View {
                             TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
                             RichTextEditor(placeholder: "Details (optional)", text: $draft.body)
                         }
+                        Section("Attachments") { CreationAttachmentList(draft: attachmentDraft) }
                         Section("Add to") { destinationMenu }
                     }
                 } else {
@@ -4018,6 +4028,7 @@ private struct NewPersonalNoteComposer: View {
                     .focused($focusedField, equals: .title)
                     .accessibilityLabel("Note title")
 
+                CreationAttachmentList(draft: attachmentDraft)
                 NoteCreationDateLabel(createdAt: draft.createdAt)
                     .accessibilityIdentifier("library.newNoteCreationDate")
 
@@ -4040,7 +4051,7 @@ private struct NewPersonalNoteComposer: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
-                        .disabled(!draft.canSave(in: availablePersonalLists))
+                        .disabled(!draft.canSave(in: availablePersonalLists) || attachmentDraft.isImporting)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     if focusedField == .title {
@@ -4053,6 +4064,12 @@ private struct NewPersonalNoteComposer: View {
             .navigationTitle("New " + presentation.title)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
+        .onAppear {
+            PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
+                exit: { dismiss() }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
+        }
+        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
         .presentationDetents([.large])
         .accessibilityIdentifier("library.newNoteComposer")
     }
@@ -5569,7 +5586,7 @@ struct BoardListsView: View {
     /// @return     (Void) saves and publishes one new Note record
     /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
     ///
-    private func createNote(in collectionID: UUID, title: String, body: String, subtitle: String, createdAt: Date, presentation: ItemPresentation) throws {
+    private func createNote(in collectionID: UUID, title: String, body: String, subtitle: String, createdAt: Date, presentation: ItemPresentation, attachments: [KanbanAttachment]) throws {
 
         guard let collectionIndex = collections.firstIndex(where: { /* Active personal List receiving the new Note */
 
@@ -5581,7 +5598,7 @@ struct BoardListsView: View {
 
         var updated = collections[collectionIndex] /* Destination collection receiving the new Note */
 
-        try updated.addNote(title: title, body: body, createdAt: createdAt, presentation: presentation, subtitle: subtitle)
+        try updated.addNote(title: title, body: body, createdAt: createdAt, presentation: presentation, subtitle: subtitle, attachments: attachments)
 
         var snapshot = collections /* Collection snapshot saved before publishing the new Note */
 
@@ -5872,8 +5889,8 @@ struct BoardListsView: View {
                 try PersonalCollectionStore.saveChecked(snapshot)
                 collections = snapshot
             },
-            onCreateNote:              { destinationID, title, body, subtitle, createdAt, presentation in
-                try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation)
+            onCreateNote:              { destinationID, title, body, subtitle, createdAt, presentation, attachments in
+                try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation, attachments: attachments)
             },
             onMoveNote:                { note, sourceID, destinationID in
                 try moveNote(note.id, from: sourceID, to: destinationID)
@@ -6581,8 +6598,8 @@ struct BoardListsView: View {
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
                     availablePersonalLists: collections
-                ) { destinationID, title, body, subtitle, createdAt, presentation in
-                    try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation)
+                ) { destinationID, title, body, subtitle, createdAt, presentation, attachments in
+                    try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation, attachments: attachments)
                 }
                 .databaseActivityOverlay()
             }
@@ -6940,7 +6957,7 @@ struct PersonalCollectionBoardView: View {
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
-    let onCreateNote: (UUID, String, String, String, Date, ItemPresentation) throws -> Void /* Checked creation callback for a destination List */
+    let onCreateNote: (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void /* Checked creation callback for a destination List */
     let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard /* Checked movement callback returning the relocated Note */
     let onUpdateMovedNote: (UUID, KanbanCard) -> Bool /* Persists edits in the Note's current collection */
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool /* Archives the Note in its current collection */

@@ -16,13 +16,6 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-Thanks!! This work session today has been great, thank you Alex
-
-
-Hey so for the Today's Focus list items in its listing, could we have swipe to delete work for each list item here as well?
-
-!
-
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!

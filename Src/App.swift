@@ -2822,6 +2822,7 @@ private struct TodayHomeView: View {
                                 }
                             },
                             onOpenCard: { card in openedFocusCard = card },
+                            onDeleteCard: onDeleteCard,
                             onOpenTodayList: {
                                 focusedListID = focus?.id
                                 showsTodayList = focus != nil
@@ -8330,6 +8331,7 @@ private struct TodayFocusSection: View {
     let onOpenPlan: () -> Void
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenCard: (KanbanCard) -> Void
+    let onDeleteCard: (Int) -> Bool
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
 
     private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
@@ -8340,6 +8342,7 @@ private struct TodayFocusSection: View {
     private var rowHeight: CGFloat { isPad ? padRowHeight : phoneRowHeight }
     @Environment(\.displayScale) private var displayScale
     @State private var measuredListingHeight: CGFloat?
+    @State private var deletingCard: KanbanCard?
 
     private var listingCapacity: CGFloat { rowHeight * 4 + 3 / displayScale }
     private var listingHeight: CGFloat {
@@ -8381,7 +8384,7 @@ private struct TodayFocusSection: View {
     }
 
     private var focusRows: some View {
-        VStack(spacing: 0) {
+        List {
             ForEach(openCards) { card in
                 HStack(spacing: 8) {
                     Button {
@@ -8418,12 +8421,26 @@ private struct TodayFocusSection: View {
                     .accessibilityLabel("Open \(card.word)")
                 }
 
-                if card.id != openCards.last?.id {
-
-                    Divider()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button {
+                        deletingCard = card
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .tint(.red)
+                    .accessibilityIdentifier("today.focus.swipeDelete")
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.defaultMinListRowHeight, rowHeight)
+        .contentMargins(.vertical, 0, for: .scrollContent)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDisabled(openCards.count <= 4)
+        .frame(height: rowHeight * CGFloat(min(openCards.count, 4)))
     }
 
 
@@ -8471,16 +8488,8 @@ private struct TodayFocusSection: View {
                             .foregroundStyle(.secondary)
                             .frame(minHeight: 40, alignment: .leading)
                     } else {
-                        if openCards.count > 4 {
-                            ScrollView(.vertical) {
-                                focusRows
-                            }
-                            .frame(height: rowHeight * 4 + 3 / displayScale)
+                        focusRows
                             .accessibilityLabel("Today's Focus items")
-                            .accessibilityHint("Scroll to see more unfinished items")
-                        } else {
-                            focusRows
-                        }
                     }
                 }
                 .onGeometryChange(for: CGFloat.self) { geometry in
@@ -8505,6 +8514,25 @@ private struct TodayFocusSection: View {
         }
 
         .frame(maxWidth: .infinity, alignment: .leading)
+        .confirmationDialog(
+            deletingCard?.presentation == .note ? "Delete Note?" : "Delete Card?",
+            isPresented: Binding(
+                get: { deletingCard != nil },
+                set: { if !$0 { deletingCard = nil } }
+            ),
+            presenting: deletingCard
+        ) { card in
+            Button("Delete", role: .destructive) {
+                guard list?.cards.contains(where: {
+                    $0.id == card.id && $0.createdAt == card.createdAt
+                }) == true else { return }
+                _ = onDeleteCard(card.id)
+                deletingCard = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCard = nil }
+        } message: { card in
+            Text("Permanently delete “\(card.word)”? This cannot be undone.")
+        }
         .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
         .padding(.bottom, list == nil ? 0 : max(0, listingCapacity - listingHeight))
     }

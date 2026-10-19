@@ -217,6 +217,31 @@ extension EnvironmentValues {
 }
 
 /// Observe native offsets without publishing per-frame changes through SwiftUI's Board body.
+/// Native row swipe actions live on the inner List. Give its pan recognizers
+/// first refusal before the enclosing Board starts horizontal paging.
+@MainActor
+enum BoardListSwipePriority {
+    @discardableResult
+    static func install(for list: UIScrollView) -> Int {
+        guard list is UICollectionView || list is UITableView else { return 0 }
+        var ancestor = list.superview
+        while let view = ancestor {
+            if let board = view as? UIScrollView,
+               board.alwaysBounceHorizontal || board.contentSize.width > board.bounds.width + 1 {
+                // Leave the vertical scrolling pan independent; prioritize the
+                // native row-action/editing pans before horizontal Board paging.
+                let gestures = (list.gestureRecognizers ?? []).filter {
+                    $0 is UIPanGestureRecognizer && $0 !== list.panGestureRecognizer
+                }
+                for gesture in gestures { board.panGestureRecognizer.require(toFail: gesture) }
+                return gestures.count
+            }
+            ancestor = view.superview
+        }
+        return 0
+    }
+}
+
 struct BoardViewportScrollProbe: UIViewRepresentable {
     let memory: BoardViewportMemory?
     let key: String
@@ -270,7 +295,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
             return nil
         }
         func findScroll(from marker: UIView) {
-            guard memory != nil, scroll == nil, !finding, attempts < 16 else { return }
+            if let scroll {
+                // SwiftUI may install row actions after the first empty List layout.
+                if !horizontal { BoardListSwipePriority.install(for: scroll) }
+                return
+            }
+            guard memory != nil, !finding, attempts < 16 else { return }
             finding = true
             DispatchQueue.main.async { [weak self, weak marker] in
                 guard let self else { return }
@@ -302,6 +332,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
         private func restore() {
             guard let scroll else { return }
             scroll.layoutIfNeeded()
+            if !horizontal { BoardListSwipePriority.install(for: scroll) }
             if let desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging {
                 let inset = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
                 let endInset = horizontal ? scroll.adjustedContentInset.right : scroll.adjustedContentInset.bottom
@@ -4040,6 +4071,22 @@ struct ArchivedCardInspectionView: View {
 /// @section    Purpose
 ///     Keep Search, labels, Calendar, and list pickers from owning duplicate content
 ///
+/// Reveal Delete without UIKit's optimistic destructive-row removal. The owning
+/// screen confirms the action and performs its existing checked deletion.
+private struct ListItemSwipeDelete: ViewModifier {
+    let enabled: Bool
+    let onRequest: () -> Void
+    func body(content: Content) -> some View {
+        content.swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if enabled {
+                Button(action: onRequest) { Label("Delete", systemImage: "trash") }
+                    .tint(.red)
+                    .accessibilityIdentifier("list.item.swipeDelete")
+            }
+        }
+    }
+}
+
 struct ContentLifecycleActions: ViewModifier {
     let title: String /* Canonical content name used for confirmation */
     let kind: String /* Card or List */
@@ -4892,13 +4939,8 @@ struct KanbanListView: View {
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                deletingCard = card
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+                        .modifier(ListItemSwipeDelete(enabled: editMode != .active,
+                            onRequest: { deletingCard = card }))
                     }
                 }
                 .onMove { sourceOffsets, destinationOffset in
@@ -4975,10 +5017,10 @@ struct KanbanListView: View {
         .confirmationDialog("Delete \(deletingCard?.word ?? "card")?", isPresented: Binding(
             get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
         ), titleVisibility: .visible) {
-            Button("Delete Card", role: .destructive) {
-                if let deletingCard { /* List card awaiting permanent deletion */
-
-                    onDeleteCard(deletingCard.id)
+            Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive) {
+                if let target = deletingCard,
+                   list.cards.contains(where: { $0.id == target.id && $0.createdAt == target.createdAt }) {
+                    onDeleteCard(target.id)
                 }
 
                 deletingCard = nil
@@ -4986,7 +5028,7 @@ struct KanbanListView: View {
 
             Button("Cancel", role: .cancel) { deletingCard = nil }
         } message: {
-            Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
+            Text("Permanently deletes this item, its details, and its bookmark. This cannot be undone.")
         }
 
         .onChange(of: listActionsRequest, initial: true) { _, request in
@@ -6400,6 +6442,7 @@ struct TodayListDetailView: View {
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
     @State private var showsNewCard = false
+    @State private var deletingCard: KanbanCard?
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken = UUID().uuidString
     @State private var draggedCardID: Int?
@@ -6675,6 +6718,8 @@ struct TodayListDetailView: View {
                                 .listRowInsets(focusedList.singleListViewMode == .noteList ? EdgeInsets() : EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
+                                .modifier(ListItemSwipeDelete(enabled: editMode != .active,
+                                    onRequest: { deletingCard = card }))
                             }
                         }
 
@@ -6786,8 +6831,22 @@ struct TodayListDetailView: View {
             .onChange(of: focusedList.map { ListCheckmarkReset.values(in: $0) }) { _, _ in
                 if let focusedList, checkmarkReset?.canRestore(focusedList) == false { checkmarkReset = nil }
             }
-            .onChange(of: listID) { _, _ in checkmarkReset = nil }
-            .onDisappear { checkmarkReset = nil }
+            .onChange(of: listID) { _, _ in checkmarkReset = nil; deletingCard = nil }
+            .onDisappear { checkmarkReset = nil; deletingCard = nil }
+            .confirmationDialog("Delete \(deletingCard?.word ?? "item")?", isPresented: Binding(
+                get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } }
+            ), titleVisibility: .visible) {
+                Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive) {
+                    if let target = deletingCard,
+                       focusedList?.cards.contains(where: { $0.id == target.id && $0.createdAt == target.createdAt }) == true {
+                        deleteCard(target.id)
+                    }
+                    deletingCard = nil
+                }
+                Button("Cancel", role: .cancel) { deletingCard = nil }
+            } message: {
+                Text("Permanently deletes this item, its details, and its bookmark. This cannot be undone.")
+            }
             .modifier(ListCheckmarkResetConfirmation(list: focusedList, session: $checkmarkReset,
                 confirmsClear: $confirmsCheckmarkReset, onUpdateCard: updateCard))
             .navigationTitle("")

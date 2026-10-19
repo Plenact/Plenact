@@ -236,3 +236,9 @@ All Card/Note creation forms now offer Add Attachment, including list-level and 
 
 
 Tapping the Today's Focus title opens the existing Today's Plan sheet, using the same route as the Today date and iPad plan summary. Its touch area is at least 44 points high without adding height to the compact focus header. The completion count still opens the Day list at its first unfinished item, and the Open today footer retains its Day navigation.
+
+
+Day, single-list, Week, and Board column screens support swiping left directly on Card and Note rows to reveal a red Delete action in both Cards and Note List layouts. Full-swipe deletion is disabled. Delete opens confirmation on the owning screen and delegates confirmed removal to the existing checked persistence callback; cancelling keeps the item in place. Swipe actions are disabled while reordering. Swiping directly on a Card or Note reveals its Delete action; the surrounding Board surface and list headers retain horizontal Board navigation, and long-press dragging remains available.
+
+
+Within Week and Library Boards, native List pan recognizers receive priority over their enclosing horizontal Board pager. This lets row swipe actions begin before the Board moves, while retaining enabled vertical List scrolling, horizontal navigation outside rows, and native long-press dragging.

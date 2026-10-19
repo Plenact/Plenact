@@ -1594,6 +1594,43 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func collections(in view: UIView) -> [UICollectionView] {
+            ((view as? UICollectionView).map { [$0] } ?? []) + view.subviews.flatMap { collections(in: $0) }
+        }
+        for personal in [false, true] {
+            let owner = UUID()
+            defer { UserDefaults.standard.removeObject(forKey: BoardViewportMemory.prefix + owner.uuidString) }
+            let cards = [KanbanCard(id: 1, word: "Card", listTitle: "First", checklists: []),
+                         KanbanCard(id: 2, word: "Note", listTitle: "First", checklists: [], presentation: .note)]
+            let lists = [KanbanList(id: 0, title: "First", cards: cards), KanbanList(id: 1, title: "Second", cards: [])]
+            let host = UIHostingController(rootView: ContentView(lists: .constant(lists), allowsAddingLists: false,
+                retainedAttachmentLists: { [] }, personalCollectionID: personal ? owner : nil, viewportOwnerID: owner))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(350))
+            let list = try XCTUnwrap(collections(in: host.view).first)
+            XCTAssertGreaterThan(BoardListSwipePriority.install(for: list), 0)
+            XCTAssertTrue(list.isScrollEnabled)
+            XCTAssertTrue(list.panGestureRecognizer.isEnabled)
+            var ancestor = list.superview
+            var board: UIScrollView?
+            while let view = ancestor {
+                if let candidate = view as? UIScrollView, candidate.contentSize.width > candidate.bounds.width + 1 { board = candidate; break }
+                ancestor = view.superview
+            }
+            XCTAssertTrue(try XCTUnwrap(board).isScrollEnabled)
+            XCTAssertTrue(try XCTUnwrap(board).panGestureRecognizer.isEnabled)
+            print("BOARD_LIST_NATIVE_PANS=" + (list.gestureRecognizers ?? []).map { String(describing: type(of: $0)) }.joined(separator: ","))
+            window.rootViewController = nil
+        }
+    }
+
+    @MainActor
     func testCreatedContentRevealFindsDestinationColumnAndGalleryTile() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)

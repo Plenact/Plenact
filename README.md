@@ -14,9 +14,17 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
+Nice!!!
+
+And what do you think if we had a setting for Plenact now, a boolean setting where the default setting for creation of new cards came with a random header color applied? And we could furthermore have an option for default random card background colors as well! Thoughts?
+
+!
+
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!
+
+- tapped today's focus list items glow on tap selection
 
 - Begin a published revision history document
 

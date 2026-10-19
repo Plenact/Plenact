@@ -2883,6 +2883,9 @@ struct CardDetailView: View {
                 noteToolbar(using: scrollProxy)
             }
         }
+        // Keep the Note's navigation toolbar at the screen bottom, beneath the keyboard.
+        // The focused editor supplies its own accessory controls above the keyboard.
+        .ignoresSafeArea(.keyboard, edges: presentation == .note && displayFormat != .divider ? .bottom : [])
         .onAppear {
             guard !card.isSectionDivider else { return }
             libraryItemOpened(card.id)
@@ -2895,7 +2898,8 @@ struct CardDetailView: View {
                 previous: keyboardNavigation.previous.map { action in { dismissEditing(); syncCardState(); action() } },
                 next: keyboardNavigation.next.map { action in { dismissEditing(); syncCardState(); action() } },
                 attachment: { dismissEditing(); activeSheet = .attachmentSources },
-                checklist: { dismissEditing(); showsNoteDetails = true; addChecklist(using: scrollProxy) }
+                checklist: { dismissEditing(); showsNoteDetails = true; addChecklist(using: scrollProxy) },
+                showsUpperBorder: true
             ))
         }
         .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
@@ -4997,6 +5001,7 @@ struct KeyboardCardActions {
     var next: (() -> Void)? = nil
     var attachment: (() -> Void)? = nil
     var checklist: (() -> Void)? = nil
+    var showsUpperBorder: Bool? = nil
 }
 struct KeyboardFormatting {
     let toggle: (UIFontDescriptor.SymbolicTraits) -> Void
@@ -5055,6 +5060,8 @@ final class PlenactKeyboard {
 final class PlenactKeyboardToolbar: UIView {
     private weak var input: UIView?
     private let formatting: KeyboardFormatting?
+    private let keyboardBackdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+    private let upperEdge = CAShapeLayer()
     private var buttonViews: [(UIBarButtonItem, UIButton)] = []
     private var undoButton: UIBarButtonItem?
     private var redoButton: UIBarButtonItem?
@@ -5063,10 +5070,45 @@ final class PlenactKeyboardToolbar: UIView {
         self.input = input; self.formatting = formatting
         super.init(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
         autoresizingMask = [.flexibleWidth]
-        backgroundColor = .secondarySystemBackground
+        backgroundColor = .clear
+        // Extend only the background beneath the system keyboard; controls remain in 44pt.
+        clipsToBounds = false
+        keyboardBackdrop.isUserInteractionEnabled = false
+        keyboardBackdrop.accessibilityElementsHidden = true
+        addSubview(keyboardBackdrop)
+        upperEdge.fillColor = UIColor.clear.cgColor
+        upperEdge.lineWidth = 1
+        layer.addSublayer(upperEdge)
         rebuild()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let radius: CGFloat = 24
+        keyboardBackdrop.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height + radius)
+        let shape = CAShapeLayer()
+        shape.path = UIBezierPath(roundedRect: keyboardBackdrop.bounds,
+                                  byRoundingCorners: [.topLeft, .topRight],
+                                  cornerRadii: CGSize(width: radius, height: radius)).cgPath
+        keyboardBackdrop.layer.mask = shape
+        let edge = UIBezierPath()
+        edge.move(to: CGPoint(x: 0.25, y: radius))
+        edge.addArc(withCenter: CGPoint(x: radius, y: radius), radius: radius - 0.25,
+                    startAngle: .pi, endAngle: .pi * 1.5, clockwise: true)
+        edge.addLine(to: CGPoint(x: bounds.width - radius, y: 0.25))
+        edge.addArc(withCenter: CGPoint(x: bounds.width - radius, y: radius), radius: radius - 0.25,
+                    startAngle: .pi * 1.5, endAngle: .pi * 2, clockwise: true)
+        upperEdge.path = edge.cgPath
+        upperEdge.strokeColor = UIColor.label.resolvedColor(with: traitCollection).withAlphaComponent(0.22).cgColor
+        upperEdge.isHidden = !overlaysLightNeutralSurface()
+    }
+    private func overlaysLightNeutralSurface() -> Bool {
+        guard traitCollection.userInterfaceStyle != .dark else { return false }
+        if let explicit = PlenactKeyboard.shared.actions.showsUpperBorder { return explicit }
+        // Standard modal forms use neutral surfaces; Today and the workspace keep
+        // their unoutlined edge. No screen snapshots or pixel sampling are needed.
+        return input?.window?.rootViewController?.presentedViewController != nil
+    }
     private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> UIBarButtonItem {
         let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction(title: title) { _ in run() })
         item.accessibilityLabel = title
@@ -5120,7 +5162,7 @@ final class PlenactKeyboardToolbar: UIView {
             middle.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
         ])
         let strip = UIStackView(arrangedSubviews: [buttonViews[0].1, scroll, buttonViews[8].1])
-        subviews.forEach { $0.removeFromSuperview() }
+        subviews.filter { $0 !== keyboardBackdrop }.forEach { $0.removeFromSuperview() }
         addSubview(strip); strip.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             strip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
@@ -5132,6 +5174,7 @@ final class PlenactKeyboardToolbar: UIView {
     }
     override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: 44) }
     func updateAvailability() {
+        setNeedsLayout()
         undoButton?.isEnabled = input?.undoManager?.canUndo == true
         redoButton?.isEnabled = input?.undoManager?.canRedo == true
         for (button, key) in contextualButtons { button.isEnabled = PlenactKeyboard.shared.actions[keyPath: key] != nil }

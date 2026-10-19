@@ -3714,7 +3714,8 @@ struct QuickNoteComposer: View {
             checklist: presentation == .card ? {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 actions.append(KanbanChecklistItem(title: ""))
-            } : nil
+            } : nil,
+            showsUpperBorder: true
         ))
     }
 

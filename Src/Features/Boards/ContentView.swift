@@ -116,6 +116,63 @@ struct BoardViewportState: Codable, Equatable {
     var offsets: [String: Double] = [:]
 }
 
+/// A one-shot UI request, issued by creation actions after publishing their new
+/// records. Include creation time because numeric Card IDs are collection-local.
+struct CreatedContentTarget: Identifiable, Equatable {
+    let id = UUID()
+    let listID: Int
+    let cardID: Int
+    let createdAt: Date
+    func matches(_ list: KanbanList) -> Bool {
+        list.id == listID && list.cards.contains { $0.id == cardID && $0.createdAt == createdAt }
+    }
+}
+
+@MainActor
+final class CreatedContentReveal: ObservableObject {
+    static let shared = CreatedContentReveal()
+    @Published private(set) var target: CreatedContentTarget?
+    func request(listID: Int, card: KanbanCard) {
+        guard let createdAt = card.createdAt else { return }
+        target = CreatedContentTarget(listID: listID, cardID: card.id, createdAt: createdAt)
+    }
+    func complete(_ request: CreatedContentTarget) {
+        if target?.id == request.id { target = nil }
+    }
+}
+
+/// Wait for List row registration and composer dismissal before revealing the row.
+/// A second pass accommodates the final height of a newly measured Card preview.
+private struct RevealCreatedContent: ViewModifier {
+    let lists: [KanbanList]
+    var existingProxy: ScrollViewProxy? = nil
+    @ObservedObject private var reveal = CreatedContentReveal.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var request: CreatedContentTarget? {
+        reveal.target.flatMap { target in lists.contains(where: target.matches) ? target : nil }
+    }
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let existingProxy { revealing(content, using: existingProxy) }
+        else { ScrollViewReader { proxy in revealing(content, using: proxy) } }
+    }
+    private func revealing(_ content: Content, using proxy: ScrollViewProxy) -> some View {
+        content.task(id: request?.id) {
+            guard let request else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled, reveal.target?.id == request.id else { return }
+                if reduceMotion { proxy.scrollTo(request.cardID, anchor: .center) }
+                else { withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(request.cardID, anchor: .center) } }
+                try await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled, reveal.target?.id == request.id else { return }
+                proxy.scrollTo(request.cardID, anchor: .center)
+                reveal.complete(request)
+            } catch { /* A changed destination or dismissed view cancels its reveal. */ }
+        }
+    }
+}
+
 @MainActor
 final class BoardViewportMemory {
     static let prefix = "Plenact.BoardViewport.v1."
@@ -351,11 +408,13 @@ struct BoardGalleryView: View {
                             if let divider = group.divider {
                                 Button { onOpen(divider, list.id) } label: { NamedSectionDivider(card: divider) }
                                     .buttonStyle(.plain).accessibilityLabel(divider.sectionHeading ?? "Section divider")
+                                    .id(divider.id)
                             }
                             LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                                 ForEach(group.cards) { card in
                                     Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card, appearance: list.appearance, boardAppearance: boardAppearance) }
                                         .buttonStyle(.plain).accessibilityHint("Opens this item in " + listTitle(list))
+                                        .id(card.id)
                                 }
                             }
                         }
@@ -369,6 +428,7 @@ struct BoardGalleryView: View {
                 if lists.isEmpty { Text("Add a list to start your gallery.").foregroundStyle(.white.opacity(0.8)) }
             }.padding(16).padding(.bottom, 16)
                 .background(BoardViewportScrollProbe(memory: viewportMemory, key: "gallery"))
+                .modifier(RevealCreatedContent(lists: lists))
         }
     }
 }
@@ -1410,6 +1470,7 @@ private struct BoardListCenterPreferenceKey: PreferenceKey {
 ///     Install the board background, header, paged list surface, and navigation path into card details
 ///
 struct ContentView: View {
+    @ObservedObject private var creationReveal = CreatedContentReveal.shared
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
     /// Archived lists belonging to the same board.
@@ -2054,11 +2115,11 @@ struct ContentView: View {
         var updatedList = lists[listIndex] /* Mutable destination-list copy */
 
         /// Append the new card to the list's cards array
-        updatedList.cards.append(contentsOf:
-            updatedList.makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
-        )
+        let created = updatedList.makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
+        updatedList.cards.append(contentsOf: created)
 
         lists[listIndex] = updatedList
+        if let card = created.first { CreatedContentReveal.shared.request(listID: listID, card: card) }
     }
 
 
@@ -3112,6 +3173,16 @@ struct ContentView: View {
 
                                     endCardDrag(cardID, commit: false)
                                 }
+                            }
+
+                            .task(id: creationReveal.target?.id) {
+                                guard let target = creationReveal.target,
+                                      lists.contains(where: target.matches) else { return }
+                                viewportMemory.horizontalRestoreAllowed = false
+                                do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+                                guard !Task.isCancelled else { return }
+                                visibleListID = target.listID
+                                listProxy.scrollTo(target.listID, anchor: presentation == .standard ? .center : .leading)
                             }
 
                             .onChange(of: boardTargetListID) { _, targetListID in
@@ -4709,6 +4780,7 @@ struct KanbanListView: View {
 
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
+                        .id(card.id)
                         .accessibilityLabel(card.sectionHeading.map { "Edit section heading: " + $0 } ?? "Edit section divider")
                         .background {
                             if editMode != .active {
@@ -4777,6 +4849,7 @@ struct KanbanListView: View {
 
                             .buttonStyle(.plain)
                             .modifier(HideNavigationLinkIndicator())
+                        .id(card.id)
                             .background {
                                 if editMode != .active {
 
@@ -4856,6 +4929,7 @@ struct KanbanListView: View {
             .background(.clear)
             .frame(height: cardCollectionHeight)
             .background(BoardViewportScrollProbe(memory: viewportMemory, key: "list:\(list.id)"))
+            .modifier(RevealCreatedContent(lists: [list]))
             .onPreferenceChange(BoardCardHeightPreferenceKey.self) { heights in
                 var updated = measuredCardHeights
                 updated.merge(heights, uniquingKeysWith: { _, latest in latest })
@@ -6621,6 +6695,7 @@ struct TodayListDetailView: View {
                         ? Color(.systemBackground).opacity(focusedList.appearance?.resolvedListBackgroundOpacity ?? 1) : .clear)
                     // Explicit task focus takes priority over restoring an old viewport.
                     .background(BoardViewportScrollProbe(memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical"))
+                    .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
                     .onAppear {
                         if focusedViewportMemory == nil {
                             let currentWeekID = planningCalendarAccess?.document.weeks.first { $0.startKey == planningCalendarAccess?.document.currentWeekKey }?.id
@@ -7042,9 +7117,9 @@ struct TodayListDetailView: View {
 
         let nextCardID = ((lists + reservedLists).flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond active and reserved retained records */
 
-        lists[listIndex].cards.append(contentsOf:
-            lists[listIndex].makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
-        )
+        let created = lists[listIndex].makeItems(startingAt: nextCardID, titles: title, description: description, subtitle: subtitle)
+        lists[listIndex].cards.append(contentsOf: created)
+        if let card = created.first { CreatedContentReveal.shared.request(listID: listID, card: card) }
     }
 }
 

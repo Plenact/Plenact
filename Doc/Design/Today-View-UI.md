@@ -227,3 +227,6 @@ Rich-text areas persist font family, size, bold, italic and color using optional
 backwards-compatible run fields; plain titles and specialized inputs stay plain.
 New Card drafts also support keyboard checklist creation and photo/drawing capture;
 media is committed only when Add succeeds. Formatting changes support undo/redo.
+
+
+Creating Cards and Notes now publishes a one-shot reveal request for the exact new record (List ID, Card ID, and creation time). Day and single-list screens reveal its row in Cards or Note List mode; Boards reveal the destination column and then its row, and Gallery reveals the tile. Today capture and the central New action open the receiving Week list after successful creation; personal Notes created from the Library directory open their saved destination after the composer closes. Library quick-template capture opens the saved Week. Multi-line entry reveals the first item in the new batch. Existing first-unchecked navigation, ordinary editing, checkmarks, and saved viewport restoration retain their separate behavior. Reveal movement respects Reduce Motion.

@@ -375,8 +375,17 @@ struct LibraryQuickTemplateComposer: View {
     private func save(_ capture: QuickCaptureSubmission) -> Bool {
         guard let access, let originalWeek,
               let current = access.document.weeks.first(where: { $0.id == originalWeek.id }) else { return false }
-        do { return access.saveWeek(try LibraryTemplateCapture.adding(capture, to: current)) }
-        catch { return false }
+        do {
+            let updated = try LibraryTemplateCapture.adding(capture, to: current)
+            guard access.saveWeek(updated) else { return false }
+            let previousIDs = Set(current.collection.lists.flatMap(\.cards).map(\.id))
+            if let list = updated.collection.lists.first(where: { $0.id == capture.listID }),
+               let card = list.cards.first(where: { !previousIDs.contains($0.id) }) {
+                CreatedContentReveal.shared.request(listID: list.id, card: card)
+                access.openWeek(updated)
+            }
+            return true
+        } catch { return false }
     }
     var body: some View {
         Group {

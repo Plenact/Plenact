@@ -1458,6 +1458,110 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
 
+    @MainActor
+    func testCreatedContentRevealScrollsLongDayListsInBothLayouts() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            if let target = CreatedContentReveal.shared.target { CreatedContentReveal.shared.complete(target) }
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        func collection(in view: UIView) -> UICollectionView? {
+            if let collection = view as? UICollectionView { return collection }
+            return view.subviews.lazy.compactMap { collection(in: $0) }.first
+        }
+        for mode in SingleListViewMode.allCases {
+            for width: CGFloat in [393, 820] {
+                let owner = UUID()
+                defer { UserDefaults.standard.removeObject(forKey: BoardViewportMemory.prefix + owner.uuidString + ".focused.8") }
+                var list = KanbanList(id: 8, title: "Creation test", cards: [])
+                list.cards = (0..<40).map { list.makeItem(id: $0, title: "Item \($0)", presentationOverride: mode == .noteList ? .note : .card) }
+                list.setSingleListViewMode(mode)
+                let target = try XCTUnwrap(list.cards.last)
+                let view = TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
+                    savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {}, onOpenWeek: {},
+                    onPermanentDelete: { _ in false })
+                    .environment(\.cardMovementSource, owner)
+                let host = UIHostingController(rootView: view)
+                window.frame = CGRect(x: 0, y: 0, width: width, height: width < 500 ? 852 : 1180)
+                window.rootViewController = host; window.makeKeyAndVisible()
+                try await Task.sleep(for: .milliseconds(250))
+                let native = try XCTUnwrap(collection(in: host.view))
+                XCTAssertLessThan(native.contentOffset.y, 100)
+                CreatedContentReveal.shared.request(listID: list.id, card: target)
+                try await Task.sleep(for: .milliseconds(1100))
+                host.view.layoutIfNeeded()
+                XCTAssertGreaterThan(native.contentOffset.y, 100, "New item must be revealed in \(mode), width \(width)")
+                XCTAssertLessThan(native.contentSize.height - native.contentOffset.y - native.bounds.height, 220)
+                XCTAssertNil(CreatedContentReveal.shared.target)
+                let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-created-\(mode.rawValue)-\(Int(width)).png")
+                try XCTUnwrap(image.pngData()).write(to: url)
+                print("CREATION_REVEAL_RENDER=" + url.path)
+                window.rootViewController = nil
+            }
+        }
+    }
+
+    @MainActor
+    func testCreatedContentRevealFindsDestinationColumnAndGalleryTile() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            if let target = CreatedContentReveal.shared.target { CreatedContentReveal.shared.complete(target) }
+            window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
+        }
+        func scrolls(in view: UIView) -> [UIScrollView] {
+            ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap { scrolls(in: $0) }
+        }
+        for gallery in [false, true] {
+            let owner = UUID()
+            let key = BoardViewportMemory.prefix + owner.uuidString
+            defer { UserDefaults.standard.removeObject(forKey: key) }
+            var memory = BoardViewportState(); memory.gallery = gallery
+            UserDefaults.standard.set(try JSONEncoder().encode(memory), forKey: key)
+            var destination = KanbanList(id: 2, title: "Destination", cards: [])
+            destination.cards = (0..<40).map { destination.makeItem(id: $0, title: "Item \($0)") }
+            let lists = [KanbanList(id: 0, title: "First", cards: []), KanbanList(id: 1, title: "Second", cards: []), destination]
+            let host = UIHostingController(rootView: ContentView(lists: .constant(lists), retainedAttachmentLists: { [] }, viewportOwnerID: owner))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(350))
+            CreatedContentReveal.shared.request(listID: destination.id, card: try XCTUnwrap(destination.cards.last))
+            try await Task.sleep(for: .milliseconds(1500))
+            host.view.layoutIfNeeded()
+            let native = scrolls(in: host.view)
+            XCTAssertTrue(native.contains { $0.contentOffset.y > 100 }, "Creation must reveal the row/tile, gallery: \(gallery)")
+            if !gallery { XCTAssertTrue(native.contains { $0.contentOffset.x > 100 }, "Destination column must also be revealed") }
+            XCTAssertNil(CreatedContentReveal.shared.target)
+            window.rootViewController = nil
+        }
+    }
+
+    @MainActor
+    func testCreatedContentRevealTargetsExactRecordAndRetainsNewerRequests() throws {
+        let reveal = CreatedContentReveal()
+        let first = KanbanList(id: 4, title: "Monday", cards: []).makeItem(id: 10, title: "New Card", createdAt: Date(timeIntervalSince1970: 100))
+        let collision = KanbanList(id: 4, title: "Other Board", cards: []).makeItem(id: 10, title: "Different Card", createdAt: Date(timeIntervalSince1970: 200))
+        reveal.request(listID: 4, card: first)
+        let original = try XCTUnwrap(reveal.target)
+        XCTAssertTrue(original.matches(KanbanList(id: 4, title: "Monday", cards: [first])))
+        XCTAssertFalse(original.matches(KanbanList(id: 4, title: "Other Board", cards: [collision])))
+        XCTAssertFalse(original.matches(KanbanList(id: 5, title: "Another List", cards: [first])))
+        XCTAssertFalse(original.matches(KanbanList(id: 4, title: "Monday", cards: [])))
+        var note = collision
+        note.presentation = .note
+        reveal.request(listID: 4, card: note)
+        let next = try XCTUnwrap(reveal.target)
+        reveal.complete(original)
+        XCTAssertEqual(reveal.target, next)
+        XCTAssertTrue(next.matches(KanbanList(id: 4, title: "Other Board", cards: [note])))
+        reveal.complete(next)
+        XCTAssertNil(reveal.target)
+    }
+
     func testSloganManualReadingAllowsOverscrollAndResumesWithoutJumping() {
         XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300, textWidth: 700), 400)
         XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: -500, viewport: 300, textWidth: 700), -600)

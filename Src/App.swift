@@ -2269,6 +2269,11 @@ private struct AppRootView: View {
                 }
             }
             lists = updatedLists
+            if let card = created.first {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                CreatedContentReveal.shared.request(listID: listID, card: card)
+                openBoardList(listID)
+            }
             return true
 
         }
@@ -5306,6 +5311,7 @@ struct BoardListsView: View {
     @State private var boardTargetListID: Int?                 /* Exact collection list requested from Saved    */
     @State private var boardTargetCardID: Int?                 /* Exact collection card requested from Saved    */
     @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
+    @State private var createdNoteDestination: PersonalCollection?
     @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
     @State private var libraryQuickTemplate: QuickCaptureTemplate?
@@ -5582,6 +5588,11 @@ struct BoardListsView: View {
         snapshot[collectionIndex] = updated
         try PersonalCollectionStore.saveChecked(snapshot)
         collections = snapshot
+        if let list = updated.lists.first(where: { !$0.isArchived }), let card = list.cards.last {
+            CreatedContentReveal.shared.request(listID: list.id, card: card)
+            if newNoteDraftDestination != nil { createdNoteDestination = updated }
+            else if openedCollection?.id != updated.id { openedCollection = updated }
+        }
     }
 
 
@@ -6562,7 +6573,11 @@ struct BoardListsView: View {
             .alert("Library", isPresented: Binding(get: { libraryStarterError != nil }, set: { if !$0 { libraryStarterError = nil } })) {
                 Button("OK", role: .cancel) { libraryStarterError = nil }
             } message: { Text(libraryStarterError ?? "") }
-            .fullScreenCover(item: $newNoteDraftDestination) { collection in
+            .fullScreenCover(item: $newNoteDraftDestination, onDismiss: {
+                guard let destination = createdNoteDestination else { return }
+                createdNoteDestination = nil
+                openedCollection = destination
+            }) { collection in
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
                     availablePersonalLists: collections

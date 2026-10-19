@@ -1458,6 +1458,23 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
 
+    func testSloganManualReadingAllowsOverscrollAndResumesWithoutJumping() {
+        XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300, textWidth: 700), 400)
+        XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: -500, viewport: 300, textWidth: 700), -600)
+        XCTAssertEqual(TodaySloganMotion.draggedPosition(start: 0, translation: -50, viewport: 300, textWidth: 100), -50)
+        XCTAssertEqual(TodaySloganMotion.draggedPosition(start: 400, translation: 5000, viewport: 300, textWidth: 700), 5400)
+        XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -600, translation: -5000, viewport: 300, textWidth: 700), -5600)
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: -1, start: -5600, viewport: 300, textWidth: 700), -5600)
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: 1, start: -5600, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: 1, start: 5400, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
+        // A future resume date produces negative elapsed time throughout the reading pause.
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: -1, start: -150, viewport: 300, textWidth: 700), -150)
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: 0, start: -150, viewport: 300, textWidth: 700), -150)
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: 1, start: -150, viewport: 300, textWidth: 700), -185.1, accuracy: 0.001)
+        // Once the text exits, the next pass enters from the right.
+        XCTAssertEqual(TodaySloganMotion.position(elapsed: 1, start: -700, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
+    }
+
     func testDailySlogansStayStableAndRotateThroughSixtyLocalDays() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))

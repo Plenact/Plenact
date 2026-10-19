@@ -10,6 +10,8 @@ The main Today experience includes:
 
 - Date, Search, Calendar access, and Account & Settings
 - A softly styled daily slogan that scrolls with accessibility and reduced-motion considerations
+
+The Today slogan supports unrestricted horizontal dragging for manual reading, including blank space beyond either end. If released completely offscreen, it reenters from the right when automatic movement resumes. Automatic movement pauses during a horizontal drag and resumes from the released position after one second. Tapping still opens the complete message; vertical dragging remains available to scroll Today. Reduce Motion and accessibility text sizes show stationary, readable text with the same full-message action. Other collection previews retain their existing scrolling behavior.
 - Quick capture into the current dated Day List, with a direct add action and full-editor path
 - Today's Focus with up to four actionable items and Open today
 - Up to six My shortcuts List destinations, configured through Account & Settings

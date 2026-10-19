@@ -4921,24 +4921,113 @@ private struct TodaySloganView: View {
     }
 
     private func sloganContent(_ slogan: String) -> some View {
-        Button { showsFullSlogan = true } label: {
-            GentleCollectionPreview(text: slogan, scrolls: true,
-                textFont: .system(size: 27, design: .serif).italic(),
-                textColor: (colorScheme == .dark
-                    ? Color(red: 0.84, green: 0.76, blue: 0.65)
-                    : Color(red: 0.40, green: 0.31, blue: 0.23)).opacity(0.55),
-                pointsPerSecond: 35.1, startPause: 0.4, endPause: 0.55, travelsAcross: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        InteractiveSloganPreview(text: slogan,
+            textColor: (colorScheme == .dark
+                ? Color(red: 0.84, green: 0.76, blue: 0.65)
+                : Color(red: 0.40, green: 0.31, blue: 0.23)).opacity(0.55),
+            onTap: { showsFullSlogan = true })
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
         .accessibilityLabel("Today's slogan. " + slogan)
-        .accessibilityHint("Shows the full message")
+        .accessibilityHint("Swipe left or right to read. Tap to show the full message.")
         .alert("Today's slogan", isPresented: $showsFullSlogan) {
             Button("Done", role: .cancel) { }
         } message: { Text(slogan) }
+    }
+}
+
+enum TodaySloganMotion {
+    static func position(elapsed: TimeInterval, start: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat {
+        let distance = viewport + textWidth
+        guard distance > 0 else { return 0 }
+        guard elapsed > 0 else { return start }
+        // When released completely offscreen, restart at the invisible right edge
+        // after the reading pause instead of spending minutes crossing blank space.
+        let resumeStart = start > viewport || start < -textWidth ? viewport : start
+        let proposed = resumeStart - elapsed * 35.1
+        if proposed >= -textWidth { return proposed }
+        return viewport - (-textWidth - proposed).truncatingRemainder(dividingBy: distance)
+    }
+    static func draggedPosition(start: CGFloat, translation: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat {
+        start + translation
+    }
+}
+
+/// Time-based movement lets a drag pick up the visible position without jumping
+/// to an animation's destination. Manual reading resumes automatically after 1s.
+struct InteractiveSloganPreview: View {
+    let text: String
+    let textColor: Color
+    let onTap: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var textWidth: CGFloat = 0
+    @State private var visible = false
+    @State private var anchorDate = Date()
+    @State private var anchorOffset: CGFloat? = nil
+    @State private var dragStart: CGFloat? = nil
+    @State private var draggedOffset: CGFloat? = nil
+
+    private func position(at date: Date, width: CGFloat) -> CGFloat {
+        if let draggedOffset { return draggedOffset }
+        let start = anchorOffset ?? width
+        let elapsed = max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
+        return TodaySloganMotion.position(elapsed: elapsed, start: start, viewport: width, textWidth: textWidth)
+    }
+
+    var body: some View {
+        Group {
+            if reduceMotion || typeSize.isAccessibilitySize {
+                Button(action: onTap) { Text(text).frame(maxWidth: .infinity, alignment: .leading) }
+                    .buttonStyle(.plain)
+            } else {
+                Text(text).lineLimit(1).hidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay {
+                        GeometryReader { geometry in
+                            TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible || dragStart != nil)) { timeline in
+                                Text(text).fixedSize(horizontal: true, vertical: false)
+                                    .background {
+                                        GeometryReader { measured in
+                                            Color.clear.preference(key: PreviewTextWidthKey.self, value: measured.size.width)
+                                        }
+                                    }
+                                    .offset(x: position(at: timeline.date, width: geometry.size.width))
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture(perform: onTap)
+                            .simultaneousGesture(DragGesture(minimumDistance: 10)
+                                .onChanged { value in
+                                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                                    if dragStart == nil {
+                                        dragStart = position(at: Date(), width: geometry.size.width)
+                                    }
+                                    draggedOffset = TodaySloganMotion.draggedPosition(start: dragStart ?? 0,
+                                        translation: value.translation.width, viewport: geometry.size.width, textWidth: textWidth)
+                                }
+                                .onEnded { _ in
+                                    guard let draggedOffset else { return }
+                                    anchorOffset = draggedOffset
+                                    anchorDate = Date().addingTimeInterval(1)
+                                    self.draggedOffset = nil
+                                    dragStart = nil
+                                })
+                        }
+                    }
+                    .clipped()
+                    .onPreferenceChange(PreviewTextWidthKey.self) { textWidth = $0 }
+                    .modifier(PreviewVisibility(visible: $visible))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(text)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { onTap() }
+            }
+        }
+        .font(.system(size: 27, design: .serif).italic())
+        .foregroundStyle(textColor)
+        .onChange(of: text) { _, _ in
+            anchorDate = Date(); anchorOffset = nil; dragStart = nil; draggedOffset = nil
+        }
     }
 }
 

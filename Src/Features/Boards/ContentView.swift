@@ -3621,6 +3621,8 @@ struct BoardHeader: View {
     var onSubtitleTap: (() -> Void)? = nil
     let onAddList: () -> Void                        /* Callback for adding a new list                      */
 
+    @State private var titleOverflows = false
+    @State private var subtitleOverflows = false
     @State private var showsBoardOptions = false
     @State private var pendingBoardAction: BoardOptionsAction?
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
@@ -3661,30 +3663,18 @@ struct BoardHeader: View {
             HStack(spacing: 8) {
                 ItemAppearanceMark(appearance: titleAppearance)
                     .font(.title2)
-                Text(title)
+                SlideableHeaderText(text: title, onOverflowChange: { titleOverflows = $0 })
                     .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
                     .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+
             }
 
-            if let onSubtitleTap {
-                Button(action: onSubtitleTap) {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.75))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(subtitle)
-                .accessibilityHint("Choose the week displayed in the Week tab")
-                .accessibilityIdentifier("board.weekSelector")
-            } else {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.75))
-            }
+            SlideableHeaderText(text: subtitle, onTap: onSubtitleTap,
+                onOverflowChange: { subtitleOverflows = $0 })
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.75))
+                .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
+
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .contentShape(Rectangle())
@@ -3699,10 +3689,11 @@ struct BoardHeader: View {
                     }
 
                     action()
-                }
+                },
+            including: titleOverflows || subtitleOverflows ? .subviews : .all
         )
         .accessibilityHint(
-            onJumpToFirstList == nil
+            titleOverflows || subtitleOverflows ? "Slide long text to read it. Board options has first and last list actions." : onJumpToFirstList == nil
                 ? ""
                 : "Swipe left to jump to the last list, or right to the first list. Board options also has these actions."
         )
@@ -6877,10 +6868,9 @@ struct TodayListDetailView: View {
                             ItemAppearanceMark(appearance: focusedList?.headerAppearance(
                                 collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.icon,
                                 collectionColor: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.color))
-                            Text((includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
+                            SlideableHeaderText(text: (includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
                                 .font(.title2.weight(.bold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.65)
+
                                 .foregroundStyle(.white)
                         }
 
@@ -6897,9 +6887,8 @@ struct TodayListDetailView: View {
                             .accessibilityIdentifier("day.dateSelector")
                         } else if let subtitle = focusedList?.subtitle, !subtitle.isEmpty {
 
-                            Text(subtitle)
+                            SlideableHeaderText(text: subtitle)
                                 .font(.subheadline)
-                                .lineLimit(1)
                                 .foregroundStyle(.white.opacity(0.75))
                         }
                     }
@@ -7299,7 +7288,7 @@ struct CardDestinationMenu: View {
                 }
             } label: {
                 if let locationTitle {
-                    Text(locationTitle).font(.caption).foregroundStyle(.secondary).italic()
+                    SlideableHeaderText(text: locationTitle).font(.caption).foregroundStyle(.secondary).italic()
                 } else {
                     Label("Move \(card.displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
                 }
@@ -7670,5 +7659,76 @@ struct SingleListNoteRow: View {
             Button("Delete", role: .destructive) { onDelete?() }
             Button("Cancel", role: .cancel) { }
         } message: { Text("Permanently deletes this item and its details. This cannot be undone.") }
+    }
+}
+
+
+/// Read overflowing header text directly, without automatic movement or model edits.
+/// Native horizontal scrolling supplies touch cancellation, momentum, and edge bounds.
+struct SlideableHeaderText: View {
+    let text: String
+    var onTap: (() -> Void)? = nil
+    var onOverflowChange: (Bool) -> Void = { _ in }
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+    private var allowsScrolling: Bool {
+        (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.scrollsOverflowingTitles ?? true
+    }
+    @State private var textWidth: CGFloat = 0
+    @State private var viewportWidth: CGFloat = 0
+    private var overflows: Bool { textWidth > viewportWidth + 1 }
+
+    private var scrollingSurface: some View {
+        Text(text.isEmpty ? " " : text)
+            .lineLimit(1)
+            .hidden()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay {
+                GeometryReader { geometry in
+                    ScrollView(.horizontal) {
+                        Text(text.isEmpty ? " " : text)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { textWidth = $0 }
+                    }
+                    .id(text)
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                    .scrollDisabled(!overflows)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { viewportWidth = $0 }
+                }
+            }
+            .clipped()
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
+            .onChange(of: overflows, initial: true) { _, value in onOverflowChange(allowsScrolling && value) }
+    }
+
+    @ViewBuilder private var readingSurface: some View {
+        if allowsScrolling {
+            scrollingSurface
+        } else {
+            Text(text.isEmpty ? " " : text)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .accessibilityLabel(text)
+        }
+    }
+
+    var body: some View {
+        Group {
+            if let onTap {
+                readingSurface
+                    .onTapGesture(perform: onTap)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityHint(allowsScrolling && overflows ? "Slide horizontally to read. Tap to open or edit." : "Tap to open or edit.")
+                    .accessibilityAction { onTap() }
+            } else {
+                readingSurface
+                    .accessibilityHint(allowsScrolling && overflows ? "Slide horizontally to read the full text." : "")
+            }
+        }
+        .onChange(of: allowsScrolling, initial: true) { _, value in onOverflowChange(value && overflows) }
     }
 }

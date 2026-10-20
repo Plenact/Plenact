@@ -235,6 +235,7 @@ struct AccountSettingsView: View {
     @State private var avatarForegroundColor: ProfileAvatarForegroundColor /* Draft icon color */
     @State private var defaultListID:       Int?                     /* Draft default list     */
     @State private var usesReducedContent:  Bool                     /* Draft content density  */
+    @State private var scrollsOverflowingTitles: Bool
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
     @State private var randomizesNewCardHeaders: Bool
     @State private var randomizesNewCardBackgrounds: Bool
@@ -312,6 +313,7 @@ struct AccountSettingsView: View {
      
         _usesReducedContent = State(initialValue: preferences.usesReducedContent)
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
+        _scrollsOverflowingTitles = State(initialValue: preferences.scrollsOverflowingTitles)
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
         _showsDueDatesOnNewCards = State(initialValue: preferences.showsDueDatesOnNewCards)
         _randomizesNewCardHeaders = State(initialValue: preferences.randomizesNewCardHeaders)
@@ -386,7 +388,8 @@ struct AccountSettingsView: View {
                 todayFocusHidesCompleted: todayFocusHidesCompleted,
                 todayFocusIncludesImportant: todayFocusIncludesImportant,
                 todayFocusIncludesBookmarked: todayFocusIncludesBookmarked,
-                todayFocusIncludesUpNext: todayFocusIncludesUpNext
+                todayFocusIncludesUpNext: todayFocusIncludesUpNext,
+                scrollsOverflowingTitles: scrollsOverflowingTitles
             )
         )
 
@@ -541,6 +544,8 @@ struct AccountSettingsView: View {
                             Toggle("Reduce supporting content", isOn: $usesReducedContent)
                             Toggle("Use larger primary controls", isOn: $usesLargeControls)
                             Toggle("Show navigation labels", isOn: $showsNavigationLabels)
+                            Toggle("Scroll overflowing titles and subtitles", isOn: $scrollsOverflowingTitles)
+                                .accessibilityHint("Allow manual horizontal reading in detail and title-bar headers")
                         } header: {
                             Text("Accessibility")
                         } footer: {
@@ -1982,6 +1987,8 @@ struct PlanSettingsView: View {
                     Toggle("Reduce supporting content", isOn: $preferences.usesReducedContent)
                     Toggle("Use larger primary controls", isOn: $preferences.usesLargeControls)
                     Toggle("Show navigation labels", isOn: $preferences.showsNavigationLabels)
+                    Toggle("Scroll overflowing titles and subtitles", isOn: $preferences.scrollsOverflowingTitles)
+                        .accessibilityHint("Allow manual horizontal reading in detail and title-bar headers")
                 }
             }
             .navigationTitle("Plan Settings")

@@ -4521,6 +4521,164 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile() throws {
+        let suite = "OverflowPreferenceTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertTrue(try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8)).scrollsOverflowingTitles)
+        XCTAssertTrue(PlanPreferencesStore.load(from: defaults).scrollsOverflowingTitles)
+        var preferences = LocalProfilePreferences()
+        preferences.scrollsOverflowingTitles = false
+        preferences.todayFocusIncludesImportant = true
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+    }
+
+    @MainActor
+    func testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText() async throws {
+        let suite = "OverflowReaderRender." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var preferences = LocalProfilePreferences(scrollsOverflowingTitles: false)
+        PlanPreferencesStore.save(preferences, to: defaults)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func scrolls(_ view: UIView) -> [UIScrollView] {
+            ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
+        }
+        let title = "A long title that can be read with a horizontal slide when this preference is enabled"
+        var overflow: [Bool] = []
+        let host = UIHostingController(rootView: SlideableHeaderText(text: title,
+            onOverflowChange: { overflow.append($0) }).font(.headline).frame(width: 180).defaultAppStorage(defaults))
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertTrue(scrolls(host.view).isEmpty)
+        XCTAssertEqual(overflow.last, false)
+        preferences.scrollsOverflowingTitles = true
+        PlanPreferencesStore.save(preferences, to: defaults)
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertTrue(scrolls(host.view).contains { $0.isScrollEnabled && $0.contentSize.width > $0.bounds.width })
+        XCTAssertEqual(overflow.last, true)
+        preferences.scrollsOverflowingTitles = false
+        PlanPreferencesStore.save(preferences, to: defaults)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertTrue(scrolls(host.view).isEmpty)
+        XCTAssertEqual(overflow.last, false)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+    }
+
+    @MainActor
+    func testLibraryLongNamesStayCompactAndExpandForAccessibility() async throws {
+        let title = Array(repeating: "On the Table", count: 8).joined(separator: ", ")
+        let row = LibraryCollectionRow(title: title, subtitle: "List", icon: "list.bullet", color: .red, count: 7)
+        let standard = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .large))
+        let accessible = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .accessibility3))
+        let standardSize = standard.sizeThatFits(in: CGSize(width: 300, height: 1000))
+        let accessibleSize = accessible.sizeThatFits(in: CGSize(width: 300, height: 3000))
+        XCTAssertLessThan(standardSize.height, 100, "Two-line names must not dominate the directory")
+        XCTAssertGreaterThan(accessibleSize.height, standardSize.height, "Accessibility names retain expanded reading")
+    }
+
+    @MainActor
+    func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func scrolls(_ view: UIView) -> [UIScrollView] {
+            (view as? UIScrollView).map { [$0] } ?? view.subviews.flatMap(scrolls)
+        }
+        let long = "Make room for today because there is more to this title than fits in the header, and every word should remain readable."
+        var overflow: [Bool] = []
+        let host = UIHostingController(rootView: VStack(spacing: 20) {
+            SlideableHeaderText(text: long, onOverflowChange: { overflow.append($0) }).font(.headline)
+            SlideableHeaderText(text: "Short").font(.subheadline)
+        }.frame(width: 220).padding())
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(200))
+        let native = scrolls(host.view)
+        let scrolling = try XCTUnwrap(native.first { $0.contentSize.width > $0.bounds.width + 1 })
+        XCTAssertTrue(scrolling.isScrollEnabled)
+        XCTAssertTrue(overflow.contains(true))
+        XCTAssertEqual(scrolling.contentOffset.x, 0, accuracy: 1, "No automatic movement")
+        XCTAssertTrue(native.contains { !$0.isScrollEnabled && $0.contentSize.width <= $0.bounds.width + 1 })
+        let end = max(0, scrolling.contentSize.width - scrolling.bounds.width)
+        scrolling.setContentOffset(CGPoint(x: end, y: 0), animated: false)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(scrolling.contentOffset.x, end, accuracy: 1, "The full ending is reachable and stays where it was read")
+        XCTAssertFalse(scrolling.showsHorizontalScrollIndicator)
+    }
+
+    @MainActor
+    func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        func scrolls(_ view: UIView) -> [UIScrollView] {
+            ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
+        }
+        let title = "On the Table, and all the meaningful possibilities that I want to make room for today"
+        let subtitle = "Ideas taking shape, plans becoming action, and the rest of this subtitle is readable too"
+        var list = KanbanList(id: 8, title: title, cards: [])
+        list.subtitleOverride = subtitle
+        let header = BoardHeader(settings: .constant(BoardDisplaySettings()), presentation: .constant(.standard),
+            activeMembers: [], memberColors: [:], onRenameMember: { _, _ in }, onDeleteMember: { _ in },
+            onSetMemberColor: { _, _ in }, onOpenCalendar: {}, title: title, subtitle: subtitle,
+            allowsAddingLists: false, onClose: {}, onViewArchivedLists: {}, onArchiveBoard: nil,
+            onDeleteBoard: nil, deleteBoardTitle: "Delete Board", onJumpToFirstList: { XCTFail("Layout must not navigate") },
+            onJumpToLastList: { XCTFail("Layout must not navigate") }, onAddList: {})
+        for (name, view) in [
+            ("board", AnyView(header.titleSwipeArea.padding(20).background(Color.blue))),
+            ("list", AnyView(TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
+                savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {}, onOpenWeek: {}, onPermanentDelete: { _ in false })))
+        ] {
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            // A top-edge native scroll view can extend into the container safe area;
+            // its single-line content height identifies the reader, not its UIKit bounds.
+            let readers = scrolls(host.view).filter { $0.contentSize.width > $0.bounds.width + 1 && $0.contentSize.height < 70 }
+            XCTAssertGreaterThanOrEqual(readers.count, 2, "Title and subtitle need independent reading positions")
+            for reader in readers { XCTAssertTrue(reader.isScrollEnabled) }
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-sliding-header-\(name).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("SLIDING_HEADER_RENDER=" + url.path)
+        }
+    }
+
+    @MainActor
+    func testLongDetailHeadersRenderWithoutEditingCardsOrNotes() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for presentation in [ItemPresentation.card, .note] {
+            let card = KanbanCard(id: 901, word: "Make room for today because it is so good, but not enough for me, because of all that it was for you!",
+                listTitle: "On the Table, and more useful thoughts for this particular list",
+                checklists: [], descriptionOverride: "A little space for a meaningful plan.",
+                subtitleOverride: "On the Table, a quick guide to this List and what I treasure in the rest of this subtitle.",
+                presentation: presentation)
+            var emissions: [KanbanCard] = []
+            let host = UIHostingController(rootView: NavigationStack {
+                CardDetailView(card: card, onTitleToggle: { emissions.append($0) })
+            })
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            XCTAssertTrue(emissions.isEmpty)
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-sliding-header-\(presentation).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("SLIDING_HEADER_RENDER=" + url.path)
+        }
+    }
+
     @MainActor
     func testEditorBannerDoesNotInsertNativeNavigationBar() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

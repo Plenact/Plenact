@@ -391,6 +391,7 @@ struct LocalProfilePreferences: Hashable, Codable {
 
     var defaultListID:       Int?   /* Preferred Today list   */
     var usesReducedContent:  Bool   /* Hide supporting copy   */
+    var scrollsOverflowingTitles: Bool
     var usesLargeControls:   Bool   /* Use taller key actions */
     var randomizesNewCardHeaders: Bool
     var randomizesNewCardBackgrounds: Bool
@@ -414,6 +415,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case defaultListID
         case usesReducedContent
+        case scrollsOverflowingTitles
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
@@ -452,9 +454,11 @@ struct LocalProfilePreferences: Hashable, Codable {
         todayFocusHidesCompleted: Bool = true,
         todayFocusIncludesImportant: Bool = false,
         todayFocusIncludesBookmarked: Bool = false,
-        todayFocusIncludesUpNext: Bool = false
+        todayFocusIncludesUpNext: Bool = false,
+        scrollsOverflowingTitles: Bool = true
     ) {
 
+        self.scrollsOverflowingTitles = scrollsOverflowingTitles
         self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
         self.todayFocusIncludesImportant = todayFocusIncludesImportant
         self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
@@ -551,7 +555,8 @@ struct LocalProfilePreferences: Hashable, Codable {
             todayFocusHidesCompleted: try container.decodeIfPresent(Bool.self, forKey: .todayFocusHidesCompleted) ?? true,
             todayFocusIncludesImportant: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesImportant) ?? false,
             todayFocusIncludesBookmarked: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesBookmarked) ?? false,
-            todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false
+            todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false,
+            scrollsOverflowingTitles: try container.decodeIfPresent(Bool.self, forKey: .scrollsOverflowingTitles) ?? true
         )
     }
 }

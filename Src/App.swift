@@ -5326,6 +5326,8 @@ struct LibraryCollectionRow: View {
                     Text(title)
                         .font(.headline)
                         .foregroundStyle(.primary)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                        .truncationMode(.tail)
                         .fixedSize(horizontal: false, vertical: true)
                     if !preview.isEmpty {
                         GentleCollectionPreview(text: preview, scrolls: scrollsPreview)

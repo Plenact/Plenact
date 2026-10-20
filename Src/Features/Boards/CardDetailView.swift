@@ -1422,12 +1422,10 @@ struct CardDetailView: View {
 
     private var noteLocationLabel: some View { /* Current personal List displayed in the Note header */
 
-        Text(currentListTitle)
+        SlideableHeaderText(text: currentListTitle)
             .font(.caption)
             .foregroundStyle(.secondary)
             .italic()
-            .lineLimit(1)
-            .truncationMode(.tail)
     }
 
 
@@ -2680,42 +2678,41 @@ struct CardDetailView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 ItemAppearanceMark(appearance: appearance)
-                                TextField("Card title", text: $titleText).textInputAutocapitalization(.sentences)
-                                    .font(.title2.weight(.bold))
-                                    .focused($focusedField, equals: .title)
-                                    .submitLabel(.done)
-                                    .onSubmit { dismissEditing() }
-                                    .onChange(of: titleText) { _, newValue in
-                                        syncCardState(title: newValue)
+                                Group {
+                                    if focusedField == .title {
+                                        TextField("Card title", text: $titleText).textInputAutocapitalization(.sentences)
+                                            .focused($focusedField, equals: .title)
+                                            .submitLabel(.done)
+                                            .onSubmit { dismissEditing() }
+                                            .onChange(of: titleText) { _, value in syncCardState(title: value) }
+                                    } else {
+                                        SlideableHeaderText(text: titleText.isEmpty ? "Card title" : titleText,
+                                            onTap: { focusedField = .title })
+                                            .accessibilityLabel("Card title, " + titleText)
+                                            .accessibilityIdentifier("card.readableTitle")
                                     }
+                                }
+                                .font(.title2.weight(.bold))
+                                .layoutPriority(1)
 
-                                locationControl
-
-                                .buttonStyle(.plain)
                                 }
 
                             if appearance?.hidesSubtitle(subtitleText) != true || focusedField == .subtitle {
-                            TextField("Card subtitle", text: $subtitleText).textInputAutocapitalization(.sentences)
-                                .font(.subheadline)
-                                .foregroundColor(focusedField == .subtitle ? Color.secondary : Color.clear)
-                                .focused($focusedField, equals: .subtitle)
-                                .submitLabel(.done)
-                                .overlay(alignment: .leading) {
-                                    if focusedField != .subtitle {
-
-                                        Text(subtitleText)
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.tail)
-                                            .allowsHitTesting(false)
-                                            .accessibilityHidden(true)
-                                    }
+                            Group {
+                                if focusedField == .subtitle || subtitleText.isEmpty {
+                                    TextField("Card subtitle", text: $subtitleText).textInputAutocapitalization(.sentences)
+                                        .focused($focusedField, equals: .subtitle)
+                                        .submitLabel(.done)
+                                        .onSubmit { dismissEditing() }
+                                        .onChange(of: subtitleText) { _, value in syncCardState(subtitle: value) }
+                                } else {
+                                    SlideableHeaderText(text: subtitleText, onTap: { focusedField = .subtitle })
+                                        .accessibilityLabel("Card subtitle, " + subtitleText)
+                                        .accessibilityIdentifier("card.readableSubtitle")
                                 }
-                                .onSubmit { dismissEditing() }
-                                .onChange(of: subtitleText) { _, newValue in
-                                    syncCardState(subtitle: newValue)
-                                }
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                             }
                         }
 
@@ -2769,6 +2766,13 @@ struct CardDetailView: View {
                 Spacer()
 
                 ImportantItemIndicator(cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
+
+                if presentation == .card, displayFormat != .divider {
+                    locationControl
+                        .frame(maxWidth: 180, minHeight: 44)
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("card.locationPicker")
+                }
 
                 Group {
 

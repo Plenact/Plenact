@@ -15,6 +15,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 
 ## Supporting references
 
+- [Slide to read long headers](Design/Sliding-Header-Text.md) — manual title/subtitle reading, editing, accessibility, and gesture boundaries
 - [Board presentation](Design/Board-Presentation.md) — historical implementation detail with a current-context note
 - [Checklist actions](Design/Checklist-Actions-Architecture.md) — action identity and detail boundaries
 - [Local profile](Design/Local-Profile-Architecture.md) — device-local identity, settings, and session boundary

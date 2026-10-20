@@ -21,6 +21,13 @@ Tapping the Today date opens Today's Plan. Users choose links to existing Cards 
 
 Fresh installations offer On the Table, In the Queue, and Scheduled in shortcut order, with one tutorial Card per List. Cards and Notes retain their canonical owners when opened through shortcuts, Search, Activity, or labels
 
+## Today’s Focus product contract
+
+See [Today’s Focus: give shape to your attention](Todays-Focus.md) for the current
+ordering, grouping, completion, and settings contract. That document supersedes
+the earlier unfinished-only preview descriptions below when optional settings are
+enabled. Defaults retain Day list order, hide completed items, and show four items.
+
 ## Proposed daily planning experience
 
 See [Your Planning Rhythm](Planning-Rhythm.md) for the shared product contract
@@ -245,3 +252,13 @@ Within Week and Library Boards, native List pan recognizers receive priority ove
 
 
 Plan Settings and Account & Settings both include New Cards switches for Random header color and Random background color, independently off by default. Creation chooses a saved per-Card banner color and/or soft preview background from curated palettes. Normal, multiline, personal List, Quick Capture, and priority creation share the defaults; newly instantiated Day/Week template Cards receive missing defaults while explicit template colors are retained. Existing records, decoding, Notes, dividers, and copied/moved records are not recolored. Appearance can override or reset each Card's banner and preview background afterward. Header and preview surfaces use the existing adaptive palette in light/dark and increased-contrast appearances.
+
+
+## Focus inclusion chooser
+
+The latest contract in [Today's Focus](Todays-Focus.md) supersedes the earlier
+title-tap route: tapping Today's Focus now opens Up Next, Important, and Bookmarked
+filter switches, plus All items. Selections combine as OR and persist immediately.
+The Today date/subheader continues to open Today's Plan. The count and Open today
+still open the dated Day list. This changes preview eligibility only, with completion,
+grouping, order, and item-count preferences applied as documented there.

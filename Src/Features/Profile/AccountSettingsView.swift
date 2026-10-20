@@ -239,6 +239,12 @@ struct AccountSettingsView: View {
     @State private var randomizesNewCardHeaders: Bool
     @State private var randomizesNewCardBackgrounds: Bool
     @State private var showsDueDatesOnNewCards: Bool
+    @State private var todayFocusIncludesUpNext: Bool
+    @State private var todayFocusIncludesImportant: Bool
+    @State private var todayFocusIncludesBookmarked: Bool
+    @State private var todayFocusOrder: TodayFocusOrder
+    @State private var todayFocusGroupsBySection: Bool
+    @State private var todayFocusHidesCompleted: Bool
     @State private var todayFocusItemCount: Int
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
@@ -310,6 +316,12 @@ struct AccountSettingsView: View {
         _randomizesNewCardHeaders = State(initialValue: preferences.randomizesNewCardHeaders)
         _randomizesNewCardBackgrounds = State(initialValue: preferences.randomizesNewCardBackgrounds)
         _todayFocusItemCount = State(initialValue: preferences.todayFocusItemCount)
+        _todayFocusIncludesUpNext = State(initialValue: preferences.todayFocusIncludesUpNext)
+        _todayFocusIncludesImportant = State(initialValue: preferences.todayFocusIncludesImportant)
+        _todayFocusIncludesBookmarked = State(initialValue: preferences.todayFocusIncludesBookmarked)
+        _todayFocusOrder = State(initialValue: preferences.todayFocusOrder)
+        _todayFocusGroupsBySection = State(initialValue: preferences.todayFocusGroupsBySection)
+        _todayFocusHidesCompleted = State(initialValue: preferences.todayFocusHidesCompleted)
     }
 
 
@@ -367,7 +379,13 @@ struct AccountSettingsView: View {
                 showsDueDatesOnNewCards: showsDueDatesOnNewCards,
                 todayFocusItemCount: todayFocusItemCount,
                 randomizesNewCardHeaders: randomizesNewCardHeaders,
-                randomizesNewCardBackgrounds: randomizesNewCardBackgrounds
+                randomizesNewCardBackgrounds: randomizesNewCardBackgrounds,
+                todayFocusOrder: todayFocusOrder,
+                todayFocusGroupsBySection: todayFocusGroupsBySection,
+                todayFocusHidesCompleted: todayFocusHidesCompleted,
+                todayFocusIncludesImportant: todayFocusIncludesImportant,
+                todayFocusIncludesBookmarked: todayFocusIncludesBookmarked,
+                todayFocusIncludesUpNext: todayFocusIncludesUpNext
             )
         )
 
@@ -511,18 +529,9 @@ struct AccountSettingsView: View {
 
                         NewCardColorDefaultsSection(headers: $randomizesNewCardHeaders, backgrounds: $randomizesNewCardBackgrounds)
 
-                        Section {
-                            Picker("Items in Today's Focus", selection: $todayFocusItemCount) {
-                                ForEach(1...12, id: \.self) { count in
-                                    Text("\(count)").tag(count)
-                                }
-                                Text("All open items").tag(0)
-                            }
-                        } header: {
-                            Text("Today")
-                        } footer: {
-                            Text("Choose how many unfinished items appear in Today's Focus. The default is 4. Progress still counts the entire day's list. Up to 4 rows are visible at once. Extra spacing below the panel keeps Today’s shortcuts in place when fewer items are shown. With a higher limit, scroll inside Today's Focus to see the remaining items.")
-                        }
+                        TodayFocusSettingsSection(count: $todayFocusItemCount, order: $todayFocusOrder,
+                            groups: $todayFocusGroupsBySection, hidesCompleted: $todayFocusHidesCompleted,
+                            important: $todayFocusIncludesImportant, bookmarked: $todayFocusIncludesBookmarked, upNext: $todayFocusIncludesUpNext)
 
                         Section {
                             Toggle("Reduce supporting content", isOn: $usesReducedContent)
@@ -1934,17 +1943,16 @@ struct PlanSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                TodayFocusSettingsSection(count: $preferences.todayFocusItemCount, order: $preferences.todayFocusOrder,
+                    groups: $preferences.todayFocusGroupsBySection, hidesCompleted: $preferences.todayFocusHidesCompleted,
+                    important: $preferences.todayFocusIncludesImportant, bookmarked: $preferences.todayFocusIncludesBookmarked, upNext: $preferences.todayFocusIncludesUpNext)
                 Section {
-                    Picker("Items in Today's Focus", selection: $preferences.todayFocusItemCount) {
-                        ForEach(1...12, id: \.self) { Text("\($0)").tag($0) }
-                        Text("All open items").tag(0)
-                    }
                     Picker("Default Today list", selection: $preferences.defaultListID) {
                         Text("Choose each day").tag(nil as Int?)
                         ForEach(lists) { Text($0.title).tag(Optional($0.id)) }
                     }
                 } header: { Text("Today") } footer: {
-                    Text("Focus shows unfinished items; progress counts the entire day's list. Up to 4 rows are visible at once. Extra spacing below the panel keeps Today’s shortcuts in place when fewer items are shown. With a higher limit, scroll inside Today's Focus to see the remaining items.")
+                    Text("Choose the fallback list for Today.")
                 }
                 Section {
                     Picker("Week starts on", selection: $firstWeekday) {
@@ -2013,6 +2021,38 @@ private struct NewCardColorDefaultsSection: View {
                 .accessibilityIdentifier("settings.newCards.randomBackground")
         } header: { Text("New Cards") } footer: {
             Text("Give each new Card a saved color from a soft palette. The switches work independently. Existing items, Notes, and section dividers keep their colors. Change or reset an individual Card's colors in Appearance.")
+        }
+    }
+}
+
+
+private struct TodayFocusSettingsSection: View {
+    @Binding var count: Int
+    @Binding var order: TodayFocusOrder
+    @Binding var groups: Bool
+    @Binding var hidesCompleted: Bool
+    @Binding var important: Bool
+    @Binding var bookmarked: Bool
+    @Binding var upNext: Bool
+
+    var body: some View {
+        Section {
+            Picker("Items in Today's Focus", selection: $count) {
+                ForEach(1...12, id: \.self) { Text("\($0)").tag($0) }
+                Text("All items").tag(0)
+            }
+            Picker("Order", selection: $order) {
+                ForEach(TodayFocusOrder.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            Toggle("Group by Day list sections", isOn: $groups)
+            Toggle("Up Next", isOn: $upNext)
+            Toggle("Cards marked important", isOn: $important)
+            Toggle("Cards bookmarked", isOn: $bookmarked)
+            Toggle("Hide completed items", isOn: $hidesCompleted)
+        } header: {
+            Text("Today's Focus")
+        } footer: {
+            Text("Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Focus follows your Day list by default. Grouping uses your section headings; chronological order uses start dates, then due dates when no start is set, within each group. Undated items keep their relative order after dated items. These choices never rearrange your Day list. The limit counts items, not headings; progress always counts the whole day. Scroll inside Focus for more than four items.")
         }
     }
 }

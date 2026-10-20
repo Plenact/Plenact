@@ -319,6 +319,206 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 500).todayFocusItemCount, 4)
     }
 
+    func testFocusFiltersCombineAsUnionBeforeLimitAndKeepCanonicalOrder() throws {
+        var cards = (0..<7).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Today", checklists: []) }
+        cards[2].isTitleChecked = true
+        cards.insert(KanbanCard(id: 90, word: "--- Important to me", listTitle: "Today", isDivider: true, checklists: []), at: 1)
+        let original = cards
+        let important: Set<Int> = [1, 2, 4, 90]
+        let saved: Set<Int> = [3, 4]
+        var preferences = LocalProfilePreferences(todayFocusItemCount: 0, todayFocusGroupsBySection: true,
+            todayFocusIncludesImportant: true)
+        func entries() -> [TodayFocusEntry] {
+            preferences.todayFocusEntries(in: cards, importantCardIDs: important, bookmarkedCardIDs: saved)
+        }
+        XCTAssertEqual(entries().map(\.id), [1, 4])
+        XCTAssertEqual(entries().first?.heading, "Important to me")
+        preferences.todayFocusIncludesBookmarked = true
+        XCTAssertEqual(entries().map(\.id), [1, 3, 4])
+        preferences.todayFocusItemCount = 2
+        XCTAssertEqual(entries().map(\.id), [1, 3])
+        preferences.todayFocusItemCount = 0
+        preferences.todayFocusHidesCompleted = false
+        XCTAssertEqual(entries().map(\.id), [1, 2, 3, 4])
+        preferences.todayFocusIncludesImportant = false
+        XCTAssertEqual(entries().map(\.id), [3, 4])
+        preferences.todayFocusIncludesBookmarked = false
+        XCTAssertEqual(entries().count, 7)
+        preferences.todayFocusIncludesImportant = true
+        XCTAssertTrue(preferences.todayFocusEntries(in: cards).isEmpty)
+        XCTAssertEqual(cards, original)
+    }
+
+    func testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        func time(_ hour: Int, day: Int = 19) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour))!
+        }
+        var cards = (0..<8).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Today", checklists: []) }
+        cards[0].startDate = time(4); cards[0].dueDate = time(5)
+        cards[1].startDate = time(7); cards[1].dueDate = time(17)
+        cards[2].startDate = time(18); cards[2].dueDate = time(19)
+        cards[3].startDate = time(9, day: 1); cards[3].dueDate = time(10, day: 1)
+        cards[4].startDate = time(15, day: 1); cards[4].startDateKind = .time
+        cards[5].dueDate = time(0); cards[5].dueDateKind = .date
+        cards[6].startDate = time(8, day: 20)
+        for index in [0, 1, 2, 3, 6] { cards[index].startDateKind = .dateAndTime; cards[index].dueDateKind = .dateAndTime }
+        var preferences = LocalProfilePreferences(todayFocusItemCount: 0, todayFocusIncludesUpNext: true)
+        let now = time(12)
+        XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: now, calendar: calendar).map(\.id), [1, 2, 4, 5])
+        preferences.todayFocusIncludesImportant = true
+        preferences.todayFocusIncludesBookmarked = true
+        XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: now, calendar: calendar,
+            importantCardIDs: [0], bookmarkedCardIDs: [7]).map(\.id), [0, 1, 2, 4, 5, 7])
+        preferences.todayFocusIncludesImportant = false; preferences.todayFocusIncludesBookmarked = false
+        XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: time(20), calendar: calendar).map(\.id), [5])
+    }
+
+    func testFocusImportanceUsesOwnerQualifiedStateAndSeedsOnlyNamedDemoRecords() throws {
+        var first = PersonalCollection(title: "Demo", kind: .list)
+        first.lists[0].cards = ["Work", "Gym", "Dinner", "Call Accountant", "Wake", "Morning Starbucks Pow-wow"].enumerated().map {
+            KanbanCard(id: $0.offset, word: $0.element, listTitle: "Today", checklists: [])
+        }
+        var second = PersonalCollection(title: "Other owner", kind: .list)
+        second.lists[0].cards = [KanbanCard(id: 0, word: "Different item", listTitle: "Today", checklists: [])]
+        let original = first
+        var data = LibraryImportanceSelection.setting(cardID: 0, collectionID: second.id, marked: true, data: Data())
+        data = LibraryImportanceSelection.demoData(in: [first], preserving: data)
+        XCTAssertEqual(LibraryImportanceSelection.cardIDs(collectionID: first.id, data: data), [0, 1, 2, 3])
+        XCTAssertEqual(LibraryImportanceSelection.cardIDs(collectionID: second.id, data: data), [0])
+        data = LibraryImportanceSelection.setting(cardID: 0, collectionID: first.id, marked: false, data: data)
+        XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 0, collectionID: first.id, data: data))
+        XCTAssertTrue(LibraryImportanceSelection.contains(cardID: 0, collectionID: second.id, data: data))
+        XCTAssertEqual(first, original)
+        let examples = FullMonthExample.make()
+        let domain = try examples.defaultsDomain(preserving: [:])
+        let exampleData = try XCTUnwrap(domain[LibraryImportanceSelection.key] as? Data)
+        let accountant = examples.collections.flatMap { owner in owner.lists.flatMap(\.cards).filter { $0.word == "Call the accountant" }.map { (owner.id, $0.id) } }
+        XCTAssertFalse(accountant.isEmpty)
+        for (owner, card) in accountant {
+            XCTAssertTrue(LibraryImportanceSelection.contains(cardID: card, collectionID: owner, data: exampleData))
+        }
+        let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
+        XCTAssertFalse(legacy.todayFocusIncludesImportant)
+        XCTAssertFalse(legacy.todayFocusIncludesBookmarked)
+        XCTAssertFalse(legacy.todayFocusIncludesUpNext)
+        let selected = LocalProfilePreferences(todayFocusIncludesImportant: true, todayFocusIncludesBookmarked: true, todayFocusIncludesUpNext: true)
+        XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(selected)), selected)
+    }
+
+    func testFocusShapePreferencesKeepLegacyDefaultsAndPersistWithoutProfile() throws {
+        let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
+        XCTAssertEqual(legacy.todayFocusOrder, .dayList)
+        XCTAssertFalse(legacy.todayFocusGroupsBySection)
+        XCTAssertTrue(legacy.todayFocusHidesCompleted)
+        let suite = "FocusShape." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = LocalProfilePreferences(todayFocusItemCount: 0,
+            todayFocusOrder: .chronological, todayFocusGroupsBySection: true, todayFocusHidesCompleted: false)
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+    }
+
+    func testFocusShapePreservesSectionsStableTiesAndAppliesLimitAfterSorting() throws {
+        func item(_ id: Int, _ title: String, _ time: Double? = nil, done: Bool = false) -> KanbanCard {
+            var card = KanbanCard(id: id, word: title, listTitle: "Monday", isTitleChecked: done, checklists: [])
+            card.startDate = time.map { Date(timeIntervalSince1970: $0) }
+            card.startDateKind = .dateAndTime
+            return card
+        }
+        let firstHeading = KanbanCard(id: 90, word: "--- Looking forward to", listTitle: "Monday", isDivider: true, checklists: [])
+        let secondHeading = KanbanCard(id: 91, word: "--- Must happen", listTitle: "Monday", isDivider: true, checklists: [])
+        let repeatedHeading = KanbanCard(id: 92, word: "--- Must happen", listTitle: "Monday", isDivider: true, checklists: [])
+        let cards = [item(1, "Before sections"), firstHeading, item(2, "Later", 200),
+            item(3, "Earlier", 100), item(4, "Same time", 100), item(5, "Done", 50, done: true),
+            secondHeading, item(6, "Undated"), item(7, "Another time", 25), repeatedHeading, item(8, "Repeated section", 1)]
+        let original = cards
+        var preferences = LocalProfilePreferences(todayFocusItemCount: 0,
+            todayFocusOrder: .chronological, todayFocusGroupsBySection: true)
+        var entries = preferences.todayFocusEntries(in: cards)
+        XCTAssertEqual(entries.map(\.id), [1, 3, 4, 2, 7, 6, 8])
+        XCTAssertEqual(entries[1].heading, "Looking forward to")
+        XCTAssertEqual(entries[4].sectionID, 91)
+        XCTAssertEqual(entries.last?.sectionID, 92)
+        preferences.todayFocusItemCount = 3
+        XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [1, 3, 4])
+        preferences.todayFocusItemCount = 0
+        preferences.todayFocusGroupsBySection = false
+        XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [8, 7, 3, 4, 2, 1, 6])
+        preferences.todayFocusHidesCompleted = false
+        entries = preferences.todayFocusEntries(in: cards)
+        XCTAssertEqual(entries.map(\.id), [8, 7, 5, 3, 4, 2, 1, 6])
+        XCTAssertTrue(entries[2].card.isTitleChecked)
+        preferences.todayFocusOrder = .dayList
+        XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [1, 2, 3, 4, 5, 6, 7, 8])
+        XCTAssertEqual(cards, original)
+    }
+
+    func testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let day = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 19)))
+        func time(_ hour: Int, day date: Int) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: 10, day: date, hour: hour))!
+        }
+        var cards = (1...5).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Monday", checklists: []) }
+        cards[0].startDate = time(17, day: 1); cards[0].startDateKind = .time
+        cards[1].dueDate = time(9, day: 25); cards[1].dueDateKind = .time
+        cards[2].startDate = time(22, day: 19); cards[2].startDateKind = .date
+        cards[3].startDate = time(12, day: 19); cards[3].startDateKind = .dateAndTime
+        let preferences = LocalProfilePreferences(todayFocusItemCount: 0, todayFocusOrder: .chronological)
+        let entries = preferences.todayFocusEntries(in: cards, on: day, calendar: calendar)
+        XCTAssertEqual(entries.map(\.id), [3, 2, 4, 1, 5])
+        XCTAssertEqual(entries[1].scheduleDate(on: day, calendar: calendar), time(9, day: 19))
+        XCTAssertTrue(try XCTUnwrap(entries[1].scheduleLabel).hasPrefix("Due · "))
+        XCTAssertNil(entries.last?.scheduleLabel)
+    }
+
+    @MainActor
+    func testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var list = KanbanList(id: 1, title: "Monday", cards: [])
+        list.cards = [KanbanCard(id: 90, word: "--- Looking forward to", listTitle: "Monday", isDivider: true, checklists: [])]
+        list.cards += (1...6).map { KanbanCard(id: $0, word: "\($0 == 1 ? "Dinner with family" : "Make time for something meaningful")", listTitle: "Monday", isTitleChecked: $0 == 2, checklists: []) }
+        list.cards.insert(KanbanCard(id: 91, word: "--- Must happen", listTitle: "Monday", isDivider: true, checklists: []), at: 4)
+        list.cards[1].startDate = .now
+        let original = list
+        for (name, preference, scheme, width) in [
+            ("default", LocalProfilePreferences(), ColorScheme.light, CGFloat(393)),
+            ("grouped", LocalProfilePreferences(todayFocusItemCount: 0, todayFocusOrder: .chronological, todayFocusGroupsBySection: true, todayFocusHidesCompleted: false), .light, 393),
+            ("dark-tablet", LocalProfilePreferences(todayFocusItemCount: 0, todayFocusGroupsBySection: true), .dark, 820),
+            ("up-next", LocalProfilePreferences(todayFocusIncludesUpNext: true), .light, 393),
+            ("filtered-empty", LocalProfilePreferences(todayFocusIncludesImportant: true), .light, 393)
+        ] {
+            let view = ScrollView {
+                TodayFocusSection(list: list, cards: list.cards.filter { !$0.isSectionDivider },
+                    entries: preference.todayFocusEntries(in: list.cards), groupsBySection: preference.todayFocusGroupsBySection,
+                    chronological: preference.todayFocusOrder == .chronological,
+                    includesImportant: preference.todayFocusIncludesImportant,
+                    includesBookmarked: preference.todayFocusIncludesBookmarked,
+                    includesUpNext: preference.todayFocusIncludesUpNext,
+                    onToggleCard: { _ in XCTFail("Rendering must not toggle") }, onOpenCard: { _ in },
+                    onDeleteCard: { _ in XCTFail("Rendering must not delete"); return false }, onOpenTodayList: {})
+                    .padding(20)
+            }.background(Color(.systemGroupedBackground)).preferredColorScheme(scheme)
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(300))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-focus-shape-\(name).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("FOCUS_SHAPE_RENDER=" + url.path)
+            XCTAssertEqual(list, original)
+        }
+    }
+
     func testTodayFocusPreferenceLimitsOnlyTheOrderedUnfinishedPreview() throws {
         var cards = (0..<16).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Monday", isTitleChecked: $0 == 0 || $0 == 5, checklists: []) }
         cards.insert(KanbanCard(id: 99, word: "Break", listTitle: "Monday", isDivider: true, checklists: []), at: 3)

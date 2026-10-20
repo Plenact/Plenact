@@ -326,6 +326,67 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable {
 /// @section    Purpose
 ///     Keep personalization separate from identity and Board domain data
 ///
+enum TodayFocusOrder: String, Codable, CaseIterable {
+    case dayList, chronological
+    var title: String { self == .dayList ? "Day list order" : "Chronological" }
+}
+
+/// A derived preview entry; the heading belongs to the user's Day list, never a new record.
+struct TodayFocusEntry: Identifiable {
+    let card: KanbanCard
+    let sectionID: Int?
+    let heading: String?
+    var id: Int { card.id }
+    var scheduleLabel: String? {
+        if let start = card.startDate { return "Start · " + card.startDateKind.label(for: start) }
+        if let due = card.dueDate { return "Due · " + card.dueDateKind.label(for: due) }
+        return nil
+    }
+
+    /// Treat time-only schedules as today's wall clock and date-only ends as the full day.
+    func isUpNext(at now: Date, calendar: Calendar) -> Bool {
+        func resolved(_ value: Date?, kind: CardDateKind, end: Bool) -> Date? {
+            guard let value else { return nil }
+            if kind == .time {
+                let parts = calendar.dateComponents([.hour, .minute, .second], from: value)
+                return calendar.date(bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
+                    second: parts.second ?? 0, of: now)
+            }
+            if kind == .date {
+                let start = calendar.startOfDay(for: value)
+                return end ? calendar.date(byAdding: .day, value: 1, to: start) : start
+            }
+            return value
+        }
+        let start = resolved(card.startDate, kind: card.startDateKind, end: false)
+        let finish = resolved(card.dueDate, kind: card.dueDateKind, end: true)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        if let start, start >= dayEnd { return false }
+        if let finish {
+            // Date-only finish is an exclusive next-midnight boundary.
+            let remains = card.dueDateKind == .date ? finish > now : finish >= now
+            guard remains else { return false }
+            return start != nil || finish < dayEnd || (card.dueDateKind == .date && finish == dayEnd)
+        }
+        guard let start else { return false }
+        if card.startDateKind == .date {
+            return calendar.isDate(start, inSameDayAs: now)
+        }
+        return start >= now && start < dayEnd
+    }
+
+    func scheduleDate(on day: Date, calendar: Calendar) -> Date? {
+        guard let value = card.startDate ?? card.dueDate else { return nil }
+        let kind = card.startDate == nil ? card.dueDateKind : card.startDateKind
+        if kind == .time {
+            let time = calendar.dateComponents([.hour, .minute, .second], from: value)
+            return calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0,
+                second: time.second ?? 0, of: day)
+        }
+        return kind.normalized(value, calendar: calendar)
+    }
+}
+
 struct LocalProfilePreferences: Hashable, Codable {
 
     var defaultListID:       Int?   /* Preferred Today list   */
@@ -334,6 +395,12 @@ struct LocalProfilePreferences: Hashable, Codable {
     var randomizesNewCardHeaders: Bool
     var randomizesNewCardBackgrounds: Bool
     var showsDueDatesOnNewCards: Bool
+    var todayFocusOrder: TodayFocusOrder
+    var todayFocusGroupsBySection: Bool
+    var todayFocusIncludesUpNext: Bool
+    var todayFocusIncludesImportant: Bool
+    var todayFocusIncludesBookmarked: Bool
+    var todayFocusHidesCompleted: Bool
     var todayFocusItemCount: Int /* Zero shows all open items; otherwise 1...12 */
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
 
@@ -350,6 +417,8 @@ struct LocalProfilePreferences: Hashable, Codable {
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
+        case todayFocusOrder, todayFocusGroupsBySection, todayFocusHidesCompleted
+        case todayFocusIncludesImportant, todayFocusIncludesBookmarked, todayFocusIncludesUpNext
         case todayFocusItemCount
         case showsNavigationLabels
     }
@@ -377,9 +446,21 @@ struct LocalProfilePreferences: Hashable, Codable {
         showsDueDatesOnNewCards: Bool = true,
         todayFocusItemCount: Int = 4,
         randomizesNewCardHeaders: Bool = false,
-        randomizesNewCardBackgrounds: Bool = false
+        randomizesNewCardBackgrounds: Bool = false,
+        todayFocusOrder: TodayFocusOrder = .dayList,
+        todayFocusGroupsBySection: Bool = false,
+        todayFocusHidesCompleted: Bool = true,
+        todayFocusIncludesImportant: Bool = false,
+        todayFocusIncludesBookmarked: Bool = false,
+        todayFocusIncludesUpNext: Bool = false
     ) {
 
+        self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
+        self.todayFocusIncludesImportant = todayFocusIncludesImportant
+        self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
+        self.todayFocusOrder = todayFocusOrder
+        self.todayFocusGroupsBySection = todayFocusGroupsBySection
+        self.todayFocusHidesCompleted = todayFocusHidesCompleted
         self.defaultListID      = defaultListID
         self.usesReducedContent = usesReducedContent
         self.usesLargeControls  = usesLargeControls
@@ -391,11 +472,50 @@ struct LocalProfilePreferences: Hashable, Codable {
     }
 
 
-    /// Keep canonical order and exclude completed items and section dividers from the preview.
-    func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard] {
-        let open = cards.filter { !$0.isSectionDivider && !$0.isTitleChecked }
+    /// Derive Focus without mutating Day order or interpreting the meaning of headings.
+    /// Section boundaries are captured before filtering; limits count items, never headings.
+    func todayFocusEntries(in cards: [KanbanCard], on day: Date = .now, calendar: Calendar = .current, importantCardIDs: Set<Int> = [], bookmarkedCardIDs: Set<Int> = []) -> [TodayFocusEntry] {
+        var sectionID: Int?
+        var heading: String?
+        var entries: [TodayFocusEntry] = []
+        for card in cards {
+            if card.isSectionDivider {
+                sectionID = card.id
+                heading = card.sectionHeading
+            } else if (!todayFocusHidesCompleted || !card.isTitleChecked)
+                && ((!todayFocusIncludesImportant && !todayFocusIncludesBookmarked && !todayFocusIncludesUpNext)
+                    || (todayFocusIncludesUpNext && TodayFocusEntry(card: card, sectionID: sectionID, heading: heading).isUpNext(at: day, calendar: calendar))
+                    || (todayFocusIncludesImportant && importantCardIDs.contains(card.id))
+                    || (todayFocusIncludesBookmarked && bookmarkedCardIDs.contains(card.id))) {
+                entries.append(TodayFocusEntry(card: card, sectionID: sectionID, heading: heading))
+            }
+        }
+        if todayFocusOrder == .chronological {
+            // Stable ties and undated items retain the user's original sequence.
+            let sectionOrder = Dictionary(uniqueKeysWithValues:
+                cards.enumerated().filter { $0.element.isSectionDivider }.map { ($0.element.id, $0.offset + 1) })
+            entries = entries.enumerated().sorted { lhs, rhs in
+                if todayFocusGroupsBySection {
+                    let l = lhs.element.sectionID.flatMap { sectionOrder[$0] } ?? 0
+                    let r = rhs.element.sectionID.flatMap { sectionOrder[$0] } ?? 0
+                    if l != r { return l < r }
+                }
+                let l = lhs.element.scheduleDate(on: day, calendar: calendar)
+                let r = rhs.element.scheduleDate(on: day, calendar: calendar)
+                switch (l, r) {
+                case let (l?, r?) where l != r: return l < r
+                case (_?, nil): return true
+                case (nil, _?): return false
+                default: return lhs.offset < rhs.offset
+                }
+            }.map(\.element)
+        }
         let count = (0...12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
-        return count == 0 ? open : Array(open.prefix(count))
+        return count == 0 ? entries : Array(entries.prefix(count))
+    }
+
+    func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard] {
+        todayFocusEntries(in: cards).map(\.card)
     }
 
 
@@ -425,7 +545,13 @@ struct LocalProfilePreferences: Hashable, Codable {
             showsDueDatesOnNewCards: try container.decodeIfPresent(Bool.self, forKey: .showsDueDatesOnNewCards) ?? true,
             todayFocusItemCount: try container.decodeIfPresent(Int.self, forKey: .todayFocusItemCount) ?? 4,
             randomizesNewCardHeaders: try container.decodeIfPresent(Bool.self, forKey: .randomizesNewCardHeaders) ?? false,
-            randomizesNewCardBackgrounds: try container.decodeIfPresent(Bool.self, forKey: .randomizesNewCardBackgrounds) ?? false
+            randomizesNewCardBackgrounds: try container.decodeIfPresent(Bool.self, forKey: .randomizesNewCardBackgrounds) ?? false,
+            todayFocusOrder: try container.decodeIfPresent(TodayFocusOrder.self, forKey: .todayFocusOrder) ?? .dayList,
+            todayFocusGroupsBySection: try container.decodeIfPresent(Bool.self, forKey: .todayFocusGroupsBySection) ?? false,
+            todayFocusHidesCompleted: try container.decodeIfPresent(Bool.self, forKey: .todayFocusHidesCompleted) ?? true,
+            todayFocusIncludesImportant: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesImportant) ?? false,
+            todayFocusIncludesBookmarked: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesBookmarked) ?? false,
+            todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false
         )
     }
 }

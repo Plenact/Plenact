@@ -7,6 +7,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 - [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 - [Planning Rhythm delivery plan](Design/Planning-Rhythm-Delivery.md) — staged delivery, source identity, local persistence, interruption safety, and acceptance gates
 - [Life planning model](Design/Life-Planning-Model.md) — current organizing model, default Lists, and the connection between daily action and reflection
+- [Today's Focus: give shape to your attention](Design/Todays-Focus.md) — product principles, implemented ordering/grouping/completion choices, and future exploration
 - [Today interaction design](Design/Today-View-UI.md) — current Today experience and proposed Today's Plan evolution
 - [Application architecture](Design/Today-View-Architecture.md) — current ownership and proposed shared review foundation
 - [Board and scheduled planning](Design/Board-and-Scheduled-Views.md) — dated views, the Scheduled List, and the separate agenda proposal

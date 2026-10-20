@@ -692,6 +692,7 @@ struct PlanningCalendarWeekView: View {
         .environment(\.planningDirectItemReturn, initialCardID == nil ? nil : { dismiss() })
         .environment(\.planningDisplayedWeekKey, week.startKey)
         .environment(\.cardMovementSource, week.id)
+        .modifier(OwnerImportanceControls(ownerID: week.id))
         .environment(\.planningHomeExit, { dismiss(); onLeaveForHome() })
         .task {
             guard !didOpenInitialTarget else { return }
@@ -744,6 +745,7 @@ struct PlanningCalendarWeekView: View {
                     returnDestinationTitle: "Calendar", boardViewActionTitle: "Switch to this week's view",
                     representedDate: week.dayListIDs.first(where: { $0.value == dayID }).flatMap { PlanningDate.date($0.key) })
                     .environment(\.cardMovementSource, week.id)
+                    .modifier(OwnerImportanceControls(ownerID: week.id))
             }
         }
     }
@@ -1124,6 +1126,7 @@ struct PlanningSelectedDayView: View {
             returnDestinationTitle: returnDestinationTitle,
             representedDate: selection.date)
             .environment(\.cardMovementSource, week.id)
+            .modifier(OwnerImportanceControls(ownerID: week.id))
             .environment(\.planningDisplayedWeekKey, week.startKey)
             .task {
                 guard let access, access.document.week(for: selection.date) == nil else { return }
@@ -1364,6 +1367,8 @@ struct FullMonthExample: Sendable {
         result["Plenact.Board.v1"] = try encoder.encode(current.collection.lists)
         result["Plenact.PersonalCollections.v1"] = try encoder.encode(collections)
         result["Plenact.SavedCardIDs.v1"] = [Int]()
+        result[LibraryImportanceSelection.key] = LibraryImportanceSelection.demoData(
+            in: document.weeks.map(\.collection) + collections)
         result[TodayListPins.key] = TodayListPins.encode(collections.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) })
         return result
     }

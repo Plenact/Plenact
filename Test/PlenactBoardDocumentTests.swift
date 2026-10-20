@@ -10,6 +10,7 @@
 //
 // --------------------------------------------------------------------------------------------------
 import XCTest
+import UserNotifications
 import SwiftUI
 import AVFoundation
 import PencilKit
@@ -1023,6 +1024,145 @@ final class PlenactBoardDocumentTests: XCTestCase {
             print("PERIODIC_RENDER=\(url.path)")
             XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), bytes)
         }
+    }
+
+    @MainActor
+    func testReviewRhythmDefaultsTimingAndIndependentNotifications() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago")); calendar.firstWeekday = 2
+        func date(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+        }
+        var preferences = ReviewRhythmPreferences()
+        XCTAssertTrue(preferences.dailyInvitations); XCTAssertTrue(preferences.weeklyInvitations)
+        XCTAssertFalse(preferences.dailyNotifications); XCTAssertFalse(preferences.weeklyNotifications)
+        XCTAssertTrue(ReviewRhythmStore.notificationRequests(preferences).isEmpty)
+        func due(_ kind: ReviewRhythmKind, _ now: Date, completed: Bool = false, deferred: Date? = nil) -> Bool {
+            ReviewRhythmStore.isDue(kind, now: now, preferences: preferences, calendar: calendar, completed: completed, deferredUntil: deferred)
+        }
+        XCTAssertFalse(due(.daily, date(19, 20, 29)))
+        XCTAssertTrue(due(.daily, date(19, 20, 30)))
+        XCTAssertFalse(due(.daily, date(19, 21), completed: true))
+        XCTAssertFalse(due(.daily, date(19, 21), deferred: date(19, 22)))
+        XCTAssertTrue(due(.daily, date(19, 22), deferred: date(19, 22)))
+        XCTAssertFalse(due(.weekly, date(18, 17, 59)))
+        XCTAssertTrue(due(.weekly, date(18, 18)))
+        XCTAssertFalse(due(.weekly, date(19, 18)), "No pile of missed Sunday invitations on Monday")
+        XCTAssertNotEqual(ReviewRhythmStore.periodID(.daily, date: date(19, 21), calendar: calendar),
+            ReviewRhythmStore.periodID(.daily, date: date(20, 21), calendar: calendar))
+        preferences.dailyInvitations = false; preferences.dailyNotifications = true
+        XCTAssertFalse(due(.daily, date(19, 21)))
+        XCTAssertEqual(ReviewRhythmStore.notificationRequests(preferences).count, 1)
+        preferences.dailyMinutes = -2; preferences.weeklyMinutes = 9999; preferences.weeklyWeekday = 0
+        XCTAssertEqual(preferences.normalized().dailyMinutes, 1230)
+        XCTAssertEqual(preferences.normalized().weeklyMinutes, 1080)
+        XCTAssertEqual(preferences.normalized().weeklyWeekday, 1)
+    }
+
+    func testReviewRhythmNotificationRequestsAreStableLocalAndContainOnlyReviewRoutes() throws {
+        var preferences = ReviewRhythmPreferences()
+        preferences.dailyNotifications = true; preferences.weeklyNotifications = true
+        preferences.dailyMinutes = 21 * 60 + 15; preferences.weeklyMinutes = 17 * 60 + 45; preferences.weeklyWeekday = 7
+        let requests = ReviewRhythmStore.notificationRequests(preferences)
+        XCTAssertEqual(Set(requests.map(\.identifier)), Set(ReviewRhythmKind.allCases.map(\.notificationID)))
+        let daily = try XCTUnwrap(requests.first { $0.identifier == ReviewRhythmKind.daily.notificationID })
+        let weekly = try XCTUnwrap(requests.first { $0.identifier == ReviewRhythmKind.weekly.notificationID })
+        let dailyTrigger = try XCTUnwrap(daily.trigger as? UNCalendarNotificationTrigger)
+        let weeklyTrigger = try XCTUnwrap(weekly.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertTrue(dailyTrigger.repeats); XCTAssertTrue(weeklyTrigger.repeats)
+        XCTAssertEqual(dailyTrigger.dateComponents.hour, 21); XCTAssertEqual(dailyTrigger.dateComponents.minute, 15)
+        XCTAssertNil(dailyTrigger.dateComponents.weekday); XCTAssertNil(dailyTrigger.dateComponents.timeZone)
+        XCTAssertEqual(weeklyTrigger.dateComponents.weekday, 7)
+        XCTAssertEqual(weeklyTrigger.dateComponents.hour, 17); XCTAssertEqual(weeklyTrigger.dateComponents.minute, 45)
+        XCTAssertEqual(daily.content.userInfo["plenactReview"] as? String, "daily")
+        XCTAssertEqual(weekly.content.userInfo.count, 1)
+        XCTAssertNil(daily.content.badge)
+        XCTAssertNotNil(daily.content.sound)
+    }
+
+    func testReviewRhythmSaveSkipAndSnoozeAreLocalAndPreserveCorruptSettings() throws {
+        let suite = "ReviewRhythmTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(ReviewRhythmStore.load(from: defaults), ReviewRhythmPreferences())
+        XCTAssertNil(defaults.object(forKey: ReviewRhythmStore.key))
+        var settings = ReviewRhythmPreferences(); settings.dailyMinutes = 19 * 60; settings.weeklyWeekday = 6
+        try ReviewRhythmStore.save(settings, to: defaults)
+        XCTAssertEqual(ReviewRhythmStore.load(from: defaults), settings)
+        let calendar = Calendar.current
+        let now = Date()
+        ReviewRhythmStore.deferInvitation(.daily, date: now, calendar: calendar, until: now.addingTimeInterval(3600), defaults: defaults)
+        ReviewRhythmStore.deferInvitation(.weekly, date: now, calendar: calendar, until: .distantFuture, defaults: defaults)
+        let values = try JSONDecoder().decode([String: Date].self, from: XCTUnwrap(defaults.data(forKey: ReviewRhythmStore.dismissalsKey)))
+        XCTAssertEqual(values[ReviewRhythmStore.periodID(.daily, date: now, calendar: calendar)], now.addingTimeInterval(3600))
+        XCTAssertEqual(values[ReviewRhythmStore.periodID(.weekly, date: now, calendar: calendar)], .distantFuture)
+        XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))
+        XCTAssertNil(defaults.object(forKey: WeeklyReviewStore.key))
+        defaults.set(Data("future or broken".utf8), forKey: ReviewRhythmStore.key)
+        XCTAssertThrowsError(try ReviewRhythmStore.save(settings, to: defaults))
+        XCTAssertEqual(defaults.data(forKey: ReviewRhythmStore.key), Data("future or broken".utf8))
+    }
+
+    @MainActor
+    func testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem() throws {
+        let suite = "ReviewCarryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let week = DatedPlanningWeek.make(for: .now)
+        var table = PersonalCollection(title: "On the Table", kind: .list)
+        var card = KanbanCard(id: 0, word: "Go to the grocery store", listTitle: table.title, checklists: [], createdAt: .now)
+        card.dueDate = .now.addingTimeInterval(-3600)
+        table.lists[0].cards = [card]
+        let access = PlanningCalendarAccess(document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table],
+            saveWeek: { _ in XCTFail("Keep must not save/move the source"); return false }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in },
+            saveLibrary: { _ in XCTFail("Keep must not save/move the source"); return false })
+        var plan = DailyPlan(date: .now)
+        let items = TodayReviewSelection.items(plan: plan, date: .now, access: access, referenceLabelIDs: [], calendar: .current)
+        let source = DailyPlanPriority(try XCTUnwrap(items.first))
+        var review = DailyEveningReview()
+        review.decisions = [DailyReviewDecision(source: source, result: source, action: .keepTomorrow)]
+        plan.eveningReview = review
+        try DailyReviewTransaction.perform(in: defaults) { _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults) }
+        let restored = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
+        XCTAssertEqual(restored.eveningReview?.decisions.first?.action, .keepTomorrow)
+        XCTAssertTrue(TodayReviewSelection.pending(items, review: restored.eveningReview).isEmpty)
+        XCTAssertEqual(TodayReviewSelection.pending(items, review: nil).count, 1, "Tomorrow gets a fresh decision")
+        XCTAssertEqual(access.library[0], table)
+        XCTAssertEqual(access.library[0].lists[0].cards[0].dueDate, card.dueDate)
+        XCTAssertEqual(try JSONDecoder().decode(DailyReviewAction.self, from: JSONEncoder().encode(DailyReviewAction.table)), .table)
+    }
+
+    @MainActor
+    func testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission() async throws {
+        let suite = "ReviewRhythmRender." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var preferences = ReviewRhythmPreferences(); preferences.dailyMinutes = 0; preferences.weeklyMinutes = 0
+        preferences.weeklyWeekday = Calendar.current.component(.weekday, from: .now)
+        try ReviewRhythmStore.save(preferences, to: defaults)
+        let bytes = defaults.data(forKey: ReviewRhythmStore.key)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        for scheme in [ColorScheme.light, .dark] {
+            let view = ScrollView {
+                ReviewRhythmPanel(onOpen: { _ in XCTFail("Rendering must not open") }, onSettings: {}, defaults: defaults)
+                    .padding(20)
+            }.background(Color(.systemGroupedBackground)).preferredColorScheme(scheme)
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-review-rhythm-\(scheme).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("REVIEW_RHYTHM_RENDER=" + url.path)
+        }
+        window.rootViewController = UIHostingController(rootView: ReviewRhythmSettingsView())
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(defaults.data(forKey: ReviewRhythmStore.key), bytes)
+        XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))
+        XCTAssertNil(defaults.object(forKey: WeeklyReviewStore.key))
     }
 
     @MainActor

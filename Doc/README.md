@@ -5,6 +5,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 ## Start here
 
 - [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
+- [Review invitations and reminders](Design/Review-Rhythm-Invitations.md) — daily/weekly invitations, Table carry decisions, Queue activation, and optional local notifications
 - [Planning Rhythm delivery plan](Design/Planning-Rhythm-Delivery.md) — staged delivery, source identity, local persistence, interruption safety, and acceptance gates
 - [Life planning model](Design/Life-Planning-Model.md) — current organizing model, default Lists, and the connection between daily action and reflection
 - [Today's Focus: give shape to your attention](Design/Todays-Focus.md) — product principles, implemented ordering/grouping/completion choices, and future exploration

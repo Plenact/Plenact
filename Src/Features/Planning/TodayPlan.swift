@@ -115,7 +115,9 @@ struct TodayPlanView: View {
     @State private var showsPeriodicReview = false
     @State private var confirmsDiscard = false
     @State private var openedItem: PlanningSearchResult?
-    init(date: Date = .now, calendar: Calendar = .current, defaults: UserDefaults = .standard) {
+    private let opensEveningReview: Bool
+    init(date: Date = .now, calendar: Calendar = .current, defaults: UserDefaults = .standard, opensEveningReview: Bool = false) {
+        self.opensEveningReview = opensEveningReview
         _date = State(initialValue: date)
         self.defaults = defaults
         _draft = State(initialValue: DailyPlan(date: date, calendar: calendar))
@@ -276,7 +278,12 @@ struct TodayPlanView: View {
                     if loadError == nil { EditButton(); Button("Save", action: save).disabled(!loaded || (!hasChanges && baseline != nil)) }
                 }
             }
-            .task { if !loaded { load() } }
+            .task {
+                if !loaded {
+                    load()
+                    if opensEveningReview && loadError == nil { showsReview = true }
+                }
+            }
             .sheet(isPresented: $showsPeriodicReview) { PeriodicReviewView(calendar: access?.document.calendar ?? planCalendar) }
             .sheet(isPresented: $showsWeeklyReview) { WeeklyReviewView(calendar: access?.document.calendar ?? planCalendar) }
             .sheet(isPresented: $showsDailyReview) { DailyHistoryReviewView(date: date, calendar: planCalendar, defaults: defaults) }

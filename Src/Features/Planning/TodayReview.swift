@@ -1,10 +1,12 @@
 import SwiftUI
 
 enum DailyReviewAction: Codable, Equatable {
-    case keep, complete, archive, queue, tomorrow, date(String)
+    case keep, keepTomorrow, table, complete, archive, queue, tomorrow, date(String)
     var title: String {
         switch self {
         case .keep: "Leave in place"
+        case .keepTomorrow: "Keep on the Table for tomorrow"
+        case .table: "Bring onto the Table"
         case .complete: "Mark complete"
         case .archive: "Archive"
         case .queue: "Return to In the Queue"
@@ -183,9 +185,16 @@ struct TodayReviewView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(source.card.word).font(.headline)
                                 Text(source.collectionTitle + " · " + source.listTitle).font(.caption).foregroundStyle(.secondary)
+                                if let due = source.card.dueDate {
+                                    Label("Due · " + source.card.dueDateKind.label(for: due), systemImage: "calendar")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                                 Menu("Choose what comes next") {
                                     Button("Leave in place") { propose(.keep, source: source) }
-                                    Button("Carry into tomorrow") { propose(.tomorrow, source: source) }
+                                    if access?.library.contains(where: { $0.id == source.collectionID && $0.isActive && $0.title == "On the Table" }) == true {
+                                        Button("Keep on the Table for tomorrow") { propose(.keepTomorrow, source: source) }
+                                    }
+                                    Button("Carry into tomorrow's Day list") { propose(.tomorrow, source: source) }
                                     Button("Return to In the Queue") { propose(.queue, source: source) }.disabled(!queueAvailable)
                                     Button("Choose a day") { dateSource = source }
                                     if source.card.presentation == .card { Button("Mark complete") { propose(.complete, source: source) } }
@@ -222,7 +231,11 @@ struct TodayReviewView: View {
             .confirmationDialog(pendingAction?.title ?? "Apply decision?", isPresented: Binding(get: { pendingAction != nil }, set: { if !$0 { pendingAction = nil; pendingSource = nil } }), titleVisibility: .visible) {
                 Button("Confirm", action: perform)
                 Button("Cancel", role: .cancel) { pendingAction = nil; pendingSource = nil }
-            } message: { Text("Applies this decision to ‘\(pendingSource?.card.word ?? "")’ and saves it in today's review. Moves preserve existing dates and details. Archive retains the item for restoration; nothing is permanently deleted.") }
+            } message: {
+                Text(pendingAction == .keepTomorrow
+                    ? "Keeps ‘\(pendingSource?.card.word ?? "")’ on the same Table and records your decision for tomorrow. No copy is created and existing dates are unchanged."
+                    : "Applies this decision to ‘\(pendingSource?.card.word ?? "")’ and saves it in today's review. Moves preserve existing dates and details. Archive retains the item for restoration; nothing is permanently deleted.")
+            }
             .sheet(item: $dateSource, onDismiss: {
                 if let (source, key) = chosenDateDecision { chosenDateDecision = nil; propose(.date(key), source: source) }
             }) { source in
@@ -412,7 +425,13 @@ struct WeeklyReviewView: View {
                         ForEach(queue) { source in
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(source.card.word).font(.headline)
+                                if let due = source.card.dueDate {
+                                    Label("Due · " + source.card.dueDateKind.label(for: due), systemImage: "calendar")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                                 Menu("Choose what comes next") {
+                                    Button("Bring onto the Table") { propose(.table, source) }
+                                        .disabled(access?.library.contains(where: { $0.isActive && $0.kind == .list && $0.title == "On the Table" && $0.lists.contains(where: { !$0.isArchived }) }) != true)
                                     Button("Keep in the Queue") { propose(.keep, source) }
                                     Button("Choose a calendar day") { dateSource = source }
                                     Button("Mark complete") { propose(.complete, source) }

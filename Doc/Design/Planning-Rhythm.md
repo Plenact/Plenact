@@ -1,5 +1,8 @@
 # Your Planning Rhythm
 
+See [Review invitations and reminders](Review-Rhythm-Invitations.md) for the implemented daily/weekly invitation and optional local-notification contract, including its current scheduling boundaries. This supersedes earlier statements that review reminders are entirely future work.
+
+
 **Status:** Approved product direction, October 16, 2026. Today's Plan and the first guided Today's Vision flow are implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented. This document defines the shared operating vision for five connected reviews. It is not a release announcement or a promise of automated scheduling
 
 ## First implemented increment — October 16, 2026

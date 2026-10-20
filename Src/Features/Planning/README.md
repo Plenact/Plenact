@@ -90,3 +90,15 @@ Card/Note starters reuse QuickNoteComposer and create in a chosen Week list only
 Jmr contains four timed Cards per day (28 total), with date-and-time schedules rendered as time ranges on dated lists. Weekdays include Wake 04:00–04:30, Morning Starbucks Pow-wow 05:00–06:30, Work 07:00–17:00 and Gym 17:00–18:00. Saturday includes Wake 05:00–05:30, Starbucks 06:00–07:30, Gym 09:00–11:00 and Car Wash 12:00–12:30. Sunday includes Wake 04:00–04:30, Starbucks 05:00–06:30, Gym 07:00–08:30 and Church 09:00–12:30. Gym descriptions preserve the user's flexible daily routine. Source times use America/Chicago and apply as local wall-clock times in the destination calendar.
 
 The optional `bundledRoutineRevision` field upgrades older v1 template libraries in memory, retaining their templates and adding/selecting Jmr once. Read-only loading does not rewrite preferences or scheduled weeks. Explicit edits persist the revision, so subsequent default choices and deletion are respected.
+
+
+## Review invitations and reminders
+
+`ReviewRhythm.swift` adds configurable evening/weekly invitations on Today, manual
+review entry, per-period Later/Skip, and optional local notifications (off initially).
+Tap Today → Planning rhythm to try either review now or configure its cadence.
+Today's Review now distinguishes keeping an item on the Table for tomorrow from
+moving it into tomorrow's dated Day list. Weekly Review can bring a Queue item onto
+the Table. Due dates remain visible in both decision flows and are never reset by
+carrying work. See [the full contract](../../../Doc/Design/Review-Rhythm-Invitations.md),
+including the distinction between in-app suppression and repeating notifications.

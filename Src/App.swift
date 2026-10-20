@@ -41,6 +41,7 @@ import Speech
 struct Plenact: App {
     @State private var recoveryError: String?
     init() {
+        ReviewRhythmNotifications.shared.install()
         do {
             try DailyReviewTransaction.recover()
             try FullMonthExampleStore.live().recoverInterruptedSwitch()
@@ -696,6 +697,8 @@ private struct AppRootView: View {
     @State private var calendarDocument: PlanningCalendarDocument?
     @State private var displayedPlanningWeek: DatedPlanningWeek?
     @State private var displayedPlanningListID: Int?
+    @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
+    @AppStorage(ReviewRhythmStore.key) private var reviewRhythmPreferencesData = Data()
     @Environment(\.scenePhase) private var scenePhase
     @State private var launchShadowFading = false
     @State private var launchProgress = PlenactLaunchProgress()
@@ -779,14 +782,24 @@ private struct AppRootView: View {
             Button("OK") { workspaceNotice = nil }
         } message: { Text(workspaceNotice ?? "") }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { welcomeCue.becameActive(); advancePlanningWeekIfNeeded() }
+            if phase == .active {
+                welcomeCue.becameActive(); advancePlanningWeekIfNeeded()
+                Task { try? await ReviewRhythmNotifications.shared.synchronize() }
+            }
             else { welcomeCue.leftForeground() }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             advancePlanningWeekIfNeeded()
         }
+        .onChange(of: reviewRhythmPreferencesData) { _, _ in
+            Task { try? await ReviewRhythmNotifications.shared.synchronize() }
+        }
+        .onReceive(reviewNotifications.$pending) { route in
+            if route != nil { selectedDestination = .today }
+        }
         .task {
             PlenactKeyboard.shared.install()
+            Task { try? await ReviewRhythmNotifications.shared.synchronize() }
             if scenePhase == .active { welcomeCue.becameActive() }
             guard !hasLoadedBoard else {
 
@@ -1289,6 +1302,17 @@ private struct AppRootView: View {
         var result = live
         switch action {
         case .keep: break
+        case .keepTomorrow:
+            guard !live.card.isTitleChecked,
+                  collections.contains(where: { $0.id == live.collectionID && $0.isActive && $0.kind == .list && $0.title == "On the Table" }) else { throw CocoaError(.validationMissingMandatoryProperty) }
+            // The review decision is the persisted change; the original item stays intact.
+            break
+        case .table:
+            guard !live.card.isTitleChecked,
+                  let table = collections.first(where: { $0.isActive && $0.kind == .list && $0.title == "On the Table" }),
+                  let list = table.lists.first(where: { !$0.isArchived }),
+                  let moved = movePriorityForVision(live, destination: WorkspaceListReference(ownerID: table.id, listID: list.id)) else { throw CocoaError(.fileWriteUnknown) }
+            result = moved
         case .queue:
             guard let queue = collections.first(where: { $0.isActive && $0.kind == .list && $0.title == "In the Queue" }),
                   let list = queue.lists.first(where: { !$0.isArchived }) else { throw CocoaError(.fileNoSuchFile) }
@@ -2338,6 +2362,9 @@ private struct TodayHomeView: View {
     @State private var openedFocusCard: KanbanCard?
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayPlan = false
+    @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
+    @State private var reviewRoute: ReviewRhythmRoute?
+    @State private var showsReviewRhythmSettings = false
     @AppStorage(TodayListPins.key) private var listPinData = Data()
     @State private var openedShortcut: WorkspaceListReference?
 
@@ -2872,6 +2899,8 @@ private struct TodayHomeView: View {
 
                     yourShortcutsSection
                     browseListsAction
+                    ReviewRhythmPanel(onOpen: { reviewRoute = $0 },
+                        onSettings: { showsReviewRhythmSettings = true })
                 }
                         .padding(20)
                         // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone.
@@ -2915,6 +2944,22 @@ private struct TodayHomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(item: $openedShortcut) { reference in
                 WorkspacePinnedListView(reference: reference)
+            }
+            .sheet(item: $reviewRoute) { ReviewRhythmDestination(route: $0) }
+            .sheet(isPresented: $showsReviewRhythmSettings) { ReviewRhythmSettingsView() }
+            .task(id: reviewNotifications.pending?.id) {
+                // Preserve a tapped reminder until the current editor/sheet is closed.
+                while let pending = reviewNotifications.pending, !Task.isCancelled {
+                    let root = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                        .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
+                    if UIApplication.shared.applicationState == .active, root != nil, root?.presentedViewController == nil,
+                       reviewRoute == nil {
+                        reviewRoute = pending
+                        reviewNotifications.pending = nil
+                        break
+                    }
+                    try? await Task.sleep(for: .milliseconds(500))
+                }
             }
             .sheet(isPresented: $showsTodayPlan) {
                 TodayPlanView(calendar: planningCalendarAccess?.document.calendar ?? .current)

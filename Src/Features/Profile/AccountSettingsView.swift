@@ -247,6 +247,7 @@ struct AccountSettingsView: View {
     @State private var todayFocusHidesCompleted: Bool
     @State private var todayFocusItemCount: Int
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
+    @State private var showsReviewRhythmSettings = false
     @State private var confirmsRemoval      = false                  /* Removal confirmation   */
     @State private var isChoosingAvatarIcon = false                  /* Whether the nested avatar picker is visible */
     @State private var profileSheetDetent: PresentationDetent = .large /* Current profile-sheet height */
@@ -527,6 +528,9 @@ struct AccountSettingsView: View {
                             Text("The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date.")
                         }
 
+                        Section("Planning rhythm") {
+                            Button("Review invitations & reminders") { showsReviewRhythmSettings = true }
+                        }
                         NewCardColorDefaultsSection(headers: $randomizesNewCardHeaders, backgrounds: $randomizesNewCardBackgrounds)
 
                         TodayFocusSettingsSection(count: $todayFocusItemCount, order: $todayFocusOrder,
@@ -557,6 +561,7 @@ struct AccountSettingsView: View {
             }
             .background(Color(.systemGroupedBackground))
 
+            .sheet(isPresented: $showsReviewRhythmSettings) { ReviewRhythmSettingsView() }
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
             .sheet(isPresented: $showsShortcutEditor) {
                 TodayShortcutEditor(pins: TodayListPins.decode(listPinData),
@@ -1936,6 +1941,7 @@ struct PlanSettingsView: View {
     @State private var loaded = false
     @State private var showsTemplates = false
     @State private var showsShortcuts = false
+    @State private var showsReviewRhythmSettings = false
     @AppStorage(TodayListPins.key) private var pinData = Data()
     let lists: [KanbanList]
     let onSaveProfile: (LocalProfile) -> Void
@@ -1962,6 +1968,9 @@ struct PlanSettingsView: View {
                     Toggle("Show due dates on new cards", isOn: $preferences.showsDueDatesOnNewCards)
                 } header: { Text("Planning") } footer: {
                     Text("Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card.")
+                }
+                Section("Planning rhythm") {
+                    Button("Review invitations & reminders") { showsReviewRhythmSettings = true }
                 }
                 NewCardColorDefaultsSection(headers: $preferences.randomizesNewCardHeaders,
                     backgrounds: $preferences.randomizesNewCardBackgrounds)
@@ -1996,6 +2005,7 @@ struct PlanSettingsView: View {
                 firstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
                 loaded = true
             }
+            .sheet(isPresented: $showsReviewRhythmSettings) { ReviewRhythmSettingsView() }
             .sheet(isPresented: $showsTemplates) { PlanningTemplatesView() }
             .sheet(isPresented: $showsShortcuts) {
                 TodayShortcutEditor(pins: TodayListPins.decode(pinData),

@@ -4521,6 +4521,114 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testEmojiReactionsValidateOneEmojiAndToggleOnlyTheCurrentAuthor() throws {
+        for emoji in ["❤️", "👍🏽", "👨‍👩‍👧‍👦", "🇺🇸", "1️⃣", "🎉", "🫶"] {
+            XCTAssertEqual(ItemEmojiReaction.validatedEmoji(" " + emoji + " "), emoji)
+        }
+        for invalid in ["", "hello", "a", "1", "#", "🎉🎉"] { XCTAssertNil(ItemEmojiReaction.validatedEmoji(invalid)) }
+        let first = UUID(), second = UUID()
+        let others = [ItemEmojiReaction(emoji: "❤️", authorID: second)]
+        let added = try XCTUnwrap(ItemEmojiReaction.toggling("❤️", authorID: first, in: others))
+        XCTAssertEqual(added.count, 2)
+        XCTAssertEqual(added.first, others.first)
+        let removed = try XCTUnwrap(ItemEmojiReaction.toggling("❤️", authorID: first, in: added))
+        XCTAssertEqual(removed, others)
+        XCTAssertNil(ItemEmojiReaction.toggling("words", authorID: first, in: added))
+        XCTAssertEqual(try JSONDecoder().decode([ItemEmojiReaction].self, from: JSONEncoder().encode(added)), added)
+    }
+
+    func testReactionPreviewVisibilityDefaultsAndPersistsWithoutRemovingReactions() throws {
+        let legacy = Data(#"{"id":1,"word":"Legacy","listTitle":"Today","checklists":[]}"#.utf8)
+        var card = try JSONDecoder().decode(KanbanCard.self, from: legacy)
+        XCTAssertNil(card.showsReactionsInPreviews)
+        let reaction = ItemEmojiReaction(emoji: "🔥", authorID: UUID())
+        card.reactions = [reaction]
+        XCTAssertEqual(card.previewReactions, [reaction])
+        card.showsReactionsInPreviews = false
+        XCTAssertTrue(card.previewReactions.isEmpty)
+        let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(restored.showsReactionsInPreviews, false)
+        XCTAssertEqual(restored.reactions, [reaction])
+        XCTAssertEqual(restored.replacingLocation(id: 42, listTitle: "Tomorrow").showsReactionsInPreviews, false)
+        card.showsReactionsInPreviews = true
+        XCTAssertEqual(card.previewReactions, [reaction])
+    }
+
+    func testReactionIdentityIsStableAndLegacyCardsRemainUnchangedUntilReactedTo() throws {
+        let suite = "ReactionIdentity." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertNil(LocalReactionIdentity.current(in: defaults))
+        XCTAssertNil(defaults.object(forKey: LocalReactionIdentity.key))
+        let author = LocalReactionIdentity.forUserAction(in: defaults)
+        XCTAssertEqual(LocalReactionIdentity.forUserAction(in: defaults), author)
+        XCTAssertEqual(LocalReactionIdentity.current(in: defaults), author)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+        let legacy = Data(#"{"id":1,"word":"Legacy","listTitle":"Today","checklists":[]}"#.utf8)
+        var card = try JSONDecoder().decode(KanbanCard.self, from: legacy)
+        XCTAssertNil(card.reactions)
+        let unchangedJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(card)) as? [String: Any])
+        XCTAssertNil(unchangedJSON["reactions"])
+        let before = card
+        card.reactions = ItemEmojiReaction.toggling("✅", authorID: author, in: [])
+        XCTAssertEqual(card.isTitleChecked, before.isTitleChecked)
+        XCTAssertEqual(card.labelIDs, before.labelIDs)
+        XCTAssertEqual(card.word, before.word)
+        XCTAssertEqual(card.checklists, before.checklists)
+        XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)), card)
+    }
+
+    func testReactionsSurviveLocationChangesAndArchiveButNotFreshTemplates() throws {
+        let reaction = ItemEmojiReaction(emoji: "💪", authorID: UUID())
+        let card = KanbanCard(id: 1, word: "A meaningful step", listTitle: "Monday", checklists: [], createdAt: .now, reactions: [reaction])
+        let relocated = card.replacingLocation(id: 99, listTitle: "In the Queue")
+        XCTAssertEqual(relocated.reactions, card.reactions)
+        XCTAssertEqual(relocated.createdAt, card.createdAt)
+        var list = KanbanList(id: 0, title: "Monday", cards: [card])
+        list.archiveCard(id: card.id)
+        XCTAssertEqual(list.archivedCards.first?.reactions, [reaction])
+        list.restoreArchivedCard(id: card.id)
+        XCTAssertEqual(list.cards.first?.reactions, [reaction])
+        var week = DatedPlanningWeek.make(for: .now)
+        week.collection.lists[0].cards = [card]
+        let template = try PlanningRoutineTemplate.capture(name: "Fresh work", week: week, calendar: .current)
+        XCTAssertTrue(template.collection.lists.flatMap(\.cards).allSatisfy { $0.reactions == nil })
+        XCTAssertEqual(week.collection.lists[0].cards[0].reactions, [reaction])
+    }
+
+    @MainActor
+    func testReactionPickerAndChipsRenderWithoutCreatingIdentityOrEditingRecords() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let author = UUID()
+        let reactions = [ItemEmojiReaction(emoji: "❤️", authorID: author), ItemEmojiReaction(emoji: "🎉", authorID: author)]
+        let identityBefore = UserDefaults.standard.object(forKey: LocalReactionIdentity.key) as? String
+        for presentation in [ItemPresentation.card, .note] {
+            let card = KanbanCard(id: 1, word: "Make time for something meaningful", listTitle: "Today", checklists: [],
+                descriptionOverride: "A little encouragement belongs here.", presentation: presentation, reactions: reactions)
+            let host = UIHostingController(rootView: NavigationStack {
+                CardDetailView(card: card, onTitleToggle: { _ in XCTFail("Rendering must not edit") })
+            })
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-reactions-\(presentation).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("REACTIONS_RENDER=" + url.path)
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let host = UIHostingController(rootView: ItemReactionPicker(selected: ["❤️"], onChoose: { _ in XCTFail("Rendering must not choose") }).preferredColorScheme(scheme))
+            window.rootViewController = host
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-reaction-picker-\(scheme).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("REACTIONS_RENDER=" + url.path)
+        }
+        XCTAssertEqual(UserDefaults.standard.object(forKey: LocalReactionIdentity.key) as? String, identityBefore)
+    }
+
     func testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip() {
         XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 100,
             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)

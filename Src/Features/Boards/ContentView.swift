@@ -490,6 +490,7 @@ struct BoardGalleryTile: View {
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture {
                 Text(excerpt).font(.subheadline).foregroundStyle(boardAppearance.resolvedTextColor(card: card.appearance, list: appearance)?.color ?? .secondary).lineLimit(3).lineSpacing(3)
             }
+            ItemReactionPreview(card: card)
             HStack(spacing: 8) {
                 Label(card.displayFormat.title, systemImage: card.displayFormat.symbol)
                 if card.isTitleChecked { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).accessibilityLabel("Completed") }
@@ -5930,7 +5931,9 @@ struct KanbanCardView: View {
                 sectionLayout:        card.sectionLayout,
             showsDueDateInList:    card.showsDueDateInList,
             startDateKind:         card.startDateKind,
-            dueDateKind:           card.dueDateKind
+            dueDateKind:           card.dueDateKind,
+            reactions: card.reactions,
+            showsReactionsInPreviews: card.showsReactionsInPreviews
         )
     }
 
@@ -6134,6 +6137,7 @@ struct KanbanCardView: View {
                     if !compactCards { cardActions }
                 }
             }
+            ItemReactionPreview(card: card)
         }
 
         .fixedSize(horizontal: false, vertical: true)
@@ -6196,6 +6200,11 @@ struct KanbanCardView: View {
             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
             CardDestinationMenu(card: card)
             if !card.isSectionDivider {
+                Toggle("Show reactions in previews", isOn: Binding(get: { card.showsReactionsInPreviews != false }, set: { visible in
+                    var updated = card
+                    updated.showsReactionsInPreviews = visible
+                    onUpdateCard(updated)
+                }))
                 Toggle("Show due date in lists", isOn: Binding(get: { card.showsDueDateInList }, set: { visible in
                     var updated = card
                     updated.showsDueDateInList = visible
@@ -7634,6 +7643,7 @@ struct SingleListNoteRow: View {
                     Text(card.word).font(.body.weight(.medium)).foregroundStyle(.primary)
                         .lineLimit(2).strikethrough(card.isTitleChecked)
                     if !preview.isEmpty { Text(preview).font(.subheadline).foregroundStyle(.secondary).lineLimit(2) }
+                    ItemReactionPreview(card: card)
                     if card.showsDueDateInList {
                         if let start = card.startDate {
                             Text("Start · " + dateText(start, kind: card.startDateKind)).font(.caption).foregroundStyle(.secondary)

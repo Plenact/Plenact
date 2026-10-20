@@ -15,6 +15,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 
 ## Supporting references
 
+- [Personal emoji reactions](Design/Emoji-Reactions.md) — expressive Card/Note marks, local authorship, persistence, and future sharing boundaries
 - [Slide to read long headers](Design/Sliding-Header-Text.md) — manual title/subtitle reading, editing, accessibility, and gesture boundaries
 - [Board presentation](Design/Board-Presentation.md) — historical implementation detail with a current-context note
 - [Checklist actions](Design/Checklist-Actions-Architecture.md) — action identity and detail boundaries

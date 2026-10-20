@@ -54,7 +54,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
             collection.lists[index].archivedCards = []
             collection.lists[index].subtitleOverride = collection.lists[index].subtitle
             collection.lists[index].cards = collection.lists[index].cards.map { card in
-                var copy = card; copy.comments = []; copy.dismissedActivityIDs = []; copy.isTitleChecked = false
+                var copy = card; copy.reactions = nil; copy.comments = []; copy.dismissedActivityIDs = []; copy.isTitleChecked = false
                 copy.checklists = card.checklists.map(reusableChecklist)
                 copy.descriptionOverride = card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph
                 copy.subtitleOverride = card.subtitle
@@ -254,7 +254,8 @@ enum PlanningTemplateApplication {
                 attachments: attachments, coverAttachmentID: cover, descriptionOverride: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph,
                 subtitleOverride: card.subtitle, presentation: card.presentation, createdAt: now, appearance: card.appearance,
                 listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout, showsDueDateInList: card.showsDueDateInList,
-                startDateKind: card.startDateKind, dueDateKind: card.dueDateKind)
+                startDateKind: card.startDateKind, dueDateKind: card.dueDateKind,
+                showsReactionsInPreviews: card.showsReactionsInPreviews)
             NewCardAppearanceDefaults.apply(to: &created)
             return created
         }

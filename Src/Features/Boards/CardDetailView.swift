@@ -129,6 +129,7 @@ struct CardDetailView: View {
     private enum ActiveSheet: Identifiable {
 
         case date(DateField)                        /* Date picker sheet for editing a specific date field */
+        case reactions
         case members                                /* Card member management sheet                        */
         case labels                                 /* Card label library and assignment picker            */
         case attachmentSources                      /* Attachment source chooser                           */
@@ -154,6 +155,7 @@ struct CardDetailView: View {
             switch self {
 
                 case .date(let field):                   "date-\(field.id)" /* Selected date field */
+                case .reactions: "reactions"
                 case .members:                           "members"
                 case .labels:                            "labels"
                 case .attachmentSources:                 "attachment-sources"
@@ -303,6 +305,9 @@ struct CardDetailView: View {
     @State private var checklists: [KanbanChecklist]         /* The checklist groups associated with the selected card       */
     @State private var checklistToFocus: UUID?               /* Newly added checklist whose first item should be focused     */
     @State private var titleChecked: Bool                    /* Whether the card title itself is checked                     */
+    @State private var showsReactionsInPreviews: Bool?
+    @State private var reactions: [ItemEmojiReaction]?
+    @State private var reactionAuthorID = LocalReactionIdentity.current()
     @State private var titleText: String                     /* Editable card title displayed in the detail header           */
     @State private var appearance: ItemAppearance?
     @State private var showsAppearanceCover = false
@@ -436,6 +441,8 @@ struct CardDetailView: View {
         self.onDelete = onDelete
 
         _titleChecked         = State(initialValue: card.isTitleChecked)        /* Initialize the title checked state based on the card's current value */
+        _showsReactionsInPreviews = State(initialValue: card.showsReactionsInPreviews)
+        _reactions = State(initialValue: card.reactions)
         _titleText            = State(initialValue: card.isSectionDivider ? (card.sectionHeading ?? "") : card.word)                  /* Initialize the editable title from the card                          */
         _appearance           = State(initialValue: card.appearance)
         _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
@@ -1128,10 +1135,28 @@ struct CardDetailView: View {
     /// @details    Keeps nil body/attachment values until edited and preserves future model fields
     /// @return     (KanbanCard) complete current record without submitting or saving it
     ///
+    private func toggleReaction(_ emoji: String) {
+        guard !hasDeletedCard, !hasMovedCard, !workingCardSnapshot.isSectionDivider,
+              ItemEmojiReaction.validatedEmoji(emoji) != nil else { return }
+        let author = LocalReactionIdentity.forUserAction()
+        guard let updated = ItemEmojiReaction.toggling(emoji, authorID: author, in: reactions ?? []) else { return }
+        let previous = reactions
+        reactions = updated.isEmpty ? nil : updated
+        reactionAuthorID = author
+        if !syncCardState() { reactions = previous }
+    }
+
+    private var reactionStrip: some View {
+        ItemReactionStrip(reactions: reactions ?? [], authorID: reactionAuthorID,
+            onToggle: toggleReaction, onAdd: { dismissEditing(); activeSheet = .reactions })
+    }
+
     private var workingCardSnapshot: KanbanCard { /* Original record overlaid with all current editor fields */
 
         var updated = card /* Complete record assembled from working editor state */
 
+        updated.showsReactionsInPreviews = showsReactionsInPreviews
+        updated.reactions = reactions
         updated.word = titleText
         updated.appearance = appearance
         updated.subtitleOverride = card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText
@@ -2143,6 +2168,10 @@ struct CardDetailView: View {
             .itemBannerBackground(appearance)
             .padding(.horizontal, appearance?.background == nil ? 0 : -20)
 
+            if reactions?.isEmpty == false {
+                reactionStrip
+            }
+
             RichTextEditor(placeholder: "Start writing...", text: descriptionEditingBinding,
                            focus: richTextFocusBinding(for: .description), minimumHeight: 280)
                 .accessibilityLabel("Note body")
@@ -2192,6 +2221,10 @@ struct CardDetailView: View {
     private func addMenu(using scrollProxy: ScrollViewProxy) -> some View {
         Menu {
             if displayFormat != .divider {
+                Button("Add reaction", systemImage: "face.smiling") {
+                    dismissEditing()
+                    activeSheet = .reactions
+                }
                 Button(workingCardSnapshot.coverAttachment == nil ? "Add cover" : "Change cover", systemImage: "photo") {
                     dismissEditing()
                     activeSheet = .cover
@@ -2729,6 +2762,9 @@ struct CardDetailView: View {
                     //                                                                            //
                     //          Presents the primary actions available for the selected card      //
                     //****************************************************************************//
+                    if presentation == .card && reactions?.isEmpty == false {
+                        reactionStrip.padding(.horizontal, 16).padding(.vertical, 8)
+                    }
                     ForEach(sectionLayout.sections) { section in
                         cardSection(section, using: scrollProxy)
                     }
@@ -2796,9 +2832,15 @@ struct CardDetailView: View {
                     }
                     Menu {
                         if displayFormat != .divider {
+                            Button("Add reaction", systemImage: "face.smiling") { dismissEditing(); activeSheet = .reactions }
                             if let libraryImportance {
                                 Toggle("Mark important", isOn: Binding(get: { libraryImportance.contains(card.id) }, set: { libraryImportance.set(card.id, $0) }))
                             }
+                            Toggle("Show reactions in previews", isOn: Binding(get: { showsReactionsInPreviews != false }, set: { visible in
+                                let previous = showsReactionsInPreviews
+                                showsReactionsInPreviews = visible
+                                if !syncCardState() { showsReactionsInPreviews = previous }
+                            }))
                             Toggle("Show due date in lists", isOn: Binding(get: { showsDueDateInList }, set: { visible in
                                 let previous = showsDueDateInList
                                 showsDueDateInList = visible
@@ -2959,6 +3001,8 @@ struct CardDetailView: View {
                     .presentationDetents([.large])
                     .databaseActivityOverlay()
 
+                case .reactions:
+                    ItemReactionPicker(selected: Set((reactions ?? []).filter { $0.authorID == reactionAuthorID }.map(\.emoji)), onChoose: toggleReaction)
                 case .members:
                     CardMembersSheet(members: members, memberColors: memberColors) { updatedMembers in
                         members = updatedMembers
@@ -5208,5 +5252,109 @@ final class PlenactKeyboardToolbar: UIView {
             UIAction(title: name, image: UIImage(systemName: "circle.fill")?.withTintColor(color, renderingMode: .alwaysOriginal)) { [weak self] _ in self?.formatting?.color(name) }
         })
         return UIMenu(title: "Text formatting", children: [style, fonts, sizes, colors])
+    }
+}
+
+
+struct ItemReactionStrip: View {
+    let reactions: [ItemEmojiReaction]
+    let authorID: UUID?
+    let onToggle: (String) -> Void
+    let onAdd: () -> Void
+    private var emojis: [String] { reactions.reduce(into: []) { if !$0.contains($1.emoji) { $0.append($1.emoji) } } }
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(emojis, id: \.self) { emoji in
+                    let matching = reactions.filter { $0.emoji == emoji }
+                    let mine = matching.contains { $0.authorID == authorID }
+                    Button { onToggle(emoji) } label: {
+                        HStack(spacing: 4) {
+                            Text(emoji).font(.title3)
+                            if matching.count > 1 { Text("\(matching.count)").font(.caption) }
+                        }
+                        .padding(.horizontal, 10).frame(minHeight: 44)
+                        .background(mine ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.1), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(emoji), \(matching.count) reaction\(matching.count == 1 ? "" : "s")")
+                    .accessibilityHint(mine ? "Remove your reaction" : "Add your reaction")
+                }
+                Button(action: onAdd) { Label("Add reaction", systemImage: "face.smiling").font(.subheadline).frame(minHeight: 44) }
+                    .buttonStyle(.plain).foregroundStyle(.tint)
+                    .accessibilityIdentifier("item.addReaction")
+            }
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    }
+}
+
+struct ItemReactionPicker: View {
+    let selected: Set<String>
+    let onChoose: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var custom = ""
+    private let choices = ["❤️", "👍", "🎉", "😊", "✨", "💪", "🔥", "🙌", "🤔", "🙏", "👏", "😂", "😍", "🥰", "🌱", "☀️", "😅", "😮", "😔", "💡", "🎯", "🫶", "😎", "✅"]
+    private func choose(_ emoji: String) { onChoose(emoji); dismiss() }
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 48))], spacing: 12) {
+                        ForEach(choices, id: \.self) { emoji in
+                            Button { choose(emoji) } label: {
+                                Text(emoji).font(.largeTitle).frame(width: 48, height: 48)
+                                    .background(selected.contains(emoji) ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(emoji)
+                            .accessibilityHint(selected.contains(emoji) ? "Remove your reaction" : "Add your reaction")
+                        }
+                    }
+                } footer: { Text("Choose what feels right. Tap one of your reactions again to remove it. Reactions do not change importance, bookmarks, or completion.") }
+                Section("Another emoji") {
+                    TextField("Type or paste one emoji", text: $custom).textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Button("Use emoji") { if let emoji = ItemEmojiReaction.validatedEmoji(custom) { choose(emoji) } }
+                        .disabled(ItemEmojiReaction.validatedEmoji(custom) == nil)
+                }
+            }
+            .navigationTitle("Add reaction").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+/// Read-only summary: preview gestures continue to open, reorder, or delete the item.
+struct ItemReactionPreview: View {
+    let card: KanbanCard
+    private var emojis: [String] {
+        card.previewReactions.reduce(into: []) { if !$0.contains($1.emoji) { $0.append($1.emoji) } }
+    }
+    var body: some View {
+        if !emojis.isEmpty {
+            ViewThatFits(in: .horizontal) {
+                summary(emojis)
+                summary(Array(emojis.prefix(3)), remaining: max(0, emojis.count - 3))
+                Text("😊 \(card.previewReactions.count)").font(.caption)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Reactions: " + emojis.map { emoji in
+                "\(emoji), \(card.previewReactions.filter { $0.emoji == emoji }.count)"
+            }.joined(separator: ", "))
+        }
+    }
+    private func summary(_ values: [String], remaining: Int = 0) -> some View {
+        HStack(spacing: 6) {
+            ForEach(values, id: \.self) { emoji in
+                HStack(spacing: 2) {
+                    Text(emoji)
+                    let count = card.previewReactions.filter { $0.emoji == emoji }.count
+                    if count > 1 { Text("\(count)").font(.caption2).foregroundStyle(.secondary) }
+                }
+            }
+            if remaining > 0 { Text("+\(remaining)").font(.caption).foregroundStyle(.secondary) }
+        }.font(.subheadline).fixedSize()
     }
 }

@@ -401,6 +401,41 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable {
     }
 }
 
+/// Authored marks are independent of labels, importance, bookmarks, and completion.
+struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
+    var id = UUID()
+    let emoji: String
+    let authorID: UUID
+    var createdAt = Date()
+
+    static func validatedEmoji(_ input: String) -> String? {
+        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard value.count == 1, value.unicodeScalars.contains(where: {
+            $0.properties.isEmoji && ($0.value > 127 || value.unicodeScalars.contains(where: { $0.value == 0x20E3 }))
+        }) else { return nil }
+        return value
+    }
+    static func toggling(_ input: String, authorID: UUID, in reactions: [Self]) -> [Self]? {
+        guard let emoji = validatedEmoji(input) else { return nil }
+        if reactions.contains(where: { $0.authorID == authorID && $0.emoji == emoji }) {
+            return reactions.filter { !($0.authorID == authorID && $0.emoji == emoji) }
+        }
+        return reactions + [Self(emoji: emoji, authorID: authorID)]
+    }
+}
+
+/// A stable local author survives profile creation; reading never creates an identity.
+enum LocalReactionIdentity {
+    static let key = "Plenact.LocalReactionAuthor.v1"
+    static func current(in defaults: UserDefaults = .standard) -> UUID? {
+        defaults.string(forKey: key).flatMap(UUID.init(uuidString:))
+    }
+    static func forUserAction(in defaults: UserDefaults = .standard) -> UUID {
+        if let existing = current(in: defaults) { return existing }
+        let id = UUID(); defaults.set(id.uuidString, forKey: key); return id
+    }
+}
+
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     let id:                   Int                 /* Stable numeric identifier for the card             */
@@ -422,6 +457,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
 
     var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
+    var showsReactionsInPreviews: Bool? = nil
+    var previewReactions: [ItemEmojiReaction] {
+        showsReactionsInPreviews != false && !isSectionDivider ? reactions ?? [] : []
+    }
+    var reactions: [ItemEmojiReaction]? = nil
     var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
     var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
     var coverAttachmentID:    UUID?              /* Explicitly chosen photo; nil disables this card's cover */
@@ -491,7 +531,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             sectionLayout:        sectionLayout,
             showsDueDateInList:    showsDueDateInList,
             startDateKind:         startDateKind,
-            dueDateKind:           dueDateKind
+            dueDateKind:           dueDateKind,
+            reactions:            reactions,
+            showsReactionsInPreviews: showsReactionsInPreviews
         )
     }
 
@@ -720,8 +762,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date, dueDateKind: CardDateKind = .date) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date, dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil) {
 
+        self.showsReactionsInPreviews = showsReactionsInPreviews
+        self.reactions = reactions?.isEmpty == true ? nil : reactions
         self.id                   = id                      /* Stable numeric identifier for the card             */
         self.word                 = word                    /* Display word shown as the card's title             */
         self.listTitle            = listTitle               /* Name of the list where the card resides            */
@@ -805,7 +849,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             sectionLayout:        try container.decodeIfPresent(CardSectionLayout.self, forKey: .sectionLayout),
             showsDueDateInList:    try container.decodeIfPresent(Bool.self, forKey: .showsDueDateInList) ?? true,
             startDateKind:         try container.decodeIfPresent(CardDateKind.self, forKey: .startDateKind) ?? .date,
-            dueDateKind:           try container.decodeIfPresent(CardDateKind.self, forKey: .dueDateKind) ?? .date
+            dueDateKind:           try container.decodeIfPresent(CardDateKind.self, forKey: .dueDateKind) ?? .date,
+            reactions: try container.decodeIfPresent([ItemEmojiReaction].self, forKey: .reactions),
+            showsReactionsInPreviews: try container.decodeIfPresent(Bool.self, forKey: .showsReactionsInPreviews)
         )
     }
 
@@ -829,6 +875,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case dueDateKind
         case createdAt
         case checklists
+        case reactions
+        case showsReactionsInPreviews
         case comments
         case members
         case labelIDs

@@ -20,6 +20,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
+- Option for subtitles in italics?
+
 - tapped today's focus list items glow on tap selection
 
 - Begin a published revision history document

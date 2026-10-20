@@ -4521,6 +4521,63 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    func testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip() {
+        XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 100,
+            controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)
+        XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 150,
+            controlsWidth: 176, gapCount: 4, regularSpacing: 12), 0)
+        XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 500,
+            controlsWidth: 176, gapCount: 4, regularSpacing: 12), 0)
+        XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 820, titleIdealWidth: 500,
+            controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)
+        XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 136,
+            controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)
+    }
+
+    @MainActor
+    func testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        var results: [String: [Int: CGRect]] = [:]
+        for (name, title, direction) in [
+            ("short", "Day", LayoutDirection.leftToRight),
+            ("long", "A long name that needs additional space before the toolbar controls", .leftToRight),
+            ("rtl", "A long name that needs additional space before the toolbar controls", .rightToLeft)
+        ] {
+            func control(_ id: Int) -> some View {
+                Color.blue.frame(width: 44, height: 44)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("headerFixture")) } action: { results[name, default: [:]][id] = $0 }
+            }
+            let view = AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: direction) {
+                control(0)
+                Text(title).lineLimit(1).frame(maxWidth: .infinity)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("headerFixture")) } action: { results[name, default: [:]][1] = $0 }
+                    .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
+                control(2); control(3); control(4)
+            }.frame(width: 360).coordinateSpace(name: "headerFixture")
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(180))
+        }
+        let short = try XCTUnwrap(results["short"])
+        let long = try XCTUnwrap(results["long"])
+        let rtl = try XCTUnwrap(results["rtl"])
+        for frames in [short, long, rtl] {
+            for id in [0, 2, 3, 4] {
+                XCTAssertEqual(try XCTUnwrap(frames[id]).width, 44, accuracy: 0.5)
+                XCTAssertEqual(try XCTUnwrap(frames[id]).height, 44, accuracy: 0.5)
+            }
+        }
+        XCTAssertEqual(try XCTUnwrap(short[3]).minX - XCTUnwrap(short[2]).maxX, 12, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(long[3]).minX - XCTUnwrap(long[2]).maxX, 0, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(long[1]).width - XCTUnwrap(short[1]).width, 48, accuracy: 0.5)
+        XCTAssertGreaterThan(try XCTUnwrap(rtl[0]).midX, try XCTUnwrap(rtl[4]).midX)
+        XCTAssertEqual(try XCTUnwrap(rtl[1]).width, try XCTUnwrap(long[1]).width, accuracy: 0.5)
+    }
+
     func testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile() throws {
         let suite = "OverflowPreferenceTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4585,6 +4642,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
     @MainActor
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws {
+        let suite = "HeaderReadingTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        PlanPreferencesStore.save(LocalProfilePreferences(scrollsOverflowingTitles: true), to: defaults)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
@@ -4597,7 +4658,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let host = UIHostingController(rootView: VStack(spacing: 20) {
             SlideableHeaderText(text: long, onOverflowChange: { overflow.append($0) }).font(.headline)
             SlideableHeaderText(text: "Short").font(.subheadline)
-        }.frame(width: 220).padding())
+        }.frame(width: 220).padding().defaultAppStorage(defaults))
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host; window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(200))
@@ -4616,6 +4677,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
     @MainActor
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws {
+        let suite = "HeaderReadingTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        PlanPreferencesStore.save(LocalProfilePreferences(scrollsOverflowingTitles: true), to: defaults)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
@@ -4638,7 +4703,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             ("list", AnyView(TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
                 savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {}, onOpenWeek: {}, onPermanentDelete: { _ in false })))
         ] {
-            let host = UIHostingController(rootView: view)
+            let host = UIHostingController(rootView: view.defaultAppStorage(defaults))
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host; window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(250))

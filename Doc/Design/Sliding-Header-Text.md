@@ -72,3 +72,19 @@ Card/Note records during layout, and existing header sizing/boundary classificat
 Synthetic previews cover the long titles and subtitles from the reported scenario.
 Actual finger drags, tap-to-edit, vertical scrolling, and Week selector taps remain
 part of the hands-on simulator/device acceptance check.
+
+
+## Conditional header spacing
+
+Focused Day/List and Board title bars retain their ordinary gaps when both heading
+lines fit. When the intrinsic heading width would exceed the space left by those
+gaps and controls, a shared Layout removes the extra inter-control spacing. It
+retains each control's existing frame/touch region and the outer header margins.
+It does not shrink icons, overlap hit targets, or hide actions. Very long text can
+still scroll (or truncate when the preference is off) after the gaps are reclaimed.
+
+The decision uses intrinsic heading width, including subtitles, rather than the
+previous rendered overflow flag. This keeps the compact state stable when the
+extra space makes a heading fit. Layout recalculates for changed text, available
+width, and type size, and mirrors placement for right-to-left interfaces. Short
+headings keep the previous 8-point Board / 12-point focused Day/List gaps.

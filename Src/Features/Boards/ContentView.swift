@@ -3576,6 +3576,7 @@ struct ContentView: View {
 ///
 struct BoardHeader: View {
 
+    @Environment(\.layoutDirection) private var headerLayoutDirection
     @Binding var settings: BoardDisplaySettings      /* Board display settings                              */
     /// Shared Standard/Overview selection displayed in the Board options menu.
     @Binding var presentation: BoardPresentation /* Shared Standard or Overview layout selection */
@@ -3712,7 +3713,7 @@ struct BoardHeader: View {
     ///
     var body: some View { /* Board header and global actions */
 
-        HStack {
+        AdaptiveWorkspaceHeaderLayout(regularSpacing: 8, layoutDirection: headerLayoutDirection) {
 
             if let onClose { /* Available return action shown beside the Board heading */
 
@@ -3726,6 +3727,7 @@ struct BoardHeader: View {
             }
 
             titleSwipeArea
+                .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
 
             if let onSearch {
                 Button(action: onSearch) {
@@ -6418,6 +6420,7 @@ struct TodayListDetailView: View {
     let onOpenWeek: () -> Void /* Open this list in the Week workspace */
     let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
 
+    @Environment(\.layoutDirection) private var headerLayoutDirection
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
     var boardAppearance: BoardAppearance? = nil
     var returnDestinationTitle: String = "Today"
@@ -6852,7 +6855,7 @@ struct TodayListDetailView: View {
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
-                    HStack(spacing: 12) {
+                    AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: headerLayoutDirection) {
                     Button(action: onClose) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
@@ -6895,6 +6898,7 @@ struct TodayListDetailView: View {
 
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .contain)
+                    .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
                     Button { showsDaySearch = true } label: {
                         WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                     }
@@ -7730,5 +7734,61 @@ struct SlideableHeaderText: View {
             }
         }
         .onChange(of: allowsScrolling, initial: true) { _, value in onOverflowChange(value && overflows) }
+    }
+}
+
+
+struct WorkspaceHeaderTitleKey: LayoutValueKey {
+    static let defaultValue = false
+}
+
+/// Decide against intrinsic text width, never the previous clipped width: no layout oscillation.
+enum WorkspaceHeaderSpacing {
+    static func gap(availableWidth: CGFloat, titleIdealWidth: CGFloat, controlsWidth: CGFloat,
+                    gapCount: Int, regularSpacing: CGFloat) -> CGFloat {
+        let titleSpace = max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
+        return titleIdealWidth > titleSpace + 1 ? 0 : regularSpacing
+    }
+}
+
+/// Tighten only inter-control gaps. Native control sizes and their touch regions are retained.
+struct AdaptiveWorkspaceHeaderLayout: Layout {
+    var regularSpacing: CGFloat
+    var layoutDirection: LayoutDirection = .leftToRight
+
+    private func arrangement(width: CGFloat?, subviews: Subviews) -> (sizes: [CGSize], gap: CGFloat, width: CGFloat) {
+        let ideal = subviews.map { $0.sizeThatFits(.unspecified) }
+        guard let title = subviews.indices.first(where: { subviews[$0][WorkspaceHeaderTitleKey.self] }) else {
+            let total = ideal.reduce(0) { $0 + $1.width } + CGFloat(max(0, subviews.count - 1)) * regularSpacing
+            return (ideal, regularSpacing, width ?? total)
+        }
+        let controlsWidth = ideal.enumerated().filter { $0.offset != title }.reduce(0) { $0 + $1.element.width }
+        let gapCount = max(0, subviews.count - 1)
+        let available = width ?? (controlsWidth + ideal[title].width + CGFloat(gapCount) * regularSpacing)
+        let gap = WorkspaceHeaderSpacing.gap(availableWidth: available, titleIdealWidth: ideal[title].width,
+            controlsWidth: controlsWidth, gapCount: gapCount, regularSpacing: regularSpacing)
+        let titleWidth = max(0, available - controlsWidth - CGFloat(gapCount) * gap)
+        var sizes = ideal
+        let titleSize = subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
+        sizes[title] = CGSize(width: titleWidth, height: titleSize.height)
+        return (sizes, gap, available)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let layout = arrangement(width: proposal.width, subviews: subviews)
+        return CGSize(width: layout.width, height: layout.sizes.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let layout = arrangement(width: bounds.width, subviews: subviews)
+        var offset: CGFloat = 0
+        for index in subviews.indices {
+            let size = layout.sizes[index]
+            let x = layoutDirection == .rightToLeft ? bounds.maxX - offset - size.width / 2
+                : bounds.minX + offset + size.width / 2
+            subviews[index].place(at: CGPoint(x: x, y: bounds.midY), anchor: .center,
+                proposal: ProposedViewSize(width: size.width, height: size.height))
+            offset += size.width + layout.gap
+        }
     }
 }

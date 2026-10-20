@@ -478,6 +478,63 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(entries.last?.scheduleLabel)
     }
 
+    func testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion() {
+        func snap(_ start: CGFloat, _ proposed: CGFloat, enabled: Bool = true, maximum: CGFloat = 1200) -> CGFloat? {
+            TodaySectionSnapBehavior.destination(start: start, proposed: proposed, perspectiveTop: 800,
+                shortcutsBottom: 700, viewport: 600, maximum: maximum, enabled: enabled)
+        }
+        XCTAssertEqual(snap(0, 450), 800)
+        XCTAssertEqual(snap(800, 650), 0)
+        XCTAssertNil(snap(0, 200))
+        XCTAssertNil(snap(800, 950))
+        XCTAssertNil(snap(1000, 850))
+        XCTAssertNil(snap(700, 690))
+        XCTAssertNil(snap(0, 450, enabled: false))
+        XCTAssertEqual(snap(0, 450, maximum: 600), 600)
+        XCTAssertNil(TodaySectionSnapBehavior.destination(start: 0, proposed: 500,
+            perspectiveTop: 0, shortcutsBottom: 0, viewport: 600, maximum: 1200, enabled: true))
+    }
+
+    @MainActor
+    func testTodayPerspectiveRendersWithoutMutatingPlansOrLists() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let beforePlans = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+        let beforeRhythm = UserDefaults.standard.data(forKey: ReviewRhythmStore.dismissalsKey)
+        let completed = [KanbanCard(id: 1, word: "Make time for family", listTitle: "Today", isTitleChecked: true, checklists: [])]
+        let tomorrow = KanbanList(id: 2, title: "Tomorrow", cards: [
+            KanbanCard(id: 2, word: "A thoughtful start", listTitle: "Tomorrow", checklists: []),
+            KanbanCard(id: 3, word: "A long walk and a little room to think", listTitle: "Tomorrow", checklists: [])])
+        for (name, done, next, scheme, width) in [
+            ("populated", completed, Optional(tomorrow), ColorScheme.light, CGFloat(393)),
+            ("quiet", [], nil, .light, 393),
+            ("dark-tablet", completed, Optional(tomorrow), .dark, 820)
+        ] {
+            let view = ScrollView {
+                TodayPerspectiveSection(completed: done, tomorrowList: next,
+                    onReview: { _ in XCTFail("Rendering must not open review") },
+                    onSettings: { XCTFail("Rendering must not open settings") },
+                    onReflect: { XCTFail("Rendering must not open a plan") },
+                    onPrepare: { XCTFail("Rendering must not create a plan") })
+                    .padding(20)
+            }.background(Color(.systemGroupedBackground)).preferredColorScheme(scheme)
+            let host = UIHostingController(rootView: view)
+            window.frame = CGRect(x: 0, y: 0, width: width, height: 1000)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-perspective-\(name).png")
+            try XCTUnwrap(image.pngData()).write(to: path)
+            print("PERSPECTIVE_RENDER=" + path.path)
+        }
+        XCTAssertEqual(UserDefaults.standard.data(forKey: DailyPlanStore.key), beforePlans)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: ReviewRhythmStore.dismissalsKey), beforeRhythm)
+        XCTAssertTrue(completed[0].isTitleChecked)
+        XCTAssertEqual(tomorrow.cards.count, 2)
+    }
+
     @MainActor
     func testFocusOverflowRetainsNativeScrollingToLastMatchingItem() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

@@ -388,6 +388,37 @@ private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 /// @section    Purpose
 ///     Use native scroll geometry where available and a coordinate-space fallback otherwise
 ///
+/// Only crossing between Today’s two spaces changes the native settling destination.
+struct TodaySectionSnapBehavior: ScrollTargetBehavior {
+    var perspectiveTop: CGFloat
+    var shortcutsBottom: CGFloat
+    var enabled: Bool
+
+    static func destination(start: CGFloat, proposed: CGFloat, perspectiveTop: CGFloat,
+                            shortcutsBottom: CGFloat, viewport: CGFloat, maximum: CGFloat,
+                            enabled: Bool) -> CGFloat? {
+        guard enabled, perspectiveTop > shortcutsBottom, shortcutsBottom > 0, viewport > 0,
+              abs(proposed - start) >= 24 else { return nil }
+        let revealBoundary = max(24, perspectiveTop - viewport * 0.7)
+        if proposed > start, start < perspectiveTop - 24,
+           start <= revealBoundary, proposed >= revealBoundary {
+            return min(maximum, perspectiveTop)
+        }
+        if proposed < start, start >= shortcutsBottom, proposed <= shortcutsBottom {
+            return 0
+        }
+        return nil
+    }
+
+    func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
+        guard let y = Self.destination(start: context.originalTarget.rect.minY,
+            proposed: target.rect.minY, perspectiveTop: perspectiveTop, shortcutsBottom: shortcutsBottom,
+            viewport: context.containerSize.height,
+            maximum: max(0, context.contentSize.height - context.containerSize.height), enabled: enabled) else { return }
+        target.rect.origin.y = y
+    }
+}
+
 private struct TodayScrollFadeTracking: ViewModifier {
 
     @Binding var isScrolled: Bool           /* Header fade visibility state */
@@ -2325,6 +2356,8 @@ private struct AppRootView: View {
 /// @note   The selected list is stored locally for the current calendar date
 ///
 private struct TodayHomeView: View {
+    @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = 30
+    @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = 18.75
     @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
     @EnvironmentObject private var welcomeCue: TodayWelcomeCue
     @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
@@ -2359,9 +2392,13 @@ private struct TodayHomeView: View {
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
     @State private var focusFiltersChangedAt: Date?
+    @State private var perspectiveSectionTop: CGFloat = 0
+    @State private var shortcutsSectionBottom: CGFloat = 0
     @State private var openedFocusCard: KanbanCard?
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayPlan = false
+    @State private var perspectivePlanDate: Date = .now
+    @State private var showsPerspectivePlan = false
     @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
     @State private var reviewRoute: ReviewRhythmRoute?
     @State private var showsReviewRhythmSettings = false
@@ -2634,15 +2671,17 @@ private struct TodayHomeView: View {
             listPickerMode = .browseAll
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "rectangle.3.group")
+                Spacer(minLength: 0)
                 Text("Browse this week")
-                Spacer()
+                    .font(.system(size: browseTextSize))
+                Image(systemName: "rectangle.3.group")
+                    .font(.system(size: browseIconSize))
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
 
-            .font(.subheadline.weight(.medium))
+            .font(.subheadline)
             .foregroundStyle(.tint)
             .frame(maxWidth: .infinity, minHeight: 48)
             .contentShape(Rectangle())
@@ -2904,16 +2943,39 @@ private struct TodayHomeView: View {
                     .id(showsTodayList || openedFocusCard != nil)
 
                     yourShortcutsSection
+                        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named("TodaySectionContent")).maxY } action: {
+                            shortcutsSectionBottom = $0
+                        }
                     browseListsAction
-                    ReviewRhythmPanel(onOpen: { reviewRoute = $0 },
-                        onSettings: { showsReviewRhythmSettings = true })
+                    TimelineView(.everyMinute) { context in
+                        let calendar = planningCalendarAccess?.document.calendar ?? .current
+                        let tomorrow = calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
+                        let tomorrowList = planningCalendarAccess?.document.weeks.compactMap { $0.list(on: tomorrow) }.first
+                        TodayPerspectiveSection(
+                            completed: calendarDayList(context.date)?.cards.filter { !$0.isSectionDivider && $0.isTitleChecked } ?? [],
+                            tomorrowList: tomorrowList,
+                            onReview: { reviewRoute = $0 },
+                            onSettings: { showsReviewRhythmSettings = true },
+                            onReflect: { showsTodayPlan = true },
+                            onPrepare: {
+                                perspectivePlanDate = tomorrow
+                                showsPerspectivePlan = true
+                            })
+                    }
+                    .padding(.top, 16)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named("TodaySectionContent")).minY } action: {
+                        perspectiveSectionTop = $0
+                    }
                 }
                         .padding(20)
                         // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone.
                         .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 10)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, 112)
+                        .coordinateSpace(name: "TodaySectionContent")
             }
+                .scrollTargetBehavior(TodaySectionSnapBehavior(perspectiveTop: perspectiveSectionTop,
+                    shortcutsBottom: shortcutsSectionBottom, enabled: !reduceWelcomeMotion))
                 .modifier(TodayScrollFadeTracking(isScrolled: $isContentScrolled))
                 .safeAreaInset(edge: .top, spacing: 0) {
                     HStack(spacing: 0) {
@@ -2969,6 +3031,9 @@ private struct TodayHomeView: View {
             }
             .sheet(isPresented: $showsTodayPlan) {
                 TodayPlanView(calendar: planningCalendarAccess?.document.calendar ?? .current)
+            }
+            .sheet(isPresented: $showsPerspectivePlan) {
+                TodayPlanView(date: perspectivePlanDate, calendar: planningCalendarAccess?.document.calendar ?? .current)
             }
             .sheet(isPresented: $showsAccountSettings) {
 
@@ -8450,6 +8515,89 @@ private struct ArchivedCollectionContentsView: View {
 /// @section    Purpose
 ///     Summarize the current focus and expose completion and list-navigation actions
 ///
+/// Optional perspective below Today’s action area; all content derives from canonical lists.
+struct TodayPerspectiveSection: View {
+    let completed: [KanbanCard]
+    let tomorrowList: KanbanList?
+    let onReview: (ReviewRhythmRoute) -> Void
+    let onSettings: () -> Void
+    let onReflect: () -> Void
+    let onPrepare: () -> Void
+
+    private var tomorrowItems: [KanbanCard] {
+        tomorrowList?.cards.filter { !$0.isSectionDivider && !$0.isTitleChecked } ?? []
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text("A little perspective")
+                    .font(.title3.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                Text("Pause, notice, and make room for what’s next.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                heading("Close the loop", symbol: "arrow.triangle.2.circlepath")
+                Text("Plans can change. Give unfinished things a next step when you’re ready.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                ReviewRhythmPanel(onOpen: onReview, onSettings: onSettings)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(TodayPanelSurface(backgroundOpacity: 0.6))
+
+            if !completed.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    heading("Worth noticing", symbol: "leaf")
+                    Text("\(completed.count) \(completed.count == 1 ? "item is" : "items are") complete on today’s list.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    ForEach(completed.prefix(2)) { card in
+                        Label(card.word, systemImage: "checkmark")
+                            .font(.subheadline).lineLimit(2)
+                    }
+                    Button("Reflect on today", action: onReflect)
+                        .font(.subheadline.weight(.medium)).foregroundStyle(.tint).frame(minHeight: 44)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(TodayPanelSurface(backgroundOpacity: 0.6))
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                heading("A glance at tomorrow", symbol: "sunrise")
+                if tomorrowList == nil {
+                    Text("A little room to think ahead. Tomorrow’s Day list isn’t set up yet.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                } else if tomorrowItems.isEmpty {
+                    Text("No unfinished items on tomorrow’s Day list. Leave room, or give something a place.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                } else {
+                    Text("\(tomorrowItems.count) \(tomorrowItems.count == 1 ? "item has" : "items have") a place on tomorrow’s Day list.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    ForEach(tomorrowItems.prefix(2)) { card in
+                        Text(card.word).font(.subheadline).lineLimit(2)
+                    }
+                    if tomorrowItems.count > 2 {
+                        Text("And \(tomorrowItems.count - 2) more")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Button("Consider tomorrow’s plan", action: onPrepare)
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.tint).frame(minHeight: 44)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(TodayPanelSurface(backgroundOpacity: 0.6))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("today.perspective")
+    }
+
+    private func heading(_ title: String, symbol: String) -> some View {
+        Label(title, systemImage: symbol).font(.headline)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 /// Deliberate combination colors preserve hue differences that RGB averaging would erase.
 struct TodayFocusFilterColor {
     static func rgb(upNext: Bool, important: Bool, bookmarked: Bool, dark: Bool = false) -> (red: Double, green: Double, blue: Double)? {

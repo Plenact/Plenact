@@ -337,6 +337,18 @@ struct TodayFocusEntry: Identifiable {
     let sectionID: Int?
     let heading: String?
     var id: Int { card.id }
+    /// Date-only values do not claim a time; a timed start takes precedence over a timed due date.
+    var previewTime: (date: Date, isStart: Bool)? {
+        if let start = card.startDate, card.startDateKind != .date { return (start, true) }
+        if let due = card.dueDate, card.dueDateKind != .date { return (due, false) }
+        return nil
+    }
+    var previewTimeLabel: String? {
+        previewTime.map { $0.date.formatted(date: .omitted, time: .shortened)
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "\u{202F}", with: "").lowercased() }
+    }
+
     var scheduleLabel: String? {
         if let start = card.startDate { return "Start · " + card.startDateKind.label(for: start) }
         if let due = card.dueDate { return "Due · " + card.dueDateKind.label(for: due) }
@@ -402,7 +414,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     var todayFocusIncludesImportant: Bool
     var todayFocusIncludesBookmarked: Bool
     var todayFocusHidesCompleted: Bool
-    var todayFocusItemCount: Int /* Zero shows all open items; otherwise 1...12 */
+    var todayFocusItemCount: Int /* Visible row capacity: zero expands all matches; otherwise 1...12 */
     var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
 
 
@@ -477,7 +489,7 @@ struct LocalProfilePreferences: Hashable, Codable {
 
 
     /// Derive Focus without mutating Day order or interpreting the meaning of headings.
-    /// Section boundaries are captured before filtering; limits count items, never headings.
+    /// Section boundaries are captured before filtering; viewport capacity never removes matches.
     func todayFocusEntries(in cards: [KanbanCard], on day: Date = .now, calendar: Calendar = .current, importantCardIDs: Set<Int> = [], bookmarkedCardIDs: Set<Int> = []) -> [TodayFocusEntry] {
         var sectionID: Int?
         var heading: String?
@@ -514,8 +526,7 @@ struct LocalProfilePreferences: Hashable, Codable {
                 }
             }.map(\.element)
         }
-        let count = (0...12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
-        return count == 0 ? entries : Array(entries.prefix(count))
+        return entries
     }
 
     func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard] {

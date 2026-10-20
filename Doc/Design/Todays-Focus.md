@@ -24,7 +24,7 @@ The initial experience remains one calm list that dwindles as you finish:
 | Grouping | Continuous list | Day list sections |
 | Inclusion filters | All eligible items | Up Next, Important, Bookmarked, or any combination |
 | Completed items | Hidden | Keep visible and allow unchecking |
-| Item limit | Four | 1–12 or all eligible items |
+| Visible row capacity | Four | 1–12 or expand all rows; matches are never truncated |
 
 These preferences persist locally through the existing planning-preferences store,
 including installations without an account profile. Missing fields in older data
@@ -97,17 +97,18 @@ Call the accountant examples important. Demo matching also recognizes the exact
 titles Dinner and Call Accountant. This does not add those records to Jmr, rewrite
 existing weeks, reapply importance on every launch, or change the user's bookmarks.
 
-Filtering happens first, preview ordering second, and the configured item limit
-last. Limits count Cards and Notes, never headings. When grouping is enabled,
-the limit may end partway through a section; later sections are reachable by
-increasing the limit. This is deliberate, not a quota of items from each group.
+Filtering and ordering retain every matching Card and Note. The configured row
+count controls only the viewport height, never the result set. Additional matches
+remain available through the inner list's native vertical scrolling. Section
+headings receive extra height and do not consume the visible-item allowance.
+Zero (Expand all rows) expands the preview to all matches instead of capping it.
 
 With Hide completed items enabled, checking an item removes it and reveals the
 next eligible item. With the preference disabled, completed items stay in place
 with a checked control and struck-through title; users can uncheck them directly.
 Progress always counts all non-divider items in today's source Day list.
 
-Up to four items are visible before the inner list scrolls. Visible section labels
+By default four items are visible before the inner list scrolls. Visible section labels
 receive additional space instead of squeezing those items. The panel shrinks with
 fewer items and preserves the existing padding beneath its section. All-complete
 and empty-list messages remain distinct. Card/Note navigation, checkbox actions,
@@ -144,3 +145,45 @@ this implementation:
 7. Preview interactions retain canonical ownership and checked saves.
 8. Improvements serve the user's attention, rather than asking the user to serve
    a ranking system.
+
+## Filter color cues
+
+The Focus title opens a compact chooser with colored text. All is black in light
+mode and white in dark mode. Progress remains italic. Combinations use deliberately
+assigned colors rather than RGB averaging, which made selections too similar:
+
+| Selection | Light | Dark |
+| --- | --- | --- |
+| Up Next (A), blue | #1D4ED8 | #93B8FF |
+| Important (B), red | #B42336 | #FF9BA8 |
+| Bookmarked (C), green | #276524 | #A3DA83 |
+| AB, purple | #7E22CE | #D3A6FF |
+| AC, teal | #00666B | #70D8D4 |
+| BC, orange | #9A4100 | #FFBB78 |
+| ABC, neutral | #535766 | #C9CBD4 |
+
+These colors are visual cues, not ranking rules. Automated contrast checks cover
+representative cream and dark surfaces; translucent/custom surfaces still need
+visual verification. No palette guarantees every viewer can distinguish every
+state by color alone, so names and explicit selection controls remain available.
+After a filter update or dismissal of the chooser with active filters (even without a selection change),
+the active filter names appear for three seconds,
+then fade over 250 ms. Further changes restart that interval. Reduce Motion skips
+the fade. The title's accessible value always retains the active filter names;
+chooser selection controls remain explicit, so color is never the sole signal.
+Progress continues to count the full source Day list, not only matching items.
+
+The filter popover stays open while toggling choices or choosing All items.
+Selections save immediately; tapping outside dismisses the chooser. Filter changes
+refresh the preview without replacing the view that owns its presentation state.
+
+## Trailing item context
+
+Focus rows show a compact local time beside the shortcut arrow whenever the item
+has a timed start or due value (timed start wins). Date-only values do not count.
+Without a time, Important and Bookmarked markers share a compact slot. When both
+apply, the star overlaps the bookmark slightly in front and below it.
+This context is independent of active filters. Time visually takes precedence over
+both markers; VoiceOver retains time, importance, and bookmark information.
+
+Dismissing the chooser with All items active does not show a confirmation subtitle.

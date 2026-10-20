@@ -2358,7 +2358,7 @@ private struct TodayHomeView: View {
     @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
     @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
-    @State private var focusFilterRevision = UUID()
+    @State private var focusFiltersChangedAt: Date?
     @State private var openedFocusCard: KanbanCard?
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayPlan = false
@@ -2851,10 +2851,12 @@ private struct TodayHomeView: View {
                     let importantFocusIDs = planningCalendarAccess?.document.weeks.first(where: {
                         $0.startKey == planningCalendarAccess?.document.currentWeekKey
                     }).map { LibraryImportanceSelection.cardIDs(collectionID: $0.id, data: focusImportantData) } ?? []
+                    // Capture persisted filters outside the timeline so changing them refreshes
+                    // its content without replacing the view that owns the open popover.
+                    let focusPreferences = (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData)) ?? PlanPreferencesStore.load()
                     TimelineView(.everyMinute) { context in
                         let focus = calendarDayList(context.date, in: focusLists) /* Active list matching the current weekday */
                         let cards = focus?.cards.filter { !$0.isSectionDivider } ?? [] /* Actionable records in the weekday list */
-                        let focusPreferences = PlanPreferencesStore.load()
 
                         TodayFocusSection(
                             list:            focus,
@@ -2863,10 +2865,14 @@ private struct TodayHomeView: View {
                                 importantCardIDs: importantFocusIDs,
                                 bookmarkedCardIDs: focusBookmarks),
                             groupsBySection: focusPreferences.todayFocusGroupsBySection,
+                            visibleItemCount: focusPreferences.todayFocusItemCount,
                             chronological:   focusPreferences.todayFocusOrder == .chronological,
                             includesImportant: focusPreferences.todayFocusIncludesImportant,
                             includesBookmarked: focusPreferences.todayFocusIncludesBookmarked,
                             includesUpNext: focusPreferences.todayFocusIncludesUpNext,
+                            filtersChangedAt: focusFiltersChangedAt,
+                            bookmarkedCardIDs: focusBookmarks,
+                            importantCardIDs: importantFocusIDs,
                             onChangeFilters: { important, bookmarked, upNext in
                                 var updated = PlanPreferencesStore.load()
                                 updated.todayFocusIncludesImportant = important
@@ -2874,7 +2880,7 @@ private struct TodayHomeView: View {
                                 updated.todayFocusIncludesUpNext = upNext
                                 PlanPreferencesStore.save(updated)
                                 if var profile { profile.preferences = updated; onSaveProfile(profile) }
-                                focusFilterRevision = UUID()
+                                focusFiltersChangedAt = .now
                             },
                             onToggleCard:    { cardID in
                                 if let focus { /* Weekday list available for navigation */
@@ -2895,7 +2901,7 @@ private struct TodayHomeView: View {
                     }
                     // A covered TimelineView can retain its last rendered completion state.
                     // Recreate the preview on return without resetting the outer Today scroll.
-                    .id("\(showsTodayList || openedFocusCard != nil)-\(focusFilterRevision)")
+                    .id(showsTodayList || openedFocusCard != nil)
 
                     yourShortcutsSection
                     browseListsAction
@@ -8444,17 +8450,40 @@ private struct ArchivedCollectionContentsView: View {
 /// @section    Purpose
 ///     Summarize the current focus and expose completion and list-navigation actions
 ///
+/// Deliberate combination colors preserve hue differences that RGB averaging would erase.
+struct TodayFocusFilterColor {
+    static func rgb(upNext: Bool, important: Bool, bookmarked: Bool, dark: Bool = false) -> (red: Double, green: Double, blue: Double)? {
+        let selection = (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
+        // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral.
+        let light: [Int: Int] = [1: 0x1D4ED8, 2: 0xB42336, 4: 0x276524,
+                                 3: 0x7E22CE, 5: 0x00666B, 6: 0x9A4100, 7: 0x535766]
+        let night: [Int: Int] = [1: 0x93B8FF, 2: 0xFF9BA8, 4: 0xA3DA83,
+                                 3: 0xD3A6FF, 5: 0x70D8D4, 6: 0xFFBB78, 7: 0xC9CBD4]
+        guard let hex = (dark ? night : light)[selection] else { return nil }
+        return (Double((hex >> 16) & 255) / 255,
+                Double((hex >> 8) & 255) / 255, Double(hex & 255) / 255)
+    }
+    static func color(upNext: Bool = false, important: Bool = false, bookmarked: Bool = false, dark: Bool) -> Color {
+        guard let rgb = rgb(upNext: upNext, important: important, bookmarked: bookmarked, dark: dark) else { return dark ? .white : .black }
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+}
+
 struct TodayFocusSection: View {
 
     let list: KanbanList? /* Canonical Week list matching the current local weekday */
     let cards: [KanbanCard] /* Non-divider cards on that list */
     let entries: [TodayFocusEntry]
     let groupsBySection: Bool
+    var visibleItemCount: Int = 4
     let chronological: Bool
     private var openCards: [KanbanCard] { entries.map(\.card) }
     var includesImportant = false
     var includesBookmarked = false
     var includesUpNext = false
+    var filtersChangedAt: Date? = nil
+    var bookmarkedCardIDs: Set<Int> = []
+    var importantCardIDs: Set<Int> = []
     var onChangeFilters: (Bool, Bool, Bool) -> Void = { _, _, _ in }
     let onToggleCard: (Int) -> Void /* Toggle local completion state */
     let onOpenCard: (KanbanCard) -> Void
@@ -8469,6 +8498,19 @@ struct TodayFocusSection: View {
     private var rowHeight: CGFloat { isPad ? padRowHeight : phoneRowHeight }
     @Environment(\.displayScale) private var displayScale
     @State private var measuredListingHeight: CGFloat?
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsFilterChooser = false
+    @State private var showsFilterSummary = false
+    @State private var filterChooserDismissedAt: Date?
+    private var filterSummaryRequestedAt: Date? {
+        guard includesUpNext || includesImportant || includesBookmarked else { return nil }
+        return [filtersChangedAt, filterChooserDismissedAt].compactMap { $0 }.max()
+    }
+    private var filterColor: Color {
+        TodayFocusFilterColor.color(upNext: includesUpNext, important: includesImportant,
+            bookmarked: includesBookmarked, dark: colorScheme == .dark)
+    }
     @State private var deletingCard: KanbanCard?
 
     @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28
@@ -8478,11 +8520,14 @@ struct TodayFocusSection: View {
         return index == 0 || entries[index - 1].sectionID != entry.sectionID
     }
 
-    private var visibleHeadingCount: Int { entries.prefix(4).filter { beginsGroup($0) }.count }
-    private var rowsHeight: CGFloat {
-        rowHeight * CGFloat(min(entries.count, 4)) + headingHeight * CGFloat(visibleHeadingCount)
+    private var rowCapacity: Int {
+        visibleItemCount == 0 ? max(entries.count, 1) : ((1...12).contains(visibleItemCount) ? visibleItemCount : 4)
     }
-    private var listingCapacity: CGFloat { rowHeight * 4 + headingHeight * CGFloat(visibleHeadingCount) + 3 / displayScale }
+    private var visibleHeadingCount: Int { entries.prefix(rowCapacity).filter { beginsGroup($0) }.count }
+    private var rowsHeight: CGFloat {
+        rowHeight * CGFloat(min(entries.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
+    }
+    private var listingCapacity: CGFloat { rowHeight * CGFloat(rowCapacity) + headingHeight * CGFloat(visibleHeadingCount) + 3 / displayScale }
     private var listingHeight: CGFloat {
         measuredListingHeight ?? rowsHeight
     }
@@ -8494,26 +8539,14 @@ struct TodayFocusSection: View {
     }
 
     private var focusTitle: some View {
-        Menu {
-            Button {
-                onChangeFilters(false, false, false)
-            } label: {
-                Label("All items", systemImage: filterLabel == nil ? "checkmark" : "line.3.horizontal")
-            }
-            Section {
-            Toggle("Up Next", isOn: Binding(
-                get: { includesUpNext }, set: { onChangeFilters(includesImportant, includesBookmarked, $0) }))
-            Toggle("Cards marked important", isOn: Binding(
-                get: { includesImportant }, set: { onChangeFilters($0, includesBookmarked, includesUpNext) }))
-            Toggle("Cards bookmarked", isOn: Binding(
-                get: { includesBookmarked }, set: { onChangeFilters(includesImportant, $0, includesUpNext) }))
-            } header: { Text("Show items matching any selection") }
-        } label: {
+        Button { showsFilterChooser = true } label: {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Today's Focus")
                     .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
-                if let filterLabel {
-                    Text(filterLabel).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                if showsFilterSummary {
+                    Text(filterLabel ?? "All items").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        .transition(.opacity)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.vertical, 10)
@@ -8526,6 +8559,54 @@ struct TodayFocusSection: View {
         .accessibilityValue(filterLabel ?? "All items")
         .accessibilityHint("Choose Up Next, important, or bookmarked items to show")
         .accessibilityIdentifier("today.focus.filters")
+        .popover(isPresented: $showsFilterChooser) {
+            VStack(alignment: .leading, spacing: 4) {
+                Button { onChangeFilters(false, false, false) } label: {
+                    HStack {
+                        Text("All items")
+                        Spacer()
+                        if filterLabel == nil { Image(systemName: "checkmark") }
+                    }.frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(TodayFocusFilterColor.color(dark: colorScheme == .dark))
+                Divider()
+                Toggle(isOn: Binding(get: { includesUpNext }, set: { onChangeFilters(includesImportant, includesBookmarked, $0) })) {
+                    Text("Up Next").foregroundStyle(TodayFocusFilterColor.color(upNext: true, dark: colorScheme == .dark))
+                }
+                Toggle(isOn: Binding(get: { includesImportant }, set: { onChangeFilters($0, includesBookmarked, includesUpNext) })) {
+                    Text("Important").foregroundStyle(TodayFocusFilterColor.color(important: true, dark: colorScheme == .dark))
+                }
+                Toggle(isOn: Binding(get: { includesBookmarked }, set: { onChangeFilters(includesImportant, $0, includesUpNext) })) {
+                    Text("Bookmarked").foregroundStyle(TodayFocusFilterColor.color(bookmarked: true, dark: colorScheme == .dark))
+                }
+                Text("Show items matching any selection").font(.caption).foregroundStyle(filterColor).padding(.top, 8)
+            }
+            .toggleStyle(.switch)
+            .buttonStyle(.plain)
+            .padding(16)
+            .frame(idealWidth: 290)
+            .presentationCompactAdaptation(.popover)
+        }
+        .onChange(of: showsFilterChooser) { wasOpen, isOpen in
+            if wasOpen && !isOpen {
+                if filterLabel != nil {
+                    filterChooserDismissedAt = .now
+                } else {
+                    // An unused filter needs no confirmation after merely inspecting the chooser.
+                    filterChooserDismissedAt = nil
+                    showsFilterSummary = false
+                }
+            }
+        }
+        .task(id: filterSummaryRequestedAt) {
+            guard let changedAt = filterSummaryRequestedAt else { showsFilterSummary = false; return }
+            let remaining = 3 - Date.now.timeIntervalSince(changedAt)
+            guard remaining > 0 else { showsFilterSummary = false; return }
+            showsFilterSummary = true
+            do { try await Task.sleep(for: .seconds(remaining)) } catch { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) { showsFilterSummary = false }
+        }
     }
 
     private var completionButton: some View {
@@ -8533,7 +8614,8 @@ struct TodayFocusSection: View {
         return Button(action: onOpenTodayList) {
             Text("\(completedCount) of \(cards.count) complete")
                 .font(isPad ? .subheadline : .caption)
-                .foregroundStyle(.secondary)
+                .italic()
+                .foregroundStyle(filterColor)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -8573,7 +8655,6 @@ struct TodayFocusSection: View {
 
                         Button { onOpenCard(card) } label: {
                             HStack {
-                                ImportantItemIndicator(cardID: card.id)
                                 ItemAppearanceMark(appearance: card.appearance)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(card.word)
@@ -8589,6 +8670,27 @@ struct TodayFocusSection: View {
                                     }
                                 }
                                 Spacer(minLength: 8)
+                                if let time = entry.previewTimeLabel {
+                                    Text(time)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                        .fixedSize(horizontal: true, vertical: false)
+                                } else {
+                                    let hasBookmark = bookmarkedCardIDs.contains(card.id)
+                                    let hasBoth = hasBookmark && importantCardIDs.contains(card.id)
+                                    ZStack {
+                                        if hasBookmark {
+                                            Image(systemName: "bookmark.fill")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .offset(x: hasBoth ? 2 : 0, y: hasBoth ? -3 : 0)
+                                                .accessibilityLabel("Bookmarked")
+                                        }
+                                        ImportantItemIndicator(cardID: card.id)
+                                    }
+                                    .frame(width: 16, height: 18)
+                                }
                                 Image(systemName: "arrow.up.right")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.tertiary)
@@ -8600,6 +8702,11 @@ struct TodayFocusSection: View {
 
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open \(card.word)")
+                        .accessibilityValue([
+                            entry.previewTime.map { ($0.isStart ? "Start time " : "Due time ") + $0.date.formatted(date: .omitted, time: .shortened) },
+                            importantCardIDs.contains(card.id) ? "Important" : nil,
+                            bookmarkedCardIDs.contains(card.id) ? "Bookmarked" : nil
+                        ].compactMap { $0 }.joined(separator: ", "))
                     }
 
                 }

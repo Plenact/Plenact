@@ -320,7 +320,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 500).todayFocusItemCount, 4)
     }
 
-    func testFocusFiltersCombineAsUnionBeforeLimitAndKeepCanonicalOrder() throws {
+    func testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder() throws {
         var cards = (0..<7).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Today", checklists: []) }
         cards[2].isTitleChecked = true
         cards.insert(KanbanCard(id: 90, word: "--- Important to me", listTitle: "Today", isDivider: true, checklists: []), at: 1)
@@ -337,7 +337,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         preferences.todayFocusIncludesBookmarked = true
         XCTAssertEqual(entries().map(\.id), [1, 3, 4])
         preferences.todayFocusItemCount = 2
-        XCTAssertEqual(entries().map(\.id), [1, 3])
+        XCTAssertEqual(entries().map(\.id), [1, 3, 4])
         preferences.todayFocusItemCount = 0
         preferences.todayFocusHidesCompleted = false
         XCTAssertEqual(entries().map(\.id), [1, 2, 3, 4])
@@ -423,7 +423,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(LocalProfileStore.load(from: defaults))
     }
 
-    func testFocusShapePreservesSectionsStableTiesAndAppliesLimitAfterSorting() throws {
+    func testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting() throws {
         func item(_ id: Int, _ title: String, _ time: Double? = nil, done: Bool = false) -> KanbanCard {
             var card = KanbanCard(id: id, word: title, listTitle: "Monday", isTitleChecked: done, checklists: [])
             card.startDate = time.map { Date(timeIntervalSince1970: $0) }
@@ -445,7 +445,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(entries[4].sectionID, 91)
         XCTAssertEqual(entries.last?.sectionID, 92)
         preferences.todayFocusItemCount = 3
-        XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [1, 3, 4])
+        XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [1, 3, 4, 2, 7, 6, 8])
         preferences.todayFocusItemCount = 0
         preferences.todayFocusGroupsBySection = false
         XCTAssertEqual(preferences.todayFocusItems(in: cards).map(\.id), [8, 7, 3, 4, 2, 1, 6])
@@ -476,6 +476,45 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(entries[1].scheduleDate(on: day, calendar: calendar), time(9, day: 19))
         XCTAssertTrue(try XCTUnwrap(entries[1].scheduleLabel).hasPrefix("Due · "))
         XCTAssertNil(entries.last?.scheduleLabel)
+    }
+
+    @MainActor
+    func testFocusOverflowRetainsNativeScrollingToLastMatchingItem() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let cards = (1...9).map { KanbanCard(id: $0, word: "Focus task \($0)", listTitle: "Today", checklists: []) }
+        let list = KanbanList(id: 1, title: "Today", cards: cards)
+        let prefs = LocalProfilePreferences(todayFocusItemCount: 4)
+        let entries = prefs.todayFocusEntries(in: cards)
+        XCTAssertEqual(entries.count, 9)
+        let host = UIHostingController(rootView: ScrollView {
+            TodayFocusSection(list: list, cards: cards, entries: entries, groupsBySection: false, chronological: false,
+                onToggleCard: { _ in XCTFail("Scrolling must not edit") }, onOpenCard: { _ in },
+                onDeleteCard: { _ in XCTFail("Scrolling must not delete"); return false }, onOpenTodayList: {})
+                .padding(20)
+        })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(400))
+        // Recurse through parent scroll views as well as ordinary containers.
+        func allScrollViews(_ view: UIView) -> [UIScrollView] {
+            var result = (view as? UIScrollView).map { [$0] } ?? []
+            result += view.subviews.flatMap(allScrollViews)
+            return result
+        }
+        let inner = try XCTUnwrap(allScrollViews(host.view).first {
+            $0.bounds.height > 0 && $0.bounds.height < 350 && $0.contentSize.height > $0.bounds.height + 100
+        })
+        XCTAssertTrue(inner.isScrollEnabled)
+        let end = inner.contentSize.height - inner.bounds.height + inner.adjustedContentInset.bottom
+        inner.setContentOffset(CGPoint(x: 0, y: end), animated: false)
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertGreaterThan(inner.contentOffset.y, 100)
+        let settledEnd = inner.contentSize.height - inner.bounds.height + inner.adjustedContentInset.bottom
+        inner.setContentOffset(CGPoint(x: 0, y: settledEnd), animated: false)
+        XCTAssertEqual(inner.contentOffset.y, settledEnd, accuracy: 2)
     }
 
     @MainActor
@@ -520,15 +559,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
-    func testTodayFocusPreferenceLimitsOnlyTheOrderedUnfinishedPreview() throws {
+    func testTodayFocusRowCapacityNeverTruncatesOrderedUnfinishedMatches() throws {
         var cards = (0..<16).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Monday", isTitleChecked: $0 == 0 || $0 == 5, checklists: []) }
         cards.insert(KanbanCard(id: 99, word: "Break", listTitle: "Monday", isDivider: true, checklists: []), at: 3)
         let original = cards
         let open = cards.filter { !$0.isSectionDivider && !$0.isTitleChecked }
         XCTAssertEqual(open.count, 14)
-        XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), Array(open.prefix(4)).map(\.id))
+        XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), open.map(\.id))
         for count in 1...12 {
-            XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: count).todayFocusItems(in: cards).map(\.id), Array(open.prefix(count)).map(\.id))
+            XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: count).todayFocusItems(in: cards).map(\.id), open.map(\.id))
         }
         XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 0).todayFocusItems(in: cards), open)
         XCTAssertTrue(LocalProfilePreferences().todayFocusItems(in: []).isEmpty)
@@ -4627,6 +4666,79 @@ final class PlenactBoardDocumentTests: XCTestCase {
             try XCTUnwrap(image.pngData()).write(to: url); print("REACTIONS_RENDER=" + url.path)
         }
         XCTAssertEqual(UserDefaults.standard.object(forKey: LocalReactionIdentity.key) as? String, identityBefore)
+    }
+
+    @MainActor
+    func testFocusFilterSummaryDisappearsAfterThreeSecondsWithoutEditingItems() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let list = KanbanList(id: 1, title: "Today", cards: [])
+        var heights: [CGFloat] = []
+        let host = UIHostingController(rootView: TodayFocusSection(list: list, cards: [], entries: [],
+            groupsBySection: false, chronological: false, includesImportant: true, includesUpNext: true,
+            filtersChangedAt: .now,
+            onChangeFilters: { _, _, _ in XCTFail("Rendering must not change filters") },
+            onToggleCard: { _ in XCTFail("Rendering must not edit items") }, onOpenCard: { _ in },
+            onDeleteCard: { _ in XCTFail("Rendering must not delete"); return false }, onOpenTodayList: {})
+            .padding(20)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heights.append($0) })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(350))
+        let expanded = try XCTUnwrap(heights.last)
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        try XCTUnwrap(image.pngData()).write(to: FileManager.default.temporaryDirectory.appendingPathComponent("plenact-focus-filter-summary.png"))
+        try await Task.sleep(for: .seconds(3.3))
+        XCTAssertLessThan(try XCTUnwrap(heights.last), expanded)
+    }
+
+    func testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues() throws {
+        let start = Date(timeIntervalSince1970: 1700000000)
+        let due = start.addingTimeInterval(3600)
+        var card = KanbanCard(id: 1, word: "Work", listTitle: "Today", startDate: start, dueDate: due,
+                              startDateKind: .date, dueDateKind: .date)
+        func entry() -> TodayFocusEntry { TodayFocusEntry(card: card, sectionID: nil, heading: nil) }
+        XCTAssertNil(entry().previewTime)
+        card.dueDateKind = .time
+        XCTAssertEqual(entry().previewTime?.date, due)
+        XCTAssertEqual(entry().previewTime?.isStart, false)
+        card.startDateKind = .dateAndTime
+        XCTAssertEqual(entry().previewTime?.date, start)
+        XCTAssertEqual(entry().previewTime?.isStart, true)
+        XCTAssertFalse(try XCTUnwrap(entry().previewTimeLabel).isEmpty)
+        card.startDate = nil
+        XCTAssertEqual(entry().previewTime?.date, due)
+        card.dueDate = nil
+        XCTAssertNil(entry().previewTimeLabel)
+    }
+
+    func testFocusFilterPaletteUsesDistinctReadableCombinationColors() throws {
+        func luminance(_ values: [Double]) -> Double {
+            zip(values, [0.2126, 0.7152, 0.0722]).reduce(0) { result, pair in
+                let v = pair.0
+                return result + (v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)) * pair.1
+            }
+        }
+        for dark in [false, true] {
+            XCTAssertNil(TodayFocusFilterColor.rgb(upNext: false, important: false, bookmarked: false, dark: dark))
+            var colors = Set<String>()
+            let background = luminance(dark ? [0.12, 0.12, 0.14] : [245.0 / 255, 229.0 / 255, 212.0 / 255])
+            for selection in 1...7 {
+                let rgb = try XCTUnwrap(TodayFocusFilterColor.rgb(upNext: selection & 1 != 0,
+                    important: selection & 2 != 0, bookmarked: selection & 4 != 0, dark: dark))
+                colors.insert("\(rgb.red),\(rgb.green),\(rgb.blue)")
+                let ink = luminance([rgb.red, rgb.green, rgb.blue])
+                XCTAssertGreaterThanOrEqual((max(ink, background) + 0.05) / (min(ink, background) + 0.05), 4.5,
+                    "Selection \(selection), dark \(dark)")
+            }
+            XCTAssertEqual(colors.count, 7)
+        }
+        let purple = try XCTUnwrap(TodayFocusFilterColor.rgb(upNext: true, important: true, bookmarked: false))
+        XCTAssertEqual(purple.red, 126.0 / 255, accuracy: 0.000001)
+        XCTAssertEqual(purple.green, 34.0 / 255, accuracy: 0.000001)
+        XCTAssertEqual(purple.blue, 206.0 / 255, accuracy: 0.000001)
     }
 
     func testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip() {

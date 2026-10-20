@@ -2054,9 +2054,9 @@ private struct TodayFocusSettingsSection: View {
 
     var body: some View {
         Section {
-            Picker("Items in Today's Focus", selection: $count) {
+            Picker("Visible rows in Today's Focus", selection: $count) {
                 ForEach(1...12, id: \.self) { Text("\($0)").tag($0) }
-                Text("All items").tag(0)
+                Text("Expand all rows").tag(0)
             }
             Picker("Order", selection: $order) {
                 ForEach(TodayFocusOrder.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -2069,7 +2069,7 @@ private struct TodayFocusSettingsSection: View {
         } header: {
             Text("Today's Focus")
         } footer: {
-            Text("Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Focus follows your Day list by default. Grouping uses your section headings; chronological order uses start dates, then due dates when no start is set, within each group. Undated items keep their relative order after dated items. These choices never rearrange your Day list. The limit counts items, not headings; progress always counts the whole day. Scroll inside Focus for more than four items.")
+            Text("Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Focus follows your Day list by default. Grouping uses your section headings; chronological order uses start dates, then due dates when no start is set, within each group. Undated items keep their relative order after dated items. These choices never rearrange your Day list. The row count controls how many items fit in the preview at once, not how many match. Scroll inside Focus to reach every additional match. Section headings do not count as items; progress always counts the whole day.")
         }
     }
 }

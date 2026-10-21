@@ -531,6 +531,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
     @MainActor
+    func testToolbarRevisitMenuRendersWithoutChoosingOrChangingHistory() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let history = UserDefaults.standard.data(forKey: ActivityRecentStore.key)
+        for scheme in [ColorScheme.light, .dark] {
+            let host = UIHostingController(rootView: ToolbarRevisitMenu { _ in XCTFail("Rendering must not navigate") }
+                .background(.regularMaterial).preferredColorScheme(scheme))
+            window.frame = CGRect(x: 0, y: 0, width: 320, height: 300)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-revisit-\(scheme).png")
+            try XCTUnwrap(image.pngData()).write(to: path); print("REVISIT_RENDER=" + path.path)
+        }
+        XCTAssertEqual(UserDefaults.standard.data(forKey: ActivityRecentStore.key), history)
+    }
+
+    @MainActor
     func testDayDistributionBannerRendersWithNoPlanWrites() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)

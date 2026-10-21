@@ -756,6 +756,9 @@ private struct AppRootView: View {
     @State private var toolbarCollectionRequest: PersonalCollectionKind?
     @State private var showsToolbarTodayPlan = false
     @State private var showsToolbarCalendar = false
+    @State private var showsToolbarSearch = false
+    @State private var showsToolbarRevisit = false
+    @State private var activityRevisitDestination: ToolbarRevisitDestination?
 
     @State private var boardTargetListID:                  Int?                             /* List requested by a Today-to-Board navigation       */
     @State private var boardTargetCardID:                  Int?                             /* Card requested by a Today-to-Board navigation       */
@@ -1001,6 +1004,7 @@ private struct AppRootView: View {
 
             SavedCardsView(
                 planningDocument: calendarDocument,
+                revisitDestination: $activityRevisitDestination,
                 lists:           lists.filter { !$0.isArchived },
                 savedCardIDs:    savedCardIDs,
                 collections:     $collections,
@@ -1079,6 +1083,7 @@ private struct AppRootView: View {
             }
         }
 
+        .modifier(PlanningSharedSearchPresentation(isPresented: $showsToolbarSearch))
         .sheet(isPresented: $showsToolbarTodayPlan) {
             TodayPlanView(calendar: calendarDocument?.calendar ?? .current)
         }
@@ -1802,6 +1807,7 @@ private struct AppRootView: View {
     }
 
     private func selectToolbarDestination(_ destination: AppDestination) {
+        if destination == .saved { activityRevisitDestination = nil }
         if destination == .board {
             let result = TodayListSelection.ensureCurrentDayList(lists: lists)
             if result.lists != lists { lists = result.lists }
@@ -1850,11 +1856,23 @@ private struct AppRootView: View {
                     case .first:
                         if destination == .today { showsToolbarTodayPlan = true }
                         if destination == .board { showsToolbarCalendar = true }
+                        if destination == .lists { showsToolbarSearch = true }
+                        if destination == .saved { showsToolbarRevisit = true }
                     case .second:
                         selectToolbarDestination(destination)
                     }
-                }, including: destination == .today || destination == .board ? .all : .none
+                }
         )
+        .popover(isPresented: Binding(get: { destination == .saved && showsToolbarRevisit }, set: {
+            if destination == .saved { showsToolbarRevisit = $0 }
+        }), arrowEdge: .bottom) {
+            ToolbarRevisitMenu { choice in
+                showsToolbarRevisit = false
+                activityRevisitDestination = choice
+                selectedDestination = .saved
+            }
+            .presentationCompactAdaptation(.popover)
+        }
         .accessibilityActions {
             if destination == .today {
                 Button("Open Today’s Plan") { showsToolbarTodayPlan = true }
@@ -1862,9 +1880,16 @@ private struct AppRootView: View {
             if destination == .board {
                 Button("Open Calendar") { showsToolbarCalendar = true }
             }
+            if destination == .lists {
+                Button("Open Search") { showsToolbarSearch = true }
+            }
+            if destination == .saved {
+                Button("Open Revisit") { showsToolbarRevisit = true }
+            }
         }
         .accessibilityHint(destination == .today ? "Touch and hold to open Today’s Plan" :
-            (destination == .board ? "Touch and hold to open Calendar" : ""))
+            (destination == .board ? "Touch and hold to open Calendar" :
+            (destination == .lists ? "Touch and hold to open Search" : "Touch and hold to open Revisit")))
         .accessibilityIdentifier("toolbar.\(title.lowercased())")
         .accessibilityLabel(title)
         .accessibilityElement(children: .combine)
@@ -7923,8 +7948,54 @@ enum ActivityFocusSelection {
     }
 }
 
+enum ToolbarRevisitDestination: String, CaseIterable, Identifiable {
+    case recent, bookmarked, archived
+    var id: String { rawValue }
+    var title: String {
+        switch self { case .recent: "Recently viewed"; case .bookmarked: "Bookmarked"; case .archived: "Archived content" }
+    }
+    var symbol: String {
+        switch self { case .recent: "clock.arrow.circlepath"; case .bookmarked: "bookmark"; case .archived: "archivebox" }
+    }
+    var detail: String {
+        switch self {
+        case .recent: "Pick up where you left off."
+        case .bookmarked: "Return to something you kept."
+        case .archived: "Find collections you put away."
+        }
+    }
+}
+
+struct ToolbarRevisitMenu: View {
+    let onChoose: (ToolbarRevisitDestination) -> Void
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Revisit").font(.headline).accessibilityAddTraits(.isHeader).padding(.bottom, 8)
+            ForEach(ToolbarRevisitDestination.allCases) { choice in
+                Button { onChoose(choice) } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: choice.symbol).frame(width: 24).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(choice.title).font(.subheadline)
+                            Text(choice.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("toolbar.revisit." + choice.rawValue)
+            }
+        }
+        .padding(16).frame(idealWidth: 290)
+    }
+}
+
 private struct SavedCardsView: View {
     let planningDocument: PlanningCalendarDocument?
+    var revisitDestination: Binding<ToolbarRevisitDestination?> = .constant(nil)
+    private var revisit: ToolbarRevisitDestination? { revisitDestination.wrappedValue }
     @AppStorage(ActivityRecentStore.key) private var recentData = Data()
     @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
     @State private var query = ""
@@ -8189,7 +8260,7 @@ private struct SavedCardsView: View {
                             } label: { Image(systemName: "ellipsis.circle") }
                                 .accessibilityLabel("Activity options")
                         }
-                        Text("Recent work and saved favorites")
+                        Text(revisit?.detail ?? "Recent work and saved favorites")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -8201,11 +8272,19 @@ private struct SavedCardsView: View {
                             .textFieldStyle(.roundedBorder)
                             .submitLabel(.search)
                     }
-                    recentSection
-                    focusHeading
-                    if focus != .saved {
+                    if revisit != nil {
+                        HStack {
+                            Text(revisit?.title ?? "").font(.title2.weight(.semibold))
+                            Spacer()
+                            Button("All Activity") { revisitDestination.wrappedValue = nil }
+                                .font(.subheadline).frame(minHeight: 44)
+                        }
+                    }
+                    if revisit == nil || revisit == .recent { recentSection }
+                    if revisit == nil { focusHeading }
+                    if revisit == nil && focus != .saved {
                         focusContent
-                    } else {
+                    } else if revisit == nil || revisit == .bookmarked {
                     VStack(alignment: .leading, spacing: 10) {
                         if savedCards.isEmpty && personalSavedCards.isEmpty {
 
@@ -8302,7 +8381,7 @@ private struct SavedCardsView: View {
                     .modifier(TodayPanelSurface())
                     }
 
-                    if focus == .saved && collections.contains(where: {
+                    if (revisit == .archived || (revisit == nil && focus == .saved)) && collections.contains(where: {
 
                         $0.isArchived == true
                     }) {
@@ -8337,6 +8416,10 @@ private struct SavedCardsView: View {
                         .padding(16)
                         .modifier(TodayPanelSurface())
                     }
+                    if revisit == .archived && archivedCollections.isEmpty {
+                        ContentUnavailableView("No archived collections", systemImage: "archivebox",
+                            description: Text(query.isEmpty ? "Collections you archive will be available here." : "No archived collections match this search."))
+                    }
                 }
 
                 .padding(20)
@@ -8344,9 +8427,13 @@ private struct SavedCardsView: View {
             }
 
             .background(.clear)
+            .id(revisit)
         }
 
         .onAppear { focusLabelLibrary = LabelLibraryStore.load() }
+        .onChange(of: revisit, initial: true) { _, choice in
+            if choice != nil { query = ""; showsSearch = false; focus = .saved }
+        }
         .onChange(of: focus) { _, value in
             if value == .labels && selectedFocusLabel == nil { selectedLabelID = availableFocusLabels.first?.id }
         }

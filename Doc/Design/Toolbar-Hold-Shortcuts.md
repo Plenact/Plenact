@@ -23,3 +23,21 @@ The New menu intentionally follows iOS’s native presentation rather than copyi
 Awesome Note’s radial layout. Device trial should cover quick taps, successful holds,
 canceled holds/drags, choosing/canceling each draft, and returning from the two
 planning shortcuts in both portrait and compact landscape layouts.
+
+## Plans and Activity
+
+Hold Plans opens the shared cross-workspace Search directly, preserving its existing
+result navigation and query behavior. It does not change the selected tab.
+
+Hold Activity opens Revisit, a compact popover anchored to Activity. It offers
+Recently viewed, Bookmarked, and Archived content, with descriptive text and icons.
+Choosing a row selects Activity and scopes it to its existing recent shelf,
+bookmarks, or archived collections. Search resets on scope entry, and changing scope
+starts at the top. All Activity or a normal Activity tab tap restores the full view.
+Tapping outside the popover changes nothing. Individual item archives remain in
+their owning list/board archive interfaces; this shortcut currently browses retained
+collections rather than introducing a new aggregate archive store.
+
+Both controls use the same exclusive hold-versus-tap gesture as Today and Week,
+with corresponding accessibility actions. The popover contains no counts, previews,
+or completion history; existing history and bookmarks remain canonical.

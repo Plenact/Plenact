@@ -187,3 +187,7 @@ This context is independent of active filters. Time visually takes precedence ov
 both markers; VoiceOver retains time, importance, and bookmark information.
 
 Dismissing the chooser with All items active does not show a confirmation subtitle.
+
+When All items is selected, its trailing checkmark also acts as an explicit Close
+Focus filters button with a 44-point target. Tapping All items still clears filters;
+tapping the checkmark dismisses without changing the selection.

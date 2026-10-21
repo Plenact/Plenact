@@ -20,6 +20,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
+- History of edits to each card!!! ?
+
 - Option for subtitles in italics?
 
 - tapped today's focus list items glow on tap selection

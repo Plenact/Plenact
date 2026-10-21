@@ -8840,12 +8840,22 @@ struct TodayFocusSection: View {
         .accessibilityIdentifier("today.focus.filters")
         .popover(isPresented: $showsFilterChooser) {
             VStack(alignment: .leading, spacing: 4) {
-                Button { onChangeFilters(false, false, false) } label: {
-                    HStack {
+                HStack(spacing: 0) {
+                    Button { onChangeFilters(false, false, false) } label: {
                         Text("All items")
-                        Spacer()
-                        if filterLabel == nil { Image(systemName: "checkmark") }
-                    }.frame(minHeight: 44).contentShape(Rectangle())
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityValue(filterLabel == nil ? "Selected" : "")
+                    if filterLabel == nil {
+                        Button { showsFilterChooser = false } label: {
+                            Image(systemName: "checkmark")
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel("Close Focus filters")
+                        .accessibilityIdentifier("today.focus.filters.close")
+                    }
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(TodayFocusFilterColor.color(dark: colorScheme == .dark))

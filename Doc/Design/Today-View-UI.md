@@ -263,3 +263,7 @@ filter switches, plus All items. Selections combine as OR and persist immediatel
 The Today date/subheader continues to open Today's Plan. The count and Open today
 still open the dated Day list. This changes preview eligibility only, with completion,
 grouping, order, and item-count preferences applied as documented there.
+
+Day headers show the canonical weekday/list name without an appended numeric date.
+The represented date appears only on the date-selector subtitle, including when
+switching days or opening a Day from Calendar. Custom list titles remain intact.

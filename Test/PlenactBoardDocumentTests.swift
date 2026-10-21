@@ -2090,6 +2090,56 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
 
+    func testLowerCornerBackPreferenceDefaultsOffAndPersistsWithoutProfile() throws {
+        let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
+        XCTAssertFalse(legacy.enablesLowerCornerBack)
+        let suite = "CornerBack." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var preferences = legacy
+        preferences.enablesLowerCornerBack = true
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+        XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(preferences)), preferences)
+    }
+
+    @MainActor
+    func testLowerCornerBackReservesSpaceOnlyWhenEnabledAndBackExists() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let suite = "CornerBackLayout." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var heights: [String: CGFloat] = [:]
+        var activations = 0
+        for (name, enabled, hasBack, toolbar) in [
+            ("off", false, true, CGFloat(0)), ("on", true, true, 0),
+            ("root", true, false, 0), ("toolbar", true, true, 56)
+        ] {
+            var preferences = LocalProfilePreferences()
+            preferences.enablesLowerCornerBack = enabled
+            PlanPreferencesStore.save(preferences, to: defaults)
+            var measured: CGFloat?
+            let host = UIHostingController(rootView: Color.blue
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { measured = $0 }
+                .modifier(LowerCornerBackShortcut(action: hasBack ? { activations += 1 } : nil))
+                .environment(\.workspaceBottomBarHeight, toolbar)
+                .defaultAppStorage(defaults))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(150))
+            heights[name] = measured
+            window.rootViewController = nil
+        }
+        XCTAssertEqual(try XCTUnwrap(heights["off"]) - XCTUnwrap(heights["on"]), 44, accuracy: 1)
+        XCTAssertEqual(heights["root"], heights["off"])
+        XCTAssertEqual(try XCTUnwrap(heights["on"]) - XCTUnwrap(heights["toolbar"]), 56, accuracy: 1)
+        XCTAssertEqual(activations, 0)
+    }
+
     func testListComposerSubmissionPreservesKindScheduleActionsAndAttachments() throws {
         let list = KanbanList(id: 7, title: "Work", cards: [])
         let start = Date(timeIntervalSince1970: 1800000000)

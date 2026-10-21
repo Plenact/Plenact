@@ -3076,6 +3076,7 @@ private struct TodayHomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(item: $openedShortcut) { reference in
                 WorkspacePinnedListView(reference: reference)
+                    .environment(\.workspaceBottomBarHeight, 0)
             }
             .sheet(item: $reviewRoute) { ReviewRhythmDestination(route: $0) }
             .sheet(isPresented: $showsReviewRhythmSettings) { ReviewRhythmSettingsView() }

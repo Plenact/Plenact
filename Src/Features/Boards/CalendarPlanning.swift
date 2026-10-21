@@ -468,6 +468,7 @@ struct PlanningCalendarView: View {
             .background(Color(.systemGroupedBackground))
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) { calendarHeader }
+            .modifier(LowerCornerBackShortcut(action: { dismiss() }))
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch, onLeaveForHome: { dismiss(); onLeaveForHome() }))
             .fullScreenCover(item: $route) { route in
                 PlanningCalendarWeekView(week: route.week, initialDayID: route.dayID, initialCardID: route.cardID,

@@ -2924,6 +2924,7 @@ struct CardDetailView: View {
             .background(Color(.systemGroupedBackground))
         }
 
+        .modifier(LowerCornerBackShortcut(action: (presentation != .note || displayFormat == .divider) ? { dismiss() } : nil))
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if presentation == .note && displayFormat != .divider {
                 noteToolbar(using: scrollProxy)

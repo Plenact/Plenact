@@ -2090,6 +2090,46 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
 
+    func testListComposerSubmissionPreservesKindScheduleActionsAndAttachments() throws {
+        let list = KanbanList(id: 7, title: "Work", cards: [])
+        let start = Date(timeIntervalSince1970: 1800000000)
+        let schedule = QuickCaptureSchedule(start: start, stop: start.addingTimeInterval(3600), includesTime: true)
+        let attachment = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
+        for presentation in [ItemPresentation.card, .note] {
+            let capture = QuickCaptureSubmission(listID: 7, title: "A new item", body: "Keep this writing", subtitle: "Context",
+                presentation: presentation, actions: ["First step"], attachments: [attachment], schedule: schedule)
+            let card = try XCTUnwrap(ListItemCreation.items(capture, in: list, startingAt: 99)?.first)
+            XCTAssertEqual(card.id, 99)
+            XCTAssertEqual(card.presentation, presentation)
+            XCTAssertEqual(card.descriptionOverride, "Keep this writing")
+            XCTAssertEqual(card.subtitleOverride, "Context")
+            XCTAssertEqual(card.startDate, start)
+            XCTAssertEqual(card.dueDate, schedule.stop)
+            XCTAssertEqual(card.startDateKind, .dateAndTime)
+            XCTAssertEqual(card.attachments, [attachment])
+            XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), presentation == .card ? ["First step"] : [])
+        }
+        let wrongOwner = QuickCaptureSubmission(listID: 8, title: "Wrong", body: "", subtitle: "", presentation: .card,
+            actions: nil, attachments: [], schedule: nil)
+        XCTAssertNil(ListItemCreation.items(wrongOwner, in: list, startingAt: 99))
+        XCTAssertTrue(list.cards.isEmpty)
+    }
+
+    func testPersonalListFullComposerRetainsScheduleAndActions() throws {
+        var collection = PersonalCollection(title: "Personal", kind: .list)
+        let schedule = QuickCaptureSchedule(start: .now, stop: .now.addingTimeInterval(3600), includesTime: true)
+        try collection.addNote(title: "Card", body: "Details", presentation: .card,
+            actions: ["First", "Second"], schedule: schedule)
+        let card = try XCTUnwrap(collection.lists[0].cards.last)
+        XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), ["First", "Second"])
+        XCTAssertEqual(card.startDate, schedule.start)
+        XCTAssertEqual(card.dueDate, schedule.stop)
+        let before = collection
+        let invalid = QuickCaptureSchedule(start: .now, stop: .distantPast, includesTime: true)
+        XCTAssertThrowsError(try collection.addNote(title: "Invalid", body: "", schedule: invalid))
+        XCTAssertEqual(collection, before)
+    }
+
     func testPersonalNoteCreationPreservesMultipleAttachmentMetadata() throws {
         var collection = PersonalCollection(title: "Attachment test", kind: .list)
         let attachments = [KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link),
@@ -3877,7 +3917,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: NewKanbanCardSheet(listTitle: "List", presentation: .note, draftKey: key) { _, _, _, _ in true })
+        let host = UIHostingController(rootView: ListItemComposer(list: KanbanList(id: 1, title: "List", cards: []), draftKey: key) { _ in true })
         window.rootViewController = host
         window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
@@ -3895,7 +3935,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertTrue(subtitle.isFirstResponder)
         XCTAssertEqual(ListCreationDraft.load(key: key).subtitle, "Subtitle")
-        let description = try XCTUnwrap(editors(host.view).first(where: { $0.accessibilityLabel == "Description (optional)" }))
+        let description = try XCTUnwrap(editors(host.view).first(where: { $0.accessibilityLabel == "Details (optional)" }))
         XCTAssertTrue(description.becomeFirstResponder())
         for character in ["A", "B", "C"] {
             description.insertText(character)
@@ -8797,7 +8837,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                         onArchive:                 { XCTFail("Layout must not archive") },
                         onDelete:                  { XCTFail("Layout must not delete") },
                         onCommitDeletion:          { _ in XCTFail("Layout must not commit deletion") },
-                        onCreateNote:              { _, _, _, _, _, _, _ in XCTFail("Layout must not create an item") },
+                        onCreateNote:              { _, _, _ in XCTFail("Layout must not create an item") },
                         onMoveNote:                { _, _, _ in throw CocoaError(.validationMissingMandatoryProperty) },
                         onUpdateMovedNote:         { _, _ in XCTFail("Layout must not update a moved Note"); return false },
                         onArchiveMovedNote:        { _, _ in XCTFail("Layout must not archive a moved Note"); return false },
@@ -9880,7 +9920,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let view = KanbanListView( /* Hosted view under test */
                 list: list, availableListHeight: 700, displaySettings: BoardDisplaySettings(),
                 presentation:         preset, labelLibrary: .starter, toggleCardTitle: { _ in },
-                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _, _, _, _ in true },
+                canMoveEarlier:       false, canMoveLater: false, onAddCard: { _ in true },
                 onCopyList:           {}, onMoveList: { _ in }, onSortList: { _ in }, onArchiveCompleted: {},
                 archivedCards:        .constant([]), onRestoreArchivedCard: { _ in },
                 onDeleteArchivedCard: { _ in }, onArchiveList: {}, onDeleteList: {},

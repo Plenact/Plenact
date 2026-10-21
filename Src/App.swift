@@ -3706,6 +3706,8 @@ struct QuickNoteComposer: View {
     let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     let template: QuickCaptureTemplate?
     let captureAction: TodayCaptureAction?
+    let draftKey: String?
+    @State private var acceptsDraftEdits = true
     let onSaveCapture: ((QuickCaptureSubmission) -> Bool)?
     @State private var drawings: [DrawingCaptureDraft] = []
     @State private var drawingToEdit: DrawingCaptureDraft?
@@ -3765,6 +3767,7 @@ struct QuickNoteComposer: View {
         lists: Binding<[KanbanList]>,
         initialListID: Int?,
         initialTitle: String = "",
+        draftKey: String? = nil,
         template: QuickCaptureTemplate? = nil,
         captureAction: TodayCaptureAction? = nil,
         initialPresentation: ItemPresentation? = nil,
@@ -3773,9 +3776,12 @@ struct QuickNoteComposer: View {
     ) {
 
         _lists = lists
+        self.draftKey = draftKey
+        let savedDraft = draftKey.map { ListCreationDraft.load(key: $0) }
+        _subtitle = State(initialValue: savedDraft?.subtitle ?? "")
         _presentation = State(initialValue: captureAction?.presentation ?? template?.presentation ?? initialPresentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
-        _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? initialTitle)
-        _description = State(initialValue: template?.body ?? "")
+        _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? savedDraft?.title ?? initialTitle)
+        _description = State(initialValue: template?.body ?? savedDraft?.description ?? "")
         _actions = State(initialValue: captureAction == .checklist ? [KanbanChecklistItem(title: "")] : (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
         _selectedListID = State(initialValue: initialListID)
         self.template = template
@@ -3925,9 +3931,14 @@ struct QuickNoteComposer: View {
         catch { mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here." }
     }
 
+    private func finishDraft() {
+        acceptsDraftEdits = false
+        if let draftKey { ListCreationDraft.clear(key: draftKey) }
+    }
+
     private func registerKeyboardDraft() {
         PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
-            exit: { dismiss() },
+            exit: { finishDraft(); dismiss() },
             attachment: attachmentDraft.openSources,
             checklist: presentation == .card ? {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -4017,6 +4028,7 @@ struct QuickNoteComposer: View {
 
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
+                        finishDraft()
                         dismiss()
                     }
                 }
@@ -4046,6 +4058,7 @@ struct QuickNoteComposer: View {
                             guard attachmentDraft.entries.isEmpty else { mediaError = "This destination couldn't save attachments. Your draft is still open."; return }
                             onSave(selectedListID, trimmedTitle, body, subtitle.trimmingCharacters(in: .whitespacesAndNewlines), presentation, actionTitles)
                         }
+                        finishDraft()
                         dismiss()
                     }
 
@@ -4056,6 +4069,10 @@ struct QuickNoteComposer: View {
 
         .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
         .onAppear { registerKeyboardDraft() }
+        .onChange(of: [title, subtitle, description]) { _, _ in
+            guard acceptsDraftEdits, let draftKey else { return }
+            ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: draftKey)
+        }
         .onChange(of: presentation) { _, _ in registerKeyboardDraft() }
         .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
         .task {
@@ -4111,192 +4128,45 @@ struct QuickNoteComposer: View {
 ///     Offer a roomy, writing-first draft that is committed only after explicit Save
 ///
 private struct NewPersonalNoteComposer: View {
+    let availablePersonalLists: [PersonalCollection]
+    let onSave: (UUID, QuickCaptureSubmission, Date) throws -> Void
+    @State private var destinationIDs: [UUID]
+    @State private var createdAt = Date.now
+    private let initialCollectionID: UUID
 
-    let availablePersonalLists: [PersonalCollection] /* Personal List destinations offered by the composer */
-    let onSave: (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void /* Checked Note creation callback */
-
-    @Environment(\.dismiss) private var dismiss /* Composer dismissal action */
-    @FocusState private var focusedField: Field? /* Input currently receiving keyboard focus */
-    @State private var presentation: ItemPresentation = .note
-    @State private var subtitle = ""
-    @StateObject private var attachmentDraft = CreationAttachmentDraft()
-    @State private var keyboardContextID = UUID()
-    @State private var draft: PersonalListNoteDraft /* Unsaved Note content and destination */
-
-
-    ///
-    /// @fcn        NewPersonalNoteComposer.init(initialCollectionID:availablePersonalLists:onSave:)
-    /// @brief      Initialize a Note draft for the selected personal List
-    /// @details    Captures the available destination Lists and save callback while creating draft
-    ///             state with the initially selected destination
-    ///
-    /// @param[in]  initialCollectionID      Stable identity of the initially selected List
-    /// @param[in]  availablePersonalLists  Active personal Lists offered by the composer
-    /// @param[in]  onSave                  Callback that persists the completed Note draft
-    ///
-    /// @return     (NewPersonalNoteComposer) configured Note composer
-    ///
-    init(
-        initialCollectionID: UUID,
-        availablePersonalLists: [PersonalCollection],
-        onSave: @escaping (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void
-    ) {
-
-        _draft = State(initialValue: PersonalListNoteDraft(destinationID: initialCollectionID))
+    init(initialCollectionID: UUID, availablePersonalLists: [PersonalCollection],
+         onSave: @escaping (UUID, QuickCaptureSubmission, Date) throws -> Void) {
+        self.initialCollectionID = initialCollectionID
         self.availablePersonalLists = availablePersonalLists
         self.onSave = onSave
+        _destinationIDs = State(initialValue: PersonalListNoteDraft.destinations(in: availablePersonalLists).map(\.id))
     }
-
-
-    ///
-    /// Identifies the editable field currently receiving keyboard focus
-    ///
-    /// @section    Purpose
-    ///     Let the composer manage title and body focus independently
-    ///
-    private enum Field {
-        case title
-        case body
-    }
-
-    private var destinations: [PersonalCollection] { /* Active personal Lists accepting a new Note */
-        PersonalListNoteDraft.destinations(in: availablePersonalLists)
-    }
-
-
-    ///
-    /// @fcn        NewPersonalNoteComposer.save()
-    /// @brief      Validate and submit the Note draft to its selected List
-    /// @details    Dismisses the composer only after persistence succeeds; a failure is reported
-    ///             while keeping the draft available for correction or retry
-    ///
-    /// @return     (Void) reports save failures and retains the composer when saving fails
-    ///
-    /// @post       Successful saves dismiss the composer; unsuccessful saves preserve draft state
-    ///
-    private func save() {
-
-        do {
-
-            guard try attachmentDraft.save(commit: { attachments in
-                try draft.save(in: availablePersonalLists) { destinationID, title, body, createdAt in
-                    try onSave(destinationID, title, body, subtitle, createdAt, presentation, attachments)
-                }
-                return true
-            }) else { return }
-            dismiss()
-        } catch {
-
-            DatabaseActivity.shared.report("Could not save the \(presentation.title): \(error.localizedDescription) The draft remains open.")
+    private var destinations: [KanbanList] {
+        destinationIDs.enumerated().compactMap { index, id in
+            guard let owner = availablePersonalLists.first(where: { $0.id == id && $0.kind == .list && $0.isActive }) else { return nil }
+            return KanbanList(id: index, title: owner.title, cards: [])
         }
     }
-
-    private var destinationMenu: some View {
-                Menu {
-                    ForEach(destinations) { collection in
-                        Button {
-                            draft.destinationID = collection.id
-                        } label: {
-                            Label(
-                                collection.title,
-                                systemImage: draft.destinationID == collection.id ? "checkmark" : "folder"
-                            )
-                        }
-                    }
-                } label: {
-                    Label(
-                        draft.destination(in: availablePersonalLists)?.title ?? "List unavailable",
-                        systemImage: "chevron.down"
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-                .disabled(destinations.isEmpty)
-                .accessibilityLabel("Note destination List")
-                .accessibilityValue(draft.destination(in: availablePersonalLists)?.title ?? "List unavailable")
-                .accessibilityHint("Choose the personal List where this Note will be saved")
-                .accessibilityIdentifier("library.newNoteLocationPicker")
-
+    private func save(_ capture: QuickCaptureSubmission) -> Bool {
+        guard destinationIDs.indices.contains(capture.listID) else { return false }
+        let ownerID = destinationIDs[capture.listID]
+        guard availablePersonalLists.contains(where: { $0.id == ownerID && $0.kind == .list && $0.isActive }) else { return false }
+        do { try onSave(ownerID, capture, createdAt); return true }
+        catch {
+            DatabaseActivity.shared.report("Could not save this item. Your draft remains open: \(error.localizedDescription)")
+            return false
+        }
     }
-
-    var body: some View { /* Note draft editor and destination picker */
-
-        NavigationStack {
-            VStack(spacing: 0) {
-                ContentCreationKindPicker(presentation: $presentation).padding(.horizontal, 20).padding(.vertical, 12)
-                if presentation == .card {
-                    Form {
-                        Section("Card") {
-                            TextField("Title", text: $draft.title, axis: .vertical).textInputAutocapitalization(.sentences).lineLimit(1...6)
-                            TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
-                            RichTextEditor(placeholder: "Details (optional)", text: $draft.body)
-                        }
-                        Section("Attachments") { CreationAttachmentList(draft: attachmentDraft) }
-                        Section("Add to") { destinationMenu }
-                    }
-                } else {
-            ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                destinationMenu
-                TextField("Note title", text: $draft.title, axis: .vertical).textInputAutocapitalization(.sentences)
-                    .font(.largeTitle.weight(.bold))
-                    .focused($focusedField, equals: .title)
-                    .accessibilityLabel("Note title")
-
-                CreationAttachmentList(draft: attachmentDraft)
-                NoteCreationDateLabel(createdAt: draft.createdAt)
-                    .accessibilityIdentifier("library.newNoteCreationDate")
-
-                RichTextEditor(placeholder: "Start writing...", text: $draft.body,
-                               focus: Binding(get: { focusedField == .body }, set: { focusedField = $0 ? .body : nil }), minimumHeight: 320)
-                    .accessibilityLabel("Note body")
-
-                Spacer(minLength: 0)
+    var body: some View {
+        QuickNoteComposer(lists: .constant(destinations), initialListID: destinationIDs.firstIndex(of: initialCollectionID),
+            initialPresentation: .note, onSaveCapture: save) { id, title, body, subtitle, presentation, actions in
+                _ = save(QuickCaptureSubmission(listID: id, title: title, body: body, subtitle: subtitle,
+                    presentation: presentation ?? .note, actions: actions, attachments: [], schedule: nil))
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-            .background(Color(.systemGroupedBackground))
-                }
-            }
-            .onChange(of: presentation) { _, _ in focusedField = nil }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save)
-                        .disabled(!draft.canSave(in: availablePersonalLists) || attachmentDraft.isImporting)
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    if focusedField == .title {
-
-                        Spacer()
-                        Button("Done") { focusedField = nil }
-                    }
-                }
-            }
-            .navigationTitle("New " + presentation.title)
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .modifier(CreationAttachmentPresentation(draft: attachmentDraft))
-        .onAppear {
-            PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
-                exit: { dismiss() }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
-        }
-        .onDisappear { PlenactKeyboard.shared.removeContext(keyboardContextID) }
-        .presentationDetents([.large])
-        .accessibilityIdentifier("library.newNoteComposer")
     }
 }
 
 
-///
-/// Represents a local search match with navigation provenance
-///
-/// @section    Purpose
-///     Keep the result identity and containing list available to result rows
-///
 struct TodaySearchResult: Identifiable {
 
     let listID: Int /* Board list opened when this result is selected */
@@ -5844,7 +5714,7 @@ struct BoardListsView: View {
     /// @return     (Void) saves and publishes one new Note record
     /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
     ///
-    private func createNote(in collectionID: UUID, title: String, body: String, subtitle: String, createdAt: Date, presentation: ItemPresentation, attachments: [KanbanAttachment]) throws {
+    private func createNote(in collectionID: UUID, capture: QuickCaptureSubmission, createdAt: Date) throws {
 
         guard let collectionIndex = collections.firstIndex(where: { /* Active personal List receiving the new Note */
 
@@ -5856,7 +5726,9 @@ struct BoardListsView: View {
 
         var updated = collections[collectionIndex] /* Destination collection receiving the new Note */
 
-        try updated.addNote(title: title, body: body, createdAt: createdAt, presentation: presentation, subtitle: subtitle, attachments: attachments)
+        try updated.addNote(title: capture.title, body: capture.body, createdAt: createdAt,
+            presentation: capture.presentation, subtitle: capture.subtitle, attachments: capture.attachments,
+            actions: capture.actions, schedule: capture.schedule, calendar: planningAccess?.document.calendar ?? .current)
 
         var snapshot = collections /* Collection snapshot saved before publishing the new Note */
 
@@ -6147,8 +6019,8 @@ struct BoardListsView: View {
                 try PersonalCollectionStore.saveChecked(snapshot)
                 collections = snapshot
             },
-            onCreateNote:              { destinationID, title, body, subtitle, createdAt, presentation, attachments in
-                try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation, attachments: attachments)
+            onCreateNote:              { destinationID, capture, createdAt in
+                try createNote(in: destinationID, capture: capture, createdAt: createdAt)
             },
             onMoveNote:                { note, sourceID, destinationID in
                 try moveNote(note.id, from: sourceID, to: destinationID)
@@ -6856,8 +6728,8 @@ struct BoardListsView: View {
                 NewPersonalNoteComposer(
                     initialCollectionID:    collection.id,
                     availablePersonalLists: collections
-                ) { destinationID, title, body, subtitle, createdAt, presentation, attachments in
-                    try createNote(in: destinationID, title: title, body: body, subtitle: subtitle, createdAt: createdAt, presentation: presentation, attachments: attachments)
+                ) { destinationID, capture, createdAt in
+                    try createNote(in: destinationID, capture: capture, createdAt: createdAt)
                 }
                 .databaseActivityOverlay()
             }
@@ -7220,7 +7092,7 @@ struct PersonalCollectionBoardView: View {
     let onArchive: () throws -> Void                /* Persist archival of this collection */
     let onDelete: () throws -> Void /* Persist permanent removal of this collection */
     let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
-    let onCreateNote: (UUID, String, String, String, Date, ItemPresentation, [KanbanAttachment]) throws -> Void /* Checked creation callback for a destination List */
+    let onCreateNote: (UUID, QuickCaptureSubmission, Date) throws -> Void /* Checked creation callback for a destination List */
     let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard /* Checked movement callback returning the relocated Note */
     let onUpdateMovedNote: (UUID, KanbanCard) -> Bool /* Persists edits in the Note's current collection */
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool /* Archives the Note in its current collection */

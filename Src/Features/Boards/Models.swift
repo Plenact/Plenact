@@ -3031,11 +3031,12 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     /// @return     (Void) appends one Note while preserving every existing record
     /// @throws     CocoaError when the destination or title is invalid
     ///
-    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = [], creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) throws {
+    mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = [], creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
+                          actions: [String]? = nil, schedule: QuickCaptureSchedule? = nil, calendar: Calendar = .current) throws {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Nonblank Note heading used for creation */
 
-        guard kind == .list, isActive, !trimmedTitle.isEmpty,
+        guard kind == .list, isActive, !trimmedTitle.isEmpty, schedule?.isValid(calendar: calendar) != false,
               let listIndex = lists.firstIndex(where: { !$0.isArchived }) else { /* Active column receiving the new Note */
 
             throw CocoaError(.validationMissingMandatoryProperty)
@@ -3043,11 +3044,12 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
         let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond all retained collection records */
         var destination = lists[listIndex] /* Column snapshot receiving the new Note */
-        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt, presentationOverride: presentation, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
+        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt, presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        note.checklists = []
+        if presentation == .note || actions == nil { note.checklists = [] }
+        schedule?.apply(to: &note, calendar: calendar)
         if !attachments.isEmpty {
             note.attachments = attachments
             note.coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id

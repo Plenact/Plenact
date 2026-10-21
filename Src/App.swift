@@ -7225,7 +7225,7 @@ struct PersonalCollectionBoardView: View {
             boardTargetCardID:         $boardTargetCardID,
             savedCardIDs:              $collection.savedCardIDs,
             boardTitle:                collection.title,
-            boardSubtitle:             collection.kind.rawValue,
+            boardSubtitle:             "",
             allowsAddingLists:         collection.kind == .board,
             fillsAvailableListWidth:   collection.kind == .list,
             onClose:                   { dismiss() },

@@ -3671,11 +3671,14 @@ struct BoardHeader: View {
 
             }
 
-            SlideableHeaderText(text: subtitle, onTap: onSubtitleTap,
-                onOverflowChange: { subtitleOverflows = $0 })
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.75))
-                .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
+            if !subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                SlideableHeaderText(text: subtitle, onTap: onSubtitleTap,
+                    onOverflowChange: { subtitleOverflows = $0 })
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
+                    .onDisappear { subtitleOverflows = false }
+            }
 
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)

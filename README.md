@@ -8,7 +8,7 @@ The product draws on lessons from successful traumatic brain injury recovery, wi
 
 ## Query
 
-This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please
+This work today has been great, thank you, Alex. Hey how many lines of .swift source code does the Plenact application now have, excluding the test file and folder contents? Please do not include whitespace, comments, lines with only brackets or function signature bars please. And how many commits do we have now in the main branch of this repository? :)
 
 Yes!! Great detail, can you help us implement this new feature? :)
 

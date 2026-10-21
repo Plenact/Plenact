@@ -404,6 +404,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     var defaultListID:       Int?   /* Preferred Today list   */
     var usesReducedContent:  Bool   /* Hide supporting copy   */
     var scrollsOverflowingTitles: Bool
+    var enablesLowerCornerBack: Bool
     var usesLargeControls:   Bool   /* Use taller key actions */
     var randomizesNewCardHeaders: Bool
     var randomizesNewCardBackgrounds: Bool
@@ -428,6 +429,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         case defaultListID
         case usesReducedContent
         case scrollsOverflowingTitles
+        case enablesLowerCornerBack
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
@@ -467,10 +469,12 @@ struct LocalProfilePreferences: Hashable, Codable {
         todayFocusIncludesImportant: Bool = false,
         todayFocusIncludesBookmarked: Bool = false,
         todayFocusIncludesUpNext: Bool = false,
-        scrollsOverflowingTitles: Bool = true
+        scrollsOverflowingTitles: Bool = true,
+        enablesLowerCornerBack: Bool = false
     ) {
 
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
+        self.enablesLowerCornerBack = enablesLowerCornerBack
         self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
         self.todayFocusIncludesImportant = todayFocusIncludesImportant
         self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
@@ -567,7 +571,8 @@ struct LocalProfilePreferences: Hashable, Codable {
             todayFocusIncludesImportant: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesImportant) ?? false,
             todayFocusIncludesBookmarked: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesBookmarked) ?? false,
             todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false,
-            scrollsOverflowingTitles: try container.decodeIfPresent(Bool.self, forKey: .scrollsOverflowingTitles) ?? true
+            scrollsOverflowingTitles: try container.decodeIfPresent(Bool.self, forKey: .scrollsOverflowingTitles) ?? true,
+            enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? false
         )
     }
 }

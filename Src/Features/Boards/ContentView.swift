@@ -3487,6 +3487,7 @@ struct ContentView: View {
                     },
                     onSave: saveBoardAppearance)
             }
+            .modifier(LowerCornerBackShortcut(action: onClose))
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch, onLeaveForHome: { onClose?(); planningHomeExit?() }))
             .sheet(isPresented: $showsWeekSelector) {
                 if let access = planningCalendarAccess {
@@ -6909,6 +6910,7 @@ struct TodayListDetailView: View {
             }
         }
 
+        .modifier(LowerCornerBackShortcut(action: onClose))
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsDaySearch, onLeaveForHome: { onClose(); planningHomeExit?() }))
         .environment(\.checklistLinkCandidates, lists.filter { !$0.isArchived }.flatMap(\.cards))
         .sheet(isPresented: $showsNewCard) {
@@ -7828,5 +7830,45 @@ enum ListItemCreation {
         cards[0].attachments = capture.attachments.isEmpty ? nil : capture.attachments
         cards[0].coverAttachmentID = capture.attachments.first { $0.kind == .photo }?.id
         return cards
+    }
+}
+
+/// Opt-in invisible Back target. A reserved inset prevents covering list rows or toolbar buttons.
+struct LowerCornerBackShortcut: ViewModifier {
+    let action: (() -> Void)?
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight
+    @State private var keyboardVisible = false
+    private var enabled: Bool {
+        (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.enablesLowerCornerBack ?? false
+    }
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if enabled, !keyboardVisible, let action {
+                    GeometryReader { geometry in
+                        // Full-screen destinations have no toolbar below the target:
+                        // include their home-indicator safe area in the touch region.
+                        let bottomExtension = toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
+                        HStack(spacing: 0) {
+                            Color.clear
+                                .frame(width: 88, height: 44 + bottomExtension)
+                                .contentShape(Rectangle())
+                                .onTapGesture(perform: action)
+                                .accessibilityElement()
+                                .accessibilityLabel("Back")
+                                .accessibilityAddTraits(.isButton)
+                                .accessibilityAction { action() }
+                                .accessibilityIdentifier("navigation.lowerCornerBack")
+                            Spacer(minLength: 0)
+                        }
+                        .environment(\.layoutDirection, .leftToRight)
+                    }
+                    .frame(height: 44)
+                    .padding(.bottom, max(0, toolbarHeight))
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardVisible = true }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardVisible = false }
     }
 }

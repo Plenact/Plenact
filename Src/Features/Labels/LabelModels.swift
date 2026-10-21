@@ -129,6 +129,25 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 ///             available
 ///
 struct LabelLibrary: Hashable, Codable {
+    static let dayAreaLabels: [KanbanLabel] = [
+        KanbanLabel(id: "day-work", name: "Work", categoryID: "work", color: .blue),
+        KanbanLabel(id: "day-health", name: "Health", categoryID: "health", color: .green),
+        KanbanLabel(id: "day-personal", name: "Personal", categoryID: "casual", color: .purple),
+        KanbanLabel(id: "day-home", name: "Home", categoryID: "home", color: .coral),
+        KanbanLabel(id: "day-spirit", name: "Spirit", categoryID: "home", color: .orange)
+    ]
+    var includingDayAreas: LabelLibrary {
+        var copy = self
+        for label in Self.dayAreaLabels where !copy.labels.contains(where: { $0.id == label.id }) {
+            if !copy.categories.contains(where: { $0.id == label.categoryID }),
+               let category = Self.starterCategories.first(where: { $0.id == label.categoryID }) { copy.categories.append(category) }
+            copy.labels.append(label)
+        }
+        return copy
+    }
+    private static let starterCategories = [KanbanLabelCategory(id: "work", name: "Work"),
+        KanbanLabelCategory(id: "health", name: "Health & Fitness"), KanbanLabelCategory(id: "casual", name: "Casual"),
+        KanbanLabelCategory(id: "home", name: "Home")]
     static let referenceCategory = KanbanLabelCategory(id: "plenact-reference", name: "Reference")
     static let referenceLabel = KanbanLabel(id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
 
@@ -220,10 +239,10 @@ enum LabelLibraryStore {
 
           guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
               let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else { /* Decoded catalog */
-            return .starter
+            return LabelLibrary.starter.includingDayAreas
         }
 
-        return library.includingReference
+        return library.includingReference.includingDayAreas
     }
 
 

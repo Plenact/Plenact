@@ -53,3 +53,5 @@ Today's Check-in, Today's Review, Weekly Review, Periodic Review, saved review s
 The `.webloc` files are local resource shortcuts, not source dependencies. This update publishes Markdown within the repository; it does not deploy a website or modify remote services
 
 - [Today’s lower perspective section](Design/Today-Perspective.md)
+
+- [Day schedule overview](Design/Day-Schedule-Overview.md)

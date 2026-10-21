@@ -4527,3 +4527,78 @@ struct ListCheckmarkReset: Equatable {
         }
     }
 }
+
+/// Read-only Day schedule projection. Durations are task-hours, never tracked time.
+struct DayTimeDistribution {
+    struct Segment: Identifiable {
+        let id: String
+        let title: String
+        let color: KanbanLabelColor
+        var planned: TimeInterval
+        var completed: TimeInterval
+    }
+    let segments: [Segment]
+    let taskCount: Int
+    let completedCount: Int
+    let untimedCount: Int
+    let hasOverlaps: Bool
+    var total: TimeInterval { segments.reduce(0) { $0 + $1.planned } }
+    var completedTime: TimeInterval { segments.reduce(0) { $0 + $1.completed } }
+
+    static func durationLabel(_ seconds: TimeInterval) -> String {
+        let minutes = Int((seconds / 60).rounded())
+        let hours = minutes / 60, remainder = minutes % 60
+        return hours == 0 ? "\(remainder)m" : (remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m")
+    }
+
+    init(cards: [KanbanCard], labels: LabelLibrary, day: Date, calendar: Calendar) {
+        let tasks = cards.filter { $0.displayFormat == .card }
+        taskCount = tasks.count
+        completedCount = tasks.filter(\.isTitleChecked).count
+        let dayStart = calendar.startOfDay(for: day)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        var buckets: [String: Segment] = [:]
+        var intervals: [(Date, Date)] = []
+        var untimed = 0
+        func resolve(_ date: Date, kind: CardDateKind) -> Date? {
+            guard kind.includesTime else { return nil }
+            if kind == .time {
+                let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
+                return calendar.date(bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
+                    second: parts.second ?? 0, of: dayStart)
+            }
+            return date
+        }
+        for card in tasks {
+            guard let rawStart = card.startDate, let rawEnd = card.dueDate,
+                  let start = resolve(rawStart, kind: card.startDateKind),
+                  var end = resolve(rawEnd, kind: card.dueDateKind) else { untimed += 1; continue }
+            if end < start, card.startDateKind == .time, card.dueDateKind == .time {
+                end = calendar.date(byAdding: .day, value: 1, to: end) ?? end
+            }
+            let clippedStart = max(start, dayStart), clippedEnd = min(end, dayEnd)
+            guard clippedEnd > clippedStart else { untimed += 1; continue }
+            intervals.append((clippedStart, clippedEnd))
+            let duration = clippedEnd.timeIntervalSince(clippedStart)
+            let tags = Set(card.labelIDs).sorted().compactMap { id in labels.labels.first { $0.id == id } }
+            let count = max(tags.count, 1)
+            let parts: [(String, String, KanbanLabelColor)] = tags.isEmpty
+                ? [("day.uncategorized", "Uncategorized", .gray)] : tags.map { ($0.id, $0.name, $0.color) }
+            for (id, title, color) in parts {
+                var segment = buckets[id] ?? Segment(id: id, title: title, color: color, planned: 0, completed: 0)
+                segment.planned += duration / Double(count)
+                if card.isTitleChecked { segment.completed += duration / Double(count) }
+                buckets[id] = segment
+            }
+        }
+        untimedCount = untimed
+        segments = buckets.values.sorted { $0.planned == $1.planned ? $0.id < $1.id : $0.planned > $1.planned }
+        var latestEnd = Date.distantPast
+        var overlap = false
+        for (start, end) in intervals.sorted(by: { $0.0 < $1.0 }) {
+            if start < latestEnd { overlap = true }
+            latestEnd = max(latestEnd, end)
+        }
+        hasOverlaps = overlap
+    }
+}

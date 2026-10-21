@@ -108,7 +108,10 @@ struct PlanningRoutineLibrary: Codable, Equatable {
                 return KanbanCard(id: nextID, word: slot.title, listTitle: week.collection.lists[index].title,
                     startDate: calendar.date(bySettingHour: slot.startHour, minute: slot.startMinute, second: 0, of: day),
                     dueDate: calendar.date(bySettingHour: slot.stopHour, minute: slot.stopMinute, second: 0, of: day),
-                    checklists: [], descriptionOverride: slot.title == "Gym" ? "Choose what fits today: gym, meditation, walking, or massage." : "",
+                    checklists: [], labelIDs: [slot.title == "Work" ? "day-work" :
+                        (slot.title == "Gym" || slot.title == "Wake" ? "day-health" :
+                        (slot.title == "Church" ? "day-spirit" : (slot.title == "Car Wash" ? "day-home" : "day-personal")))],
+                    descriptionOverride: slot.title == "Gym" ? "Choose what fits today: gym, meditation, walking, or massage." : "",
                     subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
             }
         }
@@ -132,14 +135,14 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])])
         list.subtitleOverride = "Leave room for the unexpected"
         vacation.collection.lists = [list]; vacation.weekdays = [2: 0]
-        return Self(templates: [work, vacation, jmr], defaultWeekID: jmrID, bundledRoutineRevision: 1)
+        return Self(templates: [work, vacation, jmr], defaultWeekID: jmrID, bundledRoutineRevision: 2)
     }()
 }
 
 enum PlanningRoutineStore {
     static let key = "Plenact.PlanningTemplates.v1"
     static func validate(_ value: PlanningRoutineLibrary) throws {
-        guard value.version == 1, (0...1).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0...2).contains(value.bundledRoutineRevision ?? 0),
               Set(value.templates.map(\.id)).count == value.templates.count,
               value.defaultWeekID == nil || value.templates.contains(where: { $0.id == value.defaultWeekID && $0.kind == .week }) else { throw CocoaError(.coderReadCorrupt) }
         for template in value.templates {
@@ -168,6 +171,21 @@ enum PlanningRoutineStore {
             result.defaultWeekID = PlanningRoutineLibrary.jmrID
             result.bundledRoutineRevision = 1
             try validate(result)
+        }
+        if (result.bundledRoutineRevision ?? 0) < 2 {
+            // Add tags only to untagged known bundled examples, never to scheduled weeks or user routines.
+            if let index = result.templates.firstIndex(where: { $0.id == PlanningRoutineLibrary.jmrID }) {
+                let seeds = Dictionary(grouping: PlanningRoutineLibrary.jmr.collection.lists.flatMap(\.cards), by: \.word)
+                for listIndex in result.templates[index].collection.lists.indices {
+                    for cardIndex in result.templates[index].collection.lists[listIndex].cards.indices {
+                        let card = result.templates[index].collection.lists[listIndex].cards[cardIndex]
+                        if card.labelIDs.isEmpty, let tags = seeds[card.word]?.first?.labelIDs {
+                            result.templates[index].collection.lists[listIndex].cards[cardIndex].labelIDs = tags
+                        }
+                    }
+                }
+            }
+            result.bundledRoutineRevision = 2
         }
         return result
     }

@@ -6675,6 +6675,14 @@ struct TodayListDetailView: View {
 
                     ScrollViewReader { scrollProxy in
                     List {
+                        if let day = representedDate {
+                            DayScheduleOverview(cards: focusedList.cards, labels: labelLibrary, day: day,
+                                calendar: planningCalendarAccess?.document.calendar ?? .current)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .id("day.scheduleOverview")
+                        }
 
                         ForEach(focusedList.cards) { card in
 
@@ -7800,5 +7808,126 @@ struct AdaptiveWorkspaceHeaderLayout: Layout {
                 proposal: ProposedViewSize(width: size.width, height: size.height))
             offset += size.width + layout.gap
         }
+    }
+}
+
+/// A scroll-away overview; existing Day navigation retains its own restored/first-task position.
+struct DayScheduleOverview: View {
+    let cards: [KanbanCard]
+    let labels: LabelLibrary
+    let day: Date
+    var calendar: Calendar = .current
+    @State private var showsDetails = false
+    @State private var showsPlan = false
+    @AppStorage(DailyPlanStore.key) private var planData = Data()
+    private var summary: DayTimeDistribution { DayTimeDistribution(cards: cards, labels: labels, day: day, calendar: calendar) }
+    private var intention: String {
+        ((try? DailyPlanStore.load().plans[PlanningDate.key(day, calendar: calendar)]?.intention) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private var planTitle: String {
+        calendar.isDateInToday(day) ? "Open today’s plan" : "Open day’s plan"
+    }
+    var body: some View {
+        let data = summary
+        VStack(alignment: .leading, spacing: 12) {
+            Text(calendar.isDateInToday(day) ? "The day you’re shaping" : "Your day at a glance")
+                .font(.headline).accessibilityAddTraits(.isHeader)
+            if !intention.isEmpty { Text(intention).font(.subheadline).lineLimit(3) }
+            Button { showsDetails = true } label: {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 16) { chart(data); legend(data) }
+                    VStack(alignment: .leading, spacing: 12) { chart(data); legend(data) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Planned time by tag, " + DayTimeDistribution.durationLabel(data.total))
+            .accessibilityHint("Opens time allocation and completion details")
+            if data.total > 0 {
+                Text("Outer ring · planned time completed")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Text("\(data.completedCount) of \(data.taskCount) tasks complete")
+                .font(.subheadline).foregroundStyle(.secondary)
+            Button(planTitle, systemImage: "arrow.right", action: { showsPlan = true })
+                .font(.subheadline).frame(minHeight: 44)
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .sheet(isPresented: $showsPlan) { TodayPlanView(date: day, calendar: calendar) }
+        .sheet(isPresented: $showsDetails) {
+            NavigationStack {
+                List {
+                    Section("Planned task-hours by tag") {
+                        ForEach(data.segments) { segment in
+                            VStack(alignment: .leading, spacing: 5) {
+                                Label(segment.title, systemImage: "circle.fill").foregroundStyle(segment.color.color)
+                                Text("\(DayTimeDistribution.durationLabel(segment.planned)) planned · \(DayTimeDistribution.durationLabel(segment.completed)) complete")
+                                    .font(.subheadline)
+                                ProgressView(value: segment.completed, total: max(segment.planned, 1)).tint(segment.color.color)
+                            }.padding(.vertical, 4)
+                        }
+                        if data.segments.isEmpty { Text("Add start and end times to tasks to see their planned distribution.") }
+                    }
+                    Section("What this means") {
+                        Text("Completion is the planned duration of tasks you’ve checked off—not time tracked or elapsed.")
+                        Text("Tasks with multiple tags divide their duration equally. Untagged tasks are Uncategorized. Notes and section headings are excluded.")
+                        Text("\(data.untimedCount) tasks have no valid timed interval on this day. They count in task progress, not in the ring.")
+                        Text("Intervals crossing midnight contribute only the portion on this day. Equal start and end times do not imply 24 hours.")
+                        if data.hasOverlaps { Text("Some tasks overlap. Totals are planned task-hours and may exceed the time available.") }
+                    }
+                }
+                .navigationTitle("Your planned time")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showsDetails = false } } }
+            }
+        }
+    }
+    private func chart(_ data: DayTimeDistribution) -> some View {
+        ZStack {
+            Circle().stroke(Color.secondary.opacity(0.12), lineWidth: 20)
+            if data.total > 0 {
+                ForEach(data.segments) { segment in
+                    let start = data.segments.prefix { $0.id != segment.id }.reduce(0) { $0 + $1.planned } / data.total
+                    let end = start + segment.planned / data.total
+                    let gap = min(0.004, (end - start) / 4)
+                    Circle().trim(from: start + gap, to: end - gap)
+                        .stroke(segment.color.color, style: StrokeStyle(lineWidth: 20, lineCap: .butt))
+                    Circle().trim(from: start + gap, to: end - gap)
+                        .stroke(segment.color.color.opacity(0.18), lineWidth: 4).padding(-16)
+                    if segment.completed > 0 {
+                        Circle().trim(from: start + gap, to: min(end - gap, start + segment.completed / data.total))
+                            .stroke(segment.color.color, lineWidth: 4).padding(-16)
+                    }
+                }
+                .rotationEffect(.degrees(-90))
+            }
+            VStack(spacing: 2) {
+                Text(DayTimeDistribution.durationLabel(data.total)).font(.headline)
+                Text("planned").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(19).frame(width: 148, height: 148)
+        .accessibilityHidden(true)
+    }
+    private func legend(_ data: DayTimeDistribution) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            if data.total == 0 {
+                Text("Make room for your day").font(.subheadline)
+                Text("Add start and end times to see your planned balance.").font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(data.segments.prefix(3)) { segment in
+                HStack(spacing: 5) {
+                    Circle().fill(segment.color.color).frame(width: 7, height: 7)
+                    Text(segment.title).lineLimit(1)
+                    Text(DayTimeDistribution.durationLabel(segment.planned)).foregroundStyle(.secondary)
+                }.font(.caption)
+            }
+            if data.segments.count > 3 { Text("+\(data.segments.count - 3) tags").font(.caption).foregroundStyle(.secondary) }
+            Text("Time & completion details").font(.caption).foregroundStyle(.tint)
+        }
+        .frame(minWidth: 120, alignment: .leading)
     }
 }

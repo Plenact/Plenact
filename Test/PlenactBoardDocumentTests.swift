@@ -478,6 +478,86 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(entries.last?.scheduleLabel)
     }
 
+    func testDayDistributionSplitsTagsAndCountsCompletionWithoutInventingTime() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let day = calendar.startOfDay(for: try XCTUnwrap(PlanningDate.date("2026-10-20", calendar: calendar)))
+        func date(_ hour: Int) -> Date { calendar.date(byAdding: .hour, value: hour, to: day)! }
+        let cards = [
+            KanbanCard(id: 1, word: "Work", listTitle: "Tuesday", isTitleChecked: true,
+                startDate: date(9), dueDate: date(11), labelIDs: ["day-work", "day-health", "day-work"],
+                startDateKind: .dateAndTime, dueDateKind: .dateAndTime),
+            KanbanCard(id: 2, word: "Uncategorized", listTitle: "Tuesday", startDate: date(10), dueDate: date(11),
+                startDateKind: .dateAndTime, dueDateKind: .dateAndTime),
+            KanbanCard(id: 3, word: "Untimed", listTitle: "Tuesday", startDate: date(0), dueDate: date(0)),
+            KanbanCard(id: 4, word: "Note", listTitle: "Tuesday", presentation: .note)
+        ]
+        let result = DayTimeDistribution(cards: cards, labels: LabelLibrary.starter.includingDayAreas, day: day, calendar: calendar)
+        XCTAssertEqual(result.total, 10800, accuracy: 0.01)
+        XCTAssertEqual(result.completedTime, 7200, accuracy: 0.01)
+        XCTAssertEqual(result.taskCount, 3)
+        XCTAssertEqual(result.completedCount, 1)
+        XCTAssertEqual(result.untimedCount, 1)
+        XCTAssertTrue(result.hasOverlaps)
+        XCTAssertEqual(result.segments.first { $0.id == "day-work" }?.planned, 3600)
+        XCTAssertEqual(result.segments.first { $0.id == "day-health" }?.planned, 3600)
+        let overnight = KanbanCard(id: 5, word: "Night", listTitle: "Tuesday", startDate: date(23), dueDate: date(1),
+            startDateKind: .time, dueDateKind: .time)
+        XCTAssertEqual(DayTimeDistribution(cards: [overnight], labels: .starter, day: day, calendar: calendar).total, 3600)
+        let reverse = KanbanCard(id: 6, word: "Invalid", listTitle: "Tuesday", startDate: date(11), dueDate: date(9),
+            startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+        XCTAssertEqual(DayTimeDistribution(cards: [reverse], labels: .starter, day: day, calendar: calendar).total, 0)
+    }
+
+    func testDefaultWeekUsesValidDayAreaTagsWithoutRewritingCustomTags() throws {
+        let labels = LabelLibrary.starter.includingDayAreas
+        let template = PlanningRoutineLibrary.jmr
+        XCTAssertTrue(template.collection.lists.flatMap(\.cards).allSatisfy { card in
+            !card.labelIDs.isEmpty && card.labelIDs.allSatisfy { id in labels.labels.contains { $0.id == id } }
+        })
+        let suite = "DayDistribution." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var old = PlanningRoutineLibrary.seeded
+        old.bundledRoutineRevision = 1
+        let index = try XCTUnwrap(old.templates.firstIndex { $0.id == PlanningRoutineLibrary.jmrID })
+        old.templates[index].collection.lists[0].cards[0].labelIDs = ["custom-tag"]
+        old.templates[index].collection.lists[0].cards[1].labelIDs = []
+        defaults.set(try JSONEncoder().encode(old), forKey: PlanningRoutineStore.key)
+        let upgraded = try PlanningRoutineStore.load(from: defaults)
+        XCTAssertEqual(upgraded.templates[index].collection.lists[0].cards[0].labelIDs, ["custom-tag"])
+        XCTAssertFalse(upgraded.templates[index].collection.lists[0].cards[1].labelIDs.isEmpty)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 2)
+    }
+
+    @MainActor
+    func testDayDistributionBannerRendersWithNoPlanWrites() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let before = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: .now)
+        let cards = (0..<5).map { i in
+            KanbanCard(id: i, word: "Planned activity", listTitle: "Today", isTitleChecked: i % 2 == 0,
+                startDate: day.addingTimeInterval(Double(i + 7) * 3600), dueDate: day.addingTimeInterval(Double(i + 8) * 3600),
+                labelIDs: [LabelLibrary.dayAreaLabels[i].id], startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+        }
+        for (name, items, scheme) in [("populated", cards, ColorScheme.light), ("empty", [], .light), ("dark", cards, .dark)] {
+            let host = UIHostingController(rootView: ScrollView {
+                DayScheduleOverview(cards: items, labels: LabelLibrary.starter.includingDayAreas, day: day).padding(16)
+            }.preferredColorScheme(scheme))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-day-distribution-\(name).png")
+            try XCTUnwrap(image.pngData()).write(to: url); print("DAY_DISTRIBUTION_RENDER=" + url.path)
+        }
+        XCTAssertEqual(UserDefaults.standard.data(forKey: DailyPlanStore.key), before)
+    }
+
     func testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion() {
         func snap(_ start: CGFloat, _ proposed: CGFloat, enabled: Bool = true, maximum: CGFloat = 1200) -> CGFloat? {
             TodaySectionSnapBehavior.destination(start: start, proposed: proposed, perspectiveTop: 800,
@@ -702,7 +782,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(upgraded.templates[0], legacy.templates[0])
         XCTAssertEqual(upgraded.templates[1], legacy.templates[1])
         XCTAssertEqual(upgraded.defaultWeekID, PlanningRoutineLibrary.jmrID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 1)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 2)
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), oldBytes)
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
         var customChoice = upgraded; customChoice.defaultWeekID = nil

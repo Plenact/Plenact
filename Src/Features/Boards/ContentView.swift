@@ -6439,7 +6439,6 @@ struct TodayListDetailView: View {
     var boardViewActionTitle: String = "Switch to Week View"
     var focusesFirstUncheckedTask = false
     var representedDate: Date? = nil
-    var includesDateInTitle = true
     @State private var didApplyInitialTaskFocus = false
 
 
@@ -6891,7 +6890,7 @@ struct TodayListDetailView: View {
                             ItemAppearanceMark(appearance: focusedList?.headerAppearance(
                                 collectionIcon: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.icon,
                                 collectionColor: planningCalendarAccess?.library.first(where: { $0.id == dayMovementSource })?.color))
-                            SlideableHeaderText(text: (includesDateInTitle ? representedDate : nil).map { PlanningDate.listTitle(focusedList?.title ?? PlanningDate.weekdayTitle($0), on: $0) } ?? (focusedList?.title ?? "Today"))
+                            SlideableHeaderText(text: focusedList?.title ?? representedDate.map { PlanningDate.weekdayTitle($0) } ?? "Today")
                                 .font(.title2.weight(.bold))
 
                                 .foregroundStyle(.white)

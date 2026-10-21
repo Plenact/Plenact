@@ -3134,8 +3134,7 @@ private struct TodayHomeView: View {
                         },
                         onPermanentDelete: onDeleteCard,
                         focusesFirstUncheckedTask: true,
-                        representedDate: .now,
-                        includesDateInTitle: false
+                        representedDate: .now
                     )
                     .environment(\.workspaceBottomBarHeight, 0)
                 }

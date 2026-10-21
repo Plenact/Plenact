@@ -751,8 +751,11 @@ private struct AppRootView: View {
     @State private var newLibraryListRequest = 0
     @State private var quickCreateRequest                  = 0                              /* Center-bar quick-create request                     */
     @State private var showsCenterNewCardSheet             = false                          /* Destination picker for New outside Today            */
-    @State private var isWeekListRequestArmed              = false                          /* Whether New's long press will create a Week list    */
-    @State private var weekListShakeTrigger                = 0                              /* Trigger for long-press confirmation animation       */
+    @State private var centerNewPresentation: ItemPresentation = .card
+    @State private var centerNewListID: Int?
+    @State private var toolbarCollectionRequest: PersonalCollectionKind?
+    @State private var showsToolbarTodayPlan = false
+    @State private var showsToolbarCalendar = false
 
     @State private var boardTargetListID:                  Int?                             /* List requested by a Today-to-Board navigation       */
     @State private var boardTargetCardID:                  Int?                             /* Card requested by a Today-to-Board navigation       */
@@ -1076,11 +1079,17 @@ private struct AppRootView: View {
             }
         }
 
+        .sheet(isPresented: $showsToolbarTodayPlan) {
+            TodayPlanView(calendar: calendarDocument?.calendar ?? .current)
+        }
+        .sheet(isPresented: $showsToolbarCalendar) {
+            PlanningCalendarView(onLeaveForHome: { showsToolbarCalendar = false })
+        }
         .sheet(isPresented: $showsCenterNewCardSheet) {
             QuickNoteComposer(
                 lists:         $lists.activeLists,
-                initialListID: LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID),
-                initialPresentation: .card,
+                initialListID: centerNewListID ?? LastViewedListStore.resolve(in: lists.filter { !$0.isArchived }, fallback: PlanPreferencesStore.load().defaultListID),
+                initialPresentation: centerNewPresentation,
                 onSaveCapture: { capture in
                     addCard(to: capture.listID, title: capture.title, description: capture.body,
                         subtitle: capture.subtitle, presentation: capture.presentation, actions: capture.actions,
@@ -1526,6 +1535,7 @@ private struct AppRootView: View {
             retainedWeekLists:   lists + (calendarDocument?.weeks.flatMap { $0.collection.lists } ?? []),
             collections:         $collections,
             newListRequest: newLibraryListRequest,
+            toolbarCollectionRequest: $toolbarCollectionRequest,
             registerListNewNote: registerPersonalListNewNote,
             onOpenSaved:         openSavedDestination,
             onLoadExampleWeek:   loadExampleWeek,
@@ -1657,7 +1667,7 @@ private struct AppRootView: View {
     ///             bottom safe area independently of the measured controls. In portrait,
     ///             its top edge is inset 20 points so New overlaps it without moving any controls.
     ///             New creates Cards from Today, Week and Activity, or a List from Plans;
-    ///             a long press arms Week-list creation and shake feedback
+    ///             a long press offers explicit Note, Card, List, and Board creation
     ///
     /// @return     (some View) paper-backed navigation controls
     /// @post       Button and gesture callbacks update navigation and creation-request state
@@ -1690,15 +1700,13 @@ private struct AppRootView: View {
                 : AnyLayout(VStackLayout(spacing: layout.newLabelSpacing))
             newLayout {
                 Button {
-                    if isWeekListRequestArmed {
-
-                        isWeekListRequestArmed = false
-                        addWeekList()
-                    } else if selectedDestination == .today {
+                    if selectedDestination == .today {
                         quickCreateRequest += 1
                     } else if selectedDestination == .lists {
                         newLibraryListRequest += 1
                     } else {
+                        centerNewPresentation = .card
+                        centerNewListID = nil
                         showsCenterNewCardSheet = true
                     }
                 } label: {
@@ -1713,23 +1721,16 @@ private struct AppRootView: View {
                 }
 
                 .buttonStyle(.plain)
-                .simultaneousGesture(
-                    LongPressGesture(minimumDuration: 0.55, maximumDistance: 24)
-                        .onEnded { _ in
-                            isWeekListRequestArmed = true
-                            weekListShakeTrigger += 1
-                        }
-                )
-                .phaseAnimator([0.0, -8.0, 8.0, -8.0, 8.0, 0.0], trigger: weekListShakeTrigger) { content, angle in
-                    content.rotationEffect(.degrees(angle))
-                } animation: { _ in
-                    .easeInOut(duration: 0.07)
+                .contextMenu {
+                    Button("New Note", systemImage: "note.text") { openToolbarItem(.note) }
+                    Button("New Card", systemImage: "rectangle.stack") { openToolbarItem(.card) }
+                    Divider()
+                    Button("New List", systemImage: "list.bullet.rectangle") { openToolbarCollection(.list) }
+                    Button("New Board", systemImage: "rectangle.split.3x1") { openToolbarCollection(.board) }
                 }
-
                 .accessibilityLabel(selectedDestination == .lists ? "Create a new List" : "Create a new Card")
-                .accessibilityHint(selectedDestination == .lists
-                    ? "Creates a new personal List in Plans. Touch and hold until New shakes, then release to add a Week list."
-                    : "Creates a new Card. Touch and hold until New shakes, then release to add a Week list.")
+                .accessibilityHint("Tap for contextual creation. Touch and hold for New Note, Card, List, or Board.")
+                .accessibilityIdentifier("toolbar.new")
 
                     if PlanPreferencesStore.load().showsNavigationLabels {
 
@@ -1784,26 +1785,40 @@ private struct AppRootView: View {
     /// @post       Week returns to the Board root at the actual local weekday list,
     ///             creating a blank weekday list if missing without replacing existing content
     ///
+    private func openToolbarItem(_ presentation: ItemPresentation) {
+        if selectedDestination == .lists, presentation == .note, let action = activePersonalListNewNote {
+            action()
+            return
+        }
+        centerNewListID = selectedDestination == .today
+            ? TodayListSelection.currentDayList(in: lists.filter { !$0.isArchived }, date: .now)?.id : nil
+        centerNewPresentation = presentation
+        showsCenterNewCardSheet = true
+    }
+
+    private func openToolbarCollection(_ kind: PersonalCollectionKind) {
+        selectedDestination = .lists
+        toolbarCollectionRequest = kind
+    }
+
+    private func selectToolbarDestination(_ destination: AppDestination) {
+        if destination == .board {
+            let result = TodayListSelection.ensureCurrentDayList(lists: lists)
+            if result.lists != lists { lists = result.lists }
+            boardTargetCardID = nil
+            boardTargetListID = result.dayList.id
+            weekRootRequest += 1
+        }
+        selectedDestination = destination
+    }
+
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
         let geometry = bottomToolbarLayout
         let isSelected = selectedDestination == destination /* Current tab selection */
 
         return Button {
-
-            if destination == .board {
-
-                let result = TodayListSelection.ensureCurrentDayList(lists: lists)
-                if result.lists != lists {
-                    lists = result.lists
-                }
-                boardTargetCardID = nil
-                boardTargetListID = result.dayList.id
-                weekRootRequest += 1
-            }
-
-            selectedDestination = destination
-
+            selectToolbarDestination(destination)
         } label: {
 
             let layout = geometry.horizontalLabels /* Adaptive quick-creation action layout */
@@ -1827,6 +1842,30 @@ private struct AppRootView: View {
 
         .buttonStyle(.plain)
         .foregroundStyle(isSelected ? Color.accentColor : Color.white.opacity(0.82))
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.55, maximumDistance: 24)
+                .exclusively(before: TapGesture())
+                .onEnded { result in
+                    switch result {
+                    case .first:
+                        if destination == .today { showsToolbarTodayPlan = true }
+                        if destination == .board { showsToolbarCalendar = true }
+                    case .second:
+                        selectToolbarDestination(destination)
+                    }
+                }, including: destination == .today || destination == .board ? .all : .none
+        )
+        .accessibilityActions {
+            if destination == .today {
+                Button("Open Today’s Plan") { showsToolbarTodayPlan = true }
+            }
+            if destination == .board {
+                Button("Open Calendar") { showsToolbarCalendar = true }
+            }
+        }
+        .accessibilityHint(destination == .today ? "Touch and hold to open Today’s Plan" :
+            (destination == .board ? "Touch and hold to open Calendar" : ""))
+        .accessibilityIdentifier("toolbar.\(title.lowercased())")
         .accessibilityLabel(title)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -5496,6 +5535,7 @@ struct BoardListsView: View {
 
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
     var newListRequest = 0
+    var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
     let registerListNewNote: ((() -> Void)?) -> Void /* Registers the directory's scoped Note action */
     let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
     var onLoadExampleWeek: (() -> Bool)? = nil
@@ -6861,6 +6901,11 @@ struct BoardListsView: View {
         }
         .onChange(of: newListRequest) { _, _ in
             editingCollection = PersonalCollection(title: "", kind: .list)
+        }
+        .onChange(of: toolbarCollectionRequest?.wrappedValue, initial: true) { _, kind in
+            guard let kind else { return }
+            editingCollection = PersonalCollection(title: "", kind: kind, icon: kind == .board ? .project : .notes)
+            toolbarCollectionRequest?.wrappedValue = nil
         }
         .onChange(of: libraryRecentData) { _, _ in recentItems = LibraryRecentStore.load() }
         .onAppear {

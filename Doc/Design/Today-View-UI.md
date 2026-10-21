@@ -212,7 +212,8 @@ Its Today shortcut and Library icon retain their burgundy identity.
 The central New button creates a Card from Today, Week and Activity, regardless
 of the destination List's default item format. From Plans it opens a new personal
 List draft in the existing Library creation form. Cancel creates nothing. Existing
-quick-capture formats and the long-press Week-list shortcut remain available.
+quick-capture formats remain available. Holding New now opens Note, Card, List,
+and Board choices; holding Today opens Today’s Plan, and holding Week opens Calendar.
 
 Single-list screens offer View as → Cards / Note List in their options. Day views
 apply it to the represented day's list, including past and future dates. Standalone

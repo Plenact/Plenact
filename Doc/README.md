@@ -55,3 +55,5 @@ The `.webloc` files are local resource shortcuts, not source dependencies. This 
 - [Today’s lower perspective section](Design/Today-Perspective.md)
 
 - [Day schedule overview](Design/Day-Schedule-Overview.md)
+
+- [Bottom toolbar hold shortcuts](Design/Toolbar-Hold-Shortcuts.md)

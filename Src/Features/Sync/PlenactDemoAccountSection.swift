@@ -20,20 +20,20 @@ import SwiftUI
 ///
 struct PlenactDemoAccountSection: View {
 
-    @State private var remoteSession        = PlenactSessionStore.load() /* Restored authenticated session */
-    @State private var username             = "" /* Login handle draft */
-    @State private var password             = "" /* Short-lived login password */
-    @State private var newMemberUsername    = "" /* Invited member handle draft */
-    @State private var newMemberDisplayName = "" /* Invited member display-name draft */
-    @State private var newMemberPassword    = "" /* Short-lived invited-member password */
+    @State private var remoteSession        = PlenactSessionStore.load()  /* Restored authenticated session      */
+    @State private var username             = ""                          /* Login handle draft                  */
+    @State private var password             = ""                          /* Short-lived login password          */
+    @State private var newMemberUsername    = ""                          /* Invited member handle draft         */
+    @State private var newMemberDisplayName = ""                          /* Invited member display-name draft   */
+    @State private var newMemberPassword    = ""                          /* Short-lived invited-member password */
 
-    @State private var manualAssigneeDrafts: [Int: String]            = [:] /* Per-card manual assignment text */
-    @State private var directory:            [PlenactRemoteUser]      = [] /* Authenticated user directory */
-    @State private var remoteSnapshot:       PlenactBoardSnapshotResponse? /* Last fetched server snapshot */
-    @State private var remoteDraft:          PlenactBoardDocument? /* Editable remote-only Board copy */
+    @State private var manualAssigneeDrafts: [Int: String]            = [:]  /* Per-card manual assignment text */
+    @State private var directory:            [PlenactRemoteUser]      = []   /* Authenticated user directory    */
+    @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?   /* Last fetched server snapshot    */
+    @State private var remoteDraft:          PlenactBoardDocument?           /* Editable remote-only Board copy */
 
-    @State private var currentRevision:      Int64? /* Last fetched server revision */
-    @State private var activeOperationCount = 0 /* Number of in-flight demo service operations */
+    @State private var currentRevision:      Int64?  /* Last fetched server revision                */
+    @State private var activeOperationCount = 0      /* Number of in-flight demo service operations */
 
     ///
     /// @fcn        PlenactDemoAccountSection.isWorking
@@ -42,11 +42,11 @@ struct PlenactDemoAccountSection: View {
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    private var isWorking: Bool { activeOperationCount > 0 } /* Whether a demo operation is active */
-    @State private var needsConflictReload = false /* Stale-draft reload requirement */
-    @State private var alertMessage        = "" /* Current alert text */
-    @State private var showsAlert          = false /* Shared-demo alert presentation state */
-    @State private var confirmsSeed        = false /* Initial SampleData confirmation state */
+    private var isWorking: Bool { activeOperationCount > 0 }  /* Whether a demo operation is active    */
+    @State private var needsConflictReload = false            /* Stale-draft reload requirement        */
+    @State private var alertMessage        = ""               /* Current alert text                    */
+    @State private var showsAlert          = false            /* Shared-demo alert presentation state  */
+    @State private var confirmsSeed        = false            /* Initial SampleData confirmation state */
 
     ///
     /// @fcn        PlenactDemoAccountSection.canInitializeSampleBoard
@@ -365,8 +365,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func initializeSampleBoard() async {
 
-        guard let remoteSession, /* Authenticated editor session */
-              canInitializeSampleBoard else { /* Eligible unseeded editor state */
+        guard let remoteSession,               /* Authenticated editor session   */
+              canInitializeSampleBoard else {  /* Eligible unseeded editor state */
 
             return
         }
@@ -380,8 +380,8 @@ struct PlenactDemoAccountSection: View {
 
         do {
 
-            let client   = try PlenactAPIClient() /* Configured HTTPS API client */
-            let response = try await client.publishSampleData(                 /* Initial SampleData response */
+            let client   = try PlenactAPIClient()               /* Configured HTTPS API client */
+            let response = try await client.publishSampleData(  /* Initial SampleData response */
                 token:            remoteSession.accessToken,
                 user:             remoteSession.user,
                 expectedRevision: 0
@@ -602,8 +602,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func changeOwnAssignment(cardID: Int, action: String, targetUserID: String? = nil) async {
 
-        guard let remoteSession, /* Authenticated shared-demo session */
-              let currentRevision else { /* Fetched Board revision */
+        guard let remoteSession,          /* Authenticated shared-demo session */
+              let currentRevision else {  /* Fetched Board revision            */
 
             return
         }
@@ -651,9 +651,9 @@ struct PlenactDemoAccountSection: View {
     ///
     private func cardBinding(cardID: Int) -> Binding<KanbanCard>? {
 
-          guard let document = remoteDraft, /* Current remote-only draft */
-              let listIndex = document.lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }), /* List containing the target card */
-              let cardIndex = document.lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { /* Card's current list index */
+          guard let document = remoteDraft,                                                                         /* Current remote-only draft       */
+              let listIndex = document.lists.firstIndex(where: { $0.cards.contains(where: { $0.id == cardID }) }),  /* List containing the target card */
+              let cardIndex = document.lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else {         /* Card's current list index       */
             return nil
         }
           let originalCard = document.lists[listIndex].cards[cardIndex] /* Fallback card value for the binding */
@@ -735,8 +735,8 @@ struct PlenactDemoAccountSection: View {
     @MainActor
     private func saveSharedBoard() async {
 
-          guard let remoteSession, let remoteSnapshot, let remoteDraft, /* Current editor session and snapshot */
-              remoteDraft.validationMessage == nil else { return } /* Only save a valid document */
+          guard let remoteSession, let remoteSnapshot, let remoteDraft,  /* Current editor session and snapshot */
+              remoteDraft.validationMessage == nil else { return }       /* Only save a valid document          */
         activeOperationCount += 1
 
         defer {

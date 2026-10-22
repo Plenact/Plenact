@@ -6910,14 +6910,14 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLegacyItemsRemainCardsAndRejectInvalidPresentations() throws {
 
-        let data = Data(#"{"id":1,"title":"Legacy","cards":[{"id":2,"word":"Retain","listTitle":"Legacy","checklists":[]}]}"#.utf8) /* JSON fixture bytes for the compatibility check */
-        let list = try JSONDecoder().decode(KanbanList.self, from: data) /* Decoded List fixture */
+        let data = Data(#"{"id":1,"title":"Legacy","cards":[{"id":2,"word":"Retain","listTitle":"Legacy","checklists":[]}]}"#.utf8)  /* JSON fixture bytes for the compatibility check */
+        let list = try JSONDecoder().decode(KanbanList.self, from: data)                                                             /* Decoded List fixture                           */
 
         XCTAssertEqual(list.newItemPresentation,   .card)
         XCTAssertEqual(list.cards[0].presentation, .card)
 
-        let json  = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(list)) as? [String: Any]) /* Encoded JSON representation */
-        let cards = try XCTUnwrap(json["cards"] as? [[String: Any]]) /* Card records under inspection */
+        let json  = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(list)) as? [String: Any])  /* Encoded JSON representation   */
+        let cards = try XCTUnwrap(json["cards"] as? [[String: Any]])                                                 /* Card records under inspection */
 
         XCTAssertNil(json["defaultItemPresentation"])
         XCTAssertNil(cards[0]["itemPresentation"])
@@ -6925,8 +6925,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(list.cards[0].createdAt)
         XCTAssertNil(cards[0]["createdAt"])
 
-        let invalidCard = Data(#"{"id":2,"word":"Invalid","listTitle":"Legacy","itemPresentation":"unsupported"}"#.utf8) /* Unsupported Card fixture */
-        let invalidList = Data(#"{"id":1,"title":"Invalid","cards":[],"defaultItemPresentation":"unsupported"}"#.utf8) /* Unsupported list-presentation JSON fixture */
+        let invalidCard = Data(#"{"id":2,"word":"Invalid","listTitle":"Legacy","itemPresentation":"unsupported"}"#.utf8)  /* Unsupported Card fixture                   */
+        let invalidList = Data(#"{"id":1,"title":"Invalid","cards":[],"defaultItemPresentation":"unsupported"}"#.utf8)    /* Unsupported list-presentation JSON fixture */
 
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalidCard))
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanList.self, from: invalidList))
@@ -6945,8 +6945,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCreationTimestampRoundTripsAndRejectsMalformedDates() throws {
 
-        let timestamp = Date(timeIntervalSince1970: 1_791_422_000) /* Fixed creation timestamp */
-        var list = KanbanList(id: 1, title: "Synthetic", cards: []) /* List state under verification */
+        let timestamp = Date(timeIntervalSince1970: 1_791_422_000)   /* Fixed creation timestamp      */
+        var list = KanbanList(id: 1, title: "Synthetic", cards: [])  /* List state under verification */
         list.newItemPresentation = .note
         let note = list.makeItem(id: 2, title: "Dated Note", createdAt: timestamp) /* Newly created Note value */
 
@@ -6967,10 +6967,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         XCTAssertEqual(card.replacingLocation(id: 8, listTitle: "Moved").createdAt, timestamp)
 
-        let before = Date.now /* Timestamp before the operation */
-        let newCard = list.makeItem(id: 3, title: "Created now") /* Newly created Card value */
-        let after = Date.now /* Timestamp after the operation */
-        let actual = try XCTUnwrap(newCard.createdAt) /* Observed creation timestamp */
+        let before = Date.now                                     /* Timestamp before the operation */
+        let newCard = list.makeItem(id: 3, title: "Created now")  /* Newly created Card value       */
+        let after = Date.now                                      /* Timestamp after the operation  */
+        let actual = try XCTUnwrap(newCard.createdAt)             /* Observed creation timestamp    */
 
         XCTAssertGreaterThanOrEqual(actual, before)
         XCTAssertLessThanOrEqual(actual, after)
@@ -6991,8 +6991,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testNoteCardSwitchPreservesTheCompleteRecord() throws {
 
-        var original   = SampleData.lists[0].cards[0] /* Pre-operation value for preservation checks */
-        let attachment = KanbanAttachment(fileName: "synthetic-note-reference.jpg", mediaKind: .photo) /* Attachment fixture under test */
+        var original   = SampleData.lists[0].cards[0]                                                   /* Pre-operation value for preservation checks */
+        let attachment = KanbanAttachment(fileName: "synthetic-note-reference.jpg", mediaKind: .photo)  /* Attachment fixture under test               */
 
         original.descriptionOverride  = "Synthetic idea\nA second paragraph."
         original.subtitleOverride     = "Retained context"
@@ -7287,9 +7287,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
     func testListNoteDefaultAppliesOnlyToNewNondividerItems() {
 
-        let existing = KanbanCard(id: 1, word: "Existing", listTitle: "Ideas") /* Existing Card retained while applying List defaults */
-        var list     = KanbanList(id: 1, title: "Ideas", cards: [existing]) /* List state under verification */
-        let card     = list.makeItem(id: 2, title: "Action") /* Card value under verification */
+        let existing = KanbanCard(id: 1, word: "Existing", listTitle: "Ideas")  /* Existing Card retained while applying List defaults */
+        var list     = KanbanList(id: 1, title: "Ideas", cards: [existing])     /* List state under verification                       */
+        let card     = list.makeItem(id: 2, title: "Action")                    /* Card value under verification                       */
 
         let legacyCard = KanbanCard(id: 2, word: "Action", listTitle: "Ideas") /* Legacy-format Card fixture */
 
@@ -7301,8 +7301,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(card.checklists.flatMap(\.items).map(\.isCompleted), legacyCard.checklists.flatMap(\.items).map(\.isCompleted))
 
         list.newItemPresentation = .note
-        let note                 = list.makeItem(id: 3, title: "Thought") /* Newly created Note value */
-        let divider              = list.makeItem(id: 4, title: "---") /* Section-divider fixture */
+        let note                 = list.makeItem(id: 3, title: "Thought")  /* Newly created Note value */
+        let divider              = list.makeItem(id: 4, title: "---")      /* Section-divider fixture  */
 
         XCTAssertEqual(list.cards,               [existing])
         XCTAssertEqual(note.presentation,        .note)
@@ -7328,8 +7328,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testNotePresentationSurvivesPersonalPersistenceRenameAndArchive() throws {
 
-        let suite    = "Plenact.NotePersistenceTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.NotePersistenceTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))        /* Isolated test preferences      */
 
         defer { defaults.removePersistentDomain(forName: suite) }
 
@@ -7361,8 +7361,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(restored.cards[0].attachments,  note.attachments)
         XCTAssertEqual(collection.savedCardIDs,        [note.id])
 
-        let week    = PersonalCollection.archivedWeekBoard(lists: [restored], savedCardIDs: [note.id]) /* Archived weekly-board fixture */
-        let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(week)) /* Decoded archived-week collection */
+        let week    = PersonalCollection.archivedWeekBoard(lists: [restored], savedCardIDs: [note.id])     /* Archived weekly-board fixture    */
+        let decoded = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(week))  /* Decoded archived-week collection */
 
         XCTAssertEqual(decoded.lists[0],            restored)
         XCTAssertEqual(restored.cards[0].createdAt, note.createdAt)
@@ -7380,8 +7380,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalListsDefaultNewItemsToNotesWithoutConvertingExistingRecords() {
 
-        var collection = PersonalCollection(title: "Synthetic ideas", kind: .list) /* Personal List receiving its default */
-        let existingCard = KanbanCard(id: 20, word: "Keep this Card", listTitle: collection.title) /* Existing Card content that must remain unchanged */
+        var collection = PersonalCollection(title: "Synthetic ideas", kind: .list)                  /* Personal List receiving its default              */
+        let existingCard = KanbanCard(id: 20, word: "Keep this Card", listTitle: collection.title)  /* Existing Card content that must remain unchanged */
 
         XCTAssertEqual(collection.lists[0].newItemPresentation, .note)
 
@@ -7428,9 +7428,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
     func testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody() throws {
 
-        var collection = PersonalCollection(title: "Synthetic ideas", kind: .list) /* Collection state under verification */
-        let existing = collection.lists[0].makeItem(id: 7, title: "Existing") /* Existing active Card retained during Note insertion */
-        let archived   = collection.lists[0].makeItem(id: 12, title: "Archived") /* Archived value for restoration checks */
+        var collection = PersonalCollection(title: "Synthetic ideas", kind: .list)  /* Collection state under verification                 */
+        let existing = collection.lists[0].makeItem(id: 7, title: "Existing")       /* Existing active Card retained during Note insertion */
+        let archived   = collection.lists[0].makeItem(id: 12, title: "Archived")    /* Archived value for restoration checks               */
 
         collection.lists[0].cards         = [existing]
         collection.lists[0].archivedCards = [archived]
@@ -7458,8 +7458,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         XCTAssertEqual(collection.lists[0].archivedCards, [archived])
 
-        var board       = PersonalCollection(title: "Not a list", kind: .board) /* Board state under verification */
-        let boardBefore = board /* Board state before the attempted change */
+        var board       = PersonalCollection(title: "Not a list", kind: .board)  /* Board state under verification          */
+        let boardBefore = board                                                  /* Board state before the attempted change */
 
         XCTAssertThrowsError(try board.addNote(title: "No", body: ""))
         XCTAssertEqual(board, boardBefore)
@@ -7485,8 +7485,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testAttachmentThumbnailsFitTheirSquareGridProposal() throws {
 
-        let link = try XCTUnwrap(URL(string: "https://example.com/synthetic")) /* Synthetic link target */
-        let attachments = [ /* Retained attachment set */
+        let link = try XCTUnwrap(URL(string: "https://example.com/synthetic"))  /* Synthetic link target   */
+        let attachments = [                                                     /* Retained attachment set */
             KanbanAttachment(exampleImage: .garden),
             KanbanAttachment(url: link),
             KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video),
@@ -7533,9 +7533,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
             KanbanAttachment(exampleImage: .mountains, caption: "Room to explore")
         ]
         note.coverAttachmentID = cover.id
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                   /* Previously focused window       */
+        let window = UIWindow(windowScene: scene)                                                                  /* Temporary window for UI hosting */
 
         defer {
 
@@ -7552,8 +7552,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         for (name, size, textSize) in layouts {
 
-            var emitted: [KanbanCard] = [] /* Captured callback results */
-            let controller = UIHostingController(rootView: NavigationStack { /* Hosted controller for layout assertions */
+            var emitted: [KanbanCard] = []                                    /* Captured callback results               */
+            let controller = UIHostingController(rootView: NavigationStack {  /* Hosted controller for layout assertions */
                 CardDetailView(card: note, onTitleToggle: { emitted.append($0) })
                     .environment(\.dynamicTypeSize, textSize)
             })
@@ -7588,9 +7588,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testHostedCardCoverSetupLayoutPreservesCoveredAndUncoveredRecords() async throws {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                   /* Previously focused window       */
+        let window = UIWindow(windowScene: scene)                                                                  /* Temporary window for UI hosting */
         defer {
 
             window.isHidden = true
@@ -7598,8 +7598,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             previous?.makeKey()
         }
 
-        let photo = KanbanAttachment(exampleImage: .garden) /* Synthetic photo fixture */
-        var card = KanbanCard(id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: []) /* Card value under verification */
+        let photo = KanbanAttachment(exampleImage: .garden)                                                    /* Synthetic photo fixture       */
+        var card = KanbanCard(id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: [])  /* Card value under verification */
         card.appearance = ItemAppearance(icon: .project, background: .blue)
         card.attachments = [
             photo,
@@ -7610,8 +7610,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         covered.coverAttachmentID = photo.id
         for fixture in [card, covered] {
 
-            var emitted: [KanbanCard] = [] /* Captured callback results */
-            let controller = UIHostingController(rootView: NavigationStack { /* Hosted controller for layout assertions */
+            var emitted: [KanbanCard] = []                                    /* Captured callback results               */
+            let controller = UIHostingController(rootView: NavigationStack {  /* Hosted controller for layout assertions */
                 CardDetailView(card: fixture, onTitleToggle: { emitted.append($0) })
             })
             let size = CGSize(width: 393, height: 852) /* Proposed layout dimensions */
@@ -7645,11 +7645,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCardAttachmentGalleryExcludesOnlyTheDisplayedCover() throws {
 
-        let cover = KanbanAttachment(exampleImage: .garden) /* Selected cover attachment */
-        let otherPhoto = KanbanAttachment(exampleImage: .mountains) /* Non-cover photo attachment */
-        let link = KanbanAttachment(url: try XCTUnwrap(URL(string: "https://example.com/synthetic"))) /* Synthetic link target */
-        let video = KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video) /* Video attachment fixture */
-        var card = KanbanCard( /* Card value under verification */
+        let cover = KanbanAttachment(exampleImage: .garden)                                            /* Selected cover attachment     */
+        let otherPhoto = KanbanAttachment(exampleImage: .mountains)                                    /* Non-cover photo attachment    */
+        let link = KanbanAttachment(url: try XCTUnwrap(URL(string: "https://example.com/synthetic")))  /* Synthetic link target         */
+        let video = KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video)               /* Video attachment fixture      */
+        var card = KanbanCard(                                                                         /* Card value under verification */
             id: 95, word: "Synthetic", listTitle: "Synthetic", checklists: [],
             attachments: [cover, otherPhoto, link, video], coverAttachmentID: cover.id
         )
@@ -7750,11 +7750,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testNewPersonalNoteDraftSavesOnlyToSelectedList() throws {
 
-        let initial = PersonalCollection(title: "Initial ideas", kind: .list) /* Initial destination collection to preserve */
-        let selected = PersonalCollection(title: "Selected ideas", kind: .list) /* Selected destination collection for the Note */
-        var collections = [initial, selected] /* Saved personal-collection state */
-        var draft = PersonalListNoteDraft(destinationID: initial.id) /* Uncommitted draft under test */
-        let originalCreationDate = draft.createdAt /* Timestamp retained by the operation */
+        let initial = PersonalCollection(title: "Initial ideas", kind: .list)    /* Initial destination collection to preserve   */
+        let selected = PersonalCollection(title: "Selected ideas", kind: .list)  /* Selected destination collection for the Note */
+        var collections = [initial, selected]                                    /* Saved personal-collection state              */
+        var draft = PersonalListNoteDraft(destinationID: initial.id)             /* Uncommitted draft under test                 */
+        let originalCreationDate = draft.createdAt                               /* Timestamp retained by the operation          */
 
         draft.title = "  New idea  "
         draft.body = "First line\n\nSecond line  "
@@ -7795,9 +7795,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testNewPersonalNoteDraftRejectsUnavailableDestinationsAndBlankTitle() {
 
-        let active = PersonalCollection(title: "Active ideas", kind: .list) /* Active personal collection used as an invalid target */
-        let board = PersonalCollection(title: "Projects", kind: .board) /* Board state under verification */
-        var archived = PersonalCollection(title: "Archived ideas", kind: .list) /* Archived value for restoration checks */
+        let active = PersonalCollection(title: "Active ideas", kind: .list)      /* Active personal collection used as an invalid target */
+        let board = PersonalCollection(title: "Projects", kind: .board)          /* Board state under verification                       */
+        var archived = PersonalCollection(title: "Archived ideas", kind: .list)  /* Archived value for restoration checks                */
         archived.isArchived = true
         var empty = PersonalCollection(title: "No active list", kind: .list) /* Empty collection fixture */
         empty.lists[0].isArchived = true
@@ -7836,11 +7836,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testNewPersonalNoteDraftPreservesSelectionAndTextAfterFailedSave() throws {
 
-        let initial = PersonalCollection(title: "Initial ideas", kind: .list) /* Initial destination collection to preserve */
-        let selected = PersonalCollection(title: "Selected ideas", kind: .list) /* Selected destination collection for the Note */
-        let collections = [initial, selected] /* Saved personal-collection state */
-        var draft = PersonalListNoteDraft(destinationID: initial.id) /* Uncommitted draft under test */
-        let originalCreationDate = draft.createdAt /* Timestamp retained by the operation */
+        let initial = PersonalCollection(title: "Initial ideas", kind: .list)    /* Initial destination collection to preserve   */
+        let selected = PersonalCollection(title: "Selected ideas", kind: .list)  /* Selected destination collection for the Note */
+        let collections = [initial, selected]                                    /* Saved personal-collection state              */
+        var draft = PersonalListNoteDraft(destinationID: initial.id)             /* Uncommitted draft under test                 */
+        let originalCreationDate = draft.createdAt                               /* Timestamp retained by the operation          */
         draft.title = "  Retry idea  "
         draft.body = "Retained body\n  "
         draft.destinationID = selected.id
@@ -7882,8 +7882,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision() throws {
 
-        let attachment = KanbanAttachment(fileName: "synthetic-moved-note.jpg", mediaKind: .photo) /* Attachment fixture under test */
-        var note = KanbanCard( /* Note value under verification */
+        let attachment = KanbanAttachment(fileName: "synthetic-moved-note.jpg", mediaKind: .photo)  /* Attachment fixture under test */
+        var note = KanbanCard(                                                                      /* Note value under verification */
             id: 4, word: "Beach idea", listTitle: "Ideas",
             checklists:          [KanbanChecklist(title: "Keep", items: ["Discuss"])],
             descriptionOverride: "First paragraph\n\nSecond paragraph",
@@ -7908,8 +7908,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         ]
         destination.savedCardIDs = [4]
 
-        var collections = [source, destination] /* Saved personal-collection state */
-        let moved = try PersonalCollectionNoteMovement.move( /* Note after relocation to another List */
+        var collections = [source, destination]               /* Saved personal-collection state       */
+        let moved = try PersonalCollectionNoteMovement.move(  /* Note after relocation to another List */
             noteID: note.id, from: source.id, to: destination.id, in: &collections
         )
 
@@ -7933,9 +7933,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         ))
         XCTAssertEqual(collections, beforeInvalidMove)
 
-        let board = PersonalCollection(title: "Not a destination List", kind: .board) /* Board state under verification */
-        var boardMove = [source, board] /* Board movement result */
-        let beforeBoardMove = boardMove /* Board snapshot before movement */
+        let board = PersonalCollection(title: "Not a destination List", kind: .board)  /* Board state under verification */
+        var boardMove = [source, board]                                                /* Board movement result          */
+        let beforeBoardMove = boardMove                                                /* Board snapshot before movement */
 
         XCTAssertThrowsError(try PersonalCollectionNoteMovement.move(
             noteID: note.id, from: source.id, to: board.id, in: &boardMove
@@ -7953,13 +7953,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalNoteMovePreservesNonconflictingID() throws {
 
-        var source = PersonalCollection(title: "Ideas", kind: .list) /* Source state before the operation */
-        var note = KanbanCard(id: 14, word: "Read later", listTitle: "Ideas", checklists: [], presentation: .note) /* Note value under verification */
+        var source = PersonalCollection(title: "Ideas", kind: .list)                                                /* Source state before the operation */
+        var note = KanbanCard(id: 14, word: "Read later", listTitle: "Ideas", checklists: [], presentation: .note)  /* Note value under verification     */
         note.descriptionOverride = "Synthetic body"
         source.lists[0].cards = [note]
 
-        let destination = PersonalCollection(title: "Someday", kind: .list) /* Target location for the move */
-        var collections = [source, destination] /* Saved personal-collection state */
+        let destination = PersonalCollection(title: "Someday", kind: .list)  /* Target location for the move    */
+        var collections = [source, destination]                              /* Saved personal-collection state */
 
         let moved = try PersonalCollectionNoteMovement.move( /* Note after relocation to another List */
             noteID: note.id, from: source.id, to: destination.id, in: &collections
@@ -7983,9 +7983,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLibraryDirectoryNoteDestinationPrefersMostRecentlyOpenedList() {
 
-        let first  = PersonalCollection(title: "First ideas", kind: .list) /* First value in the comparison */
-        let recent = PersonalCollection(title: "Recent ideas", kind: .list) /* Most recent activity entry */
-        let board  = PersonalCollection(title: "Projects", kind: .board) /* Board state under verification */
+        let first  = PersonalCollection(title: "First ideas", kind: .list)   /* First value in the comparison  */
+        let recent = PersonalCollection(title: "Recent ideas", kind: .list)  /* Most recent activity entry     */
+        let board  = PersonalCollection(title: "Projects", kind: .board)     /* Board state under verification */
 
         XCTAssertEqual(
 
@@ -8029,10 +8029,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testLibraryDirectoryNewActionPresentsNoteComposer() async throws {
 
-        var current = [PersonalCollection(title: "First ideas", kind: .list)] /* Current collections displayed by the Library */
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window   = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        var current = [PersonalCollection(title: "First ideas", kind: .list)]                                         /* Current collections displayed by the Library */
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting                  */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                      /* Previously focused window                    */
+        let window   = UIWindow(windowScene: scene)                                                                   /* Temporary window for UI hosting              */
 
         var newNoteAction: (() -> Void)? /* New Note action under test */
 
@@ -8095,9 +8095,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         note.descriptionOverride = "Synthetic note body"
         note.isTitleChecked     = true
 
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window   = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                      /* Previously focused window       */
+        let window   = UIWindow(windowScene: scene)                                                                   /* Temporary window for UI hosting */
 
         defer {
 
@@ -8193,15 +8193,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertEqual(category.images.count, 50, category.rawValue)
         }
 
-        let images = categories.flatMap(\.images) /* Synthetic image fixtures */
-        let names  = images.map(\.rawValue) /* Bundled illustration asset names */
+        let images = categories.flatMap(\.images)  /* Synthetic image fixtures         */
+        let names  = images.map(\.rawValue)        /* Bundled illustration asset names */
 
         XCTAssertEqual(names.count,      400)
         XCTAssertEqual(Set(names).count, 400)
         XCTAssertEqual(Set(images),      Set(ExampleCoverImage.allCases))
 
-        var distinctImages: Set<Data> = [] /* Distinct image fixtures */
-        var totalBytes                = 0 /* Combined image-data size */
+        var distinctImages: Set<Data> = []  /* Distinct image fixtures  */
+        var totalBytes                = 0   /* Combined image-data size */
 
         for name in names {
 
@@ -8211,8 +8211,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             ), "Missing bundled illustration: \(name)")
 
-            let bytes = try Data(contentsOf: url) /* Bundled illustration bytes */
-            let image = try XCTUnwrap(UIImage(data: bytes)?.cgImage, "Unreadable illustration: \(name)") /* Decoded cropped-avatar image */
+            let bytes = try Data(contentsOf: url)                                                         /* Bundled illustration bytes   */
+            let image = try XCTUnwrap(UIImage(data: bytes)?.cgImage, "Unreadable illustration: \(name)")  /* Decoded cropped-avatar image */
 
             XCTAssertEqual(image.width,  960, name)
             XCTAssertEqual(image.height, 480, name)
@@ -8248,8 +8248,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLibrarySelectionReusesAttachmentsAndPreservesPersonalContent() throws {
 
-        let photo = KanbanAttachment(fileName: "synthetic-personal.jpg", mediaKind: .photo) /* Synthetic photo fixture */
-        var card = KanbanCard(id: 9, word: "My plan", listTitle: "Local", checklists: [], /* Card value under verification */
+        let photo = KanbanAttachment(fileName: "synthetic-personal.jpg", mediaKind: .photo)  /* Synthetic photo fixture       */
+        var card = KanbanCard(id: 9, word: "My plan", listTitle: "Local", checklists: [],    /* Card value under verification */
                               attachments: [photo], coverAttachmentID: photo.id, descriptionOverride: "Keep this")
 
         for image in ExampleCoverImage.allCases {
@@ -8270,8 +8270,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertNil(card.coverAttachment?.fileName)
         }
 
-        let snapshot = card /* Persisted snapshot under verification */
-        var list = KanbanList(id: 1, title: "Local", cards: [card]) /* List state under verification */
+        let snapshot = card                                          /* Persisted snapshot under verification */
+        var list = KanbanList(id: 1, title: "Local", cards: [card])  /* List state under verification         */
 
         list.archiveCard(id: card.id)
 
@@ -8346,8 +8346,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCoversAreExplicitAndBackwardCompatible() throws {
 
-        let legacy = Data(#"{"id":1,"word":"Synthetic","listTitle":"Local","checklists":[]}"#.utf8) /* Legacy-format fixture */
-        var card = try JSONDecoder().decode(KanbanCard.self, from: legacy) /* Decoded Card fixture */
+        let legacy = Data(#"{"id":1,"word":"Synthetic","listTitle":"Local","checklists":[]}"#.utf8)  /* Legacy-format fixture */
+        var card = try JSONDecoder().decode(KanbanCard.self, from: legacy)                           /* Decoded Card fixture  */
 
         XCTAssertNil(card.coverAttachmentID)
 
@@ -8396,11 +8396,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCoverSelectionAndAttachmentRemovalNeverChooseFallbackPhotos() throws {
 
-        let first = KanbanAttachment(fileName: "first.jpg", mediaKind: .photo) /* First value in the comparison */
-        let second = KanbanAttachment(fileName: "second.jpg", mediaKind: .photo) /* Second value in the comparison */
-        let video = KanbanAttachment(fileName: "video.mov", mediaKind: .video) /* Video attachment fixture */
-        let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link) /* Synthetic link target */
-        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [], /* Card value under verification */
+        let first = KanbanAttachment(fileName: "first.jpg", mediaKind: .photo)                  /* First value in the comparison  */
+        let second = KanbanAttachment(fileName: "second.jpg", mediaKind: .photo)                /* Second value in the comparison */
+        let video = KanbanAttachment(fileName: "video.mov", mediaKind: .video)                  /* Video attachment fixture       */
+        let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)  /* Synthetic link target          */
+        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [],     /* Card value under verification  */
                               attachments: [first, second, video, link])
 
         try card.setCover(first.id)
@@ -8446,8 +8446,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCoverArchiveRestoreAndIndependentCopyRetainAttachmentIdentity() throws {
 
-        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture */
-        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo]) /* Card value under verification */
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden)                                     /* Synthetic photo fixture       */
+        var card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo])  /* Card value under verification */
 
         try card.setCover(photo.id)
 
@@ -8491,8 +8491,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
             XCTAssertNotNil(example.url)
 
-            let thumbnail = try CardAttachmentStore.coverThumbnail(for: photo) /* Rendered attachment thumbnail */
-            let image = try XCTUnwrap(thumbnail.cgImage) /* Synthetic image fixture */
+            let thumbnail = try CardAttachmentStore.coverThumbnail(for: photo)  /* Rendered attachment thumbnail */
+            let image = try XCTUnwrap(thumbnail.cgImage)                        /* Synthetic image fixture       */
 
             XCTAssertLessThanOrEqual(max(image.width, image.height), 960)
             XCTAssertGreaterThan(min(image.width, image.height), 0)
@@ -8525,14 +8525,14 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         format.scale = 1
 
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2400, height: 1600), format: format) /* Synthetic image renderer */
-        let bytes = renderer.pngData { context in /* Rendered PNG bytes for the oversized cover */
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2400, height: 1600), format: format)  /* Synthetic image renderer                   */
+        let bytes = renderer.pngData { context in                                                        /* Rendered PNG bytes for the oversized cover */
             UIColor.systemGreen.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 2400, height: 1600))
         }
 
-        let photo = try CardAttachmentStore.saveMedia(bytes, kind: .photo, fileExtension: "png") /* Synthetic photo fixture */
-        let fileName = try XCTUnwrap(photo.fileName) /* Stored avatar filename */
+        let photo = try CardAttachmentStore.saveMedia(bytes, kind: .photo, fileExtension: "png")  /* Synthetic photo fixture */
+        let fileName = try XCTUnwrap(photo.fileName)                                              /* Stored avatar filename  */
 
         defer {
 
@@ -8570,16 +8570,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testCoverRowsRemainBoundedAndCanBeDisabledWithoutContentChanges() throws {
 
-        let suite = "Plenact.CoverLayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.CoverLayoutTests.\(UUID().uuidString)"   /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
 
         defer {
 
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture */
-        let card = KanbanCard(id: 1, word: "Garden", listTitle: "Local", checklists: [], /* Card value under verification */
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden)            /* Synthetic photo fixture       */
+        let card = KanbanCard(id: 1, word: "Garden", listTitle: "Local", checklists: [],  /* Card value under verification */
                               attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "",
                               appearance: ItemAppearance(accent: .green, icon: .home, background: .teal))
 
@@ -8609,8 +8609,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             return UIHostingController(rootView: row).sizeThatFits(in: CGSize(width: 320, height: 10_000)).height
         }
 
-        let standard = measure(.standard, enabled: true) /* Standard Card baseline */
-        let overview = measure(.overview, enabled: true) /* Overview layout measurement */
+        let standard = measure(.standard, enabled: true)  /* Standard Card baseline      */
+        let overview = measure(.overview, enabled: true)  /* Overview layout measurement */
 
         XCTAssertGreaterThan(standard, overview)
         XCTAssertGreaterThan(standard, measure(.standard, enabled: false) + 100)
@@ -8631,16 +8631,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPermanentCardDeletionIncludesArchivesAndRemovesOnlyOwningBookmarks() {
 
-        let card = KanbanCard(id: 12, word: "Synthetic", listTitle: "Retained", checklists: []) /* Card value under verification */
-        var archivedList = KanbanList(id: 3, title: "Retained", cards: [], archivedCards: [card]) /* List containing archived records */
+        let card = KanbanCard(id: 12, word: "Synthetic", listTitle: "Retained", checklists: [])    /* Card value under verification    */
+        var archivedList = KanbanList(id: 3, title: "Retained", cards: [], archivedCards: [card])  /* List containing archived records */
 
         archivedList.isArchived = true
 
         var snapshot = [archivedList, KanbanList(id: 4, title: "Other", cards: [ /* Persisted snapshot under verification */
             KanbanCard(id: 13, word: "Keep", listTitle: "Other", checklists: [])
         ])]
-        let independent = [archivedList] /* Independent archived List set */
-        var bookmarks: Set<Int> = [12, 13] /* Saved-card bookmarks before deletion */
+        let independent = [archivedList]    /* Independent archived List set        */
+        var bookmarks: Set<Int> = [12, 13]  /* Saved-card bookmarks before deletion */
 
         BoardContentDeletion.card(12, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -8674,8 +8674,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let second = KanbanList(id: 2, title: "Keep", cards: [ /* Second value in the comparison */
             KanbanCard(id: 12, word: "Keep", listTitle: "Keep", checklists: [])
         ])
-        var snapshot = [first, second] /* Persisted snapshot under verification */
-        var bookmarks: Set<Int> = [10, 11, 12] /* Saved-card bookmarks before deletion */
+        var snapshot = [first, second]          /* Persisted snapshot under verification */
+        var bookmarks: Set<Int> = [10, 11, 12]  /* Saved-card bookmarks before deletion  */
 
         BoardContentDeletion.list(1, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -8702,10 +8702,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testDeletionMediaCleanupPreservesRetainedCopiesAndUnrelatedFiles() throws {
 
-        let candidate = try CardAttachmentStore.saveMedia(Data([1, 2, 3]), kind: .photo, fileExtension: "jpg") /* Candidate value for validation */
-        let unrelated = try CardAttachmentStore.saveMedia(Data([4, 5, 6]), kind: .photo, fileExtension: "jpg") /* Unrelated retained value */
-        let candidateName = try XCTUnwrap(candidate.fileName) /* Candidate display name */
-        let unrelatedName = try XCTUnwrap(unrelated.fileName) /* Unrelated display name */
+        let candidate = try CardAttachmentStore.saveMedia(Data([1, 2, 3]), kind: .photo, fileExtension: "jpg")  /* Candidate value for validation */
+        let unrelated = try CardAttachmentStore.saveMedia(Data([4, 5, 6]), kind: .photo, fileExtension: "jpg")  /* Unrelated retained value       */
+        let candidateName = try XCTUnwrap(candidate.fileName)                                                   /* Candidate display name         */
+        let unrelatedName = try XCTUnwrap(unrelated.fileName)                                                   /* Unrelated display name         */
 
         defer {
 
@@ -8750,8 +8750,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalListArchiveSaveFailureLeavesPriorSnapshotUntouched() throws {
 
-        let suite = "Plenact.ListLifecycleTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.ListLifecycleTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer {
 
@@ -8789,8 +8789,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testWeekSaveCompletionRunsOnlyAfterSuccessfulWrite() async throws {
 
-        let suite = "Plenact.DeletionCompletionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.DeletionCompletionTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))        /* Isolated test preferences      */
 
         defer {
 
@@ -8840,8 +8840,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testCheckedWeekDeletionWaitsForEarlierWritesAndPreservesDiskOnFailure() throws {
 
-        let suite = "Plenact.CheckedDeletionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.CheckedDeletionTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer {
 
@@ -8948,8 +8948,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testExampleDraftsDoNotWriteOrReplaceExistingCollections() throws {
 
-        let suite = "Plenact.PersonalExampleTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.PersonalExampleTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer {
 
@@ -8968,9 +8968,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         try PersonalCollectionStore.saveChecked([retained], to: defaults)
 
-        let originalBytes = defaults.data(forKey: "Plenact.PersonalCollections.v1") /* Serialized bytes used by the fixture */
-        let first = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title]) /* First value in the comparison */
-        let second = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title, first.title]) /* Second value in the comparison */
+        let originalBytes = defaults.data(forKey: "Plenact.PersonalCollections.v1")                              /* Serialized bytes used by the fixture */
+        let first = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title])                /* First value in the comparison        */
+        let second = PersonalListExample.shopping.makeCollection(existingTitles: [retained.title, first.title])  /* Second value in the comparison       */
 
         XCTAssertNotEqual(first.id, second.id)
         XCTAssertEqual(first.title,                                             "Shopping (2)")
@@ -9004,17 +9004,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek() async throws {
 
-        let week = SampleData.lists /* Archived weekly-board fixture */
-        var archived = PersonalCollection(title: "Archived fixture", kind: .board) /* Archived value for restoration checks */
+        let week = SampleData.lists                                                 /* Archived weekly-board fixture         */
+        var archived = PersonalCollection(title: "Archived fixture", kind: .board)  /* Archived value for restoration checks */
 
         archived.isArchived = true
 
-        let restored    = PersonalCollection(title: "Week Board (Restored)", kind: .board) /* Restored value under verification */
-        let personal    = PersonalCollection(title: "Personal fixture", kind: .list) /* Personal List fixture filtered from demo Boards */
-        let collections = [personal, restored, archived] /* Saved personal-collection state */
-        let scene       = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous    = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window      = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let restored    = PersonalCollection(title: "Week Board (Restored)", kind: .board)                               /* Restored value under verification               */
+        let personal    = PersonalCollection(title: "Personal fixture", kind: .list)                                     /* Personal List fixture filtered from demo Boards */
+        let collections = [personal, restored, archived]                                                                 /* Saved personal-collection state                 */
+        let scene       = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting                     */
+        let previous    = scene.windows.first(where: \.isKeyWindow)                                                      /* Previously focused window                       */
+        let window      = UIWindow(windowScene: scene)                                                                   /* Temporary window for UI hosting                 */
 
         defer {
 
@@ -9249,11 +9249,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testPersonalCollectionListWidthReachesTheHostedCardContainer() async throws {
 
-        let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window   = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)"                                            /* Isolated preferences-suite key  */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))                                                  /* Isolated test preferences       */
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                      /* Previously focused window       */
+        let window   = UIWindow(windowScene: scene)                                                                   /* Temporary window for UI hosting */
 
         defer {
 
@@ -9334,9 +9334,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
                     XCTAssertEqual(fixture, original)
                 }
 
-                let listWidth          = try XCTUnwrap(measured[.list]) /* Proposed List width */
-                let boardWidth         = try XCTUnwrap(measured[.board]) /* Proposed Board width */
-                let expectedDifference = preset == .standard ? max(0, width - 28 - 360) : 0 /* Expected width difference */
+                let listWidth          = try XCTUnwrap(measured[.list])                      /* Proposed List width       */
+                let boardWidth         = try XCTUnwrap(measured[.board])                     /* Proposed Board width      */
+                let expectedDifference = preset == .standard ? max(0, width - 28 - 360) : 0  /* Expected width difference */
 
                 XCTAssertEqual(listWidth - boardWidth, expectedDifference, accuracy: 1)
             }
@@ -9357,16 +9357,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBoardPresentationPreferenceIsLocalAndLeavesBoardSnapshotsUntouched() throws {
 
-        let suite = "Plenact.BoardPresentationTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.BoardPresentationTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer {
 
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let week = try JSONEncoder().encode(SampleData.lists) /* Archived weekly-board fixture */
-        var board = PersonalCollection(title: "Synthetic project", kind: .board) /* Board state under verification */
+        let week = try JSONEncoder().encode(SampleData.lists)                     /* Archived weekly-board fixture  */
+        var board = PersonalCollection(title: "Synthetic project", kind: .board)  /* Board state under verification */
 
         board.lists = SampleData.lists
         board.savedCardIDs = [0]
@@ -9439,8 +9439,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
 
 
-        let standard = measuredHeight(.standard, size: .large, width: 360) /* Standard Card baseline */
-        let overview = measuredHeight(.overview, size: .large, width: 240) /* Measured Overview panel height */
+        let standard = measuredHeight(.standard, size: .large, width: 360)  /* Standard Card baseline         */
+        let overview = measuredHeight(.overview, size: .large, width: 240)  /* Measured Overview panel height */
 
         XCTAssertGreaterThanOrEqual(standard, 112)
         XCTAssertLessThan(standard, 160)
@@ -9472,9 +9472,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 onDeleteCard: {}, onArchiveCard: {}, onToggle: {}
             ).environment(\.dynamicTypeSize, .large))
 
-            let width: CGFloat = preset == .standard ? 360 : 240 /* Proposed layout width */
-            let shortProposal = controller.sizeThatFits(in: CGSize(width: width, height: 300)) /* Compact-height layout proposal */
-            let tallProposal = controller.sizeThatFits(in: CGSize(width: width, height: 900)) /* Tall layout proposal */
+            let width: CGFloat = preset == .standard ? 360 : 240                                /* Proposed layout width          */
+            let shortProposal = controller.sizeThatFits(in: CGSize(width: width, height: 300))  /* Compact-height layout proposal */
+            let tallProposal = controller.sizeThatFits(in: CGSize(width: width, height: 900))   /* Tall layout proposal           */
 
             XCTAssertEqual(shortProposal.height, tallProposal.height, accuracy: 1)
             XCTAssertLessThan(tallProposal.height, preset == .standard ? 170 : 130)
@@ -9494,10 +9494,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testNavigationLinkedCardRowsRemainCompactInAList() async throws {
 
-        let card = KanbanCard(id: 102, word: "Review the week ahead", listTitle: "Synthetic list") /* Card value under verification */
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow) /* Previously active key window */
-        let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let card = KanbanCard(id: 102, word: "Review the week ahead", listTitle: "Synthetic list")                 /* Card value under verification   */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)                                          /* Previously active key window    */
+        let window = UIWindow(windowScene: scene)                                                                  /* Temporary window for UI hosting */
 
         defer {
 
@@ -9557,8 +9557,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(100))
 
-            let collection = try XCTUnwrap(collectionView(in: controller.view)) /* Collection state under verification */
-            let row = try XCTUnwrap(collection.visibleCells.first) /* Rendered collection row */
+            let collection = try XCTUnwrap(collectionView(in: controller.view))  /* Collection state under verification */
+            let row = try XCTUnwrap(collection.visibleCells.first)               /* Rendered collection row             */
 
             XCTAssertLessThan(row.bounds.height, preset == .standard ? 210 : 180)
         }
@@ -9578,12 +9578,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testWeekRootRequestPopsCardDetailWithoutChangingContent() async throws {
 
-        var lists            = SampleData.lists /* Board lists under verification */
-        let original         = lists /* Pre-operation value for preservation checks */
-        let card             = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider }) /* Card value under verification */
-        var targetList: Int? = lists[0].id /* List identity selected before returning to the Week root */
-        var targetCard: Int? = card.id /* Card identity selected before returning to the Week root */
-        var saved: Set<Int>  = [card.id] /* Persisted value under verification */
+        var lists            = SampleData.lists                                              /* Board lists under verification                           */
+        let original         = lists                                                         /* Pre-operation value for preservation checks              */
+        let card             = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider })  /* Card value under verification                            */
+        var targetList: Int? = lists[0].id                                                   /* List identity selected before returning to the Week root */
+        var targetCard: Int? = card.id                                                       /* Card identity selected before returning to the Week root */
+        var saved: Set<Int>  = [card.id]                                                     /* Persisted value under verification                       */
 
 
         ///
@@ -9628,10 +9628,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
             return controller.children.compactMap { navigation(in: $0) }.first
         }
 
-        let controller = UIHostingController(rootView: board(0)) /* Hosted controller for layout assertions */
-        let scene      = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous   = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window     = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let controller = UIHostingController(rootView: board(0))                                                        /* Hosted controller for layout assertions */
+        let scene      = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting             */
+        let previous   = scene.windows.first(where: \.isKeyWindow)                                                      /* Previously focused window               */
+        let window     = UIWindow(windowScene: scene)                                                                   /* Temporary window for UI hosting         */
 
         defer {
 
@@ -9678,8 +9678,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent() async throws {
 
-        let suite = "Plenact.BoardRelayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.BoardRelayoutTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer {
 
@@ -9692,18 +9692,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         archived.isArchived = true
 
-        var archives = [archived] /* Archived-card collection */
-        var saved: Set<Int> = [lists[0].archivedCards[0].id] /* Persisted value under verification */
-        let focusedListID = lists[3].id /* Focused List identifier */
-        var targetList: Int? = focusedListID /* List identity to focus after relayout */
-        var targetCard: Int? /* Card identity to reveal after relayout */
-        var visibleListID: Int? /* Visible List identifier */
-        let revealedTarget = expectation(description: "Reveal the requested middle list") /* Card revealed by edge navigation */
-        var didRevealTarget = false /* Whether navigation revealed its target */
-        let originalLists = lists /* List snapshots before movement */
-        let originalArchives = archives /* Archive snapshots before movement */
-        let originalSaved = saved /* Saved-card identifiers before movement */
-        let view = ContentView( /* Hosted view under test */
+        var archives = [archived]                                                          /* Archived-card collection               */
+        var saved: Set<Int> = [lists[0].archivedCards[0].id]                               /* Persisted value under verification     */
+        let focusedListID = lists[3].id                                                    /* Focused List identifier                */
+        var targetList: Int? = focusedListID                                               /* List identity to focus after relayout  */
+        var targetCard: Int?                                                               /* Card identity to reveal after relayout */
+        var visibleListID: Int?                                                            /* Visible List identifier                */
+        let revealedTarget = expectation(description: "Reveal the requested middle list")  /* Card revealed by edge navigation       */
+        var didRevealTarget = false                                                        /* Whether navigation revealed its target */
+        let originalLists = lists                                                          /* List snapshots before movement         */
+        let originalArchives = archives                                                    /* Archive snapshots before movement      */
+        let originalSaved = saved                                                          /* Saved-card identifiers before movement */
+        let view = ContentView(                                                            /* Hosted view under test                 */
             lists: Binding(get: { lists }, set: { lists = $0 }),
             archivedLists:           Binding(get: { archives }, set: { archives = $0 }),
             boardTargetListID:       Binding(get: { targetList }, set: { targetList = $0 }),
@@ -9723,10 +9723,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
         )
         .defaultAppStorage(defaults)
 
-        let controller = UIHostingController(rootView: view) /* Hosted controller for layout assertions */
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow) /* Previously active key window */
-        let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let controller = UIHostingController(rootView: view)                                                       /* Hosted controller for layout assertions */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting             */
+        let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)                                          /* Previously active key window            */
+        let window = UIWindow(windowScene: scene)                                                                  /* Temporary window for UI hosting         */
 
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = controller
@@ -9772,8 +9772,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testBoardBoundaryNavigationTargetsFirstAndLastActiveLists() {
 
-        let lists = SampleData.lists /* Board lists under verification */
-        let original = lists /* Pre-operation value for preservation checks */
+        let lists = SampleData.lists  /* Board lists under verification              */
+        let original = lists          /* Pre-operation value for preservation checks */
 
         XCTAssertEqual(BoardListReordering.boundaryListID(.first, in: lists),                  lists.first?.id)
         XCTAssertEqual(BoardListReordering.boundaryListID(.last,  in: lists),                   lists.last?.id)
@@ -9865,8 +9865,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testListReorderingMovesRestoredMondayToFirstWithoutChangingContent() throws {
 
-        var lists = SampleData.lists /* Board lists under verification */
-        let monday = lists.removeFirst() /* Restored Monday List after reordering */
+        var lists = SampleData.lists      /* Board lists under verification        */
+        let monday = lists.removeFirst()  /* Restored Monday List after reordering */
 
         lists.append(monday)
 
@@ -9890,8 +9890,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testListReorderingRejectsMissingAndOutOfBoundsMoves() {
 
-        var lists = SampleData.lists /* Board lists under verification */
-        let original = lists /* Pre-operation value for preservation checks */
+        var lists = SampleData.lists  /* Board lists under verification              */
+        let original = lists          /* Pre-operation value for preservation checks */
 
         XCTAssertFalse(BoardListReordering.move(999,         to: 0,           in: &lists))
         XCTAssertFalse(BoardListReordering.move(lists[0].id, to: -1,          in: &lists))
@@ -9911,10 +9911,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCardReorderingMovesDividersAndPreservesCompleteRecords() {
 
-        let first = KanbanCard(id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this") /* First retained card fixture */
-        let divider = KanbanCard(id: 2, word: "", listTitle: "Synthetic", isDivider: true) /* Movable divider fixture */
-        let last = KanbanCard(id: 3, word: "Last", listTitle: "Synthetic", isTitleChecked: true) /* Last retained card fixture */
-        var cards = [first, divider, last] /* Ordered focused-list records */
+        let first = KanbanCard(id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this")  /* First retained card fixture  */
+        let divider = KanbanCard(id: 2, word: "", listTitle: "Synthetic", isDivider: true)                      /* Movable divider fixture      */
+        let last = KanbanCard(id: 3, word: "Last", listTitle: "Synthetic", isTitleChecked: true)                /* Last retained card fixture   */
+        var cards = [first, divider, last]                                                                      /* Ordered focused-list records */
 
         XCTAssertTrue(BoardCardReordering.move(divider.id, to: 2, in: &cards))
         XCTAssertEqual(cards, [first, last, divider])
@@ -9932,8 +9932,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCardReorderingClampsDestinationsAndRejectsMissingOrNoOpMoves() {
 
-        let cardsBeforeMove = SampleData.lists[0].cards /* Original complete card sequence */
-        var cards = cardsBeforeMove /* Mutable card-order copy */
+        let cardsBeforeMove = SampleData.lists[0].cards  /* Original complete card sequence */
+        var cards = cardsBeforeMove                      /* Mutable card-order copy         */
 
         guard let lastCardID = cards.last?.id else { /* Stable identity moved to the first position */
 
@@ -9975,8 +9975,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
         card.dueDate = Date(timeIntervalSince1970: 5678)
         card.descriptionOverride = "Retain every field"
 
-        let retained = KanbanCard(id: 901, word: "Archived", listTitle: "Source") /* Archived Card retained by its source List */
-        var lists = [ /* Board lists under verification */
+        let retained = KanbanCard(id: 901, word: "Archived", listTitle: "Source")  /* Archived Card retained by its source List */
+        var lists = [                                                              /* Board lists under verification            */
             KanbanList(id: 1, title: "Source", cards: [card], archivedCards: [retained]),
             KanbanList(id: 2, title: "Destination", cards: [
                 KanbanCard(id: 902, word: "First", listTitle: "Destination"),
@@ -10012,8 +10012,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCardMovementSupportsEmptyListsAndSameListInsertionBoundaries() throws {
 
-        let cards = (1...4).map { KanbanCard(id: $0, word: "Card \($0)", listTitle: "A") } /* Card records under inspection */
-        var lists = [KanbanList(id: 10, title: "A", cards: cards), /* Board lists under verification */
+        let cards = (1...4).map { KanbanCard(id: $0, word: "Card \($0)", listTitle: "A") }  /* Card records under inspection  */
+        var lists = [KanbanList(id: 10, title: "A", cards: cards),                          /* Board lists under verification */
                      KanbanList(id: 20, title: "Empty", cards: [])]
 
         XCTAssertTrue(try BoardCardMovement.move(1, to: 10, before: 4, in: &lists))
@@ -10044,10 +10044,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testCardMovementRejectsStaleArchivedAndAmbiguousSourcesAtomically() throws {
 
-        let card = KanbanCard(id: 1, word: "Card", listTitle: "A") /* Card value under verification */
-        let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true) /* Section-divider fixture */
-        let archive = KanbanCard(id: 3, word: "Retained", listTitle: "A") /* Archived-card snapshot */
-        var lists = [KanbanList(id: 10, title: "A", cards: [card, divider], archivedCards: [archive]), /* Board lists under verification */
+        let card = KanbanCard(id: 1, word: "Card", listTitle: "A")                                      /* Card value under verification  */
+        let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true)                      /* Section-divider fixture        */
+        let archive = KanbanCard(id: 3, word: "Retained", listTitle: "A")                               /* Archived-card snapshot         */
+        var lists = [KanbanList(id: 10, title: "A", cards: [card, divider], archivedCards: [archive]),  /* Board lists under verification */
                      KanbanList(id: 20, title: "B", cards: [])]
         let original = lists /* Pre-operation value for preservation checks */
 
@@ -10180,17 +10180,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testCardMovementPersistsInWeekAndPersonalBoardWithoutChangingOtherBoards() async throws {
 
-        let suite = "Plenact.CardMovementTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.CardMovementTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
 
         defer {
 
             defaults.removePersistentDomain(forName: suite)
         }
 
-        var lists = SampleData.lists /* Board lists under verification */
-        let card = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider }) /* Card value under verification */
-        let destination = lists[1].id /* Target location for the move */
+        var lists = SampleData.lists                                             /* Board lists under verification */
+        let card = try XCTUnwrap(lists[0].cards.first { !$0.isSectionDivider })  /* Card value under verification  */
+        let destination = lists[1].id                                            /* Target location for the move   */
 
         try BoardCardMovement.move(card.id, to: destination, in: &lists)
         KanbanBoardPersistence.enqueueSave(lists, suiteName: suite)
@@ -10356,9 +10356,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
             KanbanCard(id: 11, word: "", listTitle: "Synthetic", isDivider: true),
             KanbanCard(id: 12, word: "Another card", listTitle: "Synthetic")
         ])
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first) /* Active scene for UI hosting */
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Previously focused window */
-        let window = UIWindow(windowScene: scene) /* Temporary window for UI hosting */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)  /* Active scene for UI hosting     */
+        let previous = scene.windows.first(where: \.isKeyWindow)                                                   /* Previously focused window       */
+        let window = UIWindow(windowScene: scene)                                                                  /* Temporary window for UI hosting */
 
         defer {
 
@@ -10416,8 +10416,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(100))
 
-            let collection = try XCTUnwrap(collectionView(in: controller.view)) /* Collection state under verification */
-            let itemCount = (0..<collection.numberOfSections).reduce(0) { /* Expected item count */
+            let collection = try XCTUnwrap(collectionView(in: controller.view))  /* Collection state under verification */
+            let itemCount = (0..<collection.numberOfSections).reduce(0) {        /* Expected item count                 */
                 $0 + collection.numberOfItems(inSection: $1)
             }
 
@@ -10463,22 +10463,22 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testNativeCardDragSourceUsesLocalTokenAndEndsCancellationOnce() async throws {
 
-        let declarations = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UTExportedTypeDeclarations") as? [[String: Any]]) /* Declarations under inspection */
-        let declaration = try XCTUnwrap(declarations.first { /* Declaration record under inspection */
+        let declarations = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UTExportedTypeDeclarations") as? [[String: Any]])  /* Declarations under inspection       */
+        let declaration = try XCTUnwrap(declarations.first {                                                                          /* Declaration record under inspection */
             ($0["UTTypeIdentifier"] as? String) == BoardCardDragSource.contentType.identifier
         })
 
         XCTAssertEqual(declaration["UTTypeConformsTo"] as? [String], ["public.data"])
 
-        var points: [CGPoint] = [] /* Sample layout coordinates */
-        var ended = 0 /* Completed drag state */
-        let source = BoardCardDragSource(token: "synthetic-session", /* Source state before the operation */
+        var points: [CGPoint] = []                                    /* Sample layout coordinates         */
+        var ended = 0                                                 /* Completed drag state              */
+        let source = BoardCardDragSource(token: "synthetic-session",  /* Source state before the operation */
                                          onBegan: { points.append($0) },
                                          onChanged: { points.append($0) },
                                          onEnded:   { ended += 1 })
-        let coordinator = source.makeCoordinator() /* Drop coordinator under test */
-        let point = CGPoint(x: 150, y: 320) /* Synthetic drop coordinate */
-        let provider = coordinator.begin(at: point) /* Native drag-item provider */
+        let coordinator = source.makeCoordinator()   /* Drop coordinator under test */
+        let point = CGPoint(x: 150, y: 320)          /* Synthetic drop coordinate   */
+        let provider = coordinator.begin(at: point)  /* Native drag-item provider   */
 
         XCTAssertEqual(points, [point])
         XCTAssertTrue(coordinator.isDragging)
@@ -10528,12 +10528,12 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testNativeCardDragSourceSurvivesSourceRemovalUntilSessionEnd() {
 
-        var ended = 0 /* Completed drag state */
-        let source = BoardCardDragSource(token: "synthetic-session", onBegan: { _ in }, onChanged: { _ in }, /* Source state before the operation */
+        var ended = 0                                                                                         /* Completed drag state              */
+        let source = BoardCardDragSource(token: "synthetic-session", onBegan: { _ in }, onChanged: { _ in },  /* Source state before the operation */
                                          onEnded: { ended += 1 })
-        let coordinator = source.makeCoordinator() /* Drop coordinator under test */
-        let container = UIView() /* Target drop container */
-        let interaction = UIDragInteraction(delegate: coordinator) /* Captured drag interaction */
+        let coordinator = source.makeCoordinator()                  /* Drop coordinator under test */
+        let container = UIView()                                    /* Target drop container       */
+        let interaction = UIDragInteraction(delegate: coordinator)  /* Captured drag interaction   */
 
         container.addInteraction(interaction)
         coordinator.container = container
@@ -10568,18 +10568,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testNativeCardDropCommitsOriginalRecordAndRejectsForeignOrEndedSessions() throws {
 
-        let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Source") /* Card value under verification */
-        var lists = [KanbanList(id: 10, title: "Source", cards: [card]), /* Board lists under verification */
+        let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "Source")  /* Card value under verification  */
+        var lists = [KanbanList(id: 10, title: "Source", cards: [card]),      /* Board lists under verification */
                      KanbanList(id: 20, title: "Destination", cards: [])]
-        var ends = 0 /* Drag completion events */
-        let source = BoardCardDragSource(token: "local-board", onBegan: { _ in }, /* Source state before the operation */
+        var ends = 0                                                               /* Drag completion events            */
+        let source = BoardCardDragSource(token: "local-board", onBegan: { _ in },  /* Source state before the operation */
                                          onChanged: { _ in }, onEnded: { ends += 1 }).makeCoordinator()
         let item = UIDragItem(itemProvider: source.begin(at: .zero)) /* Checklist item under verification */
 
         item.localObject = source
 
-        var points: [CGPoint] = [] /* Sample layout coordinates */
-        let drop = BoardCardDropSurface(token: "local-board", onChanged: { points.append($0) }, /* Drop operation result */
+        var points: [CGPoint] = []                                                               /* Sample layout coordinates */
+        let drop = BoardCardDropSurface(token: "local-board", onChanged: { points.append($0) },  /* Drop operation result     */
                                         onDrop: { point in
             guard let target = BoardCardMovement.target( /* Resolved destination for the dragged Card */
                 for: card.id, at: point, viewport: CGRect(x: 0, y: 100, width: 400, height: 600),
@@ -10660,8 +10660,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace() async throws {
 
-        let suite = "Plenact.WeekArchiveTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.WeekArchiveTests.\(UUID().uuidString)"   /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
 
         defer {
 
@@ -10700,10 +10700,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testListArchiveBindingsPreserveCardsAndRestoreAtEnd() throws {
 
-        let original = SampleData.lists[0] /* Pre-operation value for preservation checks */
-        var snapshot = [original, SampleData.lists[1]] /* Persisted snapshot under verification */
-        let board = Binding(get: { snapshot }, set: { snapshot = $0 }) /* Board state under verification */
-        var archived = original /* Archived value for restoration checks */
+        let original = SampleData.lists[0]                              /* Pre-operation value for preservation checks */
+        var snapshot = [original, SampleData.lists[1]]                  /* Persisted snapshot under verification       */
+        let board = Binding(get: { snapshot }, set: { snapshot = $0 })  /* Board state under verification              */
+        var archived = original                                         /* Archived value for restoration checks       */
 
         archived.isArchived = true
         board.archivedLists.wrappedValue.append(archived)
@@ -10746,10 +10746,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         list.archiveCard(id: list.cards[0].id)
 
-        let sourceLists = [list, archivedList] /* Source List snapshots */
-        let savedIDs: Set<Int> = [list.archivedCards[0].id] /* Card IDs expected in the archived-week snapshot */
-        var board = PersonalCollection.archivedWeekBoard(lists: sourceLists, savedCardIDs: savedIDs) /* Board state under verification */
-        let boardID = board.id /* Stable Board identifier */
+        let sourceLists = [list, archivedList]                                                        /* Source List snapshots                           */
+        let savedIDs: Set<Int> = [list.archivedCards[0].id]                                           /* Card IDs expected in the archived-week snapshot */
+        var board = PersonalCollection.archivedWeekBoard(lists: sourceLists, savedCardIDs: savedIDs)  /* Board state under verification                  */
+        let boardID = board.id                                                                        /* Stable Board identifier                         */
 
         XCTAssertEqual(board.isArchived, true)
 
@@ -10778,8 +10778,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testArchivedPersonalBoardPersistsAndRestoresWithoutRenamingItsLists() throws {
 
-        let suite = "Plenact.BoardArchiveTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.BoardArchiveTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
 
         defer {
 
@@ -10823,18 +10823,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalBoardArchiveSavesBeforeReturningUpdatedState() throws {
 
-        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer {
 
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let board = PersonalCollection(title: "Project", kind: .board) /* Board state under verification */
-        let other = PersonalCollection(title: "Shopping", kind: .list) /* Unrelated model fixture */
-        let original = [board, other] /* Pre-operation value for preservation checks */
-        let updated = try PersonalCollectionStore.archiveBoard(id: board.id, in: original, to: defaults) /* Updated state after mutation */
+        let board = PersonalCollection(title: "Project", kind: .board)                                    /* Board state under verification              */
+        let other = PersonalCollection(title: "Shopping", kind: .list)                                    /* Unrelated model fixture                     */
+        let original = [board, other]                                                                     /* Pre-operation value for preservation checks */
+        let updated = try PersonalCollectionStore.archiveBoard(id: board.id, in: original, to: defaults)  /* Updated state after mutation                */
 
         XCTAssertTrue(original[0].isActive)
         XCTAssertFalse(updated[0].isActive)
@@ -10855,8 +10855,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalBoardArchiveFailureKeepsMemoryAndSavedSnapshotActive() throws {
 
-        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer {
 
@@ -10867,8 +10867,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         try PersonalCollectionStore.saveChecked([board], to: defaults)
 
-        var draft = board /* Uncommitted draft under test */
-        var invalidCard = KanbanCard(id: 1, word: "Unsaved", listTitle: draft.lists[0].title) /* Unsupported Card fixture */
+        var draft = board                                                                      /* Uncommitted draft under test */
+        var invalidCard = KanbanCard(id: 1, word: "Unsaved", listTitle: draft.lists[0].title)  /* Unsupported Card fixture     */
 
         invalidCard.dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
         draft.lists[0].cards = [invalidCard]
@@ -10895,8 +10895,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalBoardArchiveRejectsMissingBoardWithoutChangingSavedData() throws {
 
-        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.ArchiveCommitTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer {
 
@@ -10925,8 +10925,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLegacyPersonalBoardDefaultsToActiveAndArchivedListsStayOutOfSearch() throws {
 
-        let original = PersonalCollection(title: "Project", kind: .board) /* Pre-operation value for preservation checks */
-        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any]) /* Serialized JSON object */
+        let original = PersonalCollection(title: "Project", kind: .board)                                                 /* Pre-operation value for preservation checks */
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])  /* Serialized JSON object                      */
 
         object.removeValue(forKey: "isArchived")
 
@@ -10955,13 +10955,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLegacyListsLoadWithEmptyArchiveAndKeepExistingJSONShape() throws {
 
-        let data = Data("{\"id\":1,\"title\":\"Monday\",\"cards\":[]}".utf8) /* JSON fixture bytes for the compatibility check */
-        let list = try JSONDecoder().decode(KanbanList.self, from: data) /* Decoded List fixture */
+        let data = Data("{\"id\":1,\"title\":\"Monday\",\"cards\":[]}".utf8)  /* JSON fixture bytes for the compatibility check */
+        let list = try JSONDecoder().decode(KanbanList.self, from: data)      /* Decoded List fixture                           */
 
         XCTAssertTrue(list.archivedCards.isEmpty)
 
-        let encoded = try JSONEncoder().encode(list) /* Encoded model payload */
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any]) /* Serialized JSON object */
+        let encoded = try JSONEncoder().encode(list)                                               /* Encoded model payload  */
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])  /* Serialized JSON object */
 
         XCTAssertEqual(Set(object.keys), ["id", "title", "cards"])
     }
@@ -10984,9 +10984,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         completed.isTitleChecked = true
         completed.attachments = [KanbanAttachment(fileName: "synthetic-archive.jpg", mediaKind: .photo)]
 
-        let active = KanbanCard(id: 500, word: "Active", listTitle: "Monday") /* Active Card before archival */
-        let divider = KanbanCard(id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true) /* Section-divider fixture */
-        var list = KanbanList(id: 1, title: "Monday", cards: [completed, divider, active]) /* List state under verification */
+        let active = KanbanCard(id: 500, word: "Active", listTitle: "Monday")                                           /* Active Card before archival   */
+        let divider = KanbanCard(id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true)  /* Section-divider fixture       */
+        var list = KanbanList(id: 1, title: "Monday", cards: [completed, divider, active])                              /* List state under verification */
 
         list.archiveCompletedCards()
 
@@ -11023,8 +11023,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testArchivedCardsStayOutOfSearchAndReserveTheirIDs() {
 
-        let archived = KanbanCard(id: 900, word: "Archived task", listTitle: "Monday", isTitleChecked: true) /* Archived value for restoration checks */
-        let list = KanbanList( /* List state under verification */
+        let archived = KanbanCard(id: 900, word: "Archived task", listTitle: "Monday", isTitleChecked: true)  /* Archived value for restoration checks */
+        let list = KanbanList(                                                                                /* List state under verification         */
             id: 1, title: "Monday",
             cards:         [KanbanCard(id: 1, word: "Active task", listTitle: "Monday")],
             archivedCards: [archived]
@@ -11061,8 +11061,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         complete.isTitleChecked = true
 
-        let divider = KanbanCard(id: 800, word: "Divider", listTitle: "Monday", isDivider: true) /* Section-divider fixture */
-        var list = KanbanList(id: 1, title: "Monday", cards: [incomplete, complete, divider]) /* List state under verification */
+        let divider = KanbanCard(id: 800, word: "Divider", listTitle: "Monday", isDivider: true)  /* Section-divider fixture       */
+        var list = KanbanList(id: 1, title: "Monday", cards: [incomplete, complete, divider])     /* List state under verification */
 
         list.archiveCard(id: incomplete.id)
         list.archiveCard(id: complete.id)
@@ -11092,8 +11092,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalListRenamePreservesArchivedCards() throws {
 
-        var collection = PersonalCollection(title: "Original", kind: .list) /* Collection state under verification */
-        let archived = KanbanCard(id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true) /* Archived value for restoration checks */
+        var collection = PersonalCollection(title: "Original", kind: .list)                               /* Collection state under verification   */
+        let archived = KanbanCard(id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true)  /* Archived value for restoration checks */
         collection.lists[0].archivedCards = [archived]
         collection.rename(to: "Renamed")
 
@@ -11135,9 +11135,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         for outcome in ["success", "timeout", "cancelled"] {
 
-            let initialCount = DatabaseActivity.shared.operations.count /* Initial request count */
-            let url = try XCTUnwrap(URL(string: "https://\(outcome).example.test/")) /* URL fixture for the request */
-            let client = try PlenactAPIClient(baseURL: url, session: session) /* In-process API client */
+            let initialCount = DatabaseActivity.shared.operations.count               /* Initial request count       */
+            let url = try XCTUnwrap(URL(string: "https://\(outcome).example.test/"))  /* URL fixture for the request */
+            let client = try PlenactAPIClient(baseURL: url, session: session)         /* In-process API client       */
 
             do {
 
@@ -11167,9 +11167,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testDatabaseActivityKeepsSpinnerUntilAllOperationsFinish() {
 
-        let activity = DatabaseActivity() /* Captured activity event */
-        let save = activity.begin("Saving Board...") /* Save operation under test */
-        let refresh = activity.begin("Synchronizing shared database...") /* Refresh operation under test */
+        let activity = DatabaseActivity()                                 /* Captured activity event      */
+        let save = activity.begin("Saving Board...")                      /* Save operation under test    */
+        let refresh = activity.begin("Synchronizing shared database...")  /* Refresh operation under test */
 
         XCTAssertTrue(activity.isWorking)
         XCTAssertEqual(activity.message, "Saving Board...")
@@ -11299,8 +11299,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testDatabaseActivityErrorsRemainUntilDismissed() {
 
-        let activity = DatabaseActivity() /* Captured activity event */
-        let operation = activity.begin("Saving Board...") /* Pending save operation */
+        let activity = DatabaseActivity()                  /* Captured activity event */
+        let operation = activity.begin("Saving Board...")  /* Pending save operation  */
 
         activity.report("Could not save the Board.")
         activity.end(operation)
@@ -11327,16 +11327,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBackgroundBoardSavesPreserveLatestSnapshot() async throws {
 
-        let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer {
 
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let first = [KanbanList(id: 1, title: "First", cards: [])] /* First value in the comparison */
-        let last = [KanbanList(id: 1, title: "Latest", cards: [])] /* Most recent request */
+        let first = [KanbanList(id: 1, title: "First", cards: [])]  /* First value in the comparison */
+        let last = [KanbanList(id: 1, title: "Latest", cards: [])]  /* Most recent request           */
 
         KanbanBoardPersistence.enqueueSave(first, suiteName: suite)
         KanbanBoardPersistence.enqueueSave(last, suiteName: suite)
@@ -11366,8 +11366,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBackgroundBoardSaveFailurePreservesPreviousSnapshot() async throws {
 
-        let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))        /* Isolated test preferences      */
 
         defer {
 
@@ -11408,8 +11408,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     @MainActor
     func testBackgroundBoardLoadReportsCorruptionWithoutRemovingData() async throws {
 
-        let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))        /* Isolated test preferences      */
 
         defer {
 
@@ -11441,8 +11441,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testRecentSearchesAreOrderedDeduplicatedAndClearable() throws {
 
-        let suite    = "Plenact.SearchTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.SearchTests.\(UUID().uuidString)"     /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
 
         defer {
 
@@ -11526,8 +11526,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers() {
 
-        let divider = KanbanCard(id: 1, word: "Divider", listTitle: "Monday", isDivider: true) /* Section-divider fixture */
-        let lists = [ /* Board lists under verification */
+        let divider = KanbanCard(id: 1, word: "Divider", listTitle: "Monday", isDivider: true)  /* Section-divider fixture        */
+        let lists = [                                                                           /* Board lists under verification */
             KanbanList(id: 0, title: "Monday",     cards: [divider]),
             KanbanList(id: 2, title: "Empty list", cards: [])
         ]
@@ -11551,8 +11551,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testExampleLoadUndoSnapshotPersistsAndClears() throws {
 
-        let suite    = "Plenact.ExampleLoadUndoTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.ExampleLoadUndoTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))        /* Isolated test preferences      */
 
         defer {
 
@@ -11586,8 +11586,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testLastViewedListResolvesSavedSelectionAndFallbacks() throws {
 
-        let suite    = "Plenact.LastViewedListTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.LastViewedListTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer {
 
@@ -11620,9 +11620,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
 
-        let lists    = Array(SampleData.lists.reversed()) /* Board lists under verification */
-        let original = lists /* Pre-operation value for preservation checks */
-        let names    = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] /* Expected weekday title sequence */
+        let lists    = Array(SampleData.lists.reversed())                                              /* Board lists under verification              */
+        let original = lists                                                                           /* Pre-operation value for preservation checks */
+        let names    = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]  /* Expected weekday title sequence             */
 
         for (offset, name) in names.enumerated() {
 
@@ -11659,10 +11659,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
 
-        let date     = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 6))) /* Date value for boundary checks */
-        let monday   = KanbanList(id: 1, title: "Monday", cards: []) /* Monday List fixture for weekday focus */
-        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: []) /* Tuesday planning fixture */
-        var archived = tuesday /* Archived value for restoration checks */
+        let date     = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))  /* Date value for boundary checks        */
+        let monday   = KanbanList(id: 1, title: "Monday", cards: [])                                      /* Monday List fixture for weekday focus */
+        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: [])                                     /* Tuesday planning fixture              */
+        var archived = tuesday                                                                            /* Archived value for restoration checks */
 
         archived.isArchived = true
 
@@ -11687,16 +11687,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
         let renamed = KanbanList(id: 7, title: "Renamed Thursday", cards: [
             KanbanCard(id: 14, word: "Keep this card", listTitle: "Renamed Thursday", checklists: [])
-        ]) /* Previously renamed weekday list retained without modification */
-        var archivedThursday = KanbanList(id: 20, title: "Thursday", cards: []) /* Archived weekday list reserves its old ID */
+        ])                                                                       /* Previously renamed weekday list retained without modification */
+        var archivedThursday = KanbanList(id: 20, title: "Thursday", cards: [])  /* Archived weekday list reserves its old ID                     */
         archivedThursday.isArchived = true
-        let lists = [renamed, archivedThursday] /* Complete Week fixture */
-        var calendar = Calendar(identifier: .gregorian) /* Fixed calendar for deterministic weekday selection */
+        let lists = [renamed, archivedThursday]          /* Complete Week fixture                              */
+        var calendar = Calendar(identifier: .gregorian)  /* Fixed calendar for deterministic weekday selection */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
 
-        let thursday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 8))) /* Thursday selection date */
-        let result = TodayListSelection.ensureCurrentDayList(lists: lists, date: thursday, calendar: calendar) /* Recreated active weekday destination */
+        let thursday = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 8)))        /* Thursday selection date              */
+        let result = TodayListSelection.ensureCurrentDayList(lists: lists, date: thursday, calendar: calendar)  /* Recreated active weekday destination */
 
         XCTAssertEqual(result.dayList.id, 21)
         XCTAssertEqual(result.dayList.title, "Thursday")
@@ -11724,9 +11724,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalCollectionBookmarksResolveActiveRecordsWithScopedIdentity() {
 
-        var first = PersonalCollection(title: "First", kind: .list) /* First independent collection */
-        let firstCard = KanbanCard(id: 1, word: "First item", listTitle: "First", checklists: []) /* Active bookmark */
-        let divider = KanbanCard(id: 2, word: "—", listTitle: "First", isDivider: true, checklists: []) /* Non-bookmarkable separator */
+        var first = PersonalCollection(title: "First", kind: .list)                                      /* First independent collection */
+        let firstCard = KanbanCard(id: 1, word: "First item", listTitle: "First", checklists: [])        /* Active bookmark              */
+        let divider = KanbanCard(id: 2, word: "—", listTitle: "First", isDivider: true, checklists: [])  /* Non-bookmarkable separator   */
         first.lists[0].cards = [firstCard, divider]
 
         var archivedList = KanbanList(id: 1, title: "Archived", cards: [
@@ -11765,8 +11765,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testPersonalCollectionPersistencePreservesOrderAndLeavesWeekUntouched() throws {
 
-        let suite    = "Plenact.PersonalCollectionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Isolated test preferences */
+        let suite    = "Plenact.PersonalCollectionTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))           /* Isolated test preferences      */
 
         defer {
 
@@ -11845,8 +11845,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             lists:        SampleData.lists,
             labelLibrary: .starter
         )
-        let encoded = try JSONEncoder().encode(document)                                   /* Versioned JSON */
-        let decoded = try JSONDecoder().decode(PlenactBoardDocument.self, from: encoded)   /* Restored Board */
+        let encoded = try JSONEncoder().encode(document)                                  /* Versioned JSON */
+        let decoded = try JSONDecoder().decode(PlenactBoardDocument.self, from: encoded)  /* Restored Board */
 
         XCTAssertEqual(decoded, document)
         XCTAssertNil(decoded.validationMessage)
@@ -11940,8 +11940,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
             displayName: "Jim",
             accountRole: "board_editor"
         )
-        let document = PlenactAPIClient.sampleDataDocument(for: jim)                    /* Seed transformed for Jim     */
-        let seededAssignments = document.lists.flatMap(\.cards).flatMap(\.members)      /* All seed assignments         */
+        let document = PlenactAPIClient.sampleDataDocument(for: jim)                /* Seed transformed for Jim */
+        let seededAssignments = document.lists.flatMap(\.cards).flatMap(\.members)  /* All seed assignments     */
 
         XCTAssertNil(document.validationMessage)
         XCTAssertEqual(document.lists.map(\.title), SampleData.listTitles)
@@ -11996,8 +11996,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     func testJSONBodySizeLimitIncludesExactBoundary() {
 
-        let maximumBody   = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes) /* Allowed request-body size */
-        let oversizedBody = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes + 1) /* Oversized request payload */
+        let maximumBody   = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes)      /* Allowed request-body size */
+        let oversizedBody = Data(repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes + 1)  /* Oversized request payload */
 
         XCTAssertTrue(PlenactAPIClient.isJSONBodyWithinLimit(maximumBody))
         XCTAssertFalse(PlenactAPIClient.isJSONBodyWithinLimit(oversizedBody))

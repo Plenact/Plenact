@@ -17,6 +17,7 @@ import Foundation
 //             Function headers use @fcn, @brief, @details, and @return, plus @param for each input
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Vertically align both /* and */ markers in consecutive trailing block-comment groups
 //             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
 //             Place those blank lines before doc-comment blocks so comments remain attached
 //             Use blank lines after function/control-flow openings and between logical steps
@@ -49,11 +50,11 @@ import Foundation
 ///
 enum AppMetadata {
 
-    static let projectName  = "ProjectName" /* Example project name */
-    static let organization = "Company Name" /* Example owning organization */
-    static let author       = "Justin Reina" /* Example project author */
-    static let created      = "2026-09-24" /* Example creation date */
-    static let lastRevision = "2026-09-24" /* Example revision date */
+    static let projectName  = "ProjectName"   /* Example project name        */
+    static let organization = "Company Name"  /* Example owning organization */
+    static let author       = "Justin Reina"  /* Example project author      */
+    static let created      = "2026-09-24"    /* Example creation date       */
+    static let lastRevision = "2026-09-24"    /* Example revision date       */
 }
 
 
@@ -70,10 +71,10 @@ enum AppMetadata {
 ///
 enum AppError: LocalizedError, Sendable {
 
-    case missingConfiguration           /* Missing required configuration          */
-    case invalidInput(String)           /* Invalid input with associated message   */
-    case networkFailure(String)         /* Network failure with associated message */
-    case unknown                        /* Unknown error                           */
+    case missingConfiguration    /* Missing required configuration          */
+    case invalidInput(String)    /* Invalid input with associated message   */
+    case networkFailure(String)  /* Network failure with associated message */
+    case unknown                 /* Unknown error                           */
 
     ///
     /// @fcn        AppError.errorDescription
@@ -120,10 +121,10 @@ enum AppError: LocalizedError, Sendable {
 ///
 struct Item: Identifiable, Codable, Sendable {
 
-    let id:        UUID             /* Example item identity */
-    let title:     String           /* Example display title */
-    let detail:    String?          /* Example optional secondary content */
-    let createdAt: Date             /* Example creation or retrieval timestamp */
+    let id:        UUID     /* Example item identity                   */
+    let title:     String   /* Example display title                   */
+    let detail:    String?  /* Example optional secondary content      */
+    let createdAt: Date     /* Example creation or retrieval timestamp */
 
 
     ///
@@ -140,10 +141,10 @@ struct Item: Identifiable, Codable, Sendable {
     ///
     init(id: UUID = UUID(), title: String, detail: String? = nil, createdAt: Date = Date()) {
 
-        self.id        = id             /* Assign the unique identifier for the item      */
-        self.title     = title          /* Assign the display title                       */
-        self.detail    = detail         /* Assign the optional secondary content          */
-        self.createdAt = createdAt      /* Assign the timestamp for creation or retrieval */
+        self.id        = id         /* Assign the unique identifier for the item      */
+        self.title     = title      /* Assign the display title                       */
+        self.detail    = detail     /* Assign the optional secondary content          */
+        self.createdAt = createdAt  /* Assign the timestamp for creation or retrieval */
 
     }
 }
@@ -219,8 +220,8 @@ final class ItemService: ItemServiceProtocol {
 @MainActor
 final class ItemListViewModel: ObservableObject {
 
-    @Published private(set) var items: [Item] = []          /* Example current item collection */
-    @Published private(set) var isLoading     = false       /* Example loading-state indicator */
+    @Published private(set) var items: [Item] = []     /* Example current item collection */
+    @Published private(set) var isLoading     = false  /* Example loading-state indicator */
 
     @Published private(set) var errorMessage: String?       /* Example current error message */
 
@@ -254,8 +255,8 @@ final class ItemListViewModel: ObservableObject {
     ///
     func loadItems() async {
 
-        isLoading    = true         /* Indicate that a loading operation is in progress */
-        errorMessage = nil          /* Clear any existing error message                 */
+        isLoading    = true  /* Indicate that a loading operation is in progress */
+        errorMessage = nil   /* Clear any existing error message                 */
 
 
         do {
@@ -299,8 +300,8 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
     let formatter = DateFormatter()     /* Example date-and-time formatter */
 
 
-    formatter.dateStyle = style         /* Set the desired date style */
-    formatter.timeStyle = .short        /* Set the desired time style */
+    formatter.dateStyle = style   /* Set the desired date style */
+    formatter.timeStyle = .short  /* Set the desired time style */
 
     return formatter.string(from: date)
 }

@@ -23,10 +23,10 @@ struct PlenactBoardDocument: Codable, Equatable {
 
     static let currentSchemaVersion = 1   /* Current supported Board document shape */
 
-    var schemaVersion: Int          /* Board JSON schema version */
-    var boardKey:      String       /* Stable shared Board key   */
-    var lists:         [KanbanList] /* Ordered lists and cards   */
-    var labelLibrary:  LabelLibrary /* Reusable label catalog   */
+    var schemaVersion: Int           /* Board JSON schema version */
+    var boardKey:      String        /* Stable shared Board key   */
+    var lists:         [KanbanList]  /* Ordered lists and cards   */
+    var labelLibrary:  LabelLibrary  /* Reusable label catalog    */
 
 
     ///
@@ -82,8 +82,8 @@ struct PlenactBoardDocument: Codable, Equatable {
             return "Unsupported Board document version or missing board key."
         }
 
-        var listIDs: Set<Int> = []   /* Unique list identifiers */
-        var cardIDs: Set<Int> = []   /* Unique Board card IDs  */
+        var listIDs: Set<Int> = []  /* Unique list identifiers */
+        var cardIDs: Set<Int> = []  /* Unique Board card IDs   */
 
         for list in lists {
 
@@ -160,11 +160,11 @@ struct PlenactBoardDocument: Codable, Equatable {
 ///
 struct PlenactBoardSnapshotResponse: Decodable {
 
-    let revision:     Int64                /* Current immutable revision   */
-    let document:     PlenactBoardDocument /* Complete Board content       */
-    let storedAtUTC:  String               /* Server storage timestamp     */
-    let storedByUserID: String             /* Verified storage actor       */
-    let storageOrigin: String              /* Controlled write origin      */
+    let revision:     Int64                 /* Current immutable revision */
+    let document:     PlenactBoardDocument  /* Complete Board content     */
+    let storedAtUTC:  String                /* Server storage timestamp   */
+    let storedByUserID: String              /* Verified storage actor     */
+    let storageOrigin: String               /* Controlled write origin    */
 
 
     ///

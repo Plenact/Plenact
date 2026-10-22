@@ -92,8 +92,8 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
 /// @note       Labels refer to categories using the stable category ID
 ///
 struct KanbanLabelCategory: Identifiable, Hashable, Codable {
-    let id: String /* Stable category identity */
-    var name: String /* User-facing category name */
+    let id: String    /* Stable category identity  */
+    var name: String  /* User-facing category name */
 }
 
 
@@ -109,10 +109,10 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable {
 /// @note       Cards store the label ID rather than copying these presentation values
 ///
 struct KanbanLabel: Identifiable, Hashable, Codable {
-    let id: String /* Stable label identity */
-    var name: String /* User-facing label name */
-    var categoryID: String /* Stable owning-category identity */
-    var color: KanbanLabelColor /* Persisted palette selection */
+    let id: String               /* Stable label identity           */
+    var name: String             /* User-facing label name          */
+    var categoryID: String       /* Stable owning-category identity */
+    var color: KanbanLabelColor  /* Persisted palette selection     */
 }
 
 
@@ -164,8 +164,8 @@ struct LabelLibrary: Hashable, Codable {
     }
 
 
-    var categories: [KanbanLabelCategory] /* Reusable label categories */
-    var labels: [KanbanLabel] /* Reusable label definitions */
+    var categories: [KanbanLabelCategory]  /* Reusable label categories  */
+    var labels: [KanbanLabel]              /* Reusable label definitions */
 
     /// Stable IDs used to assign representative starter labels to sample cards
     static let starterLabelIDs = [ /* Label IDs used by deterministic SampleData */
@@ -237,8 +237,8 @@ enum LabelLibraryStore {
     ///
     static func load() -> LabelLibrary {
 
-          guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
-              let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else { /* Decoded catalog */
+          guard let data = UserDefaults.standard.data(forKey: storageKey),                   /* Saved JSON catalog */
+              let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else {  /* Decoded catalog    */
             return LabelLibrary.starter.includingDayAreas
         }
 

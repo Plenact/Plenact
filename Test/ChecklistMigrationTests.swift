@@ -63,8 +63,8 @@ final class ChecklistMigrationTests: XCTestCase {
         ]
         """   /* Revision 0 board fixture */
 
-        let lists     = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8)) /* Migrated board */
-        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)                /* Nested checklist */
+        let lists     = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8))  /* Migrated board   */
+        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)                 /* Nested checklist */
 
         XCTAssertEqual(checklist.items.map(\.title),   ["Sort clothes", "Start washer", "Fold clothes"])
         XCTAssertEqual(checklist.completedItemIndices, [1])
@@ -94,8 +94,8 @@ final class ChecklistMigrationTests: XCTestCase {
         }
         """   /* Revision 0 checklist fixture */
 
-        let firstDecode  = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* First migration  */
-        let secondDecode = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* Repeat migration */
+        let firstDecode  = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8))  /* First migration  */
+        let secondDecode = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8))  /* Repeat migration */
 
         XCTAssertEqual(firstDecode.items.map(\.id), secondDecode.items.map(\.id))
         XCTAssertNotEqual(firstDecode.items[0].id, firstDecode.items[1].id)
@@ -113,8 +113,8 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     func testExplicitCompletionIndicesPreserveItemIDs() {
 
-        let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!   /* First action ID  */
-        let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!   /* Second action ID */
+        let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!  /* First action ID  */
+        let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!  /* Second action ID */
 
         let items = [                                                               /* Source actions   */
             KanbanChecklistItem(id: firstID,  title: "First",  isCompleted: true),
@@ -159,10 +159,10 @@ final class ChecklistMigrationTests: XCTestCase {
             ]
         )
 
-        let encoded = try JSONEncoder().encode(checklist)                                      /* Current JSON     */
-        let object  = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any]) /* JSON object   */
-        let items   = try XCTUnwrap(object["items"] as? [[String: Any]])                       /* Encoded actions */
-        let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)             /* Round-trip value */
+        let encoded = try JSONEncoder().encode(checklist)                                           /* Current JSON     */
+        let object  = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])  /* JSON object      */
+        let items   = try XCTUnwrap(object["items"] as? [[String: Any]])                            /* Encoded actions  */
+        let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)                 /* Round-trip value */
 
         XCTAssertEqual(items.first?["title"] as? String, "Go do laundry")
         XCTAssertNil(object["completedItemIndices"])
@@ -251,8 +251,8 @@ final class ChecklistMigrationTests: XCTestCase {
             continue
           }
 
-          let actions = card.checklists.flatMap(\.items)                /* Card checklist actions          */
-          let linkedCardIDs = actions.compactMap { item -> Int? in      /* Resolved linked-card target IDs */
+          let actions = card.checklists.flatMap(\.items)            /* Card checklist actions          */
+          let linkedCardIDs = actions.compactMap { item -> Int? in  /* Resolved linked-card target IDs */
 
             guard case .linkedCard(let cardID /* Linked card ID */) = item.content else {
 
@@ -304,8 +304,8 @@ final class ChecklistMigrationTests: XCTestCase {
 
         for list in SampleData.lists {
 
-          let activityCards = list.cards.filter { !$0.isSectionDivider }                    /* Daily activity cards   */
-          let dividerCards  = list.cards.filter(\.isSectionDivider)                         /* Daily dividers         */
+          let activityCards = list.cards.filter { !$0.isSectionDivider }  /* Daily activity cards */
+          let dividerCards  = list.cards.filter(\.isSectionDivider)       /* Daily dividers       */
 
           XCTAssertEqual(activityCards.count, 6, "\(list.title) should begin with six activities")
           XCTAssertEqual(dividerCards.count,  1, "\(list.title) should contain one divider")
@@ -358,16 +358,16 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     func testRegisteredCardAssigneeRoundTripsStableUserID() throws {
 
-        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"     /* Stable demo user ID            */
-        let card   = KanbanCard(                                /* Card with directory assignment */
+        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"  /* Stable demo user ID            */
+        let card   = KanbanCard(                             /* Card with directory assignment */
             id:        10,
             word:      "Prepare the week",
             listTitle: "Monday",
             members:   [.registered(userID: userID, displayName: "Jim")]
         )
 
-        let encoded = try JSONEncoder().encode(card)   /* Encoded card */
-        let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)   /* Round-trip card */
+        let encoded = try JSONEncoder().encode(card)                            /* Encoded card    */
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)  /* Round-trip card */
 
         XCTAssertEqual(decoded.members.count,          1)
         XCTAssertEqual(decoded.members[0].kind,        .registeredUser)

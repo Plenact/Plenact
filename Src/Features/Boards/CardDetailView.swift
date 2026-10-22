@@ -84,8 +84,8 @@ struct CardDetailView: View {
     ///
     private enum DateField: String, Identifiable, Equatable {
 
-        case start      /* Start date field for the card */
-        case due        /* Due date field for the card   */
+        case start  /* Start date field for the card */
+        case due    /* Due date field for the card   */
 
         ///
         /// @fcn        CardDetailView.DateField.id
@@ -130,16 +130,16 @@ struct CardDetailView: View {
 
         case date(DateField)                        /* Date picker sheet for editing a specific date field */
         case reactions
-        case members                                /* Card member management sheet                        */
-        case labels                                 /* Card label library and assignment picker            */
-        case attachmentSources                      /* Attachment source chooser                           */
+        case members            /* Card member management sheet             */
+        case labels             /* Card label library and assignment picker */
+        case attachmentSources  /* Attachment source chooser                */
         case noteAttachments
         case appearance
         case cover
-        case addDrawing(DrawingCaptureDraft)         /* New drawing attached only after Done */
-        case addLink                                /* Manual web-link entry sheet                         */
-        case attachmentPreview(KanbanAttachment)    /* Preview of an attached photo                        */
-        case actionDetail(UUID, UUID)                /* Checklist and item IDs for reduced detail          */
+        case addDrawing(DrawingCaptureDraft)      /* New drawing attached only after Done      */
+        case addLink                              /* Manual web-link entry sheet               */
+        case attachmentPreview(KanbanAttachment)  /* Preview of an attached photo              */
+        case actionDetail(UUID, UUID)             /* Checklist and item IDs for reduced detail */
 
         ///
         /// @fcn        CardDetailView.ActiveSheet.id
@@ -164,8 +164,8 @@ struct CardDetailView: View {
                 case .appearance:                        "appearance"
                 case .addLink:                           "add-link"
                 case .addDrawing(let draft):             "add-drawing-\(draft.id.uuidString)"
-                case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)" /* Previewed attachment */
-                case .actionDetail(let checklistID, let itemID): /* Owning checklist and action IDs */
+                case .attachmentPreview(let attachment): "attachment-\(attachment.id.uuidString)"  /* Previewed attachment            */
+                case .actionDetail(let checklistID, let itemID):                                   /* Owning checklist and action IDs */
                     "action-detail-\(checklistID.uuidString)-\(itemID.uuidString)"
             }
         }
@@ -179,9 +179,9 @@ struct CardDetailView: View {
     ///     the card
     ///
     private enum GeneratedActivity: String, CaseIterable, Identifiable {
-        case addedCard          /* Card was added to the board           */
-        case createdCard        /* Card was created on the board         */
-        case initialComment     /* Initial comment was added to the card */
+        case addedCard       /* Card was added to the board           */
+        case createdCard     /* Card was created on the board         */
+        case initialComment  /* Initial comment was added to the card */
 
         ///
         /// @fcn        CardDetailView.GeneratedActivity.id
@@ -231,9 +231,9 @@ struct CardDetailView: View {
     /// @note   This filter is presentation state and is not persisted with the card
     ///
     private enum ActivityFilter: String, CaseIterable, Identifiable {
-        case all                /* All activity entries for the card       */
-        case comments           /* User-added comments for the card        */
-        case cardActivity       /* Generated activity entries for the card */
+        case all           /* All activity entries for the card       */
+        case comments      /* User-added comments for the card        */
+        case cardActivity  /* Generated activity entries for the card */
 
         ///
         /// @fcn        CardDetailView.ActivityFilter.id
@@ -270,29 +270,29 @@ struct CardDetailView: View {
     ///     Keep text-field focus state explicit across title, subtitle, description, and comment entry
     ///
     private enum EditableField: Hashable {
-        case title              /* The title field is being edited       */
-        case subtitle           /* The subtitle field is being edited    */
-        case description        /* The description field is being edited */
-        case comment            /* The comment field is being edited     */
+        case title        /* The title field is being edited       */
+        case subtitle     /* The subtitle field is being edited    */
+        case description  /* The description field is being edited */
+        case comment      /* The comment field is being edited     */
     }
 
     let card: KanbanCard                                     /* The kanban card being displayed in detail                    */
     let listedOnDate: Date?
-    @Binding var labelLibrary: LabelLibrary                  /* Shared label catalog available to every card                 */
-    let availableLists: [KanbanList]                         /* Other lists that can receive this card                       */
-    let memberColors: [String: Color]                        /* Shared icon colors keyed by normalized member name           */
-    let currentUserName: String                              /* Current actor name shown in card activity                    */
-    @Binding var savedCardIDs: Set<Int>                       /* Local identities saved for quick access                       */
-    let onTitleToggle: ((KanbanCard) -> Void)?               /* Callback invoked when the card title checkbox is toggled     */
-    let onMoveToList: ((Int) -> Void)?                       /* Callback invoked to move the card to a selected list         */
-    let personalCollectionID: UUID? /* Original personal collection owning this detail session */
+    @Binding var labelLibrary: LabelLibrary     /* Shared label catalog available to every card             */
+    let availableLists: [KanbanList]            /* Other lists that can receive this card                   */
+    let memberColors: [String: Color]           /* Shared icon colors keyed by normalized member name       */
+    let currentUserName: String                 /* Current actor name shown in card activity                */
+    @Binding var savedCardIDs: Set<Int>         /* Local identities saved for quick access                  */
+    let onTitleToggle: ((KanbanCard) -> Void)?  /* Callback invoked when the card title checkbox is toggled */
+    let onMoveToList: ((Int) -> Void)?          /* Callback invoked to move the card to a selected list     */
+    let personalCollectionID: UUID?             /* Original personal collection owning this detail session  */
     @Environment(\.cardMovementAccess) private var cardMovementAccess
-    let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note movement destinations */
-    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves the Note and returns its destination-local record */
-    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? /* Persists edits after the Note changes collections */
-    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? /* Archives the Note in its current collection */
-    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? /* Persists the relocated Note's saved state */
+    let availablePersonalLists: [PersonalCollection]                          /* Personal Lists offered as Note movement destinations     */
+    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?  /* Moves the Note and returns its destination-local record  */
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Persists edits after the Note changes collections        */
+    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?                     /* Archives the Note in its current collection              */
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?               /* Persists the relocated Note's saved state                */
     /// Optional callback that archives the latest synchronized card snapshot.
     let onArchive: (() -> Void)? /* Archives the record through its original owner */
     /// Optional callback permanently deleting this card and its caller-owned content.
@@ -303,46 +303,46 @@ struct CardDetailView: View {
     @State private var editingHeaderField: EditableField?
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
 
-    @State private var checklists: [KanbanChecklist]         /* The checklist groups associated with the selected card       */
-    @State private var checklistToFocus: UUID?               /* Newly added checklist whose first item should be focused     */
-    @State private var titleChecked: Bool                    /* Whether the card title itself is checked                     */
+    @State private var checklists: [KanbanChecklist]  /* The checklist groups associated with the selected card   */
+    @State private var checklistToFocus: UUID?        /* Newly added checklist whose first item should be focused */
+    @State private var titleChecked: Bool             /* Whether the card title itself is checked                 */
     @State private var showsReactionsInPreviews: Bool?
     @State private var reactions: [ItemEmojiReaction]?
     @State private var reactionAuthorID = LocalReactionIdentity.current()
     @State private var titleText: String                     /* Editable card title displayed in the detail header           */
     @State private var appearance: ItemAppearance?
     @State private var showsAppearanceCover = false
-    @State private var subtitleText: String                  /* Editable card subtitle displayed in the detail header        */
-    @State private var startDate: Date?                      /* Optional start date for the selected card                    */
-    @State private var dueDate: Date?                        /* Optional due date for the selected card                      */
-    @State private var descriptionText: String               /* Editable description shown on this card                      */
-    @State private var activeSheet: ActiveSheet?             /* The date picker or member editor currently presented         */
-    @State private var comments: [KanbanComment]             /* Comments saved to this card's activity                       */
-    @State private var members: [CardAssignee]               /* Registered and manual card assignments                       */
-    @State private var selectedLabelIDs: [String]            /* Stable IDs of labels assigned to this card                   */
-    @State private var attachments: [KanbanAttachment]       /* Photo attachments currently assigned to the card             */
-    @State private var coverAttachmentID: UUID? /* Explicit cover selection; nil means disabled */
-    @State private var selectedCoverPhoto: PhotosPickerItem? /* One photo explicitly selected for a cover */
-    @State private var coverImportID: UUID? /* Superseded requests cannot enable an old cover */
-    @State private var showsCoverPicker = false /* Visual chooser for already attached photos */
-    @State private var showsCoverLibrary = false /* Offline category-based illustration chooser */
-    @State private var selectedPhotoItems: [PhotosPickerItem] = [] /* Photos selected from the system photo library          */
-    @State private var commentDraft = ""                     /* Text currently entered in the comment composer               */
-    @State private var dismissedActivityIDs: Set<String>     /* IDs of activity entries that have been dismissed by the user */
-    @State private var activityFilter: ActivityFilter = .all /* The currently selected activity filter for the card          */
-    @State private var showingAttachmentNotice = false       /* Whether an attachment notice is presented                    */
-    @State private var attachmentNoticeMessage = ""          /* Explanation shown for failed or unavailable sources          */
-    @State private var showingDeleteConfirmation = false     /* Whether permanent card deletion awaits confirmation          */
-    @State private var hasMovedCard = false /* Stops editor callbacks from writing back to the old owner */
-    @State private var hasDeletedCard = false                /* Prevents stale snapshots after confirmed deletion            */
+    @State private var subtitleText: String                         /* Editable card subtitle displayed in the detail header        */
+    @State private var startDate: Date?                             /* Optional start date for the selected card                    */
+    @State private var dueDate: Date?                               /* Optional due date for the selected card                      */
+    @State private var descriptionText: String                      /* Editable description shown on this card                      */
+    @State private var activeSheet: ActiveSheet?                    /* The date picker or member editor currently presented         */
+    @State private var comments: [KanbanComment]                    /* Comments saved to this card's activity                       */
+    @State private var members: [CardAssignee]                      /* Registered and manual card assignments                       */
+    @State private var selectedLabelIDs: [String]                   /* Stable IDs of labels assigned to this card                   */
+    @State private var attachments: [KanbanAttachment]              /* Photo attachments currently assigned to the card             */
+    @State private var coverAttachmentID: UUID?                     /* Explicit cover selection; nil means disabled                 */
+    @State private var selectedCoverPhoto: PhotosPickerItem?        /* One photo explicitly selected for a cover                    */
+    @State private var coverImportID: UUID?                         /* Superseded requests cannot enable an old cover               */
+    @State private var showsCoverPicker = false                     /* Visual chooser for already attached photos                   */
+    @State private var showsCoverLibrary = false                    /* Offline category-based illustration chooser                  */
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []  /* Photos selected from the system photo library                */
+    @State private var commentDraft = ""                            /* Text currently entered in the comment composer               */
+    @State private var dismissedActivityIDs: Set<String>            /* IDs of activity entries that have been dismissed by the user */
+    @State private var activityFilter: ActivityFilter = .all        /* The currently selected activity filter for the card          */
+    @State private var showingAttachmentNotice = false              /* Whether an attachment notice is presented                    */
+    @State private var attachmentNoticeMessage = ""                 /* Explanation shown for failed or unavailable sources          */
+    @State private var showingDeleteConfirmation = false            /* Whether permanent card deletion awaits confirmation          */
+    @State private var hasMovedCard = false                         /* Stops editor callbacks from writing back to the old owner    */
+    @State private var hasDeletedCard = false                       /* Prevents stale snapshots after confirmed deletion            */
     @State private var displayFormat: ItemDisplayFormat
-    @State private var presentation: ItemPresentation /* Current Card or Note rendering mode */
-    @State private var showsNoteDetails = false /* Visibility of supplementary Note fields */
-    @State private var hasEditedDescription = false /* Whether the body draft should replace the stored value */
-    @State private var recordID: Int /* Current identity after any collection-local reassignment */
-    @State private var currentListTitle: String /* Owning list name updated after Note movement */
-    @State private var currentPersonalCollectionID: UUID? /* Current personal collection after Note movement */
-    @State private var movedNoteIsSaved: Bool? /* Saved-state override for a relocated Note */
+    @State private var presentation: ItemPresentation      /* Current Card or Note rendering mode                      */
+    @State private var showsNoteDetails = false            /* Visibility of supplementary Note fields                  */
+    @State private var hasEditedDescription = false        /* Whether the body draft should replace the stored value   */
+    @State private var recordID: Int                       /* Current identity after any collection-local reassignment */
+    @State private var currentListTitle: String            /* Owning list name updated after Note movement             */
+    @State private var currentPersonalCollectionID: UUID?  /* Current personal collection after Note movement          */
+    @State private var movedNoteIsSaved: Bool?             /* Saved-state override for a relocated Note                */
 
 
     ///
@@ -405,12 +405,12 @@ struct CardDetailView: View {
     init(
         card: KanbanCard,
         labelLibrary: Binding<LabelLibrary> = .constant(.starter),
-        availableLists: [KanbanList]           = [],        /* Other lists available as move destinations                   */
-        memberColors: [String: Color]          = [:],       /* Shared member icon colors                                    */
+        availableLists: [KanbanList]           = [],   /* Other lists available as move destinations */
+        memberColors: [String: Color]          = [:],  /* Shared member icon colors                  */
         currentUserName: String                = "Justin Reina",
         savedCardIDs: Binding<Set<Int>>        = .constant([]),
-        onTitleToggle: ((KanbanCard) -> Void)? = nil,       /* Callback invoked when the card title checkbox is toggled     */
-        onMoveToList: ((Int) -> Void)?         = nil,       /* Callback invoked when the card is moved                      */
+        onTitleToggle: ((KanbanCard) -> Void)? = nil,  /* Callback invoked when the card title checkbox is toggled */
+        onMoveToList: ((Int) -> Void)?         = nil,  /* Callback invoked when the card is moved                  */
         personalCollectionID: UUID?            = nil,
         availablePersonalLists: [PersonalCollection] = [],
         onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
@@ -425,13 +425,13 @@ struct CardDetailView: View {
 
         self.card           = card                                              /* The kanban card being displayed in detail                            */
         self.listedOnDate = listedOnDate
-        self._labelLibrary  = labelLibrary                                      /* Shared catalog used by all card label assignments                    */
-        self.availableLists = availableLists                                    /* Other lists available as move destinations                           */
-        self.memberColors   = memberColors                                      /* Shared member icon colors                                            */
-        self.currentUserName = currentUserName                                  /* Current actor name shown in card activity                            */
-        self._savedCardIDs  = savedCardIDs                                      /* Local saved-card identities                                        */
-        self.onTitleToggle  = onTitleToggle                                     /* Callback invoked when the card title checkbox is toggled             */
-        self.onMoveToList   = onMoveToList                                      /* Callback invoked when the card is moved                              */
+        self._labelLibrary  = labelLibrary      /* Shared catalog used by all card label assignments        */
+        self.availableLists = availableLists    /* Other lists available as move destinations               */
+        self.memberColors   = memberColors      /* Shared member icon colors                                */
+        self.currentUserName = currentUserName  /* Current actor name shown in card activity                */
+        self._savedCardIDs  = savedCardIDs      /* Local saved-card identities                              */
+        self.onTitleToggle  = onTitleToggle     /* Callback invoked when the card title checkbox is toggled */
+        self.onMoveToList   = onMoveToList      /* Callback invoked when the card is moved                  */
         self.personalCollectionID = personalCollectionID
         self.availablePersonalLists = availablePersonalLists
         self.onMoveNoteToPersonalList = onMoveNoteToPersonalList
@@ -447,9 +447,9 @@ struct CardDetailView: View {
         _reactions = State(initialValue: card.reactions)
         _titleText            = State(initialValue: card.isSectionDivider ? (card.sectionHeading ?? "") : card.word)                  /* Initialize the editable title from the card                          */
         _appearance           = State(initialValue: card.appearance)
-        _subtitleText         = State(initialValue: card.subtitle)              /* Initialize the editable subtitle from the card                       */
-        _startDate            = State(initialValue: card.startDate)             /* Initialize the start date from the card state                        */
-        _dueDate              = State(initialValue: card.dueDate)               /* Initialize the due date from the card state                          */
+        _subtitleText         = State(initialValue: card.subtitle)   /* Initialize the editable subtitle from the card */
+        _startDate            = State(initialValue: card.startDate)  /* Initialize the start date from the card state  */
+        _dueDate              = State(initialValue: card.dueDate)    /* Initialize the due date from the card state    */
         _sectionLayout = State(initialValue: card.sectionLayout ?? CardSectionLayout())
         _showsDueDateInList = State(initialValue: card.showsDueDateInList)
         _startDateKind = State(initialValue: card.startDateKind)
@@ -460,10 +460,10 @@ struct CardDetailView: View {
         _recordID = State(initialValue: card.id)
         _currentListTitle = State(initialValue: card.listTitle)
         _currentPersonalCollectionID = State(initialValue: personalCollectionID)
-        _comments             = State(initialValue: card.comments)              /* Initialize comments from the selected card                           */
-        _members              = State(initialValue: card.members)               /* Initialize assigned members from the selected card                   */
-        _selectedLabelIDs     = State(initialValue: card.labelIDs)              /* Initialize selected labels from the card                             */
-        _attachments          = State(initialValue: card.attachments ?? [])     /* Initialize photo attachments from the card                           */
+        _comments             = State(initialValue: card.comments)           /* Initialize comments from the selected card         */
+        _members              = State(initialValue: card.members)            /* Initialize assigned members from the selected card */
+        _selectedLabelIDs     = State(initialValue: card.labelIDs)           /* Initialize selected labels from the card           */
+        _attachments          = State(initialValue: card.attachments ?? [])  /* Initialize photo attachments from the card         */
         _coverAttachmentID    = State(initialValue: card.coverAttachmentID)
         _dismissedActivityIDs = State(initialValue: card.dismissedActivityIDs)  /* Initialize dismissed activity IDs from the card state                */
 
@@ -849,13 +849,13 @@ struct CardDetailView: View {
                     return
                 }
 
-                let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type */
-                let isVideo = photoItem.supportedContentTypes.contains { /* Whether the selection is video media */
+                let contentType = photoItem.supportedContentTypes.first   /* Preferred selected-media type        */
+                let isVideo = photoItem.supportedContentTypes.contains {  /* Whether the selection is video media */
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
 
-                let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category */
-                let fileExtension = contentType?.preferredFilenameExtension ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
+                let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo                           /* Stored media category            */
+                let fileExtension = contentType?.preferredFilenameExtension ?? (isVideo ? "mov" : "jpg")  /* File type used for local storage */
 
                 let attachment = try CardAttachmentStore.saveMedia(mediaData, kind: mediaKind, fileExtension: fileExtension) /* Persisted media record ready to attach */
 
@@ -1022,8 +1022,8 @@ struct CardDetailView: View {
     ///
     private func removeAttachment(_ attachment: KanbanAttachment) {
 
-        let removesCover = coverAttachmentID == attachment.id /* Whether removing this attachment also clears the cover */
-        var updated = card /* Card snapshot excluding the removed attachment */
+        let removesCover = coverAttachmentID == attachment.id  /* Whether removing this attachment also clears the cover */
+        var updated = card                                     /* Card snapshot excluding the removed attachment         */
 
         updated.attachments = attachments
         updated.coverAttachmentID = coverAttachmentID
@@ -1072,16 +1072,16 @@ struct CardDetailView: View {
     ///
     @discardableResult
     private func syncCardState(
-        title:          String?             = nil,          /* Updated card title               */
-        subtitle:       String?             = nil,          /* Updated card subtitle            */
-        members:        [CardAssignee]?     = nil,          /* Updated card assignees           */
-        labelIDs:       [String]?           = nil,          /* Updated card label IDs           */
-        attachments:    [KanbanAttachment]? = nil,          /* Updated card attachments         */
-        titleChecked:   Bool?               = nil,          /* Updated card title checked state */
-        startDate:      Date?               = nil,          /* Updated card start date          */
-        dueDate:        Date?               = nil,          /* Updated card due date            */
-        clearStartDate: Bool                = false,        /* Whether to clear the start date  */
-        clearDueDate:   Bool                = false         /* Whether to clear the due date    */
+        title:          String?             = nil,    /* Updated card title               */
+        subtitle:       String?             = nil,    /* Updated card subtitle            */
+        members:        [CardAssignee]?     = nil,    /* Updated card assignees           */
+        labelIDs:       [String]?           = nil,    /* Updated card label IDs           */
+        attachments:    [KanbanAttachment]? = nil,    /* Updated card attachments         */
+        titleChecked:   Bool?               = nil,    /* Updated card title checked state */
+        startDate:      Date?               = nil,    /* Updated card start date          */
+        dueDate:        Date?               = nil,    /* Updated card due date            */
+        clearStartDate: Bool                = false,  /* Whether to clear the start date  */
+        clearDueDate:   Bool                = false   /* Whether to clear the due date    */
     ) -> Bool {
 
         guard !hasDeletedCard, !hasMovedCard else {
@@ -1210,8 +1210,8 @@ struct CardDetailView: View {
 
         hasDeletedCard = true
 
-        let deleted: Bool /* Whether the owning collection accepted permanent deletion */
-        if let currentPersonalCollectionID, /* Current owner used to route relocated Note deletion */
+        let deleted: Bool                    /* Whether the owning collection accepted permanent deletion */
+        if let currentPersonalCollectionID,  /* Current owner used to route relocated Note deletion       */
            currentPersonalCollectionID != personalCollectionID {
             deleted = onDeleteMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true
         } else {
@@ -1433,9 +1433,9 @@ struct CardDetailView: View {
     ///
     private func moveNote(to collectionID: UUID) {
 
-        guard let onMoveNoteToPersonalList, /* Callback handling checked movement between personal Lists */
-              let sourceID = currentPersonalCollectionID, /* Collection currently owning the Note */
-              let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID) else { /* Persisted Note with its destination-local identity */
+        guard let onMoveNoteToPersonalList,                                                             /* Callback handling checked movement between personal Lists */
+              let sourceID = currentPersonalCollectionID,                                               /* Collection currently owning the Note                      */
+              let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID) else {  /* Persisted Note with its destination-local identity        */
 
             return
         }
@@ -1700,9 +1700,9 @@ struct CardDetailView: View {
             return
         }
 
-        let checklist            = checklists[checklistIndex]                                                                   /* Current checklist snapshot       */
-        let allItemsAreCompleted = !checklist.items.isEmpty && checklist.completedItemIndices.count == checklist.items.count    /* Whether all items are complete    */
-        let completedIndices     = allItemsAreCompleted ? Set<Int>() : Set(checklist.items.indices)                             /* Completion indices after toggle   */
+        let checklist            = checklists[checklistIndex]                                                                 /* Current checklist snapshot      */
+        let allItemsAreCompleted = !checklist.items.isEmpty && checklist.completedItemIndices.count == checklist.items.count  /* Whether all items are complete  */
+        let completedIndices     = allItemsAreCompleted ? Set<Int>() : Set(checklist.items.indices)                           /* Completion indices after toggle */
 
         checklists[checklistIndex] = KanbanChecklist(
             id:                   checklist.id,
@@ -1827,8 +1827,8 @@ struct CardDetailView: View {
             return
         }
 
-        let checklist = checklists[checklistIndex]                  /* Checklist being updated */
-        var completedItemIndices = checklist.completedItemIndices   /* Mutable set of completed item indices */
+        let checklist = checklists[checklistIndex]                 /* Checklist being updated               */
+        var completedItemIndices = checklist.completedItemIndices  /* Mutable set of completed item indices */
 
         // Toggle the completion state of the specified item within the checklist
         if completedItemIndices.contains(itemIndex) {
@@ -3111,13 +3111,13 @@ struct CardDetailView: View {
                     })
                         .databaseActivityOverlay()
 
-                case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs */
-                    if let checklist = checklists.first(where: { /* Checklist containing the selected action */
+                case .actionDetail(let checklistID, let itemID):  /* Selected checklist and action IDs        */
+                    if let checklist = checklists.first(where: {  /* Checklist containing the selected action */
 
                         $0.id == checklistID
-                    }), /* Owning checklist */
-                       let item = checklist.items.first(where: { $0.id == itemID }), /* Selected action */
-                       case .actionDetail(let detail) = item.content { /* Reduced Action Detail payload */
+                    }),                                                               /* Owning checklist              */
+                       let item = checklist.items.first(where: { $0.id == itemID }),  /* Selected action               */
+                       case .actionDetail(let detail) = item.content {                /* Reduced Action Detail payload */
 
                         ChecklistActionDetailView(
                             title:           item.title,
@@ -3222,11 +3222,11 @@ private struct ChecklistActionDetailView: View {
 
     @Environment(\.dismiss) private var dismiss                 /* Sheet dismissal     */
 
-    @State private var detailID:        UUID                    /* Stable detail ID     */
-    @State private var descriptionText: String                  /* Description draft   */
-    @State private var checklists:      [KanbanChecklist]       /* Nested actions      */
-    @State private var comments:        [KanbanComment]         /* Detail comments     */
-    @State private var commentDraft     = ""                    /* New comment draft   */
+    @State private var detailID:        UUID               /* Stable detail ID  */
+    @State private var descriptionText: String             /* Description draft */
+    @State private var checklists:      [KanbanChecklist]  /* Nested actions    */
+    @State private var comments:        [KanbanComment]    /* Detail comments   */
+    @State private var commentDraft     = ""               /* New comment draft */
 
 
     ///
@@ -3435,12 +3435,12 @@ private struct ChecklistActionDetailView: View {
 ///
 private struct CardMembersSheet: View {
 
-    let onSave: ([CardAssignee]) -> Void            /* Save typed card assignments                                 */
-    let memberColors: [String: Color]               /* Shared icon colors keyed by normalized member name          */
+    let onSave: ([CardAssignee]) -> Void  /* Save typed card assignments                        */
+    let memberColors: [String: Color]     /* Shared icon colors keyed by normalized member name */
 
-    @Environment(\.dismiss) private var dismiss     /* Dismiss action for the sheet                                */
-    @State private var members: [CardAssignee]      /* Local typed assignments being edited                        */
-    @State private var memberDraft = ""             /* Current text input for adding a new member                  */
+    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet               */
+    @State private var members: [CardAssignee]   /* Local typed assignments being edited       */
+    @State private var memberDraft = ""          /* Current text input for adding a new member */
 
     ///
     /// @fcn        CardMembersSheet.trimmedMemberDraft
@@ -3484,12 +3484,12 @@ private struct CardMembersSheet: View {
 
         var seenAssignments: Set<String> = [] /* Identity keys already emitted */
 
-        let manualDraft = canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : [] /* Optional new manual assignment */
-        let membersToSave = members + manualDraft /* Existing assignments plus valid draft */
+        let manualDraft = canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : []  /* Optional new manual assignment        */
+        let membersToSave = members + manualDraft                                        /* Existing assignments plus valid draft */
 
         return membersToSave.compactMap { assignee in
-            let trimmedName = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized display name */
-            let identityKey = assignee.kind == .registeredUser /* Stable identity namespace */
+            let trimmedName = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines)  /* Normalized display name   */
+            let identityKey = assignee.kind == .registeredUser                                      /* Stable identity namespace */
                 ? "user:\(assignee.userID ?? assignee.id.uuidString)"
                 : "manual:\(trimmedName.lowercased())"
 
@@ -3662,9 +3662,9 @@ struct DetailSection<Content: View>: View {
 
     @State private var isCollapsed = false
     let collapsible: Bool
-    let title:          String          /* The title of the detail section                    */
-    var trailing:       String?         /* The optional trailing symbol of the detail section */
-    var trailingAction: (() -> Void)?   /* The optional action for the trailing symbol        */
+    let title:          String         /* The title of the detail section                    */
+    var trailing:       String?        /* The optional trailing symbol of the detail section */
+    var trailingAction: (() -> Void)?  /* The optional action for the trailing symbol        */
 
     @ViewBuilder let content: () -> Content /* Content rendered beneath the section heading */
 
@@ -3685,10 +3685,10 @@ struct DetailSection<Content: View>: View {
     init(title: String, collapsible: Bool = false, trailing: String? = nil, trailingAction: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
 
         self.collapsible = collapsible
-        self.title          = title          /* The title of the detail section                    */
-        self.trailing       = trailing       /* The optional trailing symbol of the detail section */
-        self.trailingAction = trailingAction /* The optional action for the trailing symbol        */
-        self.content        = content        /* The content of the detail section                  */
+        self.title          = title           /* The title of the detail section                    */
+        self.trailing       = trailing        /* The optional trailing symbol of the detail section */
+        self.trailingAction = trailingAction  /* The optional action for the trailing symbol        */
+        self.content        = content         /* The content of the detail section                  */
     }
 
 
@@ -3808,9 +3808,9 @@ struct ActionTile: View {
 ///
 struct DetailRow: View {
 
-    let icon:  String   /* The icon representing the detail row     */
-    let title: String   /* The title or label of the detail row     */
-    let value: String   /* The value associated with the detail row */
+    let icon:  String  /* The icon representing the detail row     */
+    let title: String  /* The title or label of the detail row     */
+    let value: String  /* The value associated with the detail row */
 
     ///
     /// @fcn        DetailRow.body
@@ -3855,31 +3855,31 @@ struct DetailRow: View {
 ///
 struct ChecklistBlock: View {
 
-    let checklist: KanbanChecklist          /* The checklist data rendered by the block                                */
-    let linkedCardsByID: [Int: KanbanCard]  /* Linked cards keyed by stable ID                                          */
-    let onDelete: ()        -> Void         /* The action invoked when the checklist is deleted                        */
-    let onAddItem: (String) -> Void         /* The action invoked when a new item is added                             */
-    let onToggleItem: (Int) -> Void         /* The action invoked when an item is toggled                              */
-    let onUpdateItem: (Int, String) -> Void /* The action invoked when item text is edited                             */
-    let onDeleteItem: (Int)  -> Void        /* The action invoked when an item is deleted                              */
-    let onOpenActionDetail: (UUID) -> Void  /* The action invoked for reduced detail                                  */
-    let onRename: (String)   -> Void        /* The action invoked when the checklist title is renamed                  */
-    let onToggleAllItems: () -> Void        /* The action invoked when all items are toggled                           */
-    let onMove: (ChecklistMoveDirection) -> Void /* The action invoked when the checklist is moved                     */
-    let canMoveUp: Bool                     /* Whether the checklist can be moved up in the list                       */
-    let canMoveDown: Bool                   /* Whether the checklist can be moved down in the list                     */
-    let focusFirstItem: Bool                /* Whether the first item should be focused when the checklist is rendered */
-    let onFirstItemFocused: () -> Void      /* The action invoked when the first item receives focus                   */
+    let checklist: KanbanChecklist                /* The checklist data rendered by the block                                */
+    let linkedCardsByID: [Int: KanbanCard]        /* Linked cards keyed by stable ID                                         */
+    let onDelete: ()        -> Void               /* The action invoked when the checklist is deleted                        */
+    let onAddItem: (String) -> Void               /* The action invoked when a new item is added                             */
+    let onToggleItem: (Int) -> Void               /* The action invoked when an item is toggled                              */
+    let onUpdateItem: (Int, String) -> Void       /* The action invoked when item text is edited                             */
+    let onDeleteItem: (Int)  -> Void              /* The action invoked when an item is deleted                              */
+    let onOpenActionDetail: (UUID) -> Void        /* The action invoked for reduced detail                                   */
+    let onRename: (String)   -> Void              /* The action invoked when the checklist title is renamed                  */
+    let onToggleAllItems: () -> Void              /* The action invoked when all items are toggled                           */
+    let onMove: (ChecklistMoveDirection) -> Void  /* The action invoked when the checklist is moved                          */
+    let canMoveUp: Bool                           /* Whether the checklist can be moved up in the list                       */
+    let canMoveDown: Bool                         /* Whether the checklist can be moved down in the list                     */
+    let focusFirstItem: Bool                      /* Whether the first item should be focused when the checklist is rendered */
+    let onFirstItemFocused: () -> Void            /* The action invoked when the first item receives focus                   */
     var onChangeType: ((KanbanChecklistItem) -> Bool)? = nil
     @State private var typeDraft: KanbanChecklistItem?
     @State private var requestedType = ChecklistItemType.standard
 
     @State private var newItemText = ""
     @State private var confirmsDeletion = false
-    @State private var isRenaming = false   /* Whether the checklist title is currently being renamed                  */
-    @State private var titleDraft = ""      /* The draft text for the checklist title being edited                     */
-    @State private var hideCompletedItems = false /* Checklist completed-item filter */
-    @State private var isCollapsed = false  /* Whether the checklist's items are currently collapsed from view         */
+    @State private var isRenaming = false          /* Whether the checklist title is currently being renamed          */
+    @State private var titleDraft = ""             /* The draft text for the checklist title being edited             */
+    @State private var hideCompletedItems = false  /* Checklist completed-item filter                                 */
+    @State private var isCollapsed = false         /* Whether the checklist's items are currently collapsed from view */
 
     ///
     /// @fcn        ChecklistBlock.allItemsAreCompleted
@@ -4195,20 +4195,20 @@ struct ChecklistItemRow: View {
     let linkedCollectionID: UUID?
     @Environment(\.cardMovementSource) private var linkedSourceID
 
-    let item: String                  /* The editable item text                                        */
-    let isCompleted: Bool             /* The current completion state                                  */
-    let linkedCardID: Int?            /* Stable linked card ID, when present                           */
-    let linkedCard: KanbanCard?       /* Resolved linked card, when available                          */
+    let item: String             /* The editable item text               */
+    let isCompleted: Bool        /* The current completion state         */
+    let linkedCardID: Int?       /* Stable linked card ID, when present  */
+    let linkedCard: KanbanCard?  /* Resolved linked card, when available */
     var webURL: URL? = nil
-    let onOpenDetail: (() -> Void)?   /* Action Detail presentation callback                           */
-    let onToggle: () -> Void          /* The action invoked by the checkbox                            */
-    let onUpdate: (String) -> Void    /* The action invoked by text editing                            */
-    let onDelete: () -> Void          /* The action invoked by delete                                  */
-    let shouldFocus: Bool             /* Indicates whether the text field should receive focus         */
-    let onFocusHandled: () -> Void    /* The action invoked when the text field focus has been handled */
+    let onOpenDetail: (() -> Void)?  /* Action Detail presentation callback                           */
+    let onToggle: () -> Void         /* The action invoked by the checkbox                            */
+    let onUpdate: (String) -> Void   /* The action invoked by text editing                            */
+    let onDelete: () -> Void         /* The action invoked by delete                                  */
+    let shouldFocus: Bool            /* Indicates whether the text field should receive focus         */
+    let onFocusHandled: () -> Void   /* The action invoked when the text field focus has been handled */
 
-    @State private var horizontalOffset: CGFloat = 0 /* Current swipe translation */
-    @FocusState private var isTextFocused: Bool /* Text-editor focus state */
+    @State private var horizontalOffset: CGFloat = 0  /* Current swipe translation */
+    @FocusState private var isTextFocused: Bool       /* Text-editor focus state   */
 
 
     ///
@@ -4390,9 +4390,9 @@ struct ChecklistItemRow: View {
 ///
 struct ActivityRow: View {
 
-    let text: String       /* The main text content of the activity row */
-    let actorColor: Color  /* The icon color for the activity actor      */
-    let onDelete: () -> Void /* Activity deletion callback */
+    let text: String          /* The main text content of the activity row */
+    let actorColor: Color     /* The icon color for the activity actor     */
+    let onDelete: () -> Void  /* Activity deletion callback                */
 
 
     ///
@@ -4436,9 +4436,9 @@ struct ActivityRow: View {
 ///
 struct CommentActivityRow: View {
 
-    let comment: KanbanComment      /* The comment data rendered by the row           */
-    let memberColor: Color          /* The assigned icon color for the comment author  */
-    let onDelete: () -> Void        /* The action invoked when the comment is deleted */
+    let comment: KanbanComment  /* The comment data rendered by the row           */
+    let memberColor: Color      /* The assigned icon color for the comment author */
+    let onDelete: () -> Void    /* The action invoked when the comment is deleted */
 
     ///
     /// @fcn        CommentActivityRow.body
@@ -4483,10 +4483,10 @@ struct CommentActivityRow: View {
 ///
 struct ActivitySwipeRow<Content: View>: View {
 
-        let onDelete: () -> Void                            /* The action invoked when the row is deleted     */
-        let deletionAccessibilityLabel: String              /* Accessibility label for the swipe action       */
-        @ViewBuilder let content: () -> Content             /* The content view rendered inside the swipe row */
-        @State private var horizontalOffset: CGFloat = 0    /* The current horizontal offset of the swipe row */
+        let onDelete: () -> Void                          /* The action invoked when the row is deleted     */
+        let deletionAccessibilityLabel: String            /* Accessibility label for the swipe action       */
+        @ViewBuilder let content: () -> Content           /* The content view rendered inside the swipe row */
+        @State private var horizontalOffset: CGFloat = 0  /* The current horizontal offset of the swipe row */
 
 
         ///

@@ -135,9 +135,9 @@ extension ProfileAvatarIcon {
 ///
 struct ProfileAvatarView: View {
 
-    let profile: LocalProfile?   /* Current local profile */
-    let size:    CGFloat         /* Stable avatar size    */
-    var photoData: Data? = nil /* In-memory photo override for the profile's stored filename */
+    let profile: LocalProfile?  /* Current local profile                                      */
+    let size:    CGFloat        /* Stable avatar size                                         */
+    var photoData: Data? = nil  /* In-memory photo override for the profile's stored filename */
 
     ///
     /// @fcn        ProfileAvatarView.body
@@ -179,8 +179,8 @@ struct ProfileAvatarView: View {
 
         .frame(width: size, height: size)
         .overlay {
-            if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName), /* Selected or saved avatar bytes */
-               let image = UIImage(data: data) { /* Decoded avatar photo */
+            if let data = photoData ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName),  /* Selected or saved avatar bytes */
+               let image = UIImage(data: data) {                                                    /* Decoded avatar photo           */
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -213,10 +213,10 @@ struct AccountSettingsView: View {
     }
     @State private var selectedTab: SettingsTab = .account
 
-    let profile:  LocalProfile?                  /* Existing local profile */
-    let lists:    [KanbanList]                   /* Default-list choices   */
-    let onSave:   (LocalProfile) -> Void         /* Profile save callback  */
-    let onRemove: () -> Void                     /* Profile removal        */
+    let profile:  LocalProfile?           /* Existing local profile */
+    let lists:    [KanbanList]            /* Default-list choices   */
+    let onSave:   (LocalProfile) -> Void  /* Profile save callback  */
+    let onRemove: () -> Void              /* Profile removal        */
 
     @Environment(\.planningCalendarAccess) private var planningAccess
     @AppStorage(TodayListPins.key) private var listPinData = Data()
@@ -225,16 +225,16 @@ struct AccountSettingsView: View {
     @State private var didLoadWeekStart = false
     @Environment(\.dismiss) private var dismiss  /* Sheet dismissal       */
 
-    @State private var profileID:           UUID                     /* Draft profile ID       */
-    @State private var createdAt:           Date                     /* Draft creation date    */
-    @State private var displayName:         String                   /* Draft display name     */
-    @State private var email:               String                   /* Draft local email      */
-    @State private var context:             String                   /* Draft planning context */
-    @State private var avatarColor:         ProfileAvatarColor       /* Draft avatar color     */
-    @State private var avatarIcon:          ProfileAvatarIcon        /* Draft avatar icon      */
-    @State private var avatarForegroundColor: ProfileAvatarForegroundColor /* Draft icon color */
-    @State private var defaultListID:       Int?                     /* Draft default list     */
-    @State private var usesReducedContent:  Bool                     /* Draft content density  */
+    @State private var profileID:           UUID                            /* Draft profile ID       */
+    @State private var createdAt:           Date                            /* Draft creation date    */
+    @State private var displayName:         String                          /* Draft display name     */
+    @State private var email:               String                          /* Draft local email      */
+    @State private var context:             String                          /* Draft planning context */
+    @State private var avatarColor:         ProfileAvatarColor              /* Draft avatar color     */
+    @State private var avatarIcon:          ProfileAvatarIcon               /* Draft avatar icon      */
+    @State private var avatarForegroundColor: ProfileAvatarForegroundColor  /* Draft icon color       */
+    @State private var defaultListID:       Int?                            /* Draft default list     */
+    @State private var usesReducedContent:  Bool                            /* Draft content density  */
     @State private var scrollsOverflowingTitles: Bool
     @State private var enablesLowerCornerBack: Bool
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
@@ -250,11 +250,11 @@ struct AccountSettingsView: View {
     @State private var todayFocusItemCount: Int
     @State private var showsNavigationLabels: Bool                   /* Draft navigation captions */
     @State private var showsReviewRhythmSettings = false
-    @State private var confirmsRemoval      = false                  /* Removal confirmation   */
-    @State private var isChoosingAvatarIcon = false                  /* Whether the nested avatar picker is visible */
-    @State private var profileSheetDetent: PresentationDetent = .large /* Current profile-sheet height */
-    @State private var avatarPhotoData:    Data?                     /* Draft avatar photo bytes */
-    @State private var photoSaveError:     String?                   /* Avatar photo persistence error text */
+    @State private var confirmsRemoval      = false                     /* Removal confirmation                        */
+    @State private var isChoosingAvatarIcon = false                     /* Whether the nested avatar picker is visible */
+    @State private var profileSheetDetent: PresentationDetent = .large  /* Current profile-sheet height                */
+    @State private var avatarPhotoData:    Data?                        /* Draft avatar photo bytes                    */
+    @State private var photoSaveError:     String?                      /* Avatar photo persistence error text         */
 
 
     ///
@@ -637,22 +637,22 @@ struct AccountSettingsView: View {
 ///
 private struct ProfileAvatarIconPicker: View {
 
-    @Binding var selection: ProfileAvatarIcon /* Parent's saved icon choice */
-    @Binding var avatarColor: ProfileAvatarColor /* Parent's saved avatar background */
-    @Binding var foregroundColor: ProfileAvatarForegroundColor /* Parent's saved icon and initials color */
-    @Binding var photoData: Data? /* Parent's saved in-memory photo bytes */
-    let displayName: String /* Name used to preview initials */
+    @Binding var selection: ProfileAvatarIcon                   /* Parent's saved icon choice             */
+    @Binding var avatarColor: ProfileAvatarColor                /* Parent's saved avatar background       */
+    @Binding var foregroundColor: ProfileAvatarForegroundColor  /* Parent's saved icon and initials color */
+    @Binding var photoData: Data?                               /* Parent's saved in-memory photo bytes   */
+    let displayName: String                                     /* Name used to preview initials          */
 
-    @Environment(\.dismiss) private var dismiss /* Picker dismissal action */
-    @State private var draftIcon: ProfileAvatarIcon /* Unsaved icon selection */
-    @State private var draftAvatarColor: ProfileAvatarColor /* Unsaved avatar background */
-    @State private var draftForegroundColor: ProfileAvatarForegroundColor /* Unsaved foreground color */
-    @State private var isEditingColorMap = false /* Whether a nested color editor is active */
-    @State private var draftPhotoData: Data? /* Unsaved photo bytes */
-    @State private var selectedPhoto: PhotosPickerItem? /* Current system photo selection */
-    @State private var cropImage: AvatarCropImage? /* Image awaiting crop confirmation */
-    @State private var isLoadingPhoto = false /* Whether selected photo data is loading */
-    @State private var photoError: String? /* Photo selection or decoding error */
+    @Environment(\.dismiss) private var dismiss                            /* Picker dismissal action                 */
+    @State private var draftIcon: ProfileAvatarIcon                        /* Unsaved icon selection                  */
+    @State private var draftAvatarColor: ProfileAvatarColor                /* Unsaved avatar background               */
+    @State private var draftForegroundColor: ProfileAvatarForegroundColor  /* Unsaved foreground color                */
+    @State private var isEditingColorMap = false                           /* Whether a nested color editor is active */
+    @State private var draftPhotoData: Data?                               /* Unsaved photo bytes                     */
+    @State private var selectedPhoto: PhotosPickerItem?                    /* Current system photo selection          */
+    @State private var cropImage: AvatarCropImage?                         /* Image awaiting crop confirmation        */
+    @State private var isLoadingPhoto = false                              /* Whether selected photo data is loading  */
+    @State private var photoError: String?                                 /* Photo selection or decoding error       */
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)] /* Adaptive icon-grid layout */
 
@@ -938,8 +938,8 @@ private struct ProfileAvatarIconPicker: View {
 
             do {
 
-                guard let data = try await selectedPhoto.loadTransferable(type: Data.self), /* Transferred photo bytes */
-                      let image = AvatarPhotoCrop.image(from: data) else { /* Decoded photo for cropping */
+                guard let data = try await selectedPhoto.loadTransferable(type: Data.self),  /* Transferred photo bytes    */
+                      let image = AvatarPhotoCrop.image(from: data) else {                   /* Decoded photo for cropping */
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
@@ -1071,8 +1071,8 @@ private struct ProfileAvatarIconPicker: View {
 ///     Make the pending crop image usable as an identifiable SwiftUI sheet item
 ///
 private struct AvatarCropImage: Identifiable {
-    let id = UUID() /* Identity for the pending crop presentation */
-    let image: UIImage /* Decoded source image */
+    let id = UUID()     /* Identity for the pending crop presentation */
+    let image: UIImage  /* Decoded source image                       */
 }
 
 
@@ -1124,9 +1124,9 @@ enum AvatarPhotoCrop {
     ///
     static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize {
 
-        let scale = max(side / imageSize.width, side / imageSize.height) * zoom /* Aspect-fill crop scale */
-        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2) /* Maximum horizontal crop movement */
-        let verticalLimit = max(0, (imageSize.height * scale - side) / 2) /* Maximum vertical crop movement */
+        let scale = max(side / imageSize.width, side / imageSize.height) * zoom  /* Aspect-fill crop scale           */
+        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)       /* Maximum horizontal crop movement */
+        let verticalLimit = max(0, (imageSize.height * scale - side) / 2)        /* Maximum vertical crop movement   */
 
         return CGSize(
             width:  min(max(offset.width, -horizontalLimit), horizontalLimit),
@@ -1157,10 +1157,10 @@ enum AvatarPhotoCrop {
             return nil
         }
 
-        let scale = max(side / image.size.width, side / image.size.height) * zoom /* Aspect-fill crop scale */
-        let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom) /* Bounded crop translation */
-        let outputScale = 512 / side /* Convert viewport points to output pixels */
-        let format = UIGraphicsImageRendererFormat() /* Square JPEG renderer settings */
+        let scale = max(side / image.size.width, side / image.size.height) * zoom              /* Aspect-fill crop scale                   */
+        let offset = constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)  /* Bounded crop translation                 */
+        let outputScale = 512 / side                                                           /* Convert viewport points to output pixels */
+        let format = UIGraphicsImageRendererFormat()                                           /* Square JPEG renderer settings            */
 
         format.scale = 1
         format.opaque = true
@@ -1187,15 +1187,15 @@ enum AvatarPhotoCrop {
 ///
 private struct AvatarPhotoCropView: View {
 
-    let image: UIImage /* Decoded source photo */
-    let onUsePhoto: (Data) -> Void /* Callback receiving the cropped JPEG */
-    @Environment(\.dismiss) private var dismiss /* Crop-sheet dismissal action */
-    @State private var zoom: CGFloat = 1 /* Current image zoom */
-    @State private var offset: CGSize = .zero /* Current image translation */
-    @State private var cropSide: CGFloat = 1 /* Current square crop viewport side */
-    @GestureState private var drag: CGSize = .zero /* In-progress drag translation */
-    @GestureState private var magnification: CGFloat = 1 /* In-progress pinch scale */
-    @State private var cropFailed = false /* Whether crop rendering failed */
+    let image: UIImage                                    /* Decoded source photo                */
+    let onUsePhoto: (Data) -> Void                        /* Callback receiving the cropped JPEG */
+    @Environment(\.dismiss) private var dismiss           /* Crop-sheet dismissal action         */
+    @State private var zoom: CGFloat = 1                  /* Current image zoom                  */
+    @State private var offset: CGSize = .zero             /* Current image translation           */
+    @State private var cropSide: CGFloat = 1              /* Current square crop viewport side   */
+    @GestureState private var drag: CGSize = .zero        /* In-progress drag translation        */
+    @GestureState private var magnification: CGFloat = 1  /* In-progress pinch scale             */
+    @State private var cropFailed = false                 /* Whether crop rendering failed       */
 
 
     ///
@@ -1213,8 +1213,8 @@ private struct AvatarPhotoCropView: View {
     ///
     private func stage(side: CGFloat) -> some View {
 
-        let currentZoom = min(max(zoom * magnification, 1), 6) /* Zoom including the in-progress pinch */
-        let currentOffset = AvatarPhotoCrop.constrainedOffset(                 /* Drag-adjusted, bounded crop position */
+        let currentZoom = min(max(zoom * magnification, 1), 6)  /* Zoom including the in-progress pinch */
+        let currentOffset = AvatarPhotoCrop.constrainedOffset(  /* Drag-adjusted, bounded crop position */
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
             imageSize: image.size, side: side, zoom: currentZoom
         )
@@ -1357,8 +1357,8 @@ private struct AvatarPhotoCropView: View {
 ///
 private struct ProfileColorPreset: Identifiable {
 
-    let name: String /* Display name for the preset */
-    let color: ProfileColor /* Preset color value */
+    let name: String         /* Display name for the preset */
+    let color: ProfileColor  /* Preset color value          */
 
     ///
     /// @fcn        ProfileColorPreset.id
@@ -1379,17 +1379,17 @@ private struct ProfileColorPreset: Identifiable {
 ///
 private struct ProfileColorMapPicker: View {
 
-    let title: String /* Color role shown in navigation and preview */
-    let defaultColor: ProfileColor /* Role-specific default choice */
-    let presets: [ProfileColorPreset] /* Named colors available for quick selection */
-    @Binding var selection: ProfileColor /* Parent color value committed on save */
-    private let initialColor: ProfileColor /* Value used by Reset */
+    let title: String                       /* Color role shown in navigation and preview */
+    let defaultColor: ProfileColor          /* Role-specific default choice               */
+    let presets: [ProfileColorPreset]       /* Named colors available for quick selection */
+    @Binding var selection: ProfileColor    /* Parent color value committed on save       */
+    private let initialColor: ProfileColor  /* Value used by Reset                        */
 
-    @Environment(\.dismiss) private var dismiss /* Picker dismissal action */
-    @State private var hue: Double /* Draft hue component */
-    @State private var saturation: Double /* Draft saturation component */
-    @State private var brightness: Double /* Draft brightness component */
-    @State private var isEditingRGB = false /* Whether the nested RGB editor is active */
+    @Environment(\.dismiss) private var dismiss  /* Picker dismissal action                 */
+    @State private var hue: Double               /* Draft hue component                     */
+    @State private var saturation: Double        /* Draft saturation component              */
+    @State private var brightness: Double        /* Draft brightness component              */
+    @State private var isEditingRGB = false      /* Whether the nested RGB editor is active */
 
 
     ///
@@ -1640,11 +1640,11 @@ private struct ProfileColorMapPicker: View {
 ///
 private struct ProfileRGBColorEditor: View {
 
-    let onSave: (ProfileColor) -> Void /* Callback receiving the edited profile color */
-    @Environment(\.dismiss) private var dismiss /* Editor dismissal action */
-    @State private var red: Double /* Draft red channel in the 0...255 range */
-    @State private var green: Double /* Draft green channel in the 0...255 range */
-    @State private var blue: Double /* Draft blue channel in the 0...255 range */
+    let onSave: (ProfileColor) -> Void           /* Callback receiving the edited profile color */
+    @Environment(\.dismiss) private var dismiss  /* Editor dismissal action                     */
+    @State private var red: Double               /* Draft red channel in the 0...255 range      */
+    @State private var green: Double             /* Draft green channel in the 0...255 range    */
+    @State private var blue: Double              /* Draft blue channel in the 0...255 range     */
 
 
     ///
@@ -1750,11 +1750,11 @@ private struct ProfileRGBColorEditor: View {
 ///
 private struct RGBChannelControl: View {
 
-    let title: String /* Channel label */
-    @Binding var value: Double /* Channel intensity from 0 through 255 */
+    let title: String           /* Channel label                        */
+    @Binding var value: Double  /* Channel intensity from 0 through 255 */
 
-    @State private var hexValue: String /* Editable two-character hexadecimal value */
-    @FocusState private var isEditingHex: Bool /* Whether the text field owns focus */
+    @State private var hexValue: String         /* Editable two-character hexadecimal value */
+    @FocusState private var isEditingHex: Bool  /* Whether the text field owns focus        */
 
 
     ///
@@ -1820,8 +1820,8 @@ private struct RGBChannelControl: View {
                 }
 
                 .onChange(of: hexValue) { _, newValue in
-                    let validCharacters = Set("0123456789ABCDEF") /* Accepted hexadecimal digits */
-                    let normalized = String(newValue.uppercased().filter { validCharacters.contains($0) }.prefix(2)) /* Uppercase two-digit input */
+                    let validCharacters = Set("0123456789ABCDEF")                                                     /* Accepted hexadecimal digits */
+                    let normalized = String(newValue.uppercased().filter { validCharacters.contains($0) }.prefix(2))  /* Uppercase two-digit input   */
 
                     if normalized != newValue {
 
@@ -1851,9 +1851,9 @@ private struct RGBChannelControl: View {
 ///
 private struct ProfileColorMapSurface: View {
 
-    @Binding var hue: Double /* Selected horizontal hue coordinate */
-    @Binding var saturation: Double /* Selected vertical saturation coordinate */
-    let brightness: Double /* Fixed brightness used for the surface preview */
+    @Binding var hue: Double         /* Selected horizontal hue coordinate            */
+    @Binding var saturation: Double  /* Selected vertical saturation coordinate       */
+    let brightness: Double           /* Fixed brightness used for the surface preview */
 
 
     ///
@@ -1889,8 +1889,8 @@ private struct ProfileColorMapSurface: View {
     ///
     var body: some View { /* Interactive hue and saturation surface */
         GeometryReader { geometry in
-            let width = max(geometry.size.width, 1) /* Safe color-map width */
-            let height = max(geometry.size.height, 1) /* Safe color-map height */
+            let width = max(geometry.size.width, 1)    /* Safe color-map width  */
+            let height = max(geometry.size.height, 1)  /* Safe color-map height */
 
             ZStack {
                 LinearGradient(colors: spectrum, startPoint: .leading, endPoint: .trailing)

@@ -794,11 +794,11 @@ private struct BoardListFramePreferenceKey: PreferenceKey {
 
 /// Install a native drag interaction on the row's content container, separate from List reordering.
 struct BoardCardDragSource: UIViewRepresentable {
-    static let contentType = UTType(exportedAs: "com.plenact.local-board-card", conformingTo: .data) /* Private transfer type for local Board card drags */
-    let token: String /* Board-session token carried by each drag item */
-    let onBegan: (CGPoint) -> Void /* Reports the initial global card-drag position */
-    let onChanged: (CGPoint) -> Void /* Reports subsequent global card-drag positions */
-    let onEnded: () -> Void /* Clears parent state when the native drag session ends */
+    static let contentType = UTType(exportedAs: "com.plenact.local-board-card", conformingTo: .data)  /* Private transfer type for local Board card drags      */
+    let token: String                                                                                 /* Board-session token carried by each drag item         */
+    let onBegan: (CGPoint) -> Void                                                                    /* Reports the initial global card-drag position         */
+    let onChanged: (CGPoint) -> Void                                                                  /* Reports subsequent global card-drag positions         */
+    let onEnded: () -> Void                                                                           /* Clears parent state when the native drag session ends */
 
 
     ///
@@ -834,11 +834,11 @@ struct BoardCardDragSource: UIViewRepresentable {
     ///     Own drag delegate state and forward location changes to the SwiftUI source callbacks
     ///
     final class Coordinator: NSObject, UIDragInteractionDelegate {
-        var source: BoardCardDragSource /* Current parent callbacks and transfer token */
-        weak var container: UIView? /* Collection cell hosting the native drag interaction */
-        var interaction: UIDragInteraction? /* Native interaction retained through an active drag */
-        private(set) var isDragging = false /* Whether a native drag session is in progress */
-        var isDetached = false /* Whether SwiftUI has dismantled the source probe */
+        var source: BoardCardDragSource      /* Current parent callbacks and transfer token         */
+        weak var container: UIView?          /* Collection cell hosting the native drag interaction */
+        var interaction: UIDragInteraction?  /* Native interaction retained through an active drag  */
+        private(set) var isDragging = false  /* Whether a native drag session is in progress        */
+        var isDetached = false               /* Whether SwiftUI has dismantled the source probe     */
 
 
         ///
@@ -1152,10 +1152,10 @@ struct BoardCardDragSource: UIViewRepresentable {
 ///     Forward native drop locations to Board card movement without changing list reordering
 ///
 struct BoardCardDropSurface: UIViewRepresentable {
-    let token: String /* Board-session token required for local drop acceptance */
-    var isEnabled = true /* Whether this surface currently accepts card drops */
-    let onChanged: (CGPoint) -> Void /* Reports the global pointer position during an accepted drop */
-    let onDrop: (CGPoint) -> Bool /* Commits a drop at the reported global pointer position */
+    let token: String                 /* Board-session token required for local drop acceptance      */
+    var isEnabled = true              /* Whether this surface currently accepts card drops           */
+    let onChanged: (CGPoint) -> Void  /* Reports the global pointer position during an accepted drop */
+    let onDrop: (CGPoint) -> Bool     /* Commits a drop at the reported global pointer position      */
 
 
     ///
@@ -1219,10 +1219,10 @@ struct BoardCardDropSurface: UIViewRepresentable {
     ///     Route native drop callbacks to SwiftUI while restoring the original delegate when needed
     ///
     final class Coordinator: NSObject, UIDropInteractionDelegate, UICollectionViewDropDelegate {
-        var surface: BoardCardDropSurface /* Current acceptance settings and parent drop callbacks */
-        weak var container: UICollectionView? /* Collection view hosting drop handling */
-        weak var interaction: UIDropInteraction? /* Installed or reused native drop interaction */
-        weak var originalDropDelegate: (any UICollectionViewDropDelegate)? /* Prior collection delegate restored on detachment */
+        var surface: BoardCardDropSurface                                   /* Current acceptance settings and parent drop callbacks */
+        weak var container: UICollectionView?                               /* Collection view hosting drop handling                 */
+        weak var interaction: UIDropInteraction?                            /* Installed or reused native drop interaction           */
+        weak var originalDropDelegate: (any UICollectionViewDropDelegate)?  /* Prior collection delegate restored on detachment      */
 
 
         ///
@@ -1597,13 +1597,13 @@ struct ContentView: View {
 
     @Binding private var lists: [KanbanList]                                                /* Shared kanban board lists                        */
     /// Archived lists belonging to the same board.
-    @Binding private var archivedLists: [KanbanList] /* Archived partition belonging to this Board */
-    @Binding private var boardTargetListID: Int?                                            /* Requested list to reveal after board navigation  */
+    @Binding private var archivedLists: [KanbanList]  /* Archived partition belonging to this Board      */
+    @Binding private var boardTargetListID: Int?      /* Requested list to reveal after board navigation */
     /// Optional card identity to open after navigating to its containing list.
     @Binding private var boardTargetCardID: Int? /* Pending card identity to open after revealing its list */
     /// Explicit parent requests to return from Card Detail to this Board's root.
-    let boardRootRequest: Int /* Changing request value returns card navigation to the Board root */
-    @Binding private var savedCardIDs: Set<Int>                                             /* Locally bookmarked card identities                */
+    let boardRootRequest: Int                    /* Changing request value returns card navigation to the Board root */
+    @Binding private var savedCardIDs: Set<Int>  /* Locally bookmarked card identities                               */
     /// Reports which list is nearest the center of the visible board.
     let onListViewed: (Int) -> Void /* Reports the list nearest the viewport center */
     /// Title displayed in the board header.
@@ -1642,8 +1642,8 @@ struct ContentView: View {
     /// Receives active-list snapshots for caller-owned persistence.
     let onListsChanged: @MainActor ([KanbanList]) -> Void /* Publishes active-list snapshots for caller-owned persistence */
     /// Supplies other retained snapshots whose attachment files must not be pruned.
-    let retainedAttachmentLists: () -> [KanbanList] /* Supplies external snapshots protecting referenced media */
-    let personalCollectionID: UUID? /* Owning personal collection; nil for the Week workspace */
+    let retainedAttachmentLists: () -> [KanbanList]  /* Supplies external snapshots protecting referenced media */
+    let personalCollectionID: UUID?                  /* Owning personal collection; nil for the Week workspace  */
     private let appearanceBinding: Binding<BoardAppearance?>?
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
     @State private var showsBoardAppearance = false
@@ -1700,12 +1700,12 @@ struct ContentView: View {
         }
     }
 
-    let availablePersonalLists: [PersonalCollection] /* Personal Lists available for moving Notes */
-    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves a Note and returns its persisted destination record */
-    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? /* Persists edits to a Note after collection movement */
-    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? /* Archives a Note under its current collection owner */
-    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? /* Deletes a Note under its current collection owner */
-    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state */
+    let availablePersonalLists: [PersonalCollection]                          /* Personal Lists available for moving Notes                 */
+    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?  /* Moves a Note and returns its persisted destination record */
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Persists edits to a Note after collection movement        */
+    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?                     /* Archives a Note under its current collection owner        */
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Deletes a Note under its current collection owner         */
+    let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?               /* Persists a relocated Note's collection-local saved state  */
     /// Controls presentation of the calendar sheet.
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
@@ -1718,8 +1718,8 @@ struct ContentView: View {
     }
     @State private var showsSharedSearch = false
     @State private var showsWeekSelector = false
-    @State private var showsCalendar = false /* Calendar sheet presentation state */
-    @State private var calendarCardTarget: (listID: Int, cardID: Int)? /* Selection opened after Calendar dismissal */
+    @State private var showsCalendar = false                            /* Calendar sheet presentation state         */
+    @State private var calendarCardTarget: (listID: Int, cardID: Int)?  /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists.
     @State private var showsArchivedLists = false /* Archived-list browser presentation state */
     /// Navigation stack path for card-detail destinations.
@@ -1727,9 +1727,9 @@ struct ContentView: View {
     @State private var listToMove: KanbanList?
     @Environment(\.planningDirectItemReturn) private var directItemReturn
     @State private var openedDirectItem = false
-    @State private var navigationPath = NavigationPath() /* Card-detail destinations in the Board navigation stack */
-    @State private var boardBoundaryJumpRequest = 0 /* Trigger distinguishing repeated boundary-navigation requests */
-    @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation */
+    @State private var navigationPath = NavigationPath()                                /* Card-detail destinations in the Board navigation stack       */
+    @State private var boardBoundaryJumpRequest = 0                                     /* Trigger distinguishing repeated boundary-navigation requests */
+    @State private var boardBoundaryJumpTarget: BoardListReordering.BoardListBoundary?  /* First or last list boundary requested for navigation         */
     /// Last visible list identity sent through `onListViewed`.
     @State private var lastReportedVisibleListID: Int? /* Last centered list reported to the parent */
     /// Currently centered list identity.
@@ -1804,20 +1804,20 @@ struct ContentView: View {
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
         }
     }
-    @State private var draggedCardID: Int? /* Card identity participating in the native drag session */
-    @State private var cardDragLocation: CGPoint? /* Current card-drag pointer in global coordinates */
-    @State private var cardDragToken = UUID().uuidString /* Per-Board token rejecting drags from other Board surfaces */
+    @State private var draggedCardID: Int?                /* Card identity participating in the native drag session    */
+    @State private var cardDragLocation: CGPoint?         /* Current card-drag pointer in global coordinates           */
+    @State private var cardDragToken = UUID().uuidString  /* Per-Board token rejecting drags from other Board surfaces */
     /// Environment preference used to reduce or remove animated transitions.
     @Environment(\.accessibilityReduceMotion) private var reducesMotion /* Accessibility preference limiting animated transitions */
     /// Current Dynamic Type size used when selecting Board dimensions.
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category informing Board dimensions */
-    @Environment(\.scenePhase) private var scenePhase /* Scene lifecycle used to cancel interrupted drag sessions */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize  /* Text-size category informing Board dimensions            */
+    @Environment(\.scenePhase) private var scenePhase            /* Scene lifecycle used to cancel interrupted drag sessions */
     /// Locally persisted choice between Standard and Overview Board layouts.
-    @State private var presentation = BoardPresentation.standard /* Persisted Standard or Overview layout selection */
-    @State private var labelLibrary                  = LabelLibraryStore.load()             /* Label library containing all available labels    */
-    @State private var displaySettings               = BoardDisplaySettings()               /* Board display settings                           */
-    @State private var memberColors: [String: Color] = [:]                                  /* Mapping of member names to their assigned colors */
-    @State private var currentUserName               = "Justin Reina"                       /* Current user's name                              */
+    @State private var presentation = BoardPresentation.standard                 /* Persisted Standard or Overview layout selection  */
+    @State private var labelLibrary                  = LabelLibraryStore.load()  /* Label library containing all available labels    */
+    @State private var displaySettings               = BoardDisplaySettings()    /* Board display settings                           */
+    @State private var memberColors: [String: Color] = [:]                       /* Mapping of member names to their assigned colors */
+    @State private var currentUserName               = "Justin Reina"            /* Current user's name                              */
 
 
     ///
@@ -1949,8 +1949,8 @@ struct ContentView: View {
         visibleListID = targetListID
         listProxy.scrollTo(targetListID, anchor: presentation == .standard ? .center : .leading)
 
-        if let targetCardID = boardTargetCardID, /* Requested card identity to open */
-           let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) { /* Requested record resolved in its containing list */
+        if let targetCardID = boardTargetCardID,                                                                      /* Requested card identity to open                  */
+           let card = lists.first(where: { $0.id == targetListID })?.cards.first(where: { $0.id == targetCardID }) {  /* Requested record resolved in its containing list */
             navigationPath = NavigationPath()
             navigationPath.append(card)
             openedDirectItem = directItemReturn != nil
@@ -1999,8 +1999,8 @@ struct ContentView: View {
             .flatMap(\.members)
             .compactMap { assignee in
 
-                let trimmedMember    = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Display name */
-                let normalizedMember = trimmedMember.lowercased()                               /* Normalize the member name for case-insensitive comparison */
+                let trimmedMember    = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines)  /* Display name                                              */
+                let normalizedMember = trimmedMember.lowercased()                                            /* Normalize the member name for case-insensitive comparison */
 
                 guard !trimmedMember.isEmpty, seenMembers.insert(normalizedMember).inserted else {
 
@@ -2041,8 +2041,8 @@ struct ContentView: View {
             return
         }
 
-        let currentKey = currentName.lowercased()       /* Normalized key for the current member name */
-        let updatedKey = updatedName.lowercased()       /* Normalized key for the updated member name */    
+        let currentKey = currentName.lowercased()  /* Normalized key for the current member name */
+        let updatedKey = updatedName.lowercased()  /* Normalized key for the updated member name */
 
         for listIndex in lists.indices {
 
@@ -2053,11 +2053,11 @@ struct ContentView: View {
 
                 updatedCard.members = updatedCard.members.compactMap { assignee in
 
-                    let trimmedMember = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Existing display name */
-                    let renamedMember = assignee.kind == .manual && trimmedMember.lowercased() == currentKey /* Match only manual names */
+                    let trimmedMember = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines)  /* Existing display name   */
+                    let renamedMember = assignee.kind == .manual && trimmedMember.lowercased() == currentKey  /* Match only manual names */
                         ? updatedName
-                        : trimmedMember /* Name retained or updated for this assignment */
-                    let normalizedName = assignee.kind == .registeredUser /* Namespace stable IDs separately from names */
+                        : trimmedMember                                    /* Name retained or updated for this assignment */
+                    let normalizedName = assignee.kind == .registeredUser  /* Namespace stable IDs separately from names   */
                         ? "user:\(assignee.userID ?? assignee.id.uuidString)"
                         : "manual:\(renamedMember.lowercased())" /* Stable deduplication key */
 
@@ -2192,10 +2192,10 @@ struct ContentView: View {
 
     private func addList() {
 
-        let nextListID     = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
-        let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Normalized current titles */
-        var newTitle       = "New List" /* First candidate list name */
-        var suffix         = 2 /* Duplicate-title suffix */
+        let nextListID     = ((lists + archivedLists).map(\.id).max() ?? -1) + 1  /* Board-wide next list ID   */
+        let existingTitles = Set(lists.map { $0.title.lowercased() })             /* Normalized current titles */
+        var newTitle       = "New List"                                           /* First candidate list name */
+        var suffix         = 2                                                    /* Duplicate-title suffix    */
 
         while existingTitles.contains(newTitle.lowercased()) {
 
@@ -2260,8 +2260,8 @@ struct ContentView: View {
     @discardableResult
     private func deleteCard(_ cardID: Int) -> Bool {
 
-        var snapshot = lists + archivedLists /* Complete Board snapshot for checked removal */
-        var bookmarks = savedCardIDs /* Saved identities pruned with removed records */
+        var snapshot = lists + archivedLists  /* Complete Board snapshot for checked removal  */
+        var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
 
         BoardContentDeletion.card(cardID, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -2280,8 +2280,8 @@ struct ContentView: View {
     ///
     private func deleteList(_ id: Int) {
 
-        var snapshot = lists + archivedLists /* Complete Board snapshot for checked removal */
-        var bookmarks = savedCardIDs /* Saved identities pruned with removed records */
+        var snapshot = lists + archivedLists  /* Complete Board snapshot for checked removal  */
+        var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
 
         BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
         commitDeletion(snapshot, bookmarks: bookmarks)
@@ -2477,9 +2477,9 @@ struct ContentView: View {
 
             $0.id == listID
         }),
-              let center = dragGeometry.centers[listID] else { return } /* Measured center of the dragged list */
-              let direction = value.location.x > center ? 1 : -1 /* Neighbor direction selected by the pointer position */
-              let destination = source + direction /* Adjacent list position considered for swapping */
+              let center = dragGeometry.centers[listID] else { return }  /* Measured center of the dragged list                 */
+              let direction = value.location.x > center ? 1 : -1         /* Neighbor direction selected by the pointer position */
+              let destination = source + direction                       /* Adjacent list position considered for swapping      */
 
         guard lists.indices.contains(destination),
               let targetCenter = dragGeometry.centers[lists[destination].id], /* Neighbor center used as the reorder threshold */
@@ -2534,8 +2534,8 @@ struct ContentView: View {
     ///
     private func listDragOffset(for listID: Int) -> CGFloat {
 
-        guard draggedListID == listID, let location = listDragLocation, /* Pointer position driving the dragged list's offset */
-              let center = dragGeometry.centers[listID] else { return 0 } /* Measured resting center of the dragged list */
+        guard draggedListID == listID, let location = listDragLocation,    /* Pointer position driving the dragged list's offset */
+              let center = dragGeometry.centers[listID] else { return 0 }  /* Measured resting center of the dragged list        */
         return location - center - listDragGrabOffset
     }
 
@@ -2567,8 +2567,8 @@ struct ContentView: View {
 
         var updatedList = lists[listIndex] /* Mutable list copy */
 
-        var sortedCards:    [KanbanCard] = [] /* Cards emitted in sorted order */
-        var currentSection: [KanbanCard] = [] /* Cards before the next divider */
+        var sortedCards:    [KanbanCard] = []  /* Cards emitted in sorted order */
+        var currentSection: [KanbanCard] = []  /* Cards before the next divider */
 
         // Iterate through each card in the list, grouping them by sections and sorting within each section
         for card in updatedList.cards { /* Preserve divider-separated sections */
@@ -2901,8 +2901,8 @@ struct ContentView: View {
     }
 
     private var cardDropTarget: BoardCardDropTarget? {
-        _ = dragGeometryRevision /* Valid list and insertion anchor under the card-drag pointer */
-        guard let location = cardDragLocation, let draggedCardID else { /* Active pointer position and dragged record identity */
+        _ = dragGeometryRevision                                         /* Valid list and insertion anchor under the card-drag pointer */
+        guard let location = cardDragLocation, let draggedCardID else {  /* Active pointer position and dragged record identity         */
 
             return nil
         }
@@ -3338,8 +3338,8 @@ struct ContentView: View {
 
                             .onChange(of: boardBoundaryJumpRequest) { _, _ in
 
-                                guard let target = boardBoundaryJumpTarget, /* Requested first or last list boundary */
-                                      let listID = BoardListReordering.boundaryListID(target, in: lists) else { /* Active list resolved at the requested boundary */
+                                guard let target = boardBoundaryJumpTarget,                                      /* Requested first or last list boundary          */
+                                      let listID = BoardListReordering.boundaryListID(target, in: lists) else {  /* Active list resolved at the requested boundary */
 
                                     return
                                 }
@@ -3371,10 +3371,10 @@ struct ContentView: View {
 
                                         try await Task.sleep(for: .milliseconds(550))
 
-                                        guard draggedListID == listID, let location = listDragLocation, /* Latest pointer position during list edge navigation */
-                                              let source = lists.firstIndex(where: { $0.id == listID }) else { continue } /* Current dragged-list position */
-                                        let direction = BoardListReordering.edgeDirection(at: location, viewportWidth: listArea.size.width) /* Activated left or right viewport edge */
-                                        let destination = source + direction /* Neighbor position reached by edge navigation */
+                                        guard draggedListID == listID, let location = listDragLocation,                                      /* Latest pointer position during list edge navigation */
+                                              let source = lists.firstIndex(where: { $0.id == listID }) else { continue }                    /* Current dragged-list position                       */
+                                        let direction = BoardListReordering.edgeDirection(at: location, viewportWidth: listArea.size.width)  /* Activated left or right viewport edge               */
+                                        let destination = source + direction                                                                 /* Neighbor position reached by edge navigation        */
 
                                         guard direction != 0, lists.indices.contains(destination) else {
 
@@ -3657,12 +3657,12 @@ struct BoardHeader: View {
     @Environment(\.layoutDirection) private var headerLayoutDirection
     @Binding var settings: BoardDisplaySettings      /* Board display settings                              */
     /// Shared Standard/Overview selection displayed in the Board options menu.
-    @Binding var presentation: BoardPresentation /* Shared Standard or Overview layout selection */
-    let activeMembers:     [String]                  /* Unique users assigned to active cards               */
-    let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name         */
-    let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments         */
-    let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments           */
-    let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color                 */
+    @Binding var presentation: BoardPresentation     /* Shared Standard or Overview layout selection */
+    let activeMembers:     [String]                  /* Unique users assigned to active cards        */
+    let memberColors:      [String: Color]           /* Icon colors keyed by normalized member name  */
+    let onRenameMember:    (String, String) -> Void  /* Rename a member across all card assignments  */
+    let onDeleteMember:    (String) -> Void          /* Remove a member from all card assignments    */
+    let onSetMemberColor:  (String, Color) -> Void   /* Update a member's shared icon color          */
     /// Opens the calendar view for the current board.
     let onOpenCalendar: () -> Void /* Presents the Board's calendar browser */
     /// Board name shown in the header.
@@ -3676,9 +3676,9 @@ struct BoardHeader: View {
     /// Opens the archived-list browser.
     let onViewArchivedLists: () -> Void /* Presents this Board's archived lists */
     /// Optional callback that archives the board after confirmation.
-    let onArchiveBoard: (() -> Void)? /* Optional whole-Board archive action */
-    let onDeleteBoard: (() -> Void)? /* Confirmed parent-owned Board removal */
-    let deleteBoardTitle: String /* Week content clearing or personal Board deletion label */
+    let onArchiveBoard: (() -> Void)?  /* Optional whole-Board archive action                    */
+    let onDeleteBoard: (() -> Void)?   /* Confirmed parent-owned Board removal                   */
+    let deleteBoardTitle: String       /* Week content clearing or personal Board deletion label */
     /// Navigates to the first active list when more than one list exists.
     let onJumpToFirstList: (() -> Void)? /* Optional navigation action revealing the first active list */
     /// Navigates to the last active list when more than one list exists.
@@ -3706,8 +3706,8 @@ struct BoardHeader: View {
     @State private var pendingBoardAction: BoardOptionsAction?
     @State private var showingSettings = false       /* Controls the visibility of the board settings sheet */
     /// Controls confirmation before archiving the complete board.
-    @State private var confirmsArchiveBoard = false /* Whole-Board archive confirmation state */
-    @State private var confirmsDeleteBoard = false /* Permanent Board deletion confirmation */
+    @State private var confirmsArchiveBoard = false  /* Whole-Board archive confirmation state */
+    @State private var confirmsDeleteBoard = false   /* Permanent Board deletion confirmation  */
 
 
     ///
@@ -3764,8 +3764,8 @@ struct BoardHeader: View {
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
                 
-                    guard let boundary = BoardListReordering.boundary(forHorizontalSwipe: value.translation), /* Board edge selected by the horizontal swipe */
-                          let action = boundary == .first ? onJumpToFirstList : onJumpToLastList else { /* Available callback for the selected boundary */
+                    guard let boundary = BoardListReordering.boundary(forHorizontalSwipe: value.translation),  /* Board edge selected by the horizontal swipe  */
+                          let action = boundary == .first ? onJumpToFirstList : onJumpToLastList else {        /* Available callback for the selected boundary */
 
                         return
                     }
@@ -3900,10 +3900,10 @@ private struct ArchivedListsView: View {
     /// Archived lists available for restoration.
     @Binding var lists: [KanbanList] /* Shared archived-list partition */
     /// Requests restoration of a list by identity.
-    let onRestore: (Int) -> Void /* Restores an archived list by identity */
-    let onDelete: (Int) -> Void /* Permanently remove a confirmed archived list */
-    let onDeleteCard: (Int, Int) -> Void /* Remove a card within the archived list */
-    @State private var deletingList: KanbanList? /* List awaiting permanent deletion */
+    let onRestore: (Int) -> Void                  /* Restores an archived list by identity        */
+    let onDelete: (Int) -> Void                   /* Permanently remove a confirmed archived list */
+    let onDeleteCard: (Int, Int) -> Void          /* Remove a card within the archived list       */
+    @State private var deletingList: KanbanList?  /* List awaiting permanent deletion             */
     /// Dismiss action for the archive browser.
     @Environment(\.dismiss) private var dismiss /* Archived-list browser dismissal action */
 
@@ -3993,13 +3993,13 @@ private struct ArchivedListsView: View {
 ///     Offer confirmed card deletion for both retained card partitions
 ///
 private struct ArchivedListContentsView: View {
-    @Binding var lists: [KanbanList] /* Canonical retained lists */
-    let listID: Int /* Archived list identity */
-    let onDeleteCard: (Int) -> Void /* Owner removes confirmed cards */
-    let onDeleteList: () -> Void /* Owner removes the confirmed list */
-    @State private var deletingCard: KanbanCard? /* Card awaiting permanent removal */
-    @State private var confirmsDeleteList = false /* Complete retained list deletion */
-    @Environment(\.dismiss) private var dismiss /* Close a deleted list */
+    @Binding var lists: [KanbanList]               /* Canonical retained lists         */
+    let listID: Int                                /* Archived list identity           */
+    let onDeleteCard: (Int) -> Void                /* Owner removes confirmed cards    */
+    let onDeleteList: () -> Void                   /* Owner removes the confirmed list */
+    @State private var deletingCard: KanbanCard?   /* Card awaiting permanent removal  */
+    @State private var confirmsDeleteList = false  /* Complete retained list deletion  */
+    @Environment(\.dismiss) private var dismiss    /* Close a deleted list             */
 
     ///
     /// @fcn        ArchivedListContentsView.list
@@ -4081,10 +4081,10 @@ private struct ArchivedListContentsView: View {
 ///     Allow inspection and confirmed permanent deletion before restoration
 ///
 struct ArchivedCardInspectionView: View {
-    let card: KanbanCard /* Retained card snapshot */
-    let onDelete: () -> Bool /* Owner reports successful save-first removal */
-    @State private var confirmsDelete = false /* Permanent deletion confirmation */
-    @Environment(\.dismiss) private var dismiss /* Return after deletion */
+    let card: KanbanCard                         /* Retained card snapshot                      */
+    let onDelete: () -> Bool                     /* Owner reports successful save-first removal */
+    @State private var confirmsDelete = false    /* Permanent deletion confirmation             */
+    @Environment(\.dismiss) private var dismiss  /* Return after deletion                       */
 
     ///
     /// @fcn        ArchivedCardInspectionView.body
@@ -4168,12 +4168,12 @@ private struct ListItemSwipeDelete: ViewModifier {
 }
 
 struct ContentLifecycleActions: ViewModifier {
-    let title: String /* Canonical content name used for confirmation */
-    let kind: String /* Card or List */
-    let onArchive: (() -> Void)? /* Optional retention action; dividers support deletion only */
-    let onDelete: () -> Bool /* Owner reports saved removal of the confirmed record */
-    @State private var confirmsDelete = false /* Permanent removal confirmation */
-    @Environment(\.dismiss) private var dismiss /* Close snapshot projections after mutation */
+    let title: String                            /* Canonical content name used for confirmation              */
+    let kind: String                             /* Card or List                                              */
+    let onArchive: (() -> Void)?                 /* Optional retention action; dividers support deletion only */
+    let onDelete: () -> Bool                     /* Owner reports saved removal of the confirmed record       */
+    @State private var confirmsDelete = false    /* Permanent removal confirmation                            */
+    @Environment(\.dismiss) private var dismiss  /* Close snapshot projections after mutation                 */
 
 
     ///
@@ -4225,25 +4225,25 @@ struct ContentLifecycleActions: ViewModifier {
 ///
 private struct BoardSettingsView: View {
 
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true /* Device-only visibility */
-    @Binding var settings: BoardDisplaySettings             /* Bound to the board's display preferences        */
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true  /* Device-only visibility                   */
+    @Binding var settings: BoardDisplaySettings                                   /* Bound to the board's display preferences */
     /// Shared presentation choice updated immediately from Board settings.
     @Binding var presentation: BoardPresentation /* Shared Board layout selection edited by this menu */
 
     @Environment(\.dismiss) private var dismiss             /* Dismiss action for the settings sheet           */
 
-    let activeMembers:     [String]                         /* Active assigned users in board order            */        
-    let memberColors:      [String: Color]                  /* Member icon colors keyed by normalized name     */
-    let onRenameMember:    (String, String)   -> Void       /* Rename a member across all assigned cards       */
-    let onDeleteMember:    (String)           -> Void       /* Remove a member from all assigned cards         */
-    let onSetMemberColor:  (String, Color)    -> Void       /* Update a member's shared icon color             */
+    let activeMembers:     [String]                    /* Active assigned users in board order        */
+    let memberColors:      [String: Color]             /* Member icon colors keyed by normalized name */
+    let onRenameMember:    (String, String)   -> Void  /* Rename a member across all assigned cards   */
+    let onDeleteMember:    (String)           -> Void  /* Remove a member from all assigned cards     */
+    let onSetMemberColor:  (String, Color)    -> Void  /* Update a member's shared icon color         */
 
-    @State private var memberNameDraft  = ""                /* Draft name for renaming a member                */
-    @State private var isRenamingMember = false             /* Flag indicating if member rename in progress    */
+    @State private var memberNameDraft  = ""     /* Draft name for renaming a member             */
+    @State private var isRenamingMember = false  /* Flag indicating if member rename in progress */
 
-    @State private var editingMember: String?               /* Currently edited member name                    */
-    @State private var memberToDelete: String?              /* Member slated for deletion                      */
-    @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection           */
+    @State private var editingMember: String?                   /* Currently edited member name      */
+    @State private var memberToDelete: String?                  /* Member slated for deletion        */
+    @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection */
 
 
     ///
@@ -4438,8 +4438,8 @@ private struct BoardSettingsView: View {
 ///
 private struct MemberColorTarget: Identifiable {
 
-    let member: String                          /* The name of the member whose color is being edited */    
-    let color: Color                            /* The current color of the member's icon             */
+    let member: String  /* The name of the member whose color is being edited */
+    let color: Color    /* The current color of the member's icon             */
 
     ///
     /// @fcn        MemberColorTarget.id
@@ -4471,11 +4471,11 @@ private struct MemberColorTarget: Identifiable {
 ///
 private struct MemberColorEditorSheet: View {
 
-    let memberName: String              /* The name of the member whose color is being edited         */
-    let onSave: (Color) -> Void         /* The closure to call when the user saves the selected color */
+    let memberName: String       /* The name of the member whose color is being edited         */
+    let onSave: (Color) -> Void  /* The closure to call when the user saves the selected color */
 
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for the color editor */
-    @State private var selectedColor: Color /* Draft member icon color */
+    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the color editor */
+    @State private var selectedColor: Color      /* Draft member icon color             */
 
 
     ///
@@ -4578,47 +4578,47 @@ struct KanbanListView: View {
 
     let list: KanbanList                        /* The kanban list data rendered by the view                      */
     /// Maximum vertical space available to the list's card collection.
-    let availableListHeight: CGFloat /* Vertical viewport space available to this list panel */
-    let displaySettings: BoardDisplaySettings   /* The board's display settings affecting card and list rendering */
+    let availableListHeight: CGFloat           /* Vertical viewport space available to this list panel           */
+    let displaySettings: BoardDisplaySettings  /* The board's display settings affecting card and list rendering */
     /// Layout preset that controls the list's card dimensions.
-    let presentation: BoardPresentation /* Board layout controlling list density and dimensions */
-    let labelLibrary: LabelLibrary              /* Shared categorized labels available to the cards               */
-    let toggleCardTitle: (Int) -> Void          /* The action invoked to toggle the title of a card               */
-    let canMoveEarlier: Bool                    /* Indicates whether the list can be moved earlier in the board   */
-    let canMoveLater:  Bool                     /* Indicates whether the list can be moved later in the board     */
-    let onAddCard: (QuickCaptureSubmission) -> Bool     /* The action invoked to add a new card to the list               */
-    let onCopyList: () -> Void                  /* The action invoked to copy the list                            */
+    let presentation: BoardPresentation              /* Board layout controlling list density and dimensions         */
+    let labelLibrary: LabelLibrary                   /* Shared categorized labels available to the cards             */
+    let toggleCardTitle: (Int) -> Void               /* The action invoked to toggle the title of a card             */
+    let canMoveEarlier: Bool                         /* Indicates whether the list can be moved earlier in the board */
+    let canMoveLater:  Bool                          /* Indicates whether the list can be moved later in the board   */
+    let onAddCard: (QuickCaptureSubmission) -> Bool  /* The action invoked to add a new card to the list             */
+    let onCopyList: () -> Void                       /* The action invoked to copy the list                          */
     var onMoveToBoard: (() -> Void)? = nil
-    let onMoveList: (Int) -> Void               /* The action invoked to move the list by a specified offset      */
-    let onSortList: (Bool) -> Void              /* The action invoked to sort the list based on a specified order */
-    let onArchiveCompleted: () -> Void          /* The action invoked to archive all completed cards in the list  */
+    let onMoveList: (Int) -> Void       /* The action invoked to move the list by a specified offset      */
+    let onSortList: (Bool) -> Void      /* The action invoked to sort the list based on a specified order */
+    let onArchiveCompleted: () -> Void  /* The action invoked to archive all completed cards in the list  */
     /// Archived cards retained by this list.
     @Binding var archivedCards: [KanbanCard] /* Retained records belonging to this list's archive */
     /// Requests restoration of an archived card by identity.
-    let onRestoreArchivedCard: (Int) -> Void /* Restores a retained card to the active list */
-    let onDeleteArchivedCard: (Int) -> Void /* Confirmed removal of a retained card */
-    let onArchiveList: () -> Void               /* The action invoked to archive the entire list                  */
-    let onDeleteList: () -> Void /* Confirmed removal of this list and its retained content */
-    let onDeleteCard: (Int) -> Void             /* The action invoked to delete a card at a specified index       */
+    let onRestoreArchivedCard: (Int) -> Void  /* Restores a retained card to the active list              */
+    let onDeleteArchivedCard: (Int) -> Void   /* Confirmed removal of a retained card                     */
+    let onArchiveList: () -> Void             /* The action invoked to archive the entire list            */
+    let onDeleteList: () -> Void              /* Confirmed removal of this list and its retained content  */
+    let onDeleteCard: (Int) -> Void           /* The action invoked to delete a card at a specified index */
     /// Requests archival of an active card by identity.
-    let onArchiveCard: (Int) -> Void /* Archives an active card by identity */
-    let onUpdateCard: (KanbanCard) -> Void      /* The action invoked to save edited card information             */
-    let onMoveCard: (Int, Int) -> Void          /* Move a card to a destination index in this list                */
+    let onArchiveCard: (Int) -> Void        /* Archives an active card by identity                */
+    let onUpdateCard: (KanbanCard) -> Void  /* The action invoked to save edited card information */
+    let onMoveCard: (Int, Int) -> Void      /* Move a card to a destination index in this list    */
     /// Reports list-reorder drag updates to the owning board.
     let onListDragChanged: (DragGesture.Value?) -> Void /* Reports list-reorder gesture samples to the Board */
     /// Reports completion or cancellation of a list-reorder drag.
-    let onListDragEnded: () -> Void /* Ends the parent Board's list-reorder session */
-    var draggedCardID: Int? = nil /* Active native-drag record identity */
-    var dropBeforeCardID: Int? = nil /* Card identity marking the current insertion boundary */
-    var isCardDropTarget = false /* Whether this list contains the current insertion target */
+    let onListDragEnded: () -> Void   /* Ends the parent Board's list-reorder session            */
+    var draggedCardID: Int? = nil     /* Active native-drag record identity                      */
+    var dropBeforeCardID: Int? = nil  /* Card identity marking the current insertion boundary    */
+    var isCardDropTarget = false      /* Whether this list contains the current insertion target */
     var onMoveSection: (Int, Int) -> Void = { _, _ in }
-    var onCardDragBegan: (Int, CGPoint) -> Void = { _, _ in } /* Reports a card identity and initial global pointer */
-    var onCardDragChanged: (Int, CGPoint) -> Void = { _, _ in } /* Reports a card identity and updated global pointer */
-    var onCardDragEnded: (Int, Bool, CGPoint?) -> Void = { _, _, _ in } /* Ends a card drag with commit intent and final pointer */
-    var cardDragToken = "" /* Board-session token shared by drag sources and drop surfaces */
-    var onCardDrop: (CGPoint) -> Bool = { _ in false } /* Commits a native drop at its global pointer position */
-    var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu */
-    var onMoveCardToList: (Int, Int) -> Void = { _, _ in } /* Moves a selected card to the requested list identity */
+    var onCardDragBegan: (Int, CGPoint) -> Void = { _, _ in }            /* Reports a card identity and initial global pointer           */
+    var onCardDragChanged: (Int, CGPoint) -> Void = { _, _ in }          /* Reports a card identity and updated global pointer           */
+    var onCardDragEnded: (Int, Bool, CGPoint?) -> Void = { _, _, _ in }  /* Ends a card drag with commit intent and final pointer        */
+    var cardDragToken = ""                                               /* Board-session token shared by drag sources and drop surfaces */
+    var onCardDrop: (CGPoint) -> Bool = { _ in false }                   /* Commits a native drop at its global pointer position         */
+    var cardMoveDestinations: [KanbanList] = []                          /* Lists offered by the explicit card movement menu             */
+    var onMoveCardToList: (Int, Int) -> Void = { _, _ in }               /* Moves a selected card to the requested list identity         */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onOpenDayView: (() -> Void)? = nil
     @State private var opensDayAfterDismissal = false
@@ -4645,13 +4645,13 @@ struct KanbanListView: View {
 
     @State private var activeSheet: ActiveSheet?            /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
-    @State private var opensNewCardAfterDismissal = false /* Deferred creation request after another sheet closes */
-    @State private var isWatching               = false     /* Indicates whether the user is watching the list     */
+    @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
+    @State private var isWatching               = false    /* Indicates whether the user is watching the list      */
     private var effectiveAppearance: ItemAppearance { boardAppearance.resolved(list.appearance) }
     private var usesNoteList: Bool { hidesPanelHeader && list.singleListViewMode == .noteList }
     private var listTint: KanbanListTint { effectiveAppearance.listBackground ?? .neutral }
-    @State private var editMode: EditMode       = .inactive /* Indicates whether the list is in edit mode          */
-    @State private var deletingCard: KanbanCard? /* Swipe deletion awaiting confirmation */
+    @State private var editMode: EditMode       = .inactive  /* Indicates whether the list is in edit mode */
+    @State private var deletingCard: KanbanCard?             /* Swipe deletion awaiting confirmation       */
     /// Measured height of the list header used to size its card collection.
     @State private var headerHeight: CGFloat = 72 /* Measured list-header height with an initial estimate */
     /// Measured card heights keyed by stable card identity.
@@ -4735,8 +4735,8 @@ struct KanbanListView: View {
     /// @return     (CGFloat) estimated collection height in points
     /// @post       No card order or layout state is modified
     ///
-    private var cardCollectionContentHeight: CGFloat { /* Total card content height including row spacing */
-        let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero) { height, card in /* Accumulated measured or estimated card heights */
+    private var cardCollectionContentHeight: CGFloat {                                          /* Total card content height including row spacing */
+        let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero) { height, card in  /* Accumulated measured or estimated card heights  */
             height + (card.isSectionDivider ? 44 : (usesNoteList ? (measuredCardHeights[card.id] ?? 72) : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card))) + (usesNoteList ? 0 : 8))
         }
 
@@ -4753,8 +4753,8 @@ struct KanbanListView: View {
     /// @return     (CGFloat) visible card-collection height
     /// @post       Header measurement and card content remain unchanged
     ///
-    private var cardCollectionHeight: CGFloat { /* Card collection height capped by the remaining list viewport */
-        let availableHeight = max(1, availableListHeight - (hidesPanelHeader ? 0 : headerHeight) - 24) /* Vertical space remaining after header and panel padding */
+    private var cardCollectionHeight: CGFloat {                                                         /* Card collection height capped by the remaining list viewport */
+        let availableHeight = max(1, availableListHeight - (hidesPanelHeader ? 0 : headerHeight) - 24)  /* Vertical space remaining after header and panel padding      */
 
         return min(cardCollectionContentHeight, availableHeight)
     }
@@ -5327,24 +5327,24 @@ private struct KanbanListActionsSheet: View {
     @State private var confirmsCheckmarkReset = false
     @Binding var checkmarkReset: ListCheckmarkReset?
     let onUpdateCard: (KanbanCard) -> Void
-    let list: KanbanList                   /* The Kanban list this sheet is associated with                                 */
-    let canMoveEarlier: Bool               /* Indicates if the list can be moved earlier                                    */
-    let canMoveLater: Bool                 /* Indicates if the list can be moved later                                      */
-    @Binding var isWatching: Bool          /* Indicates if the user is watching the list                                    */
-    let onAddCard: () -> Void              /* Action to perform when adding a card                                          */
-    let onCopyList: () -> Void             /* Action to perform when copying the list                                       */
+    let list: KanbanList           /* The Kanban list this sheet is associated with */
+    let canMoveEarlier: Bool       /* Indicates if the list can be moved earlier    */
+    let canMoveLater: Bool         /* Indicates if the list can be moved later      */
+    @Binding var isWatching: Bool  /* Indicates if the user is watching the list    */
+    let onAddCard: () -> Void      /* Action to perform when adding a card          */
+    let onCopyList: () -> Void     /* Action to perform when copying the list       */
     var onMoveToBoard: (() -> Void)? = nil
-    let onMoveList: (Int) -> Void          /* Action to perform when moving the list by a given offset                      */
-    let onSortList: (Bool) -> Void         /* Action to perform when sorting the list; true for A to Z, false for Z to A    */
-    @Binding var cardEditMode: EditMode /* Manual card ordering in the owning List */
-    let onArchiveCompleted: () -> Void     /* Action to perform when archiving completed cards                              */
+    let onMoveList: (Int) -> Void        /* Action to perform when moving the list by a given offset                   */
+    let onSortList: (Bool) -> Void       /* Action to perform when sorting the list; true for A to Z, false for Z to A */
+    @Binding var cardEditMode: EditMode  /* Manual card ordering in the owning List                                    */
+    let onArchiveCompleted: () -> Void   /* Action to perform when archiving completed cards                           */
     /// Archived cards available to restore to the active list.
     @Binding var archivedCards: [KanbanCard] /* Shared retained records in this list's archive */
     /// Restores an archived card by stable card identity.
-    let onRestoreArchivedCard: (Int) -> Void /* Restores a retained record by identity */
-    let onDeleteArchivedCard: (Int) -> Void /* Permanently remove a confirmed archived card */
-    let onArchiveList: () -> Void          /* Action to perform when archiving the entire list                              */
-    let onDeleteList: () -> Void /* Permanently remove this list after confirmation */
+    let onRestoreArchivedCard: (Int) -> Void  /* Restores a retained record by identity           */
+    let onDeleteArchivedCard: (Int) -> Void   /* Permanently remove a confirmed archived card     */
+    let onArchiveList: () -> Void             /* Action to perform when archiving the entire list */
+    let onDeleteList: () -> Void              /* Permanently remove this list after confirmation  */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
     var onOpenDayView: (() -> Void)? = nil
@@ -5353,10 +5353,10 @@ private struct KanbanListActionsSheet: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var sheetHeight: PresentationDetent = .height(624)
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for list operations */
-    @State private var showsArchivedCards = false /* Archive browser opened from the compact footer */
-    @State private var confirmingArchive = false /* Archive confirmation presentation state */
-    @State private var confirmingDelete = false /* Permanent list deletion confirmation */
+    @Environment(\.dismiss) private var dismiss    /* Dismiss action for list operations             */
+    @State private var showsArchivedCards = false  /* Archive browser opened from the compact footer */
+    @State private var confirmingArchive = false   /* Archive confirmation presentation state        */
+    @State private var confirmingDelete = false    /* Permanent list deletion confirmation           */
 
 
     ///
@@ -5705,9 +5705,9 @@ private struct ArchivedCardsView: View {
     /// Archived card snapshot supplied by the owning list.
     @Binding var cards: [KanbanCard] /* Shared archived-card collection displayed by the browser */
     /// Requests restoration of an archived card by identity.
-    let onRestore: (Int) -> Void /* Returns an archived card to its active list */
-    let onDelete: (Int) -> Void /* Owner removes confirmed archived cards */
-    @State private var deletingCard: KanbanCard? /* Archived card awaiting deletion */
+    let onRestore: (Int) -> Void                  /* Returns an archived card to its active list */
+    let onDelete: (Int) -> Void                   /* Owner removes confirmed archived cards      */
+    @State private var deletingCard: KanbanCard?  /* Archived card awaiting deletion             */
 
 
     ///
@@ -5807,23 +5807,23 @@ private struct ArchivedCardsView: View {
 ///
 struct KanbanCardView: View {
 
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true /* Shared display-only preference */
-    let card: KanbanCard                            /* The kanban card being displayed                               */
-    let height: CGFloat                             /* Minimum card height; content may grow                         */
-    let displaySettings: BoardDisplaySettings       /* Settings controlling which elements of the card are displayed */
-    var cardBackground: KanbanListTint? = nil /* Board-scoped tint, independent of item banner metadata */
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = true  /* Shared display-only preference                                */
+    let card: KanbanCard                                                          /* The kanban card being displayed                               */
+    let height: CGFloat                                                           /* Minimum card height; content may grow                         */
+    let displaySettings: BoardDisplaySettings                                     /* Settings controlling which elements of the card are displayed */
+    var cardBackground: KanbanListTint? = nil                                     /* Board-scoped tint, independent of item banner metadata        */
     var compactCards: Bool = false
     var titleColor: ListPreviewTextColor? = nil
     var supportingTextColor: ListPreviewTextColor? = nil
     var listedOnDate: Date? = nil // Assigned day from the list, independent of its editable title.
     /// Layout preset used to select compact card dimensions.
-    var presentation: BoardPresentation = .standard /* Board layout controlling the card row's density */
-    let labelLibrary: LabelLibrary                  /* Shared label catalog used to resolve card label IDs           */
-    let onUpdateCard: (KanbanCard) -> Void          /* The action invoked when card details are updated              */
-    let onDeleteCard: () -> Void                    /* The action invoked when this card is deleted                  */
+    var presentation: BoardPresentation = .standard  /* Board layout controlling the card row's density     */
+    let labelLibrary: LabelLibrary                   /* Shared label catalog used to resolve card label IDs */
+    let onUpdateCard: (KanbanCard) -> Void           /* The action invoked when card details are updated    */
+    let onDeleteCard: () -> Void                     /* The action invoked when this card is deleted        */
     /// Requests archival of the displayed card.
-    let onArchiveCard: () -> Void /* Archives this card through its containing list */
-    let onToggle: () -> Void                        /* Callback invoked when the card's title checkbox is toggled    */
+    let onArchiveCard: () -> Void  /* Archives this card through its containing list             */
+    let onToggle: () -> Void       /* Callback invoked when the card's title checkbox is toggled */
 
     /// Plain writing keeps previews readable without changing the stored rich note.
     private var noteExcerpt: String {
@@ -5833,10 +5833,10 @@ struct KanbanCardView: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    @State private var renameDraft        = ""      /* Draft text for the rename operation                           */
-    @State private var isRenaming         = false   /* Flag indicating if the rename operation is active             */
-    @State private var isEditingInfo      = false   /* Flag indicating if the card info editing mode is active       */
-    @State private var isConfirmingDelete = false   /* Flag indicating if the delete confirmation dialog is shown    */
+    @State private var renameDraft        = ""     /* Draft text for the rename operation                        */
+    @State private var isRenaming         = false  /* Flag indicating if the rename operation is active          */
+    @State private var isEditingInfo      = false  /* Flag indicating if the card info editing mode is active    */
+    @State private var isConfirmingDelete = false  /* Flag indicating if the delete confirmation dialog is shown */
     /// Current Dynamic Type size used to adapt the compact card layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category used for adaptive card content */
 
@@ -6275,13 +6275,13 @@ struct KanbanCardView: View {
 ///
 private struct CardInfoEditorSheet: View {
 
-    let onSave: (String, String, String) -> Void /* Callback receiving the edited card text */
-    let presentation: ItemPresentation /* Item kind used for accessible creation labels */
+    let onSave: (String, String, String) -> Void  /* Callback receiving the edited card text       */
+    let presentation: ItemPresentation            /* Item kind used for accessible creation labels */
 
-    @Environment(\.dismiss) private var dismiss     /* Dismiss action for the sheet         */
-    @State private var title:       String          /* Draft text for the title field       */
-    @State private var subtitle:    String          /* Draft text for the subtitle field    */
-    @State private var description: String          /* Draft text for the description field */
+    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet         */
+    @State private var title:       String       /* Draft text for the title field       */
+    @State private var subtitle:    String       /* Draft text for the subtitle field    */
+    @State private var description: String       /* Draft text for the description field */
 
 
     ///
@@ -6399,15 +6399,15 @@ struct TodayListDetailView: View {
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
     /// Archived lists and cards retained to reserve identities during creation.
-    let reservedLists: [KanbanList] /* Retained lists whose card identities remain unavailable for reuse */
-    @Binding var labelLibrary: LabelLibrary /* Shared reusable label library */
-    @Binding var savedCardIDs: Set<Int> /* Device-local saved cards */
+    let reservedLists: [KanbanList]          /* Retained lists whose card identities remain unavailable for reuse */
+    @Binding var labelLibrary: LabelLibrary  /* Shared reusable label library                                     */
+    @Binding var savedCardIDs: Set<Int>      /* Device-local saved cards                                          */
 
-    let listID: Int /* Focused list identity */
-    let currentUserName: String /* Current activity author */
-    let onClose: () -> Void /* Return to Today */
-    let onOpenWeek: () -> Void /* Open this list in the Week workspace */
-    let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
+    let listID: Int                       /* Focused list identity                    */
+    let currentUserName: String           /* Current activity author                  */
+    let onClose: () -> Void               /* Return to Today                          */
+    let onOpenWeek: () -> Void            /* Open this list in the Week workspace     */
+    let onPermanentDelete: (Int) -> Bool  /* Parent's save-first Week deletion result */
 
     @Environment(\.layoutDirection) private var headerLayoutDirection
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()

@@ -321,6 +321,8 @@ struct CardDetailView: View {
     @State private var members: [CardAssignee]                      /* Registered and manual card assignments                       */
     @State private var selectedLabelIDs: [String]                   /* Stable IDs of labels assigned to this card                   */
     @State private var attachments: [KanbanAttachment]              /* Photo attachments currently assigned to the card             */
+    @State private var isEditingLocked: Bool
+    @State private var lockedSnapshot: KanbanCard?
     @State private var coverAttachmentID: UUID?                     /* Explicit cover selection; nil means disabled                 */
     @State private var selectedCoverPhoto: PhotosPickerItem?        /* One photo explicitly selected for a cover                    */
     @State private var coverImportID: UUID?                         /* Superseded requests cannot enable an old cover               */
@@ -484,6 +486,8 @@ struct CardDetailView: View {
         _members              = State(initialValue: card.members)            /* Initialize assigned members from the selected card */
         _selectedLabelIDs     = State(initialValue: card.labelIDs)           /* Initialize selected labels from the card           */
         _attachments          = State(initialValue: card.attachments ?? [])  /* Initialize photo attachments from the card         */
+        _lockedSnapshot       = State(initialValue: card.isEditingLocked ? card : nil)
+        _isEditingLocked      = State(initialValue: card.isEditingLocked)
         _coverAttachmentID    = State(initialValue: card.coverAttachmentID)
         _dismissedActivityIDs = State(initialValue: card.dismissedActivityIDs)  /* Initialize dismissed activity IDs from the card state                */
 
@@ -588,6 +592,7 @@ struct CardDetailView: View {
     ///
     private func setCover(_ id: UUID?) {
 
+        guard !isEditingLocked else { return }
         var updated = card.replacingLocation(id: recordID, listTitle: currentListTitle) /* Edited record retaining its current location identity */
 
         updated.attachments = attachments
@@ -617,7 +622,7 @@ struct CardDetailView: View {
     ///
     private func useLibraryCover(_ image: ExampleCoverImage) -> Bool {
 
-        guard !hasDeletedCard, !hasMovedCard else {
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else {
 
             return false
         }
@@ -870,7 +875,7 @@ struct CardDetailView: View {
     @MainActor
     private func importPhotos(from photoItems: [PhotosPickerItem], coverRequestID: UUID? = nil) async {
 
-        guard !hasDeletedCard, !hasMovedCard else {
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else {
 
             return
         }
@@ -892,7 +897,7 @@ struct CardDetailView: View {
                     continue
                 }
 
-                guard !hasDeletedCard, !hasMovedCard else {
+                guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else {
 
                     return
                 }
@@ -962,7 +967,7 @@ struct CardDetailView: View {
     /// @note       Attach both the preview and editable strokes, publishing only after the owner accepts the update.
     ///
     private func addDrawingAttachment(_ draft: DrawingCaptureDraft) -> Bool {
-        guard !hasDeletedCard, !hasMovedCard else { return false }
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else { return false }
         let previous = attachments
         do {
             return try QuickCaptureMediaCommit.save([], drawings: [draft]) { imported in
@@ -1013,7 +1018,7 @@ struct CardDetailView: View {
     ///             attachment
     ///
     private func addClipboardAttachment() {
-        guard !hasDeletedCard, !hasMovedCard else { return }
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else { return }
         let pasteboard = UIPasteboard.general
         activeSheet = nil
 
@@ -1125,7 +1130,7 @@ struct CardDetailView: View {
     /// @param[in]  clearStartDate  Whether to remove the card's start date
     /// @param[in]  clearDueDate    Whether to remove the card's due date
     ///
-    /// @return     (Bool) false when deletion or a rejected relocated-Note update prevents submission
+    /// @return     (Bool) false when locking, deletion, or a rejected relocated-Note update prevents submission
     ///
     /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent
     ///             update. Confirmed deletion suppresses all snapshots, including dismissal and
@@ -1145,15 +1150,18 @@ struct CardDetailView: View {
         startDate:      Date?               = nil,    /* Updated card start date          */
         dueDate:        Date?               = nil,    /* Updated card due date            */
         clearStartDate: Bool                = false,  /* Whether to clear the start date  */
-        clearDueDate:   Bool                = false   /* Whether to clear the due date    */
+        clearDueDate:   Bool                = false,  /* Whether to clear the due date    */
+        editingLocked:  Bool?               = nil     /* Explicit lock or unlock request  */
     ) -> Bool {
 
-        guard !hasDeletedCard, !hasMovedCard else {
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked || editingLocked == false else {
 
             return false
         }
 
         var updatedCard = workingCardSnapshot /* Complete working record receiving submitted field changes */
+
+        if let editingLocked { updatedCard.isEditingLocked = editingLocked }
 
         if let title { /* Submitted replacement title */
 
@@ -1196,13 +1204,44 @@ struct CardDetailView: View {
     }
 
     ///
-    /// @fcn        CardDetailView.workingCardSnapshot
-    /// @brief      Overlay working fields on the original record without losing hidden content
-    /// @details    Keeps nil body/attachment values until edited and preserves future model fields
-    /// @return     (KanbanCard) complete current record without submitting or saving it
+    /// @fcn        CardDetailView.setEditingLocked
+    /// @brief      Save an explicit lock change while retaining the complete working content
+    /// @details    Ends editing before saving the current draft and lock flag together. A failed checked callback
+    ///             for a relocated Note leaves the prior lock state in place. Clearing media selections prevents pending imports from
+    ///             modifying the locked presentation; unlocking is allowed by the normal content-update guard.
+    ///
+    /// @param[in]  locked  Requested content-editing lock state
+    ///
+    /// @return     (Void) no return value
+    ///
+    private func setEditingLocked(_ locked: Bool) {
+        dismissEditing()
+        guard syncCardState(editingLocked: locked) else { return }
+        if locked {
+            var snapshot = workingCardSnapshot
+            snapshot.isEditingLocked = true
+            lockedSnapshot = snapshot
+        } else { lockedSnapshot = nil }
+        isEditingLocked = locked
+        activeSheet = nil
+        selectedPhotoItems = []
+        selectedCoverPhoto = nil
+        coverImportID = nil
+    }
+
+
+    ///
+    /// @fcn        CardDetailView.toggleReaction
+    /// @brief      Toggle the current author's reaction only while editing is unlocked
+    /// @details    Validates the emoji before creating an author identity and restores the prior reactions if the
+    ///             owner rejects synchronization. Locked items never create a reaction identity or submit changes.
+    ///
+    /// @param[in]  emoji  Proposed single emoji reaction
+    ///
+    /// @return     (Void) no return value
     ///
     private func toggleReaction(_ emoji: String) {
-        guard !hasDeletedCard, !hasMovedCard, !workingCardSnapshot.isSectionDivider,
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked, !workingCardSnapshot.isSectionDivider,
               ItemEmojiReaction.validatedEmoji(emoji) != nil else { return }
         let author = LocalReactionIdentity.forUserAction()
         guard let updated = ItemEmojiReaction.toggling(emoji, authorID: author, in: reactions ?? []) else { return }
@@ -1217,10 +1256,18 @@ struct CardDetailView: View {
             onToggle: toggleReaction, onAdd: { dismissEditing(); activeSheet = .reactions })
     }
 
+    ///
+    /// @fcn        CardDetailView.workingCardSnapshot
+    /// @brief      Overlay working fields on the original record without losing hidden content
+    /// @details    Keeps nil body/attachment values until edited and preserves future model fields
+    /// @return     (KanbanCard) complete current record without submitting or saving it
+    ///
     private var workingCardSnapshot: KanbanCard { /* Original record overlaid with all current editor fields */
 
+        if isEditingLocked, let lockedSnapshot { return lockedSnapshot }
         var updated = card /* Complete record assembled from working editor state */
 
+        updated.isEditingLocked = isEditingLocked
         updated.showsReactionsInPreviews = showsReactionsInPreviews
         updated.reactions = reactions
         updated.word = titleText
@@ -2378,6 +2425,7 @@ struct CardDetailView: View {
 
             Spacer(minLength: 0)
 
+            if !isEditingLocked {
             Button {
                 dismissEditing()
                 showsNoteDetails.toggle()
@@ -2407,6 +2455,8 @@ struct CardDetailView: View {
 
             Spacer(minLength: 0)
 
+            }
+
             ShareLink(item: NoteTextSharing.text(for: workingCardSnapshot), subject: Text(titleText)) {
                 Image(systemName: "square.and.arrow.up")
             }
@@ -2416,7 +2466,7 @@ struct CardDetailView: View {
 
             Spacer(minLength: 0)
 
-            addMenu(using: scrollProxy)
+            if !isEditingLocked { addMenu(using: scrollProxy) }
         }
         .font(.title2)
         .buttonStyle(NoteToolbarButtonStyle())
@@ -2737,7 +2787,10 @@ struct CardDetailView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            if displayFormat == .divider {
+            if isEditingLocked {
+                ReadOnlyCardContent(card: workingCardSnapshot, labels: labelLibrary,
+                    onOpenAttachment: { activeSheet = .attachmentPreview($0) })
+            } else if displayFormat == .divider {
 
                 VStack(alignment: .leading) {
 
@@ -2924,6 +2977,7 @@ struct CardDetailView: View {
                         .frame(maxWidth: 180, minHeight: 44)
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("card.locationPicker")
+                        .disabled(isEditingLocked)
                 }
 
                 Group {
@@ -2943,10 +2997,20 @@ struct CardDetailView: View {
                         if presentation == .card {
                             addMenu(using: scrollProxy)
                                 .foregroundStyle(.primary)
+                                .disabled(isEditingLocked)
                         }
 
                     }
                     Menu {
+                        if displayFormat != .divider {
+                            Button(isEditingLocked ? "Unlock editing" : "Lock editing",
+                                   systemImage: isEditingLocked ? "lock.open" : "lock") {
+                                setEditingLocked(!isEditingLocked)
+                            }
+                            .disabled(onTitleToggle == nil && onUpdateMovedNote == nil)
+                            .accessibilityIdentifier("card.editingLockAction")
+                        }
+                        if !isEditingLocked {
                         if displayFormat != .divider {
                             Button("Add reaction", systemImage: "face.smiling") { dismissEditing(); activeSheet = .reactions }
                             if let libraryImportance {
@@ -3021,6 +3085,7 @@ struct CardDetailView: View {
                                 Label("Delete \(displayFormat.title)", systemImage: "trash")
                             }
                         }
+                        }
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(.title2)
@@ -3060,8 +3125,8 @@ struct CardDetailView: View {
                 exit: { dismissEditing(); syncCardState(); dismiss() },
                 previous: keyboardNavigation.previous.map { action in { dismissEditing(); syncCardState(); action() } },
                 next: keyboardNavigation.next.map { action in { dismissEditing(); syncCardState(); action() } },
-                attachment: { dismissEditing(); activeSheet = .attachmentSources },
-                checklist: { dismissEditing(); showsNoteDetails = true; addChecklist(using: scrollProxy) },
+                attachment: { guard !isEditingLocked else { return }; dismissEditing(); activeSheet = .attachmentSources },
+                checklist: { guard !isEditingLocked else { return }; dismissEditing(); showsNoteDetails = true; addChecklist(using: scrollProxy) },
                 showsUpperBorder: true
             ))
         }
@@ -6051,5 +6116,106 @@ struct ItemReactionPreview: View {
             }
             if remaining > 0 { Text("+\(remaining)").font(.caption).foregroundStyle(.secondary) }
         }.font(.subheadline).fixedSize()
+    }
+}
+
+
+/// Presents all retained Card or Note content without installing any editing controls.
+struct ReadOnlyCardContent: View {
+    let card: KanbanCard
+    let labels: LabelLibrary
+    let onOpenAttachment: (KanbanAttachment) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Label("Read-only", systemImage: "lock.fill")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("card.editingLocked")
+                Text("Use Unlock editing in the actions menu to make changes.")
+                    .font(.caption).foregroundStyle(.secondary)
+                SlideableHeaderText(text: card.word).font(.title2.bold())
+                if !card.subtitle.isEmpty { Text(card.subtitle).foregroundStyle(.secondary) }
+                if let created = card.createdAt { NoteCreationDateLabel(createdAt: created) }
+                if let cover = card.coverAttachment {
+                    Button { onOpenAttachment(cover) } label: { CardCoverPreview(attachment: cover) }
+                        .buttonStyle(.plain).accessibilityLabel("View cover")
+                }
+                let body = card.presentation == .note ? card.descriptionOverride ?? "" : card.funParagraph
+                if !PlanRichText.plain(body).isEmpty {
+                    Text(PlanRichText.display(body)).textSelection(.enabled)
+                }
+                if let start = card.startDate { Label("Start: " + card.startDateKind.label(for: start), systemImage: "calendar") }
+                if let due = card.dueDate { Label("Due: " + card.dueDateKind.label(for: due), systemImage: "calendar.badge.clock") }
+                if !card.checklists.isEmpty {
+                    Divider()
+                    ReadOnlyChecklistContent(checklists: card.checklists)
+                }
+                if !card.labelIDs.isEmpty {
+                    Text("Labels").font(.headline)
+                    ForEach(labels.labels.filter { card.labelIDs.contains($0.id) }) { KanbanLabelChip(label: $0) }
+                }
+                if !card.members.isEmpty {
+                    Text("Members").font(.headline)
+                    ForEach(card.members) { Text($0.displayName) }
+                }
+                if !(card.attachmentsExcludingCover).isEmpty {
+                    Text("Attachments").font(.headline)
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(card.attachmentsExcludingCover) { attachment in
+                                if let url = attachment.url {
+                                    Link(destination: url) { CardAttachmentThumbnail(attachment: attachment) }
+                                } else {
+                                    Button { onOpenAttachment(attachment) } label: { CardAttachmentThumbnail(attachment: attachment) }
+                                        .buttonStyle(.plain).accessibilityLabel("View attachment")
+                                }
+                            }
+                        }
+                    }
+                }
+                ItemReactionPreview(card: card)
+                if !card.comments.isEmpty {
+                    Divider()
+                    Text("Comments").font(.headline)
+                    ForEach(card.comments) { comment in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(comment.author).font(.subheadline.bold())
+                            Text(PlanRichText.display(comment.body)).textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityIdentifier("card.readOnlyContent")
+    }
+}
+
+/// Static completion marks and expanded nested action details remain readable while editing is locked.
+private struct ReadOnlyChecklistContent: View {
+    let checklists: [KanbanChecklist]
+
+    var body: some View {
+        ForEach(checklists) { checklist in
+            VStack(alignment: .leading, spacing: 10) {
+                Text(checklist.title).font(.headline)
+                ForEach(Array(checklist.items.enumerated()), id: \.element.id) { index, item in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .top) {
+                            Image(systemName: checklist.completedItemIndices.contains(index) ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(.secondary)
+                            Text(item.title)
+                        }
+                        if case .webLink(let url) = item.content { Link(url.absoluteString, destination: url) }
+                        if case .actionDetail(let detail) = item.content {
+                            Text(PlanRichText.display(detail.description)).textSelection(.enabled)
+                            AnyView(ReadOnlyChecklistContent(checklists: detail.checklists)).padding(.leading, 16)
+                            ForEach(detail.comments) { comment in Text(comment.author + ": " + PlanRichText.plain(comment.body)) }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

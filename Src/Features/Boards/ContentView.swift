@@ -5114,6 +5114,7 @@ struct KanbanListView: View {
     var onCardDrop: (CGPoint) -> Bool = { _ in false }                   /* Commits a native drop at its global pointer position         */
     var cardMoveDestinations: [KanbanList] = []                          /* Lists offered by the explicit card movement menu             */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in }               /* Moves a selected card to the requested list identity         */
+    @State private var inlineCaptureDraft = InlineListCaptureDraft()
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onOpenDayView: (() -> Void)? = nil
     @State private var opensDayAfterDismissal = false
@@ -5537,15 +5538,9 @@ struct KanbanListView: View {
                 .moveDisabled(editMode != .active)
 
 
-                Button {
-                    activeSheet = .newCard
-                } label: {
-                    Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                }
+                InlineListCapture(list: list, draft: $inlineCaptureDraft,
+                    textColor: boardAppearance.resolvedAddItemTextColor(list: list.appearance, title: list.title)?.color ?? .primary, onCreate: onAddCard,
+                    onOpenComposer: { activeSheet = .newCard })
                 .background { cardDropSurface }
                 .overlay(alignment: .top) { cardInsertionMarker(before: nil) }
                 .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
@@ -5654,6 +5649,7 @@ struct KanbanListView: View {
                     onDeleteList:          onDeleteList,
                     onEditList:            onEditList,
                     onAppearance:          onAppearance,
+                    inheritedAddItemTextColor: boardAppearance.resolvedAddItemTextColor(list: nil, title: list.title)?.color ?? .primary,
                     onOpenDayView: onOpenDayView == nil ? nil : {
                         opensDayAfterDismissal = true
                         activeSheet = nil
@@ -5661,7 +5657,12 @@ struct KanbanListView: View {
                 )
                 .databaseActivityOverlay()
             case .newCard:
-                ListItemComposer(list: list, draftKey: ListCreationDraft.key(collectionID: draftCollectionID, listID: list.id), onCreate: onAddCard)
+                ListItemComposer(list: list, draftKey: ListCreationDraft.key(collectionID: draftCollectionID, listID: list.id),
+                    initialTitle: inlineCaptureDraft.title, onCreate: { capture in
+                        guard onAddCard(capture) else { return false }
+                        inlineCaptureDraft.title = ""
+                        return true
+                    })
                     .databaseActivityOverlay()
             }
         }
@@ -5882,13 +5883,103 @@ final class ListCreationDraftModel: ObservableObject {
     }
 }
 
+/// A title-only capture row shared by Board columns and focused Lists, including Days.
+struct InlineListCapture: View {
+    let list: KanbanList
+    @Binding var draft: InlineListCaptureDraft
+    var textColor: Color = .primary
+    let onCreate: (QuickCaptureSubmission) -> Bool
+    let onOpenComposer: () -> Void
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            TextField("Add a \(list.newItemPresentation.title.lowercased()) to \(list.title)…", text: $draft.title,
+                prompt: Text("Add a \(list.newItemPresentation.title.lowercased()) to \(list.title)…").foregroundStyle(textColor))
+                .foregroundStyle(textColor)
+                .textInputAutocapitalization(.sentences)
+                .submitLabel(.done)
+                .focused($isFocused)
+                .onSubmit { createInline() }
+                .accessibilityIdentifier("list.inlineCapture.title")
+            Button {
+                isFocused = false
+                onOpenComposer()
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(textColor)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add \(list.newItemPresentation.title.lowercased()) to \(list.title)")
+            .accessibilityHint("Opens the full editor with your entered title.")
+            .accessibilityIdentifier("list.inlineCapture.add")
+        }
+        .frame(minHeight: 44)
+        .onChange(of: list.id) { _, _ in
+            draft = InlineListCaptureDraft()
+            isFocused = false
+        }
+    }
+
+
+    ///
+    /// @fcn        InlineListCapture.createInline()
+    /// @brief      Save a title directly into the current List
+    /// @details    Retains focus for successive captures and retains writing if saving fails.
+    ///
+    /// @return     (Void) requests creation without opening a detail view
+    ///
+    private func createInline() {
+        let previousRevealID = CreatedContentReveal.shared.target?.id
+        guard draft.submit(to: list, onCreate: onCreate) else { return }
+        // Keep successive captures at the footer rather than centering the new Card above it.
+        if let request = CreatedContentReveal.shared.target,
+           request.id != previousRevealID, request.listID == list.id {
+            CreatedContentReveal.shared.complete(request)
+        }
+        isFocused = true
+    }
+}
+
+/// Retains unsaved inline writing until the canonical List creation callback succeeds.
+struct InlineListCaptureDraft {
+    var title = ""
+
+
+    ///
+    /// @fcn        InlineListCaptureDraft.submit(to:onCreate:)
+    /// @brief      Submit a nonblank title through the existing List creation path
+    /// @details    Uses the destination's Card or Note default and clears only after a successful
+    ///             save. Empty submissions never invoke creation or open another view.
+    ///
+    /// @param[in]  list      Destination List and its default item presentation
+    /// @param[in]  onCreate  Checked canonical creation callback
+    ///
+    /// @return     (Bool) true when the item was saved and the draft cleared
+    ///
+    mutating func submit(to list: KanbanList, onCreate: (QuickCaptureSubmission) -> Bool) -> Bool {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let capture = QuickCaptureSubmission(listID: list.id, title: trimmed, body: "",
+            subtitle: "", presentation: list.newItemPresentation, actions: nil, attachments: [], schedule: nil)
+        guard onCreate(capture) else { return false }
+        title = ""
+        return true
+    }
+}
+
+
 /// List-scoped entry point to the same full composer used by the central New button.
 struct ListItemComposer: View {
     let list: KanbanList
     let draftKey: String
+    var initialTitle: String = ""
     let onCreate: (QuickCaptureSubmission) -> Bool
     var body: some View {
-        QuickNoteComposer(lists: .constant([list]), initialListID: list.id,
+        QuickNoteComposer(lists: .constant([list]), initialListID: list.id, initialTitle: initialTitle,
             draftKey: draftKey, initialPresentation: list.newItemPresentation,
             onSaveCapture: onCreate) { id, title, body, subtitle, presentation, actions in
                 _ = onCreate(QuickCaptureSubmission(listID: id, title: title, body: body,
@@ -5944,6 +6035,7 @@ private struct KanbanListActionsSheet: View {
     let onDeleteList: () -> Void              /* Permanently remove this list after confirmation  */
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onAppearance: ((ItemAppearance?) -> Bool)? = nil
+    var inheritedAddItemTextColor: Color = .primary
     var onOpenDayView: (() -> Void)? = nil
     @State private var isEditingAppearance = false
     @State private var isEditingList = false
@@ -6162,7 +6254,7 @@ private struct KanbanListActionsSheet: View {
         }
         .sheet(isPresented: $isEditingAppearance) {
             if let onAppearance {
-                ItemAppearanceSheet(title: list.title, appearance: list.appearance, showsListBackground: true, onSave: onAppearance)
+                ItemAppearanceSheet(title: list.title, appearance: list.appearance, showsListBackground: true, inheritedAddItemTextColor: inheritedAddItemTextColor, onSave: onAppearance)
             }
         }
     }
@@ -7264,6 +7356,7 @@ struct TodayListDetailView: View {
     @State private var isEditingList = false
     @State private var isEditingAppearance = false
     @State private var showsNewCard = false
+    @State private var inlineCaptureDraft = InlineListCaptureDraft()
     @State private var deletingCard: KanbanCard?
     @State private var editMode: EditMode = .inactive /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken = UUID().uuidString
@@ -7660,18 +7753,9 @@ struct TodayListDetailView: View {
                         .moveDisabled(editMode != .active)
 
 
-                        Button { showsNewCard = true } label: {
-                            HStack {
-                                Text("Add a card to \(focusedList.title)…")
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Image(systemName: "plus.circle.fill").font(.title2)
-                            }
-                            .frame(minHeight: 44)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add card to \(focusedList.title)")
+                        InlineListCapture(list: focusedList, draft: $inlineCaptureDraft,
+                            textColor: effectiveBoardAppearance.resolvedAddItemTextColor(list: focusedList.appearance, title: focusedList.title)?.color ?? .primary, onCreate: addCard,
+                            onOpenComposer: { showsNewCard = true })
 
                         .padding(12)
                         .background { cardDropSurface }
@@ -7921,7 +8005,12 @@ struct TodayListDetailView: View {
         .environment(\.checklistLinkCandidates, lists.filter { !$0.isArchived }.flatMap(\.cards))
         .sheet(isPresented: $showsNewCard) {
             if let focusedList = lists.first(where: { $0.id == listID }) {
-                ListItemComposer(list: focusedList, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID), onCreate: addCard)
+                ListItemComposer(list: focusedList, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID),
+                    initialTitle: inlineCaptureDraft.title, onCreate: { capture in
+                        guard addCard(capture) else { return false }
+                        inlineCaptureDraft.title = ""
+                        return true
+                    })
                     .databaseActivityOverlay()
             }
         }
@@ -7935,7 +8024,8 @@ struct TodayListDetailView: View {
         }
         .sheet(isPresented: $isEditingAppearance) {
             if let focusedList {
-                ItemAppearanceSheet(title: focusedList.title, appearance: focusedList.appearance, showsListBackground: true) { appearance in
+                ItemAppearanceSheet(title: focusedList.title, appearance: focusedList.appearance, showsListBackground: true,
+                    inheritedAddItemTextColor: effectiveBoardAppearance.resolvedAddItemTextColor(list: nil, title: focusedList.title)?.color ?? .primary) { appearance in
                     setListAppearance(listID, appearance: appearance, in: &lists)
                 }
             }

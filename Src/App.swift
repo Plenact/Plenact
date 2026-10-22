@@ -4648,7 +4648,9 @@ struct QuickNoteComposer: View {
         let savedDraft = draftKey.map { ListCreationDraft.load(key: $0) }
         _subtitle = State(initialValue: savedDraft?.subtitle ?? "")
         _presentation = State(initialValue: captureAction?.presentation ?? template?.presentation ?? initialPresentation ?? lists.wrappedValue.first(where: { $0.id == initialListID })?.newItemPresentation ?? .card)
-        _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? savedDraft?.title ?? initialTitle)
+        // Explicit inline writing takes priority over a previously retained composer title.
+        let suppliedTitle = initialTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : initialTitle
+        _title = State(initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? suppliedTitle ?? savedDraft?.title ?? initialTitle)
         _description = State(initialValue: template?.body ?? savedDraft?.description ?? "")
         _actions = State(initialValue: captureAction == .checklist ? [KanbanChecklistItem(title: "")] : (template?.actions ?? []).map { KanbanChecklistItem(title: $0) })
         _selectedListID = State(initialValue: initialListID)

@@ -3799,6 +3799,87 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testAddItemTextColorsPersistAndRemainScopedToTheirView
+    /// @brief      Verify capture colors, legacy defaults, and independent List overrides
+    /// @details    Checks Codable compatibility, Board inheritance, built-in readability defaults,
+    ///             and preservation of unrelated Card text colors and List content.
+    ///
+    /// @return     (Void) records color and persistence assertions
+    /// @throws     Propagates encoding or decoding failures.
+    ///
+    func testAddItemTextColorsPersistAndRemainScopedToTheirView() throws {
+        let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.addItemTextColor)
+        XCTAssertNil(legacy.resolvedAddItemTextColor(list: nil, title: "Thursday"))
+        for title in ["On the Table", "In the Queue", "Scheduled"] {
+            XCTAssertEqual(legacy.resolvedAddItemTextColor(list: nil, title: title), .white)
+            XCTAssertEqual(DefaultListTutorial.makeStarter(title: title).boardAppearance?.addItemTextColor, .white)
+        }
+        var board = BoardAppearance()
+        board.addItemTextColor = .white
+        board.cardTextColor = .blue
+        var list = ItemAppearance()
+        list.addItemTextColor = .charcoal
+        XCTAssertFalse(list.isEmpty)
+        XCTAssertEqual(board.resolvedAddItemTextColor(list: list, title: "Projects"), .charcoal)
+        XCTAssertEqual(board.resolvedAddItemTextColor(list: nil, title: "Projects"), .white)
+        XCTAssertEqual(board.cardTextColor, .blue)
+        XCTAssertNil(list.cardTextColor)
+        XCTAssertEqual(try JSONDecoder().decode(BoardAppearance.self, from: JSONEncoder().encode(board)), board)
+        XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(list)), list)
+        let original = KanbanList(id: 8, title: "Ideas", cards: [])
+        var styled = original
+        styled.appearance = list
+        let inherited = BoardAppearance.inheritingLists([styled])[0]
+        XCTAssertNil(inherited.appearance?.addItemTextColor)
+        XCTAssertEqual(inherited.cards, original.cards)
+        XCTAssertEqual(styled.appearance?.addItemTextColor, .charcoal)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testInlineListCaptureRetainsFailedDraftAndCreatesDestinationItems
+    /// @brief      Verify quick entry uses canonical creation for ordinary and Day Lists
+    /// @details    Checks repeated capture, Card and Note defaults, whitespace rejection, archived
+    ///             destinations, and retention of the original writing after a rejected save.
+    ///
+    /// @return     (Void) no return value
+    ///
+    func testInlineListCaptureRetainsFailedDraftAndCreatesDestinationItems() {
+        for title in ["Projects", "Monday", "On the Table", "In the Queue", "Scheduled"] {
+            for presentation in [ItemPresentation.card, .note] {
+                var list = KanbanList(id: 7, title: title, cards: [], newItemPresentation: presentation)
+                var draft = InlineListCaptureDraft(title: "  First thought  ")
+                XCTAssertFalse(draft.submit(to: list) { _ in false })
+                XCTAssertEqual(draft.title, "  First thought  ")
+                for text in ["  First thought  ", "Another thought"] {
+                    draft.title = text
+                    let destination = list
+                    XCTAssertTrue(draft.submit(to: destination) { capture in
+                        guard let items = ListItemCreation.items(capture, in: destination,
+                            startingAt: list.cards.count + 20) else { return false }
+                        list.cards.append(contentsOf: items)
+                        return true
+                    })
+                    XCTAssertEqual(draft.title, "")
+                }
+                XCTAssertEqual(list.cards.map(\.word), ["First thought", "Another thought"])
+                XCTAssertTrue(list.cards.allSatisfy { $0.listTitle == title && $0.presentation == presentation })
+                XCTAssertEqual(Set(list.cards.map(\.id)).count, 2)
+                draft.title = " \n "
+                XCTAssertFalse(draft.submit(to: list) { _ in XCTFail("Blank titles must not save"); return true })
+                list.isArchived = true
+                draft.title = "Keep this draft"
+                XCTAssertFalse(draft.submit(to: list) { capture in
+                    ListItemCreation.items(capture, in: list, startingAt: 30) != nil
+                })
+                XCTAssertEqual(draft.title, "Keep this draft")
+            }
+        }
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testListComposerSubmissionPreservesKindScheduleActionsAndAttachments
     /// @brief      Verify that list Composer Submission Preserves Kind Schedule Actions And Attachments
     /// @details    Exercises `start.addingTimeInterval`, `ListItemCreation.items`,
@@ -10455,10 +10536,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
             let editable = (view is UITextField || view is UITextView) ? [view] : []
             return editable + view.subviews.flatMap { fields(in: $0) }
         }
-        for template in [QuickCaptureTemplate.smallPlan, .idea] {
+        let draftKey = "InlineComposerTest." + UUID().uuidString
+        defer { ListCreationDraft.clear(key: draftKey) }
+        for template in [QuickCaptureTemplate.smallPlan, .idea, nil] {
+            ListCreationDraft(title: "Older saved title", subtitle: "Retained subtitle", description: "Retained body").save(key: draftKey)
             let controller = UIHostingController(rootView: QuickNoteComposer(
                 lists: .constant([KanbanList(id: 4, title: "Thursday", cards: [])]),
-                initialListID: 4, initialTitle: "Captured thought", template: template
+                initialListID: 4, initialTitle: "Captured thought", draftKey: draftKey, template: template
             ) { _, _, _, _, _, _ in
                 XCTFail("Reviewing a template must not create a record")
             })

@@ -311,6 +311,24 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     var collectionBackground: CollectionBackground? = nil
     var cardTitleColor: ListPreviewTextColor? = nil
     var cardTextColor: ListPreviewTextColor? = nil
+    var addItemTextColor: ProfileColor? = nil
+
+
+    ///
+    /// @fcn        BoardAppearance.resolvedAddItemTextColor(list:title:)
+    /// @brief      Resolve the inline Add Card field color for one List
+    /// @details    Prefers the List override, then Board override. Existing built-in photo Lists
+    ///             default to white without rewriting their stored appearance.
+    ///
+    /// @param[in]  list   Optional List appearance
+    /// @param[in]  title  Destination List title used for built-in defaults
+    ///
+    /// @return     (ProfileColor?) selected color, or nil for the system primary text color
+    ///
+    func resolvedAddItemTextColor(list: ItemAppearance?, title: String) -> ProfileColor? {
+        list?.addItemTextColor ?? addItemTextColor
+            ?? (["On the Table", "In the Queue", "Scheduled"].contains(title) ? .white : nil)
+    }
 
 
     ///
@@ -401,6 +419,7 @@ struct BoardAppearance: Hashable, Codable, Sendable {
                 appearance.listBackground = nil
                 appearance.cardTitleColor = nil
                 appearance.cardTextColor = nil
+                appearance.addItemTextColor = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
             }
             return updated
@@ -444,6 +463,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var cardBackground: KanbanListTint? = nil
     var cardTitleColor: ListPreviewTextColor? = nil
     var cardTextColor: ListPreviewTextColor? = nil
+    var addItemTextColor: ProfileColor? = nil
     var sectionCollapsed: Bool? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
@@ -471,7 +491,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil }
 }
 
 /// Creation-only defaults; stored colors remain ordinary editable appearance fields.
@@ -5066,9 +5086,9 @@ enum DefaultListTutorial {
             collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
         }
         switch title {
-        case "On the Table": collection.boardAppearance = BoardAppearance(bannerBackground: .coral)
-        case "In the Queue": collection.boardAppearance = BoardAppearance(bannerBackground: .teal)
-        case "Scheduled": collection.boardAppearance = BoardAppearance(bannerBackground: .graphite)
+        case "On the Table": collection.boardAppearance = BoardAppearance(bannerBackground: .coral, addItemTextColor: .white)
+        case "In the Queue": collection.boardAppearance = BoardAppearance(bannerBackground: .teal, addItemTextColor: .white)
+        case "Scheduled": collection.boardAppearance = BoardAppearance(bannerBackground: .graphite, addItemTextColor: .white)
         default: break
         }
         let heading: String

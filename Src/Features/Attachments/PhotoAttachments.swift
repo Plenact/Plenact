@@ -1610,6 +1610,7 @@ struct ItemAppearanceSheet: View {
     let onOpenCover: (() -> Void)?
     let onOpenLayout: (() -> Void)?
     let showsListBackground: Bool
+    let inheritedAddItemTextColor: Color?
     let onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
     @State private var draftDisplay: ItemDisplayFormat?
     @State private var draft: ItemAppearance
@@ -1629,13 +1630,15 @@ struct ItemAppearanceSheet: View {
     /// @param[in]  showsListBackground  Whether list-background controls are available in this appearance editor
     /// @param[in]  displayFormat        Optional item display format to edit with its appearance
     /// @param[in]  onSaveDisplay        Optional checked save callback for appearance and item display format
+    /// @param[in]  inheritedAddItemTextColor  Resolved Board color used when this List has no override
     /// @param[in]  onSave               Save callback returning true only when the owner accepts the edited value
     ///
     /// @return     (ItemAppearanceSheet) initialized instance
     ///
-    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
+    init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, inheritedAddItemTextColor: Color? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
         self.title = title
         self.showsListBackground = showsListBackground
+        self.inheritedAddItemTextColor = inheritedAddItemTextColor
         self.onSave = onSave
         self.onOpenCover = onOpenCover
         self.onOpenLayout = onOpenLayout
@@ -1698,6 +1701,10 @@ struct ItemAppearanceSheet: View {
                         explanation: showsListBackground
                             ? "Unchanged follows the Board. Individual Cards and Notes can override this List. Colors affect previews only."
                             : "Unchanged follows the List, then Board. Colors affect previews only; opened editors, dates, labels, and status indicators keep their own styling.")
+                }
+                if showsListBackground {
+                    AddItemTextColorSection(selection: $draft.addItemTextColor,
+                        defaultColor: inheritedAddItemTextColor ?? BoardAppearance().resolvedAddItemTextColor(list: nil, title: title)?.color ?? .primary)
                 }
                 Section("Preview") {
                     HStack {
@@ -2625,6 +2632,8 @@ struct BoardAppearanceSheet: View {
                 }
                 PreviewTextColorsSection(titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor,
                     explanation: "Unchanged keeps the app defaults. Lists and individual Cards and Notes can override each color independently. Colors affect previews only.")
+                AddItemTextColorSection(selection: $draft.addItemTextColor,
+                    defaultColor: BoardAppearance().resolvedAddItemTextColor(list: nil, title: listSurface?.title ?? "")?.color ?? .primary)
                 Section("List banner color") {
                     Picker("Banner background", selection: $draft.bannerBackground) {
                         Text("Default").tag(Optional<ItemAccent>.none)
@@ -2764,6 +2773,32 @@ struct BoardAppearanceSheet: View {
 }
 
 /// Optional preview colors share one control at Board, List, Card, and Note scope.
+/// A view-scoped color override for the inline capture field, separate from Card styling.
+struct AddItemTextColorSection: View {
+    @Binding var selection: ProfileColor?
+    var defaultColor: Color = .primary
+
+    var body: some View {
+        Section("Add Card field") {
+            ColorPicker("Text color", selection: Binding(
+                get: { selection?.color ?? defaultColor },
+                set: { color in
+                    var red: CGFloat = 0
+                    var green: CGFloat = 0
+                    var blue: CGFloat = 0
+                    var alpha: CGFloat = 0
+                    guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return }
+                    selection = ProfileColor(red: Double(red), green: Double(green), blue: Double(blue))
+                }), supportsOpacity: false)
+                .accessibilityIdentifier("appearance.addItemTextColor")
+            Button("Use default color") { selection = nil }
+                .disabled(selection == nil)
+            Text("Changes the Add Card or Add Note text and its + button in this view. Lists can override their Board's color.")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+}
+
 struct PreviewTextColorsSection: View {
     @Binding var titleColor: ListPreviewTextColor?
     @Binding var textColor: ListPreviewTextColor?

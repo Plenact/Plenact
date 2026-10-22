@@ -88,3 +88,9 @@ previous rendered overflow flag. This keeps the compact state stable when the
 extra space makes a heading fit. Layout recalculates for changed text, available
 width, and type size, and mirrors placement for right-to-left interfaces. Short
 headings keep the previous 8-point Board / 12-point focused Day/List gaps.
+
+## Trailing overflow cue
+
+Scrollable titles and subtitles display a fixed trailing ellipsis while additional text remains beyond the reading edge. A short transparent fade masks the moving text before the dots without covering the header background. The cue disappears at the end and returns when scrolling back. It follows the surrounding font, color, and layout direction, ignores touches, and is excluded from accessibility text. The text keeps its full scrollable width; tapping still opens editing where supported.
+
+Both reading edges now use the same cue: hidden earlier text produces a leading ellipsis, hidden later text produces a trailing ellipsis, and both appear in the middle. Each edge clears independently when that end of the text is reached.

@@ -7578,9 +7578,23 @@ struct SlideableHeaderText: View {
     private var allowsScrolling: Bool {
         (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.scrollsOverflowingTitles ?? true
     }
+    @Environment(\.layoutDirection) private var readingDirection
+    @Namespace private var readingSpace
+    @State private var textFrame: CGRect = .zero
+    @State private var ellipsisWidth: CGFloat = 18
     @State private var textWidth: CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
     private var overflows: Bool { textWidth > viewportWidth + 1 }
+
+    private var showsLeadingCue: Bool {
+        guard overflows else { return false }
+        return readingDirection == .rightToLeft ? textFrame.maxX > viewportWidth + 1 : textFrame.minX < -1
+    }
+
+    private var showsTrailingCue: Bool {
+        guard overflows else { return false }
+        return readingDirection == .rightToLeft ? textFrame.minX < -1 : textFrame.maxX > viewportWidth + 1
+    }
 
     private var scrollingSurface: some View {
         Text(text.isEmpty ? " " : text)
@@ -7592,13 +7606,51 @@ struct SlideableHeaderText: View {
                     ScrollView(.horizontal) {
                         Text(text.isEmpty ? " " : text)
                             .fixedSize(horizontal: true, vertical: false)
-                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { textWidth = $0 }
+                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(readingSpace)) } action: {
+                                textFrame = $0
+                                textWidth = $0.width
+                            }
                     }
                     .id(text)
+                    .coordinateSpace(name: readingSpace)
                     .scrollIndicators(.hidden)
                     .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
                     .scrollDisabled(!overflows)
                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { viewportWidth = $0 }
+                    .mask {
+                        HStack(spacing: 0) {
+                            if showsLeadingCue {
+                                Color.clear.frame(width: ellipsisWidth)
+                                LinearGradient(colors: [.clear, .black],
+                                    startPoint: readingDirection == .rightToLeft ? .trailing : .leading,
+                                    endPoint: readingDirection == .rightToLeft ? .leading : .trailing)
+                                    .frame(width: 10)
+                            }
+                            Rectangle()
+                            if showsTrailingCue {
+                                LinearGradient(colors: [.black, .clear],
+                                    startPoint: readingDirection == .rightToLeft ? .trailing : .leading,
+                                    endPoint: readingDirection == .rightToLeft ? .leading : .trailing)
+                                    .frame(width: 10)
+                                Color.clear.frame(width: ellipsisWidth)
+                            }
+                        }
+                    }
+                    .overlay(alignment: .leading) {
+                        Text("…")
+                            .fixedSize()
+                            .opacity(showsLeadingCue ? 1 : 0)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                    .overlay(alignment: .trailing) {
+                        Text("…")
+                            .fixedSize()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { ellipsisWidth = $0 }
+                            .opacity(showsTrailingCue ? 1 : 0)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
             .clipped()

@@ -300,6 +300,7 @@ struct CardDetailView: View {
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
     @State private var richTextFocusedField: EditableField? // UIKit editors retain focus independently of SwiftUI text fields.
+    @State private var editingHeaderField: EditableField?
     @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
 
     @State private var checklists: [KanbanChecklist]         /* The checklist groups associated with the selected card       */
@@ -373,6 +374,7 @@ struct CardDetailView: View {
     private func dismissEditing() {
         richTextFocusedField = nil
         focusedField = nil
+        editingHeaderField = nil
     }
 
 
@@ -2712,15 +2714,16 @@ struct CardDetailView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 ItemAppearanceMark(appearance: appearance)
                                 Group {
-                                    if focusedField == .title {
+                                    if editingHeaderField == .title {
                                         TextField("Card title", text: $titleText).textInputAutocapitalization(.sentences)
                                             .focused($focusedField, equals: .title)
+                                            .task { focusedField = .title }
                                             .submitLabel(.done)
                                             .onSubmit { dismissEditing() }
                                             .onChange(of: titleText) { _, value in syncCardState(title: value) }
                                     } else {
                                         SlideableHeaderText(text: titleText.isEmpty ? "Card title" : titleText,
-                                            onTap: { focusedField = .title })
+                                            onTap: { editingHeaderField = .title })
                                             .accessibilityLabel("Card title, " + titleText)
                                             .accessibilityIdentifier("card.readableTitle")
                                     }
@@ -2730,16 +2733,17 @@ struct CardDetailView: View {
 
                                 }
 
-                            if appearance?.hidesSubtitle(subtitleText) != true || focusedField == .subtitle {
+                            if appearance?.hidesSubtitle(subtitleText) != true || editingHeaderField == .subtitle {
                             Group {
-                                if focusedField == .subtitle || subtitleText.isEmpty {
+                                if editingHeaderField == .subtitle || subtitleText.isEmpty {
                                     TextField("Card subtitle", text: $subtitleText).textInputAutocapitalization(.sentences)
                                         .focused($focusedField, equals: .subtitle)
+                                        .task { if editingHeaderField == .subtitle { focusedField = .subtitle } }
                                         .submitLabel(.done)
                                         .onSubmit { dismissEditing() }
                                         .onChange(of: subtitleText) { _, value in syncCardState(subtitle: value) }
                                 } else {
-                                    SlideableHeaderText(text: subtitleText, onTap: { focusedField = .subtitle })
+                                    SlideableHeaderText(text: subtitleText, onTap: { editingHeaderField = .subtitle })
                                         .accessibilityLabel("Card subtitle, " + subtitleText)
                                         .accessibilityIdentifier("card.readableSubtitle")
                                 }
@@ -2848,7 +2852,7 @@ struct CardDetailView: View {
                             }))
                         }
                         if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true {
-                            Button("Add subtitle", systemImage: "text.badge.plus") { focusedField = .subtitle }
+                            Button("Add subtitle", systemImage: "text.badge.plus") { editingHeaderField = .subtitle }
                         }
                         Button("Appearance", systemImage: "paintpalette") {
                             dismissEditing()
@@ -2959,6 +2963,7 @@ struct CardDetailView: View {
         .navigationBarBackButtonHidden(true)
         .onChange(of: focusedField) { _, field in
             if field != nil { richTextFocusedField = nil }
+            if let editingHeaderField, field != editingHeaderField { self.editingHeaderField = nil }
         }
         .onChange(of: selectedCoverPhoto) { _, photoItem in
             guard let photoItem else { return } /* Newly selected library media awaiting cover import */

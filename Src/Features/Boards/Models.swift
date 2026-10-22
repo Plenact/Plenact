@@ -199,6 +199,18 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
         }
     }
 
+
+    ///
+    /// @fcn        QuickCaptureTemplate.draftTitle
+    /// @brief      Choose a captured title or the template default
+    /// @details    Preserves a nonblank captured title exactly; blank Card and Note templates remain untitled while
+    ///             other templates use their authored title.
+    ///
+    /// @param[in]  capturedTitle  Existing title text to preserve when it is not blank
+    ///
+    /// @return     (String) unchanged nonblank captured title, authored template title, or blank for empty generic
+    ///             templates
+    ///
     func draftTitle(capturedTitle: String) -> String {
         if !capturedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return capturedTitle
@@ -249,6 +261,18 @@ struct CollectionBackground: Hashable, Codable, Sendable {
     var preset: CollectionBackgroundPreset
     var photoFileName: String? = nil
 
+
+    ///
+    /// @fcn        CollectionBackground.defaultListBackground
+    /// @brief      Resolve the built-in background for a special list
+    /// @details    Uses an explicit override when supplied and otherwise chooses the tutorial background associated
+    ///             with the list title.
+    ///
+    /// @param[in]  title       Display title or proposed title text
+    /// @param[in]  overriding  Explicit background override to prefer over the built-in choice
+    ///
+    /// @return     (CollectionBackground?) explicit or recognized built-in background, or nil for an ordinary list
+    ///
     static func defaultListBackground(for title: String, overriding: CollectionBackground? = nil) -> CollectionBackground? {
         if let overriding { return overriding }
         switch title {
@@ -259,6 +283,19 @@ struct CollectionBackground: Hashable, Codable, Sendable {
         }
     }
 
+
+    ///
+    /// @fcn        CollectionBackground.isAllowed
+    /// @brief      Check whether collection-level imagery is available
+    /// @details    Separates ordinary personal collections from dated-week and dated-view contexts before permitting
+    ///             a collection background.
+    ///
+    /// @param[in]  collectionID  UUID of the collection owning the referenced content
+    /// @param[in]  datedWeekIDs  Known calendar-week owner identities
+    /// @param[in]  isDatedView   Whether the current interface represents a calendar day or week
+    ///
+    /// @return     (Bool) true for a known personal owner outside dated-week and dated-view contexts
+    ///
     static func isAllowed(collectionID: UUID?, datedWeekIDs: Set<UUID>, isDatedView: Bool) -> Bool {
         guard let collectionID, !isDatedView else { return false }
         return !datedWeekIDs.contains(collectionID)
@@ -275,18 +312,68 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     var cardTitleColor: ListPreviewTextColor? = nil
     var cardTextColor: ListPreviewTextColor? = nil
 
+
+    ///
+    /// @fcn        BoardAppearance.resolvedTitleColor
+    /// @brief      Resolve the card preview title color through inheritance
+    /// @details    Prefers a card override, then a list override, then the board's configured title color.
+    ///
+    /// @param[in]  card  Optional card-level appearance overrides
+    /// @param[in]  list  Optional list-level appearance overrides
+    ///
+    /// @return     (ListPreviewTextColor?) most-specific preview title color override, or nil to retain default
+    ///             rendering
+    ///
     func resolvedTitleColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor? {
         card?.cardTitleColor ?? list?.cardTitleColor ?? cardTitleColor
     }
+
+
+    ///
+    /// @fcn        BoardAppearance.resolvedTextColor
+    /// @brief      Resolve supporting preview text color through inheritance
+    /// @details    Prefers the most specific card or list override before falling back to the board setting.
+    ///
+    /// @param[in]  card  Optional card-level appearance overrides
+    /// @param[in]  list  Optional list-level appearance overrides
+    ///
+    /// @return     (ListPreviewTextColor?) most-specific supporting text color override, or nil to retain default
+    ///             rendering
+    ///
     func resolvedTextColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor? {
         card?.cardTextColor ?? list?.cardTextColor ?? cardTextColor
     }
 
-    /// Explicit item choices override List, then Board; nil preserves the caller's existing layout.
+
+    ///
+    /// @fcn        BoardAppearance.resolvedCardDetail
+    /// @brief      Resolve compact or detailed preview presentation
+    /// @details    Combines card and list overrides with the board setting and the supplied fallback detail mode.
+    ///
+    /// @param[in]  card      Optional card-level appearance overrides
+    /// @param[in]  list      Optional list-level appearance overrides
+    /// @param[in]  fallback  Presentation to use when no explicit override applies
+    ///
+    /// @return     (BoardCardDetail) card, list, or board detail override, falling back to the caller's existing
+    ///             layout
+    ///
+    /// @note       Explicit item choices override List, then Board; nil preserves the caller's existing layout.
+    ///
     func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed) -> BoardCardDetail {
         card?.cardDetail ?? list?.cardDetail ?? cardDetail ?? fallback
     }
 
+
+    ///
+    /// @fcn        BoardAppearance.resolved
+    /// @brief      Fill missing item backgrounds from board appearance
+    /// @details    Returns an appearance copy with missing banner and list backgrounds inherited from the board;
+    ///             explicit values and other item fields are preserved.
+    ///
+    /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
+    ///
+    /// @return     (ItemAppearance) appearance with missing banner and list backgrounds filled from board settings
+    ///
     func resolved(_ appearance: ItemAppearance?) -> ItemAppearance {
         var result = appearance ?? ItemAppearance()
         result.background = result.background ?? bannerBackground
@@ -294,6 +381,18 @@ struct BoardAppearance: Hashable, Codable, Sendable {
         return result
     }
 
+
+    ///
+    /// @fcn        BoardAppearance.inheritingLists
+    /// @brief      Return lists whose surface and text styling inherits from the board
+    /// @details    Clears list banner, list background, and preview text-color overrides while preserving card-level
+    ///             overrides, list content, and other appearance fields.
+    ///
+    /// @param[in]  lists  Lists participating in the operation
+    ///
+    /// @return     ([KanbanList]) lists with surface and preview text-color overrides cleared, preserving their order
+    ///             and content
+    ///
     static func inheritingLists(_ lists: [KanbanList]) -> [KanbanList] {
         lists.map { list in
             var updated = list
@@ -308,6 +407,18 @@ struct BoardAppearance: Hashable, Codable, Sendable {
         }
     }
 
+
+    ///
+    /// @fcn        BoardAppearance.decodeWeek
+    /// @brief      Decode the stored current-week board appearance
+    /// @details    Uses the default appearance for empty data and propagates decoding errors for malformed nonempty
+    ///             storage.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     (BoardAppearance) decoded board appearance, or default appearance for empty data
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func decodeWeek(_ data: Data) throws -> BoardAppearance {
         data.isEmpty ? BoardAppearance() : try JSONDecoder().decode(BoardAppearance.self, from: data)
     }
@@ -344,6 +455,18 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         guard let value = listBackgroundOpacity, value.isFinite else { return 1 }
         return min(1, max(0, value))
     }
+
+
+    ///
+    /// @fcn        ItemAppearance.hidesSubtitle
+    /// @brief      Decide whether an empty subtitle should be suppressed
+    /// @details    Returns true only when hideEmptySubtitle is explicitly enabled and the supplied text is blank
+    ///             after trimming whitespace.
+    ///
+    /// @param[in]  text  Attributed or plain text to restore or display
+    ///
+    /// @return     (Bool) true only for a blank subtitle with hideEmptySubtitle explicitly enabled
+    ///
     func hidesSubtitle(_ text: String) -> Bool {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -355,6 +478,19 @@ struct ItemAppearance: Hashable, Codable, Sendable {
 enum NewCardAppearanceDefaults {
     static let headerPalette: [ItemAccent] = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
     static let backgroundPalette: [KanbanListTint] = [.blue, .green, .orange, .red]
+
+
+    ///
+    /// @fcn        NewCardAppearanceDefaults.apply
+    /// @brief      Apply configured creation appearance to a new card
+    /// @details    Mutates only the new card using the user's creation preferences rather than rewriting existing
+    ///             cards.
+    ///
+    /// @param[in,out]  card         Card or note being inspected or changed
+    /// @param[in]      preferences  User display and creation preferences
+    ///
+    /// @return     (Void) no return value
+    ///
     static func apply(to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load()) {
         guard card.presentation == .card, !card.isSectionDivider,
               preferences.randomizesNewCardHeaders || preferences.randomizesNewCardBackgrounds else { return }
@@ -385,9 +521,33 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable {
     }
     var includesDate: Bool { self != .time }
     var includesTime: Bool { self != .date }
+
+
+    ///
+    /// @fcn        CardDateKind.normalized
+    /// @brief      Normalize a date value for its stored precision
+    /// @details    Date-only values use the supplied calendar's day boundary; other kinds retain their time
+    ///             information.
+    ///
+    /// @param[in]  value     Date value whose precision or display components should be resolved
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Date) local start-of-day for date-only precision, otherwise the original date value
+    ///
     func normalized(_ value: Date, calendar: Calendar = .current) -> Date {
         self == .date ? calendar.startOfDay(for: value) : value
     }
+
+
+    ///
+    /// @fcn        CardDateKind.label
+    /// @brief      Format a date value using this kind's components
+    /// @details    Selects date-only, time-only, or combined formatting so the label reflects the stored precision.
+    ///
+    /// @param[in]  value  Date value whose precision or display components should be resolved
+    ///
+    /// @return     (String) label containing only the date and time components included by this kind
+    ///
     func label(for value: Date) -> String {
         let date = DateFormatter()
         date.dateStyle = .medium
@@ -409,6 +569,17 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
     let authorID: UUID
     var createdAt = Date()
 
+
+    ///
+    /// @fcn        ItemEmojiReaction.validatedEmoji
+    /// @brief      Accept a single supported emoji reaction
+    /// @details    Trims surrounding whitespace and rejects empty, multi-character, or nonemoji input by returning
+    ///             nil.
+    ///
+    /// @param[in]  input  User-entered emoji text to trim and validate
+    ///
+    /// @return     (String?) accepted single emoji, or nil for unsupported input
+    ///
     static func validatedEmoji(_ input: String) -> String? {
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard value.count == 1, value.unicodeScalars.contains(where: {
@@ -416,6 +587,20 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
         }) else { return nil }
         return value
     }
+
+
+    ///
+    /// @fcn        ItemEmojiReaction.toggling
+    /// @brief      Toggle the current author's reaction for one emoji
+    /// @details    Rejects invalid emoji; otherwise removes the matching author's existing reaction or adds a new one
+    ///             while preserving other authors.
+    ///
+    /// @param[in]  input      User-entered emoji text to trim and validate
+    /// @param[in]  authorID   Stable local author UUID for the explicit reaction action
+    /// @param[in]  reactions  Existing reaction records, including other authors' selections
+    ///
+    /// @return     ([Self]?) updated author-qualified reactions, or nil for invalid emoji
+    ///
     static func toggling(_ input: String, authorID: UUID, in reactions: [Self]) -> [Self]? {
         guard let emoji = validatedEmoji(input) else { return nil }
         if reactions.contains(where: { $0.authorID == authorID && $0.emoji == emoji }) {
@@ -428,9 +613,32 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
 /// A stable local author survives profile creation; reading never creates an identity.
 enum LocalReactionIdentity {
     static let key = "Plenact.LocalReactionAuthor.v1"
+
+
+    ///
+    /// @fcn        LocalReactionIdentity.current
+    /// @brief      Read the existing local reaction author identity
+    /// @details    Returns nil for missing or invalid storage without creating a new identity as a side effect of
+    ///             rendering.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (UUID?) existing valid author UUID, or nil without creating one
+    ///
     static func current(in defaults: UserDefaults = .standard) -> UUID? {
         defaults.string(forKey: key).flatMap(UUID.init(uuidString:))
     }
+
+
+    ///
+    /// @fcn        LocalReactionIdentity.forUserAction
+    /// @brief      Obtain a stable author identity for an explicit reaction
+    /// @details    Reuses a stored UUID or creates and persists one only when the user acts.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (UUID) existing author UUID or a newly persisted identity for this explicit user action
+    ///
     static func forUserAction(in defaults: UserDefaults = .standard) -> UUID {
         if let existing = current(in: defaults) { return existing }
         let id = UUID(); defaults.set(id.uuidString, forKey: key); return id
@@ -562,6 +770,20 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         attachmentsExcludingCover.filter { $0.kind == .photo }
     }
 
+
+    ///
+    /// @fcn        KanbanCard.setPhotoCaption
+    /// @brief      Update a particular photo attachment's caption
+    /// @details    Validates the photo identity and normalizes caption input before changing the attachment array;
+    ///             invalid targets throw.
+    ///
+    /// @param[in]  caption  Proposed photo caption text
+    /// @param[in]  id       Stable draft or objective identity
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     mutating func setPhotoCaption(_ caption: String, for id: UUID) throws {
         guard var current = attachments,
               let index = current.firstIndex(where: { $0.id == id && $0.kind == .photo }) else {
@@ -572,6 +794,18 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         attachments = current
     }
 
+
+    ///
+    /// @fcn        KanbanCard.reorderGalleryPhotos
+    /// @brief      Apply a validated photo-gallery order
+    /// @details    Requires the supplied photo IDs to match the gallery contents and preserves nonphoto attachments.
+    ///
+    /// @param[in]  orderedIDs  Photo identities in the requested complete gallery order
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     mutating func reorderGalleryPhotos(_ orderedIDs: [UUID]) throws {
         let photos = galleryPhotos
         guard orderedIDs.count == photos.count,
@@ -718,6 +952,16 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return trimmed.isEmpty || Self.isDividerTitle(trimmed) ? nil : trimmed
     }
 
+
+    ///
+    /// @fcn        KanbanCard.isDividerTitle
+    /// @brief      Recognize the divider entry syntax
+    /// @details    Trims the input before checking the dash-based syntax used to create plain and named dividers.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (Bool) true for named-divider syntax or a supported plain dash separator
+    ///
     static func isDividerTitle(_ title: String) -> Bool {
         if namedDividerHeading(title) != nil { return true }
         let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)  /* Title without surrounding spaces */
@@ -1014,7 +1258,21 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// The badge is derived only from a stored due date and this card's saved display preference.
     var listDueDateLabel: String? { showsDueDateInList && hasDueDate ? dueDateLabel : nil }
 
-    /// Omit a date already supplied by the owning list, while retaining any explicit time.
+
+    ///
+    /// @fcn        KanbanCard.dueDateBadge
+    /// @brief      Build the due-date badge for this card's context
+    /// @details    Uses the represented list date and calendar to decide whether a due badge is meaningful; returns
+    ///             nil when it should be omitted.
+    ///
+    /// @param[in]  listDate  Calendar date represented by the owning list, when available
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ((label: String, systemImage: String)?) due label and symbol, or nil when the list context already
+    ///             supplies the date
+    ///
+    /// @note       Omit a date already supplied by the owning list, while retaining any explicit time.
+    ///
     func dueDateBadge(on listDate: Date?, calendar: Calendar = .current) -> (label: String, systemImage: String)? {
         guard showsDueDateInList, let dueDate else { return nil }
         let matchesListDay = dueDateKind.includesDate && listDate.map { calendar.isDate(dueDate, inSameDayAs: $0) } == true
@@ -1025,6 +1283,18 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return (dueDateLabel, "calendar")
     }
 
+
+    ///
+    /// @fcn        KanbanCard.usesTimeOnlySchedule
+    /// @brief      Determine whether schedule badges can omit the date
+    /// @details    Compares stored schedule precision and the represented list day before choosing time-only
+    ///             presentation.
+    ///
+    /// @param[in]  listDate  Calendar date represented by the owning list, when available
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Bool) true when schedule labels can omit a redundant calendar date in this list context
+    ///
     func usesTimeOnlySchedule(on listDate: Date?, calendar: Calendar = .current) -> Bool {
         guard let listDate else { return false }
         let dates = [(startDate, startDateKind), (dueDate, dueDateKind)].compactMap { date, kind in
@@ -1035,7 +1305,20 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         }
     }
 
-    /// Presentation-only schedule labels for a card in a dated Day or Week list.
+
+    ///
+    /// @fcn        KanbanCard.scheduleBadges
+    /// @brief      Build the applicable start and due schedule badges
+    /// @details    Uses date precision and list context to retain useful schedule information without redundant date
+    ///             text.
+    ///
+    /// @param[in]  listDate  Calendar date represented by the owning list, when available
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([CardScheduleBadge]) applicable start and due badges for the represented list date
+    ///
+    /// @note       Presentation-only schedule labels for a card in a dated Day or Week list.
+    ///
     func scheduleBadges(on listDate: Date?, calendar: Calendar = .current) -> [CardScheduleBadge] {
         guard showsDueDateInList else { return [] }
         guard listDate != nil else {
@@ -1066,6 +1349,17 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return [CardScheduleBadge(title: "", value: badge.label, systemImage: badge.systemImage)]
     }
 
+
+    ///
+    /// @fcn        KanbanCard.defaultDueDateVisibility
+    /// @brief      Read the default due-date badge preference
+    /// @details    Loads the stored display preferences and uses their due-date visibility setting for new
+    ///             presentation decisions.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Bool) configured default visibility of due-date badges
+    ///
     static func defaultDueDateVisibility(from defaults: UserDefaults = .standard) -> Bool {
         PlanPreferencesStore.load(from: defaults).showsDueDatesOnNewCards
     }
@@ -1145,11 +1439,35 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var archivedCards: [KanbanCard]      /* Cards retained in this list's archive               */
     var isArchived: Bool = false         /* Whether this list is in the board archive           */
     var singleListViewMode: SingleListViewMode { appearance?.listViewMode ?? .cards }
+
+
+    ///
+    /// @fcn        KanbanList.setSingleListViewMode
+    /// @brief      Change a list's single-list presentation mode
+    /// @details    Stores the selected mode in the list appearance, preserving the other appearance fields.
+    ///
+    /// @param[in]  mode  Mode supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func setSingleListViewMode(_ mode: SingleListViewMode) {
         var value = appearance ?? ItemAppearance()
         value.listViewMode = mode
         appearance = value
     }
+
+
+    ///
+    /// @fcn        KanbanList.defaultHeaderIcon
+    /// @brief      Choose the standard icon associated with a list title
+    /// @details    Recognizes Plenact's special list names and returns nil for an ordinary title without a fixed
+    ///             default.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (PersonalCollectionIcon?) fixed special-list icon, or nil when no recognized special-list default
+    ///             exists
+    ///
     static func defaultHeaderIcon(for title: String) -> PersonalCollectionIcon? {
         switch title {
         case "On the Table": .tasks
@@ -1158,6 +1476,18 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         default: nil
         }
     }
+
+
+    ///
+    /// @fcn        KanbanList.fixedIconColor
+    /// @brief      Resolve the fixed icon color for a special list
+    /// @details    Maps recognized special-list titles to their established colors; ordinary titles have no fixed
+    ///             color.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (ProfileColor?) established special-list color, or nil for an ordinary title
+    ///
     static func fixedIconColor(for title: String) -> ProfileColor? {
         switch title {
         case "On the Table": ProfileColor(red: 0.48, green: 0.13, blue: 0.16)
@@ -1166,10 +1496,32 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         default: nil
         }
     }
+
+
+    ///
+    /// @fcn        KanbanList.fixedHeaderIconColor
+    /// @brief      Resolve the special list header's fixed icon color
+    /// @details    Uses the title-based fixed-color rules for header presentation.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (ProfileColor?) fixed special-list header color, or nil when no fixed color applies
+    ///
     static func fixedHeaderIconColor(for title: String) -> ProfileColor? {
         // A warm highlight remains legible against On the Table's burgundy banner.
         title == "On the Table" ? ProfileColor(red: 1, green: 0.84, blue: 0.55) : fixedIconColor(for: title)
     }
+
+
+    ///
+    /// @fcn        KanbanList.resolvedIconColor
+    /// @brief      Resolve the displayed list icon color
+    /// @details    Combines fixed special-list styling with appearance and collection-level color choices.
+    ///
+    /// @param[in]  collectionColor  Optional inherited collection icon color
+    ///
+    /// @return     (ProfileColor?) effective fixed, list, or inherited collection icon color, when available
+    ///
     func resolvedIconColor(collectionColor: ProfileColor? = nil) -> ProfileColor? {
         Self.fixedIconColor(for: title) ?? appearance?.iconColor ?? collectionColor
     }
@@ -1178,6 +1530,19 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     var showsIconInHeader: Bool {
         hasFixedHeaderIcon || appearance?.showsIconInHeader == true
     }
+
+
+    ///
+    /// @fcn        KanbanList.headerAppearance
+    /// @brief      Build the effective icon appearance for the list header
+    /// @details    Combines list overrides, collection icon defaults, and special-list styling without changing
+    ///             stored appearance.
+    ///
+    /// @param[in]  collectionIcon   Optional inherited collection icon choice
+    /// @param[in]  collectionColor  Optional inherited collection icon color
+    ///
+    /// @return     (ItemAppearance?) resolved list-header appearance using available list and collection defaults
+    ///
     func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil, collectionColor: ProfileColor? = nil) -> ItemAppearance? {
         guard showsIconInHeader else { return nil }
         var value = appearance ?? ItemAppearance()
@@ -1430,7 +1795,20 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     }
 
 
-    /// Updates display metadata without replacing retained records or changing their identities.
+    ///
+    /// @fcn        KanbanList.edit
+    /// @brief      Validate and update editable list metadata
+    /// @details    Rejects a blank proposed title before assigning the title and optional subtitle override.
+    ///
+    /// @param[in]  proposedTitle  Proposed list title, validated before assignment
+    /// @param[in]  subtitle       Supporting subtitle text
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
+    /// @note       Updates display metadata without replacing retained records or changing their identities.
+    ///
     mutating func edit(title proposedTitle: String, subtitle: String?) throws {
 
         let trimmedTitle = proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1635,6 +2013,15 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     var retainedURL: URL? = nil
     var linkedCollectionID: UUID? = nil
 
+
+    ///
+    /// @fcn        KanbanChecklistItem.retainActiveContent
+    /// @brief      Retain the current checklist item's alternate presentation content
+    /// @details    Copies an active linked-card ID, action detail, or URL to its retained field; a standard item
+    ///             leaves retained values untouched.
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func retainActiveContent() {
         switch content {
         case .standard: break
@@ -3966,6 +4353,26 @@ struct CardMoveDestination: Identifiable, Hashable {
 
 /// Builds both sides before publication, retaining hidden fields and relocating bookmarks.
 enum CrossBoardCardMovement {
+
+
+    ///
+    /// @fcn        CrossBoardCardMovement.move
+    /// @brief      Move a card between current-week and personal-owner lists
+    /// @details    Validates unique source and active destination, allocates a collision-free destination card ID
+    ///             when crossing owners, and transfers the moved card's bookmark with its content.
+    ///
+    /// @param[in]      card         Card or note being inspected or changed
+    /// @param[in]      sourceID     Identity of the source owner
+    /// @param[in]      destination  Chosen calendar or personal-list destination
+    /// @param[in,out]  week         Current planning-week lists, updated in place after a valid movement
+    /// @param[in,out]  collections  Personal collection values available to the operation
+    /// @param[in,out]  saved        Owner-local saved-card identities, updated when bookmarked content moves
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
+    ///             `CocoaError(.validationNumberTooLarge)`. Errors from throwing dependencies propagate unless
+    ///             handled within this operation.
+    ///
     static func move(_ card: KanbanCard, from sourceID: UUID?, to destination: CardMoveDestination,
                      week: inout [KanbanList], collections: inout [PersonalCollection],
                      saved: inout Set<Int>) throws {
@@ -4057,6 +4464,21 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable {
             (topic.0, self == .life ? ([30, 28, 26] + Array(repeating: 12, count: 9))[index] : 12)
         }
     }
+
+
+    ///
+    /// @fcn        PersonalBoardExample.makeCollection
+    /// @brief      Instantiate a personal board example
+    /// @details    Uses the supplied date and calendar for dated content and avoids title collisions with existing
+    ///             collections.
+    ///
+    /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
+    /// @param[in]  now             Reference time used instead of an implicit clock read
+    /// @param[in]  calendar        Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (PersonalCollection) new example board collection with an available title and generated date
+    ///             context
+    ///
     func makeCollection(existingTitles: [String], now: Date = .now, calendar: Calendar = .current) -> PersonalCollection {
         var board = PersonalCollection(title: PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles), kind: .board,
                                        icon: self == .garden ? .home : .project, color: self == .garden ? .green : .teal)
@@ -4199,6 +4621,18 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
         ]
         }
     }
+
+
+    ///
+    /// @fcn        MixedListTemplate.makeCollection
+    /// @brief      Instantiate the mixed-presentation list template
+    /// @details    Creates a fresh collection whose title avoids existing names and whose items retain the template's
+    ///             intended presentation.
+    ///
+    /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
+    ///
+    /// @return     (PersonalCollection) new mixed-presentation collection with a collision-free title
+    ///
     func makeCollection(existingTitles: [String]) -> PersonalCollection {
         let title = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
         var collection = PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
@@ -4219,6 +4653,18 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
 }
 
 extension PersonalCollection {
+
+
+    ///
+    /// @fcn        PersonalCollection.exampleWeek
+    /// @brief      Create a personal collection from the example week
+    /// @details    Uses an available title and the example week's lists rather than replacing the active planning
+    ///             week.
+    ///
+    /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
+    ///
+    /// @return     (PersonalCollection) new personal example-week collection with an available title
+    ///
     static func exampleWeek(existingTitles: [String]) -> PersonalCollection {
         let title = uniqueTitle("Week View", existingTitles: existingTitles)
         var draft = PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)
@@ -4230,6 +4676,17 @@ extension PersonalCollection {
 
 /// Shared paste/submission policy: keep line order and duplicates, omit empty lines.
 enum MultilineEntry {
+
+
+    ///
+    /// @fcn        MultilineEntry.titles
+    /// @brief      Split a multiline entry into usable item titles
+    /// @details    Trims each line and discards empty lines while preserving the order of the remaining entries.
+    ///
+    /// @param[in]  text  Attributed or plain text to restore or display
+    ///
+    /// @return     ([String]) trimmed nonempty input lines in their original order
+    ///
     static func titles(_ text: String) -> [String] {
         text.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -4238,6 +4695,24 @@ enum MultilineEntry {
 }
 
 extension KanbanList {
+
+
+    ///
+    /// @fcn        KanbanList.makeItems
+    /// @brief      Create cards or notes from a multiline title submission
+    /// @details    Allocates sequential IDs, interprets divider syntax, and applies supplied content, actions,
+    ///             presentation, and creation preferences to the generated items.
+    ///
+    /// @param[in]  id                   Starting numeric card ID or owner-local content identity
+    /// @param[in]  titles               Multiline item-title input
+    /// @param[in]  description          Optional description applied to the generated items
+    /// @param[in]  subtitle             Supporting subtitle text
+    /// @param[in]  presentation         Card, note, or board presentation selected by the caller
+    /// @param[in]  actions              Action lines or contextual keyboard actions supplied by the caller
+    /// @param[in]  creationPreferences  User defaults to apply only to newly created items
+    ///
+    /// @return     ([KanbanCard]) newly allocated cards, notes, or dividers corresponding to the usable title lines
+    ///
     func makeItems(startingAt id: Int, titles: String, description: String? = nil, subtitle: String = "",
                    presentation: ItemPresentation? = nil, actions: [String]? = nil, creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) -> [KanbanCard] {
         MultilineEntry.titles(titles).enumerated().map { offset, title in
@@ -4273,11 +4748,37 @@ struct CardSectionLayout: Hashable, Codable, Sendable {
 
 /// Allocate destination-local identities and remap links between cards in a copied list.
 enum ListCopying {
+
+
+    ///
+    /// @fcn        ListCopying.copy
+    /// @brief      Copy a list with destination-safe identities
+    /// @details    Allocates new list and card IDs against the destination and updates checklist references according
+    ///             to whether the copy crosses owners.
+    ///
+    /// @param[in]  source       Original list whose content is being copied
+    /// @param[in]  destination  Existing destination lists used when allocating collision-free identities
+    /// @param[in]  crossBoard   Whether the copy crosses owners and requires cross-owner reference rules
+    ///
+    /// @return     (KanbanList) copied list with new destination-safe list and card identities
+    ///
     static func copy(_ source: KanbanList, into destination: [KanbanList], crossBoard: Bool) -> KanbanList {
         let listID = (destination.map(\.id).max() ?? -1) + 1
         let firstCardID = (destination.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1
         let ids = Dictionary(uniqueKeysWithValues: source.allCards.enumerated().map { ($0.element.id, firstCardID + $0.offset) })
         let title = source.title + " Copy"
+
+
+        ///
+        /// @fcn        ListCopying.copy.copyCard
+        /// @brief      Copy one card using the enclosing identity map
+        /// @details    Rewrites checklist references consistently with the copied list's destination and cross-board
+        ///             policy.
+        ///
+        /// @param[in]  card  Card or note being inspected or changed
+        ///
+        /// @return     (KanbanCard) copied card with rewritten checklist references
+        ///
         func copyCard(_ card: KanbanCard) -> KanbanCard {
             var copy = card.replacingLocation(id: ids[card.id]!, listTitle: title)
             copy.checklists = card.checklists.map { checklist in
@@ -4307,6 +4808,22 @@ enum ListCopying {
 
 /// Moves a whole list between distinct boards, reserving active and archived identities.
 enum CrossBoardListMovement {
+
+
+    ///
+    /// @fcn        CrossBoardListMovement.detach
+    /// @brief      Detach one board list into a standalone collection
+    /// @details    Validates its owner, preserves the moved content, and redirects affected references as the
+    ///             ownership changes.
+    ///
+    /// @param[in]      listID       Numeric list identity within its owner
+    /// @param[in]      sourceID     Identity of the source owner
+    /// @param[in,out]  collections  Personal collection values available to the operation
+    ///
+    /// @return     (PersonalCollection) new standalone collection containing the detached list
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     static func detach(listID: Int, from sourceID: UUID,
                        collections: inout [PersonalCollection]) throws -> PersonalCollection {
         guard let source = collections.first(where: { $0.id == sourceID && $0.isActive && $0.kind == .board }),
@@ -4331,6 +4848,23 @@ enum CrossBoardListMovement {
         return standalone
     }
 
+
+    ///
+    /// @fcn        CrossBoardListMovement.move
+    /// @brief      Transfer an entire list between existing owners
+    /// @details    Uses destination-safe IDs and rewrites affected checklist links and saved-card ownership while
+    ///             retaining the list's content.
+    ///
+    /// @param[in]      listID         Numeric list identity within its owner
+    /// @param[in]      sourceID       Identity of the source owner
+    /// @param[in]      destinationID  UUID of the existing destination collection owner
+    /// @param[in,out]  collections    Personal collection values available to the operation
+    ///
+    /// @return     (KanbanList) list at its new owner with remapped identities and links
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
+    ///             `CocoaError(.validationNumberTooLarge)`. Errors from throwing dependencies propagate unless
+    ///             handled within this operation.
+    ///
     static func move(listID: Int, from sourceID: UUID, to destinationID: UUID,
                      collections: inout [PersonalCollection]) throws -> KanbanList {
         guard sourceID != destinationID,
@@ -4364,6 +4898,18 @@ enum CrossBoardListMovement {
             moved.appearance = source.appearance
             moved.isArchived = source.isArchived
         }
+
+
+        ///
+        /// @fcn        CrossBoardListMovement.move.relocate
+        /// @brief      Rewrite a moved card for its destination owner
+        /// @details    Uses the enclosing list and card identity maps so internal checklist links follow the
+        ///             transferred content.
+        ///
+        /// @param[in]  card  Card or note being inspected or changed
+        ///
+        /// @return     (KanbanCard) relocated card with checklist links mapped to destination identities
+        ///
         func relocate(_ card: KanbanCard) -> KanbanCard {
             var result = card.replacingLocation(id: mapping[card.id]!, listTitle: source.title)
             result.checklists = result.checklists.map { checklist in
@@ -4390,6 +4936,18 @@ enum CrossBoardListMovement {
         // Redirect references from every retained board to each moved card's new owner and identity.
         for boardIndex in snapshot.indices {
             let owner = snapshot[boardIndex].id
+
+
+            ///
+            /// @fcn        CrossBoardListMovement.move.redirect
+            /// @brief      Redirect links that point to the transferred list
+            /// @details    Traverses card checklist content using the enclosing source and destination identity
+            ///             mapping.
+            ///
+            /// @param[in]  card  Card or note being inspected or changed
+            ///
+            /// @return     (KanbanCard) card whose inbound links follow the transferred list
+            ///
             func redirect(_ card: KanbanCard) -> KanbanCard {
                 var card = card
                 card.checklists = card.checklists.map { checklist in
@@ -4431,6 +4989,17 @@ struct CardScheduleBadge: Equatable {
 
 /// Creation-only guidance: never called when opening or emptying an existing List.
 enum DefaultListTutorial {
+
+
+    ///
+    /// @fcn        DefaultListTutorial.defaultBanner
+    /// @brief      Choose the tutorial banner accent for a special list
+    /// @details    Recognizes the built-in list names and returns nil for titles without a tutorial accent.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (ItemAccent?) tutorial accent for a recognized special list, or nil for other titles
+    ///
     static func defaultBanner(for title: String) -> ItemAccent? {
         switch title {
         case "On the Table": .coral
@@ -4440,6 +5009,17 @@ enum DefaultListTutorial {
         }
     }
 
+
+    ///
+    /// @fcn        DefaultListTutorial.makeStarter
+    /// @brief      Create the initial special-list tutorial collection
+    /// @details    Builds the welcome content and default appearance for the requested list; callers control when a
+    ///             starter is installed.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    ///
+    /// @return     (PersonalCollection) fresh special-list collection containing its welcome content and appearance
+    ///
     static func makeStarter(title: String) -> PersonalCollection {
         let icon: PersonalCollectionIcon
         let color: ProfileColor
@@ -4495,22 +5075,82 @@ struct ListCheckmarkReset: Equatable {
     let previous: [String: Bool]
     let cleared: [String: Bool]
 
+
+    ///
+    /// @fcn        ListCheckmarkReset.values
+    /// @brief      Capture completion state throughout a list
+    /// @details    Uses stable nested identity paths so card and checklist checkmarks can be compared and restored
+    ///             separately from other metadata.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     ([String: Bool]) completion values keyed by stable card and nested checklist identity paths
+    ///
     static func values(in list: KanbanList) -> [String: Bool] {
         var values: [String: Bool] = [:]
         _ = transform(list.cards) { key, value in values[key] = value; return value }
         return values
     }
+
+
+    ///
+    /// @fcn        ListCheckmarkReset.reset
+    /// @brief      Create a cleared copy and restoration snapshot
+    /// @details    Records original and cleared completion values and returns transformed cards without mutating the
+    ///             supplied list.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     ((ListCheckmarkReset, [KanbanCard])) restoration snapshot paired with copies of the cleared cards
+    ///
     static func reset(_ list: KanbanList) -> (ListCheckmarkReset, [KanbanCard]) {
         let previous = values(in: list)
         let cards = transform(list.cards) { _, _ in false }
         var cleared = list; cleared.cards = cards
         return (Self(previous: previous, cleared: values(in: cleared)), cards)
     }
+
+
+    ///
+    /// @fcn        ListCheckmarkReset.canRestore
+    /// @brief      Check whether the captured checkmarks can still be restored
+    /// @details    Requires the current list's completion values to match the cleared snapshot, preventing an Undo
+    ///             from overwriting later checkmark edits.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     (Bool) true only when current checkmarks still match the captured cleared state
+    ///
     func canRestore(_ list: KanbanList) -> Bool { Self.values(in: list) == cleared }
+
+
+    ///
+    /// @fcn        ListCheckmarkReset.restoring
+    /// @brief      Restore captured checkmarks when the snapshot is still valid
+    /// @details    Returns nil after a conflicting completion change; otherwise restores only completion fields while
+    ///             keeping current card content.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     ([KanbanCard]?) restored completion values, or nil if later checkmark edits conflict
+    ///
     func restoring(_ list: KanbanList) -> [KanbanCard]? {
         guard canRestore(list) else { return nil }
         return Self.transform(list.cards) { key, value in previous[key] ?? value }
     }
+
+
+    ///
+    /// @fcn        ListCheckmarkReset.transform
+    /// @brief      Transform completion values recursively by identity path
+    /// @details    Copies the supplied hierarchy and invokes the change closure for each card or nested checklist
+    ///             path.
+    ///
+    /// @param[in]  cards   Canonical card values in their current order
+    /// @param[in]  change  Transform receiving the stable identity path and current completion value
+    ///
+    /// @return     ([KanbanCard]) hierarchy copies with completion fields transformed by stable identity path
+    ///
     private static func transform(_ cards: [KanbanCard], change: (String, Bool) -> Bool) -> [KanbanCard] {
         cards.map { original in
             guard !original.isSectionDivider else { return original }
@@ -4521,6 +5161,20 @@ struct ListCheckmarkReset: Equatable {
             return card
         }
     }
+
+
+    ///
+    /// @fcn        ListCheckmarkReset.transform
+    /// @brief      Transform completion values recursively by identity path
+    /// @details    Copies the supplied hierarchy and invokes the change closure for each card or nested checklist
+    ///             path.
+    ///
+    /// @param[in]  lists   Lists participating in the operation
+    /// @param[in]  path    Stable hierarchy path or writable field key path used by the operation
+    /// @param[in]  change  Transform receiving the stable identity path and current completion value
+    ///
+    /// @return     ([KanbanChecklist]) hierarchy copies with completion fields transformed by stable identity path
+    ///
     private static func transform(_ lists: [KanbanChecklist], path: String, change: (String, Bool) -> Bool) -> [KanbanChecklist] {
         lists.map { checklist in
             KanbanChecklist(id: checklist.id, title: checklist.title, items: checklist.items.map { original in
@@ -4557,12 +5211,37 @@ struct DayTimeDistribution {
     var total: TimeInterval { segments.reduce(0) { $0 + $1.planned } }
     var completedTime: TimeInterval { segments.reduce(0) { $0 + $1.completed } }
 
+
+    ///
+    /// @fcn        DayTimeDistribution.durationLabel
+    /// @brief      Format a duration as a compact hour-minute label
+    /// @details    Rounds seconds to the nearest minute and omits zero hour or minute components for compact chart
+    ///             totals and legend entries.
+    ///
+    /// @param[in]  seconds  Duration in seconds to round to a compact minute-based label
+    ///
+    /// @return     (String) rounded minute-based duration such as 45m, 2h, or 2h 15m
+    ///
     static func durationLabel(_ seconds: TimeInterval) -> String {
         let minutes = Int((seconds / 60).rounded())
         let hours = minutes / 60, remainder = minutes % 60
         return hours == 0 ? "\(remainder)m" : (remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m")
     }
 
+
+    ///
+    /// @fcn        DayTimeDistribution.init
+    /// @brief      Aggregate planned and completed time by tag for one day
+    /// @details    Uses timed task intervals clipped to the represented calendar day, divides multi-tag time equally,
+    ///             and records overlaps as additive planned time rather than actual tracked time.
+    ///
+    /// @param[in]  cards     Canonical card values in their current order
+    /// @param[in]  labels    Label catalog used to resolve stored label IDs
+    /// @param[in]  day       Calendar day represented by the result
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (DayTimeDistribution) initialized instance
+    ///
     init(cards: [KanbanCard], labels: LabelLibrary, day: Date, calendar: Calendar) {
         let tasks = cards.filter { $0.displayFormat == .card }
         taskCount = tasks.count
@@ -4572,6 +5251,19 @@ struct DayTimeDistribution {
         var buckets: [String: Segment] = [:]
         var intervals: [(Date, Date)] = []
         var untimed = 0
+
+
+        ///
+        /// @fcn        DayTimeDistribution.init.resolve
+        /// @brief      Resolve one schedule endpoint for the represented day
+        /// @details    Anchors time-only values to the day and excludes date-only values from timed-duration
+        ///             calculations.
+        ///
+        /// @param[in]  date  Represented date for the operation
+        /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
+        ///
+        /// @return     (Date?) timed endpoint resolved for the represented day, or nil for an unusable endpoint
+        ///
         func resolve(_ date: Date, kind: CardDateKind) -> Date? {
             guard kind.includesTime else { return nil }
             if kind == .time {
@@ -4618,6 +5310,20 @@ struct DayTimeDistribution {
 /// Named dividers own subsequent content up to the next named divider.
 /// Plain separators do not change ownership; all operations retain original item identities.
 enum DaySections {
+
+
+    ///
+    /// @fcn        DaySections.owner
+    /// @brief      Find the named heading that owns a card
+    /// @details    Scans canonical order until the next named heading; cards before the first heading have no section
+    ///             owner.
+    ///
+    /// @param[in]  id     Starting numeric card ID or owner-local content identity
+    /// @param[in]  cards  Canonical card values in their current order
+    ///
+    /// @return     (KanbanCard?) preceding named divider owning the target card, or nil for ungrouped or missing
+    ///             content
+    ///
     static func owner(of id: Int, in cards: [KanbanCard]) -> KanbanCard? {
         var heading: KanbanCard?
         for card in cards {
@@ -4626,6 +5332,18 @@ enum DaySections {
         }
         return nil
     }
+
+
+    ///
+    /// @fcn        DaySections.visible
+    /// @brief      Project canonical cards into the expanded section rows
+    /// @details    Retains headings and ungrouped content while omitting members of collapsed sections; stored cards
+    ///             remain untouched.
+    ///
+    /// @param[in]  cards  Canonical card values in their current order
+    ///
+    /// @return     ([KanbanCard]) canonical-order headings and members of expanded sections
+    ///
     static func visible(_ cards: [KanbanCard]) -> [KanbanCard] {
         var collapsed = false
         return cards.filter { card in
@@ -4636,13 +5354,41 @@ enum DaySections {
             return !collapsed
         }
     }
+
+
+    ///
+    /// @fcn        DaySections.reveal
+    /// @brief      Expand the section containing a particular card
+    /// @details    Finds its named heading and clears the collapsed appearance flag without changing card order.
+    ///
+    /// @param[in]      id     Starting numeric card ID or owner-local content identity
+    /// @param[in,out]  cards  Canonical card values in their current order
+    ///
+    /// @return     (Void) no return value
+    ///
     static func reveal(_ id: Int, in cards: inout [KanbanCard]) {
         guard let heading = owner(of: id, in: cards),
               let index = cards.firstIndex(where: { $0.id == heading.id }),
               cards[index].appearance?.sectionCollapsed == true else { return }
         cards[index].appearance?.sectionCollapsed = false
     }
-    /// Translate native List offsets through the visible projection, keeping hidden members in storage.
+
+
+    ///
+    /// @fcn        DaySections.visibleMove
+    /// @brief      Translate a visible native-list move into canonical indices
+    /// @details    Maps visible source and destination positions back to full card order so collapsed members are not
+    ///             lost or misindexed.
+    ///
+    /// @param[in]  cards              Canonical card values in their current order
+    /// @param[in]  sourceOffsets      Indices in the visible native-list projection being moved
+    /// @param[in]  destinationOffset  Insertion offset in the visible native-list projection
+    ///
+    /// @return     ((id: Int, index: Int)?) canonical source identity and insertion index, or nil for an invalid
+    ///             visible move
+    ///
+    /// @note       Translate native List offsets through the visible projection, keeping hidden members in storage.
+    ///
     static func visibleMove(_ cards: [KanbanCard], sourceOffsets: IndexSet, destinationOffset: Int) -> (id: Int, index: Int)? {
         let rows = visible(cards)
         guard let source = sourceOffsets.first, rows.indices.contains(source),
@@ -4653,6 +5399,20 @@ enum DaySections {
         else { boundary = cards.firstIndex(where: { $0.id == rows[destinationOffset].id }) ?? cards.count }
         return (rows[source].id, canonicalSource < boundary ? boundary - 1 : boundary)
     }
+
+
+    ///
+    /// @fcn        DaySections.reordered
+    /// @brief      Reorder a card or named section in canonical card order
+    /// @details    Moves a heading with its complete section block and delegates ordinary-card movement while
+    ///             preserving the ungrouped prefix.
+    ///
+    /// @param[in]  cards        Canonical card values in their current order
+    /// @param[in]  itemID       Canonical card or divider identity to reorder
+    /// @param[in]  destination  Canonical insertion index or direction-resolved destination index
+    ///
+    /// @return     ([KanbanCard]) canonical cards after a valid card or whole-section move, or the unchanged input
+    ///
     static func reordered(_ cards: [KanbanCard], itemID: Int, to destination: Int) -> [KanbanCard] {
         guard let source = cards.firstIndex(where: { $0.id == itemID }) else { return cards }
         guard cards[source].sectionHeading != nil else {
@@ -4669,6 +5429,20 @@ enum DaySections {
         }
         return result
     }
+
+
+    ///
+    /// @fcn        DaySections.moved
+    /// @brief      Move a named section relative to neighboring sections
+    /// @details    Treats the heading and all following members up to the next named heading as one block and leaves
+    ///             invalid requests unchanged.
+    ///
+    /// @param[in]  cards      Canonical card values in their current order
+    /// @param[in]  sectionID  Named divider identity whose complete section should move
+    /// @param[in]  offset     Relative section or photo movement, or normalized scroll displacement
+    ///
+    /// @return     ([KanbanCard]) canonical cards with the requested neighboring-section move, or the unchanged input
+    ///
     static func moved(_ cards: [KanbanCard], sectionID: Int, offset: Int) -> [KanbanCard] {
         let starts = cards.indices.filter { cards[$0].sectionHeading != nil }
         guard offset == -1 || offset == 1,
@@ -4694,6 +5468,19 @@ struct SectionTransferReceipt {
     let mapping: [Int: Int]
     let heading: KanbanCard
 
+
+    ///
+    /// @fcn        SectionTransferReceipt.undo
+    /// @brief      Restore affected owners if the transfer snapshot still matches
+    /// @details    Compares current affected owners with the recorded post-transfer values, restores only those
+    ///             owners, and throws on conflicts instead of overwriting later edits.
+    ///
+    /// @param[in]  owners  Canonical collection owners participating in the operation
+    ///
+    /// @return     ([PersonalCollection]) owners with only the transferred changes restored
+    /// @throws     Explicit failures include `CocoaError(.fileWriteFileExists)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     func undo(in owners: [PersonalCollection]) throws -> [PersonalCollection] {
         guard after.allSatisfy({ expected in owners.first(where: { $0.id == expected.id }) == expected }) else {
             throw CocoaError(.fileWriteFileExists)
@@ -4703,6 +5490,28 @@ struct SectionTransferReceipt {
 }
 
 enum SectionTransfer {
+
+
+    ///
+    /// @fcn        SectionTransfer.move
+    /// @brief      Transfer a complete named section between active lists
+    /// @details    Validates both owners and the heading, remaps cross-owner IDs and nested links, optionally shifts
+    ///             calendar dates, and publishes the working owners only after constructing a valid transfer receipt.
+    ///
+    /// @param[in]      heading         Named divider identifying the complete section to transfer
+    /// @param[in]      source          Owner-qualified source list reference
+    /// @param[in]      destination     Owner-qualified destination list reference
+    /// @param[in,out]  owners          Canonical collection owners participating in the operation
+    /// @param[in]      sourceDay       Original represented day, when known, for optional schedule shifting
+    /// @param[in]      destinationDay  Destination represented day, when applicable
+    /// @param[in]      shiftDates      Whether date-bearing schedules should shift with the moved section
+    /// @param[in]      calendar        Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (SectionTransferReceipt) checked before/after snapshots and the transferred identity map
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
+    ///             `CocoaError(.fileReadCorruptFile)`, `CocoaError(.validationNumberTooLarge)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     static func move(heading: KanbanCard, source: WorkspaceListReference, destination: WorkspaceListReference,
                      owners: inout [PersonalCollection], sourceDay: Date? = nil, destinationDay: Date? = nil,
                      shiftDates: Bool = false, calendar: Calendar = .current) throws -> SectionTransferReceipt {
@@ -4741,6 +5550,20 @@ enum SectionTransfer {
             delta = calendar.dateComponents([.day], from: calendar.startOfDay(for: anchor), to: calendar.startOfDay(for: destinationDay)).day ?? 0
         } else { delta = 0 }
         // Freeze implicit links before moving their owner, including nested and retained links.
+
+
+        ///
+        /// @fcn        SectionTransfer.move.checklist
+        /// @brief      Rewrite checklist links and retained content during a section move
+        /// @details    Remaps links into the moved block, qualifies other source links when needed, and recursively
+        ///             preserves inactive retained detail.
+        ///
+        /// @param[in]  sourceChecklist  Checklist whose active and retained links are being rewritten
+        /// @param[in]  owner            Owner identity used to qualify numeric item references
+        /// @param[in]  freeze           Whether implicit source-owner links must become explicitly qualified
+        ///
+        /// @return     (KanbanChecklist) checklist with active and retained links rewritten using the transfer maps
+        ///
         func checklist(_ sourceChecklist: KanbanChecklist, owner: UUID, freeze: Bool) -> KanbanChecklist {
             let items = sourceChecklist.items.map { original -> KanbanChecklistItem in
                 var item = original
@@ -4782,6 +5605,18 @@ enum SectionTransfer {
             for id in ids where snapshot[from].savedCardIDs.remove(id) != nil { snapshot[to].savedCardIDs.insert(mapping[id]!) }
             for index in snapshot.indices {
                 let owner = snapshot[index].id
+
+
+                ///
+                /// @fcn        SectionTransfer.move.redirect
+                /// @brief      Redirect inbound links to the moved section's new owner
+                /// @details    Applies the enclosing identity map across checklist content while avoiding a second
+                ///             rewrite of cards already relocated.
+                ///
+                /// @param[in]  card  Card or note being inspected or changed
+                ///
+                /// @return     (KanbanCard) card with inbound links redirected to the transferred section's owner
+                ///
                 func redirect(_ card: KanbanCard) -> KanbanCard {
                     var result = card
                     // Moved cards were already redirected; do not apply an ID mapping twice.

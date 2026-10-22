@@ -25,6 +25,18 @@ import PencilKit
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testUntimedBundledExamplesPopulateEveryFocusFilterCombinationLateInTheDay
+    /// @brief      Verify that untimed Bundled Examples Populate Every Focus Filter Combination Late In The Day
+    /// @details    Exercises `PlanningDate.date`, `PlanningRoutineLibrary.seeded.templates.filter`,
+    ///             `DatedPlanningWeek.make`. Checks `XCTAssertTrue(important.allSatisfy { $0 > 500 })`;
+    ///             `XCTAssertFalse(entries.isEmpty, "\(template.name), filter mask \(mask) must demonstrate Focus
+    ///             even late in the day")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testUntimedBundledExamplesPopulateEveryFocusFilterCombinationLateInTheDay() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -52,6 +64,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLegacyBundledFocusMetadataUpgradeDoesNotRewriteStoredPlansOrCustomTemplates
+    /// @brief      Verify that legacy Bundled Focus Metadata Upgrade Does Not Rewrite Stored Plans Or Custom
+    ///             Templates
+    /// @details    Exercises `PlanningRoutineStore.load`, `upgraded.templates.dropFirst().allSatisfy`,
+    ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 4)`;
+    ///             `XCTAssertEqual(upgraded.templates[0], custom)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLegacyBundledFocusMetadataUpgradeDoesNotRewriteStoredPlansOrCustomTemplates() throws {
         let suite = "ExampleFocusMigration." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -74,6 +98,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCustomTemplateDoesNotInventFocusMarksOrDates
+    /// @brief      Verify that custom Template Does Not Invent Focus Marks Or Dates
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningDate.key`. Checks
+    ///             `XCTAssertNil(custom.exampleFocus)`;
+    ///             `XCTAssertTrue(PlanningTemplateApplication.exampleImportantIDs(custom, in: blank).isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCustomTemplateDoesNotInventFocusMarksOrDates() throws {
         let calendar = routineCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: calendar))
@@ -92,6 +127,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(card.dueDate)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMonthExampleRetainsFocusChoicesAndProvidesMatchingTodayItems
+    /// @brief      Verify that month Example Retains Focus Choices And Provides Matching Today Items
+    /// @details    Exercises `PlanningDate.date`, `FullMonthExample.make`, `example.defaultsDomain`. Checks
+    ///             `XCTAssertTrue(preserved.todayFocusIncludesImportant)`;
+    ///             `XCTAssertTrue(preserved.todayFocusIncludesBookmarked)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMonthExampleRetainsFocusChoicesAndProvidesMatchingTodayItems() throws {
         let calendar = routineCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-21", calendar: calendar))
@@ -118,6 +164,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleWeekUndoRetainsCalendarAndFocusFlagsWithLegacyCompatibility
+    /// @brief      Verify that example Week Undo Retains Calendar And Focus Flags With Legacy Compatibility
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `ExampleLoadUndoStore.save`. Checks
+    ///             `XCTAssertEqual(snapshot.week, week)`; `XCTAssertEqual(snapshot.savedCardIDs, [3])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testExampleWeekUndoRetainsCalendarAndFocusFlagsWithLegacyCompatibility() throws {
         let suite = "ExampleWeekFocusUndo." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -137,8 +193,32 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(legacy.importantCardIDs)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo
+    /// @brief      Verify that section Transfer Keeps Whole Block Links Bookmarks And Undo
+    /// @details    Exercises `.linkedCard`, `.actionDetail`, `watcher.checklists.append`. Checks
+    ///             `XCTAssertEqual(owners[0].lists[0].cards.map(\.id), [0, 5, 6])`;
+    ///             `XCTAssertEqual(owners[1].lists[0].cards.map(\.word), ["Existing", "--- Morning", "Breakfast",
+    ///             "---", "Walk"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo.card
+        /// @brief      Prepare card for the enclosing regression test
+        /// @details    Supplies the local fixture for section Transfer Keeps Whole Block Links Bookmarks And Undo.
+        ///
+        /// @param[in]  id     Starting numeric card ID or owner-local content identity
+        /// @param[in]  title  Display title or proposed title text
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func card(_ id: Int, _ title: String) -> KanbanCard { KanbanCard(id: id, word: title, listTitle: "Source", checklists: []) }
         var source = PersonalCollection(title: "Source", kind: .board, icon: .project, color: .blue)
         var target = PersonalCollection(title: "Target", kind: .list, icon: .notes, color: .teal)
@@ -204,6 +284,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try receipt.undo(in: owners + [unrelated]), original + [unrelated])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically
+    /// @brief      Verify that section Transfer Shifts Dates Across DST And Rejects Invalid Moves Atomically
+    /// @details    Exercises `PlanningDate.date`, `dated.replacingLocation`, `SectionTransfer.move`. Checks
+    ///             `XCTAssertTrue(owners[0].lists[0].cards.isEmpty)`; `XCTAssertEqual(result.map(\.id), [1, 2, 3])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -244,6 +334,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(owners[0].lists[1].cards[1].startDate, dated.startDate)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery
+    /// @brief      Verify that section Move Journal Restores Importance And Supports Legacy Recovery
+    /// @details    Exercises `DailyReviewTransaction.perform`, `PropertyListSerialization.data`,
+    ///             `DailyReviewTransaction.recover`. Checks `XCTAssertEqual(defaults.data(forKey:
+    ///             LibraryImportanceSelection.key), before)`; `XCTAssertEqual(defaults.data(forKey:
+    ///             "Plenact.Board.v1"), Data("board".utf8))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     @MainActor
     func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws {
         let suite = "SectionMoveJournal." + UUID().uuidString
@@ -268,6 +371,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), Data("old".utf8))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches
+    /// @brief      Verify that section Move Chooser And Undo Notice Render Without Moving And Only Notice Receives
+    ///             Touches
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `TransferConfirmationPresenter.shared.dismiss`. Checks `XCTAssertEqual(moves, 0)`;
+    ///             `XCTAssertFalse(scene.windows.contains { !$0.isHidden && $0.windowLevel > .alert }, "Persistent
+    ///             Undo must not create another window")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -301,7 +417,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(undoCalls, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDaySectionsKeepPlainDividersInsideTheirNamedSection
+    /// @brief      Verify that day Sections Keep Plain Dividers Inside Their Named Section
+    /// @details    Exercises `DaySections.visible(cards).map`, `DaySections.visible`, `DaySections.owner`. Checks
+    ///             `XCTAssertEqual(DaySections.visible(cards).map(\.id), [0, 1, 5, 6])`;
+    ///             `XCTAssertEqual(DaySections.owner(of: 4, in: cards)?.id, 1)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDaySectionsKeepPlainDividersInsideTheirNamedSection() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testDaySectionsKeepPlainDividersInsideTheirNamedSection.card
+        /// @brief      Prepare card for the enclosing regression test
+        /// @details    Supplies the local fixture for day Sections Keep Plain Dividers Inside Their Named Section.
+        ///
+        /// @param[in]  id     Starting numeric card ID or owner-local content identity
+        /// @param[in]  title  Display title or proposed title text
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func card(_ id: Int, _ title: String) -> KanbanCard {
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
@@ -331,7 +470,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(entries.contains { $0.id == 2 }, "Collapsing Day content does not hide it from Focus")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard
+    /// @brief      Verify that visible Reordering Maps Past Collapsed Content And Reveals The Moved Card
+    /// @details    Exercises `DaySections.visibleMove`, `DaySections.reordered`, `DaySections.reveal`. Checks
+    ///             `XCTAssertEqual(move.id, 5)`; `XCTAssertEqual(move.index, 3)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard.card
+        /// @brief      Prepare card for the enclosing regression test
+        /// @details    Supplies the local fixture for visible Reordering Maps Past Collapsed Content And Reveals The
+        ///             Moved Card.
+        ///
+        /// @param[in]  id     Starting numeric card ID or owner-local content identity
+        /// @param[in]  title  Display title or proposed title text
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func card(_ id: Int, _ title: String) -> KanbanCard { KanbanCard(id: id, word: title, listTitle: "Day", checklists: []) }
         var heading = card(1, "--- Morning")
         heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
@@ -351,7 +513,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(lists[0].cards.first { $0.id == 1 }?.appearance?.sectionCollapsed, false)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDaySectionMovementRetainsTheWholeBlockAndItsMetadata
+    /// @brief      Verify that day Section Movement Retains The Whole Block And Its Metadata
+    /// @details    Exercises `DaySections.moved`, `moved.map`, `DaySections.moved(cards, sectionID: 7, offset:
+    ///             -1).map`. Checks `XCTAssertEqual(moved.map(\.id), [0, 5, 6, 1, 2, 3, 4, 7, 8])`;
+    ///             `XCTAssertEqual(DaySections.moved(moved, sectionID: 1, offset: -1), cards)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDaySectionMovementRetainsTheWholeBlockAndItsMetadata() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testDaySectionMovementRetainsTheWholeBlockAndItsMetadata.card
+        /// @brief      Prepare card for the enclosing regression test
+        /// @details    Supplies the local fixture for day Section Movement Retains The Whole Block And Its Metadata.
+        ///
+        /// @param[in]  id     Starting numeric card ID or owner-local content identity
+        /// @param[in]  title  Display title or proposed title text
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func card(_ id: Int, _ title: String) -> KanbanCard {
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
@@ -371,6 +556,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         for item in cards { XCTAssertEqual(moved.first { $0.id == item.id }, item) }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes
+    /// @brief      Verify that section Example Upgrade Preserves Existing Routines And Stored Bytes
+    /// @details    Exercises `library.templates.removeAll`, `PlanningRoutineLibrary.sectionExamples.contains`,
+    ///             `PlanningRoutineStore.load`. Checks
+    ///             `XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)`;
+    ///             `XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws {
         let suite = "DaySectionExamples." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -405,6 +602,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance
+    /// @brief      Verify that day Section Rows Render With Large Text And Without Editing On Appearance
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(writes, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -438,6 +645,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(writes, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile
+    /// @brief      Verify that random Card Color Preferences Default Off And Round Trip Without Profile
+    /// @details    Exercises `PlanPreferencesStore.save`, `PlanPreferencesStore.load`, `LocalProfileStore.load`.
+    ///             Checks `XCTAssertFalse(old.randomizesNewCardHeaders)`;
+    ///             `XCTAssertFalse(old.randomizesNewCardBackgrounds)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile() throws {
         let old = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
         XCTAssertFalse(old.randomizesNewCardHeaders)
@@ -458,6 +676,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers
+    /// @brief      Verify that random Card Creation Colors Are Independent And Exclude Notes And Dividers
+    /// @details    Exercises `list.makeItem`, `NewCardAppearanceDefaults.headerPalette.contains`,
+    ///             `NewCardAppearanceDefaults.backgroundPalette.contains`. Checks
+    ///             `XCTAssertEqual(card.appearance?.background != nil, headers)`;
+    ///             `XCTAssertEqual(card.appearance?.cardBackground != nil, backgrounds)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers() throws {
         let list = KanbanList(id: 1, title: "Ideas", cards: [])
         for headers in [false, true] {
@@ -492,6 +722,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(custom, original)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords
+    /// @brief      Verify that random Card Color Previews Render In Light And Dark Without Changing Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(cards, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -532,6 +772,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("RANDOM_CARD_COLORS_RENDER=" + url.path)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits
+    /// @brief      Verify that plan Preferences Save Without Creating Profile And Share Profile Edits
+    /// @details    Exercises `PlanPreferencesStore.load`, `PlanPreferencesStore.save`, `LocalProfileStore.load`.
+    ///             Checks `XCTAssertEqual(PlanPreferencesStore.load(from: defaults).todayFocusItemCount, 4)`;
+    ///             `XCTAssertNil(LocalProfileStore.load(from: defaults))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits() throws {
         let suite = "PlanSettingsTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -553,6 +804,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListBackgroundOpacityDefaultsClampsAndPersistsIndependently
+    /// @brief      Verify that list Background Opacity Defaults Clamps And Persists Independently
+    /// @details    Exercises `BoardAppearance().resolved`. Checks
+    ///             `XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)`; `XCTAssertFalse(appearance.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListBackgroundOpacityDefaultsClampsAndPersistsIndependently() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
         XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)
@@ -570,6 +830,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(ItemAppearance(listBackgroundOpacity: .nan).resolvedListBackgroundOpacity, 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNoteListDayLayoutRendersAtPhoneAndTabletWidths
+    /// @brief      Verify that note List Day Layout Renders At Phone And Tablet Widths
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertGreaterThan(host.view.bounds.height, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testNoteListDayLayoutRendersAtPhoneAndTabletWidths() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -599,6 +869,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSingleListViewModePersistsWithoutConvertingOrReorderingContent
+    /// @brief      Verify that single List View Mode Persists Without Converting Or Reordering Content
+    /// @details    Exercises `list.setSingleListViewMode`, `anotherDay.setSingleListViewMode`. Checks
+    ///             `XCTAssertEqual(list.singleListViewMode, .cards)`; `XCTAssertEqual(restored.singleListViewMode,
+    ///             .noteList)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testSingleListViewModePersistsWithoutConvertingOrReorderingContent() throws {
         var list = KanbanList(id: 4, title: "Wednesday", cards: [
             KanbanCard(id: 1, word: "Task", listTitle: "Wednesday", isTitleChecked: true,
@@ -626,6 +907,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(anotherDay.singleListViewMode, .noteList)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListIconColorsPersistAndMainListColorsRemainFixed
+    /// @brief      Verify that list Icon Colors Persist And Main List Colors Remain Fixed
+    /// @details    Exercises `restored.resolvedIconColor`, `restored.headerAppearance`, `list.resolvedIconColor`.
+    ///             Checks `XCTAssertEqual(restored.resolvedIconColor(collectionColor: .orange), .blue)`;
+    ///             `XCTAssertEqual(restored.headerAppearance()?.iconColor, .blue)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListIconColorsPersistAndMainListColorsRemainFixed() throws {
         var list = KanbanList(id: 1, title: "Custom", cards: [])
         list.appearance = ItemAppearance(iconColor: .blue, showsIconInHeader: true)
@@ -645,6 +937,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMainLibraryListsUseTheSameFocusedDestinationAsToday
+    /// @brief      Verify that main Library Lists Use The Same Focused Destination As Today
+    /// @details    Exercises `DefaultListTutorial.makeStarter`. Checks
+    ///             `XCTAssertEqual(collection.preferredFocusedListID, collection.lists[0].id)`;
+    ///             `XCTAssertEqual(WorkspaceListReference(ownerID: collection.id, listID:
+    ///             collection.preferredFocusedListID!).listID, collection.lists[0].id)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testMainLibraryListsUseTheSameFocusedDestinationAsToday() {
         for title in ["On the Table", "In the Queue", "Scheduled"] {
             let collection = DefaultListTutorial.makeStarter(title: title)
@@ -658,6 +961,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(archived.preferredFocusedListID)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListHeaderIconDefaultsAndExplicitChoicesPersist
+    /// @brief      Verify that list Header Icon Defaults And Explicit Choices Persist
+    /// @details    Exercises `custom.headerAppearance`, `legacy.headerAppearance`, `restored.headerAppearance`.
+    ///             Checks `XCTAssertFalse(custom.showsIconInHeader)`; `XCTAssertNil(custom.headerAppearance())`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws {
         var custom = KanbanList(id: 7, title: "Custom list", cards: [])
         custom.appearance = ItemAppearance(icon: .tasks)
@@ -688,6 +1001,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(custom.headerAppearance(collectionIcon: .upcoming))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent
+    /// @brief      Verify that list Checkmark Reset Restores Exact Nested Flags Without Replacing Content
+    /// @details    Exercises `.actionDetail`, `ListCheckmarkReset.reset`, `ListCheckmarkReset.values(in:
+    ///             list).values.contains`. Checks `XCTAssertFalse(ListCheckmarkReset.values(in:
+    ///             list).values.contains(true))`; `XCTAssertEqual(list.archivedCards, original.archivedCards)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws {
         let nested = KanbanChecklist(title: "Nested", items: [KanbanChecklistItem(title: "Nested done", isCompleted: true)])
         let detail = KanbanChecklistActionDetail(description: "Keep details", checklists: [nested])
@@ -716,6 +1040,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(snapshot.restoring(list))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayFocusPreferenceDefaultsAndPersistsWithoutChangingOlderSettings
+    /// @brief      Verify that today Focus Preference Defaults And Persists Without Changing Older Settings
+    /// @details    Checks `XCTAssertEqual(restored.todayFocusItemCount, 4)`; `XCTAssertEqual(restored.defaultListID,
+    ///             3)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testTodayFocusPreferenceDefaultsAndPersistsWithoutChangingOlderSettings() throws {
         let legacy = Data(#"{"defaultListID":3,"usesReducedContent":true,"showsDueDatesOnNewCards":false}"#.utf8)
         let restored = try JSONDecoder().decode(LocalProfilePreferences.self, from: legacy)
@@ -733,6 +1067,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LocalProfilePreferences(todayFocusItemCount: 500).todayFocusItemCount, 4)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder
+    /// @brief      Verify that focus Filters Combine As Union And Keep All Matches In Canonical Order
+    /// @details    Exercises `(0..<7).map`, `cards.insert`, `entries().map`. Checks
+    ///             `XCTAssertEqual(entries().map(\.id), [1, 4])`; `XCTAssertEqual(entries().first?.heading,
+    ///             "Important to me")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder() throws {
         var cards = (0..<7).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Today", checklists: []) }
         cards[2].isTitleChecked = true
@@ -742,6 +1087,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let saved: Set<Int> = [3, 4]
         var preferences = LocalProfilePreferences(todayFocusItemCount: 0, todayFocusGroupsBySection: true,
             todayFocusIncludesImportant: true)
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder.entries
+        /// @brief      Prepare entries for the enclosing regression test
+        /// @details    Supplies the local fixture for focus Filters Combine As Union And Keep All Matches In
+        ///             Canonical Order. Uses `preferences.todayFocusEntries`.
+        ///
+        /// @return     ([TodayFocusEntry]) resulting values in the ordering described above
+        ///
         func entries() -> [TodayFocusEntry] {
             preferences.todayFocusEntries(in: cards, importantCardIDs: important, bookmarkedCardIDs: saved)
         }
@@ -763,9 +1118,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(cards, original)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices
+    /// @brief      Verify that focus Up Next Skips Ended Slots And Keeps Current Upcoming And Explicit Choices
+    /// @details    Exercises `(0..<8).map`, `preferences.todayFocusEntries(in: cards, on: now, calendar:
+    ///             calendar).map`, `preferences.todayFocusEntries`. Checks
+    ///             `XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: now, calendar: calendar).map(\.id),
+    ///             [1, 2, 4, 5])`; `XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: time(20), calendar:
+    ///             calendar).map(\.id), [5])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices.time
+        /// @brief      Prepare time for the enclosing regression test
+        /// @details    Supplies the local fixture for focus Up Next Skips Ended Slots And Keeps Current Upcoming And
+        ///             Explicit Choices. Uses `calendar.date`.
+        ///
+        /// @param[in]  hour  Hour-of-day component used by the fixture
+        /// @param[in]  day   Calendar day represented by the result
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func time(_ hour: Int, day: Int = 19) -> Date {
             calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour))!
         }
@@ -789,6 +1170,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: time(20), calendar: calendar).map(\.id), [5])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusImportanceUsesOwnerQualifiedStateAndSeedsOnlyNamedDemoRecords
+    /// @brief      Verify that focus Importance Uses Owner Qualified State And Seeds Only Named Demo Records
+    /// @details    Exercises `LibraryImportanceSelection.setting`, `LibraryImportanceSelection.demoData`,
+    ///             `LibraryImportanceSelection.cardIDs`. Checks
+    ///             `XCTAssertEqual(LibraryImportanceSelection.cardIDs(collectionID: first.id, data: data), [0, 1, 2,
+    ///             3])`; `XCTAssertEqual(LibraryImportanceSelection.cardIDs(collectionID: second.id, data: data),
+    ///             [0])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusImportanceUsesOwnerQualifiedStateAndSeedsOnlyNamedDemoRecords() throws {
         var first = PersonalCollection(title: "Demo", kind: .list)
         first.lists[0].cards = ["Work", "Gym", "Dinner", "Call Accountant", "Wake", "Morning Starbucks Pow-wow"].enumerated().map {
@@ -821,6 +1215,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(selected)), selected)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusShapePreferencesKeepLegacyDefaultsAndPersistWithoutProfile
+    /// @brief      Verify that focus Shape Preferences Keep Legacy Defaults And Persist Without Profile
+    /// @details    Exercises `PlanPreferencesStore.save`, `PlanPreferencesStore.load`, `LocalProfileStore.load`.
+    ///             Checks `XCTAssertEqual(legacy.todayFocusOrder, .dayList)`;
+    ///             `XCTAssertFalse(legacy.todayFocusGroupsBySection)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusShapePreferencesKeepLegacyDefaultsAndPersistWithoutProfile() throws {
         let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
         XCTAssertEqual(legacy.todayFocusOrder, .dayList)
@@ -836,7 +1241,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(LocalProfileStore.load(from: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting
+    /// @brief      Verify that focus Shape Preserves Sections Stable Ties And All Matches After Sorting
+    /// @details    Exercises `preferences.todayFocusEntries`, `entries.map`, `preferences.todayFocusItems(in:
+    ///             cards).map`. Checks `XCTAssertEqual(entries.map(\.id), [1, 3, 4, 2, 7, 6, 8])`;
+    ///             `XCTAssertEqual(entries[1].heading, "Looking forward to")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting.item
+        /// @brief      Prepare item for the enclosing regression test
+        /// @details    Supplies the local fixture for focus Shape Preserves Sections Stable Ties And All Matches
+        ///             After Sorting. Uses `time.map`.
+        ///
+        /// @param[in]  id     Starting numeric card ID or owner-local content identity
+        /// @param[in]  title  Display title or proposed title text
+        /// @param[in]  time   Time fixture value supplied to the enclosing test
+        /// @param[in]  done   Completion state assigned by the fixture
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func item(_ id: Int, _ title: String, _ time: Double? = nil, done: Bool = false) -> KanbanCard {
             var card = KanbanCard(id: id, word: title, listTitle: "Monday", isTitleChecked: done, checklists: [])
             card.startDate = time.map { Date(timeIntervalSince1970: $0) }
@@ -871,10 +1302,34 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(cards, original)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback
+    /// @brief      Verify that focus Chronology Honors Time Only Date Only And Due Fallback
+    /// @details    Exercises `(1...5).map`, `preferences.todayFocusEntries`, `entries.map`. Checks
+    ///             `XCTAssertEqual(entries.map(\.id), [3, 2, 4, 1, 5])`; `XCTAssertEqual(entries[1].scheduleDate(on:
+    ///             day, calendar: calendar), time(9, day: 19))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         let day = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 19)))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback.time
+        /// @brief      Prepare time for the enclosing regression test
+        /// @details    Supplies the local fixture for focus Chronology Honors Time Only Date Only And Due Fallback.
+        ///             Uses `calendar.date`.
+        ///
+        /// @param[in]  hour  Hour-of-day component used by the fixture
+        /// @param[in]  date  Represented date for the operation
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func time(_ hour: Int, day date: Int) -> Date {
             calendar.date(from: DateComponents(year: 2026, month: 10, day: date, hour: hour))!
         }
@@ -891,10 +1346,32 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(entries.last?.scheduleLabel)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDayDistributionSplitsTagsAndCountsCompletionWithoutInventingTime
+    /// @brief      Verify that day Distribution Splits Tags And Counts Completion Without Inventing Time
+    /// @details    Exercises `PlanningDate.date`, `result.segments.first`. Checks `XCTAssertEqual(result.total,
+    ///             10800)`; `XCTAssertEqual(result.completedTime, 7200)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDayDistributionSplitsTagsAndCountsCompletionWithoutInventingTime() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let day = calendar.startOfDay(for: try XCTUnwrap(PlanningDate.date("2026-10-20", calendar: calendar)))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testDayDistributionSplitsTagsAndCountsCompletionWithoutInventingTime.date
+        /// @brief      Prepare date for the enclosing regression test
+        /// @details    Supplies the local fixture for day Distribution Splits Tags And Counts Completion Without
+        ///             Inventing Time. Uses `calendar.date`.
+        ///
+        /// @param[in]  hour  Hour-of-day component used by the fixture
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func date(_ hour: Int) -> Date { calendar.date(byAdding: .hour, value: hour, to: day)! }
         let cards = [
             KanbanCard(id: 1, word: "Work", listTitle: "Tuesday", isTitleChecked: true,
@@ -922,6 +1399,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(DayTimeDistribution(cards: [reverse], labels: .starter, day: day, calendar: calendar).total, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDefaultWeekUsesValidDayAreaTagsWithoutRewritingCustomTags
+    /// @brief      Verify that default Week Uses Valid Day Area Tags Without Rewriting Custom Tags
+    /// @details    Exercises `template.collection.lists.flatMap(\.cards).allSatisfy`,
+    ///             `template.collection.lists.flatMap`, `card.labelIDs.allSatisfy`. Checks
+    ///             `XCTAssertEqual(upgraded.templates[index].collection.lists[0].cards[0].labelIDs, ["custom-tag"])`;
+    ///             `XCTAssertFalse(upgraded.templates[index].collection.lists[0].cards[1].labelIDs.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDefaultWeekUsesValidDayAreaTagsWithoutRewritingCustomTags() throws {
         let labels = LabelLibrary.starter.includingDayAreas
         let template = PlanningRoutineLibrary.jmr
@@ -943,6 +1432,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testToolbarRevisitMenuRendersWithoutChoosingOrChangingHistory
+    /// @brief      Verify that toolbar Revisit Menu Renders Without Choosing Or Changing History
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
+    ///             ActivityRecentStore.key), history)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testToolbarRevisitMenuRendersWithoutChoosingOrChangingHistory() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -963,6 +1463,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(UserDefaults.standard.data(forKey: ActivityRecentStore.key), history)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDayDistributionBannerRendersWithNoPlanWrites
+    /// @brief      Verify that day Distribution Banner Renders With No Plan Writes
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
+    ///             DailyPlanStore.key), before)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDayDistributionBannerRendersWithNoPlanWrites() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -991,7 +1502,31 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(UserDefaults.standard.data(forKey: DailyPlanStore.key), before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion
+    /// @brief      Verify that today Section Snap Only Crosses Boundaries And Respects Reduced Motion
+    /// @details    Exercises `TodaySectionSnapBehavior.destination`. Checks `XCTAssertEqual(snap(0, 450), 800)`;
+    ///             `XCTAssertEqual(snap(800, 650), 0)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion() {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion.snap
+        /// @brief      Prepare snap for the enclosing regression test
+        /// @details    Supplies the local fixture for today Section Snap Only Crosses Boundaries And Respects Reduced
+        ///             Motion. Uses `TodaySectionSnapBehavior.destination`.
+        ///
+        /// @param[in]  start     Starting horizontal position or original vertical scroll offset in points
+        /// @param[in]  proposed  Proposed vertical scroll offset at the end of the gesture
+        /// @param[in]  enabled   Whether this optional behavior is enabled
+        /// @param[in]  maximum   Largest vertical content offset allowed by the scroll bounds
+        ///
+        /// @return     (CGFloat?) matching or resolved value, or nil when unavailable
+        ///
         func snap(_ start: CGFloat, _ proposed: CGFloat, enabled: Bool = true, maximum: CGFloat = 1200) -> CGFloat? {
             TodaySectionSnapBehavior.destination(start: start, proposed: proposed, perspectiveTop: 800,
                 shortcutsBottom: 700, viewport: 600, maximum: maximum, enabled: enabled)
@@ -1008,6 +1543,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             perspectiveTop: 0, shortcutsBottom: 0, viewport: 600, maximum: 1200, enabled: true))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayPerspectiveRendersWithoutMutatingPlansOrLists
+    /// @brief      Verify that today Perspective Renders Without Mutating Plans Or Lists
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
+    ///             DailyPlanStore.key), beforePlans)`; `XCTAssertEqual(UserDefaults.standard.data(forKey:
+    ///             ReviewRhythmStore.dismissalsKey), beforeRhythm)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayPerspectiveRendersWithoutMutatingPlansOrLists() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -1048,6 +1595,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(tomorrow.cards.count, 2)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusOverflowRetainsNativeScrollingToLastMatchingItem
+    /// @brief      Verify that focus Overflow Retains Native Scrolling To Last Matching Item
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(entries.count, 9)`;
+    ///             `XCTAssertTrue(inner.isScrollEnabled)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testFocusOverflowRetainsNativeScrollingToLastMatchingItem() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -1069,6 +1627,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         window.rootViewController = host; window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(400))
         // Recurse through parent scroll views as well as ordinary containers.
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusOverflowRetainsNativeScrollingToLastMatchingItem.allScrollViews
+        /// @brief      Find all scroll views in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func allScrollViews(_ view: UIView) -> [UIScrollView] {
             var result = (view as? UIScrollView).map { [$0] } ?? []
             result += view.subviews.flatMap(allScrollViews)
@@ -1087,6 +1657,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(inner.contentOffset.y, settledEnd, accuracy: 2)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations
+    /// @brief      Verify that focus Shape Renders Default Grouped And Completed Previews Without Mutations
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(list, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -1129,6 +1709,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayFocusRowCapacityNeverTruncatesOrderedUnfinishedMatches
+    /// @brief      Verify that today Focus Row Capacity Never Truncates Ordered Unfinished Matches
+    /// @details    Exercises `(0..<16).map`, `cards.insert`, `cards.filter`. Checks `XCTAssertEqual(open.count, 14)`;
+    ///             `XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), open.map(\.id))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testTodayFocusRowCapacityNeverTruncatesOrderedUnfinishedMatches() throws {
         var cards = (0..<16).map { KanbanCard(id: $0, word: "Item \($0)", listTitle: "Monday", isTitleChecked: $0 == 0 || $0 == 5, checklists: []) }
         cards.insert(KanbanCard(id: 99, word: "Break", listTitle: "Monday", isDivider: true, checklists: []), at: 3)
@@ -1145,6 +1735,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes
+    /// @brief      Verify that jmr Template Matches All Requested Time Ranges And Daily Gym Notes
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningTemplateApplication.apply`.
+    ///             Checks `XCTAssertEqual(template.name, "Jmr")`; `XCTAssertEqual(template.kind, .week)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes() throws {
         let template = PlanningRoutineLibrary.jmr
         XCTAssertEqual(template.name, "Jmr")
@@ -1193,6 +1792,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testJmrUpgradeKeepsSavedTemplatesAndDoesNotRewriteScheduledWeeks
+    /// @brief      Verify that jmr Upgrade Keeps Saved Templates And Does Not Rewrite Scheduled Weeks
+    /// @details    Exercises `legacy.templates.removeAll`, `PlanningDate.date`, `DatedPlanningWeek.make`. Checks
+    ///             `XCTAssertEqual(upgraded.templates.count, 6)`; `XCTAssertEqual(upgraded.templates[0],
+    ///             legacy.templates[0])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testJmrUpgradeKeepsSavedTemplatesAndDoesNotRewriteScheduledWeeks() throws {
         let name = "Plenact.JmrUpgradeTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
@@ -1228,6 +1838,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryDaySectionExamplesSearchIncludesHeadingsAndMemberItems
+    /// @brief      Verify that library Day Section Examples Search Includes Headings And Member Items
+    /// @details    Exercises `LibraryDaySectionExamples.matches`, `LibraryDaySectionExamples.matches(query:
+    ///             "morning").map`, `LibraryDaySectionExamples.matches(query: "tools teardown").map`. Checks
+    ///             `XCTAssertEqual(LibraryDaySectionExamples.matches(query: "day sections").count, 3)`;
+    ///             `XCTAssertEqual(LibraryDaySectionExamples.matches(query: "morning").map(\.name), ["A day in
+    ///             chapters"])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testLibraryDaySectionExamplesSearchIncludesHeadingsAndMemberItems() {
         XCTAssertEqual(LibraryDaySectionExamples.matches(query: "day sections").count, 3)
@@ -1237,6 +1858,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(LibraryDaySectionExamples.matches(query: "nonexistent example zzz").isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryStarterFiltersScopeSearchAndExcludePersonalCollections
+    /// @brief      Verify that library Starter Filters Scope Search And Exclude Personal Collections
+    /// @details    Exercises `filter.includes`, `LibraryBrowseFilter.all.includes`,
+    ///             `LibraryBrowseFilter.boards.includes`. Checks `XCTAssertFalse(filter.browsesCollections)`;
+    ///             `XCTAssertFalse(filter.includes(list))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryStarterFiltersScopeSearchAndExcludePersonalCollections() throws {
         let list = PersonalCollection(title: "Vacation private plans", kind: .list)
         let board = PersonalCollection(title: "Example private work", kind: .board)
@@ -1256,6 +1888,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(LibraryStarterSearch.matches("private plans", texts: ["A month in motion"]))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryTemplateCaptureUsesLiveWeekAndReservesArchivedIDs
+    /// @brief      Verify that library Template Capture Uses Live Week And Reserves Archived I Ds
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertEqual(result.id, week.id)`;
+    ///             `XCTAssertEqual(result.collection.lists[index].cards.count, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryTemplateCaptureUsesLiveWeekAndReservesArchivedIDs() throws {
         let calendar = routineCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
@@ -1289,6 +1932,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(week.collection.lists[index].cards.count, 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryTemplatesAndExamplesFiltersRenderAndSearchWithoutWriting
+    /// @brief      Verify that library Templates And Examples Filters Render And Search Without Writing
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(saved, 0)`; `XCTAssertEqual(keys.map {
+    ///             UserDefaults.standard.data(forKey: $0) }, before)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLibraryTemplatesAndExamplesFiltersRenderAndSearchWithoutWriting() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -1320,6 +1974,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningTemplateMediaRetentionAndWorkspaceBackup
+    /// @brief      Verify that planning Template Media Retention And Workspace Backup
+    /// @details    Exercises `PlanningRoutineStore.load`, `PlanningRoutineStore.save`,
+    ///             `PlanningRoutineStore.retainedFiles`. Checks `XCTAssertEqual(try
+    ///             PlanningRoutineStore.retainedFiles(from: defaults), ["routine-preview.png",
+    ///             "routine-strokes.drawing"])`; `XCTAssertNil(defaults.object(forKey: PlanningRoutineStore.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPlanningTemplateMediaRetentionAndWorkspaceBackup() throws {
         let name = "Plenact.RoutineBackupTests." + UUID().uuidString
@@ -1350,6 +2015,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: media.appendingPathComponent("routine-strokes.drawing")), strokes)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningWeekReplacementPreservesUndatedAndArchivedContent
+    /// @brief      Verify that planning Week Replacement Preserves Undated And Archived Content
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertEqual(applied.collection.lists.first { $0.id == 50 }, undated)`;
+    ///             `XCTAssertEqual(applied.collection.lists[monday].archivedCards,
+    ///             week.collection.lists[monday].archivedCards)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningWeekReplacementPreservesUndatedAndArchivedContent() throws {
         let calendar = routineCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
@@ -1366,6 +2043,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(applied.collection.lists.flatMap(\.cards).filter { !$0.isSectionDivider }.count, 43)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.routineCalendar
+    /// @brief      Prepare routine calendar for the enclosing regression test
+    /// @details    Supplies the local fixture for plenactBoardDocumentTests.
+    ///
+    /// @param[in]  firstWeekday  Calendar weekday index used to define the fixture week start
+    ///
+    /// @return     (Calendar) result described by this operation's contract
+    ///
     private func routineCalendar(firstWeekday: Int = 2) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -1373,6 +2060,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         return calendar
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningTemplatesSeedStoreConflictAndCorruptDataRetention
+    /// @brief      Verify that planning Templates Seed Store Conflict And Corrupt Data Retention
+    /// @details    Exercises `PlanningRoutineStore.load`, `baseline.templates.map`, `PlanningRoutineStore.save`.
+    ///             Checks `XCTAssertNil(defaults.data(forKey: PlanningRoutineStore.key))`;
+    ///             `XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day", "Jmr"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningTemplatesSeedStoreConflictAndCorruptDataRetention() throws {
         let name = "Plenact.RoutineTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
@@ -1393,6 +2091,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), retained)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningWeekTemplateCopiesResetCompletionAndRemapLinks
+    /// @brief      Verify that planning Week Template Copies Reset Completion And Remap Links
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `source.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertTrue(template.collection.lists[index].archivedCards.isEmpty)`;
+    ///             `XCTAssertTrue(template.collection.lists[index].cards[0].comments.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningWeekTemplateCopiesResetCompletionAndRemapLinks() throws {
         let calendar = routineCalendar()
         let sourceDate = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
@@ -1438,6 +2147,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(copied[1].word, "Work")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningTemplatesShiftDaysAcrossWeekStartAndDaylightSaving
+    /// @brief      Verify that planning Templates Shift Days Across Week Start And Daylight Saving
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `source.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertEqual(PlanningDate.key(try XCTUnwrap(copy.startDate), calendar:
+    ///             destinationCalendar), "2026-11-02")`; `XCTAssertEqual(destinationCalendar.component(.hour, from:
+    ///             try XCTUnwrap(copy.startDate)), 9)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningTemplatesShiftDaysAcrossWeekStartAndDaylightSaving() throws {
         let sourceCalendar = routineCalendar(firstWeekday: 1)
         let sourceDate = try XCTUnwrap(PlanningDate.date("2026-10-25", calendar: sourceCalendar))
@@ -1467,6 +2188,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(destinationCalendar.component(.hour, from: try XCTUnwrap(dayCopy.dueDate)), 9)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningDayReplacementKeepsOtherDaysArchivesAndBookmarks
+    /// @brief      Verify that planning Day Replacement Keeps Other Days Archives And Bookmarks
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `target.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertEqual(result.collection.lists[monday].cards.map(\.word),
+    ///             day.collection.lists[0].cards.map(\.word))`;
+    ///             `XCTAssertTrue(result.collection.lists[monday].cards.allSatisfy { $0.id > 70 })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningDayReplacementKeepsOtherDaysArchivesAndBookmarks() throws {
         let calendar = routineCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
@@ -1487,6 +2220,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(target.collection.lists[monday].cards[0].word, "Old Monday")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningDefaultWeekAppliesOnceAndCanBeDisabled
+    /// @brief      Verify that planning Default Week Applies Once And Can Be Disabled
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningRoutineStore.newWeek`. Checks
+    ///             `XCTAssertTrue(prepared.hasContent)`;
+    ///             `XCTAssertTrue(prepared.collection.lists.flatMap(\.cards).allSatisfy { !$0.isTitleChecked &&
+    ///             $0.comments.isEmpty })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningDefaultWeekAppliesOnceAndCanBeDisabled() throws {
         let name = "Plenact.RoutineDefaultTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
@@ -1511,6 +2256,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(try PlanningRoutineStore.newWeek(for: nextDate, calendar: calendar, defaults: defaults).hasContent)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningTemplateScreensRenderWithoutSaving
+    /// @brief      Verify that planning Template Screens Render Without Saving
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `UserDefaults.standard.data`. Checks `XCTAssertEqual(saves, 0)`;
+    ///             `XCTAssertEqual(UserDefaults.standard.data(forKey: PlanningRoutineStore.key), before)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPlanningTemplateScreensRenderWithoutSaving() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -1540,6 +2296,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections
+    /// @brief      Verify that library Help Search Includes Instructions And Excludes User Collections
+    /// @details    Exercises `LibraryBrowseFilter.allCases.map`, `LibraryBrowseFilter.help.includes`, `articles.map`.
+    ///             Checks `XCTAssertEqual(LibraryBrowseFilter.allCases.map(\.rawValue), ["All", "Lists", "Boards",
+    ///             "Labels", "Examples", "Templates", "Help"])`;
+    ///             `XCTAssertFalse(LibraryBrowseFilter.help.includes(collection))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections() throws {
         XCTAssertEqual(LibraryBrowseFilter.allCases.map(\.rawValue), ["All", "Lists", "Boards", "Labels", "Examples", "Templates", "Help"])
         let collection = PersonalCollection(title: "Help", kind: .list)
@@ -1555,6 +2322,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(PlenactHelpCatalog.groups.allSatisfy { group in articles.contains { $0.group == group } })
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryHelpRendersGuidesWithoutChangingPlanningData
+    /// @brief      Verify that library Help Renders Guides Without Changing Planning Data
+    /// @details    Exercises `keys.map`, `UserDefaults.standard.data`,
+    ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertEqual(keys.map {
+    ///             UserDefaults.standard.data(forKey: $0) }, before)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLibraryHelpRendersGuidesWithoutChangingPlanningData() async throws {
         let keys = [DailyPlanStore.key, WeeklyReviewStore.key, PeriodicReviewStore.key, PlanningCalendarStore.key, "Plenact.PersonalCollections.v1"]
@@ -1578,12 +2356,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(keys.map { UserDefaults.standard.data(forKey: $0) }, before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints
+    /// @brief      Verify that periodic Review Carries Objectives Without Rewriting Prior Checkpoints
+    /// @details    Exercises `PeriodicReviewStore.save`, `PeriodicReviewStore.load`, `PeriodicReviewStore.previous`.
+    ///             Checks `XCTAssertEqual(next.startingObjectives, saved.objectives)`;
+    ///             `XCTAssertEqual(next.objectives[0].id, saved.objectives[0].id)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints() throws {
         let name = "PlenactTests.Periodic." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints.date
+        /// @brief      Prepare date for the enclosing regression test
+        /// @details    Supplies the local fixture for periodic Review Carries Objectives Without Rewriting Prior
+        ///             Checkpoints. Uses `PlanningDate.date`.
+        ///
+        /// @param[in]  key  Storage key or stable lookup key used by this operation
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func date(_ key: String) -> Date { PlanningDate.date(key, calendar: calendar)! }
         var prior = PeriodicReviewRecord(title: "First quarter", start: date("2026-01-01"), end: date("2026-03-31"), calendar: calendar)
         prior.objectives = [ReviewObjective(title: "Build a sustainable routine", progress: "Found a useful morning rhythm", nextStep: "Protect time to reflect")]
@@ -1614,6 +2415,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: PeriodicReviewStore.key), Data("corrupt".utf8))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPeriodicReviewRendersSetupAndAllStepsWithoutWriting
+    /// @brief      Verify that periodic Review Renders Setup And All Steps Without Writing
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(defaults.data(forKey:
+    ///             PeriodicReviewStore.key), bytes)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPeriodicReviewRendersSetupAndAllStepsWithoutWriting() async throws {
         let name = "PlenactTests.PeriodicRender." + UUID().uuidString
@@ -1644,10 +2456,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReviewRhythmDefaultsTimingAndIndependentNotifications
+    /// @brief      Verify that review Rhythm Defaults Timing And Independent Notifications
+    /// @details    Exercises `ReviewRhythmStore.notificationRequests`, `ReviewRhythmStore.periodID`,
+    ///             `preferences.normalized`. Checks `XCTAssertTrue(preferences.dailyInvitations)`;
+    ///             `XCTAssertTrue(preferences.weeklyInvitations)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testReviewRhythmDefaultsTimingAndIndependentNotifications() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago")); calendar.firstWeekday = 2
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testReviewRhythmDefaultsTimingAndIndependentNotifications.date
+        /// @brief      Prepare date for the enclosing regression test
+        /// @details    Supplies the local fixture for review Rhythm Defaults Timing And Independent Notifications.
+        ///             Uses `calendar.date`.
+        ///
+        /// @param[in]  day     Calendar day represented by the result
+        /// @param[in]  hour    Hour-of-day component used by the fixture
+        /// @param[in]  minute  Minute-of-hour component used by the fixture
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func date(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
             calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
         }
@@ -1655,6 +2492,21 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(preferences.dailyInvitations); XCTAssertTrue(preferences.weeklyInvitations)
         XCTAssertFalse(preferences.dailyNotifications); XCTAssertFalse(preferences.weeklyNotifications)
         XCTAssertTrue(ReviewRhythmStore.notificationRequests(preferences).isEmpty)
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testReviewRhythmDefaultsTimingAndIndependentNotifications.due
+        /// @brief      Prepare due for the enclosing regression test
+        /// @details    Supplies the local fixture for review Rhythm Defaults Timing And Independent Notifications.
+        ///             Uses `ReviewRhythmStore.isDue`.
+        ///
+        /// @param[in]  kind       Date, review, or collection kind selecting this operation's behavior
+        /// @param[in]  now        Reference time used instead of an implicit clock read
+        /// @param[in]  completed  Whether the represented review period is already complete
+        /// @param[in]  deferred   Optional deferral deadline used by the review timing fixture
+        ///
+        /// @return     (Bool) result of the validation, lookup, or checked operation described above
+        ///
         func due(_ kind: ReviewRhythmKind, _ now: Date, completed: Bool = false, deferred: Date? = nil) -> Bool {
             ReviewRhythmStore.isDue(kind, now: now, preferences: preferences, calendar: calendar, completed: completed, deferredUntil: deferred)
         }
@@ -1677,6 +2529,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(preferences.normalized().weeklyWeekday, 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReviewRhythmNotificationRequestsAreStableLocalAndContainOnlyReviewRoutes
+    /// @brief      Verify that review Rhythm Notification Requests Are Stable Local And Contain Only Review Routes
+    /// @details    Exercises `ReviewRhythmStore.notificationRequests`, `requests.map`,
+    ///             `ReviewRhythmKind.allCases.map`. Checks `XCTAssertEqual(Set(requests.map(\.identifier)),
+    ///             Set(ReviewRhythmKind.allCases.map(\.notificationID)))`; `XCTAssertTrue(dailyTrigger.repeats)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testReviewRhythmNotificationRequestsAreStableLocalAndContainOnlyReviewRoutes() throws {
         var preferences = ReviewRhythmPreferences()
         preferences.dailyNotifications = true; preferences.weeklyNotifications = true
@@ -1698,6 +2561,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNotNil(daily.content.sound)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReviewRhythmSaveSkipAndSnoozeAreLocalAndPreserveCorruptSettings
+    /// @brief      Verify that review Rhythm Save Skip And Snooze Are Local And Preserve Corrupt Settings
+    /// @details    Exercises `ReviewRhythmStore.load`, `ReviewRhythmStore.save`, `ReviewRhythmStore.deferInvitation`.
+    ///             Checks `XCTAssertEqual(ReviewRhythmStore.load(from: defaults), ReviewRhythmPreferences())`;
+    ///             `XCTAssertNil(defaults.object(forKey: ReviewRhythmStore.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testReviewRhythmSaveSkipAndSnoozeAreLocalAndPreserveCorruptSettings() throws {
         let suite = "ReviewRhythmTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -1721,6 +2595,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: ReviewRhythmStore.key), Data("future or broken".utf8))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem
+    /// @brief      Verify that keep Tomorrow Decision Persists Without Copying Or Retiming The Table Item
+    /// @details    Exercises `DatedPlanningWeek.make`, `.now.addingTimeInterval`, `TodayReviewSelection.items`.
+    ///             Checks `XCTAssertEqual(restored.eveningReview?.decisions.first?.action, .keepTomorrow)`;
+    ///             `XCTAssertTrue(TodayReviewSelection.pending(items, review: restored.eveningReview).isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem() throws {
         let suite = "ReviewCarryTests." + UUID().uuidString
@@ -1750,6 +2635,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(DailyReviewAction.self, from: JSONEncoder().encode(DailyReviewAction.table)), .table)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission
+    /// @brief      Verify that review Rhythm Invitations And Settings Render Without Writing Or Requesting Permission
+    /// @details    Exercises `Calendar.current.component`, `ReviewRhythmStore.save`,
+    ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertEqual(defaults.data(forKey:
+    ///             ReviewRhythmStore.key), bytes)`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission() async throws {
         let suite = "ReviewRhythmRender." + UUID().uuidString
@@ -1783,6 +2679,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: WeeklyReviewStore.key))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeeklyReviewCalendarBoundariesPersistenceAndRecovery
+    /// @brief      Verify that weekly Review Calendar Boundaries Persistence And Recovery
+    /// @details    Exercises `DailyPlanStore.Document`, `PlanningDate.date`, `review.dailyPlans(in: days).map`.
+    ///             Checks `XCTAssertEqual(review.startKey, "2026-10-12")`; `XCTAssertEqual(review.dailyPlans(in:
+    ///             days).map(\.id), ["2026-10-12", "2026-10-18"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws {
         let name = "PlenactTests.Weekly." + UUID().uuidString
@@ -1817,6 +2724,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: WeeklyReviewStore.key), Data("broken".utf8))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeeklyReviewRendersAllStepsAndPreservesSavedRecord
+    /// @brief      Verify that weekly Review Renders All Steps And Preserves Saved Record
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(defaults.data(forKey:
+    ///             WeeklyReviewStore.key), bytes)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testWeeklyReviewRendersAllStepsAndPreservesSavedRecord() async throws {
         let name = "PlenactTests.WeeklyRender." + UUID().uuidString
@@ -1844,6 +2762,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckInMoodsRoundTripWithoutCarryingForwardOrChangingOlderEntries
+    /// @brief      Verify that check In Moods Round Trip Without Carrying Forward Or Changing Older Entries
+    /// @details    Exercises `plan.recordCheckIn`, `DailyPlanStore.save`, `String(decoding: bytes, as:
+    ///             UTF8.self).contains`. Checks `XCTAssertFalse(String(decoding: bytes, as:
+    ///             UTF8.self).contains("\"mood\""))`; `XCTAssertNil(try DailyPlanStore.load(from:
+    ///             defaults).plans[plan.id]?.checkInHistory.first?.mood)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCheckInMoodsRoundTripWithoutCarryingForwardOrChangingOlderEntries() throws {
         let name = "PlenactTests.Moods." + UUID().uuidString
@@ -1875,6 +2805,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(CheckInMoodChoice.custom.mood)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCustomMoodRequiresOneEmojiAndMeaningfulShortText
+    /// @brief      Verify that custom Mood Requires One Emoji And Meaningful Short Text
+    /// @details    Exercises `CheckInMood.custom`. Checks `XCTAssertNotNil(CheckInMood.custom(emoji: emoji, label:
+    ///             "Feeling focused"), emoji)`; `XCTAssertNil(CheckInMood.custom(emoji: emoji, label: "Focused"),
+    ///             emoji)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testCustomMoodRequiresOneEmojiAndMeaningfulShortText() {
         for emoji in ["🌤️", "👩🏽‍💻", "🇺🇸", "❤️", "🫶🏽", "😊"] {
             XCTAssertNotNil(CheckInMood.custom(emoji: emoji, label: "Feeling focused"), emoji)
@@ -1887,6 +2827,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNotNil(CheckInMood.custom(emoji: "😊", label: String(repeating: "a", count: 40)))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckInHistoryRetainsLegacySnapshotsAndOtherDays
+    /// @brief      Verify that check In History Retains Legacy Snapshots And Other Days
+    /// @details    Exercises `Calendar.current.date`, `DailyPlanStore.save`, `String(decoding: bytes, as:
+    ///             UTF8.self).contains`. Checks `XCTAssertFalse(String(decoding: bytes, as:
+    ///             UTF8.self).contains("checkIns"))`; `XCTAssertEqual(restored.checkInHistory.count, 1)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCheckInHistoryRetainsLegacySnapshotsAndOtherDays() throws {
         let name = "PlenactTests.CheckInHistory." + UUID().uuidString
@@ -1932,6 +2883,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), beforeConflict)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckInSnapshotsDoNotFollowLaterCompletionOrPlanEdits
+    /// @brief      Verify that check In Snapshots Do Not Follow Later Completion Or Plan Edits
+    /// @details    Exercises `DatedPlanningWeek.make`, `sources.map`, `plan.recordCheckIn`. Checks
+    ///             `XCTAssertEqual(first.completedTasks, 0)`; `XCTAssertEqual(first.totalTasks, 1)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCheckInSnapshotsDoNotFollowLaterCompletionOrPlanEdits() throws {
         var table = PersonalCollection(title: "On the Table", kind: .list)
@@ -1959,6 +2920,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(plan.checkIn?.focus)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting
+    /// @brief      Verify that daily History Renders Current Past And Empty Days Without Writing
+    /// @details    Exercises `plan.recordCheckIn`, `date.addingTimeInterval`, `CheckInMood.custom`. Checks
+    ///             `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting() async throws {
         let name = "PlenactTests.DailyHistoryRender." + UUID().uuidString
@@ -1993,6 +2964,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes
+    /// @brief      Verify that check In Persists Shared Plan And Tracks Live Progress Without Counting Notes
+    /// @details    Exercises `DatedPlanningWeek.make`, `sources.map`, `DailyPlanStore.save`. Checks `XCTAssertNil(try
+    ///             DailyPlanStore.load(from: defaults).plans[plan.id]?.checkIn)`; `XCTAssertEqual(restored, saved)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes() throws {
         let name = "PlenactTests.CheckIn." + UUID().uuidString
@@ -2037,6 +3018,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try DailyPlanStore.save(plan, replacing: initial, to: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCheckInRendersWithoutSavingOrChangingSources
+    /// @brief      Verify that check In Renders Without Saving Or Changing Sources
+    /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCheckInRendersWithoutSavingOrChangingSources() async throws {
         let week = DatedPlanningWeek.make(for: .now)
@@ -2057,6 +3048,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(saves, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEveningReviewTransactionRecoversInterruptedAndFailedWrites
+    /// @brief      Verify that evening Review Transaction Recovers Interrupted And Failed Writes
+    /// @details    Exercises `DailyReviewTransaction.perform`, `DailyReviewTransaction.begin`,
+    ///             `DailyReviewTransaction.recover`. Checks `XCTAssertEqual(defaults.data(forKey: key),
+    ///             Data(key.utf8))`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `Forced.failure`. Errors from throwing dependencies propagate unless
+    ///             handled within this operation.
+    ///
     @MainActor
     func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws {
         let name = "PlenactTests.Review." + UUID().uuidString
@@ -2085,6 +3088,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "committed")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEveningReviewPersistsReflectionAndSkipsDecidedAndReferenceItems
+    /// @brief      Verify that evening Review Persists Reflection And Skips Decided And Reference Items
+    /// @details    Exercises `DatedPlanningWeek.make`, `DailyPlanStore.save`, `DailyPlanStore.load`. Checks
+    ///             `XCTAssertNil(try DailyPlanStore.load(from: defaults).plans[plan.id]?.eveningReview)`;
+    ///             `XCTAssertEqual(Set(items.map { $0.card.word }), ["Keep", "Finished"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testEveningReviewPersistsReflectionAndSkipsDecidedAndReferenceItems() throws {
         let name = "PlenactTests.Evening." + UUID().uuidString
@@ -2117,6 +3131,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try DailyPlanStore.load(from: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEveningReviewRendersAllStepsWithoutSaving
+    /// @brief      Verify that evening Review Renders All Steps Without Saving
+    /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testEveningReviewRendersAllStepsWithoutSaving() async throws {
         let week = DatedPlanningWeek.make(for: .now)
@@ -2141,6 +3165,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(saves, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayVisionRendersMorningAndRealityStepsWithoutSaving
+    /// @brief      Verify that today Vision Renders Morning And Reality Steps Without Saving
+    /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayVisionRendersMorningAndRealityStepsWithoutSaving() async throws {
         let week = DatedPlanningWeek.make(for: .now)
@@ -2167,6 +3201,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
         XCTAssertEqual(saves, 0, "Opening a morning review must not save or move anything")
     }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayVisionCandidatesUseRealDatesAndExcludeReferenceAndCompletedItems
+    /// @brief      Verify that today Vision Candidates Use Real Dates And Exclude Reference And Completed Items
+    /// @details    Exercises `DatedPlanningWeek.make`, `PlanningDate.key`, `week.collection.lists.firstIndex`. Checks
+    ///             `XCTAssertEqual(Set(found.map { $0.card.word }), ["Day priority", "Due today", "Spans today"])`;
+    ///             `XCTAssertEqual(Set(found.map(\.id)).count, 3)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testTodayVisionCandidatesUseRealDatesAndExcludeReferenceAndCompletedItems() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -2194,6 +3240,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(access.library[0], scheduled)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayVisionProgressResumesAndLegacyDailyPlansStayCompatible
+    /// @brief      Verify that today Vision Progress Resumes And Legacy Daily Plans Stay Compatible
+    /// @details    Exercises `DailyPlanStore.save`, `JSONSerialization.jsonObject`, `plans[plan.id]?.removeValue`.
+    ///             Checks `XCTAssertNil(legacy.visionStep)`; `XCTAssertNil(legacy.visionCompletedAt)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayVisionProgressResumesAndLegacyDailyPlansStayCompatible() throws {
         let name = "PlenactTests.Vision." + UUID().uuidString
@@ -2223,6 +3279,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try DailyPlanStore.save(saved, replacing: legacy, to: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMorningTransferPreservesDetailsAndReturnsOneNewDestinationIdentity
+    /// @brief      Verify that morning Transfer Preserves Details And Returns One New Destination Identity
+    /// @details    Exercises `table.lists[0].cards.map`, `CrossBoardCardMovement.move`,
+    ///             `collections[1].lists[0].cards.first`. Checks
+    ///             `XCTAssertTrue(collections[0].lists[0].cards.isEmpty)`;
+    ///             `XCTAssertEqual(collections[1].lists[0].cards.count, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMorningTransferPreservesDetailsAndReturnsOneNewDestinationIdentity() throws {
         var source = PersonalCollection(title: "Scheduled", kind: .list)
         var table = PersonalCollection(title: "On the Table", kind: .list)
@@ -2245,6 +3313,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(moved.presentation, .note)
         XCTAssertEqual(moved.checklists, card.checklists)
     }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testAddingDailyPrioritySavesCanonicalCardOrNoteAndRejectsFailedDestinations
+    /// @brief      Verify that adding Daily Priority Saves Canonical Card Or Note And Rejects Failed Destinations
+    /// @details    Exercises `DatedPlanningWeek.make`, `DailyPriorityCreation.create`,
+    ///             `DailyPlanPriority(source).resolve`. Checks `XCTAssertEqual(source.card.id, 91)`;
+    ///             `XCTAssertEqual(source.card.word, "New priority")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testAddingDailyPrioritySavesCanonicalCardOrNoteAndRejectsFailedDestinations() throws {
         let week = DatedPlanningWeek.make(for: .now)
@@ -2281,6 +3361,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(dated.weekKey, week.startKey)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailyPlanRoundTripsAndPreservesOtherDaysAndConflictingEdits
+    /// @brief      Verify that daily Plan Round Trips And Preserves Other Days And Conflicting Edits
+    /// @details    Exercises `DailyPlanStore.load`, `DailyPlanStore.save`, `PlanningDate.key`. Checks
+    ///             `XCTAssertEqual(first.id, "2026-10-16")`; `XCTAssertEqual(first.timeZoneID, "America/Chicago")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDailyPlanRoundTripsAndPreservesOtherDaysAndConflictingEdits() throws {
         let name = "PlenactTests.DailyPlan." + UUID().uuidString
@@ -2311,6 +3401,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailyPlanPreservesUnreadableAndUnsupportedStoredData
+    /// @brief      Verify that daily Plan Preserves Unreadable And Unsupported Stored Data
+    /// @details    Exercises `DailyPlanStore.load`, `DailyPlanStore.save`. Checks `XCTAssertThrowsError(try
+    ///             DailyPlanStore.load(from: defaults))`; `XCTAssertThrowsError(try
+    ///             DailyPlanStore.save(DailyPlan(date: .now), replacing: nil, to: defaults))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDailyPlanPreservesUnreadableAndUnsupportedStoredData() throws {
         let name = "PlenactTests.DailyPlan." + UUID().uuidString
@@ -2327,6 +3428,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "unexpected preference type")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailyPlanPrioritiesResolveLiveOwnerAndWithinBoardMovesWithoutCopyingCards
+    /// @brief      Verify that daily Plan Priorities Resolve Live Owner And Within Board Moves Without Copying Cards
+    /// @details    Exercises `reference.resolve`. Checks `XCTAssertEqual(reference.title, card.word)`;
+    ///             `XCTAssertNil(reference.resolve(in: []))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDailyPlanPrioritiesResolveLiveOwnerAndWithinBoardMovesWithoutCopyingCards() throws {
         let first = UUID(), other = UUID()
         let card = KanbanCard(id: 5, word: "A useful priority", listTitle: "Before", createdAt: Date(timeIntervalSince1970: 123))
@@ -2348,6 +3459,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(decoded, reference)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailyPlanIsIncludedInExampleWorkspaceBackupAndRestore
+    /// @brief      Verify that daily Plan Is Included In Example Workspace Backup And Restore
+    /// @details    Exercises `folder.appendingPathComponent`, `DailyPlanStore.save`, `WeeklyReviewStore.save`. Checks
+    ///             `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`; `XCTAssertNil(defaults.object(forKey:
+    ///             WeeklyReviewStore.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDailyPlanIsIncludedInExampleWorkspaceBackupAndRestore() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -2377,6 +3499,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try DailyPlanStore.load(from: defaults).plans[plan.id]?.intention, "My original plan")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayPlanRendersSavedContextAndLivePrioritiesWithoutSourceMutations
+    /// @brief      Verify that today Plan Renders Saved Context And Live Priorities Without Source Mutations
+    /// @details    Exercises `DatedPlanningWeek.make`, `access.searchableItems.map`, `DailyPlanStore.save`. Checks
+    ///             `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), saved)`;
+    ///             `XCTAssertEqual(access.library.first, originalSource)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayPlanRendersSavedContextAndLivePrioritiesWithoutSourceMutations() async throws {
         let name = "PlenactTests.DailyPlanRender." + UUID().uuidString
@@ -2411,6 +3544,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(access.library.first, originalSource)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFullMonthExampleCoversPastTodayAndSparseFuture
+    /// @brief      Verify that full Month Example Covers Past Today And Sparse Future
+    /// @details    Exercises `FullMonthExample.make`, `example.document.week`, `PlanningDate.key`. Checks
+    ///             `XCTAssertEqual(example.document.firstWeekday, 2)`; `XCTAssertGreaterThanOrEqual(cards.count, 3)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFullMonthExampleCoversPastTodayAndSparseFuture() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -2444,6 +3587,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFullMonthBackupRestoresAllPreferencesAndLocalFilesAndKeepsOriginal
+    /// @brief      Verify that full Month Backup Restores All Preferences And Local Files And Keeps Original
+    /// @details    Exercises `folder.appendingPathComponent`, `store.documents.appendingPathComponent`,
+    ///             `store.support.appendingPathComponent`. Checks `XCTAssertTrue(store.hasUserData)`;
+    ///             `XCTAssertNotNil(try PlanningCalendarStore.load(from: defaults))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFullMonthBackupRestoresAllPreferencesAndLocalFilesAndKeepsOriginal() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let name = "PlenactTests.Month." + UUID().uuidString
@@ -2478,6 +3632,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: "Plenact.CustomSetting"), "new user edit")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch
+    /// @brief      Verify that full Month Backup Rejects Corruption And Recovers Interrupted Switch
+    /// @details    Exercises `folder.appendingPathComponent`, `store.documents.appendingPathComponent`,
+    ///             `Data([1]).write`. Checks `XCTAssertEqual(defaults.string(forKey: "Plenact.Protected"), "user
+    ///             data")`; `XCTAssertEqual(try Data(contentsOf: file), Data([1]))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let name = "PlenactTests.Month." + UUID().uuidString
@@ -2512,6 +3677,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLowerCornerBackPreferenceDefaultsOffAndPersistsWithoutProfile
+    /// @brief      Verify that lower Corner Back Preference Defaults Off And Persists Without Profile
+    /// @details    Exercises `PlanPreferencesStore.save`, `PlanPreferencesStore.load`, `LocalProfileStore.load`.
+    ///             Checks `XCTAssertFalse(legacy.enablesLowerCornerBack)`;
+    ///             `XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLowerCornerBackPreferenceDefaultsOffAndPersistsWithoutProfile() throws {
         let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
         XCTAssertFalse(legacy.enablesLowerCornerBack)
@@ -2526,6 +3702,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(preferences)), preferences)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLowerCornerBackReservesSpaceOnlyWhenEnabledAndBackExists
+    /// @brief      Verify that lower Corner Back Reserves Space Only When Enabled And Back Exists
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(try XCTUnwrap(heights["off"]) -
+    ///             XCTUnwrap(heights["on"]), 44)`; `XCTAssertEqual(heights["root"], heights["off"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLowerCornerBackReservesSpaceOnlyWhenEnabledAndBackExists() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2562,6 +3749,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(activations, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListComposerSubmissionPreservesKindScheduleActionsAndAttachments
+    /// @brief      Verify that list Composer Submission Preserves Kind Schedule Actions And Attachments
+    /// @details    Exercises `start.addingTimeInterval`, `ListItemCreation.items`,
+    ///             `card.checklists.flatMap(\.items).map`. Checks `XCTAssertEqual(card.id, 99)`;
+    ///             `XCTAssertEqual(card.presentation, presentation)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListComposerSubmissionPreservesKindScheduleActionsAndAttachments() throws {
         let list = KanbanList(id: 7, title: "Work", cards: [])
         let start = Date(timeIntervalSince1970: 1800000000)
@@ -2587,6 +3785,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(list.cards.isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalListFullComposerRetainsScheduleAndActions
+    /// @brief      Verify that personal List Full Composer Retains Schedule And Actions
+    /// @details    Exercises `.now.addingTimeInterval`, `collection.addNote`, `card.checklists.flatMap(\.items).map`.
+    ///             Checks `XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), ["First", "Second"])`;
+    ///             `XCTAssertEqual(card.startDate, schedule.start)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPersonalListFullComposerRetainsScheduleAndActions() throws {
         var collection = PersonalCollection(title: "Personal", kind: .list)
         let schedule = QuickCaptureSchedule(start: .now, stop: .now.addingTimeInterval(3600), includesTime: true)
@@ -2602,6 +3811,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(collection, before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalNoteCreationPreservesMultipleAttachmentMetadata
+    /// @brief      Verify that personal Note Creation Preserves Multiple Attachment Metadata
+    /// @details    Exercises `collection.addNote`. Checks `XCTAssertEqual(item.attachments, attachments)`;
+    ///             `XCTAssertEqual(item.coverAttachmentID, attachments[1].id)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPersonalNoteCreationPreservesMultipleAttachmentMetadata() throws {
         var collection = PersonalCollection(title: "Attachment test", kind: .list)
         let attachments = [KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link),
@@ -2618,6 +3837,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(restored.lists[0].cards, collection.lists[0].cards)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreationAttachmentListPresentsSharedMenuInLightAndDark
+    /// @brief      Verify that creation Attachment List Presents Shared Menu In Light And Dark
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertNotNil(host.presentedViewController)`;
+    ///             `XCTAssertEqual(draft.entries.count, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCreationAttachmentListPresentsSharedMenuInLightAndDark() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2651,6 +3881,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreationAttachmentDraftKeepsMultipleEntriesAndCleansRejectedFiles
+    /// @brief      Verify that creation Attachment Draft Keeps Multiple Entries And Cleans Rejected Files
+    /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image`,
+    ///             `UIColor.blue.setFill`, `context.fill`. Checks `XCTAssertEqual(attachments.count, 23)`;
+    ///             `XCTAssertTrue(rejectedFiles.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     @MainActor
     func testCreationAttachmentDraftKeepsMultipleEntriesAndCleansRejectedFiles() throws {
         let draft = CreationAttachmentDraft()
@@ -2689,6 +3931,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(draft.entries.count, 23)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealScrollsLongDayListsInBothLayouts
+    /// @brief      Verify that created Content Reveal Scrolls Long Day Lists In Both Layouts
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `CreatedContentReveal.shared.complete`. Checks `XCTAssertLessThan(native.contentOffset.y, 100)`;
+    ///             `XCTAssertGreaterThan(native.contentOffset.y, 100)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCreatedContentRevealScrollsLongDayListsInBothLayouts() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2698,6 +3951,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             if let target = CreatedContentReveal.shared.target { CreatedContentReveal.shared.complete(target) }
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealScrollsLongDayListsInBothLayouts.collection
+        /// @brief      Find collection in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UICollectionView. Returns the first qualifying match,
+        ///             or nil when none is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UICollectionView?) matching or resolved value, or nil when unavailable
+        ///
         func collection(in view: UIView) -> UICollectionView? {
             if let collection = view as? UICollectionView { return collection }
             return view.subviews.lazy.compactMap { collection(in: $0) }.first
@@ -2735,12 +4000,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling
+    /// @brief      Verify that week And Library Boards Prioritize Inner List Swipes Without Disabling Scrolling
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertGreaterThan(BoardListSwipePriority.install(for:
+    ///             list), 0)`; `XCTAssertTrue(list.isScrollEnabled)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling.collections
+        /// @brief      Find collections in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UICollectionView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UICollectionView]) resulting values in the ordering described above
+        ///
         func collections(in view: UIView) -> [UICollectionView] {
             ((view as? UICollectionView).map { [$0] } ?? []) + view.subviews.flatMap { collections(in: $0) }
         }
@@ -2772,6 +4060,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealFindsDestinationColumnAndGalleryTile
+    /// @brief      Verify that created Content Reveal Finds Destination Column And Gallery Tile
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `CreatedContentReveal.shared.complete`. Checks `XCTAssertTrue(native.contains { $0.contentOffset.y
+    ///             > 100 }, "Creation must reveal the row/tile, gallery: \(gallery)")`;
+    ///             `XCTAssertTrue(native.contains { $0.contentOffset.x > 100 }, "Destination column must also be
+    ///             revealed")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCreatedContentRevealFindsDestinationColumnAndGalleryTile() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2781,6 +4082,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             if let target = CreatedContentReveal.shared.target { CreatedContentReveal.shared.complete(target) }
             window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealFindsDestinationColumnAndGalleryTile.scrolls
+        /// @brief      Find scrolls in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrolls(in view: UIView) -> [UIScrollView] {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap { scrolls(in: $0) }
         }
@@ -2808,6 +4121,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealTargetsExactRecordAndRetainsNewerRequests
+    /// @brief      Verify that created Content Reveal Targets Exact Record And Retains Newer Requests
+    /// @details    Exercises `KanbanList(id: 4, title: "Monday", cards: []).makeItem`, `KanbanList(id: 4, title:
+    ///             "Other Board", cards: []).makeItem`, `reveal.request`. Checks
+    ///             `XCTAssertTrue(original.matches(KanbanList(id: 4, title: "Monday", cards: [first])))`;
+    ///             `XCTAssertFalse(original.matches(KanbanList(id: 4, title: "Other Board", cards: [collision])))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCreatedContentRevealTargetsExactRecordAndRetainsNewerRequests() throws {
         let reveal = CreatedContentReveal()
@@ -2830,6 +4155,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(reveal.target)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSloganManualReadingAllowsOverscrollAndResumesWithoutJumping
+    /// @brief      Verify that slogan Manual Reading Allows Overscroll And Resumes Without Jumping
+    /// @details    Exercises `TodaySloganMotion.draggedPosition`, `TodaySloganMotion.position`. Checks
+    ///             `XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300,
+    ///             textWidth: 700), 400)`; `XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100,
+    ///             translation: -500, viewport: 300, textWidth: 700), -600)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testSloganManualReadingAllowsOverscrollAndResumesWithoutJumping() {
         XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300, textWidth: 700), 400)
         XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: -500, viewport: 300, textWidth: 700), -600)
@@ -2847,6 +4183,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodaySloganMotion.position(elapsed: 1, start: -700, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailySlogansStayStableAndRotateThroughSixtyLocalDays
+    /// @brief      Verify that daily Slogans Stay Stable And Rotate Through Sixty Local Days
+    /// @details    Exercises `TodaySloganCatalog.slogan`, `seen.insert`. Checks
+    ///             `XCTAssertEqual(TodaySloganCatalog.slogans.count, 60)`;
+    ///             `XCTAssertEqual(Set(TodaySloganCatalog.slogans).count, 60)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDailySlogansStayStableAndRotateThroughSixtyLocalDays() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -2868,6 +4215,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodaySloganCatalog.slogan(on: previous, calendar: calendar), TodaySloganCatalog.slogans[59])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDailySloganUsesLocalMidnightAcrossTimeZones
+    /// @brief      Verify that daily Slogan Uses Local Midnight Across Time Zones
+    /// @details    Exercises `ISO8601DateFormatter().date`, `TodaySloganCatalog.slogan`. Checks
+    ///             `XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar: chicago),
+    ///             TodaySloganCatalog.slogans[0])`; `XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar:
+    ///             london), TodaySloganCatalog.slogans[1])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDailySloganUsesLocalMidnightAcrossTimeZones() throws {
         let instant = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-16T04:30:00Z"))
         var chicago = Calendar(identifier: .gregorian)
@@ -2878,6 +4237,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodaySloganCatalog.slogan(on: instant, calendar: london), TodaySloganCatalog.slogans[1])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote
+    /// @brief      Verify that new Composer Shares Title And Rich Body Across Card And Note
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
+    ///             Checks `XCTAssertEqual(noteTitle.text, "Shared draft title")`;
+    ///             `XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)),
+    ///             PlanRichText.runs(body))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testNewComposerSharesTitleAndRichBodyAcrossCardAndNote() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2892,6 +4263,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
         try await Task.sleep(for: .milliseconds(300))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote.descendants
+        /// @brief      Find descendants in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIView]) resulting values in the ordering described above
+        ///
         func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
         let title = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextView }.first { String(describing: type(of: $0)).contains("VerticalTextView") })
         title.becomeFirstResponder()
@@ -2921,6 +4303,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.encode(returnedDetails.attributedText), "Edited note body")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCollectionBackgroundsPersistAndExcludeDatedViews
+    /// @brief      Verify that collection Backgrounds Persist And Exclude Dated Views
+    /// @details    Exercises `CollectionBackground.isAllowed`. Checks
+    ///             `XCTAssertTrue(CollectionBackground.isAllowed(collectionID: personalID, datedWeekIDs: [weekID],
+    ///             isDatedView: false))`; `XCTAssertFalse(CollectionBackground.isAllowed(collectionID: nil,
+    ///             datedWeekIDs: [weekID], isDatedView: false))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCollectionBackgroundsPersistAndExcludeDatedViews() throws {
         let personalID = UUID(), weekID = UUID()
         XCTAssertTrue(CollectionBackground.isAllowed(collectionID: personalID, datedWeekIDs: [weekID], isDatedView: false))
@@ -2941,6 +4335,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBackgroundPhotoResizesStoresAndRejectsInvalidImages
+    /// @brief      Verify that background Photo Resizes Stores And Rejects Invalid Images
+    /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1800), format:
+    ///             format).image`, `UIColor.systemTeal.setFill`, `context.fill`. Checks
+    ///             `XCTAssertLessThanOrEqual(max(photo.size.width, photo.size.height), 2048)`;
+    ///             `XCTAssertEqual(photo.size.width / photo.size.height, 3000.0 / 1800.0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testBackgroundPhotoResizesStoresAndRejectsInvalidImages() throws {
         let format = UIGraphicsImageRendererFormat(); format.scale = 1
@@ -2958,6 +4364,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try CollectionBackgroundPhotoStore.preparedPhoto(Data("not an image".utf8)))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCollectionBackgroundPresetsRenderOffline
+    /// @brief      Verify that collection Background Presets Render Offline
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.flexible`.
+    ///             Uses the fixture and assertions below to verify collection Background Presets Render Offline.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCollectionBackgroundPresetsRenderOffline() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -2984,6 +4400,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("BACKGROUND_PRESETS_PATH=\(url.path)")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPersonalBoardBackgroundAndWeekDefaultRenderSeparately
+    /// @brief      Verify that personal Board Background And Week Default Render Separately
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
+    ///             Uses the fixture and assertions below to verify personal Board Background And Week Default Render
+    ///             Separately.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPersonalBoardBackgroundAndWeekDefaultRenderSeparately() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -3011,6 +4438,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         previous?.makeKey()
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate
+    /// @brief      Verify that board Viewport Memory Round Trips And Keeps Owners Separate
+    /// @details    Exercises `first.record`, `first.flush`. Checks `XCTAssertEqual(reopened.state, first.state)`;
+    ///             `XCTAssertEqual(other.state.scale, 1)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate() throws {
         let suite = "Plenact.ViewportTests." + UUID().uuidString
@@ -3031,6 +4468,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(first.state.offsets["horizontal"], 430)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testViewportProbeRestoresNativeOffsetsInBothDirections
+    /// @brief      Verify that viewport Probe Restores Native Offsets In Both Directions
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(offset, 470)`;
+    ///             `XCTAssertEqual(memory.state.offsets["position"], 470)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testViewportProbeRestoresNativeOffsetsInBothDirections() async throws {
         let suite = "Plenact.ScrollRestoreTests." + UUID().uuidString
@@ -3039,6 +4487,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         defer { previous?.makeKey() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testViewportProbeRestoresNativeOffsetsInBothDirections.nativeScroll
+        /// @brief      Find native scroll in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns the first qualifying match, or
+        ///             nil when none is present.
+        ///
+        /// @param[in]  view        Native view inspected or synchronized by the operation
+        /// @param[in]  horizontal  Whether the probe observes the horizontal rather than vertical axis
+        ///
+        /// @return     (UIScrollView?) matching or resolved value, or nil when unavailable
+        ///
         func nativeScroll(_ view: UIView, horizontal: Bool) -> UIScrollView? {
             if let scroll = view as? UIScrollView,
                horizontal ? scroll.contentSize.width > scroll.bounds.width + 1 : scroll.contentSize.height > scroll.bounds.height + 1 { return scroll }
@@ -3073,6 +4534,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testZoomedBoardRestoresItsRealHorizontalViewport
+    /// @brief      Verify that zoomed Board Restores Its Real Horizontal Viewport
+    /// @details    Exercises `UserDefaults.standard.removeObject`, `initial.flush`, `(0..<10).map`. Checks
+    ///             `XCTAssertEqual(scroll.contentOffset.x + scroll.adjustedContentInset.left, 420)`;
+    ///             `XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 350)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testZoomedBoardRestoresItsRealHorizontalViewport() async throws {
         let owner = UUID()
@@ -3086,6 +4558,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         defer { previous?.makeKey() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testZoomedBoardRestoresItsRealHorizontalViewport.scrolls
+        /// @brief      Find scrolls in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrolls(_ view: UIView) -> [UIScrollView] {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
         }
@@ -3120,6 +4604,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPreviewTextColorsInheritIndependentlyFromBoardListAndItem
+    /// @brief      Verify that preview Text Colors Inherit Independently From Board List And Item
+    /// @details    Exercises `board.resolvedTitleColor`, `board.resolvedTextColor`. Checks
+    ///             `XCTAssertNil(board.cardTitleColor)`; `XCTAssertNil(board.cardTextColor)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPreviewTextColorsInheritIndependentlyFromBoardListAndItem() throws {
         var board = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(board.cardTitleColor)
@@ -3147,6 +4641,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults
+    /// @brief      Verify that list Preview Text Colors Persist Independently And Decode Legacy Defaults
+    /// @details    Exercises `BoardAppearance.inheritingLists`. Checks `XCTAssertNil(legacy.cardTitleColor)`;
+    ///             `XCTAssertNil(legacy.cardTextColor)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.cardTitleColor); XCTAssertNil(legacy.cardTextColor)
@@ -3171,6 +4675,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCustomListPreviewColorsRenderWithoutEditingContent
+    /// @brief      Verify that custom List Preview Colors Render Without Editing Content
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(originals, [card, note])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCustomListPreviewColorsRenderWithoutEditingContent() async throws {
         var card = KanbanCard(id: 92, word: "Plan the garden", listTitle: "Garden")
@@ -3204,6 +4718,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(originals, [card, note])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFreshInstallationSeedsTutorialListsAndOrderedShortcutsOnlyOnce
+    /// @brief      Verify that fresh Installation Seeds Tutorial Lists And Ordered Shortcuts Only Once
+    /// @details    Exercises `TodayListPins.loadInitialCollections`, `seeded.map`, `seeded.allSatisfy`. Checks
+    ///             `XCTAssertEqual(seeded.map(\.title), ["On the Table", "In the Queue", "Scheduled"])`;
+    ///             `XCTAssertTrue(seeded.allSatisfy { $0.kind == .list && $0.lists.count == 1 &&
+    ///             $0.lists[0].allCards.count == 1 })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFreshInstallationSeedsTutorialListsAndOrderedShortcutsOnlyOnce() throws {
         let suite = "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -3227,6 +4753,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(TodayListPins.decode(try XCTUnwrap(defaults.data(forKey: TodayListPins.key))).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDefaultListPhotosAreBundledAndRespectCustomBackgrounds
+    /// @brief      Verify that default List Photos Are Bundled And Respect Custom Backgrounds
+    /// @details    Exercises `CollectionBackground.defaultListBackground`, `CollectionBackground.isAllowed`. Checks
+    ///             `XCTAssertEqual(CollectionBackground.defaultListBackground(for: title)?.preset, preset)`;
+    ///             `XCTAssertNotNil(UIImage(named: asset))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDefaultListPhotosAreBundledAndRespectCustomBackgrounds() throws {
         for (title, preset, asset) in [("On the Table", CollectionBackgroundPreset.tabletop, "DefaultListTable"), ("In the Queue", .forestPath, "DefaultListQueue"), ("Scheduled", .sunlitWall, "DefaultListScheduled")] {
             XCTAssertEqual(CollectionBackground.defaultListBackground(for: title)?.preset, preset)
@@ -3242,6 +4779,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(CollectionBackground.isAllowed(collectionID: UUID(), datedWeekIDs: [], isDatedView: true))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReferenceLabelSupportsLegacyAndExistingCustomCatalogs
+    /// @brief      Verify that reference Label Supports Legacy And Existing Custom Catalogs
+    /// @details    Checks `XCTAssertEqual(legacy.includingReference.labels, [LabelLibrary.referenceLabel])`;
+    ///             `XCTAssertEqual(library.includingReference.labels, [custom])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testReferenceLabelSupportsLegacyAndExistingCustomCatalogs() {
         let legacy = LabelLibrary(categories: [], labels: [])
         XCTAssertEqual(legacy.includingReference.labels, [LabelLibrary.referenceLabel])
@@ -3252,6 +4798,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LabelLibrary.starter.includingReference, LabelLibrary.starter)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testStarterListTutorialsAreActionableAndOnlySeedTheThreeDefaultLists
+    /// @brief      Verify that starter List Tutorials Are Actionable And Only Seed The Three Default Lists
+    /// @details    Exercises `DefaultListTutorial.makeStarter`, `LabelLibraryStore.load`,
+    ///             `card.descriptionOverride?.contains`. Checks
+    ///             `XCTAssertEqual(starter.boardAppearance?.bannerBackground, expected)`;
+    ///             `XCTAssertNil(list.appearance?.background)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testStarterListTutorialsAreActionableAndOnlySeedTheThreeDefaultLists() throws {
         let titles = ["On the Table", "In the Queue", "Scheduled"]
         for title in titles {
@@ -3280,6 +4838,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDefaultListsDoNotReplaceExistingOrLegacyInstallations
+    /// @brief      Verify that default Lists Do Not Replace Existing Or Legacy Installations
+    /// @details    Exercises `TodayListPins.loadInitialCollections`. Checks
+    ///             `XCTAssertTrue(TodayListPins.loadInitialCollections(from: defaults).isEmpty)`;
+    ///             `XCTAssertEqual(defaults.data(forKey: savedKey), saved)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDefaultListsDoNotReplaceExistingOrLegacyInstallations() throws {
         for savedKey in ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, TodayListPins.key] {
             let suite = "Plenact.ExistingInstallTests." + UUID().uuidString
@@ -3292,6 +4861,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testImportantIndicatorUsesCollectionAndCardIdentity
+    /// @brief      Verify that important Indicator Uses Collection And Card Identity
+    /// @details    Exercises `LibraryImportanceSelection.contains`. Checks
+    ///             `XCTAssertTrue(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: data))`;
+    ///             `XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: other, data: data))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testImportantIndicatorUsesCollectionAndCardIdentity() throws {
         let owner = UUID()
         let other = UUID()
@@ -3304,6 +4884,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: cleared))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity
+    /// @brief      Verify that workspace Labels Count Only Active Items And Keep Owner Identity
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `card.replacingLocation`. Checks
+    ///             `XCTAssertEqual(usage.matches.count, 2)`; `XCTAssertEqual(Set(usage.matches.map(\.collectionID)),
+    ///             [week.id, library.id])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity() throws {
         let catalog = LabelLibrary.starter
         let label = try XCTUnwrap(catalog.labels.first)
@@ -3335,6 +4926,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LibraryBrowseFilter.labels.searchPrompt, "Find in your Labels")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayShortcutPinsKeepOrderOwnerAndSixItemLimit
+    /// @brief      Verify that today Shortcut Pins Keep Order Owner And Six Item Limit
+    /// @details    Exercises `(1...8).map`, `TodayListPins.decode`, `TodayListPins.encode`. Checks
+    ///             `XCTAssertEqual(decoded.count, 6)`; `XCTAssertEqual(Array(decoded.prefix(2)), [first, second])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTodayShortcutPinsKeepOrderOwnerAndSixItemLimit() {
         let first = WorkspaceListReference(ownerID: UUID(), listID: 0)
         let second = WorkspaceListReference(ownerID: UUID(), listID: 0)
@@ -3348,6 +4948,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayListPins.decode(TodayListPins.encode(Array(decoded.reversed()))), Array(decoded.reversed()))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing
+    /// @brief      Verify that today Shortcut Grid Renders Two Rows Without Opening Or Editing
+    /// @details    Exercises `(0..<6).map`, `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`.
+    ///             Uses the fixture and assertions below to verify today Shortcut Grid Renders Two Rows Without
+    ///             Opening Or Editing.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing() async throws {
         var owner = PersonalCollection(title: "Projects", kind: .board)
@@ -3369,6 +4980,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("Shortcuts preview: " + path.path)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayPlanRendersWithoutChangingStoredPlans
+    /// @brief      Verify that today Plan Renders Without Changing Stored Plans
+    /// @details    Exercises `UserDefaults.standard.dictionaryRepresentation().filter`,
+    ///             `UserDefaults.standard.dictionaryRepresentation`, `$0.key.hasPrefix`. Checks
+    ///             `XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTodayPlanRendersWithoutChangingStoredPlans() async throws {
         let before = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("Plenact.") }
@@ -3390,6 +5012,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSameDayDateOnlySchedulesDoNotRepeatTheListDate
+    /// @brief      Verify that same Day Date Only Schedules Do Not Repeat The List Date
+    /// @details    Exercises `card.scheduleBadges`. Checks `XCTAssertTrue(card.scheduleBadges(on: day, calendar:
+    ///             calendar).isEmpty)`; `XCTAssertEqual(card, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testSameDayDateOnlySchedulesDoNotRepeatTheListDate() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -3410,6 +5042,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(card.scheduleBadges(on: day, calendar: calendar).count, 2, "Cross-day ranges retain their dates")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates
+    /// @brief      Verify that same Day Schedule Uses Times Only Without Changing Stored Dates
+    /// @details    Exercises `card.scheduleBadges`, `badges.map`, `CardDateKind.time.label`. Checks
+    ///             `XCTAssertEqual(badges.map(\.title), ["Start", "Finish"])`;
+    ///             `XCTAssertEqual(badges.map(\.systemImage), ["clock", "checkmark.circle"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -3440,6 +5083,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(card.usesTimeOnlySchedule(on: tomorrow, calendar: calendar))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts
+    /// @brief      Verify that week Calendar Grid Aligns Rows Across Months And Week Starts
+    /// @details    Exercises `PlanningDate.date`, `PlanningWeekSelector.monthDays`, `days[(row * 7)..<(row * 7 +
+    ///             7)].map`. Checks `XCTAssertEqual(days.count, 42)`; `XCTAssertEqual(calendar.component(.weekday,
+    ///             from: days[0]), firstWeekday)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar(identifier: .gregorian)
@@ -3460,6 +5114,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCalendarContentMatchesPlannedAndScheduledItemsAcrossWeekBoundaries
+    /// @brief      Verify that calendar Content Matches Planned And Scheduled Items Across Week Boundaries
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.list`. Checks
+    ///             `XCTAssertEqual(Set(today.map { $0.card.word }), ["Planned and scheduled", "Starts today"])`;
+    ///             `XCTAssertEqual(today.count, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCalendarContentMatchesPlannedAndScheduledItemsAcrossWeekBoundaries() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar.current; calendar.firstWeekday = firstWeekday
@@ -3490,6 +5155,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekCalendarPickerRendersSelectedWeekAndDay
+    /// @brief      Verify that week Calendar Picker Renders Selected Week And Day
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`. Uses
+    ///             the fixture and assertions below to verify week Calendar Picker Renders Selected Week And Day.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testWeekCalendarPickerRendersSelectedWeekAndDay() async throws {
         let date = try XCTUnwrap(PlanningDate.date("2026-10-14"))
@@ -3519,6 +5194,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("Week calendar preview: " + path.path)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDetachListCreatesStandaloneLibraryCollectionWithoutCopying
+    /// @brief      Verify that detach List Creates Standalone Library Collection Without Copying
+    /// @details    Exercises `.linkedCard`, `CrossBoardListMovement.detach`. Checks
+    ///             `XCTAssertEqual(collections.count, 2)`; `XCTAssertTrue(collections[0].lists.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDetachListCreatesStandaloneLibraryCollectionWithoutCopying() throws {
         for title in ["Week board", "Library board"] {
             var source = PersonalCollection(title: title, kind: .board, icon: .home, color: .green)
@@ -3555,6 +5240,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(empty.isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWholeListMovePreservesContentBookmarksAndCrossBoardLinks
+    /// @brief      Verify that whole List Move Preserves Content Bookmarks And Cross Board Links
+    /// @details    Exercises `.linkedCard`, `CrossBoardListMovement.move`, `boards[0].lists.map`. Checks
+    ///             `XCTAssertEqual(boards[0].lists.map(\.id), [9])`; `XCTAssertEqual(boards[1].lists.count, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWholeListMovePreservesContentBookmarksAndCrossBoardLinks() throws {
         var first = KanbanCard(id: 1, word: "Garden plan", listTitle: "Ideas", descriptionOverride: "Keep all writing")
         first.displayFormat = .note
@@ -3604,6 +5299,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(boards[1].lists.count, 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation
+    /// @brief      Verify that whole List Move Rejects Unavailable Or Same Board Without Mutation
+    /// @details    Exercises `CrossBoardListMovement.move`. Checks `XCTAssertThrowsError(try
+    ///             CrossBoardListMovement.move(listID: 4, from: source.id, to: destination, collections: &boards))`;
+    ///             `XCTAssertEqual(boards, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation() throws {
         var source = PersonalCollection(title: "Source", kind: .board)
         source.lists = [KanbanList(id: 4, title: "List", cards: [])]
@@ -3617,6 +5323,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTransferToastIsVisibleWithoutTakingFocusOrInterceptingTouches
+    /// @brief      Verify that transfer Toast Is Visible Without Taking Focus Or Intercepting Touches
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `presenter.show`. Checks `XCTAssertFalse(window.isKeyWindow)`;
+    ///             `XCTAssertTrue(scene.windows.first(where: \.isKeyWindow) === keyWindow)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTransferToastIsVisibleWithoutTakingFocusOrInterceptingTouches() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -3639,6 +5356,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("Transfer preview: " + path.path)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTransferConfirmationsNameDestinationAndDistinguishCopies
+    /// @brief      Verify that transfer Confirmations Name Destination And Distinguish Copies
+    /// @details    Checks `XCTAssertEqual(TransferConfirmation(title: "Garden path", destination: "Garden /
+    ///             Ideas").message, "Moved ‘Garden path’ to Garden / Ideas.")`;
+    ///             `XCTAssertEqual(TransferConfirmation(title: "My note", destination: "Journal").message, "Moved ‘My
+    ///             note’ to Journal.")`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTransferConfirmationsNameDestinationAndDistinguishCopies() {
         XCTAssertEqual(TransferConfirmation(title: "Garden path", destination: "Garden / Ideas").message,
                        "Moved ‘Garden path’ to Garden / Ideas.")
@@ -3648,6 +5376,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
                        "Copied ‘Ideas’ to Home.")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWelcomeCueLaunchAndFourHourReturnPolicy
+    /// @brief      Verify that welcome Cue Launch And Four Hour Return Policy
+    /// @details    Exercises `cue.becameActive`, `cue.cancel`, `start.addingTimeInterval`. Checks
+    ///             `XCTAssertTrue(cue.pending)`; `XCTAssertEqual(cue.requestID, 1)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testWelcomeCueLaunchAndFourHourReturnPolicy() {
         let name = "PlenactTests.WelcomePolicy." + UUID().uuidString
@@ -3673,6 +5410,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(freshProcess.pending) // Every launch is intentionally testable.
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWelcomeCuePulsesInOrderAndSettlesWithoutRepeating
+    /// @brief      Verify that welcome Cue Pulses In Order And Settles Without Repeating
+    /// @details    Exercises `cue.becameActive`, `cue.play`, `highlights.append`. Checks `XCTAssertEqual(highlights,
+    ///             [.profile, .profile, .plan, .plan])`; `XCTAssertNil(cue.target)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testWelcomeCuePulsesInOrderAndSettlesWithoutRepeating() async {
         let cue = TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeSequence")!)
@@ -3688,6 +5434,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(cue.pending)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWelcomeCueReduceMotionAndInteractionCancellation
+    /// @brief      Verify that welcome Cue Reduce Motion And Interaction Cancellation
+    /// @details    Exercises `cue.becameActive`, `cue.play`, `highlights.append`. Checks `XCTAssertEqual(highlights,
+    ///             [.profile, .plan])`; `XCTAssertEqual(highlights, [.profile])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testWelcomeCueReduceMotionAndInteractionCancellation() async {
         let cue = TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeCancellation")!)
@@ -3709,6 +5464,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(cue.target); XCTAssertFalse(cue.illuminated)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLaunchPacingRevealsEvenlyAndWaitsForReadiness
+    /// @brief      Verify that launch Pacing Reveals Evenly And Waits For Readiness
+    /// @details    Exercises `ready.paced`, `loading.paced(elapsed: 2).status`, `loading.paced`. Checks
+    ///             `XCTAssertEqual(visual.stage, stage)`; `XCTAssertFalse(visual.finished)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testLaunchPacingRevealsEvenlyAndWaitsForReadiness() {
         let ready = PlenactLaunchProgress(stage: .welcome, finished: true)
         for (time, stage) in [(0.0, PlenactLaunchStage.restore), (0.23, .plans), (0.45, .ready), (0.67, .welcome)] {
@@ -3722,6 +5486,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(loading.paced(elapsed: 2).finished)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreationSessionClearsLiveDraftAndRejectsDismissalCallbacks
+    /// @brief      Verify that creation Session Clears Live Draft And Rejects Dismissal Callbacks
+    /// @details    Exercises `ListCreationDraft.clear`, `draft.beginSession`, `draft.binding`. Checks
+    ///             `XCTAssertEqual(ListCreationDraft.load(key: key).title, "New card")`; `XCTAssertEqual(draft.title,
+    ///             "")`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testCreationSessionClearsLiveDraftAndRejectsDismissalCallbacks() {
         let key = "test.creation.reset." + UUID().uuidString
@@ -3750,6 +5524,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(draft.description, "Keep this draft")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLaunchProgressRevealsOnlyStartedStagesAndKeepsCompletedStagesSteady
+    /// @brief      Verify that launch Progress Reveals Only Started Stages And Keeps Completed Stages Steady
+    /// @details    Exercises `progress.status`, `PlenactLaunchStage.allCases.allSatisfy`, `finished.status`. Checks
+    ///             `XCTAssertEqual(progress.status(for: step), step.rawValue < stage.rawValue ? .complete : (step ==
+    ///             stage ? .running : .waiting))`; `XCTAssertTrue(PlenactLaunchStage.allCases.allSatisfy {
+    ///             finished.status(for: $0) == .complete })`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testLaunchProgressRevealsOnlyStartedStagesAndKeepsCompletedStagesSteady() {
         for stage in PlenactLaunchStage.allCases {
             let progress = PlenactLaunchProgress(stage: stage)
@@ -3762,6 +5547,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlenactLaunchStage.allCases.map(\.symbol), ["folder", "calendar", "slider.horizontal.3", "sun.max"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRichEditorDefersFocusAndIgnoresStaleRequests
+    /// @brief      Verify that rich Editor Defers Focus And Ignores Stale Requests
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertFalse(textView.isFirstResponder, "Focus must not
+    ///             change inside the SwiftUI update")`; `XCTAssertFalse(textView.isFirstResponder, "An obsolete
+    ///             description-focus request must not steal title focus")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testRichEditorDefersFocusAndIgnoresStaleRequests() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -3803,6 +5600,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDaySelectorResolvesDatesAcrossWeeksWithoutChangingContent
+    /// @brief      Verify that day Selector Resolves Dates Across Weeks Without Changing Content
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningDate.key`. Checks
+    ///             `XCTAssertEqual(selection.listID, dayID)`; `XCTAssertEqual(selection.week, week)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDaySelectorResolvesDatesAcrossWeeksWithoutChangingContent() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar(identifier: .gregorian)
@@ -3828,6 +5635,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekSelectorPreservesStoredContentAndActiveWeek
+    /// @brief      Verify that week Selector Preserves Stored Content And Active Week
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningWeekSelector.choices`. Checks
+    ///             `XCTAssertEqual(choices.count, 17)`; `XCTAssertEqual(Set(choices.map(\.startKey)).count,
+    ///             choices.count)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWeekSelectorPreservesStoredContentAndActiveWeek() throws {
         for firstWeekday in [1, 2] {
             var calendar = Calendar(identifier: .gregorian)
@@ -3849,6 +5667,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLoadingScreenResourcesAndReducedMotionLayout
+    /// @brief      Verify that loading Screen Resources And Reduced Motion Layout
+    /// @details    Exercises `Bundle.main.url`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertNotNil(UIImage(named: "LaunchLogo"))`;
+    ///             `XCTAssertNotNil(UIImage(named: "LaunchShadow"))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLoadingScreenResourcesAndReducedMotionLayout() async throws {
         XCTAssertNotNil(UIImage(named: "LaunchLogo"))
@@ -3891,6 +5720,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCoverSearchMatchesTagsWithinTheSelectedAlbum
+    /// @brief      Verify that cover Search Matches Tags Within The Selected Album
+    /// @details    Exercises `ExampleCoverImage.search`, `ExampleCoverImage.search("quiet morning", in:
+    ///             .rest).contains`, `ExampleCoverImage.search("WATER plants", in: .nature).contains`. Checks
+    ///             `XCTAssertEqual(ExampleCoverImage.search("").count, 400)`;
+    ///             `XCTAssertEqual(ExampleCoverImage.search(" ", in: .nature).count, 50)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testCoverSearchMatchesTagsWithinTheSelectedAlbum() {
         XCTAssertEqual(ExampleCoverImage.search("").count, 400)
         XCTAssertEqual(ExampleCoverImage.search("  ", in: .nature).count, 50)
@@ -3922,6 +5762,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(ExampleCoverImage.search("mental health", in: .health).contains(.mentalHealth))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDirectCardAndNoteBackDismissesResultToItsPresenter
+    /// @brief      Verify that direct Card And Note Back Dismisses Result To Its Presenter
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `PlanningDate.date`. Checks `XCTAssertTrue(probe.presented)`; `XCTAssertFalse(probe.presented,
+    ///             "Back must dismiss the direct result for week=\(usesWeek), note=\(isNote)")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDirectCardAndNoteBackDismissesResultToItsPresenter() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -3964,6 +5815,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         previous?.makeKey()
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.findDetailNavigation
+    /// @brief      Find a navigation controller containing a pushed detail view
+    /// @details    Searches the supplied controller, its presented controller, and child controllers recursively;
+    ///             returns nil when no detail navigation stack exists.
+    ///
+    /// @param[in]  controller  Native controller supplied to the lifecycle callback
+    ///
+    /// @return     (UINavigationController?) matching or resolved value, or nil when unavailable
+    ///
     @MainActor
     private func findDetailNavigation(in controller: UIViewController) -> UINavigationController? {
         if let nav = controller as? UINavigationController, nav.viewControllers.count > 1 { return nav }
@@ -3974,6 +5836,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         return nil
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn
+    /// @brief      Verify that note Navigation Reports Toolbar Visibility And Restores On Return
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertFalse(probe.noteIsVisible)`;
+    ///             `XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4000,6 +5873,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(probe.noteIsVisible, "Ordinary Card navigation remains unchanged")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testChecklistTypeSwitchesPreserveInactiveContentAndIdentity
+    /// @brief      Verify that checklist Type Switches Preserve Inactive Content And Identity
+    /// @details    Exercises `.actionDetail`, `.linkedCard`, `.webLink`. Checks `XCTAssertEqual(restored.id, id)`;
+    ///             `XCTAssertTrue(restored.isCompleted)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testChecklistTypeSwitchesPreserveInactiveContentAndIdentity() throws {
         let url = try XCTUnwrap(URL(string: "https://example.com/plan"))
         let detail = KanbanChecklistActionDetail(description: "My plan", checklists: [KanbanChecklist(title: "Steps", items: ["First", "Next"])], comments: [])
@@ -4024,6 +5907,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONEncoder().encode(switched)), switched)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLegacyTypedChecklistItemsSeedRetainedPayloads
+    /// @brief      Verify that legacy Typed Checklist Items Seed Retained Payloads
+    /// @details    Exercises `.linkedCard`, `JSONSerialization.jsonObject`, `json.removeValue`. Checks
+    ///             `XCTAssertEqual(restored.retainedCardID, 12)`; `XCTAssertEqual(restored.content,
+    ///             .linkedCard(cardID: 12))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLegacyTypedChecklistItemsSeedRetainedPayloads() throws {
         let item = KanbanChecklistItem(title: "Linked", content: .linkedCard(cardID: 12))
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(item)) as? [String: Any])
@@ -4035,11 +5929,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KanbanChecklistItem.self, from: JSONSerialization.data(withJSONObject: json)).type, .standard)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCompactProfileRendersSlimmerThanDetailedWithoutEditing
+    /// @brief      Verify that compact Profile Renders Slimmer Than Detailed Without Editing
+    /// @details    Exercises `compact.sizeThatFits`, `detailed.sizeThatFits`,
+    ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertLessThan(compactSize.height,
+    ///             detailedSize.height)`; `XCTAssertLessThanOrEqual(compactSize.height, 90)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCompactProfileRendersSlimmerThanDetailedWithoutEditing() async throws {
         var card = KanbanCard(id: 91, word: "Plan the next garden season", listTitle: "Garden")
         card.subtitleOverride = "Choose seeds, prepare the beds, and make room for something new"
         let original = card
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testCompactProfileRendersSlimmerThanDetailedWithoutEditing.row
+        /// @brief      Prepare row for the enclosing regression test
+        /// @details    Supplies the local fixture for compact Profile Renders Slimmer Than Detailed Without Editing.
+        ///
+        /// @param[in]  compact  Whether the compact presentation is selected
+        ///
+        /// @return     (some View) regression fixture view
+        ///
         func row(_ compact: Bool) -> some View {
             KanbanCardView(card: card, height: compact ? 64 : 150, displaySettings: BoardDisplaySettings(),
                 compactCards: compact, labelLibrary: .starter,
@@ -4082,6 +5998,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("PROFILE_PREVIEW_PATH=\(url.path)")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardDisplayProfilesResolveCardThenListThenBoard
+    /// @brief      Verify that card Display Profiles Resolve Card Then List Then Board
+    /// @details    Exercises `board.resolvedCardDetail`. Checks `XCTAssertEqual(board.resolvedCardDetail(card: nil,
+    ///             list: nil), .detailed)`; `XCTAssertEqual(board.resolvedCardDetail(card: nil, list: nil, fallback:
+    ///             .compact), .compact)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCardDisplayProfilesResolveCardThenListThenBoard() throws {
         var board = BoardAppearance()
         XCTAssertEqual(board.resolvedCardDetail(card: nil, list: nil), .detailed)
@@ -4102,6 +6029,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(board.resolvedCardDetail(card: card, list: list), .detailed)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardDisplayProfilesRoundTripWithoutChangingContent
+    /// @brief      Verify that card Display Profiles Round Trip Without Changing Content
+    /// @details    Exercises `BoardAppearance.inheritingLists`. Checks `XCTAssertEqual(decoded, collection)`;
+    ///             `XCTAssertEqual(decoded.lists[0].cards[0].descriptionOverride, "Keep my writing")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCardDisplayProfilesRoundTripWithoutChangingContent() throws {
         var collection = PersonalCollection(title: "Profiles", kind: .board)
         var card = KanbanCard(id: 65, word: "Keep my title", listTitle: collection.lists[0].title)
@@ -4127,6 +6064,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(retained[0].appearance?.cardDetail, .compact, "Applying Board colors must keep List display profiles")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardCardDetailPersistsAndDecodesLegacyAppearance
+    /// @brief      Verify that board Card Detail Persists And Decodes Legacy Appearance
+    /// @details    Exercises `BoardAppearance.decodeWeek`. Checks `XCTAssertNil(legacy.cardDetail)`;
+    ///             `XCTAssertEqual(try BoardAppearance.decodeWeek(data).cardDetail, detail)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testBoardCardDetailPersistsAndDecodesLegacyAppearance() throws {
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.cardDetail)
@@ -4141,13 +6088,49 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems
+    /// @brief      Verify that library Plate Ranks Urgency And Excludes Completed Archived And Undated Items
+    /// @details    Exercises `PlanningDate.date`, `LibraryPlateSelection.items`, `selected.map`. Checks
+    ///             `XCTAssertEqual(selected.map(\.card.id), [4, 3, 2, 1])`; `XCTAssertEqual(selected.map(\.rank), [0,
+    ///             1, 2, 3])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems() throws {
         let calendar = Calendar.current
         let now = try XCTUnwrap(PlanningDate.date("2026-10-11"))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems.due
+        /// @brief      Prepare due for the enclosing regression test
+        /// @details    Supplies the local fixture for library Plate Ranks Urgency And Excludes Completed Archived And
+        ///             Undated Items. Uses `calendar.date`.
+        ///
+        /// @param[in]  days  Calendar-day offset used by the regression fixture
+        ///
+        /// @return     (Date) result described by this operation's contract
+        ///
         func due(_ days: Int) -> Date { calendar.date(byAdding: .day, value: days, to: now)! }
         var collection = PersonalCollection(title: "Projects", kind: .list)
         var important = KanbanCard(id: 1, word: "Important", listTitle: "Projects")
         important.isTitleChecked = false
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems.task
+        /// @brief      Prepare task for the enclosing regression test
+        /// @details    Supplies the local fixture for library Plate Ranks Urgency And Excludes Completed Archived And
+        ///             Undated Items.
+        ///
+        /// @param[in]  id    Starting numeric card ID or owner-local content identity
+        /// @param[in]  days  Calendar-day offset used by the regression fixture
+        ///
+        /// @return     (KanbanCard) result described by this operation's contract
+        ///
         func task(_ id: Int, _ days: Int) -> KanbanCard {
             var card = KanbanCard(id: id, word: "Task \(id)", listTitle: "Projects", dueDate: due(days))
             card.isTitleChecked = false
@@ -4170,6 +6153,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(LibraryPlateSelection.items(in: [collection], important: marked, now: now).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testActivityHistoryRetainsOwnersBoundsAndClearsOnlyShortcuts
+    /// @brief      Verify that activity History Retains Owners Bounds And Clears Only Shortcuts
+    /// @details    Exercises `LibraryRecentStore.remember`, `ActivityRecentStore.remember`,
+    ///             `ActivityRecentStore.load`. Checks `XCTAssertEqual(ActivityRecentStore.load(from: defaults),
+    ///             [library, week])`; `XCTAssertEqual(ActivityRecentStore.load(from: defaults).count, 20)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testActivityHistoryRetainsOwnersBoundsAndClearsOnlyShortcuts() throws {
         let suite = "ActivityTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4192,6 +6186,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(ActivityRecentStore.load(from: defaults), [library])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryRecentsPersistDeduplicateAndKeepCollectionsSeparate
+    /// @brief      Verify that library Recents Persist Deduplicate And Keep Collections Separate
+    /// @details    Exercises `LibraryRecentStore.remember`, `LibraryRecentStore.load`. Checks
+    ///             `XCTAssertEqual(LibraryRecentStore.remember(first, defaults: defaults), [first, second])`;
+    ///             `XCTAssertEqual(LibraryRecentStore.load(from: defaults), [first, second])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryRecentsPersistDeduplicateAndKeepCollectionsSeparate() throws {
         let suite = "LibraryRecentTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4207,6 +6212,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(LibraryRecentStore.load(from: defaults).first?.cardID, 12)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekTodayHighlightRendersInPanoramicWithoutChangingCards
+    /// @brief      Verify that week Today Highlight Renders In Panoramic Without Changing Cards
+    /// @details    Exercises `DatedPlanningWeek.make`, `PlanningDate.key`,
+    ///             `UIApplication.shared.connectedScenes.compactMap`. Checks
+    ///             `XCTAssertEqual(access.document.weeks[0], week)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws {
         let date = Date.now
@@ -4234,6 +6250,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(access.document.weeks[0], week)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekTodayHighlightUsesExactDateAcrossWeeksAndTimeZones
+    /// @brief      Verify that week Today Highlight Uses Exact Date Across Weeks And Time Zones
+    /// @details    Exercises `PlanningDate.date`, `WeekDayHighlight.isToday`. Checks
+    ///             `XCTAssertTrue(WeekDayHighlight.isToday(today, now: today, calendar: calendar))`;
+    ///             `XCTAssertFalse(WeekDayHighlight.isToday(nil, now: today, calendar: calendar))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWeekTodayHighlightUsesExactDateAcrossWeeksAndTimeZones() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -4250,6 +6277,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(WeekDayHighlight.isToday(PlanningDate.date("2026-10-18", calendar: calendar), now: afterMidnight, calendar: calendar))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTabletTodayPlanSummaryRendersSavedAndEmptyStatesWithoutWriting
+    /// @brief      Verify that tablet Today Plan Summary Renders Saved And Empty States Without Writing
+    /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), before)`;
+    ///             `XCTAssertEqual(opens, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTabletTodayPlanSummaryRendersSavedAndEmptyStatesWithoutWriting() async throws {
         let name = "PlenactTests.TodaySummary." + UUID().uuidString
@@ -4292,6 +6330,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(opens, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTabletBoardRendersProportionalLists
+    /// @brief      Verify that tablet Board Renders Proportional Lists
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Uses the fixture and assertions below to verify tablet Board
+    ///             Renders Proportional Lists.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testTabletBoardRendersProportionalLists() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4314,6 +6363,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         print("TABLET_BOARD_RENDER=\(url.path)")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTabletStandardZoomPreservesProportionsAndNeighborPreviews
+    /// @brief      Verify that tablet Standard Zoom Preserves Proportions And Neighbor Previews
+    /// @details    Exercises `BoardPresentation.standard.columnWidth`, `BoardTabletSizing.scale`. Checks
+    ///             `XCTAssertGreaterThan(scale, 1)`; `XCTAssertEqual(preview, viewport * 0.05 + 13.5)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTabletStandardZoomPreservesProportionsAndNeighborPreviews() {
         for viewport: CGFloat in [744, 820, 1180] {
             let column = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
@@ -4329,6 +6387,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(BoardTabletSizing.scale(viewportWidth: .infinity, columnWidth: 360, isTablet: true, enabled: true), 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLegacyMondayFirstBoardUsesFollowingSundayWithoutRelabellingOldWork
+    /// @brief      Verify that legacy Monday First Board Uses Following Sunday Without Relabelling Old Work
+    /// @details    Exercises `PlanningDate.date`, `titles.enumerated().map`, `titles.enumerated`. Checks
+    ///             `XCTAssertTrue(try document.repairLegacyMondayFirstLayout(now: saturday))`;
+    ///             `XCTAssertEqual(document.firstWeekday, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLegacyMondayFirstBoardUsesFollowingSundayWithoutRelabellingOldWork() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!; calendar.firstWeekday = 1
@@ -4356,6 +6425,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(sundayFirst, before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate
+    /// @brief      Verify that monday Start On Sunday Keeps Consecutive Dates And Following Sunday Separate
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `original.list`. Checks
+    ///             `XCTAssertEqual(document.currentWeekKey, "2026-10-05")`; `XCTAssertEqual(current.startKey,
+    ///             "2026-10-05")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws {
         let today = try XCTUnwrap(PlanningDate.date("2026-10-11"))
         var calendar = Calendar.current
@@ -4382,6 +6462,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(following.dayListIDs.keys.contains("2026-10-11"))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNewCardDraftFieldsRemainEditableWhileSaving
+    /// @brief      Verify that new Card Draft Fields Remain Editable While Saving
+    /// @details    Exercises `ListCreationDraft.clear`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertTrue(subtitle.becomeFirstResponder())`;
+    ///             `XCTAssertTrue(subtitle.isFirstResponder)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testNewCardDraftFieldsRemainEditableWhileSaving() async throws {
         let key = "plenact.testDraft.\(UUID().uuidString)"
@@ -4394,9 +6485,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
         window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
         try await Task.sleep(for: .milliseconds(200))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testNewCardDraftFieldsRemainEditableWhileSaving.editors
+        /// @brief      Find editors in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UITextView]) resulting values in the ordering described above
+        ///
         func editors(_ view: UIView) -> [UITextView] {
             (view as? UITextView).map { [$0] } ?? view.subviews.flatMap { editors($0) }
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testNewCardDraftFieldsRemainEditableWhileSaving.fields
+        /// @brief      Find fields in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextField. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UITextField]) resulting values in the ordering described above
+        ///
         func fields(_ view: UIView) -> [UITextField] {
             (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields($0) }
         }
@@ -4420,6 +6535,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain(restored.description), "ABC")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListCreationDraftSurvivesRecreationAndStaysInItsCollection
+    /// @brief      Verify that list Creation Draft Survives Recreation And Stays In Its Collection
+    /// @details    Exercises `ListCreationDraft.key`, `draft.save`, `ListCreationDraft.load`. Checks
+    ///             `XCTAssertEqual(ListCreationDraft.load(key: key, defaults: defaults), draft)`;
+    ///             `XCTAssertEqual(ListCreationDraft.load(key: other, defaults: defaults), ListCreationDraft())`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListCreationDraftSurvivesRecreationAndStaysInItsCollection() throws {
         let suite = "ListDraftTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4434,6 +6560,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(ListCreationDraft.load(key: key, defaults: defaults), ListCreationDraft())
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDueBadgeOmitsOnlyTheOwningListsAssignedDay
+    /// @brief      Verify that due Badge Omits Only The Owning Lists Assigned Day
+    /// @details    Exercises `card.dueDateBadge`. Checks `XCTAssertNil(card.dueDateBadge(on: sameDay))`;
+    ///             `XCTAssertEqual(card.dueDateBadge(on: nextWeek)?.label, card.dueDateLabel)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDueBadgeOmitsOnlyTheOwningListsAssignedDay() throws {
         let calendar = Calendar.current
         let due = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 17, minute: 46)))
@@ -4461,6 +6597,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(card.dueDateBadge(on: nil))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardDateKindsPersistAndCopyWithoutInventingDates
+    /// @brief      Verify that card Date Kinds Persist And Copy Without Inventing Dates
+    /// @details    Exercises `decoded.startDateLabel.contains`, `decoded.listDueDateLabel?.contains`,
+    ///             `decoded.dueDateLabel.contains`. Checks `XCTAssertEqual(decoded.startDateKind, kind)`;
+    ///             `XCTAssertEqual(decoded.dueDateKind, kind)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCardDateKindsPersistAndCopyWithoutInventingDates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone.current
@@ -4500,6 +6647,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(decoded.dueDateLabel.contains("PM"))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDateTimeEditorOpeningDoesNotSaveDraft
+    /// @brief      Verify that date Time Editor Opening Does Not Save Draft
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(saves, 0)`;
+    ///             `XCTAssertGreaterThan(host.view.bounds.height, 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDateTimeEditorOpeningDoesNotSaveDraft() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4517,6 +6675,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertGreaterThan(host.view.bounds.height, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDueDateVisibilityRequiresAStoredDateAndPreservesCardPreference
+    /// @brief      Verify that due Date Visibility Requires A Stored Date And Preserves Card Preference
+    /// @details    Exercises `restored.replacingLocation`, `ListCopying.copy`, `JSONSerialization.jsonObject`. Checks
+    ///             `XCTAssertTrue(card.hasDueDate, "Date presence must not depend on the sample card ID")`;
+    ///             `XCTAssertEqual(card.listDueDateLabel, card.dueDateLabel)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDueDateVisibilityRequiresAStoredDateAndPreservesCardPreference() throws {
         let date = Date(timeIntervalSince1970: 1_800_000_000)
         var card = KanbanCard(id: 1, word: "Due date", listTitle: "Monday", dueDate: date, showsDueDateInList: true)
@@ -4544,6 +6713,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(decodedLegacy.listDueDateLabel, restored.dueDateLabel)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNewCardDueDateDefaultPreferencesPersistAndLegacyDefaultsToTrue
+    /// @brief      Verify that new Card Due Date Default Preferences Persist And Legacy Defaults To True
+    /// @details    Exercises `KanbanCard.defaultDueDateVisibility`, `LocalProfileStore.save`,
+    ///             `LocalProfileStore.load`. Checks `XCTAssertTrue(KanbanCard.defaultDueDateVisibility(from:
+    ///             defaults))`; `XCTAssertTrue(profile.preferences.showsDueDatesOnNewCards)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testNewCardDueDateDefaultPreferencesPersistAndLegacyDefaultsToTrue() throws {
         let suite = UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4566,6 +6746,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(decoded.showsDueDatesOnNewCards)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardCommentComposerKeepsKeyboardFocusWhileTyping
+    /// @brief      Verify that card Comment Composer Keeps Keyboard Focus While Typing
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertTrue(comment.becomeFirstResponder())`;
+    ///             `XCTAssertTrue(comment.isFirstResponder, "Comment typing must not dismiss the keyboard")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCardCommentComposerKeepsKeyboardFocusWhileTyping() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4580,6 +6771,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
         host.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(150))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testCardCommentComposerKeepsKeyboardFocusWhileTyping.findComment
+        /// @brief      Find find comment in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextView. Returns the first qualifying match, or
+        ///             nil when none is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UITextView?) matching or resolved value, or nil when unavailable
+        ///
         func findComment(_ view: UIView) -> UITextView? {
             if let text = view as? UITextView, text.accessibilityLabel == "Comment..." { return text }
             return view.subviews.lazy.compactMap { findComment($0) }.first
@@ -4599,6 +6802,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(comment.isFirstResponder, "Explicit keyboard dismissal must still work")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs
+    /// @brief      Verify that week Start Migration Keeps Dates Archives Bookmarks And Unique I Ds
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `.linkedCard`. Checks
+    ///             `XCTAssertEqual(document.currentWeekKey, "2026-10-05")`;
+    ///             `XCTAssertEqual(document.calendar.firstWeekday, 2)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs() throws {
         var sunday = Calendar(identifier: .gregorian)
         sunday.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -4607,6 +6821,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let earlier = try XCTUnwrap(PlanningDate.date("2026-10-04", calendar: sunday))
         var first = DatedPlanningWeek.make(for: earlier, calendar: sunday)
         var second = DatedPlanningWeek.make(for: today, calendar: sunday)
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs.fill
+        /// @brief      Prepare fill for the enclosing regression test
+        /// @details    Supplies the local fixture for week Start Migration Keeps Dates Archives Bookmarks And Unique
+        ///             I Ds. Uses `list.makeItem`.
+        ///
+        /// @param[in,out]  week  Dated planning week being inspected or saved
+        ///
+        /// @return     (Void) no return value
+        ///
         func fill(_ week: inout DatedPlanningWeek) {
             for index in week.collection.lists.indices {
                 let list = week.collection.lists[index]
@@ -4675,6 +6901,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document, unchanged)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMondayWeekStartAcrossYearBoundaryAndStoredReload
+    /// @brief      Verify that monday Week Start Across Year Boundary And Stored Reload
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `document.changeFirstWeekday`. Checks
+    ///             `XCTAssertEqual(document.currentWeekKey, "2026-12-28")`; `XCTAssertEqual(document.week(for:
+    ///             date)?.collection.lists.first?.title, "Monday")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMondayWeekStartAcrossYearBoundaryAndStoredReload() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -4695,6 +6932,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions
+    /// @brief      Verify that board Options Popover Layout Does Not Invoke Destructive Actions
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Uses the fixture and assertions below to verify board Options Popover Layout
+    ///             Does Not Invoke Destructive Actions.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4724,6 +6971,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek
+    /// @brief      Verify that library Week Example Creates Independent Draft Without Replacing Week
+    /// @details    Exercises `PersonalCollection.exampleWeek`. Checks `XCTAssertEqual(first.kind, .board)`;
+    ///             `XCTAssertEqual(first.lists, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek() throws {
         let original = SampleData.lists
         let first = PersonalCollection.exampleWeek(existingTitles: ["Week View"])
@@ -4737,6 +6994,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(first)), first)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts
+    /// @brief      Verify that mixed List Templates Retain Formats And Create Independent Drafts
+    /// @details    Exercises `template.makeCollection`, `cards.map`, `cards.allSatisfy`. Checks
+    ///             `XCTAssertNotEqual(draft.id, second.id)`; `XCTAssertNotEqual(draft.title, template.rawValue)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts() throws {
         for template in MixedListTemplate.allCases {
             let draft = template.makeCollection(existingTitles: [template.rawValue])
@@ -4756,6 +7023,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningHostedCalendarLayoutDoesNotPersistBrowsing
+    /// @brief      Verify that planning Hosted Calendar Layout Does Not Persist Browsing
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(saveCount, 0)`; `XCTAssertEqual(access.document,
+    ///             original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPlanningHostedCalendarLayoutDoesNotPersistBrowsing() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -4787,6 +7065,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.planningTestCalendar
+    /// @brief      Create the fixed calendar used by planning regression tests
+    /// @details    Uses a Gregorian calendar in America/Chicago with Sunday as the first weekday so date and
+    ///             daylight-saving assertions are reproducible.
+    ///
+    /// @return     (Calendar) result described by this operation's contract
+    ///
     private func planningTestCalendar() -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -4794,6 +7081,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         return calendar
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningMigrationPreservesExistingContentAndAssociatesSevenDates
+    /// @brief      Verify that planning Migration Preserves Existing Content And Associates Seven Dates
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.list`. Checks
+    ///             `XCTAssertEqual(week.startKey, "2026-10-04")`; `XCTAssertEqual(week.collection.lists, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningMigrationPreservesExistingContentAndAssociatesSevenDates() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
@@ -4808,6 +7105,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(Set(week.dayListIDs.values).count, 7)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningDateAssociationSurvivesRenamingAndDoesNotOverwriteArchivedDay
+    /// @brief      Verify that planning Date Association Survives Renaming And Does Not Overwrite Archived Day
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
+    ///             Checks `XCTAssertEqual(week.list(on: date)?.title, "Family plans")`;
+    ///             `XCTAssertNotEqual(replacement, id)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningDateAssociationSurvivesRenamingAndDoesNotOverwriteArchivedDay() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
@@ -4824,6 +7132,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(week.list(on: date)?.id, replacement)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningRolloverPreservesPreviousWeekAndReusesFuturePlans
+    /// @brief      Verify that planning Rollover Preserves Previous Week And Reuses Future Plans
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `future.list`. Checks
+    ///             `XCTAssertEqual(next.id, future.id)`; `XCTAssertEqual(next.collection, future.collection)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningRolloverPreservesPreviousWeekAndReusesFuturePlans() throws {
         let calendar = planningTestCalendar()
         let today = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
@@ -4847,6 +7165,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.weeks.count, 2)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningEmptyBrowsingDoesNotPersistAndExplicitSaveRoundTrips
+    /// @brief      Verify that planning Empty Browsing Does Not Persist And Explicit Save Round Trips
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningCalendarStore.save`. Checks
+    ///             `XCTAssertNil(document.week(for: futureDate, calendar: calendar))`;
+    ///             `XCTAssertFalse(preview.hasContent)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningEmptyBrowsingDoesNotPersistAndExplicitSaveRoundTrips() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
@@ -4869,6 +7198,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(document.currentWeekKey, current.startKey)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningPersistenceRetainsCorruptDocumentWithoutOverwrite
+    /// @brief      Verify that planning Persistence Retains Corrupt Document Without Overwrite
+    /// @details    Exercises `DatedPlanningWeek.make`, `PlanningCalendarStore.save`. Checks `XCTAssertThrowsError(try
+    ///             PlanningCalendarStore.save(document, to: defaults))`; `XCTAssertEqual(defaults.data(forKey:
+    ///             PlanningCalendarStore.key), bytes)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningPersistenceRetainsCorruptDocumentWithoutOverwrite() throws {
         let suite = "Plenact.PlanningCorruption.\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -4881,6 +7221,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), bytes)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningDateKeysAcrossDSTAndYearBoundary
+    /// @brief      Verify that planning Date Keys Across DST And Year Boundary
+    /// @details    Exercises `PlanningDate.date`, `PlanningDate.days`, `PlanningDate.weekKey`. Checks
+    ///             `XCTAssertEqual(PlanningDate.weekKey(yearEnd, calendar: calendar), "2026-12-27")`;
+    ///             `XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map {
+    ///             PlanningDate.key($0, calendar: calendar) }, "2027-01-02")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningDateKeysAcrossDSTAndYearBoundary() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-11-01", calendar: calendar))
@@ -4892,6 +7244,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map { PlanningDate.key($0, calendar: calendar) }, "2027-01-02")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCollectionPreviewsPreferDescriptionsAndReadOlderCollections
+    /// @brief      Verify that collection Previews Prefer Descriptions And Read Older Collections
+    /// @details    Exercises `JSONSerialization.jsonObject`, `legacy.removeValue`, `JSONSerialization.data`. Checks
+    ///             `XCTAssertEqual(collection.contentPreview, "Garden plans · Desk project · Weekend ideas")`;
+    ///             `XCTAssertEqual(collection.contentPreview, "Personal projects and plans")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCollectionPreviewsPreferDescriptionsAndReadOlderCollections() throws {
         var collection = PersonalCollection(title: "Ideas", kind: .list)
         collection.lists[0].cards = [
@@ -4922,6 +7285,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardZoomPresetsResetAfterPinchingFromEitherMode
+    /// @brief      Verify that board Zoom Presets Reset After Pinching From Either Mode
+    /// @details    Exercises `BoardPanoramicZoom.preset`, `BoardPanoramicZoom.scale`. Checks
+    ///             `XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)`;
+    ///             `XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testBoardZoomPresetsResetAfterPinchingFromEitherMode() {
         XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)
         XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)
@@ -4931,6 +7304,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPanoramicPinchZoomClampsAndReversesAtBothLimits
+    /// @brief      Verify that panoramic Pinch Zoom Clamps And Reverses At Both Limits
+    /// @details    Exercises `BoardPanoramicZoom.scale`, `BoardPanoramicZoom.clamped`,
+    ///             `BoardPresentation.standard.columnWidth`. Checks `XCTAssertEqual(BoardPanoramicZoom.initial,
+    ///             0.62)`; `XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testPanoramicPinchZoomClampsAndReversesAtBothLimits() {
         XCTAssertEqual(BoardPanoramicZoom.initial, 0.62)
         XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93, accuracy: 0.001)
@@ -4950,6 +7333,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRichBoardExamplesRemainIndependentAndResolveTheirInternalLinks
+    /// @brief      Verify that rich Board Examples Remain Independent And Resolve Their Internal Links
+    /// @details    Exercises `PlanningDate.date`, `example.makeCollection`, `draft.lists.flatMap`. Checks
+    ///             `XCTAssertEqual(draft.kind, .board)`; `XCTAssertNotEqual(draft.title, example.rawValue)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testRichBoardExamplesRemainIndependentAndResolveTheirInternalLinks() throws {
         let now = try XCTUnwrap(PlanningDate.date("2026-10-13"))
         for example in PersonalBoardExample.allCases {
@@ -4985,6 +7378,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems
+    /// @brief      Verify that activity Due Soon Includes Overdue And Excludes Completed Undated And Later Items
+    /// @details    Exercises `XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar)).addingTimeInterval`,
+    ///             `PlanningDate.date`, `ActivityFocusSelection.isDueSoon`. Checks
+    ///             `XCTAssertTrue(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))`;
+    ///             `XCTAssertTrue(ActivityFocusSelection.dueReason(card, now: now, calendar:
+    ///             calendar).hasPrefix("Overdue"))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems() throws {
         let calendar = planningTestCalendar()
         let now = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar)).addingTimeInterval(12 * 3600)
@@ -5012,6 +7418,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testGalleryGroupsPreserveItemOrderAndDividerIdentity
+    /// @brief      Verify that gallery Groups Preserve Item Order And Divider Identity
+    /// @details    Exercises `list.makeItem`, `BoardGalleryGroup.groups`, `groups.flatMap(\.cards).map`. Checks
+    ///             `XCTAssertEqual(groups.flatMap(\.cards).map(\.id), [1, 3, 4, 6])`;
+    ///             `XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testGalleryGroupsPreserveItemOrderAndDividerIdentity() {
         var list = KanbanList(id: 3, title: "Plans", cards: [])
         list.cards = [list.makeItem(id: 1, title: "First"), list.makeItem(id: 2, title: "--- Ideas"),
@@ -5028,6 +7444,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(list, original)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNamedDividersPreserveIdentityAndLegacySeparators
+    /// @brief      Verify that named Dividers Preserve Identity And Legacy Separators
+    /// @details    Exercises `list.makeItem`. Checks `XCTAssertTrue(named.isSectionDivider)`;
+    ///             `XCTAssertEqual(named.word, "Ideas")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws {
         let list = KanbanList(id: 3, title: "Plans", cards: [])
         var named = list.makeItem(id: 42, title: "--- Ideas")
@@ -5055,6 +7481,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(converted.sectionHeading)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryBrowseFiltersScopeSearchAndExcludeArchivedCollections
+    /// @brief      Verify that library Browse Filters Scope Search And Exclude Archived Collections
+    /// @details    Exercises `collections.filter`, `LibraryBrowseFilter.all.includes`,
+    ///             `LibraryBrowseFilter.lists.includes`. Checks `XCTAssertEqual(collections.filter {
+    ///             LibraryBrowseFilter.all.includes($0) }.map(\.id), [list.id, board.id])`;
+    ///             `XCTAssertEqual(collections.filter { LibraryBrowseFilter.lists.includes($0) }.map(\.id),
+    ///             [list.id])`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testLibraryBrowseFiltersScopeSearchAndExcludeArchivedCollections() {
         var list = PersonalCollection(title: "Reading", kind: .list)
         var board = PersonalCollection(title: "Projects", kind: .board)
@@ -5073,6 +7511,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity
+    /// @brief      Verify that library Search Finds Note Content And Keeps Collection Identity
+    /// @details    Exercises `LabelLibraryStore.load`, `LibrarySearchIndex.results`, `results.compactMap`. Checks
+    ///             `XCTAssertEqual(results.count, 2)`; `XCTAssertEqual(Set(results.compactMap(\.ownerID)), [first.id,
+    ///             second.id])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity() throws {
         var first = PersonalCollection(title: "Garden", kind: .list)
         var second = PersonalCollection(title: "Home", kind: .list)
@@ -5094,6 +7543,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(LibrarySearchIndex.results(query: "  ", collections: [first, second], labels: labels).isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities
+    /// @brief      Verify that planning Shared Search Retains Scopes And Owner Qualified Identities
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningSharedSearchIndex.results`.
+    ///             Checks `XCTAssertEqual(results.count, 2)`; `XCTAssertNotEqual(results[0].id, results[1].id)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-10-10", calendar: calendar))
@@ -5113,6 +7572,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(boardResults.contains { $0.ownerID == library.id && $0.cardID == nil })
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPlanningCardsMoveBetweenDatedWeekLibraryAndCurrentWeek
+    /// @brief      Verify that planning Cards Move Between Dated Week Library And Current Week
+    /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `future.list`. Checks
+    ///             `XCTAssertEqual(moved, original.replacingLocation(id: original.id, listTitle:
+    ///             destination.title))`; `XCTAssertTrue(current[0].cards.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPlanningCardsMoveBetweenDatedWeekLibraryAndCurrentWeek() throws {
         let calendar = planningTestCalendar()
         let date = try XCTUnwrap(PlanningDate.date("2026-12-25", calendar: calendar))
@@ -5146,6 +7616,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCrossBoardMoveSupportsNotesAndKeepsWithinBoardIdentity
+    /// @brief      Verify that cross Board Move Supports Notes And Keeps Within Board Identity
+    /// @details    Exercises `CrossBoardCardMovement.move`, `note.replacingLocation`. Checks `XCTAssertEqual(moved,
+    ///             note.replacingLocation(id: note.id, listTitle: "Ready"))`;
+    ///             `XCTAssertTrue(collections[0].lists[0].cards.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCrossBoardMoveSupportsNotesAndKeepsWithinBoardIdentity() throws {
         var note = SampleData.lists[0].cards[0]
         note.displayFormat = .note
@@ -5170,6 +7650,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(saved, [note.id])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCrossBoardCardMoveRoundTripPreservesContentAndBookmark
+    /// @brief      Verify that cross Board Card Move Round Trip Preserves Content And Bookmark
+    /// @details    Exercises `CrossBoardCardMovement.move`, `original.replacingLocation`,
+    ///             `collections[0].savedCardIDs.contains`. Checks `XCTAssertEqual(moved,
+    ///             original.replacingLocation(id: original.id, listTitle: "Ideas"))`;
+    ///             `XCTAssertTrue(week[0].cards.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCrossBoardCardMoveRoundTripPreservesContentAndBookmark() throws {
         let original = SampleData.lists[0].cards[0]
         var week = [KanbanList(id: 10, title: "Monday", cards: [original])]
@@ -5194,6 +7686,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(saved.contains(original.id))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat
+    /// @brief      Verify that cross Board Move Reserves Archived Identities And Preserves Format
+    /// @details    Exercises `CrossBoardCardMovement.move`, `original.replacingLocation`, `saved.contains`. Checks
+    ///             `XCTAssertNotEqual(moved.id, original.id)`; `XCTAssertEqual(moved, original.replacingLocation(id:
+    ///             moved.id, listTitle: "Monday"))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat() throws {
         var original = SampleData.lists[0].cards[0]
         original.displayFormat = .picture
@@ -5214,6 +7717,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(saved.contains(moved.id))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation
+    /// @brief      Verify that cross Board Move Rejects Unavailable Destination Without Mutation
+    /// @details    Exercises `CrossBoardCardMovement.move`. Checks `XCTAssertEqual(week, before)`;
+    ///             `XCTAssertEqual(saved, [card.id])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation() throws {
         let card = SampleData.lists[0].cards[0]
         var week = [KanbanList(id: 10, title: "Monday", cards: [card])]
@@ -5229,6 +7742,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEmojiReactionsValidateOneEmojiAndToggleOnlyTheCurrentAuthor
+    /// @brief      Verify that emoji Reactions Validate One Emoji And Toggle Only The Current Author
+    /// @details    Exercises `ItemEmojiReaction.validatedEmoji`, `ItemEmojiReaction.toggling`. Checks
+    ///             `XCTAssertEqual(ItemEmojiReaction.validatedEmoji(" " + emoji + " "), emoji)`;
+    ///             `XCTAssertNil(ItemEmojiReaction.validatedEmoji(invalid))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testEmojiReactionsValidateOneEmojiAndToggleOnlyTheCurrentAuthor() throws {
         for emoji in ["❤️", "👍🏽", "👨‍👩‍👧‍👦", "🇺🇸", "1️⃣", "🎉", "🫶"] {
             XCTAssertEqual(ItemEmojiReaction.validatedEmoji(" " + emoji + " "), emoji)
@@ -5245,6 +7768,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode([ItemEmojiReaction].self, from: JSONEncoder().encode(added)), added)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReactionPreviewVisibilityDefaultsAndPersistsWithoutRemovingReactions
+    /// @brief      Verify that reaction Preview Visibility Defaults And Persists Without Removing Reactions
+    /// @details    Exercises `restored.replacingLocation`. Checks `XCTAssertNil(card.showsReactionsInPreviews)`;
+    ///             `XCTAssertEqual(card.previewReactions, [reaction])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testReactionPreviewVisibilityDefaultsAndPersistsWithoutRemovingReactions() throws {
         let legacy = Data(#"{"id":1,"word":"Legacy","listTitle":"Today","checklists":[]}"#.utf8)
         var card = try JSONDecoder().decode(KanbanCard.self, from: legacy)
@@ -5262,6 +7795,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(card.previewReactions, [reaction])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReactionIdentityIsStableAndLegacyCardsRemainUnchangedUntilReactedTo
+    /// @brief      Verify that reaction Identity Is Stable And Legacy Cards Remain Unchanged Until Reacted To
+    /// @details    Exercises `LocalReactionIdentity.current`, `LocalReactionIdentity.forUserAction`,
+    ///             `LocalProfileStore.load`. Checks `XCTAssertNil(LocalReactionIdentity.current(in: defaults))`;
+    ///             `XCTAssertNil(defaults.object(forKey: LocalReactionIdentity.key))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testReactionIdentityIsStableAndLegacyCardsRemainUnchangedUntilReactedTo() throws {
         let suite = "ReactionIdentity." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -5286,6 +7830,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)), card)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReactionsSurviveLocationChangesAndArchiveButNotFreshTemplates
+    /// @brief      Verify that reactions Survive Location Changes And Archive But Not Fresh Templates
+    /// @details    Exercises `card.replacingLocation`, `list.archiveCard`, `list.restoreArchivedCard`. Checks
+    ///             `XCTAssertEqual(relocated.reactions, card.reactions)`; `XCTAssertEqual(relocated.createdAt,
+    ///             card.createdAt)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testReactionsSurviveLocationChangesAndArchiveButNotFreshTemplates() throws {
         let reaction = ItemEmojiReaction(emoji: "💪", authorID: UUID())
         let card = KanbanCard(id: 1, word: "A meaningful step", listTitle: "Monday", checklists: [], createdAt: .now, reactions: [reaction])
@@ -5304,6 +7859,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(week.collection.lists[0].cards[0].reactions, [reaction])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testReactionPickerAndChipsRenderWithoutCreatingIdentityOrEditingRecords
+    /// @brief      Verify that reaction Picker And Chips Render Without Creating Identity Or Editing Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.object(forKey:
+    ///             LocalReactionIdentity.key) as? String, identityBefore)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testReactionPickerAndChipsRenderWithoutCreatingIdentityOrEditingRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5337,6 +7903,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(UserDefaults.standard.object(forKey: LocalReactionIdentity.key) as? String, identityBefore)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusFilterSummaryDisappearsAfterThreeSecondsWithoutEditingItems
+    /// @brief      Verify that focus Filter Summary Disappears After Three Seconds Without Editing Items
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertLessThan(try XCTUnwrap(heights.last), expanded)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testFocusFilterSummaryDisappearsAfterThreeSecondsWithoutEditingItems() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5363,11 +7939,31 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertLessThan(try XCTUnwrap(heights.last), expanded)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues
+    /// @brief      Verify that focus Trailing Time Prefers Timed Start And Skips Date Only Values
+    /// @details    Exercises `start.addingTimeInterval`. Checks `XCTAssertNil(entry().previewTime)`;
+    ///             `XCTAssertEqual(entry().previewTime?.date, due)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues() throws {
         let start = Date(timeIntervalSince1970: 1700000000)
         let due = start.addingTimeInterval(3600)
         var card = KanbanCard(id: 1, word: "Work", listTitle: "Today", startDate: start, dueDate: due,
                               startDateKind: .date, dueDateKind: .date)
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues.entry
+        /// @brief      Prepare entry for the enclosing regression test
+        /// @details    Supplies the local fixture for focus Trailing Time Prefers Timed Start And Skips Date Only
+        ///             Values.
+        ///
+        /// @return     (TodayFocusEntry) result described by this operation's contract
+        ///
         func entry() -> TodayFocusEntry { TodayFocusEntry(card: card, sectionID: nil, heading: nil) }
         XCTAssertNil(entry().previewTime)
         card.dueDateKind = .time
@@ -5383,7 +7979,31 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(entry().previewTimeLabel)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusFilterPaletteUsesDistinctReadableCombinationColors
+    /// @brief      Verify that focus Filter Palette Uses Distinct Readable Combination Colors
+    /// @details    Exercises `TodayFocusFilterColor.rgb`, `colors.insert`. Checks
+    ///             `XCTAssertNil(TodayFocusFilterColor.rgb(upNext: false, important: false, bookmarked: false, dark:
+    ///             dark))`; `XCTAssertGreaterThanOrEqual((max(ink, background) + 0.05) / (min(ink, background) +
+    ///             0.05), 4.5)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testFocusFilterPaletteUsesDistinctReadableCombinationColors() throws {
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testFocusFilterPaletteUsesDistinctReadableCombinationColors.luminance
+        /// @brief      Calculate relative luminance for the filter-palette test
+        /// @details    Linearizes the supplied sRGB components and combines them using the red, green, and blue
+        ///             luminance weights.
+        ///
+        /// @param[in]  values  Values to summarize in their supplied order
+        ///
+        /// @return     (Double) result described by this operation's contract
+        ///
         func luminance(_ values: [Double]) -> Double {
             zip(values, [0.2126, 0.7152, 0.0722]).reduce(0) { result, pair in
                 let v = pair.0
@@ -5410,6 +8030,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(purple.blue, 206.0 / 255, accuracy: 0.000001)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip
+    /// @brief      Verify that header Spacing Compacts Only When Intrinsic Text Would Clip
+    /// @details    Exercises `WorkspaceHeaderSpacing.gap`. Checks
+    ///             `XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 100,
+    ///             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)`;
+    ///             `XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 150,
+    ///             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 0)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip() {
         XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 100,
             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)
@@ -5423,6 +8055,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace
+    /// @brief      Verify that adaptive Header Retains Control Targets And Gives Long Text The Gap Space
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(try XCTUnwrap(frames[id]).width, 44)`;
+    ///             `XCTAssertEqual(try XCTUnwrap(frames[id]).height, 44)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5435,6 +8078,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
             ("long", "A long name that needs additional space before the toolbar controls", .leftToRight),
             ("rtl", "A long name that needs additional space before the toolbar controls", .rightToLeft)
         ] {
+
+
+            ///
+            /// @fcn        PlenactBoardDocumentTests.testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace.control
+            /// @brief      Prepare control for the enclosing regression test
+            /// @details    Supplies the local fixture for adaptive Header Retains Control Targets And Gives Long Text
+            ///             The Gap Space. Uses `Color.blue.frame(width: 44, height: 44)
+            ///             .onGeometryChange`, `Color.blue.frame`, `$0.frame`.
+            ///
+            /// @param[in]  id  Starting numeric card ID or owner-local content identity
+            ///
+            /// @return     (some View) regression fixture view
+            ///
             func control(_ id: Int) -> some View {
                 Color.blue.frame(width: 44, height: 44)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("headerFixture")) } action: { results[name, default: [:]][id] = $0 }
@@ -5467,6 +8123,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(rtl[1]).width, try XCTUnwrap(long[1]).width, accuracy: 0.5)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile
+    /// @brief      Verify that overflow Reading Preference Defaults On And Persists Without Profile
+    /// @details    Exercises `PlanPreferencesStore.load`, `PlanPreferencesStore.save`, `LocalProfileStore.load`.
+    ///             Checks `XCTAssertTrue(try JSONDecoder().decode(LocalProfilePreferences.self, from:
+    ///             Data("{}".utf8)).scrollsOverflowingTitles)`; `XCTAssertTrue(PlanPreferencesStore.load(from:
+    ///             defaults).scrollsOverflowingTitles)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile() throws {
         let suite = "OverflowPreferenceTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -5481,6 +8149,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(LocalProfileStore.load(from: defaults))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText
+    /// @brief      Verify that overflow Reading Preference Switches Mounted Reader Without Changing Text
+    /// @details    Exercises `PlanPreferencesStore.save`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertTrue(scrolls(host.view).isEmpty)`;
+    ///             `XCTAssertEqual(overflow.last, false)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText() async throws {
         let suite = "OverflowReaderRender." + UUID().uuidString
@@ -5492,6 +8171,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText.scrolls
+        /// @brief      Find scrolls in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrolls(_ view: UIView) -> [UIScrollView] {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
         }
@@ -5517,6 +8208,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryLongNamesStayCompactAndExpandForAccessibility
+    /// @brief      Verify that library Long Names Stay Compact And Expand For Accessibility
+    /// @details    Exercises `row.environment`, `standard.sizeThatFits`, `accessible.sizeThatFits`. Checks
+    ///             `XCTAssertLessThan(standardSize.height, 100)`; `XCTAssertGreaterThan(accessibleSize.height,
+    ///             standardSize.height)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLibraryLongNamesStayCompactAndExpandForAccessibility() async throws {
         let title = Array(repeating: "On the Table", count: 8).joined(separator: ", ")
@@ -5529,6 +8231,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertGreaterThan(accessibleSize.height, standardSize.height, "Accessibility names retain expanded reading")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition
+    /// @brief      Verify that slideable Header Text Scrolls Only Overflow And Retains Reading Position
+    /// @details    Exercises `PlanPreferencesStore.save`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertTrue(scrolling.isScrollEnabled)`;
+    ///             `XCTAssertTrue(overflow.contains(true))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws {
         let suite = "HeaderReadingTests." + UUID().uuidString
@@ -5539,6 +8252,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition.scrolls
+        /// @brief      Find scrolls in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrolls(_ view: UIView) -> [UIScrollView] {
             (view as? UIScrollView).map { [$0] } ?? view.subviews.flatMap(scrolls)
         }
@@ -5564,6 +8289,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(scrolling.showsHorizontalScrollIndicator)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLongListAndBoardHeadersExposeIndependentNativeReaders
+    /// @brief      Verify that long List And Board Headers Expose Independent Native Readers
+    /// @details    Exercises `PlanPreferencesStore.save`, `UIApplication.shared.connectedScenes.compactMap`,
+    ///             `scene.windows.first`. Checks `XCTAssertGreaterThanOrEqual(readers.count, 2)`;
+    ///             `XCTAssertTrue(reader.isScrollEnabled)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws {
         let suite = "HeaderReadingTests." + UUID().uuidString
@@ -5574,6 +8310,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testLongListAndBoardHeadersExposeIndependentNativeReaders.scrolls
+        /// @brief      Find scrolls in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrolls(_ view: UIView) -> [UIScrollView] {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
         }
@@ -5607,6 +8355,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLongDetailHeadersRenderWithoutEditingCardsOrNotes
+    /// @brief      Verify that long Detail Headers Render Without Editing Cards Or Notes
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(emissions.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLongDetailHeadersRenderWithoutEditingCardsOrNotes() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5633,6 +8391,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEditorBannerDoesNotInsertNativeNavigationBar
+    /// @brief      Verify that editor Banner Does Not Insert Native Navigation Bar
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertTrue(navigation.isNavigationBarHidden, "The custom editor
+    ///             controls must not gain an empty native bar")`; `XCTAssertTrue(emitted.isEmpty, "Banner layout must
+    ///             not change the record")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testEditorBannerDoesNotInsertNativeNavigationBar() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -5644,6 +8414,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
             previous?.makeKey()
         }
 
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testEditorBannerDoesNotInsertNativeNavigationBar.navigationController
+        /// @brief      Prepare navigation controller for the enclosing regression test
+        /// @details    Supplies the local fixture for editor Banner Does Not Insert Native Navigation Bar. Uses
+        ///             `controller.children.compactMap`.
+        ///
+        /// @param[in]  controller  Native controller supplied to the lifecycle callback
+        ///
+        /// @return     (UINavigationController?) matching or resolved value, or nil when unavailable
+        ///
         func navigationController(in controller: UIViewController) -> UINavigationController? {
             if let navigation = controller as? UINavigationController {
                 return navigation
@@ -5682,6 +8463,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBannerBackgroundFillsProposedWidthWithoutLegacyAccentDecoration
+    /// @brief      Verify that banner Background Fills Proposed Width Without Legacy Accent Decoration
+    /// @details    Exercises `controller.sizeThatFits`, `mark.sizeThatFits`. Checks `XCTAssertEqual(size.width,
+    ///             320)`; `XCTAssertLessThan(size.height, 100)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testBannerBackgroundFillsProposedWidthWithoutLegacyAccentDecoration() {
         let background = ItemAppearance(background: .green)
@@ -5701,6 +8491,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(size.height, 0, accuracy: 1)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBannerBackgroundIsIndependentAndBackwardCompatible
+    /// @brief      Verify that banner Background Is Independent And Backward Compatible
+    /// @details    Exercises `JSONSerialization.jsonObject`, `card.replacingLocation`. Checks `XCTAssertEqual(legacy,
+    ///             ItemAppearance(accent: .teal, icon: .heart))`; `XCTAssertNil(legacy.background)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testBannerBackgroundIsIndependentAndBackwardCompatible() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"accent":"teal","icon":"heart"}"#.utf8))
         XCTAssertEqual(legacy, ItemAppearance(accent: .teal, icon: .heart))
@@ -5722,6 +8522,14 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(combined.isEmpty)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering
+    /// @brief      Verify that today Initial Task Focus Skips Completed And Non Task Formats Without Reordering
+    /// @details    Checks `XCTAssertEqual(list.firstUncheckedTaskID, 5)`; `XCTAssertEqual(list.cards, cards)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering() {
         let cards = [
             KanbanCard(id: 1, word: "Done", listTitle: "Plans", isTitleChecked: true),
@@ -5745,6 +8553,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(list.firstUncheckedTaskID)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardCardBackgroundIsOptionalAndIndependentOfItemAppearance
+    /// @brief      Verify that board Card Background Is Optional And Independent Of Item Appearance
+    /// @details    Exercises `BoardAppearance.decodeWeek`, `theme.resolved`. Checks
+    ///             `XCTAssertNil(legacy.cardBackground)`; `XCTAssertEqual(try
+    ///             BoardAppearance.decodeWeek(JSONEncoder().encode(theme)), theme)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testBoardCardBackgroundIsOptionalAndIndependentOfItemAppearance() throws {
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data(#"{"bannerBackground":"blue","listBackground":"green"}"#.utf8))
         XCTAssertNil(legacy.cardBackground)
@@ -5757,6 +8576,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data(#"{"cardBackground":"invalid"}"#.utf8)))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardAppearanceInheritanceAndApplyingAllPreserveContent
+    /// @brief      Verify that board Appearance Inheritance And Applying All Preserve Content
+    /// @details    Exercises `theme.resolved`, `card.replacingLocation`, `BoardAppearance.inheritingLists`. Checks
+    ///             `XCTAssertEqual(theme.resolved(nil).background, .blue)`;
+    ///             `XCTAssertEqual(theme.resolved(nil).listBackground, .green)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testBoardAppearanceInheritanceAndApplyingAllPreserveContent() throws {
         let theme = BoardAppearance(bannerBackground: .blue, listBackground: .green)
         XCTAssertEqual(theme.resolved(nil).background, .blue)
@@ -5786,6 +8616,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(BoardAppearance.inheritingLists(inherited), inherited)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testIndependentBoardAppearancePersistsAndAcceptsLegacyCollections
+    /// @brief      Verify that independent Board Appearance Persists And Accepts Legacy Collections
+    /// @details    Exercises `BoardAppearance.decodeWeek`, `PersonalCollectionStore.saveChecked`,
+    ///             `PersonalCollectionStore.load`. Checks `XCTAssertEqual(try
+    ///             BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))),
+    ///             week)`; `XCTAssertEqual(try BoardAppearance.decodeWeek(Data()), BoardAppearance())`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testIndependentBoardAppearancePersistsAndAcceptsLegacyCollections() throws {
         let suite = "PlenactTests.BoardAppearance.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -5811,6 +8653,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(reopened.lists, first.lists)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListBackgroundTintRoundTripsAndKeepsLegacyDefaults
+    /// @brief      Verify that list Background Tint Round Trips And Keeps Legacy Defaults
+    /// @details    Checks `XCTAssertNil(legacy.listBackground)`; `XCTAssertFalse(appearance.isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListBackgroundTintRoundTripsAndKeepsLegacyDefaults() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"background":"blue"}"#.utf8))
         XCTAssertNil(legacy.listBackground)
@@ -5832,6 +8683,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"listBackground":"invalid"}"#.utf8)))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEmptySubtitleAppearanceIsOptionalAndNeverHidesWriting
+    /// @brief      Verify that empty Subtitle Appearance Is Optional And Never Hides Writing
+    /// @details    Exercises `legacy.hidesSubtitle`, `appearance.hidesSubtitle`,
+    ///             `restored.appearance?.hidesSubtitle`. Checks `XCTAssertNil(legacy.hideEmptySubtitle)`;
+    ///             `XCTAssertFalse(legacy.hidesSubtitle(""))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testEmptySubtitleAppearanceIsOptionalAndNeverHidesWriting() throws {
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(legacy.hideEmptySubtitle)
@@ -5852,6 +8714,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(appearance.hidesSubtitle(""))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues
+    /// @brief      Verify that optional Appearance Preserves Legacy JSON And Rejects Invalid Values
+    /// @details    Exercises `JSONSerialization.jsonObject`. Checks `XCTAssertNil(card.appearance)`;
+    ///             `XCTAssertNil(list.appearance)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues() throws {
         let card = try JSONDecoder().decode(KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","checklists":[]}"#.utf8))
         let list = try JSONDecoder().decode(KanbanList.self, from: Data(#"{"id":0,"title":"Monday","cards":[]}"#.utf8))
@@ -5875,6 +8747,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil
+    /// @brief      Verify that list Appearance Changes Only Canonical Metadata And Resets To Nil
+    /// @details    Exercises `card.replacingLocation`, `lists[0].edit`, `DatabaseActivity.shared.dismissError`.
+    ///             Checks `XCTAssertTrue(setListAppearance(0, appearance: appearance, in: &lists))`;
+    ///             `XCTAssertEqual(lists, expected)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil() throws {
         let photo = KanbanAttachment(exampleImage: .camping, caption: "A day outdoors")
@@ -5908,6 +8791,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(lists, duplicated)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testAppearanceRetainsCardNoteCopiesArchivesAndBothLocalStores
+    /// @brief      Verify that appearance Retains Card Note Copies Archives And Both Local Stores
+    /// @details    Exercises `card.replacingLocation`, `list.archiveCard`, `collection.rename`. Checks
+    ///             `XCTAssertEqual(copy.appearance, appearance)`; `XCTAssertEqual(copy.attachments,
+    ///             card.attachments)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testAppearanceRetainsCardNoteCopiesArchivesAndBothLocalStores() async throws {
         let suite = "PlenactTests.Appearance.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -5939,6 +8833,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(CardAttachmentStore.fileNames(in: [decoded]), ["appearance-example.jpg"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent
+    /// @brief      Verify that display Formats Override Legacy Dividers Without Changing Retained Content
+    /// @details    Exercises `JSONSerialization.jsonObject`, `.manual`, `decoded.replacingLocation`. Checks
+    ///             `XCTAssertEqual(legacy.displayFormat, .divider)`; `XCTAssertNil(legacyJSON["listDisplayFormat"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent() throws {
         let legacy = KanbanCard(id: 71, word: "---", listTitle: "Ideas", isDivider: true)
         XCTAssertEqual(legacy.displayFormat, .divider)
@@ -5984,6 +8888,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalid))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults
+    /// @brief      Verify that mixed Display Formats Persist Move Rename And Archive With Independent Defaults
+    /// @details    Exercises `ItemDisplayFormat.allCases.enumerated().map`, `ItemDisplayFormat.allCases.enumerated`,
+    ///             `lists[0].makeItem`. Checks `XCTAssertTrue(editBoardList(1, title: "Ideas", subtitle: "",
+    ///             newItemPresentation: .note, in: &lists))`; `XCTAssertEqual(lists[0].cards, cards)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults() async throws {
         let suite = "PlenactTests.DisplayFormats.\(UUID().uuidString)"
@@ -6021,6 +8936,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(CardAttachmentStore.fileNames(in: collection.lists), ["mixed-display-example.jpg"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords
+    /// @brief      Verify that hosted Mixed Display Formats And Picture Placeholders Do Not Mutate Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(item, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6100,6 +9025,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testAppearanceSheetAndDecoratedNoteLayoutDoNotModifyRecords
+    /// @brief      Verify that appearance Sheet And Decorated Note Layout Do Not Modify Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Uses the fixture and assertions below to verify appearance Sheet And
+    ///             Decorated Note Layout Do Not Modify Records.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testAppearanceSheetAndDecoratedNoteLayoutDoNotModifyRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6150,6 +9086,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLibraryExamplesLayoutDoesNotLoadOrRestoreWeekOnPresentation
+    /// @brief      Verify that library Examples Layout Does Not Load Or Restore Week On Presentation
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Uses the fixture and assertions below to verify library Examples Layout Does
+    ///             Not Load Or Restore Week On Presentation.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testLibraryExamplesLayoutDoesNotLoadOrRestoreWeekOnPresentation() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6186,6 +9133,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testStarterAndExampleWeekPictureRowsUseExplicitBundledCoversAndRetainActivities
+    /// @brief      Verify that starter And Example Week Picture Rows Use Explicit Bundled Covers And Retain
+    ///             Activities
+    /// @details    Exercises `lists.flatMap(\.cards).filter`, `lists.flatMap`, `pictures.map`. Checks
+    ///             `XCTAssertEqual(pictures.map(\.word), ["Capture a new idea", "Take a walk", "Capture notes and
+    ///             ideas"])`; `XCTAssertEqual(pictures.map(\.listTitle), ["Tuesday", "Wednesday", "Sunday"])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testStarterAndExampleWeekPictureRowsUseExplicitBundledCoversAndRetainActivities() throws {
         let lists = SampleData.lists
         let pictures = lists.flatMap(\.cards).filter { $0.displayFormat == .picture }
@@ -6210,6 +9169,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists)), lists)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities
+    /// @brief      Verify that picture Rows Have No Footer Or Internal Padding At Both Board Densities
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(size.width, width)`; `XCTAssertEqual(size.height,
+    ///             (width - 8) / ratio)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6257,6 +9227,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleWeekGalleriesUseBundledPhotosAndPreserveCoverAndContent
+    /// @brief      Verify that example Week Galleries Use Bundled Photos And Preserve Cover And Content
+    /// @details    Exercises `lists.flatMap`, `cards.filter`, `galleryCards.map`. Checks
+    ///             `XCTAssertEqual(galleryCards.map(\.word), [ "Review the week ahead", "Plan the weekend", "Spend
+    ///             time outdoors" ])`; `XCTAssertEqual(galleryCards.map { $0.galleryPhotos.count }, [3, 3, 3])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testExampleWeekGalleriesUseBundledPhotosAndPreserveCoverAndContent() throws {
         let lists = SampleData.lists
         let cards = lists.flatMap(\.cards)
@@ -6296,6 +9277,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(SampleData.lists, lists)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPhotoCaptionsDecodeLegacyAttachmentsAndPreserveMetadata
+    /// @brief      Verify that photo Captions Decode Legacy Attachments And Preserve Metadata
+    /// @details    Exercises `JSONSerialization.jsonObject`, `card.setPhotoCaption`. Checks
+    ///             `XCTAssertNil(json["caption"])`; `XCTAssertEqual(try JSONDecoder().decode(KanbanAttachment.self,
+    ///             from: legacyData), photo)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPhotoCaptionsDecodeLegacyAttachmentsAndPreserveMetadata() throws {
         let photo = KanbanAttachment(fileName: "gallery-legacy.jpg", mediaKind: .photo)
         let legacyData = try JSONEncoder().encode(photo)
@@ -6320,6 +9312,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(card.attachments, [photo, link])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPhotoGalleryReorderKeepsCoverAndNonphotoSlotsAndRejectsInvalidOrders
+    /// @brief      Verify that photo Gallery Reorder Keeps Cover And Nonphoto Slots And Rejects Invalid Orders
+    /// @details    Exercises `card.reorderGalleryPhotos`, `card.setCover`, `card.removeAttachment`. Checks
+    ///             `XCTAssertEqual(card.galleryPhotos, [first, second, third])`; `XCTAssertEqual(card.attachments,
+    ///             [third, video, cover, first, link, second])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPhotoGalleryReorderKeepsCoverAndNonphotoSlotsAndRejectsInvalidOrders() throws {
         let cover = KanbanAttachment(exampleImage: .camping, caption: "Cover caption")
         let first = KanbanAttachment(fileName: "first-gallery.jpg", caption: "First")
@@ -6348,6 +9351,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(snapshot.attachments, [first, video, cover, second, link, third])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPhotoGalleryEditsPersistInBothStoresAndRetainArchivedCopies
+    /// @brief      Verify that photo Gallery Edits Persist In Both Stores And Retain Archived Copies
+    /// @details    Exercises `original.setPhotoCaption`, `original.reorderGalleryPhotos`,
+    ///             `KanbanBoardPersistence.saveListsChecked`. Checks `XCTAssertEqual(restoredWeek, lists)`;
+    ///             `XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [personal])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testPhotoGalleryEditsPersistInBothStoresAndRetainArchivedCopies() async throws {
         let suite = "PlenactTests.Gallery.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -6374,6 +9388,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(original.attachments?.first, second)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords
+    /// @brief      Verify that hosted Photo Gallery Scrolls Horizontally Without Editing Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertTrue(scrollViews(in: controller.view).contains {
+    ///             $0.contentSize.width > $0.bounds.width })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords() async throws {
         let photos = [
@@ -6390,6 +9415,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previous?.makeKey()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords.scrollViews
+        /// @brief      Find scroll views in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIScrollView]) resulting values in the ordering described above
+        ///
         func scrollViews(in view: UIView) -> [UIScrollView] {
             let matches = (view as? UIScrollView).map { [$0] } ?? []
             return matches + view.subviews.flatMap { scrollViews(in: $0) }
@@ -6420,6 +9457,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle
+    /// @brief      Verify that list Editing Preserves Retained Records And Round Trips Subtitle
+    /// @details    Exercises `list.edit`, `collection.rename`. Checks `XCTAssertThrowsError(try list.edit(title: " \n
+    ///             ", subtitle: "Do not save"))`; `XCTAssertEqual(list, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle() throws {
 
         let card = KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
@@ -6454,6 +9501,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(collection.lists[0].archivedCards[0].id, archive.id)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCanonicalListEditorSaveRetainsLatestRecordsAndWeekdayRecreation
+    /// @brief      Verify that canonical List Editor Save Retains Latest Records And Weekday Recreation
+    /// @details    Exercises `lists[0].makeItem`, `lists[0].cards.append`, `TodayListSelection.ensureCurrentDayList`.
+    ///             Checks `XCTAssertTrue(editBoardList(4, title: "My plans", subtitle: defaultSubtitle, in:
+    ///             &lists))`; `XCTAssertNil(lists[0].subtitleOverride, "Unchanged generated text must keep the legacy
+    ///             optional-field shape")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testCanonicalListEditorSaveRetainsLatestRecordsAndWeekdayRecreation() throws {
 
@@ -6482,6 +9541,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(json["subtitleOverride"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEditedListMetadataPersistsInIndependentLocalStores
+    /// @brief      Verify that edited List Metadata Persists In Independent Local Stores
+    /// @details    Exercises `week.edit`, `KanbanBoardPersistence.saveListsChecked`,
+    ///             `KanbanBoardPersistence.loadListsInBackground`. Checks `XCTAssertEqual(restoredWeek, [week])`;
+    ///             `XCTAssertEqual(restoredCollection, collection)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testEditedListMetadataPersistsInIndependentLocalStores() async throws {
 
@@ -6507,6 +9577,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(unchangedWeek, [week], "Editing Library metadata must not alter the Week store")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testHostedListEditorPrefillsWithoutMutatingRecords
+    /// @brief      Verify that hosted List Editor Prefills Without Mutating Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertTrue(fields(in: controller.view).contains { $0.text ==
+    ///             list.title })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testHostedListEditorPrefillsWithoutMutatingRecords() async throws {
 
@@ -6520,9 +9601,33 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previous?.makeKey()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testHostedListEditorPrefillsWithoutMutatingRecords.fields
+        /// @brief      Find fields in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextField. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UITextField]) resulting values in the ordering described above
+        ///
         func fields(in view: UIView) -> [UITextField] {
             (view as? UITextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testHostedListEditorPrefillsWithoutMutatingRecords.textViews
+        /// @brief      Find text views in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextView. Returns all collected matches in
+        ///             hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UITextView]) resulting values in the ordering described above
+        ///
         func textViews(in view: UIView) -> [UITextView] {
             (view as? UITextView).map { [$0] } ?? view.subviews.flatMap { textViews(in: $0) }
         }
@@ -6540,6 +9645,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
                       || fields(in: controller.view).contains { $0.text == list.subtitle })
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords
+    /// @brief      Verify that quick Capture Templates Preserve Title And Create Independent Records
+    /// @details    Exercises `template.draftTitle`, `list.makeItem`, `first.checklists.flatMap(\.items).map`. Checks
+    ///             `XCTAssertEqual(template.draftTitle(capturedTitle: "My own title"), "My own title")`;
+    ///             `XCTAssertEqual(first.presentation, template.presentation)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords() throws {
         let list = KanbanList(id: 4, title: "Thursday", cards: [])
         for template in QuickCaptureTemplate.allCases {
@@ -6572,6 +9688,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(QuickCaptureTemplate.blankNote.draftTitle(capturedTitle: ""), "")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testQuickCreationSwitchKeepsTitleAndTemplateWriting
+    /// @brief      Verify that quick Creation Switch Keeps Title And Template Writing
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Checks `XCTAssertTrue(textValues().contains("Keep this idea"))`;
+    ///             `XCTAssertTrue(textValues().contains(QuickCaptureTemplate.smallPlan.body))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testQuickCreationSwitchKeepsTitleAndTemplateWriting() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6584,7 +9711,28 @@ final class PlenactBoardDocumentTests: XCTestCase {
             })
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host; window.makeKeyAndVisible()
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testQuickCreationSwitchKeepsTitleAndTemplateWriting.descendants
+        /// @brief      Find descendants in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIView]) resulting values in the ordering described above
+        ///
         func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap { descendants($0) } }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testQuickCreationSwitchKeepsTitleAndTemplateWriting.textValues
+        /// @brief      Prepare text values for the enclosing regression test
+        /// @details    Supplies the local fixture for quick Creation Switch Keeps Title And Template Writing. Uses
+        ///             `descendants(host.view).compactMap`.
+        ///
+        /// @return     ([String]) resulting values in the ordering described above
+        ///
         func textValues() -> [String] {
             descendants(host.view).compactMap { view in
                 if let field = view as? UITextField { return field.text }
@@ -6605,6 +9753,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCaptureStartStopDatesAreOptionalValidatedAndPersistAsCalendarDates
+    /// @brief      Verify that capture Start Stop Dates Are Optional Validated And Persist As Calendar Dates
+    /// @details    Exercises `schedule.isValid`, `schedule.apply`, `pair.0.map`. Checks
+    ///             `XCTAssertTrue(schedule.isValid(calendar: calendar))`; `XCTAssertEqual(saved.startDate, pair.0.map
+    ///             { times ? $0 : calendar.startOfDay(for: $0) })`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCaptureStartStopDatesAreOptionalValidatedAndPersistAsCalendarDates() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -6629,6 +9788,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertFalse(QuickCaptureSchedule(start: start, stop: earlierToday, includesTime: true).isValid(calendar: calendar))
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting
+    /// @brief      Verify that voice Save Options Keep Only Selected Content And Preserve Rich Writing
+    /// @details    Exercises `PlanRichText.Run`, `VoiceCaptureSaveOption.audio.body`, `option.body`. Checks
+    ///             `XCTAssertEqual(VoiceCaptureSaveOption.audio.body(existing: rich, transcript: transcript), rich)`;
+    ///             `XCTAssertEqual(PlanRichText.plain(body), "Keep this writing\n\nMy reviewed spoken thought")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting() throws {
         let rich = PlanRichText.prefix + (try JSONEncoder().encode([PlanRichText.Run(text: "Keep this writing", bold: true)])).base64EncodedString()
         let transcript = "  My reviewed spoken thought  "
@@ -6647,6 +9817,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(VoiceCaptureSaveOption.both.savesAudio && VoiceCaptureSaveOption.both.savesText)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testVoiceAudioCommitRoundTripsPlaybackFileAndCleansRejectedSave
+    /// @brief      Verify that voice Audio Commit Round Trips Playback File And Cleans Rejected Save
+    /// @details    Exercises `data[0].initialize`, `file.write`, `CardAttachmentStore.removeDeletedFiles`. Checks
+    ///             `XCTAssertTrue(try QuickCaptureMediaCommit.save([], audio: audio) { attachments in retained =
+    ///             attachments; return true })`; `XCTAssertEqual(attachment.kind, .audio)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testVoiceAudioCommitRoundTripsPlaybackFileAndCleansRejectedSave() throws {
         let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
@@ -6680,6 +9861,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertThrowsError(try QuickCaptureMediaCommit.save([], audio: Data()) { _ in XCTFail("Empty audio must not commit"); return true })
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testQuickCapturePhotoCommitRetainsSuccessfulFilesAndCleansRejectedOrPartialImports
+    /// @brief      Verify that quick Capture Photo Commit Retains Successful Files And Cleans Rejected Or Partial
+    ///             Imports
+    /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image`,
+    ///             `UIColor.systemBlue.setFill`, `context.fill`. Checks `XCTAssertEqual(attachments.count, 1)`;
+    ///             `XCTAssertEqual(try Data(contentsOf: url), photo.data)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testQuickCapturePhotoCommitRetainsSuccessfulFilesAndCleansRejectedOrPartialImports() throws {
         let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { context in
@@ -6713,6 +9906,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: directory.path)), before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.drawingFixture
+    /// @brief      Create a small deterministic PencilKit drawing fixture
+    /// @details    Builds three blue pen control points on one stroke for drawing persistence, preview, and export
+    ///             tests.
+    ///
+    /// @return     (PKDrawing) result described by this operation's contract
+    ///
     @MainActor
     private func drawingFixture() -> PKDrawing {
         let points = [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map { index, point in
@@ -6721,6 +9923,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         return PKDrawing(strokes: [PKStroke(ink: PKInk(.pen, color: .blue), path: PKStrokePath(controlPoints: points, creationDate: .now))])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDrawingCapturePersistsEditableStrokesAndRetainsBothFiles
+    /// @brief      Verify that drawing Capture Persists Editable Strokes And Retains Both Files
+    /// @details    Exercises `CardAttachmentStore.removeDeletedFiles`, `saved.flatMap`,
+    ///             `QuickCaptureMediaCommit.save`. Checks `XCTAssertTrue(try QuickCaptureMediaCommit.save([],
+    ///             drawings: [draft]) { saved = $0; return true })`; `XCTAssertEqual(attachment.kind, .photo)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDrawingCapturePersistsEditableStrokesAndRetainsBothFiles() throws {
         let draft = DrawingCaptureDraft(drawing: drawingFixture())
@@ -6754,6 +9967,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(legacyRestored.storedFileNames, ["old-photo.jpg"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDrawingRejectedAndPartialSavesCleanBothFiles
+    /// @brief      Verify that drawing Rejected And Partial Saves Clean Both Files
+    /// @details    Exercises `QuickCaptureMediaCommit.save`, `XCTUnwrap(CardAttachmentStore.fileURL(for:
+    ///             attachment)).deletingLastPathComponent`, `CardAttachmentStore.fileURL`. Checks `XCTAssertFalse(try
+    ///             QuickCaptureMediaCommit.save([], drawings: [draft]) { rejected = $0; return false })`;
+    ///             `XCTAssertFalse(FileManager.default.fileExists(atPath:
+    ///             directory.appendingPathComponent(name).path))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDrawingRejectedAndPartialSavesCleanBothFiles() throws {
         let draft = DrawingCaptureDraft(drawing: drawingFixture())
@@ -6767,6 +9993,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: directory.path)), before)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes
+    /// @brief      Verify that drawing Exports PNG Transparency And JPEG Without Changing Strokes
+    /// @details    Exercises `drawing.dataRepresentation`, `DrawingImageExport.data`, `transparent.prefix`. Checks
+    ///             `XCTAssertEqual(Array(transparent.prefix(8)), [137, 80, 78, 71, 13, 10, 26, 10])`;
+    ///             `XCTAssertEqual(Array(jpeg.prefix(2)), [255, 216])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes() throws {
         let drawing = drawingFixture()
@@ -6781,6 +10018,19 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertLessThanOrEqual(max(image.size.width * image.scale, image.size.height * image.scale), 4096)
             XCTAssertGreaterThan(image.size.width, 0)
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes.cornerAlpha
+        /// @brief      Read the exported image corner alpha for transparency assertions
+        /// @details    Decodes the image, draws its corner into a one-pixel bitmap, and returns the alpha byte;
+        ///             failed image or context creation throws through XCTUnwrap.
+        ///
+        /// @param[in]  data  Encoded input or media bytes
+        ///
+        /// @return     (UInt8) result described by this operation's contract
+        /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+        ///
         func cornerAlpha(_ data: Data) throws -> UInt8 {
             let image = try XCTUnwrap(UIImage(data: data)?.cgImage)
             var bytes = [UInt8](repeating: 0, count: 4)
@@ -6797,6 +10047,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayCaptureAction.allCases.map(\.rawValue), ["note", "checklist", "photo", "voice", "drawing"])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDrawingEditorRendersOnPhoneAndTabletWithoutSaving
+    /// @brief      Verify that drawing Editor Renders On Phone And Tablet Without Saving
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(canvas.drawing.strokes.count, 1)`;
+    ///             `XCTAssertTrue(canvas.isFirstResponder)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testDrawingEditorRendersOnPhoneAndTabletWithoutSaving() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6810,6 +10071,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = host; window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(800))
             host.view.layoutIfNeeded()
+
+
+            ///
+            /// @fcn        PlenactBoardDocumentTests.testDrawingEditorRendersOnPhoneAndTabletWithoutSaving.canvases
+            /// @brief      Find canvases in the hosted view hierarchy
+            /// @details    Recursively inspects native subviews for PKCanvasView. Returns all collected matches in
+            ///             hierarchy order.
+            ///
+            /// @param[in]  view  Native view inspected or synchronized by the operation
+            ///
+            /// @return     ([PKCanvasView]) resulting values in the ordering described above
+            ///
             func canvases(_ view: UIView) -> [PKCanvasView] {
                 (view as? PKCanvasView).map { [$0] } ?? view.subviews.flatMap(canvases)
             }
@@ -6824,12 +10097,35 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(saves, 0)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords
+    /// @brief      Verify that quick Capture Actions And Composers Render Without Creating Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(fields(host.view).contains("Carry my thought
+    ///             forward"))`; `XCTAssertTrue(fields(host.view).contains(""))`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords.fields
+        /// @brief      Find fields in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextField, UITextView. Returns all collected
+        ///             matches in hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([String]) resulting values in the ordering described above
+        ///
         func fields(_ view: UIView) -> [String] {
             let value = (view as? UITextField)?.text ?? (view as? UITextView)?.text
             return (value.map { [$0] } ?? []) + view.subviews.flatMap(fields)
@@ -6867,6 +10163,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(TodayCaptureAction.checklist.presentation, .card)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords
+    /// @brief      Verify that hosted Template Composer Prefills Title Without Creating Records
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKey`. Uses the fixture and assertions below to verify hosted Template Composer
+    ///             Prefills Title Without Creating Records.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -6877,6 +10184,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previous?.makeKey()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords.fields
+        /// @brief      Find fields in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIView]) resulting values in the ordering described above
+        ///
         func fields(in view: UIView) -> [UIView] {
             let editable = (view is UITextField || view is UITextView) ? [view] : []
             return editable + view.subviews.flatMap { fields(in: $0) }
@@ -7060,6 +10378,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(stored, "Before selected after")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testKeyboardNeighborsStayWithinActiveListAndSkipDividers
+    /// @brief      Verify that keyboard Neighbors Stay Within Active List And Skip Dividers
+    /// @details    Exercises `CardKeyboardNeighbors.resolve`. Checks `XCTAssertNil(CardKeyboardNeighbors.resolve(a,
+    ///             in: lists).previous)`; `XCTAssertEqual(CardKeyboardNeighbors.resolve(a, in: lists).next, b)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testKeyboardNeighborsStayWithinActiveListAndSkipDividers() {
         let a = KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
         let divider = KanbanCard(id: 2, word: "Section", listTitle: "Today", isDivider: true, checklists: [])
@@ -7073,6 +10400,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNil(CardKeyboardNeighbors.resolve(a, in: archived).next)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testKeyboardRichFontsPersistAndFormattingSupportsUndoRedo
+    /// @brief      Verify that keyboard Rich Fonts Persist And Formatting Supports Undo Redo
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual((attributes[.font] as? UIFont)?.pointSize,
+    ///             24)`; `XCTAssertEqual(attributes[NSAttributedString.Key("PlenactFontName")] as? String,
+    ///             "Georgia")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testKeyboardRichFontsPersistAndFormattingSupportsUndoRedo() throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -7112,6 +10451,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain(PlanRichText.prefix + legacy.base64EncodedString()), "Old writing")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSharedKeyboardAttachesToPlainFieldsAndRendersNarrowAndWide
+    /// @brief      Verify that shared Keyboard Attaches To Plain Fields And Renders Narrow And Wide
+    /// @details    Exercises `PlenactKeyboard.shared.install`, `NotificationCenter.default.post`,
+    ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertTrue(field.inputAccessoryView
+    ///             is PlenactKeyboardToolbar)`; `XCTAssertEqual(field.keyboardType, .emailAddress)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testSharedKeyboardAttachesToPlainFieldsAndRendersNarrowAndWide() throws {
         PlenactKeyboard.shared.install()
@@ -7138,6 +10488,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRichTextEditorProvidesAccessibleKeyboardToolbar
+    /// @brief      Verify that rich Text Editor Provides Accessible Keyboard Toolbar
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
+    ///             Checks `XCTAssertNotNil(controls.first(where: { $0.accessibilityLabel == "Font and formatting"
+    ///             })?.menu)`; `XCTAssertEqual(text.text, "A multiline description\nwith a second line")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testRichTextEditorProvidesAccessibleKeyboardToolbar() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -7150,12 +10511,36 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { window.isHidden = true; previousWindow?.makeKeyAndVisible() }
         host.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(150))
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testRichTextEditorProvidesAccessibleKeyboardToolbar.editor
+        /// @brief      Find editor in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextView. Returns the first qualifying match, or
+        ///             nil when none is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UITextView?) matching or resolved value, or nil when unavailable
+        ///
         func editor(in view: UIView) -> UITextView? {
             if let text = view as? UITextView { return text }
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
         }
         let text = try XCTUnwrap(editor(in: host.view))
         let toolbar = try XCTUnwrap(text.inputAccessoryView as? PlenactKeyboardToolbar)
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testRichTextEditorProvidesAccessibleKeyboardToolbar.buttons
+        /// @brief      Find buttons in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UIButton. Returns all collected matches in hierarchy
+        ///             order.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     ([UIButton]) resulting values in the ordering described above
+        ///
         func buttons(in view: UIView) -> [UIButton] {
             (view as? UIButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
         }
@@ -7166,6 +10551,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertGreaterThan(text.sizeThatFits(CGSize(width: 300, height: 1000)).height, 40)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testRichTextTypingStylesAndLegacyText
+    /// @brief      Verify that rich Text Typing Styles And Legacy Text
+    /// @details    Exercises `editor.makeCoordinator`, `PlanRichText.attributed`, `UIFont.preferredFont`. Checks
+    ///             `XCTAssertEqual(stored, "Legacy plain text 😊")`; `XCTAssertTrue((view.typingAttributes[.font] as?
+    ///             UIFont)?.fontDescriptor.symbolicTraits.contains(.traitBold) ?? false)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testRichTextTypingStylesAndLegacyText() {
         var stored = "Legacy plain text 😊"
@@ -7185,6 +10580,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(PlanRichText.plain("plenact-rich-v1:invalid"), "plenact-rich-v1:invalid")
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testChecklistEditingSelectsWholeExistingItem
+    /// @brief      Verify that checklist Editing Selects Whole Existing Item
+    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(field.becomeFirstResponder())`;
+    ///             `XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start), 0)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     @MainActor
     func testChecklistEditingSelectsWholeExistingItem() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -7198,6 +10604,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
         window.makeKeyAndVisible()
         defer { window.endEditing(true); window.isHidden = true; previous?.makeKeyAndVisible() }
         host.view.layoutIfNeeded()
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testChecklistEditingSelectsWholeExistingItem.find
+        /// @brief      Find find in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UITextField. Returns the first qualifying match, or
+        ///             nil when none is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UITextField?) matching or resolved value, or nil when unavailable
+        ///
         func find(in view: UIView) -> UITextField? {
             if let field = view as? UITextField { return field }
             return view.subviews.lazy.compactMap { find(in: $0) }.first
@@ -7211,6 +10629,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(field.text, text)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListCopyAllocatesIDsAndPreservesContentAndInternalLinks
+    /// @brief      Verify that list Copy Allocates I Ds And Preserves Content And Internal Links
+    /// @details    Exercises `.linkedCard`, `ListCopying.copy`, `copy.allCards.map`. Checks `XCTAssertEqual(copy.id,
+    ///             9)`; `XCTAssertEqual(copy.allCards.map(\.id), [21, 22])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testListCopyAllocatesIDsAndPreservesContentAndInternalLinks() throws {
         var first = KanbanCard(id: 1, word: "First", listTitle: "Source", descriptionOverride: "Keep", sectionLayout: CardSectionLayout(hidden: [.details]))
         first.checklists = [KanbanChecklist(title: "Links", items: [KanbanChecklistItem(title: "Internal", content: .linkedCard(cardID: 2)), KanbanChecklistItem(title: "External", content: .linkedCard(cardID: 99))])]
@@ -7231,6 +10659,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(copy)), copy)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardSectionLayoutPersistsWithoutRemovingHiddenContent
+    /// @brief      Verify that card Section Layout Persists Without Removing Hidden Content
+    /// @details    Exercises `JSONSerialization.jsonObject`, `legacy.removeValue`, `JSONSerialization.data`. Checks
+    ///             `XCTAssertEqual(decoded.sectionLayout, layout)`; `XCTAssertEqual(decoded.sectionLayout?.sections,
+    ///             [.activity, .quickActions, .media, .details])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws {
         var layout = CardSectionLayout()
         layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]
@@ -7253,6 +10692,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(repaired.sections, [.activity, .quickActions, .media, .description, .checklists])
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards
+    /// @brief      Verify that multiline Entries Preserve Order Ignore Blank Lines And Create Distinct Cards
+    /// @details    Exercises `MultilineEntry.titles`, `list.makeItems`, `cards.map`. Checks
+    ///             `XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])`;
+    ///             `XCTAssertTrue(MultilineEntry.titles(" \n\t\r\n").isEmpty)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws {
         let input = " A\r\nB\n\n C \rD\nA\n"
         XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])
@@ -7270,6 +10720,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertTrue(items.allSatisfy { !$0.isCompleted })
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNewItemsUseBlankOrEnteredSubtitleAndPersistIt
+    /// @brief      Verify that new Items Use Blank Or Entered Subtitle And Persist It
+    /// @details    Exercises `list.makeItem`. Checks `XCTAssertEqual(blank.subtitleOverride, "")`;
+    ///             `XCTAssertEqual(blank.subtitle, "")`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws {
         let list = KanbanList(id: 1, title: "Saturday", cards: [])
         let blank = list.makeItem(id: 1, title: "New task")
@@ -7285,6 +10745,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testListNoteDefaultAppliesOnlyToNewNondividerItems
+    /// @brief      Verify that list Note Default Applies Only To New Nondivider Items
+    /// @details    Exercises `list.makeItem`, `card.checklists.map`, `legacyCard.checklists.map`. Checks
+    ///             `XCTAssertEqual(card.presentation, .card)`; `XCTAssertEqual(card.word, legacyCard.word)`.
+    ///
+    /// @return     (Void) no return value
+    ///
     func testListNoteDefaultAppliesOnlyToNewNondividerItems() {
 
         let existing = KanbanCard(id: 1, word: "Existing", listTitle: "Ideas")  /* Existing Card retained while applying List defaults */
@@ -7426,6 +10895,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection)), collection)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody
+    /// @brief      Verify that creating Personal List Note Uses Fresh Identity And Preserves Body
+    /// @details    Exercises `collection.lists[0].makeItem`, `collection.addNote`, `board.addNote`. Checks
+    ///             `XCTAssertThrowsError(try collection.addNote(title: " \n ", body: "Uncommitted"))`;
+    ///             `XCTAssertEqual(collection, original)`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody() throws {
 
         var collection = PersonalCollection(title: "Synthetic ideas", kind: .list)  /* Collection state under verification                 */
@@ -9178,6 +12658,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         }
     }
 
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testStandardBoardHasEqualFifteenPointNeighborPreviews
+        /// @brief      Verify that standard Board Has Equal Fifteen Point Neighbor Previews
+        /// @details    Exercises `BoardPresentation.standard.columnWidth`. Checks `XCTAssertEqual(sideInset - 17,
+        ///             15)`; `XCTAssertEqual(width + 2 * sideInset, viewport)`.
+        ///
+        /// @return     (Void) no return value
+        ///
         func testStandardBoardHasEqualFifteenPointNeighborPreviews() {
 
             for viewport: CGFloat in [320, 360, 393, 414, 424] {
@@ -9189,6 +12678,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }
         }
 
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews
+        /// @brief      Verify that hosted Standard Board Centers Requested List With Equal Neighbor Previews
+        /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
+        ///             `previous?.makeKey`. Checks `XCTAssertEqual(frames.count, 3)`; `XCTAssertEqual(center.width,
+        ///             329)`.
+        ///
+        /// @return     (Void) no return value
+        /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+        ///
         @MainActor
         func testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews() async throws {
 
@@ -9204,6 +12704,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 previous?.makeKey()
                 defaults.removePersistentDomain(forName: suite)
             }
+
+
+            ///
+            /// @fcn        PlenactBoardDocumentTests.testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews.collections
+            /// @brief      Find collections in the hosted view hierarchy
+            /// @details    Recursively inspects native subviews for UICollectionView. Returns all collected matches
+            ///             in hierarchy order.
+            ///
+            /// @param[in]  view  Native view inspected or synchronized by the operation
+            ///
+            /// @return     ([UICollectionView]) resulting values in the ordering described above
+            ///
             func collections(in view: UIView) -> [UICollectionView] {
                 if let collection = view as? UICollectionView { return [collection] }
                 return view.subviews.flatMap { collections(in: $0) }
@@ -10084,6 +13596,16 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(lists, sameListDuplicate)
     }
 
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDividerMovementPreservesRecordsWithinAndBetweenLists
+    /// @brief      Verify that divider Movement Preserves Records Within And Between Lists
+    /// @details    Exercises `BoardCardMovement.move`. Checks `XCTAssertTrue(try BoardCardMovement.move(divider.id,
+    ///             to: 10, in: &lists))`; `XCTAssertEqual(lists[0].cards, [card, divider])`.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func testDividerMovementPreservesRecordsWithinAndBetweenLists() throws {
         let divider = KanbanCard(id: 2, word: "---", listTitle: "A", isDivider: true, checklists: [])
         let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "A", checklists: [])
@@ -10252,6 +13774,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             window.rootViewController = nil
             previous?.makeKey()
         }
+
+
+        ///
+        /// @fcn        PlenactBoardDocumentTests.testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags.collectionView
+        /// @brief      Find collection view in the hosted view hierarchy
+        /// @details    Recursively inspects native subviews for UICollectionView. Returns the first qualifying match,
+        ///             or nil when none is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UICollectionView?) matching or resolved value, or nil when unavailable
+        ///
         func collectionView(in view: UIView) -> UICollectionView? {
             if let collection = view as? UICollectionView { return collection }
             return view.subviews.compactMap { collectionView(in: $0) }.first

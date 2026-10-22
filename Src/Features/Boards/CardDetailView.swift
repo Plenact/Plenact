@@ -359,7 +359,19 @@ struct CardDetailView: View {
         Dictionary((availableLists.flatMap(\.cards) + checklistLinkCandidates).map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
     }
 
-    /// UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields.
+
+    ///
+    /// @fcn        CardDetailView.richTextFocusBinding
+    /// @brief      Bridge one rich-text field into shared editor focus
+    /// @details    Clears native header focus when a rich editor becomes active and clears only the matching
+    ///             rich-text selection on blur.
+    ///
+    /// @param[in]  field  Selected editable field or field key path
+    ///
+    /// @return     (Binding<Bool>) binding that coordinates this rich-text field with the native header editor focus
+    ///
+    /// @note       UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields.
+    ///
     private func richTextFocusBinding(for field: EditableField) -> Binding<Bool> {
         Binding(get: { richTextFocusedField == field }, set: { isFocused in
             if isFocused {
@@ -371,6 +383,14 @@ struct CardDetailView: View {
         })
     }
 
+
+    ///
+    /// @fcn        CardDetailView.dismissEditing
+    /// @brief      End header and rich-text editing together
+    /// @details    Clears rich-text focus, native field focus, and the active header-field editing mode.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func dismissEditing() {
         richTextFocusedField = nil
         focusedField = nil
@@ -745,6 +765,18 @@ struct CardDetailView: View {
         }
     }
 
+
+    ///
+    /// @fcn        CardDetailView.updatePhotoCaption
+    /// @brief      Save a photo caption through the card's checked update
+    /// @details    Edits a working card snapshot, publishes attachment state only after sync accepts it, and reports
+    ///             validation or save failures.
+    ///
+    /// @param[in]  id       Stable draft or objective identity
+    /// @param[in]  caption  Proposed photo caption text
+    ///
+    /// @return     (Bool) true only after the edited attachment caption is accepted by card synchronization
+    ///
     private func updatePhotoCaption(_ id: UUID, _ caption: String) -> Bool {
         var updated = workingCardSnapshot
         do {
@@ -758,6 +790,17 @@ struct CardDetailView: View {
         }
     }
 
+
+    ///
+    /// @fcn        CardDetailView.reorderGalleryPhotos
+    /// @brief      Save a validated photo-gallery order
+    /// @details    Reorders a working snapshot and updates local attachments only after checked card synchronization
+    ///             succeeds.
+    ///
+    /// @param[in]  ids  Photo identities in their requested display order
+    ///
+    /// @return     (Bool) true only after validated gallery ordering is accepted by card synchronization
+    ///
     private func reorderGalleryPhotos(_ ids: [UUID]) -> Bool {
         var updated = workingCardSnapshot
         do {
@@ -771,6 +814,16 @@ struct CardDetailView: View {
         }
     }
 
+
+    ///
+    /// @fcn        CardDetailView.selectedCoverPreview
+    /// @brief      Build the selected cover's accessible preview button
+    /// @details    Opens the attachment preview on tap and supplies the photo caption as the accessibility value.
+    ///
+    /// @param[in]  cover  Currently selected cover attachment
+    ///
+    /// @return     (some View) the selected cover's accessible preview button
+    ///
     private func selectedCoverPreview(_ cover: KanbanAttachment) -> some View {
         Button { activeSheet = .attachmentPreview(cover) } label: {
             CardCoverPreview(attachment: cover)
@@ -896,7 +949,18 @@ struct CardDetailView: View {
     }
 
 
-    /// Attach both the preview and editable strokes, publishing only after the owner accepts the update.
+    ///
+    /// @fcn        CardDetailView.addDrawingAttachment
+    /// @brief      Import and save an editable drawing on this card
+    /// @details    Rejects deleted or moved cards and restores the previous attachment state if media import or card
+    ///             synchronization fails.
+    ///
+    /// @param[in]  draft  Editable value proposed for persistence
+    ///
+    /// @return     (Bool) true when the imported drawing is retained by the owner; false on rejection or failure
+    ///
+    /// @note       Attach both the preview and editable strokes, publishing only after the owner accepts the update.
+    ///
     private func addDrawingAttachment(_ draft: DrawingCaptureDraft) -> Bool {
         guard !hasDeletedCard, !hasMovedCard else { return false }
         let previous = attachments
@@ -1370,7 +1434,21 @@ struct CardDetailView: View {
         if saveDate(nil, kind: .date, for: field) { activeSheet = nil }
     }
 
-    /// Commit date value and kind together; failed persistence retains the original selection.
+
+    ///
+    /// @fcn        CardDetailView.saveDate
+    /// @brief      Save or clear one card schedule endpoint
+    /// @details    Normalizes the chosen precision, explicitly signals a cleared endpoint, and restores both dates
+    ///             and kinds if card synchronization rejects the change.
+    ///
+    /// @param[in]  value  Optional schedule value; nil explicitly clears the endpoint
+    /// @param[in]  kind   Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  field  Selected editable field or field key path
+    ///
+    /// @return     (Bool) true when date and kind save together; false after restoring the original selection
+    ///
+    /// @note       Commit date value and kind together; failed persistence retains the original selection.
+    ///
     private func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool {
         let previousStart = startDate, previousDue = dueDate
         let previousStartKind = startDateKind, previousDueKind = dueDateKind
@@ -2220,6 +2298,17 @@ struct CardDetailView: View {
         .databaseActivityOverlay()
     }
 
+
+    ///
+    /// @fcn        CardDetailView.addMenu
+    /// @brief      Build the card or note's contextual Add menu
+    /// @details    Provides reaction, cover, checklist, date, and comment actions while excluding
+    ///             presentation-specific actions for dividers.
+    ///
+    /// @param[in]  scrollProxy  Proxy used to reveal newly added content in the detail view
+    ///
+    /// @return     (some View) the card or note's contextual add menu
+    ///
     private func addMenu(using scrollProxy: ScrollViewProxy) -> some View {
         Menu {
             if displayFormat != .divider {
@@ -4007,6 +4096,15 @@ struct ChecklistBlock: View {
         if onChangeType?(updated) == true && type == .actionDetail { onOpenActionDetail(item.id) }
     }
 
+
+    ///
+    /// @fcn        ChecklistBlock.submitNewItems
+    /// @brief      Submit nonempty checklist entry text
+    /// @details    Uses the shared multiline parser to reject blank input, then invokes the add callback and clears
+    ///             the editor text.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func submitNewItems() {
         guard !MultilineEntry.titles(newItemText).isEmpty else { return }
         onAddItem(newItemText)
@@ -4612,11 +4710,46 @@ enum PlanRichText {
         ("Default", .label), ("Blue", .systemBlue), ("Green", .systemGreen),
         ("Orange", .systemOrange), ("Purple", .systemPurple), ("Red", .systemRed)
     ]
+
+
+    ///
+    /// @fcn        PlanRichText.runs
+    /// @brief      Decode Plenact's optional rich-text run representation
+    /// @details    Requires the stored prefix and valid base64 JSON; ordinary text or invalid encoded data returns
+    ///             nil.
+    ///
+    /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
+    ///
+    /// @return     ([Run]?) decoded formatting runs, or nil for ordinary text or an invalid encoded representation
+    ///
     static func runs(_ value: String) -> [Run]? {
         guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))) else { return nil }
         return try? JSONDecoder().decode([Run].self, from: data)
     }
+
+
+    ///
+    /// @fcn        PlanRichText.plain
+    /// @brief      Return the plain text represented by a stored rich-text value
+    /// @details    Concatenates decoded runs when present and otherwise returns the original value unchanged.
+    ///
+    /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
+    ///
+    /// @return     (String) concatenated run text, or the original value when no rich-text representation decodes
+    ///
     static func plain(_ value: String) -> String { runs(value)?.map(\.text).joined() ?? value }
+
+
+    ///
+    /// @fcn        PlanRichText.attributed
+    /// @brief      Build UIKit attributed text from the stored representation
+    /// @details    Applies supported font traits, bounded sizes, and named colors while retaining metadata needed for
+    ///             later round-trip encoding.
+    ///
+    /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
+    ///
+    /// @return     (NSAttributedString) UIKit text carrying supported formatting and round-trip metadata
+    ///
     static func attributed(_ value: String) -> NSAttributedString {
         let result = NSMutableAttributedString(string: "")
         for run in runs(value) ?? [Run(text: value)] {
@@ -4638,6 +4771,18 @@ enum PlanRichText {
         }
         return result
     }
+
+
+    ///
+    /// @fcn        PlanRichText.encode
+    /// @brief      Encode supported attributed formatting for persistence
+    /// @details    Enumerates attribute runs and uses sorted-key base64 JSON only when formatting exists; plain text
+    ///             and failed encoding fall back to the original string.
+    ///
+    /// @param[in]  value  Attributed content whose supported formatting should be encoded
+    ///
+    /// @return     (String) prefixed base64 run JSON when formatting is present, otherwise the plain string
+    ///
     static func encode(_ value: NSAttributedString) -> String {
         var runs: [Run] = []
         value.enumerateAttributes(in: NSRange(location: 0, length: value.length)) { attributes, range, _ in
@@ -4652,6 +4797,18 @@ enum PlanRichText {
         guard let data = try? encoder.encode(runs) else { return value.string }
         return prefix + data.base64EncodedString()
     }
+
+
+    ///
+    /// @fcn        PlanRichText.display
+    /// @brief      Build SwiftUI attributed text from persisted rich-text runs
+    /// @details    Applies supported family, size, bold, italic, and named colors, with plain-text fallback when no
+    ///             runs decode.
+    ///
+    /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
+    ///
+    /// @return     (AttributedString) SwiftUI attributed text with the supported persisted run styling
+    ///
     static func display(_ value: String) -> AttributedString {
         var result = AttributedString(plain(value))
         if let runs = runs(value) {
@@ -4679,7 +4836,29 @@ struct RichTextEditor: UIViewRepresentable {
     var minimumHeight: CGFloat = 80
     var verticalInset: CGFloat = 6
 
+
+    ///
+    /// @fcn        RichTextEditor.makeCoordinator
+    /// @brief      Create the native bridge coordinator
+    /// @details    Creates the coordinator retained by SwiftUI for RichTextEditor so its delegate or observation
+    ///             state can span view updates.
+    ///
+    /// @return     (Coordinator) retained native bridge coordinator
+    ///
     func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+
+    ///
+    /// @fcn        RichTextEditor.makeUIView
+    /// @brief      Create the native rich-text editor and keyboard controls
+    /// @details    Configures dynamic type, the placeholder, delegate, supported formatting toolbar, and initial
+    ///             attributed content.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (UITextView) native rich-text view configured with its delegate, placeholder, and formatting
+    ///             accessory
+    ///
     func makeUIView(context: Context) -> UITextView {
         let view = UITextView()
         view.autocapitalizationType = .sentences
@@ -4710,6 +4889,19 @@ struct RichTextEditor: UIViewRepresentable {
         ))
         return view
     }
+
+
+    ///
+    /// @fcn        RichTextEditor.updateUIView
+    /// @brief      Synchronize retained rich-text content without losing selection
+    /// @details    Refreshes the coordinator's parent, replaces only changed attributed content, clamps the insertion
+    ///             position, and defers UIKit focus reconciliation until after the SwiftUI update.
+    ///
+    /// @param[in]  view     Native view inspected or synchronized by the operation
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIView(_ view: UITextView, context: Context) {
         context.coordinator.parent = self
         if PlanRichText.encode(view.attributedText) != text {
@@ -4722,6 +4914,20 @@ struct RichTextEditor: UIViewRepresentable {
         context.coordinator.scheduleFocusUpdate(view)
 
     }
+
+
+    ///
+    /// @fcn        RichTextEditor.sizeThatFits
+    /// @brief      Measure the rich editor using its proposed width
+    /// @details    Returns nil without a width proposal and otherwise fits native text height above the configured
+    ///             minimum.
+    ///
+    /// @param[in]  proposal  Parent layout proposal, including an optional available width
+    /// @param[in]  uiView    Native editor whose fitting size is being measured
+    /// @param[in]  context   Framework-supplied update context and coordinator access
+    ///
+    /// @return     (CGSize?) proposed width and fitted text height, or nil when the proposal has no width
+    ///
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width else { return nil }
         return CGSize(width: width, height: max(minimumHeight, uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height))
@@ -4732,8 +4938,31 @@ struct RichTextEditor: UIViewRepresentable {
         weak var hint: UILabel?
         private var focusUpdatePending = false
         private var applyingFocus = false
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.init
+        /// @brief      Retain the rich-text representable for native delegate callbacks
+        /// @details    Stores the parent value that supplies the text and optional focus bindings; later
+        ///             representable updates refresh that value.
+        ///
+        /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
+        ///
+        /// @return     (Coordinator) initialized instance
+        ///
         init(_ parent: RichTextEditor) { self.parent = parent }
 
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.scheduleFocusUpdate
+        /// @brief      Reconcile requested editor focus after the current view update
+        /// @details    Coalesces main-queue work, rereads the latest binding, requires an attached view, and
+        ///             suppresses delegate feedback during programmatic focus changes.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (Void) no return value
+        ///
         func scheduleFocusUpdate(_ view: UITextView) {
             guard let focus = parent.focus, focus.wrappedValue != view.isFirstResponder,
                   !focusUpdatePending else { return }
@@ -4750,17 +4979,67 @@ struct RichTextEditor: UIViewRepresentable {
                 else { view.resignFirstResponder() }
             }
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.textViewDidChange
+        /// @brief      Publish native rich-text edits back to the binding
+        /// @details    Encodes supported formatting, updates placeholder visibility, and refreshes the shared
+        ///             keyboard controls.
+        ///
+        /// @param[in]  textView  Native rich-text editor delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func textViewDidChange(_ textView: UITextView) {
             parent.text = PlanRichText.encode(textView.attributedText)
             hint?.isHidden = !textView.text.isEmpty
             PlenactKeyboard.shared.refreshActive()
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.textViewDidBeginEditing
+        /// @brief      Reflect user-driven rich-editor focus in SwiftUI
+        /// @details    Sets the parent focus binding only when the change was not initiated by the coordinator's
+        ///             focus reconciliation.
+        ///
+        /// @param[in]  textView  Native rich-text editor delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func textViewDidBeginEditing(_ textView: UITextView) {
             if !applyingFocus, parent.focus?.wrappedValue == false { parent.focus?.wrappedValue = true }
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.textViewDidEndEditing
+        /// @brief      Reflect user-driven rich-editor blur in SwiftUI
+        /// @details    Clears the parent focus binding while avoiding a feedback loop from programmatic focus
+        ///             changes.
+        ///
+        /// @param[in]  textView  Native rich-text editor delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func textViewDidEndEditing(_ textView: UITextView) {
             if !applyingFocus, parent.focus?.wrappedValue == true { parent.focus?.wrappedValue = false }
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.restore
+        /// @brief      Restore attributed text, selection, and typing attributes
+        /// @details    Registers the inverse state with Undo, clamps the restored selection to valid bounds, and
+        ///             republishes the resulting text change.
+        ///
+        /// @param[in]  text       Attributed or plain text to restore or display
+        /// @param[in]  selection  Text selection or resolved navigation selection to retain
+        /// @param[in]  typing     Typing attributes to restore with the text and selection
+        ///
+        /// @return     (Void) no return value
+        ///
         func restore(_ text: NSAttributedString, selection: NSRange, typing: [NSAttributedString.Key: Any]) {
             guard let view else { return }
             let previous = NSAttributedString(attributedString: view.attributedText)
@@ -4772,6 +5051,18 @@ struct RichTextEditor: UIViewRepresentable {
             view.typingAttributes = typing
             textViewDidChange(view)
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.apply
+        /// @brief      Apply a formatting transform with Undo support
+        /// @details    Registers the previous content and selection, transforms typing attributes for an insertion
+        ///             point, or rewrites selected attributed runs while preserving selection.
+        ///
+        /// @param[in]  change  Transform from the current attributed-text attributes to their edited values
+        ///
+        /// @return     (Void) no return value
+        ///
         func apply(_ change: ([NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any]) {
             guard let view else { return }
             let previous = NSAttributedString(attributedString: view.attributedText)
@@ -4785,6 +5076,18 @@ struct RichTextEditor: UIViewRepresentable {
             view.selectedRange = selection
             textViewDidChange(view)
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.toggle
+        /// @brief      Toggle one font trait for the current editing context
+        /// @details    Derives the requested trait state from the caret or selection and applies it through the
+        ///             shared undoable attribute transform.
+        ///
+        /// @param[in]  trait  UIFont symbolic trait to toggle in the current selection or typing attributes
+        ///
+        /// @return     (Void) no return value
+        ///
         func toggle(_ trait: UIFontDescriptor.SymbolicTraits) {
             guard let view else { return }
             let attributes = view.selectedRange.length == 0 ? view.typingAttributes : view.textStorage.attributes(at: view.selectedRange.location, effectiveRange: nil)
@@ -4798,6 +5101,19 @@ struct RichTextEditor: UIViewRepresentable {
                 return attributes
             }
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.font
+        /// @brief      Apply a font family or size without discarding traits
+        /// @details    Keeps existing symbolic traits and unspecified settings while retaining Plenact font metadata
+        ///             for persistence.
+        ///
+        /// @param[in]  name  Requested font family; nil retains the current family
+        /// @param[in]  size  Requested font size; nil retains the current size
+        ///
+        /// @return     (Void) no return value
+        ///
         func font(name: String?, size: Double?) {
             apply { attributes in
                 var attributes = attributes
@@ -4810,6 +5126,18 @@ struct RichTextEditor: UIViewRepresentable {
                 return attributes
             }
         }
+
+
+        ///
+        /// @fcn        RichTextEditor.Coordinator.color
+        /// @brief      Apply a named rich-text foreground color
+        /// @details    Uses the shared color catalog and removes explicit stored color metadata when the Default
+        ///             color is selected.
+        ///
+        /// @param[in]  name  Named rich-text color; Default clears the explicit color override
+        ///
+        /// @return     (Void) no return value
+        ///
         func color(_ name: String) {
             apply { attributes in
                 var attributes = attributes
@@ -4894,7 +5222,29 @@ struct CardLayoutEditor: View {
 struct ChecklistTextField: UIViewRepresentable {
     @Binding var text: String
     @Binding var focus: Bool
+
+
+    ///
+    /// @fcn        ChecklistTextField.makeCoordinator
+    /// @brief      Create the native bridge coordinator
+    /// @details    Creates the coordinator retained by SwiftUI for ChecklistTextField so its delegate or observation
+    ///             state can span view updates.
+    ///
+    /// @return     (Coordinator) retained native bridge coordinator
+    ///
     func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+
+    ///
+    /// @fcn        ChecklistTextField.makeUIView
+    /// @brief      Create the native single-line checklist editor
+    /// @details    Configures dynamic type, delegate callbacks, the Done return key, and horizontal layout priorities
+    ///             appropriate for an editable row.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (UITextField) native checklist text field configured for single-line editing
+    ///
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
         field.autocapitalizationType = .sentences
@@ -4910,20 +5260,79 @@ struct ChecklistTextField: UIViewRepresentable {
         field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
         return field
     }
+
+
+    ///
+    /// @fcn        ChecklistTextField.updateUIView
+    /// @brief      Synchronize checklist text and requested focus
+    /// @details    Updates changed text and makes or resigns first responder according to the parent focus value.
+    ///
+    /// @param[in]  field    Native checklist text field delivering the delegate callback
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIView(_ field: UITextField, context: Context) {
         context.coordinator.parent = self
         if field.text != text { field.text = text }
         if focus && !field.isFirstResponder { field.becomeFirstResponder() }
         else if !focus && field.isFirstResponder { field.resignFirstResponder() }
     }
+
+
+    ///
+    /// @fcn        ChecklistTextField.sizeThatFits
+    /// @brief      Measure a checklist editor at the proposed width
+    /// @details    Returns nil without a width proposal and otherwise uses its intrinsic height with a
+    ///             twenty-four-point minimum.
+    ///
+    /// @param[in]  proposal  Parent layout proposal, including an optional available width
+    /// @param[in]  uiView    Native editor whose fitting size is being measured
+    /// @param[in]  context   Framework-supplied update context and coordinator access
+    ///
+    /// @return     (CGSize?) proposed width and intrinsic height of at least twenty-four points, or nil without width
+    ///
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField, context: Context) -> CGSize? {
         guard let width = proposal.width else { return nil }
         return CGSize(width: width, height: max(24, uiView.intrinsicContentSize.height))
     }
     class Coordinator: NSObject, UITextFieldDelegate {
         var parent: ChecklistTextField
+
+
+        ///
+        /// @fcn        ChecklistTextField.Coordinator.init
+        /// @brief      Retain the checklist representable for text-field callbacks
+        /// @details    Stores the parent bindings used to publish native text and focus changes.
+        ///
+        /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
+        ///
+        /// @return     (Coordinator) initialized instance
+        ///
         init(_ parent: ChecklistTextField) { self.parent = parent }
+
+
+        ///
+        /// @fcn        ChecklistTextField.Coordinator.changed
+        /// @brief      Copy native checklist text into its SwiftUI binding
+        /// @details    Normalizes a nil text-field value to an empty string on editing changes.
+        ///
+        /// @param[in]  field  Native checklist text field delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         @objc func changed(_ field: UITextField) { parent.text = field.text ?? "" }
+
+
+        ///
+        /// @fcn        ChecklistTextField.Coordinator.textFieldDidBeginEditing
+        /// @brief      Select the existing checklist text when editing begins
+        /// @details    Marks the parent as focused and defers full-text selection to the main queue.
+        ///
+        /// @param[in]  field  Native checklist text field delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func textFieldDidBeginEditing(_ field: UITextField) {
             parent.focus = true
             DispatchQueue.main.async { [weak field] in
@@ -4931,7 +5340,30 @@ struct ChecklistTextField: UIViewRepresentable {
                 field.selectAll(nil)
             }
         }
+
+
+        ///
+        /// @fcn        ChecklistTextField.Coordinator.textFieldDidEndEditing
+        /// @brief      Clear the checklist row's focus state
+        /// @details    Updates the parent binding after native editing ends.
+        ///
+        /// @param[in]  field  Native checklist text field delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func textFieldDidEndEditing(_ field: UITextField) { parent.focus = false }
+
+
+        ///
+        /// @fcn        ChecklistTextField.Coordinator.textFieldShouldReturn
+        /// @brief      Finish checklist editing from the return key
+        /// @details    Ends native focus through the field's return-key handling and returns the delegate's
+        ///             acceptance result.
+        ///
+        /// @param[in]  field  Native checklist text field delivering the delegate callback
+        ///
+        /// @return     (Bool) true to accept the return-key request after ending editing
+        ///
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
             field.resignFirstResponder()
             return true
@@ -4947,6 +5379,21 @@ struct CardDateEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var date: Date
     @State private var kind: CardDateKind
+
+
+    ///
+    /// @fcn        CardDateEditorSheet.init
+    /// @brief      Initialize an optional schedule-value editor
+    /// @details    Tracks whether a value already exists, seeds a missing value with the current time, and retains
+    ///             its precision and checked save callback.
+    ///
+    /// @param[in]  title   Display title or proposed title text
+    /// @param[in]  date    Represented date for the operation
+    /// @param[in]  kind    Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (CardDateEditorSheet) initialized instance
+    ///
     init(title: String, date: Date?, kind: CardDateKind, onSave: @escaping (Date?, CardDateKind) -> Bool) {
         self.title = title
         self.hasExistingValue = date != nil
@@ -5000,6 +5447,20 @@ struct ChecklistItemTypeEditor: View {
     @State private var urlText: String
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        ChecklistItemTypeEditor.init
+    /// @brief      Seed checklist type editing without losing retained content
+    /// @details    Loads the selected type, retained linked-card identity, and retained URL into independent draft
+    ///             state and keeps the available card candidates.
+    ///
+    /// @param[in]  item         Item supplied to this operation
+    /// @param[in]  initialType  Checklist presentation initially selected in the editor
+    /// @param[in]  candidates   Candidates supplied to this operation
+    /// @param[in]  onSave       Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (ChecklistItemTypeEditor) initialized instance
+    ///
     init(item: KanbanChecklistItem, initialType: ChecklistItemType, candidates: [KanbanCard], onSave: @escaping (KanbanChecklistItem) -> Bool) {
         self.item = item; self.candidates = candidates; self.onSave = onSave
         _type = State(initialValue: initialType)
@@ -5065,6 +5526,20 @@ extension EnvironmentValues {
     }
 }
 enum CardKeyboardNeighbors {
+
+
+    ///
+    /// @fcn        CardKeyboardNeighbors.resolve
+    /// @brief      Find navigable neighbors around the current card
+    /// @details    Flattens eligible active list content in display order and resolves previous and next cards by
+    ///             identity without modifying the lists.
+    ///
+    /// @param[in]  card   Card or note being inspected or changed
+    /// @param[in]  lists  Lists participating in the operation
+    ///
+    /// @return     ((previous: KanbanCard?, next: KanbanCard?)) optional previous and next navigable cards around the
+    ///             supplied card
+    ///
     static func resolve(_ card: KanbanCard, in lists: [KanbanList]) -> (previous: KanbanCard?, next: KanbanCard?) {
         guard let list = lists.first(where: { !$0.isArchived && $0.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt }) }) else { return (nil, nil) }
         let items = list.cards.filter { !$0.isSectionDivider }
@@ -5093,10 +5568,45 @@ final class PlenactKeyboard {
     private var contexts: [(UUID, KeyboardCardActions)] = []
     private weak var activeInput: UIView?
     var actions: KeyboardCardActions { contexts.last?.1 ?? KeyboardCardActions() }
+
+
+    ///
+    /// @fcn        PlenactKeyboard.setContext
+    /// @brief      Register the active card or capture keyboard actions
+    /// @details    Retains the context identity and action set and refreshes available controls for the active
+    ///             editor.
+    ///
+    /// @param[in]  id       Stable draft or objective identity
+    /// @param[in]  actions  Action lines or contextual keyboard actions supplied by the caller
+    ///
+    /// @return     (Void) no return value
+    ///
     func setContext(_ id: UUID, actions: KeyboardCardActions) {
         contexts.removeAll { $0.0 == id }; contexts.append((id, actions)); refreshActive()
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboard.removeContext
+    /// @brief      Remove keyboard actions only for the matching context
+    /// @details    Prevents an older departing editor from clearing a newer context and refreshes controls when
+    ///             removal applies.
+    ///
+    /// @param[in]  id  Stable draft or objective identity
+    ///
+    /// @return     (Void) no return value
+    ///
     func removeContext(_ id: UUID) { contexts.removeAll { $0.0 == id }; refreshActive() }
+
+
+    ///
+    /// @fcn        PlenactKeyboard.install
+    /// @brief      Install shared native keyboard focus observation
+    /// @details    Registers the notifications needed to track active text inputs and maintain the common keyboard
+    ///             accessory.
+    ///
+    /// @return     (Void) no return value
+    ///
     func install() {
         guard observers.isEmpty else { return }
         for name in [UITextField.textDidBeginEditingNotification, UITextView.textDidBeginEditingNotification] {
@@ -5115,6 +5625,17 @@ final class PlenactKeyboard {
             })
         }
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboard.activate
+    /// @brief      Track a native text input as the active keyboard target
+    /// @details    Associates the view with the shared keyboard toolbar and updates its available actions.
+    ///
+    /// @param[in]  view  Native view inspected or synchronized by the operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func activate(_ view: UIView) {
         activeInput = view
         if let field = view as? UITextField {
@@ -5127,6 +5648,15 @@ final class PlenactKeyboard {
             text.reloadInputViews()
         }
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboard.refreshActive
+    /// @brief      Refresh controls for the currently active text input
+    /// @details    Updates the retained toolbar's actions and Undo availability from the latest editor context.
+    ///
+    /// @return     (Void) no return value
+    ///
     func refreshActive() {
         let toolbar = (activeInput as? UITextField)?.inputAccessoryView ?? (activeInput as? UITextView)?.inputAccessoryView
         (toolbar as? PlenactKeyboardToolbar)?.updateAvailability()
@@ -5143,6 +5673,19 @@ final class PlenactKeyboardToolbar: UIView {
     private var undoButton: UIBarButtonItem?
     private var redoButton: UIBarButtonItem?
     private var contextualButtons: [(UIBarButtonItem, KeyPath<KeyboardCardActions, (() -> Void)?>)] = []
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.init
+    /// @brief      Create the shared native keyboard accessory toolbar
+    /// @details    Retains its input and optional formatting actions, configures a forty-four-point flexible-width
+    ///             surface with an extended backdrop, and builds its controls.
+    ///
+    /// @param[in]  input       Native text input served by the shared keyboard accessory
+    /// @param[in]  formatting  Optional rich-text formatting actions available to the toolbar
+    ///
+    /// @return     (PlenactKeyboardToolbar) initialized instance
+    ///
     init(input: UIView, formatting: KeyboardFormatting? = nil) {
         self.input = input; self.formatting = formatting
         super.init(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
@@ -5158,7 +5701,28 @@ final class PlenactKeyboardToolbar: UIView {
         layer.addSublayer(upperEdge)
         rebuild()
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.init
+    /// @brief      Create the shared native keyboard accessory toolbar
+    /// @details    Retains its input and optional formatting actions, configures a forty-four-point flexible-width
+    ///             surface with an extended backdrop, and builds its controls.
+    ///
+    /// @param[in]  coder  Decoder required by the UIKit initialization protocol
+    ///
+    /// @return     (PlenactKeyboardToolbar) does not return; coder initialization terminates with fatalError
+    ///
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.layoutSubviews
+    /// @brief      Refresh toolbar layout and surface-dependent styling
+    /// @details    Runs native layout first, then updates the toolbar for its current hierarchy and available width.
+    ///
+    /// @return     (Void) no return value
+    ///
     override func layoutSubviews() {
         super.layoutSubviews()
         let radius: CGFloat = 24
@@ -5179,6 +5743,16 @@ final class PlenactKeyboardToolbar: UIView {
         upperEdge.strokeColor = UIColor.label.resolvedColor(with: traitCollection).withAlphaComponent(0.22).cgColor
         upperEdge.isHidden = !overlaysLightNeutralSurface()
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.overlaysLightNeutralSurface
+    /// @brief      Decide whether the keyboard toolbar needs a light-surface upper border
+    /// @details    Returns false in dark appearance, honors an explicit context choice, and otherwise uses the
+    ///             presence of a modal presentation as the neutral-surface fallback.
+    ///
+    /// @return     (Bool) true when the toolbar's hierarchy indicates a light neutral underlying surface
+    ///
     private func overlaysLightNeutralSurface() -> Bool {
         guard traitCollection.userInterfaceStyle != .dark else { return false }
         if let explicit = PlenactKeyboard.shared.actions.showsUpperBorder { return explicit }
@@ -5186,17 +5760,53 @@ final class PlenactKeyboardToolbar: UIView {
         // their unoutlined edge. No screen snapshots or pixel sampling are needed.
         return input?.window?.rootViewController?.presentedViewController != nil
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.action
+    /// @brief      Create an accessible keyboard toolbar item
+    /// @details    Uses the requested title, symbol, and callback for a single action.
+    ///
+    /// @param[in]  title   Display title or proposed title text
+    /// @param[in]  symbol  SF Symbol name used by the control
+    /// @param[in]  run     Action executed when the native toolbar item is selected
+    ///
+    /// @return     (UIBarButtonItem) toolbar button wired to the supplied accessible action
+    ///
     private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> UIBarButtonItem {
         let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction(title: title) { _ in run() })
         item.accessibilityLabel = title
         item.width = 30
         return item
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.contextual
+    /// @brief      Build a toolbar action backed by the active card context
+    /// @details    Resolves the requested optional callback from the current action set so unavailable contextual
+    ///             actions can remain disabled.
+    ///
+    /// @param[in]  title   Display title or proposed title text
+    /// @param[in]  symbol  SF Symbol name used by the control
+    /// @param[in]  key     Key path selecting the editable preference or optional contextual callback
+    ///
+    /// @return     (UIBarButtonItem) toolbar button backed by the requested optional context callback
+    ///
     private func contextual(_ title: String, symbol: String, key: KeyPath<KeyboardCardActions, (() -> Void)?>) -> UIBarButtonItem {
         let item = action(title, symbol: symbol) { PlenactKeyboard.shared.actions[keyPath: key]?() }
         contextualButtons.append((item, key))
         return item
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.rebuild
+    /// @brief      Rebuild keyboard controls for the current editor context
+    /// @details    Arranges navigation, editing, formatting, and dismissal actions from the active capabilities.
+    ///
+    /// @return     (Void) no return value
+    ///
     func rebuild() {
         contextualButtons = []
         let exit = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
@@ -5250,6 +5860,15 @@ final class PlenactKeyboardToolbar: UIView {
         updateAvailability()
     }
     override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: 44) }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.updateAvailability
+    /// @brief      Refresh enabled states without replacing the toolbar
+    /// @details    Rechecks native Undo and Redo and the current optional contextual actions.
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateAvailability() {
         setNeedsLayout()
         undoButton?.isEnabled = input?.undoManager?.canUndo == true
@@ -5257,6 +5876,18 @@ final class PlenactKeyboardToolbar: UIView {
         for (button, key) in contextualButtons { button.isEnabled = PlenactKeyboard.shared.actions[keyPath: key] != nil }
         for (item, button) in buttonViews { button.isEnabled = item.isEnabled }
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.performUndo
+    /// @brief      Run Undo or Redo and publish the native text change
+    /// @details    Uses the input's undo manager, notifies the appropriate text-view delegate or text-field change
+    ///             channels, and refreshes toolbar action availability.
+    ///
+    /// @param[in]  redo  Whether to execute Redo instead of Undo
+    ///
+    /// @return     (Void) no return value
+    ///
     private func performUndo(redo: Bool) {
         if redo { input?.undoManager?.redo() } else { input?.undoManager?.undo() }
         if let view = input as? UITextView { view.delegate?.textViewDidChange?(view) }
@@ -5266,6 +5897,16 @@ final class PlenactKeyboardToolbar: UIView {
         }
         updateAvailability()
     }
+
+
+    ///
+    /// @fcn        PlenactKeyboardToolbar.formattingMenu
+    /// @brief      Build the native rich-text formatting menu
+    /// @details    Exposes the supported trait, font, size, and color choices through the installed formatting
+    ///             callbacks.
+    ///
+    /// @return     (UIMenu) native menu of the formatting actions supported by the active editor
+    ///
     private func formattingMenu() -> UIMenu {
         let style = UIMenu(title: "Style", options: .displayInline, children: [
             UIAction(title: "Bold", image: UIImage(systemName: "bold")) { [weak self] _ in self?.formatting?.toggle(.traitBold) },
@@ -5325,6 +5966,18 @@ struct ItemReactionPicker: View {
     @Environment(\.dismiss) private var dismiss
     @State private var custom = ""
     private let choices = ["❤️", "👍", "🎉", "😊", "✨", "💪", "🔥", "🙌", "🤔", "🙏", "👏", "😂", "😍", "🥰", "🌱", "☀️", "😅", "😮", "😔", "💡", "🎯", "🫶", "😎", "✅"]
+
+
+    ///
+    /// @fcn        ItemReactionPicker.choose
+    /// @brief      Submit a chosen emoji and close the picker
+    /// @details    Invokes the supplied emoji callback and then dismisses; validation and persistence belong to the
+    ///             callback's owner.
+    ///
+    /// @param[in]  emoji  Emoji text proposed for a reaction or check-in mood
+    ///
+    /// @return     (Void) no return value
+    ///
     private func choose(_ emoji: String) { onChoose(emoji); dismiss() }
     var body: some View {
         NavigationStack {
@@ -5374,6 +6027,19 @@ struct ItemReactionPreview: View {
             }.joined(separator: ", "))
         }
     }
+
+
+    ///
+    /// @fcn        ItemReactionPreview.summary
+    /// @brief      Build a compact emoji and reaction-count preview
+    /// @details    Displays each distinct visible emoji, its count when greater than one, and an additional-emoji
+    ///             count when the supplied remaining value is positive.
+    ///
+    /// @param[in]  values     Values to summarize in their supplied order
+    /// @param[in]  remaining  Number of additional reactions omitted from the visible emoji summary
+    ///
+    /// @return     (some View) a compact emoji and reaction-count preview
+    ///
     private func summary(_ values: [String], remaining: Int = 0) -> some View {
         HStack(spacing: 6) {
             ForEach(values, id: \.self) { emoji in

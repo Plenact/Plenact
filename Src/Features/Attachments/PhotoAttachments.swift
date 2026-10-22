@@ -465,9 +465,34 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
         return tags
     }()
     var tags: [String] { Self.tagCatalog[rawValue] ?? rawValue.components(separatedBy: "-") }
+
+
+    ///
+    /// @fcn        ExampleCoverImage.search
+    /// @brief      Filter cover choices by album and search text
+    /// @details    Applies the optional album restriction and each cover's shared query matching rules without
+    ///             changing the catalog.
+    ///
+    /// @param[in]  query  User-entered search text
+    /// @param[in]  album  Optional cover-category restriction
+    ///
+    /// @return     ([Self]) covers satisfying the optional album restriction and search query
+    ///
     static func search(_ query: String, in album: CoverCategory? = nil) -> [Self] {
         (album?.images ?? CoverCategory.allCases.flatMap(\.images)).filter { $0.matches(query) }
     }
+
+
+    ///
+    /// @fcn        ExampleCoverImage.matches
+    /// @brief      Match a built-in cover against descriptive search text
+    /// @details    Uses the cover's searchable metadata and normalized query, allowing an empty query to retain the
+    ///             cover.
+    ///
+    /// @param[in]  query  User-entered search text
+    ///
+    /// @return     (Bool) true when the cover's searchable metadata matches the normalized query
+    ///
     func matches(_ query: String) -> Bool {
         let normalized = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
         let terms = normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
@@ -1384,6 +1409,16 @@ extension ItemAccent {
         }
     }
 
+
+    ///
+    /// @fcn        ItemAccent.bannerColor
+    /// @brief      Resolve an accent's banner surface color
+    /// @details    Uses the increased-contrast choice to select the appropriate opacity or treatment for the accent.
+    ///
+    /// @param[in]  increasedContrast  Whether the system requests increased visual contrast
+    ///
+    /// @return     (Color) accent banner color adjusted for the requested contrast setting
+    ///
     func bannerColor(increasedContrast: Bool) -> Color {
         Color(uiColor: UIColor { traits in
             let tint = UIColor(self.color).resolvedColor(with: traits)
@@ -1424,6 +1459,17 @@ private struct ItemBannerBackground: ViewModifier {
     let appearance: ItemAppearance?
     @Environment(\.colorSchemeContrast) private var contrast
 
+
+    ///
+    /// @fcn        ItemBannerBackground.body
+    /// @brief      Apply a decorative item banner background
+    /// @details    Uses the available item appearance and accessibility contrast context to render the banner
+    ///             surface.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) a decorative item banner background
+    ///
     func body(content: Content) -> some View {
         if let background = appearance?.background {
             content
@@ -1436,6 +1482,17 @@ private struct ItemBannerBackground: ViewModifier {
 }
 
 extension View {
+
+
+    ///
+    /// @fcn        View.itemBannerBackground
+    /// @brief      Attach the shared appearance-driven banner modifier
+    /// @details    Wraps the view in ItemBannerBackground using the optional appearance supplied by its owner.
+    ///
+    /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
+    ///
+    /// @return     (some View) attach the shared appearance-driven banner modifier
+    ///
     func itemBannerBackground(_ appearance: ItemAppearance?) -> some View {
         modifier(ItemBannerBackground(appearance: appearance))
     }
@@ -1558,6 +1615,24 @@ struct ItemAppearanceSheet: View {
     @State private var draft: ItemAppearance
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        ItemAppearanceSheet.init
+    /// @brief      Initialize editable appearance and optional display controls
+    /// @details    Seeds local draft state from the supplied appearance and display format and retains the checked
+    ///             save and auxiliary-editor callbacks.
+    ///
+    /// @param[in]  title                Display title or proposed title text
+    /// @param[in]  appearance           Optional or explicit appearance overrides supplied by the caller
+    /// @param[in]  onOpenCover          Optional action for opening the cover editor
+    /// @param[in]  onOpenLayout         Optional action for opening the section-layout editor
+    /// @param[in]  showsListBackground  Whether list-background controls are available in this appearance editor
+    /// @param[in]  displayFormat        Optional item display format to edit with its appearance
+    /// @param[in]  onSaveDisplay        Optional checked save callback for appearance and item display format
+    /// @param[in]  onSave               Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (ItemAppearanceSheet) initialized instance
+    ///
     init(title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil, showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil, onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, onSave: @escaping (ItemAppearance?) -> Bool) {
         self.title = title
         self.showsListBackground = showsListBackground
@@ -1818,6 +1893,18 @@ struct CardPhotoGallery: View {
         .frame(minHeight: 44)
     }
 
+
+    ///
+    /// @fcn        CardPhotoGallery.photoTile
+    /// @brief      Build one photo-gallery tile and its actions
+    /// @details    Uses the attachment and gallery position for the photo preview, caption, selection, and available
+    ///             gallery controls.
+    ///
+    /// @param[in]  photo  Photo attachment represented by the editor or gallery tile
+    /// @param[in]  index  Current zero-based gallery photo index
+    ///
+    /// @return     (some View) one photo-gallery tile and its actions
+    ///
     private func photoTile(_ photo: KanbanAttachment, index: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Button { onOpen(photo) } label: {
@@ -1884,6 +1971,18 @@ struct CardPhotoGallery: View {
         .frame(width: photoWidth)
     }
 
+
+    ///
+    /// @fcn        CardPhotoGallery.movePhoto
+    /// @brief      Request a relative gallery-photo move
+    /// @details    Builds the revised photo ID ordering for the requested offset and uses the checked reorder
+    ///             callback before accepting a change.
+    ///
+    /// @param[in]  index   Current zero-based gallery photo index
+    /// @param[in]  offset  Relative section or photo movement, or normalized scroll displacement
+    ///
+    /// @return     (Void) no return value
+    ///
     private func movePhoto(_ index: Int, by offset: Int) {
         var ids = photos.map(\.id)
         ids.swapAt(index, index + offset)
@@ -1897,6 +1996,18 @@ struct CardPhotoCaptionSheet: View {
     @State private var caption: String
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        CardPhotoCaptionSheet.init
+    /// @brief      Seed photo-caption editing from its attachment
+    /// @details    Retains the photo and checked save callback and uses an empty draft caption when the attachment
+    ///             has none.
+    ///
+    /// @param[in]  photo   Photo attachment represented by the editor or gallery tile
+    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (CardPhotoCaptionSheet) initialized instance
+    ///
     init(photo: KanbanAttachment, onSave: @escaping (String) -> Bool) {
         self.photo = photo
         self.onSave = onSave
@@ -2063,6 +2174,18 @@ struct CardAttachmentThumbnail: View {
 final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var isPlaying = false
     private var player: AVAudioPlayer?
+
+
+    ///
+    /// @fcn        CaptureAudioPlayback.toggle
+    /// @brief      Toggle playback of the requested audio URL
+    /// @details    Stops current playback or creates and starts an audio player, publishing playback state and
+    ///             reporting setup failures.
+    ///
+    /// @param[in]  url  File URL for the requested audio resource
+    ///
+    /// @return     (Void) no return value
+    ///
     func toggle(url: URL) {
         if isPlaying { stop(); return }
         do {
@@ -2075,11 +2198,33 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
         } catch { isPlaying = false; errorMessage = "This recording couldn't be played. The file may be unavailable." }
     }
     @Published var errorMessage: String?
+
+
+    ///
+    /// @fcn        CaptureAudioPlayback.stop
+    /// @brief      Stop and release the current audio player
+    /// @details    Clears the retained player and resets the observable playing state.
+    ///
+    /// @return     (Void) no return value
+    ///
     func stop() {
         guard player != nil else { isPlaying = false; return }
         player?.stop(); player = nil; isPlaying = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
+
+
+    ///
+    /// @fcn        CaptureAudioPlayback.audioPlayerDidFinishPlaying
+    /// @brief      Clear playback state when audio finishes
+    /// @details    Handles the delegate completion by releasing the finished playback session through the shared stop
+    ///             path.
+    ///
+    /// @param[in]  player  Audio player delivering completion
+    /// @param[in]  flag    Whether the system reports successful completion
+    ///
+    /// @return     (Void) no return value
+    ///
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor [weak self] in self?.stop() }
     }
@@ -2204,12 +2349,37 @@ struct CardAttachmentPreview: View {
 /// Collection photos live separately from card attachments so attachment cleanup cannot remove them.
 enum CollectionBackgroundPhotoStore {
     private static let cache = NSCache<NSString, UIImage>()
+
+
+    ///
+    /// @fcn        CollectionBackgroundPhotoStore.directory
+    /// @brief      Resolve the directory for collection background photos
+    /// @details    Creates the application-owned storage directory when needed and propagates directory access
+    ///             failures.
+    ///
+    /// @return     (URL) application-owned directory used for saved collection backgrounds
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func directory() throws -> URL {
         let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         let url = root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
+
+
+    ///
+    /// @fcn        CollectionBackgroundPhotoStore.preparedPhoto
+    /// @brief      Prepare a bounded JPEG collection background
+    /// @details    Decodes the source with orientation correction, caps its thumbnail at 2048 pixels, and encodes
+    ///             JPEG at 0.8 quality; invalid input throws.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     (Data) orientation-corrected JPEG thumbnail bytes with a 2048-pixel bound
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func preparedPhoto(_ data: Data) throws -> Data {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
@@ -2222,11 +2392,36 @@ enum CollectionBackgroundPhotoStore {
         }
         return jpeg
     }
+
+
+    ///
+    /// @fcn        CollectionBackgroundPhotoStore.save
+    /// @brief      Write prepared background-photo bytes under a fresh file name
+    /// @details    Writes the supplied bytes atomically to a UUID-named .jpg file and returns the storage name; image
+    ///             conversion is performed separately by preparedPhoto.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     (String) newly written background photo's UUID-based .jpg file name
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func save(_ data: Data) throws -> String {
         let name = UUID().uuidString + ".jpg"
         try data.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
     }
+
+
+    ///
+    /// @fcn        CollectionBackgroundPhotoStore.image
+    /// @brief      Load and cache a stored collection background photo
+    /// @details    Requires a last-path-component .jpg name, reuses the image cache, and returns nil if storage or
+    ///             image decoding is unavailable.
+    ///
+    /// @param[in]  name  Storage file name, symbol name, or accessible control name selected for this operation
+    ///
+    /// @return     (UIImage?) cached or decoded background image, or nil for invalid names or unavailable files
+    ///
     static func image(named name: String?) -> UIImage? {
         guard let name, name == URL(fileURLWithPath: name).lastPathComponent, name.hasSuffix(".jpg") else { return nil }
         if let image = cache.object(forKey: name as NSString) { return image }
@@ -2235,6 +2430,18 @@ enum CollectionBackgroundPhotoStore {
         cache.totalCostLimit = 32 * 1024 * 1024
         return image
     }
+
+
+    ///
+    /// @fcn        CollectionBackgroundPhotoStore.remove
+    /// @brief      Remove a stored collection background photo and cached image
+    /// @details    Accepts only a last-path-component name, attempts file removal when the directory is available,
+    ///             and evicts its cache entry; file-removal errors are ignored.
+    ///
+    /// @param[in]  name  Storage file name, symbol name, or accessible control name selected for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func remove(_ name: String) {
         guard name == URL(fileURLWithPath: name).lastPathComponent, let directory = try? directory() else { return }
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
@@ -2323,6 +2530,28 @@ struct BoardAppearanceSheet: View {
     let onSave: (BoardAppearance, Bool) -> Bool
     @Environment(\.dismiss) private var dismiss
 
+
+    ///
+    /// @fcn        BoardAppearanceSheet.init
+    /// @brief      Seed board appearance and optional list-surface editing
+    /// @details    Builds independent draft values for presentation, surface opacity, icon visibility, icon color,
+    ///             and inherited defaults before retaining the save callbacks.
+    ///
+    /// @param[in]  appearance                   Optional or explicit appearance overrides supplied by the caller
+    /// @param[in]  presentation                 Card, note, or board presentation selected by the caller
+    /// @param[in]  onSavePresentation           Optional callback for committing the chosen board presentation
+    /// @param[in]  allowsCollectionBackground   Whether the editor should offer collection-level background controls
+    /// @param[in]  defaultCollectionBackground  Built-in collection background used when no explicit override is
+    ///                                          selected
+    /// @param[in]  listSurface                  Optional list whose surface and header settings are being edited
+    /// @param[in]  listHeaderIcon               Inherited icon used when the list has no explicit header choice
+    /// @param[in]  onSaveListSurface            Optional callback for saving list opacity, header visibility, icon,
+    ///                                          and icon color
+    /// @param[in]  onSave                       Save callback returning true only when the owner accepts the edited
+    ///                                          value
+    ///
+    /// @return     (BoardAppearanceSheet) initialized instance
+    ///
     init(appearance: BoardAppearance, presentation: BoardPresentation = .standard,
          onSavePresentation: ((BoardPresentation) -> Void)? = nil,
          allowsCollectionBackground: Bool = false,
@@ -2497,6 +2726,15 @@ struct BoardAppearanceSheet: View {
         }
     }
 
+
+    ///
+    /// @fcn        BoardAppearanceSheet.saveAppearance
+    /// @brief      Commit the edited board and list appearance settings
+    /// @details    Uses the provided save callbacks and dismisses only through the editor's accepted save flow,
+    ///             retaining failed edits for correction.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func saveAppearance() {
         guard !isImportingPhoto else { return }
         var updated = draft
@@ -2526,6 +2764,17 @@ struct PreviewTextColorsSection: View {
     @Binding var textColor: ListPreviewTextColor?
     let explanation: String
 
+
+    ///
+    /// @fcn        PreviewTextColorsSection.picker
+    /// @brief      Build a preview text-color override picker
+    /// @details    Binds the optional color choice so users can select an explicit color or retain inherited styling.
+    ///
+    /// @param[in]  title      Display title or proposed title text
+    /// @param[in]  selection  Text selection or resolved navigation selection to retain
+    ///
+    /// @return     (some View) a preview text-color override picker
+    ///
     private func picker(_ title: String, selection: Binding<ListPreviewTextColor?>) -> some View {
         Picker(title, selection: selection) {
             Text("Unchanged").tag(Optional<ListPreviewTextColor>.none)
@@ -2553,6 +2802,19 @@ struct DrawingCaptureDraft: Identifiable {
     let id: UUID
     let drawing: PKDrawing
     let preview: UIImage
+
+
+    ///
+    /// @fcn        DrawingCaptureDraft.init
+    /// @brief      Create an editable drawing draft with a cached preview
+    /// @details    Retains its identity and PencilKit strokes and renders a bounded 960-point preview so composer
+    ///             typing does not repeatedly rasterize the drawing.
+    ///
+    /// @param[in]  id       Stable draft or objective identity
+    /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
+    ///
+    /// @return     (DrawingCaptureDraft) initialized instance
+    ///
     init(id: UUID = UUID(), drawing: PKDrawing = PKDrawing()) {
         self.id = id
         self.drawing = drawing
@@ -2566,7 +2828,22 @@ enum DrawingImageFormat: String, CaseIterable {
 }
 
 enum DrawingImageExport {
-    /// Crop to the marks with a small margin; cap raster size without changing editable strokes.
+
+
+    ///
+    /// @fcn        DrawingImageExport.image
+    /// @brief      Render a drawing into a bounded raster image
+    /// @details    Uses drawing bounds and the requested maximum dimension, applying a transparent or opaque export
+    ///             surface as requested.
+    ///
+    /// @param[in]  drawing           PencilKit strokes used as the editable drawing source
+    /// @param[in]  transparent       Whether the exported PNG or drawing image should preserve transparency
+    /// @param[in]  maximumDimension  Maximum raster dimension used to bound drawing previews
+    ///
+    /// @return     (UIImage) bounded raster preview of the drawing with the requested background treatment
+    ///
+    /// @note       Crop to the marks with a small margin; cap raster size without changing editable strokes.
+    ///
     static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage {
         let bounds = drawing.bounds
         let rect = bounds.isNull || bounds.isEmpty ? CGRect(x: 0, y: 0, width: 600, height: 800) : bounds.insetBy(dx: -24, dy: -24)
@@ -2580,6 +2857,22 @@ enum DrawingImageExport {
             ink.draw(in: CGRect(origin: .zero, size: rect.size))
         }
     }
+
+
+    ///
+    /// @fcn        DrawingImageExport.data
+    /// @brief      Encode nonempty drawing strokes as PNG or JPEG
+    /// @details    Rejects an empty drawing, permits transparency only for PNG, uses 0.95 JPEG quality, and throws if
+    ///             image encoding fails.
+    ///
+    /// @param[in]  drawing      PencilKit strokes used as the editable drawing source
+    /// @param[in]  format       Selected drawing export format
+    /// @param[in]  transparent  Whether the exported PNG or drawing image should preserve transparency
+    ///
+    /// @return     (Data) PNG or JPEG image bytes for the nonempty drawing
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func data(_ drawing: PKDrawing, format: DrawingImageFormat, transparent: Bool = false) throws -> Data {
         guard !drawing.strokes.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
         let image = image(drawing, transparent: format == .png && transparent)
@@ -2591,7 +2884,23 @@ enum DrawingImageExport {
 }
 
 enum DrawingAttachmentStore {
-    /// New files are written before publishing metadata. Previous files remain safe until normal pruning.
+
+
+    ///
+    /// @fcn        DrawingAttachmentStore.save
+    /// @brief      Save both editable strokes and a drawing preview
+    /// @details    Creates the files needed by the attachment and preserves the appropriate previous attachment
+    ///             identity when updating an existing drawing.
+    ///
+    /// @param[in]  draft     Editable value proposed for persistence
+    /// @param[in]  previous  Previous saved drawing attachment or preceding review, when available
+    ///
+    /// @return     (KanbanAttachment) photo attachment linking the new preview and editable stroke files
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
+    /// @note       New files are written before publishing metadata. Previous files remain safe until normal pruning.
+    ///
     static func save(_ draft: DrawingCaptureDraft, replacing previous: KanbanAttachment? = nil) throws -> KanbanAttachment {
         guard !draft.drawing.strokes.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
         let png = try DrawingImageExport.data(draft.drawing, format: .png)
@@ -2609,6 +2918,19 @@ enum DrawingAttachmentStore {
         attachment.drawingFileName = strokesURL.lastPathComponent
         return attachment
     }
+
+
+    ///
+    /// @fcn        DrawingAttachmentStore.load
+    /// @brief      Restore editable strokes from a drawing attachment
+    /// @details    Reads the attachment's retained drawing data and throws when the editable source cannot be loaded.
+    ///
+    /// @param[in]  attachment  Attachment whose retained drawing source should be loaded
+    ///
+    /// @return     (DrawingCaptureDraft) editable drawing draft reconstructed from the stored stroke file
+    /// @throws     Explicit failures include `CocoaError(.fileReadNoSuchFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func load(_ attachment: KanbanAttachment) throws -> DrawingCaptureDraft {
         guard let name = attachment.drawingFileName, name == URL(fileURLWithPath: name).lastPathComponent,
               let previewURL = CardAttachmentStore.fileURL(for: attachment) else { throw CocoaError(.fileReadNoSuchFile) }
@@ -2623,6 +2945,18 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     @Published var hasMarks: Bool
     @Published var canUndo = false
     @Published var canRedo = false
+
+
+    ///
+    /// @fcn        DrawingCanvasState.init
+    /// @brief      Configure a retained PencilKit canvas for editing
+    /// @details    Loads the initial strokes, installs the delegate and black pen, enables any input, and sets the
+    ///             canvas size and maximum zoom.
+    ///
+    /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
+    ///
+    /// @return     (DrawingCanvasState) initialized instance
+    ///
     init(drawing: PKDrawing) {
         hasMarks = !drawing.strokes.isEmpty
         super.init()
@@ -2635,20 +2969,80 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
         canvas.contentSize = CGSize(width: 1200, height: 1600)
         canvas.maximumZoomScale = 3
     }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.canvasViewDrawingDidChange
+    /// @brief      Publish a canvas stroke change to editor state
+    /// @details    Updates the observable drawing and undo availability from the PencilKit delegate callback.
+    ///
+    /// @param[in]  canvasView  Canvas view supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
         hasMarks = !canvasView.drawing.strokes.isEmpty
         // PencilKit registers undo after its drawing-change delegate callback.
         DispatchQueue.main.async { [weak self] in self?.refreshUndo() }
     }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.refreshUndo
+    /// @brief      Refresh the canvas's undo and redo availability
+    /// @details    Reads both capabilities from the canvas undo manager for the editor controls.
+    ///
+    /// @return     (Void) no return value
+    ///
     func refreshUndo() { canUndo = canvas.undoManager?.canUndo ?? false; canRedo = canvas.undoManager?.canRedo ?? false }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.undo
+    /// @brief      Undo the canvas's most recent drawing edit
+    /// @details    Delegates to its undo manager and refreshes the published control availability.
+    ///
+    /// @return     (Void) no return value
+    ///
     func undo() { canvas.undoManager?.undo(); refreshUndo() }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.redo
+    /// @brief      Redo the canvas's next available drawing edit
+    /// @details    Uses the canvas undo manager and refreshes availability after the operation.
+    ///
+    /// @return     (Void) no return value
+    ///
     func redo() { canvas.undoManager?.redo(); refreshUndo() }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.clear
+    /// @brief      Clear canvas strokes with a registered inverse edit
+    /// @details    Captures the previous drawing in the canvas undo manager before assigning an empty drawing and
+    ///             refreshing Undo availability.
+    ///
+    /// @return     (Void) no return value
+    ///
     func clear() {
         let previous = canvas.drawing
         canvas.undoManager?.registerUndo(withTarget: self) { target in target.restore(previous) }
         canvas.drawing = PKDrawing()
         refreshUndo()
     }
+
+
+    ///
+    /// @fcn        DrawingCanvasState.restore
+    /// @brief      Restore canvas strokes with a registered inverse edit
+    /// @details    Captures the previous drawing for Undo, replaces the native canvas drawing, and refreshes Undo and
+    ///             Redo availability.
+    ///
+    /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
+    ///
+    /// @return     (Void) no return value
+    ///
     private func restore(_ drawing: PKDrawing) {
         let previous = canvas.drawing
         canvas.undoManager?.registerUndo(withTarget: self) { target in target.restore(previous) }
@@ -2661,6 +3055,15 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 final class DrawingCanvasView: PKCanvasView {
     private let picker = PKToolPicker()
     private var lastSize = CGSize.zero
+
+
+    ///
+    /// @fcn        DrawingCanvasView.didMoveToWindow
+    /// @brief      Reconnect the PencilKit tool picker after attachment
+    /// @details    Calls the superclass lifecycle method and updates tool presentation for the current window.
+    ///
+    /// @return     (Void) no return value
+    ///
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil {
@@ -2671,11 +3074,30 @@ final class DrawingCanvasView: PKCanvasView {
             picker.removeObserver(self)
         }
     }
+
+
+    ///
+    /// @fcn        DrawingCanvasView.showTools
+    /// @brief      Present the tool picker for the attached drawing canvas
+    /// @details    Associates the picker with the canvas and requests the appropriate first-responder tool
+    ///             interaction.
+    ///
+    /// @return     (Void) no return value
+    ///
     func showTools() {
         guard window != nil else { return }
         becomeFirstResponder()
         picker.setVisible(true, forFirstResponder: self)
     }
+
+
+    ///
+    /// @fcn        DrawingCanvasView.layoutSubviews
+    /// @brief      Refresh drawing-tool placement after layout
+    /// @details    Runs the superclass layout before updating the canvas's tool-picker presentation.
+    ///
+    /// @return     (Void) no return value
+    ///
     override func layoutSubviews() {
         super.layoutSubviews()
         guard bounds.size != lastSize, bounds.width > 0, bounds.height > 0 else { return }
@@ -2688,7 +3110,32 @@ final class DrawingCanvasView: PKCanvasView {
 
 struct DrawingCanvas: UIViewRepresentable {
     let state: DrawingCanvasState
+
+
+    ///
+    /// @fcn        DrawingCanvas.makeUIView
+    /// @brief      Create the editor's native PencilKit canvas
+    /// @details    Returns the canvas held by the shared drawing state so its strokes and Undo manager remain stable
+    ///             across SwiftUI updates.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (DrawingCanvasView) the existing PencilKit canvas retained by the drawing state object
+    ///
     func makeUIView(context: Context) -> DrawingCanvasView { state.canvas }
+
+
+    ///
+    /// @fcn        DrawingCanvas.updateUIView
+    /// @brief      Retain the existing canvas during SwiftUI updates
+    /// @details    No incremental update is needed because DrawingCanvasState owns and directly updates the same
+    ///             native canvas instance.
+    ///
+    /// @param[in]  view     Native view inspected or synchronized by the operation
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIView(_ view: DrawingCanvasView, context: Context) {}
 }
 
@@ -2698,9 +3145,33 @@ private struct DrawingExportFile: Identifiable {
 }
 private struct DrawingShareSheet: UIViewControllerRepresentable {
     let url: URL
+
+
+    ///
+    /// @fcn        DrawingShareSheet.makeUIViewController
+    /// @brief      Create the system sheet for a drawing export
+    /// @details    Passes the exported file URL to UIActivityViewController for the user's chosen share or save
+    ///             action.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (UIActivityViewController) system activity controller containing the exported drawing file
+    ///
     func makeUIViewController(context: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: [url], applicationActivities: nil)
     }
+
+
+    ///
+    /// @fcn        DrawingShareSheet.updateUIViewController
+    /// @brief      Retain the current drawing share controller during updates
+    /// @details    No incremental controller update is needed because the share payload is supplied at creation.
+    ///
+    /// @param[in]  controller  Native controller supplied to the lifecycle callback
+    /// @param[in]  context     Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
@@ -2714,11 +3185,37 @@ struct DrawingCaptureEditor: View {
     @State private var exportFile: DrawingExportFile?
     @State private var exportDirectory: URL?
     @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        DrawingCaptureEditor.init
+    /// @brief      Initialize a drawing editor without saving its draft
+    /// @details    Retains the initial draft and checked save callback and creates a state object containing its
+    ///             editable PencilKit canvas.
+    ///
+    /// @param[in]  initial  Initial editable drawing draft
+    /// @param[in]  onSave   Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (DrawingCaptureEditor) initialized instance
+    ///
     init(initial: DrawingCaptureDraft, onSave: @escaping (DrawingCaptureDraft) -> Bool) {
         self.initial = initial; self.onSave = onSave
         _state = StateObject(wrappedValue: DrawingCanvasState(drawing: initial.drawing))
     }
     private var changed: Bool { state.canvas.drawing.dataRepresentation() != initial.drawing.dataRepresentation() }
+
+
+    ///
+    /// @fcn        DrawingCaptureEditor.export
+    /// @brief      Create a temporary drawing export for sharing
+    /// @details    Encodes the selected format and transparency, retains the export URL for presentation, and reports
+    ///             failures without replacing the draft drawing.
+    ///
+    /// @param[in]  format       Selected drawing export format
+    /// @param[in]  transparent  Whether the exported PNG or drawing image should preserve transparency
+    ///
+    /// @return     (Void) no return value
+    ///
     private func export(_ format: DrawingImageFormat, transparent: Bool = false) {
         do {
             let data = try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
@@ -2731,6 +3228,16 @@ struct DrawingCaptureEditor: View {
             exportFile = DrawingExportFile(url: url)
         } catch { cleanExport(); errorMessage = "The image couldn't be exported. Your drawing is still here; please try again." }
     }
+
+
+    ///
+    /// @fcn        DrawingCaptureEditor.cleanExport
+    /// @brief      Remove the editor's temporary export file
+    /// @details    Releases the current export URL after removing its file so later sharing begins with a fresh
+    ///             export.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func cleanExport() {
         if let exportDirectory { try? FileManager.default.removeItem(at: exportDirectory) }
         exportDirectory = nil
@@ -2909,10 +3416,28 @@ final class CreationAttachmentDraft: ObservableObject {
     @Published var isImporting = false
     @Published var notice: String?
 
+
+    ///
+    /// @fcn        CreationAttachmentDraft.openSources
+    /// @brief      Open attachment capture choices from the draft
+    /// @details    Ends the current text-editing context as needed and presents the available attachment sources.
+    ///
+    /// @return     (Void) no return value
+    ///
     func openSources() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         sheet = .sources
     }
+
+
+    ///
+    /// @fcn        CreationAttachmentDraft.paste
+    /// @brief      Add supported clipboard content to the attachment draft
+    /// @details    Reads available pasteboard media and reports unsupported or failed imports without creating a
+    ///             workspace card.
+    ///
+    /// @return     (Void) no return value
+    ///
     func paste() {
         sheet = nil
         if let images = UIPasteboard.general.images, !images.isEmpty {
@@ -2924,6 +3449,16 @@ final class CreationAttachmentDraft: ObservableObject {
             entries.append(Entry(content: .link(url)))
         } else { notice = "The clipboard does not contain an image or a valid web link." }
     }
+
+
+    ///
+    /// @fcn        CreationAttachmentDraft.importSelection
+    /// @brief      Load selected photo items into the draft
+    /// @details    Processes the current selection asynchronously and retains successfully loaded draft media for a
+    ///             later checked save.
+    ///
+    /// @return     (Void) no return value
+    ///
     func importSelection() async {
         guard !selection.isEmpty else { return }
         let selected = selection
@@ -2942,6 +3477,22 @@ final class CreationAttachmentDraft: ObservableObject {
             catch { notice = "Some attachments couldn't be prepared. Your draft and attachments already added are still here." }
         }
     }
+
+
+    ///
+    /// @fcn        CreationAttachmentDraft.save
+    /// @brief      Import draft attachments and run the checked owner commit
+    /// @details    Rejects pending photo imports, saves each media or drawing entry, and removes newly stored files
+    ///             when commit returns false or throws; links require no file import.
+    ///
+    /// @param[in]  commit  Owner-save callback that accepts imported attachment records and reports whether they were
+    ///                     retained
+    ///
+    /// @return     (Bool) true if the owner retains the imported attachments; false after a rejected commit and
+    ///             cleanup
+    /// @throws     Explicit failures include `CocoaError(.fileReadUnknown)`, `CocoaError(.fileReadCorruptFile)`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func save(commit: ([KanbanAttachment]) throws -> Bool) throws -> Bool {
         guard !isImporting, selection.isEmpty else { throw CocoaError(.fileReadUnknown) }
         var stored: [KanbanAttachment] = []
@@ -2990,6 +3541,18 @@ struct CreationAttachmentList: View {
 
 struct CreationAttachmentPresentation: ViewModifier {
     @ObservedObject var draft: CreationAttachmentDraft
+
+
+    ///
+    /// @fcn        CreationAttachmentPresentation.body
+    /// @brief      Present creation attachment sources, links, and drawing capture
+    /// @details    Connects source and drawing sheets to the draft, imports photo selections asynchronously, and
+    ///             presents attachment notices without creating a card.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) present creation attachment sources, links, and drawing capture
+    ///
     func body(content: Content) -> some View {
         content
             .sheet(item: $draft.sheet) { sheet in

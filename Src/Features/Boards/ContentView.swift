@@ -77,13 +77,49 @@ extension Binding where Value == [KanbanList] {
 ///
 enum BoardPanoramicZoom {
     static let initial: CGFloat = 0.62
+
+
+    ///
+    /// @fcn        BoardPanoramicZoom.preset
+    /// @brief      Choose the initial zoom for the selected board mode
+    /// @details    Panoramic mode uses the overview scale; standard mode starts at a scale of one.
+    ///
+    /// @param[in]  panoramic  Whether the board is using its panoramic overview
+    ///
+    /// @return     (CGFloat) panoramic initial scale or one for standard mode
+    ///
     static func preset(panoramic: Bool) -> CGFloat { panoramic ? initial : 1 }
     static let minimum: CGFloat = 0.25
     static let maximum: CGFloat = 1.25
+
+
+    ///
+    /// @fcn        BoardPanoramicZoom.clamped
+    /// @brief      Constrain a board zoom scale to supported bounds
+    /// @details    Nonfinite input falls back to the initial scale; finite input is limited to the minimum and
+    ///             maximum.
+    ///
+    /// @param[in]  scale  Proposed board magnification factor
+    ///
+    /// @return     (CGFloat) finite scale constrained to the supported minimum and maximum
+    ///
     static func clamped(_ scale: CGFloat) -> CGFloat {
         guard scale.isFinite else { return initial }
         return min(maximum, max(minimum, scale))
     }
+
+
+    ///
+    /// @fcn        BoardPanoramicZoom.scale
+    /// @brief      Apply a pinch magnification to the starting zoom
+    /// @details    Invalid or nonpositive magnification preserves the clamped starting scale instead of propagating
+    ///             an invalid value.
+    ///
+    /// @param[in]  start          Starting horizontal position or original vertical scroll offset in points
+    /// @param[in]  magnification  Relative pinch multiplier applied to the starting scale
+    ///
+    /// @return     (CGFloat) clamped starting scale multiplied by a valid pinch magnification
+    ///
     static func scale(start: CGFloat, magnification: CGFloat) -> CGFloat {
         guard magnification.isFinite, magnification > 0 else { return clamped(start) }
         return clamped(start * magnification)
@@ -91,6 +127,21 @@ enum BoardPanoramicZoom {
 }
 /// Scale the entire Standard List, including its text and Cards, to retain phone proportions.
 enum BoardTabletSizing {
+
+
+    ///
+    /// @fcn        BoardTabletSizing.scale
+    /// @brief      Calculate the optional tablet enlargement factor
+    /// @details    Requires an enabled tablet layout and valid column width; otherwise returns one. The enlarged
+    ///             baseline includes a ten percent reduction.
+    ///
+    /// @param[in]  viewportWidth  Available board viewport width in points
+    /// @param[in]  columnWidth    Unscaled list-column width in points
+    /// @param[in]  isTablet       Whether the current device uses the tablet layout
+    /// @param[in]  enabled        Whether this optional behavior is enabled
+    ///
+    /// @return     (CGFloat) tablet enlargement factor of at least one, or one when enlargement is unavailable
+    ///
     static func scale(viewportWidth: CGFloat, columnWidth: CGFloat, isTablet: Bool, enabled: Bool) -> CGFloat {
         guard isTablet, enabled, viewportWidth.isFinite, columnWidth.isFinite, columnWidth > 0 else { return 1 }
         // Ease back ten percent from the near-full-width tablet baseline.
@@ -99,6 +150,19 @@ enum BoardTabletSizing {
 }
 
 enum WeekDayHighlight {
+
+
+    ///
+    /// @fcn        WeekDayHighlight.isToday
+    /// @brief      Determine whether an assigned list date is today
+    /// @details    Uses the supplied calendar's day comparison; an unassigned date never receives the highlight.
+    ///
+    /// @param[in]  assignedDate  Calendar date assigned to the list, or nil for an undated list
+    /// @param[in]  now           Reference time used instead of an implicit clock read
+    /// @param[in]  calendar      Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Bool) true if the assigned date falls on the same local day as the reference time
+    ///
     static func isToday(_ assignedDate: Date?, now: Date, calendar: Calendar) -> Bool {
         guard let assignedDate else { return false }
         return calendar.isDate(assignedDate, inSameDayAs: now)
@@ -123,6 +187,17 @@ struct CreatedContentTarget: Identifiable, Equatable {
     let listID: Int
     let cardID: Int
     let createdAt: Date
+
+
+    ///
+    /// @fcn        CreatedContentTarget.matches
+    /// @brief      Match a reveal request to its destination list
+    /// @details    Checks list ID, card ID, and creation timestamp together to avoid matching a reused numeric ID.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     (Bool) true only when list ID, card ID, and creation timestamp all match
+    ///
     func matches(_ list: KanbanList) -> Bool {
         list.id == listID && list.cards.contains { $0.id == cardID && $0.createdAt == createdAt }
     }
@@ -132,10 +207,34 @@ struct CreatedContentTarget: Identifiable, Equatable {
 final class CreatedContentReveal: ObservableObject {
     static let shared = CreatedContentReveal()
     @Published private(set) var target: CreatedContentTarget?
+
+
+    ///
+    /// @fcn        CreatedContentReveal.request
+    /// @brief      Queue a newly created card for scrolling into view
+    /// @details    Stores its list, ID, and creation timestamp; cards without a timestamp do not replace the current
+    ///             request.
+    ///
+    /// @param[in]  listID  Numeric list identity within its owner
+    /// @param[in]  card    Card or note being inspected or changed
+    ///
+    /// @return     (Void) no return value
+    ///
     func request(listID: Int, card: KanbanCard) {
         guard let createdAt = card.createdAt else { return }
         target = CreatedContentTarget(listID: listID, cardID: card.id, createdAt: createdAt)
     }
+
+
+    ///
+    /// @fcn        CreatedContentReveal.complete
+    /// @brief      Consume the reveal request that just finished
+    /// @details    Clears the pending target only if its identity still matches, preserving a newer request.
+    ///
+    /// @param[in]  request  Request supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func complete(_ request: CreatedContentTarget) {
         if target?.id == request.id { target = nil }
     }
@@ -151,11 +250,35 @@ private struct RevealCreatedContent: ViewModifier {
     private var request: CreatedContentTarget? {
         reveal.target.flatMap { target in lists.contains(where: target.matches) ? target : nil }
     }
+
+
+    ///
+    /// @fcn        RevealCreatedContent.body
+    /// @brief      Attach scrolling support for newly created content
+    /// @details    Reuses an existing scroll proxy when supplied; otherwise installs its own ScrollViewReader.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) attach scrolling support for newly created content
+    ///
     @ViewBuilder
     func body(content: Content) -> some View {
         if let existingProxy { revealing(content, using: existingProxy) }
         else { ScrollViewReader { proxy in revealing(content, using: proxy) } }
     }
+
+
+    ///
+    /// @fcn        RevealCreatedContent.revealing
+    /// @brief      Scroll to a pending creation after layout settles
+    /// @details    Checks cancellation and request identity around delayed scrolling, respects Reduce Motion, and
+    ///             consumes only the completed request.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    /// @param[in]  proxy    Scroll proxy for the enclosing content reader
+    ///
+    /// @return     (some View) scroll to a pending creation after layout settles
+    ///
     private func revealing(_ content: Content, using proxy: ScrollViewProxy) -> some View {
         content.task(id: request?.id) {
             guard let request else { return }
@@ -182,6 +305,18 @@ final class BoardViewportMemory {
     private var pendingSave: DispatchWorkItem?
     var horizontalRestoreAllowed = true
 
+
+    ///
+    /// @fcn        BoardViewportMemory.init
+    /// @brief      Restore viewport memory for a particular owner
+    /// @details    Decodes saved state or uses defaults, clamps the zoom scale, and discards negative or nonfinite
+    ///             offsets.
+    ///
+    /// @param[in]  owner     Owner identity used to qualify numeric item references
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (BoardViewportMemory) initialized instance
+    ///
     init(owner: String, defaults: UserDefaults = .standard) {
         key = Self.prefix + owner
         self.defaults = defaults
@@ -189,17 +324,48 @@ final class BoardViewportMemory {
         state.scale = state.scale.isFinite ? Double(BoardPanoramicZoom.clamped(CGFloat(state.scale))) : 1
         state.offsets = state.offsets.filter { $0.value.isFinite && $0.value >= 0 }
     }
+
+
+    ///
+    /// @fcn        BoardViewportMemory.record
+    /// @brief      Record a normalized scroll offset
+    /// @details    Rejects nonfinite input, clamps negative offsets to zero, and schedules a debounced save.
+    ///
+    /// @param[in]  offset  Relative section or photo movement, or normalized scroll displacement
+    /// @param[in]  key     Storage key or stable lookup key used by this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func record(_ offset: Double, for key: String) {
         guard offset.isFinite else { return }
         state.offsets[key] = max(0, offset)
         scheduleSave()
     }
+
+
+    ///
+    /// @fcn        BoardViewportMemory.scheduleSave
+    /// @brief      Debounce persistence of viewport changes
+    /// @details    Cancels the previous work item and schedules a weakly captured flush on the main queue after 0.35
+    ///             seconds.
+    ///
+    /// @return     (Void) no return value
+    ///
     func scheduleSave() {
         pendingSave?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.flush() }
         pendingSave = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
     }
+
+
+    ///
+    /// @fcn        BoardViewportMemory.flush
+    /// @brief      Persist changed viewport state immediately
+    /// @details    Cancels pending work, encodes the state, and avoids rewriting identical stored data.
+    ///
+    /// @return     (Void) no return value
+    ///
     func flush() {
         pendingSave?.cancel(); pendingSave = nil
         guard let data = try? JSONEncoder().encode(state), defaults.data(forKey: key) != data else { return }
@@ -221,6 +387,18 @@ extension EnvironmentValues {
 /// first refusal before the enclosing Board starts horizontal paging.
 @MainActor
 enum BoardListSwipePriority {
+
+
+    ///
+    /// @fcn        BoardListSwipePriority.install
+    /// @brief      Prioritize native list row gestures over board paging
+    /// @details    Finds a horizontal ancestor and makes its pan wait for the inner list's other pan gestures;
+    ///             returns the number of dependencies installed.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     (Int) number of native row-pan gestures given priority over horizontal board paging
+    ///
     @discardableResult
     static func install(for list: UIScrollView) -> Int {
         guard list is UICollectionView || list is UITableView else { return 0 }
@@ -248,9 +426,40 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
     var horizontal = false
     final class Marker: UIView {
         var attached: (() -> Void)?
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Marker.didMoveToWindow
+        /// @brief      Notify the probe when its marker becomes attached
+        /// @details    Calls the superclass implementation and invokes the attachment callback only when a window
+        ///             exists.
+        ///
+        /// @return     (Void) no return value
+        ///
         override func didMoveToWindow() { super.didMoveToWindow(); if window != nil { attached?() } }
     }
+
+
+    ///
+    /// @fcn        BoardViewportScrollProbe.makeCoordinator
+    /// @brief      Create the native bridge coordinator
+    /// @details    Creates the coordinator retained by SwiftUI for BoardViewportScrollProbe so its delegate or
+    ///             observation state can span view updates.
+    ///
+    /// @return     (Coordinator) retained native bridge coordinator
+    ///
     func makeCoordinator() -> Coordinator { Coordinator() }
+
+
+    ///
+    /// @fcn        BoardViewportScrollProbe.makeUIView
+    /// @brief      Create a noninteractive marker for native scroll discovery
+    /// @details    Configures the coordinator and uses weak references in the marker's window attachment callback.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Marker) noninteractive marker that triggers native scroll-view discovery after attachment
+    ///
     func makeUIView(context: Context) -> Marker {
         let view = Marker(); view.isUserInteractionEnabled = false
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
@@ -259,10 +468,36 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
         }
         return view
     }
+
+
+    ///
+    /// @fcn        BoardViewportScrollProbe.updateUIView
+    /// @brief      Refresh the viewport probe's owner and scroll axis
+    /// @details    Reconfigures the coordinator and attempts native scroll discovery once the marker is attached to a
+    ///             window.
+    ///
+    /// @param[in]  view     Native view inspected or synchronized by the operation
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIView(_ view: Marker, context: Context) {
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
         if view.window != nil { context.coordinator.findScroll(from: view) }
     }
+
+
+    ///
+    /// @fcn        BoardViewportScrollProbe.dismantleUIView
+    /// @brief      Finish observing a departing native scroll view
+    /// @details    Captures the final offset, invalidates observation, and flushes viewport memory through the
+    ///             coordinator.
+    ///
+    /// @param[in]  view         Native view inspected or synchronized by the operation
+    /// @param[in]  coordinator  Coordinator retaining the native bridge's observation or delegate state
+    ///
+    /// @return     (Void) no return value
+    ///
     static func dismantleUIView(_ view: Marker, coordinator: Coordinator) { coordinator.finish() }
     @MainActor
     final class Coordinator {
@@ -275,6 +510,20 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
         private var desired: Double?
         private var attempts = 0
         private var finding = false
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.configure
+        /// @brief      Switch the probe to a new viewport memory key
+        /// @details    Finishes the previous observation before resetting the desired offset, restoration flag, and
+        ///             discovery attempts.
+        ///
+        /// @param[in]  memory      Optional owner-scoped viewport state and persistence object
+        /// @param[in]  key         Storage key or stable lookup key used by this operation
+        /// @param[in]  horizontal  Whether the probe observes the horizontal rather than vertical axis
+        ///
+        /// @return     (Void) no return value
+        ///
         func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool) {
             guard self.memory !== memory || self.key != key else { return }
             finish()
@@ -282,10 +531,33 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
             desired = memory?.state.offsets[key]
             restored = false; attempts = 0
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.matches
+        /// @brief      Check whether a native scroll view serves the requested axis
+        /// @details    Horizontal probes require horizontal scrolling; vertical probes also recognize table and
+        ///             collection views.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (Bool) true if the native scroll view is suitable for the probe's requested axis
+        ///
         private func matches(_ view: UIScrollView) -> Bool {
             if horizontal { return view.alwaysBounceHorizontal || view.contentSize.width > view.bounds.width + 1 }
             return view is UICollectionView || view is UITableView || view.alwaysBounceVertical || view.contentSize.height > view.bounds.height + 1
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.descendant
+        /// @brief      Find the first suitable scroll view below a container
+        /// @details    Searches descendants recursively and returns nil when no matching native scroller is present.
+        ///
+        /// @param[in]  view  Native view inspected or synchronized by the operation
+        ///
+        /// @return     (UIScrollView?) first matching descendant scroller, or nil when none exists
+        ///
         private func descendant(in view: UIView) -> UIScrollView? {
             for child in view.subviews {
                 if let scroll = child as? UIScrollView {
@@ -294,6 +566,18 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
             }
             return nil
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.findScroll
+        /// @brief      Locate the native scroller associated with the marker
+        /// @details    Defers hierarchy inspection to the main queue, bounds discovery retries, and refreshes
+        ///             inner-list swipe priority for an attached scroller.
+        ///
+        /// @param[in]  marker  Attached marker used to locate the enclosing native scroll view
+        ///
+        /// @return     (Void) no return value
+        ///
         func findScroll(from marker: UIView) {
             if let scroll {
                 // SwiftUI may install row actions after the first empty List layout.
@@ -322,6 +606,18 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
                 }
             }
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.attach
+        /// @brief      Observe a discovered native scroll view
+        /// @details    Retains its content-offset observation and schedules restoration after the current layout
+        ///             pass.
+        ///
+        /// @param[in]  scroll  Native scroll view to observe or restore
+        ///
+        /// @return     (Void) no return value
+        ///
         private func attach(_ scroll: UIScrollView) {
             self.scroll = scroll
             observation = scroll.observe(\.contentOffset, options: [.new]) { [weak self] _, _ in
@@ -329,6 +625,16 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
             }
             DispatchQueue.main.async { [weak self] in self?.restore() }
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.restore
+        /// @brief      Restore the saved offset within the laid-out content bounds
+        /// @details    Accounts for adjusted insets and the selected axis, respects disabled horizontal restoration
+        ///             and active dragging, then enables offset capture.
+        ///
+        /// @return     (Void) no return value
+        ///
         private func restore() {
             guard let scroll else { return }
             scroll.layoutIfNeeded()
@@ -345,11 +651,31 @@ struct BoardViewportScrollProbe: UIViewRepresentable {
             }
             restored = true
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.capture
+        /// @brief      Capture the current inset-normalized scroll position
+        /// @details    Records offsets only after restoration and while both the native scroll view and viewport
+        ///             memory remain available.
+        ///
+        /// @return     (Void) no return value
+        ///
         private func capture() {
             guard restored, let scroll, let memory else { return }
             let offset = horizontal ? scroll.contentOffset.x + scroll.adjustedContentInset.left : scroll.contentOffset.y + scroll.adjustedContentInset.top
             memory.record(Double(offset), for: key)
         }
+
+
+        ///
+        /// @fcn        BoardViewportScrollProbe.Coordinator.finish
+        /// @brief      Release scroll observation and save the last viewport
+        /// @details    Captures before invalidating observation, clears the native scroller reference, and flushes
+        ///             memory.
+        ///
+        /// @return     (Void) no return value
+        ///
         func finish() {
             capture(); observation?.invalidate(); observation = nil; scroll = nil
             memory?.flush()
@@ -391,6 +717,19 @@ private struct BoardPinchState {
 }
 private struct BoardZoomScrollBehavior: ScrollTargetBehavior {
     let panoramic: Bool
+
+
+    ///
+    /// @fcn        BoardZoomScrollBehavior.updateTarget
+    /// @brief      Apply column snapping only in standard board mode
+    /// @details    Delegates to SwiftUI's view-aligned behavior outside panoramic mode; panoramic scrolling retains
+    ///             its proposed target.
+    ///
+    /// @param[in,out]  target   Proposed native scroll target, updated in place when the snapping rules apply
+    /// @param[in]      context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
         if !panoramic { ViewAlignedScrollTargetBehavior().updateTarget(&target, context: context) }
     }
@@ -400,6 +739,19 @@ struct BoardGalleryGroup: Identifiable {
     let id: Int
     let divider: KanbanCard?
     var cards: [KanbanCard]
+
+
+    ///
+    /// @fcn        BoardGalleryGroup.groups
+    /// @brief      Partition visible gallery cards by named section
+    /// @details    Begins with an ungrouped prefix and starts a new group for each named divider after collapse
+    ///             filtering.
+    ///
+    /// @param[in]  list  List supplying the current content and metadata
+    ///
+    /// @return     ([BoardGalleryGroup]) ordered visible card groups, beginning with the possibly empty ungrouped
+    ///             prefix
+    ///
     static func groups(in list: KanbanList) -> [BoardGalleryGroup] {
         var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]
         for card in DaySections.visible(list.cards) {
@@ -592,6 +944,18 @@ struct DaySectionRow: View {
         }
         .sheet(isPresented: $showsMove) { SectionMoveSheet(heading: card) }
     }
+
+
+    ///
+    /// @fcn        DaySectionRow.setColor
+    /// @brief      Update the named section's accent color
+    /// @details    Preserves other appearance fields and normalizes an empty appearance to nil before invoking the
+    ///             update callback.
+    ///
+    /// @param[in]  color  Requested section accent; nil clears the explicit accent
+    ///
+    /// @return     (Void) no return value
+    ///
     private func setColor(_ color: ItemAccent?) {
         var updated = card
         var appearance = updated.appearance ?? ItemAppearance()
@@ -603,6 +967,18 @@ struct DaySectionRow: View {
 struct DaySectionRail: ViewModifier {
     let cardID: Int
     let cards: [KanbanCard]
+
+
+    ///
+    /// @fcn        DaySectionRail.body
+    /// @brief      Show a section-colored rail beside a member card
+    /// @details    Uses the owning heading's accent and keeps the decorative overlay outside hit testing and
+    ///             accessibility.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) show a section-colored rail beside a member card
+    ///
     func body(content: Content) -> some View {
         content.overlay(alignment: .leading) {
             if let color = DaySections.owner(of: cardID, in: cards)?.appearance?.accent {
@@ -1680,6 +2056,18 @@ struct ContentView: View {
             isDatedView: displayedWeekKey != nil)
     }
 
+
+    ///
+    /// @fcn        ContentView.saveBoardAppearance
+    /// @brief      Save board styling and optionally restore list inheritance
+    /// @details    Uses the supplied appearance binding or the checked current-week encoding path; reports failures
+    ///             and returns false when the change cannot be saved.
+    ///
+    /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
+    /// @param[in]  applyToAll  Whether list surface and text overrides should inherit the board settings
+    ///
+    /// @return     (Bool) true after the appearance change is accepted; false if storage is invalid or saving fails
+    ///
     private func saveBoardAppearance(_ appearance: BoardAppearance, applyToAll: Bool) -> Bool {
         do {
             if let appearanceBinding {
@@ -1739,6 +2127,15 @@ struct ContentView: View {
     /// Measured horizontal centers keyed by list identity.
     @State private var dragGeometry = BoardDragGeometryCache()
     @State private var dragGeometryRevision = 0
+
+
+    ///
+    /// @fcn        ContentView.refreshActiveDragGeometry
+    /// @brief      Invalidate geometry while a card or list drag is active
+    /// @details    Advances the revision only when a drag exists, avoiding unnecessary geometry refreshes at rest.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func refreshActiveDragGeometry() {
         if draggedListID != nil || draggedCardID != nil { dragGeometryRevision &+= 1 }
     }
@@ -1772,6 +2169,16 @@ struct ContentView: View {
                 boardScale = BoardPanoramicZoom.scale(start: boardScale, magnification: value.magnification)
             }
     }
+
+
+    ///
+    /// @fcn        ContentView.persistViewport
+    /// @brief      Save the board's current presentation and zoom state
+    /// @details    Copies zoom, panorama, gallery, presentation, and visible-list values into owner-scoped memory
+    ///             before flushing.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func persistViewport() {
         viewportMemory.state.scale = Double(boardScale)
         viewportMemory.state.panoramic = isPanoramic
@@ -1781,10 +2188,31 @@ struct ContentView: View {
         viewportMemory.flush()
     }
 
+
+    ///
+    /// @fcn        ContentView.resetBoardZoom
+    /// @brief      Reset zoom to the current mode's baseline
+    /// @details    Ignores requests during dragging and disables the transition animation when Reduce Motion is
+    ///             enabled.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func resetBoardZoom() {
         guard draggedListID == nil, draggedCardID == nil else { return }
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2)) { boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic) }
     }
+
+
+    ///
+    /// @fcn        ContentView.adjustBoardZoom
+    /// @brief      Adjust zoom through accessibility controls
+    /// @details    Applies a bounded fifteen percent step outside gallery mode and ignores requests during an active
+    ///             drag.
+    ///
+    /// @param[in]  direction  Accessibility adjustment direction selecting a zoom increment or decrement
+    ///
+    /// @return     (Void) no return value
+    ///
     private func adjustBoardZoom(_ direction: AccessibilityAdjustmentDirection) {
         guard !isGallery, draggedListID == nil, draggedCardID == nil else { return }
         switch direction {
@@ -1797,6 +2225,15 @@ struct ContentView: View {
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
     }
 
+
+    ///
+    /// @fcn        ContentView.toggleBoardZoom
+    /// @brief      Toggle between panoramic and standard board modes
+    /// @details    Resets zoom to the new mode's preset and respects Reduce Motion; active drags prevent mode
+    ///             changes.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func toggleBoardZoom() {
         guard draggedListID == nil, draggedCardID == nil else { return }
         withAnimation(reducesMotion ? nil : .smooth(duration: 0.25)) {
@@ -2190,6 +2627,15 @@ struct ContentView: View {
         return PlanningDate.date(key)
     }
 
+
+    ///
+    /// @fcn        ContentView.addList
+    /// @brief      Append a uniquely named empty list to the board
+    /// @details    Allocates an ID beyond active and archived lists, avoids case-insensitive title collisions, and
+    ///             makes the new list the visible target.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func addList() {
 
         let nextListID     = ((lists + archivedLists).map(\.id).max() ?? -1) + 1  /* Board-wide next list ID   */
@@ -2343,6 +2789,19 @@ struct ContentView: View {
         lists[index].cards = DaySections.moved(lists[index].cards, sectionID: sectionID, offset: offset)
     }
 
+
+    ///
+    /// @fcn        ContentView.moveCard
+    /// @brief      Reorder a card or an entire named section
+    /// @details    Uses the canonical section-aware ordering helper, reveals the moved card's section, and animates
+    ///             only a changed order.
+    ///
+    /// @param[in]  listID            Numeric list identity within its owner
+    /// @param[in]  cardID            Numeric card identity within its owner
+    /// @param[in]  destinationIndex  Canonical insertion index in the destination list
+    ///
+    /// @return     (Void) no return value
+    ///
     private func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int) {
 
         guard let listIndex = lists.firstIndex(where: { /* Position of the list containing the reordered card */
@@ -2810,6 +3269,17 @@ struct ContentView: View {
             })
     }
 
+
+    ///
+    /// @fcn        ContentView.updateCard
+    /// @brief      Replace the matching active card with its edited value
+    /// @details    Searches lists by card identity, updates the first match, and prunes attachments after
+    ///             replacement.
+    ///
+    /// @param[in]  updatedCard  Edited card value to publish at its existing identity
+    ///
+    /// @return     (Void) no return value
+    ///
     private func updateCard(_ updatedCard: KanbanCard) {
 
         for listIndex in lists.indices {
@@ -4156,6 +4626,18 @@ struct ArchivedCardInspectionView: View {
 private struct ListItemSwipeDelete: ViewModifier {
     let enabled: Bool
     let onRequest: () -> Void
+
+
+    ///
+    /// @fcn        ListItemSwipeDelete.body
+    /// @brief      Install an explicit trailing swipe-delete action
+    /// @details    Exposes Delete only when enabled and disables full-swipe deletion so the user must choose the
+    ///             action.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) install an explicit trailing swipe-delete action
+    ///
     func body(content: Content) -> some View {
         content.swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if enabled {
@@ -4721,6 +5203,17 @@ struct KanbanListView: View {
         boardAppearance.resolvedCardDetail(card: card.appearance, list: list.appearance) == .compact
     }
 
+
+    ///
+    /// @fcn        KanbanListView.cardHeight
+    /// @brief      Calculate a scaled card preview height
+    /// @details    Uses the compact height or the selected presentation's minimum height before applying the card
+    ///             scale.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (CGFloat) compact or presentation-minimum height multiplied by the current card scale
+    ///
     private func cardHeight(for card: KanbanCard) -> CGFloat {
         (usesCompactCards(card) ? 64 : presentation.minimumCardHeight) * cardScale
     }
@@ -5222,19 +5715,64 @@ struct ListCreationDraft: Codable, Equatable {
     var subtitle = ""
     var description = ""
 
+
+    ///
+    /// @fcn        ListCreationDraft.key
+    /// @brief      Build the storage key for a destination's creation draft
+    /// @details    Includes the collection UUID or current-week sentinel and the numeric list ID to keep drafts
+    ///             separate.
+    ///
+    /// @param[in]  collectionID  UUID of the collection owning the referenced content
+    /// @param[in]  listID        Numeric list identity within its owner
+    ///
+    /// @return     (String) owner-and-list-qualified creation-draft preferences key
+    ///
     static func key(collectionID: UUID?, listID: Int) -> String {
         "plenact.creationDraft.\(collectionID?.uuidString ?? "currentWeek").\(listID)"
     }
 
+
+    ///
+    /// @fcn        ListCreationDraft.load
+    /// @brief      Restore a destination-specific creation draft
+    /// @details    Returns an empty draft when the key has no data or its encoded value cannot be decoded.
+    ///
+    /// @param[in]  key       Storage key or stable lookup key used by this operation
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (ListCreationDraft) constructed value
+    ///
     static func load(key: String, defaults: UserDefaults = .standard) -> Self {
         guard let data = defaults.data(forKey: key), let draft = try? JSONDecoder().decode(Self.self, from: data) else { return Self() }
         return draft
     }
 
+
+    ///
+    /// @fcn        ListCreationDraft.save
+    /// @brief      Persist the current creation draft
+    /// @details    Writes encoded draft data under the supplied key only when encoding succeeds.
+    ///
+    /// @param[in]  key       Storage key or stable lookup key used by this operation
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func save(key: String, defaults: UserDefaults = .standard) {
         if let data = try? JSONEncoder().encode(self) { defaults.set(data, forKey: key) }
     }
 
+
+    ///
+    /// @fcn        ListCreationDraft.clear
+    /// @brief      Remove a completed or cancelled creation draft
+    /// @details    Deletes only the specified draft key from the supplied preferences store.
+    ///
+    /// @param[in]  key       Storage key or stable lookup key used by this operation
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func clear(key: String, defaults: UserDefaults = .standard) { defaults.removeObject(forKey: key) }
 }
 
@@ -5246,6 +5784,16 @@ final class ListCreationDraftModel: ObservableObject {
     @Published var subtitle: String { didSet { save() } }
     @Published var description: String { didSet { save() } }
 
+
+    ///
+    /// @fcn        ListCreationDraftModel.init
+    /// @brief      Load editable creation fields for a destination key
+    /// @details    Retains the key and initializes title, subtitle, and description from the saved draft.
+    ///
+    /// @param[in]  key  Storage key or stable lookup key used by this operation
+    ///
+    /// @return     (ListCreationDraftModel) initialized instance
+    ///
     init(key: String) {
         self.key = key
         let saved = ListCreationDraft.load(key: key)
@@ -5254,6 +5802,15 @@ final class ListCreationDraftModel: ObservableObject {
         description = saved.description
     }
 
+
+    ///
+    /// @fcn        ListCreationDraftModel.beginSession
+    /// @brief      Reload draft fields before accepting editor changes
+    /// @details    Temporarily suspends edits during restoration so field assignments do not persist intermediate
+    ///             values.
+    ///
+    /// @return     (Void) no return value
+    ///
     func beginSession() {
         acceptsEdits = false
         let saved = ListCreationDraft.load(key: key)
@@ -5263,6 +5820,15 @@ final class ListCreationDraftModel: ObservableObject {
         acceptsEdits = true
     }
 
+
+    ///
+    /// @fcn        ListCreationDraftModel.finishSession
+    /// @brief      Clear a finished draft and reject delayed editor callbacks
+    /// @details    Stops accepting edits before clearing fields and storage, preventing keyboard dismissal from
+    ///             recreating the draft.
+    ///
+    /// @return     (Void) no return value
+    ///
     func finishSession() {
         // Dismissal can deliver a final text-editor callback after Add or Cancel.
         acceptsEdits = false
@@ -5272,6 +5838,16 @@ final class ListCreationDraftModel: ObservableObject {
         ListCreationDraft.clear(key: key)
     }
 
+
+    ///
+    /// @fcn        ListCreationDraftModel.binding
+    /// @brief      Bind a creation field while the session accepts edits
+    /// @details    Reads through the supplied reference key path and ignores writes after the session has finished.
+    ///
+    /// @param[in]  field  Selected editable field or field key path
+    ///
+    /// @return     (Binding<String>) field binding that ignores writes after the creation session has finished
+    ///
     func binding(_ field: ReferenceWritableKeyPath<ListCreationDraftModel, String>) -> Binding<String> {
         Binding(get: { self[keyPath: field] }, set: { value in
             guard self.acceptsEdits else { return }
@@ -5279,6 +5855,14 @@ final class ListCreationDraftModel: ObservableObject {
         })
     }
 
+
+    ///
+    /// @fcn        ListCreationDraftModel.save
+    /// @brief      Persist editable draft fields during an active session
+    /// @details    Returns without writing once edits are disabled, preserving the completed-session cleanup.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func save() {
         guard acceptsEdits else { return }
         ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: key)
@@ -5570,6 +6154,17 @@ private struct KanbanListActionsSheet: View {
         }
     }
 
+
+    ///
+    /// @fcn        KanbanListActionsSheet.footerActionLabel
+    /// @brief      Build a consistent list-action footer label
+    /// @details    Stacks the icon and wrapping caption in a shared minimum-height touch region.
+    ///
+    /// @param[in]  title   Display title or proposed title text
+    /// @param[in]  symbol  SF Symbol name used by the control
+    ///
+    /// @return     (some View) a consistent list-action footer label
+    ///
     private func footerActionLabel(_ title: String, symbol: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: symbol)
@@ -5590,6 +6185,18 @@ private struct KanbanListActionsSheet: View {
 // -------------------------------------- MARK: - Kanban Card ----------------------------------- //
 
 
+///
+/// @fcn        setListAppearance
+/// @brief      Apply appearance to one unambiguous active list
+/// @details    Rejects missing, duplicated, or archived matches with activity feedback; stores nil for an empty
+///             appearance.
+///
+/// @param[in]      listID      Numeric list identity within its owner
+/// @param[in]      appearance  Optional or explicit appearance overrides supplied by the caller
+/// @param[in,out]  lists       Lists participating in the operation
+///
+/// @return     (Bool) true for a uniquely identified active list update; false when the target is invalid
+///
 @MainActor
 @discardableResult
 func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: inout [KanbanList]) -> Bool {
@@ -5602,7 +6209,23 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
     return true
 }
 
-/// Saves metadata into the current canonical record, not the editor's older snapshot.
+
+///
+/// @fcn        editBoardList
+/// @brief      Validate and apply list title and subtitle edits
+/// @details    Requires one active matching list, preserves an unchanged subtitle override, and reports validation
+///             failures without publishing the failed edit.
+///
+/// @param[in]      listID               Numeric list identity within its owner
+/// @param[in]      title                Display title or proposed title text
+/// @param[in]      subtitle             Supporting subtitle text
+/// @param[in]      newItemPresentation  Optional default presentation for new items in the edited list
+/// @param[in,out]  lists                Lists participating in the operation
+///
+/// @return     (Bool) true after valid metadata is applied; false when validation or target resolution fails
+///
+/// @note       Saves metadata into the current canonical record, not the editor's older snapshot.
+///
 @MainActor
 @discardableResult
 func editBoardList(_ listID: Int, title: String, subtitle: String, newItemPresentation: ItemPresentation? = nil, in lists: inout [KanbanList]) -> Bool {
@@ -5632,10 +6255,34 @@ struct ListInfoEditorSheet: View {
     @State private var title: String
     @State private var subtitle: String
 
+
+    ///
+    /// @fcn        ListInfoEditorSheet.init
+    /// @brief      Initialize list metadata editing with a save callback
+    /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
+    ///             presentation-aware initializer.
+    ///
+    /// @param[in]  list    List supplying the current content and metadata
+    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (ListInfoEditorSheet) initialized instance
+    ///
     init(list: KanbanList, onSave: @escaping (String, String) -> Bool) {
         self.init(list: list) { title, subtitle, _ in onSave(title, subtitle) }
     }
 
+
+    ///
+    /// @fcn        ListInfoEditorSheet.init
+    /// @brief      Initialize list metadata editing with a save callback
+    /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
+    ///             presentation-aware initializer.
+    ///
+    /// @param[in]  list    List supplying the current content and metadata
+    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (ListInfoEditorSheet) initialized instance
+    ///
     init(list: KanbanList, onSave: @escaping (String, String, ItemPresentation) -> Bool) {
         _defaultPresentation = State(initialValue: list.newItemPresentation)
         self.onSave = onSave
@@ -6456,6 +7103,17 @@ struct TodayListDetailView: View {
         )
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.insertionMarker
+    /// @brief      Render the current drag insertion position
+    /// @details    Shows a decorative accent line only for the matching before-card target and excludes it from
+    ///             interaction and accessibility.
+    ///
+    /// @param[in]  cardID  Numeric card identity within its owner
+    ///
+    /// @return     (some View) the current drag insertion position
+    ///
     private func insertionMarker(before cardID: Int?) -> some View {
         Group {
             if let target = cardDropTarget, target.beforeCardID == cardID {
@@ -6469,11 +7127,30 @@ struct TodayListDetailView: View {
         .accessibilityHidden(true)
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.clearCardDrag
+    /// @brief      Clear the active card drag identity and location
+    /// @details    Resets both drag fields so subsequent gestures begin without a stale source or pointer position.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func clearCardDrag() {
         draggedCardID = nil
         cardDragLocation = nil
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.cardDragSource
+    /// @brief      Attach normal press-and-hold dragging to a card
+    /// @details    Installs the drag source outside Edit mode and scopes begin, move, and end callbacks to the active
+    ///             card identity.
+    ///
+    /// @param[in]  cardID  Numeric card identity within its owner
+    ///
+    /// @return     (some View) attach normal press-and-hold dragging to a card
+    ///
     private func cardDragSource(for cardID: Int) -> some View {
         Group {
             if editMode != .active {
@@ -6495,6 +7172,17 @@ struct TodayListDetailView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.finishCardDrag
+    /// @brief      Resolve and apply the final card-drop location
+    /// @details    Always clears drag state, rejects missing sources or targets, and reports movement errors instead
+    ///             of claiming success.
+    ///
+    /// @param[in]  point  Touch or drop location in the operation's coordinate space
+    ///
+    /// @return     (Bool) true when the resolved card drop changes the canonical list order; false otherwise
+    ///
     private func finishCardDrag(at point: CGPoint) -> Bool {
         defer { clearCardDrag() }
         guard let cardID = draggedCardID, let focusedList else { return false }
@@ -6523,14 +7211,46 @@ struct TodayListDetailView: View {
         lists.first { $0.id == listID }
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.usesCompactCards
+    /// @brief      Resolve whether a card uses a compact preview
+    /// @details    Combines board, list, and card appearance through the shared detail-resolution rules.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (Bool) true when effective card, list, and board appearance resolves to compact detail
+    ///
     private func usesCompactCards(_ card: KanbanCard) -> Bool {
         effectiveBoardAppearance.resolvedCardDetail(card: card.appearance, list: focusedList?.appearance) == .compact
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.cardPreviewHeight
+    /// @brief      Choose the compact or standard preview height
+    /// @details    Returns the compact row height when inherited appearance selects compact detail; otherwise uses
+    ///             the standard minimum.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (CGFloat) sixty-four points for a compact card or the standard minimum height otherwise
+    ///
     private func cardPreviewHeight(_ card: KanbanCard) -> CGFloat {
         usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.cardPreview
+    /// @brief      Build a preview appropriate to the list's display mode
+    /// @details    Uses a note row for note-list mode or a styled card preview with the existing edit, completion,
+    ///             archive, and delete callbacks.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (some View) a preview appropriate to the list's display mode
+    ///
     @ViewBuilder
     private func cardPreview(_ card: KanbanCard) -> some View {
         if focusedList?.singleListViewMode == .noteList {
@@ -6601,6 +7321,17 @@ struct TodayListDetailView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.selectDay
+    /// @brief      Open the requested day through the available navigation path
+    /// @details    Prefers the injected day-selection callback; otherwise resolves a calendar-backed selection and
+    ///             leaves state unchanged if unavailable.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func selectDay(_ date: Date) {
         if let onSelectDay { onSelectDay(date); return }
         guard let access = planningCalendarAccess,
@@ -6608,6 +7339,18 @@ struct TodayListDetailView: View {
         selectedDay = selection
     }
 
+
+    ///
+    /// @fcn        TodayListDetailView.keyboardNavigation
+    /// @brief      Build previous and next card navigation actions
+    /// @details    Enables actions only for existing neighbors and resolves each neighbor again when invoked to avoid
+    ///             using a stale ordering.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (CardKeyboardNavigation) previous and next actions that resolve current neighboring cards when
+    ///             invoked
+    ///
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation {
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
         return CardKeyboardNavigation(
@@ -7420,6 +8163,21 @@ struct BoardOptionsPopover: View {
     var listViewMode: Binding<SingleListViewMode>? = nil
     let onAction: (BoardOptionsAction) -> Void
 
+
+    ///
+    /// @fcn        BoardOptionsPopover.icon
+    /// @brief      Build an accessible board-option icon button
+    /// @details    Provides a forty-four-point target, disabled styling, an accessibility name, and the selected
+    ///             action callback.
+    ///
+    /// @param[in]  symbol   SF Symbol name used by the control
+    /// @param[in]  name     Storage file name, symbol name, or accessible control name selected for this operation
+    /// @param[in]  action   Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  color    Requested icon, accent, or formatting color
+    /// @param[in]  enabled  Whether this optional behavior is enabled
+    ///
+    /// @return     (some View) an accessible board-option icon button
+    ///
     private func icon(_ symbol: String, name: String, action: BoardOptionsAction,
                       color: Color = .primary, enabled: Bool = true) -> some View {
         Button { onAction(action) } label: {
@@ -7519,10 +8277,35 @@ struct CopyListDestinationSheet: View {
     let currentID: UUID?
     let copyHere: () -> Bool
     @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        CopyListDestinationSheet.destinationWeeks
+    /// @brief      List active calendar-week copy destinations
+    /// @details    Excludes the current source week and archived collections while retaining the calendar's week
+    ///             ordering.
+    ///
+    /// @param[in]  access  Checked calendar and personal-owner access callbacks
+    ///
+    /// @return     ([DatedPlanningWeek]) active calendar weeks excluding the source owner
+    ///
     private func destinationWeeks(_ access: PlanningCalendarAccess) -> [DatedPlanningWeek] {
         let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id
         return access.document.weeks.filter { $0.collection.isActive && $0.id != sourceID }
     }
+
+
+    ///
+    /// @fcn        CopyListDestinationSheet.copy
+    /// @brief      Copy the source list into a calendar week
+    /// @details    Creates a cross-board copy and dismisses with confirmation only after the checked week save
+    ///             succeeds.
+    ///
+    /// @param[in]  week    Dated planning week being inspected or saved
+    /// @param[in]  access  Checked calendar and personal-owner access callbacks
+    ///
+    /// @return     (Void) no return value
+    ///
     private func copy(to week: DatedPlanningWeek, using access: PlanningCalendarAccess) {
         var updated = week
         let copy = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
@@ -7578,6 +8361,18 @@ struct MoveListDestinationSheet: View {
     let currentID: UUID?
     @Environment(\.dismiss) private var dismiss
     private var sourceID: UUID? { currentID ?? access?.document.weeks.first { $0.startKey == access?.document.currentWeekKey }?.id }
+
+
+    ///
+    /// @fcn        MoveListDestinationSheet.move
+    /// @brief      Move the source list to the selected owner
+    /// @details    Requires the source owner and a successful movement callback before dismissing the destination
+    ///             sheet.
+    ///
+    /// @param[in]  id  Stable identity used by this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func move(to id: UUID?) {
         guard let sourceID, access?.moveList?(source.id, sourceID, id) == true else { return }
         dismiss()
@@ -7618,6 +8413,18 @@ struct MoveListDestinationSheet: View {
 private struct DayHeaderAccessibility: ViewModifier {
     let label: String
     let action: (() -> Void)?
+
+
+    ///
+    /// @fcn        DayHeaderAccessibility.body
+    /// @brief      Expose an actionable day header to accessibility
+    /// @details    Adds a button label and action when navigation exists; otherwise returns the content without
+    ///             additional traits.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) expose an actionable day header to accessibility
+    ///
     @ViewBuilder func body(content: Content) -> some View {
         if let action {
             content.accessibilityLabel(label).accessibilityAddTraits(.isButton).accessibilityAction { action() }
@@ -7644,6 +8451,18 @@ private struct ListCheckmarkResetControl: View {
         .disabled(session?.canRestore(list) != true && !ListCheckmarkReset.values(in: list).values.contains(true))
 
     }
+
+
+    ///
+    /// @fcn        ListCheckmarkResetControl.apply
+    /// @brief      Publish only cards changed by a checkmark operation
+    /// @details    Compares each candidate against the current list and invokes the update callback only for
+    ///             differing records.
+    ///
+    /// @param[in]  cards  Canonical card values in their current order
+    ///
+    /// @return     (Void) no return value
+    ///
     private func apply(_ cards: [KanbanCard]) {
         for card in cards where list.cards.first(where: { $0.id == card.id }) != card { onUpdateCard(card) }
     }
@@ -7654,6 +8473,18 @@ private struct ListCheckmarkResetConfirmation: ViewModifier {
     @Binding var session: ListCheckmarkReset?
     @Binding var confirmsClear: Bool
     let onUpdateCard: (KanbanCard) -> Void
+
+
+    ///
+    /// @fcn        ListCheckmarkResetConfirmation.body
+    /// @brief      Confirm clearing a list's nested checkmarks
+    /// @details    Captures a restoration session before publishing changed cards and explains when that restoration
+    ///             remains available.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) confirm clearing a list's nested checkmarks
+    ///
     func body(content: Content) -> some View {
         content.confirmationDialog("Clear all checkmarks in \(list?.title ?? "this list")?", isPresented: $confirmsClear, titleVisibility: .visible) {
             Button("Clear all checkmarks", role: .destructive) {
@@ -7682,6 +8513,18 @@ struct SingleListNoteRow: View {
         if !subtitle.isEmpty { return subtitle }
         return PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+
+    ///
+    /// @fcn        SingleListNoteRow.dateText
+    /// @brief      Format a note date according to its date kind
+    /// @details    Shows a calendar date, a time, or both without adding components absent from the stored kind.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
+    ///
+    /// @return     (String) date-only, time-only, or combined label matching the stored date kind
+    ///
     private func dateText(_ date: Date, kind: CardDateKind) -> String {
         switch kind {
         case .date: date.formatted(date: .abbreviated, time: .omitted)
@@ -7871,6 +8714,22 @@ struct WorkspaceHeaderTitleKey: LayoutValueKey {
 
 /// Decide against intrinsic text width, never the previous clipped width: no layout oscillation.
 enum WorkspaceHeaderSpacing {
+
+
+    ///
+    /// @fcn        WorkspaceHeaderSpacing.gap
+    /// @brief      Choose compact spacing only when header text would clip
+    /// @details    Subtracts control widths and regular gaps, then returns zero if the ideal title exceeds the
+    ///             remaining space by more than one point.
+    ///
+    /// @param[in]  availableWidth   Total width available to the header in points
+    /// @param[in]  titleIdealWidth  Intrinsic width required by the title and subtitle
+    /// @param[in]  controlsWidth    Combined intrinsic width of the header controls
+    /// @param[in]  gapCount         Number of spaces between adjacent header children
+    /// @param[in]  regularSpacing   Normal intercontrol spacing in points
+    ///
+    /// @return     (CGFloat) regular spacing when text fits, otherwise zero
+    ///
     static func gap(availableWidth: CGFloat, titleIdealWidth: CGFloat, controlsWidth: CGFloat,
                     gapCount: Int, regularSpacing: CGFloat) -> CGFloat {
         let titleSpace = max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
@@ -7883,6 +8742,19 @@ struct AdaptiveWorkspaceHeaderLayout: Layout {
     var regularSpacing: CGFloat
     var layoutDirection: LayoutDirection = .leftToRight
 
+
+    ///
+    /// @fcn        AdaptiveWorkspaceHeaderLayout.arrangement
+    /// @brief      Measure a header with adaptive control spacing
+    /// @details    Reserves intrinsic control sizes, detects the marked title child, and gives that child the
+    ///             remaining width after the chosen gaps.
+    ///
+    /// @param[in]  width     Available horizontal extent in points
+    /// @param[in]  subviews  Layout children to measure or position
+    ///
+    /// @return     ((sizes: [CGSize], gap: CGFloat, width: CGFloat)) child sizes, selected gap, and total width used
+    ///             by measurement and placement
+    ///
     private func arrangement(width: CGFloat?, subviews: Subviews) -> (sizes: [CGSize], gap: CGFloat, width: CGFloat) {
         let ideal = subviews.map { $0.sizeThatFits(.unspecified) }
         guard let title = subviews.indices.first(where: { subviews[$0][WorkspaceHeaderTitleKey.self] }) else {
@@ -7901,11 +8773,37 @@ struct AdaptiveWorkspaceHeaderLayout: Layout {
         return (sizes, gap, available)
     }
 
+
+    ///
+    /// @fcn        AdaptiveWorkspaceHeaderLayout.sizeThatFits
+    /// @brief      Measure the adaptive header's required size
+    /// @details    Uses the proposed width and the tallest arranged child without modifying the layout cache.
+    ///
+    /// @param[in]      proposal  Parent layout proposal, including an optional available width
+    /// @param[in]      subviews  Layout children to measure or position
+    /// @param[in,out]  cache     Framework layout cache; this implementation does not retain measurements in it
+    ///
+    /// @return     (CGSize) arranged header width and maximum child height
+    ///
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let layout = arrangement(width: proposal.width, subviews: subviews)
         return CGSize(width: layout.width, height: layout.sizes.map(\.height).max() ?? 0)
     }
 
+
+    ///
+    /// @fcn        AdaptiveWorkspaceHeaderLayout.placeSubviews
+    /// @brief      Position header children in the current reading direction
+    /// @details    Uses the shared measurement result and reverses horizontal placement for right-to-left layouts
+    ///             while centering children vertically.
+    ///
+    /// @param[in]      bounds    Assigned layout rectangle in which children should be placed
+    /// @param[in]      proposal  Parent layout proposal, including an optional available width
+    /// @param[in]      subviews  Layout children to measure or position
+    /// @param[in,out]  cache     Framework layout cache; this implementation does not retain measurements in it
+    ///
+    /// @return     (Void) no return value
+    ///
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let layout = arrangement(width: bounds.width, subviews: subviews)
         var offset: CGFloat = 0
@@ -7994,6 +8892,18 @@ struct DayScheduleOverview: View {
             }
         }
     }
+
+
+    ///
+    /// @fcn        DayScheduleOverview.chart
+    /// @brief      Draw planned tag distribution and completion arcs
+    /// @details    Uses segment shares of planned time for the main ring and completed planned time for the thin
+    ///             outer ring; the accompanying legend supplies accessible text.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     (some View) draw planned tag distribution and completion arcs
+    ///
     private func chart(_ data: DayTimeDistribution) -> some View {
         ZStack {
             Circle().stroke(Color.secondary.opacity(0.12), lineWidth: 20)
@@ -8021,6 +8931,18 @@ struct DayScheduleOverview: View {
         .padding(19).frame(width: 148, height: 148)
         .accessibilityHidden(true)
     }
+
+
+    ///
+    /// @fcn        DayScheduleOverview.legend
+    /// @brief      Summarize the leading planned-time categories
+    /// @details    Shows up to three tag totals, an additional-tag count, and an empty-state prompt when no timed
+    ///             work is available.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     (some View) summarize the leading planned-time categories
+    ///
     private func legend(_ data: DayTimeDistribution) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             if data.total == 0 {
@@ -8043,6 +8965,21 @@ struct DayScheduleOverview: View {
 
 /// Materialize a full draft without allocating in or mutating a different owner.
 enum ListItemCreation {
+
+
+    ///
+    /// @fcn        ListItemCreation.items
+    /// @brief      Build full-featured cards or notes from a capture submission
+    /// @details    Validates the active destination, title, and schedule; applies scheduling to each created item and
+    ///             attaches imported media and its photo cover to the first item.
+    ///
+    /// @param[in]  capture   Full capture submission including presentation, text, schedule, and attachments
+    /// @param[in]  list      List supplying the current content and metadata
+    /// @param[in]  id        Starting numeric card ID or owner-local content identity
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([KanbanCard]?) generated items, or nil when input or destination validation fails
+    ///
     static func items(_ capture: QuickCaptureSubmission, in list: KanbanList, startingAt id: Int,
                       calendar: Calendar = .current) -> [KanbanCard]? {
         guard capture.listID == list.id, !list.isArchived,
@@ -8068,6 +9005,18 @@ struct LowerCornerBackShortcut: ViewModifier {
     private var enabled: Bool {
         (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.enablesLowerCornerBack ?? false
     }
+
+
+    ///
+    /// @fcn        LowerCornerBackShortcut.body
+    /// @brief      Install the optional lower-left Back touch region
+    /// @details    Shows an eighty-eight-point-wide target only when enabled, a Back action exists, and the keyboard
+    ///             is hidden; includes the home-indicator inset on full-screen destinations.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) install the optional lower-left back touch region
+    ///
     func body(content: Content) -> some View {
         content
             .safeAreaInset(edge: .bottom, spacing: 0) {

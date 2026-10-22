@@ -221,6 +221,15 @@ final class TransferConfirmationPresenter {
     private var undoOverlay: TransferUndoOverlay?
     private var undoHost: UIViewController?
 
+
+    ///
+    /// @fcn        TransferConfirmationPresenter.dismiss
+    /// @brief      Remove the current transfer feedback presentation
+    /// @details    Cancels its maintenance task and clears the retained overlay, hosting controller, and any
+    ///             transient feedback window.
+    ///
+    /// @return     (Void) no return value
+    ///
     func dismiss() {
         dismissTask?.cancel()
         window?.isHidden = true
@@ -230,7 +239,21 @@ final class TransferConfirmationPresenter {
         undoHost = nil
     }
 
-    /// Unlike the transient confirmation, this remains available across navigation until used or dismissed.
+
+    ///
+    /// @fcn        TransferConfirmationPresenter.showUndo
+    /// @brief      Show a persistent section-transfer Undo notice
+    /// @details    Hosts the notice in the existing key window and keeps it above later presentations; Undo uses the
+    ///             supplied checked callback and can report a failed restoration.
+    ///
+    /// @param[in]  confirmation  Transfer message and action metadata to present
+    /// @param[in]  undo          Checked restoration callback; false keeps feedback available for a failed Undo
+    ///
+    /// @return     (Void) no return value
+    ///
+    /// @note       Unlike the transient confirmation, this remains available across navigation until used or
+    ///             dismissed.
+    ///
     func showUndo(_ confirmation: TransferConfirmation, undo: @escaping () -> Bool) {
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }),
@@ -268,6 +291,17 @@ final class TransferConfirmationPresenter {
         }
     }
 
+
+    ///
+    /// @fcn        TransferConfirmationPresenter.show
+    /// @brief      Show a short-lived transfer confirmation
+    /// @details    Replaces previous feedback with a noninteractive presentation that dismisses after its display
+    ///             interval.
+    ///
+    /// @param[in]  confirmation  Transfer message and action metadata to present
+    ///
+    /// @return     (Void) no return value
+    ///
     func show(_ confirmation: TransferConfirmation) {
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }) else { return }
@@ -292,6 +326,19 @@ final class TransferConfirmationPresenter {
 
 private final class TransferUndoOverlay: UIView {
     var touchRegion: CGRect = .zero
+
+
+    ///
+    /// @fcn        TransferUndoOverlay.hitTest
+    /// @brief      Restrict the Undo overlay to its hosted notice panel
+    /// @details    Returns a normal child hit only inside the retained panel rectangle; touches outside pass through
+    ///             to the existing application window.
+    ///
+    /// @param[in]  point  Touch or drop location in the operation's coordinate space
+    /// @param[in]  event  Optional UIKit event accompanying hit testing
+    ///
+    /// @return     (UIView?) hit-tested notice subview, or nil to pass touches outside the notice through
+    ///
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard touchRegion.contains(point) else { return nil }
         return super.hitTest(point, with: event)
@@ -301,6 +348,18 @@ private final class TransferUndoOverlay: UIView {
 private final class TransferConfirmationWindow: UIWindow {
     var touchRegion: CGRect = .zero
     override var canBecomeKey: Bool { false }
+
+
+    ///
+    /// @fcn        TransferConfirmationWindow.hitTest
+    /// @brief      Keep transient confirmation windows noninteractive
+    /// @details    Returns nil so underlying application content continues receiving touches.
+    ///
+    /// @param[in]  point  Touch or drop location in the operation's coordinate space
+    /// @param[in]  event  Optional UIKit event accompanying hit testing
+    ///
+    /// @return     (UIView?) nil so the transient feedback window never consumes application touches
+    ///
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard touchRegion.contains(point) else { return nil }
         return super.hitTest(point, with: event)

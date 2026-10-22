@@ -8,6 +8,17 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable {
     let location: String
     let sourceCreatedAt: Date?
     var id: String { "\(ownerID):\(cardID)" }
+
+
+    ///
+    /// @fcn        DailyPlanPriority.init
+    /// @brief      Capture a workspace item's owner-qualified priority reference
+    /// @details    Stores the source identity and snapshot fields needed to display and later resolve the priority.
+    ///
+    /// @param[in]  source  Live source item with its calendar or Library location
+    ///
+    /// @return     (DailyPlanPriority) initialized instance
+    ///
     init(_ source: PlanningSearchResult) {
         ownerID = source.collectionID
         cardID = source.card.id
@@ -15,6 +26,19 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable {
         title = source.card.word
         location = source.collectionTitle == source.listTitle ? source.listTitle : source.collectionTitle + " · " + source.listTitle
     }
+
+
+    ///
+    /// @fcn        DailyPlanPriority.resolve
+    /// @brief      Resolve a retained daily priority against live workspace sources
+    /// @details    Matches its owner-qualified identity and returns nil when the original item is no longer
+    ///             available.
+    ///
+    /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
+    ///
+    /// @return     (PlanningSearchResult?) live item matching owner UUID, card ID, and creation timestamp, or nil if
+    ///             unavailable
+    ///
     func resolve(in sources: [PlanningSearchResult]) -> PlanningSearchResult? {
         sources.first { $0.collectionID == ownerID && $0.card.id == cardID && $0.card.createdAt == sourceCreatedAt }
     }
@@ -33,6 +57,19 @@ struct DailyPlan: Codable, Equatable, Identifiable {
     var eveningReview: DailyEveningReview? = nil
     var visionStep: Int? = nil
     var visionCompletedAt: Date? = nil
+
+
+    ///
+    /// @fcn        DailyPlan.init
+    /// @brief      Create an empty plan for a represented calendar day
+    /// @details    Stores the local day key and calendar context used by daily planning and subsequent check-in
+    ///             history.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (DailyPlan) initialized instance
+    ///
     init(date: Date, calendar: Calendar = .current) {
         id = PlanningDate.key(date, calendar: calendar)
         timeZoneID = calendar.timeZone.identifier
@@ -57,6 +94,20 @@ enum DailyPlanStore {
             }
         }
     }
+
+
+    ///
+    /// @fcn        DailyPlanStore.load
+    /// @brief      Load and validate the retained daily-plan document
+    /// @details    Returns an empty document for absent storage and surfaces unsupported or invalid saved data rather
+    ///             than resetting it silently.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Document) validated daily-plan document, or an empty document for absent storage
+    /// @throws     Explicit failures include `Failure.corrupt`, `Failure.unsupported`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document {
         guard defaults.object(forKey: key) != nil else { return Document() }
         guard let data = defaults.data(forKey: key) else { throw Failure.corrupt }
@@ -74,7 +125,21 @@ enum DailyPlanStore {
         }
         return document
     }
-    /// Keep explicit priorities linked to content when its whole section changes owner or list.
+
+
+    ///
+    /// @fcn        DailyPlanStore.relocatingSection
+    /// @brief      Follow moved section members in retained daily priorities
+    /// @details    Uses the transfer receipt's owner and card identity mapping to update affected references while
+    ///             preserving unrelated plans.
+    ///
+    /// @param[in]  receipt   Checked section-transfer receipt containing before/after owners and ID mapping
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    ///
+    /// @return     (Document) document with affected priorities redirected and unrelated plans preserved
+    ///
+    /// @note       Keep explicit priorities linked to content when its whole section changes owner or list.
+    ///
     static func relocatingSection(_ receipt: SectionTransferReceipt, in document: Document) -> Document {
         guard let owner = receipt.after.first(where: { $0.id == receipt.destination.ownerID }),
               let list = owner.lists.first(where: { $0.id == receipt.destination.listID }) else { return document }
@@ -90,7 +155,23 @@ enum DailyPlanStore {
         return result
     }
 
-    /// Merge one day into the latest document, preserving every other day's plan.
+
+    ///
+    /// @fcn        DailyPlanStore.save
+    /// @brief      Save a daily plan against its expected retained value
+    /// @details    Checks the supplied baseline to avoid overwriting concurrent changes, then encodes and returns the
+    ///             accepted saved plan.
+    ///
+    /// @param[in]  plan      Daily plan supplying the retained priorities and review state
+    /// @param[in]  expected  Expected retained plan; nil requires that no plan already exists
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (DailyPlan) saved plan with an updated timestamp after baseline and write verification
+    /// @throws     Explicit failures include `Failure.conflict`, `Failure.corrupt`, `Failure.write`. Errors from
+    ///             throwing dependencies propagate unless handled within this operation.
+    ///
+    /// @note       Merge one day into the latest document, preserving every other day's plan.
+    ///
     @discardableResult
     static func save(_ plan: DailyPlan, replacing expected: DailyPlan?, to defaults: UserDefaults = .standard) throws -> DailyPlan {
         var document = try load(from: defaults)
@@ -132,6 +213,21 @@ struct TodayPlanView: View {
     @State private var confirmsDiscard = false
     @State private var openedItem: PlanningSearchResult?
     private let opensEveningReview: Bool
+
+
+    ///
+    /// @fcn        TodayPlanView.init
+    /// @brief      Seed daily planning and its optional evening-review entry
+    /// @details    Retains preferences and entry mode and creates the represented day's initial draft without
+    ///             persisting during initialization.
+    ///
+    /// @param[in]  date                Represented date for the operation
+    /// @param[in]  calendar            Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  defaults            Preferences store used for this operation
+    /// @param[in]  opensEveningReview  Whether daily planning should enter its evening-review flow
+    ///
+    /// @return     (TodayPlanView) initialized instance
+    ///
     init(date: Date = .now, calendar: Calendar = .current, defaults: UserDefaults = .standard, opensEveningReview: Bool = false) {
         self.opensEveningReview = opensEveningReview
         _date = State(initialValue: date)
@@ -148,6 +244,16 @@ struct TodayPlanView: View {
         value.timeZone = TimeZone(identifier: draft.timeZoneID) ?? .current
         return value
     }
+
+
+    ///
+    /// @fcn        TodayPlanView.load
+    /// @brief      Load the represented day's editable plan
+    /// @details    Restores the current draft and persistence baseline and reports retained-data failures through the
+    ///             view's error state.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func load() {
         do {
             let saved = try DailyPlanStore.load(from: defaults).plans[draft.id]
@@ -157,6 +263,16 @@ struct TodayPlanView: View {
             loaded = true
         } catch { loadError = error.localizedDescription; loaded = true }
     }
+
+
+    ///
+    /// @fcn        TodayPlanView.save
+    /// @brief      Save and dismiss the edited daily plan
+    /// @details    Uses baseline-aware persistence, replaces the draft with the saved value, and dismisses on
+    ///             success; failure retains the editor and sets its save error.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func save() {
         do {
             baseline = try DailyPlanStore.save(draft, replacing: baseline, to: defaults)
@@ -164,9 +280,29 @@ struct TodayPlanView: View {
             dismiss()
         } catch { saveError = error.localizedDescription }
     }
+
+
+    ///
+    /// @fcn        TodayPlanView.close
+    /// @brief      Request dismissal of daily planning
+    /// @details    Prompts to discard unsaved changes when the draft differs from its baseline; otherwise dismisses
+    ///             immediately without writing.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func close() {
         if hasChanges { confirmsDiscard = true } else { dismiss() }
     }
+
+
+    ///
+    /// @fcn        TodayPlanView.saveVisionProgress
+    /// @brief      Save daily vision progress without dismissing
+    /// @details    Updates the draft and baseline from the accepted saved plan and returns false if the checked store
+    ///             rejects it.
+    ///
+    /// @return     (Bool) true after updating the draft and baseline from storage; false on save failure
+    ///
     private func saveVisionProgress() -> Bool {
         do {
             let saved = try DailyPlanStore.save(draft, replacing: baseline, to: defaults)
@@ -175,6 +311,18 @@ struct TodayPlanView: View {
             return true
         } catch { return false }
     }
+
+
+    ///
+    /// @fcn        TodayPlanView.priorityRow
+    /// @brief      Build a daily priority row with its live workspace context
+    /// @details    Resolves the stored priority to available source content and presents the corresponding navigation
+    ///             and planning controls.
+    ///
+    /// @param[in]  priority  Owner-qualified daily priority to render or resolve
+    ///
+    /// @return     (some View) a daily priority row with its live workspace context
+    ///
     private func priorityRow(_ priority: DailyPlanPriority) -> some View {
         let source = priority.resolve(in: sources)
         return Button { openedItem = source } label: {
@@ -388,6 +536,23 @@ struct DailyPriorityPicker: View {
 
 @MainActor
 enum DailyPriorityCreation {
+
+
+    ///
+    /// @fcn        DailyPriorityCreation.create
+    /// @brief      Create a new card or note in the chosen priority destination
+    /// @details    Uses calendar or personal-owner access to save full content and attachments, returning the
+    ///             resulting searchable item only after accepted persistence.
+    ///
+    /// @param[in]  title         Display title or proposed title text
+    /// @param[in]  body          Body text for the new item
+    /// @param[in]  presentation  Card, note, or board presentation selected by the caller
+    /// @param[in]  destination   Owner-qualified destination list reference
+    /// @param[in]  access        Checked calendar and personal-owner access callbacks
+    /// @param[in]  attachments   Attachment records already available for the new item
+    ///
+    /// @return     (PlanningSearchResult?) saved item and its owner context, or nil when creation is rejected
+    ///
     static func create(title: String, body: String, presentation: ItemPresentation,
                        destination: WorkspaceListReference, access: PlanningCalendarAccess, attachments: [KanbanAttachment] = []) -> PlanningSearchResult? {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -428,6 +593,16 @@ private struct NewDailyPriorityView: View {
     private var destinations: [WorkspaceListDestination] {
         WorkspaceBrowseIndex.lists(in: WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? []))
     }
+
+
+    ///
+    /// @fcn        NewDailyPriorityView.saveDraft
+    /// @brief      Save the new priority draft and its imported media
+    /// @details    Uses the checked capture and creation paths and retains the composer with feedback when the
+    ///             destination cannot be saved.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func saveDraft() {
         guard let access, let destination else { return }
         do {
@@ -443,6 +618,16 @@ private struct NewDailyPriorityView: View {
         } catch { self.error = "Attachments couldn't be saved. Your draft is still here; please try again."; return }
         dismiss()
     }
+
+
+    ///
+    /// @fcn        NewDailyPriorityView.initializeDestination
+    /// @brief      Choose On the Table as the initial priority destination
+    /// @details    Runs once and selects the first available standalone On the Table owner; leaves the destination
+    ///             unset when that choice is unavailable.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func initializeDestination() {
         guard !initialized else { return }
         initialized = true
@@ -513,6 +698,22 @@ private struct NewDailyPriorityView: View {
 
 /// Morning suggestions are a projection of canonical dated content, never automatic moves.
 enum TodayVisionSelection {
+
+
+    ///
+    /// @fcn        TodayVisionSelection.candidates
+    /// @brief      Select live candidates for the day's planning vision
+    /// @details    Uses calendar access and reference-label exclusions to offer suitable workspace content for
+    ///             explicit priority selection.
+    ///
+    /// @param[in]  date               Represented date for the operation
+    /// @param[in]  access             Checked calendar and personal-owner access callbacks
+    /// @param[in]  referenceLabelIDs  Label IDs marking reference content that should be excluded from action
+    ///                                selection
+    /// @param[in]  calendar           Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([PlanningSearchResult]) unfinished day-related candidates excluding reference-labeled material
+    ///
     static func candidates(date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar) -> [PlanningSearchResult] {
         let key = PlanningDate.key(date, calendar: calendar)
         let datedList = access.document.week(for: date, calendar: calendar).flatMap { week in
@@ -558,13 +759,45 @@ struct TodayVisionView: View {
     private var table: WorkspaceListDestination? {
         WorkspaceBrowseIndex.lists(in: access?.library ?? []).first { $0.owner.kind == .list && $0.owner.title == "On the Table" }
     }
+
+
+    ///
+    /// @fcn        TodayVisionView.isScheduled
+    /// @brief      Check whether a vision candidate belongs to the Scheduled list
+    /// @details    Matches its owner UUID against active calendar access library collections whose kind is list and
+    ///             title is Scheduled.
+    ///
+    /// @param[in]  source  Live source item with its calendar or Library location
+    ///
+    /// @return     (Bool) true when the source belongs to the standalone Scheduled list owner
+    ///
     private func isScheduled(_ source: PlanningSearchResult) -> Bool {
         access?.library.contains { $0.id == source.collectionID && $0.kind == .list && $0.title == "Scheduled" } == true
     }
+
+
+    ///
+    /// @fcn        TodayVisionView.select
+    /// @brief      Apply the user's vision candidate selection
+    /// @details    Updates the working plan's priorities using the source's owner-qualified identity.
+    ///
+    /// @param[in]  source  Live source item with its calendar or Library location
+    ///
+    /// @return     (Void) no return value
+    ///
     private func select(_ source: PlanningSearchResult) {
         let priority = DailyPlanPriority(source)
         if !plan.priorities.contains(where: { $0.id == priority.id }) { plan.priorities.append(priority) }
     }
+
+
+    ///
+    /// @fcn        TodayVisionView.advance
+    /// @brief      Save vision progress and move to its next step
+    /// @details    Uses the accepted plan-save callback before advancing the guided planning flow.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func advance() {
         guard !saving else { return }; saving = true
         let previousStep = plan.visionStep
@@ -681,6 +914,20 @@ struct CheckInMood: Codable, Equatable {
     let emoji: String
     let label: String
     var display: String { emoji + " " + label }
+
+
+    ///
+    /// @fcn        CheckInMood.custom
+    /// @brief      Validate a custom emoji-and-label check-in mood
+    /// @details    Requires usable mood text and a valid emoji selection and returns nil when the input cannot form a
+    ///             supported mood.
+    ///
+    /// @param[in]  emoji  Emoji text proposed for a reaction or check-in mood
+    /// @param[in]  label  User-visible description accompanying the custom mood
+    ///
+    /// @return     (CheckInMood?) trimmed supported emoji and nonempty label of at most forty characters, or nil for
+    ///             invalid input
+    ///
     static func custom(emoji: String, label: String) -> CheckInMood? {
         let emoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
         let label = label.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -741,6 +988,21 @@ extension DailyPlan {
                       focus: saved.focus, intention: "", constraints: "", concerns: "", priorities: [],
                       completedTasks: nil, totalTasks: nil, notes: nil, unavailable: nil, legacy: true)]
     }
+
+
+    ///
+    /// @fcn        DailyPlan.recordCheckIn
+    /// @brief      Append a snapshot of the current daily check-in
+    /// @details    Captures the user's reflection, mood, priorities, and their live completion context at the
+    ///             supplied timestamp.
+    ///
+    /// @param[in]  changed    User-authored reflection describing what changed
+    /// @param[in]  sources    Live owner-qualified workspace items used to resolve retained references
+    /// @param[in]  timestamp  Explicit timestamp to store or format
+    /// @param[in]  mood       Optional mood captured with the check-in
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func recordCheckIn(changed: String, sources: [PlanningSearchResult], at timestamp: Date = .now, mood: CheckInMood? = nil) {
         var entries = checkInHistory
         let focus = DailyCheckInProgress.focus(plan: self, sources: sources)
@@ -765,6 +1027,20 @@ struct DailyHistoryReviewView: View {
     @AppStorage private var storedData: Data
     private let calendar: Calendar
     private let defaults: UserDefaults
+
+
+    ///
+    /// @fcn        DailyHistoryReviewView.init
+    /// @brief      Configure history observation for a represented day
+    /// @details    Retains calendar and preferences and binds stored daily-plan bytes so later saves can refresh the
+    ///             displayed history.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (DailyHistoryReviewView) initialized instance
+    ///
     init(date: Date, calendar: Calendar, defaults: UserDefaults = .standard) {
         _date = State(initialValue: date)
         self.calendar = calendar; self.defaults = defaults
@@ -772,15 +1048,49 @@ struct DailyHistoryReviewView: View {
     }
     private var plan: DailyPlan? { document.plans[PlanningDate.key(date, calendar: calendar)] }
     private var isToday: Bool { calendar.isDateInToday(date) }
+
+
+    ///
+    /// @fcn        DailyHistoryReviewView.reload
+    /// @brief      Reload retained planning and check-in history
+    /// @details    Reads the represented day's saved plan and updates the view's history or retained-data error
+    ///             state.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func reload() {
         do { document = try DailyPlanStore.load(from: defaults); loadError = nil }
         catch { loadError = error.localizedDescription }
     }
+
+
+    ///
+    /// @fcn        DailyHistoryReviewView.checkInTime
+    /// @brief      Format a check-in timestamp in its recorded time zone
+    /// @details    Uses the saved time-zone identifier with a fallback when that identifier is no longer available.
+    ///
+    /// @param[in]  timestamp   Explicit timestamp to store or format
+    /// @param[in]  timeZoneID  Recorded time-zone identifier used to format the check-in timestamp
+    ///
+    /// @return     (String) localized time label using the saved time zone or the view calendar's fallback zone
+    ///
     private func checkInTime(_ timestamp: Date, timeZoneID: String) -> String {
         var style = Date.FormatStyle(date: .omitted, time: .shortened)
         style.timeZone = TimeZone(identifier: timeZoneID) ?? calendar.timeZone
         return timestamp.formatted(style)
     }
+
+
+    ///
+    /// @fcn        DailyHistoryReviewView.text
+    /// @brief      Build a labeled history-text section
+    /// @details    Presents the recorded value using the history view's shared heading and body styling.
+    ///
+    /// @param[in]  title  Display title or proposed title text
+    /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
+    ///
+    /// @return     (some View) a labeled history-text section
+    ///
     private func text(_ title: String, _ value: String) -> some View {
         Group {
             if !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -885,6 +1195,20 @@ struct DailyHistoryReviewView: View {
 
 /// Live progress counts tasks only; Notes and unavailable links remain separate context.
 enum DailyCheckInProgress {
+
+
+    ///
+    /// @fcn        DailyCheckInProgress.counts
+    /// @brief      Count task, note, and unresolved daily priorities
+    /// @details    Counts all resolved tasks in tasks and their completed subset separately; notes and missing live
+    ///             source references have their own counts.
+    ///
+    /// @param[in]  plan     Daily plan supplying the retained priorities and review state
+    /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
+    ///
+    /// @return     ((completed: Int, tasks: Int, notes: Int, unavailable: Int)) completed-task count, total task
+    ///             count, note count, and unresolved-priority count
+    ///
     static func counts(plan: DailyPlan, sources: [PlanningSearchResult]) -> (completed: Int, tasks: Int, notes: Int, unavailable: Int) {
         var result = (completed: 0, tasks: 0, notes: 0, unavailable: 0)
         for priority in plan.priorities {
@@ -894,6 +1218,20 @@ enum DailyCheckInProgress {
         }
         return result
     }
+
+
+    ///
+    /// @fcn        DailyCheckInProgress.focus
+    /// @brief      Resolve the daily plan's still-eligible check-in focus
+    /// @details    Requires the recorded focus to remain among the priorities and resolve to a live note or
+    ///             incomplete task; otherwise returns nil.
+    ///
+    /// @param[in]  plan     Daily plan supplying the retained priorities and review state
+    /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
+    ///
+    /// @return     (DailyPlanPriority?) still-selected live note or incomplete task priority, or nil when no eligible
+    ///             focus remains
+    ///
     static func focus(plan: DailyPlan, sources: [PlanningSearchResult]) -> DailyPlanPriority? {
         guard let focus = plan.checkIn?.focus,
               plan.priorities.contains(where: { $0 == focus }),
@@ -926,6 +1264,20 @@ struct TodayCheckInView: View {
     }
     @State private var didSave = false
     @State private var selectedFocus: DailyPlanPriority?
+
+
+    ///
+    /// @fcn        TodayCheckInView.init
+    /// @brief      Seed check-in editing from the shared daily plan
+    /// @details    Retains the plan binding, represented date, and checked save callback and restores the currently
+    ///             recorded focus selection.
+    ///
+    /// @param[in]  plan    Daily plan supplying the retained priorities and review state
+    /// @param[in]  date    Represented date for the operation
+    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (TodayCheckInView) initialized instance
+    ///
     init(plan: Binding<DailyPlan>, date: Date, onSave: @escaping () -> Bool) {
         _plan = plan; self.date = date; self.onSave = onSave
         _selectedFocus = State(initialValue: plan.wrappedValue.checkIn?.focus)
@@ -936,9 +1288,31 @@ struct TodayCheckInView: View {
         return result
     }
     @State private var confirmsLeaving = false
+
+
+    ///
+    /// @fcn        TodayCheckInView.selectFocus
+    /// @brief      Stage the check-in focus selection
+    /// @details    Assigns the optional priority to local selection state; the shared plan is updated only by the
+    ///             later save action.
+    ///
+    /// @param[in]  priority  Owner-qualified daily priority, or nil when clearing an optional selection
+    ///
+    /// @return     (Void) no return value
+    ///
     private func selectFocus(_ priority: DailyPlanPriority?) {
         selectedFocus = priority
     }
+
+
+    ///
+    /// @fcn        TodayCheckInView.save
+    /// @brief      Save a single check-in snapshot with optional mood
+    /// @details    Rejects duplicate saves and invalid custom moods, retains the previous plan before mutation, and
+    ///             restores it if the checked save callback fails.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func save() {
         guard !didSave, moodChoice != .custom || selectedMood != nil else { return }
         let previous = plan
@@ -1053,11 +1427,38 @@ struct TodayPlanSummaryPanel: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var plan: DailyPlan?
     @State private var readFailed = false
+
+
+    ///
+    /// @fcn        TodayPlanSummaryPanel.init
+    /// @brief      Configure a live daily-plan summary and open action
+    /// @details    Retains its represented date, source context, welcome choice, and callback and observes daily-plan
+    ///             storage without writing a plan.
+    ///
+    /// @param[in]  date          Represented date for the operation
+    /// @param[in]  calendar      Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  sources       Live owner-qualified workspace items used to resolve retained references
+    /// @param[in]  defaults      Preferences store used for this operation
+    /// @param[in]  welcomesPlan  Whether the daily-plan summary participates in the welcome cue
+    /// @param[in]  onOpen        Action invoked when the summary is opened
+    ///
+    /// @return     (TodayPlanSummaryPanel) initialized instance
+    ///
     init(date: Date, calendar: Calendar, sources: [PlanningSearchResult], defaults: UserDefaults = .standard, welcomesPlan: Bool = false, onOpen: @escaping () -> Void) {
         self.welcomesPlan = welcomesPlan
         self.date = date; self.calendar = calendar; self.sources = sources; self.defaults = defaults; self.onOpen = onOpen
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
     }
+
+
+    ///
+    /// @fcn        TodayPlanSummaryPanel.reload
+    /// @brief      Refresh the represented day's quiet plan summary
+    /// @details    Loads the retained plan for display and exposes storage failures without inventing replacement
+    ///             history.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func reload() {
         do {
             plan = try DailyPlanStore.load(from: defaults).plans[PlanningDate.key(date, calendar: calendar)]

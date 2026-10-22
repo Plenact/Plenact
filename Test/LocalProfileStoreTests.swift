@@ -22,8 +22,8 @@ import CoreImage
 ///
 final class LocalProfileStoreTests: XCTestCase {
 
-    private var defaults: UserDefaults!   /* Isolated test preferences */
-    private let suiteName = "Plenact.LocalProfileStoreTests"   /* Test suite key */
+    private var defaults: UserDefaults!                       /* Isolated test preferences */
+    private let suiteName = "Plenact.LocalProfileStoreTests"  /* Test suite key            */
 
 
     ///
@@ -203,8 +203,8 @@ final class LocalProfileStoreTests: XCTestCase {
     ///
     func testAvatarPhotoFileRoundTripAndRemoval() throws {
 
-        let data = Data([1, 2, 3, 4]) /* Synthetic avatar-image bytes */
-        let fileName = try ProfileAvatarPhotoStore.save(data) /* Stored avatar filename */
+        let data = Data([1, 2, 3, 4])                          /* Synthetic avatar-image bytes */
+        let fileName = try ProfileAvatarPhotoStore.save(data)  /* Stored avatar filename       */
 
         defer {
 
@@ -275,8 +275,8 @@ final class LocalProfileStoreTests: XCTestCase {
 
         XCTAssertEqual(croppedImage.size, CGSize(width: 512, height: 512))
 
-        let colorImage = try XCTUnwrap(CIImage(data: data)) /* Core Image representation of the avatar crop */
-        let average = try XCTUnwrap(colorImage.applyingFilter("CIAreaAverage", parameters: [ /* Average color sample for the exported crop */
+        let colorImage = try XCTUnwrap(CIImage(data: data))                                   /* Core Image representation of the avatar crop */
+        let average = try XCTUnwrap(colorImage.applyingFilter("CIAreaAverage", parameters: [  /* Average color sample for the exported crop   */
             kCIInputExtentKey: CIVector(cgRect: colorImage.extent)
         ]).cropped(to: CGRect(x: 0, y: 0, width: 1, height: 1)) as CIImage?)
         var pixel = [UInt8](repeating: 0, count: 4) /* RGBA buffer for the average crop color */

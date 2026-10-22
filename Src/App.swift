@@ -88,10 +88,10 @@ struct Plenact: App {
 /// @note   Add cases only when the corresponding application view is implemented
 ///
 private enum AppDestination: Hashable {
-    case today       /* Today's planning entry point             */
-    case board       /* Complete kanban workspace                */
-    case lists       /* Library of Week and personal collections */
-    case saved       /* Device-local saved cards                 */
+    case today  /* Today's planning entry point             */
+    case board  /* Complete kanban workspace                */
+    case lists  /* Library of Week and personal collections */
+    case saved  /* Device-local saved cards                 */
 }
 
 
@@ -104,8 +104,8 @@ private enum AppDestination: Hashable {
 /// @note   Both picker modes operate on existing board lists
 ///
 private enum TodayListPickerMode: String, Identifiable {
-    case chooseToday   /* Set the selected list as today's plan   */
-    case browseAll     /* Open a selected list on the Board       */
+    case chooseToday  /* Set the selected list as today's plan */
+    case browseAll    /* Open a selected list on the Board     */
 
     ///
     /// @fcn        TodayListPickerMode.id
@@ -200,8 +200,8 @@ enum TodayListSelection {
             return (lists, existing)
         }
 
-        let nextID = (lists.map(\.id).max() ?? -1) + 1 /* Fresh ID reserved across active and archived lists */
-        let dayList = KanbanList(id: nextID, title: title, cards: []) /* New empty list for the actual weekday */
+        let nextID = (lists.map(\.id).max() ?? -1) + 1                 /* Fresh ID reserved across active and archived lists */
+        let dayList = KanbanList(id: nextID, title: title, cards: [])  /* New empty list for the actual weekday              */
 
         return (lists + [dayList], dayList)
     }
@@ -723,8 +723,8 @@ private struct AppRootView: View {
     @State private var confirmsExampleMonth = false
     @State private var confirmsRestoreUserData = false
     @State private var workspaceNotice: String?
-    @State private var lists: [KanbanList]                 = []                             /* Complete in-memory Week snapshot                    */
-    @State private var collections                         = TodayListPins.loadInitialCollections()	/* Device-local personal collections                   */
+    @State private var lists: [KanbanList]                 = []                                      /* Complete in-memory Week snapshot  */
+    @State private var collections                         = TodayListPins.loadInitialCollections()  /* Device-local personal collections */
     @State private var calendarDocument: PlanningCalendarDocument?
     @State private var displayedPlanningWeek: DatedPlanningWeek?
     @State private var displayedPlanningListID: Int?
@@ -733,9 +733,9 @@ private struct AppRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var launchShadowFading = false
     @State private var launchProgress = PlenactLaunchProgress()
-    @State private var hasLoadedBoard                      = false                          /* Whether the initial Week snapshot has loaded        */
-    @State private var profile                             = LocalProfileStore.load()       /* Optional local identity and settings                */
-    @State private var selectedDestination: AppDestination = .today                         /* Currently selected primary destination              */ 
+    @State private var hasLoadedBoard                      = false                     /* Whether the initial Week snapshot has loaded */
+    @State private var profile                             = LocalProfileStore.load()  /* Optional local identity and settings         */
+    @State private var selectedDestination: AppDestination = .today                    /* Currently selected primary destination       */
     @State private var bottomNavigationSafeInset: CGFloat = 34
     private var bottomToolbarLayout: BottomToolbarLayout {
         .configuration(isTablet: UIDevice.current.userInterfaceIdiom == .pad, compact: verticalSizeClass == .compact)
@@ -745,12 +745,12 @@ private struct AppRootView: View {
     }
     @State private var visibleNoteIDs: Set<UUID> = []
     private var isNotePresented: Bool { !visibleNoteIDs.isEmpty }
-    @State private var weekRootRequest                     = 0                              /* Explicit Week toolbar taps return to the Board root */
-    @State private var savedCardIDs                        = SavedCardPersistence.load()    /* Device-local saved cards                            */
-    @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                    /* Personal bookmark requested from Saved             */
+    @State private var weekRootRequest                     = 0                            /* Explicit Week toolbar taps return to the Board root */
+    @State private var savedCardIDs                        = SavedCardPersistence.load()  /* Device-local saved cards                            */
+    @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                  /* Personal bookmark requested from Saved              */
     @State private var newLibraryListRequest = 0
-    @State private var quickCreateRequest                  = 0                              /* Center-bar quick-create request                     */
-    @State private var showsCenterNewCardSheet             = false                          /* Destination picker for New outside Today            */
+    @State private var quickCreateRequest                  = 0      /* Center-bar quick-create request          */
+    @State private var showsCenterNewCardSheet             = false  /* Destination picker for New outside Today */
     @State private var centerNewPresentation: ItemPresentation = .card
     @State private var centerNewListID: Int?
     @State private var toolbarCollectionRequest: PersonalCollectionKind?
@@ -760,9 +760,9 @@ private struct AppRootView: View {
     @State private var showsToolbarRevisit = false
     @State private var activityRevisitDestination: ToolbarRevisitDestination?
 
-    @State private var boardTargetListID:                  Int?                             /* List requested by a Today-to-Board navigation       */
-    @State private var boardTargetCardID:                  Int?                             /* Card requested by a Today-to-Board navigation       */
-    @State private var activePersonalListNewNote:          (() -> Void)?					/* Callback to create a new note in active pers list   */
+    @State private var boardTargetListID:                  Int?           /* List requested by a Today-to-Board navigation     */
+    @State private var boardTargetCardID:                  Int?           /* Card requested by a Today-to-Board navigation     */
+    @State private var activePersonalListNewNote:          (() -> Void)?  /* Callback to create a new note in active pers list */
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass                         /* Layout size class used to compact the landscape bar */
 
@@ -2108,8 +2108,8 @@ private struct AppRootView: View {
     ///
     private func archiveWeekBoard() {
 
-        let archived = PersonalCollection.archivedWeekBoard(lists: lists, savedCardIDs: savedCardIDs) /* Retained copy of the current Week workspace */
-        let updated = collections + [archived] /* Directory snapshot including the archived Week */
+        let archived = PersonalCollection.archivedWeekBoard(lists: lists, savedCardIDs: savedCardIDs)  /* Retained copy of the current Week workspace    */
+        let updated = collections + [archived]                                                         /* Directory snapshot including the archived Week */
 
         do {
 
@@ -2279,8 +2279,8 @@ private struct AppRootView: View {
     @discardableResult
     private func deleteWeekList(_ id: Int) -> Bool {
 
-        var snapshot = lists /* Week snapshot for checked deletion */
-        var bookmarks = savedCardIDs /* Bookmarks pruned alongside removed content */
+        var snapshot = lists          /* Week snapshot for checked deletion         */
+        var bookmarks = savedCardIDs  /* Bookmarks pruned alongside removed content */
 
         BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -2330,8 +2330,8 @@ private struct AppRootView: View {
     @discardableResult
     private func deleteWeekCard(_ id: Int) -> Bool {
 
-        var snapshot = lists /* Week snapshot for checked deletion */
-        var bookmarks = savedCardIDs /* Bookmarks pruned alongside removed content */
+        var snapshot = lists          /* Week snapshot for checked deletion         */
+        var bookmarks = savedCardIDs  /* Bookmarks pruned alongside removed content */
 
         BoardContentDeletion.card(id, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -2476,10 +2476,10 @@ private struct AppRootView: View {
     ///
     private func addWeekList() {
 
-        let nextListID = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
-        let existingTitles = Set(lists.map { $0.title.lowercased() }) /* Existing normalized titles */
-        var title = "New List" /* First candidate list title */
-        var suffix = 2 /* Duplicate-title suffix */
+        let nextListID = (lists.map(\.id).max() ?? -1) + 1             /* Board-wide next list ID    */
+        let existingTitles = Set(lists.map { $0.title.lowercased() })  /* Existing normalized titles */
+        var title = "New List"                                         /* First candidate list title */
+        var suffix = 2                                                 /* Duplicate-title suffix     */
 
         while existingTitles.contains(title.lowercased()) {
 
@@ -2521,8 +2521,8 @@ private struct AppRootView: View {
                 return false
             }
 
-            let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Board-wide next card ID */
-            var updatedList = lists[listIndex] /* Mutable destination-list copy */
+            let nextCardID  = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1  /* Board-wide next card ID       */
+            var updatedList = lists[listIndex]                                           /* Mutable destination-list copy */
 
             var created = updatedList.makeItems(
                 startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
@@ -2587,26 +2587,26 @@ private struct TodayHomeView: View {
     }
 
 
-    @Binding var lists:     [KanbanList]                    /* Shared local Board lists                           */
-    @Binding var archivedLists: [KanbanList]                   /* Archived Week lists retained for example-load undo */
-    @Binding var savedCardIDs: Set<Int>                     /* Device-local bookmarks used by card details        */
-    let profile:            LocalProfile?                   /* Current local profile and preferences              */
-    let onSaveProfile:      (LocalProfile)        -> Void   /* Save local identity and personalization            */
-    let onRemoveProfile:    ()                    -> Void   /* Remove only local profile information              */
-    let onAddCard: (Int, String, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records */
+    @Binding var lists:     [KanbanList]                                                /* Shared local Board lists                           */
+    @Binding var archivedLists: [KanbanList]                                            /* Archived Week lists retained for example-load undo */
+    @Binding var savedCardIDs: Set<Int>                                                 /* Device-local bookmarks used by card details        */
+    let profile:            LocalProfile?                                               /* Current local profile and preferences              */
+    let onSaveProfile:      (LocalProfile)        -> Void                               /* Save local identity and personalization            */
+    let onRemoveProfile:    ()                    -> Void                               /* Remove only local profile information              */
+    let onAddCard: (Int, String, String, String, ItemPresentation?, [String]?) -> Void  /* Create canonical Week records                      */
     let onAddCapture: (QuickCaptureSubmission) -> Bool
-    let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                       */
-    let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID             */
-    let onOpenBoardCard:    (Int, Int)             -> Void      /* Route to a Week card by list/card IDs */
-    let onArchiveCard: (Int) -> Void /* Retain a canonical Week card */
-    let onDeleteCard: (Int) -> Bool /* Report successful confirmed Week card removal */
-    let onArchiveList: (Int) -> Void /* Retain a canonical Week list */
-    let onDeleteList: (Int) -> Bool /* Report successful confirmed Week list removal */
-    let quickCreateRequest: Int                             /* Center-bar requests for the Today composer         */
+    let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                  */
+    let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID        */
+    let onOpenBoardCard:    (Int, Int)             -> Void  /* Route to a Week card by list/card IDs         */
+    let onArchiveCard: (Int) -> Void                        /* Retain a canonical Week card                  */
+    let onDeleteCard: (Int) -> Bool                         /* Report successful confirmed Week card removal */
+    let onArchiveList: (Int) -> Void                        /* Retain a canonical Week list                  */
+    let onDeleteList: (Int) -> Bool                         /* Report successful confirmed Week list removal */
+    let quickCreateRequest: Int                             /* Center-bar requests for the Today composer    */
 
-    @State private var selectedTodayListID: Int?            /* Board list selected for today's plan     */
-    @State private var listPickerMode: TodayListPickerMode? /* Active list picker presentation mode     */
-    @State private var showsAccountSettings = false         /* Account & Settings sheet presentation    */
+    @State private var selectedTodayListID: Int?             /* Board list selected for today's plan  */
+    @State private var listPickerMode: TodayListPickerMode?  /* Active list picker presentation mode  */
+    @State private var showsAccountSettings = false          /* Account & Settings sheet presentation */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
     @State private var focusFiltersChangedAt: Date?
     @State private var perspectiveSectionTop: CGFloat = 0
@@ -2622,20 +2622,20 @@ private struct TodayHomeView: View {
     @AppStorage(TodayListPins.key) private var listPinData = Data()
     @State private var openedShortcut: WorkspaceListReference?
 
-    @State private var focusedListID: Int?                  /* Current-day list selected when opening Focus */
-    @State private var quickCaptureTitle    = ""            /* Draft title for inline card capture      */
-    @State private var quickComposerInitialTitle = ""       /* Quick-capture title handed to full editor */
-    @State private var showsQuickNoteEditor = false         /* Full-size quick card editor presentation */
+    @State private var focusedListID: Int?             /* Current-day list selected when opening Focus */
+    @State private var quickCaptureTitle    = ""       /* Draft title for inline card capture          */
+    @State private var quickComposerInitialTitle = ""  /* Quick-capture title handed to full editor    */
+    @State private var showsQuickNoteEditor = false    /* Full-size quick card editor presentation     */
     @State private var showsTemplates = false
     @State private var pendingTemplate: QuickCaptureTemplate?
     @State private var composerInitialPresentation: ItemPresentation?
     @State private var composerTemplate: QuickCaptureTemplate?
     @State private var captureAction: TodayCaptureAction?
     @State private var showsPlanSettings = false
-    @State private var showsSearch          = false         /* Local Board search presentation          */
-    @State private var presentComposerAfterListChoice = false /* Deferred center-plus request           */
-    @State private var labelLibrary = LabelLibraryStore.load() /* Local categorized label definitions   */
-    @State private var isContentScrolled = false            /* If content is passing beneath the header */
+    @State private var showsSearch          = false             /* Local Board search presentation          */
+    @State private var presentComposerAfterListChoice = false   /* Deferred center-plus request             */
+    @State private var labelLibrary = LabelLibraryStore.load()  /* Local categorized label definitions      */
+    @State private var isContentScrolled = false                /* If content is passing beneath the header */
 
 
     ///
@@ -3039,8 +3039,8 @@ private struct TodayHomeView: View {
     private func ensureCurrentWeekdayList() {
         if let current = calendarDayList(.now) { selectedTodayListID = current.id; return }
         let result = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
-        let activeLists = result.lists.filter { !$0.isArchived } /* Updated active Week lists */
-        let retainedLists = result.lists.filter(\.isArchived) /* Preserved archived Week lists */
+        let activeLists = result.lists.filter { !$0.isArchived }  /* Updated active Week lists     */
+        let retainedLists = result.lists.filter(\.isArchived)     /* Preserved archived Week lists */
 
         if activeLists != lists {
 
@@ -3111,8 +3111,8 @@ private struct TodayHomeView: View {
                     // its content without replacing the view that owns the open popover.
                     let focusPreferences = (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData)) ?? PlanPreferencesStore.load()
                     TimelineView(.everyMinute) { context in
-                        let focus = calendarDayList(context.date, in: focusLists) /* Active list matching the current weekday */
-                        let cards = focus?.cards.filter { !$0.isSectionDivider } ?? [] /* Actionable records in the weekday list */
+                        let focus = calendarDayList(context.date, in: focusLists)       /* Active list matching the current weekday */
+                        let cards = focus?.cards.filter { !$0.isSectionDivider } ?? []  /* Actionable records in the weekday list   */
 
                         TodayFocusSection(
                             list:            focus,
@@ -3899,9 +3899,9 @@ struct QuickNoteComposer: View {
     @State private var presentation: ItemPresentation
     @State private var createdAt = Date.now
     @State private var subtitle = ""
-    @State private var title = ""               /* New card title */
-    @State private var description = ""         /* Optional card detail */
-    @State private var selectedListID: Int?      /* Destination selected in the form */
+    @State private var title = ""            /* New card title                   */
+    @State private var description = ""      /* Optional card detail             */
+    @State private var selectedListID: Int?  /* Destination selected in the form */
     @State private var actions: [KanbanChecklistItem]
 
 
@@ -4324,11 +4324,11 @@ private struct NewPersonalNoteComposer: View {
 
 struct TodaySearchResult: Identifiable {
 
-    let listID: Int /* Board list opened when this result is selected */
-    let cardID: Int? /* Stable card identity, or nil for a list result */
-    let cardTitle: String /* Matching card title */
-    let listTitle: String /* Containing list title */
-    let detail: String /* Supporting detail shown under the title */
+    let listID: Int        /* Board list opened when this result is selected */
+    let cardID: Int?       /* Stable card identity, or nil for a list result */
+    let cardTitle: String  /* Matching card title                            */
+    let listTitle: String  /* Containing list title                          */
+    let detail: String     /* Supporting detail shown under the title        */
     var ownerID: UUID? = nil
     var weekKey: String? = nil
     var ownerTitle: String? = nil
@@ -4413,8 +4413,8 @@ enum RecentSearchStore {
     @discardableResult
     static func remember(_ query: String, in defaults: UserDefaults = .standard) -> [String] {
 
-        let term = query.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized query to remember */
-        var searches = load(from: defaults) /* Recent queries updated in recency order */
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)  /* Normalized query to remember            */
+        var searches = load(from: defaults)                               /* Recent queries updated in recency order */
 
         guard !term.isEmpty else {
 
@@ -4504,11 +4504,11 @@ enum TodaySearchIndex {
                     return nil
                 }
 
-                let checklistText = card.checklists.flatMap { [$0.title] + $0.items.map(\.title) } /* Searchable checklist and action titles */
-                let commentText = card.comments.flatMap { [$0.author, PlanRichText.plain($0.body)] } /* Searchable discussion authors and content */
-                let users = card.members.map(\.displayName) /* Searchable assignee names */
-                let labels = library.labels.filter { card.labelIDs.contains($0.id) } /* Definitions of labels assigned to this card */
-                let labelText = labels.flatMap { label in /* Searchable label and category names */
+                let checklistText = card.checklists.flatMap { [$0.title] + $0.items.map(\.title) }    /* Searchable checklist and action titles      */
+                let commentText = card.comments.flatMap { [$0.author, PlanRichText.plain($0.body)] }  /* Searchable discussion authors and content   */
+                let users = card.members.map(\.displayName)                                           /* Searchable assignee names                   */
+                let labels = library.labels.filter { card.labelIDs.contains($0.id) }                  /* Definitions of labels assigned to this card */
+                let labelText = labels.flatMap { label in                                             /* Searchable label and category names         */
                     [label.name] + library.categories.filter { $0.id == label.categoryID }.map(\.name)
                 }
 
@@ -4562,22 +4562,22 @@ enum TodaySearchIndex {
 ///
 struct TodaySearchView: View {
 
-    let lists: [KanbanList] /* Current locally stored Board snapshot */
-    let onOpenBoardList: (Int) -> Void /* Navigate to a result's containing list */
-    let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs */
-    let onArchiveCard: (Int) -> Void /* Canonical Week archive */
-    let onDeleteCard: (Int) -> Bool /* Confirmed canonical Week deletion result */
-    let onArchiveList: (Int) -> Void /* Canonical Week list archive */
-    let onDeleteList: (Int) -> Bool /* Confirmed canonical list deletion result */
+    let lists: [KanbanList]                  /* Current locally stored Board snapshot    */
+    let onOpenBoardList: (Int) -> Void       /* Navigate to a result's containing list   */
+    let onOpenBoardCard: (Int, Int) -> Void  /* Route to a Week card by list/card IDs    */
+    let onArchiveCard: (Int) -> Void         /* Canonical Week archive                   */
+    let onDeleteCard: (Int) -> Bool          /* Confirmed canonical Week deletion result */
+    let onArchiveList: (Int) -> Void         /* Canonical Week list archive              */
+    let onDeleteList: (Int) -> Bool          /* Confirmed canonical list deletion result */
 
     var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = nil
     var onSelectResult: ((TodaySearchResult) -> Void)? = nil
 
-    @Environment(\.dismiss) private var dismiss /* Close the search sheet */
-    @FocusState private var searchFieldFocused: Bool /* Search field focus state */
-    @State private var query = "" /* User-entered search text */
-    @State private var scope: TodaySearchScope = .all             /* Selected local-search scope */
-    @State private var recentSearches = RecentSearchStore.load()  /* Device-local recent terms */
+    @Environment(\.dismiss) private var dismiss                   /* Close the search sheet             */
+    @FocusState private var searchFieldFocused: Bool              /* Search field focus state           */
+    @State private var query = ""                                 /* User-entered search text           */
+    @State private var scope: TodaySearchScope = .all             /* Selected local-search scope        */
+    @State private var recentSearches = RecentSearchStore.load()  /* Device-local recent terms          */
     @State private var labelLibrary = LabelLibraryStore.load()    /* Definitions used for label matches */
 
 
@@ -4850,11 +4850,11 @@ struct TodaySearchView: View {
 ///
 private struct CalendarCardResult: Identifiable {
 
-    let cardID: Int /* Stable card identity */
-    let title: String /* Card title shown on the selected date */
-    let listID: Int /* Board list opened when selected */
-    let listTitle: String /* Containing Board list */
-    let dateLabel: String /* Start/due marker for this date */
+    let cardID: Int        /* Stable card identity                  */
+    let title: String      /* Card title shown on the selected date */
+    let listID: Int        /* Board list opened when selected       */
+    let listTitle: String  /* Containing Board list                 */
+    let dateLabel: String  /* Start/due marker for this date        */
 
     ///
     /// @fcn        CalendarCardResult.id
@@ -5442,11 +5442,11 @@ extension PersonalCollection {
 
 struct LibraryCollectionRow: View {
 
-    let title: String      /* User-owned collection or Week Board title       */
-    let subtitle: String   /* Collection kind and active-list context         */
-    let icon: String       /* SF Symbol representing the organizing space     */
-    let color: Color       /* Collection accent, not its only identifying cue */
-    let count: Int         /* Active non-divider card count                   */
+    let title: String     /* User-owned collection or Week Board title       */
+    let subtitle: String  /* Collection kind and active-list context         */
+    let icon: String      /* SF Symbol representing the organizing space     */
+    let color: Color      /* Collection accent, not its only identifying cue */
+    let count: Int        /* Active non-divider card count                   */
     var preview: String = ""
     var scrollsPreview = false
 
@@ -5585,16 +5585,16 @@ struct BoardListsView: View {
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
     var newListRequest = 0
     var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
-    let registerListNewNote: ((() -> Void)?) -> Void /* Registers the directory's scoped Note action */
-    let onOpenSaved: () -> Void                                /* Select the existing canonical Saved destination */
+    let registerListNewNote: ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
+    let onOpenSaved: () -> Void                       /* Select the existing canonical Saved destination */
     var onLoadExampleWeek: (() -> Bool)? = nil
     var onUndoExampleWeek: (() -> Bool)? = nil
     var onLoadExampleMonth: (() -> Void)? = nil
     var onRestoreUserData: (() -> Void)? = nil
     var hasUserDataBackup = false
-    var savedPersonalCardTarget: PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation */
-    var onClearSavedPersonalCardTarget: () -> Void = {} /* Acknowledge a handled or invalid Saved request */
-    @State private var archivingCollection: PersonalCollection? /* Collection awaiting archive confirmation */
+    var savedPersonalCardTarget: PersonalSavedCardTarget? = nil  /* Saved bookmark waiting for Library navigation  */
+    var onClearSavedPersonalCardTarget: () -> Void = {}          /* Acknowledge a handled or invalid Saved request */
+    @State private var archivingCollection: PersonalCollection?  /* Collection awaiting archive confirmation       */
     @FocusState private var isLibrarySearchFocused: Bool
     @State private var showsRecentShelf = false
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
@@ -5605,15 +5605,15 @@ struct BoardListsView: View {
     @State private var showsCollectionFilter = false
     @State var browseFilter: LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
-    @State var searchText = ""                                 /* Directory search query                      */
-    @State private var editingCollection: PersonalCollection?  /* Collection draft being edited               */
-    @State private var openedCollection: PersonalCollection?   /* Collection board presented full-screen      */
-    @State private var boardTargetListID: Int?                 /* Exact collection list requested from Saved    */
-    @State private var boardTargetCardID: Int?                 /* Exact collection card requested from Saved    */
-    @State private var deletingCollection: PersonalCollection? /* Collection awaiting delete confirmation     */
+    @State var searchText = ""                                  /* Directory search query                     */
+    @State private var editingCollection: PersonalCollection?   /* Collection draft being edited              */
+    @State private var openedCollection: PersonalCollection?    /* Collection board presented full-screen     */
+    @State private var boardTargetListID: Int?                  /* Exact collection list requested from Saved */
+    @State private var boardTargetCardID: Int?                  /* Exact collection card requested from Saved */
+    @State private var deletingCollection: PersonalCollection?  /* Collection awaiting delete confirmation    */
     @State private var createdNoteDestination: PersonalCollection?
-    @State private var newNoteDraftDestination: PersonalCollection? /* Personal List selected for the presented Note draft */
-    @State private var mostRecentlyOpenedListID: UUID? /* Last opened List used as the next Note destination */
+    @State private var newNoteDraftDestination: PersonalCollection?  /* Personal List selected for the presented Note draft */
+    @State private var mostRecentlyOpenedListID: UUID?               /* Last opened List used as the next Note destination  */
     @State private var libraryQuickTemplate: QuickCaptureTemplate?
     @State private var weekExampleAction: String?
     @State private var libraryStarterError: String?
@@ -5786,8 +5786,8 @@ struct BoardListsView: View {
         visibleCollections:      [PersonalCollection]
     ) -> PersonalCollection? {
 
-        if let mostRecentlyOpenedListID, /* Remembered personal List identity */
-           let recentList = collections.first(where: { /* Remembered List still available for Note creation */
+        if let mostRecentlyOpenedListID,                /* Remembered personal List identity                 */
+           let recentList = collections.first(where: {  /* Remembered List still available for Note creation */
                $0.id == mostRecentlyOpenedListID && $0.kind == .list && $0.isActive
            }) {
             return recentList
@@ -5915,8 +5915,8 @@ struct BoardListsView: View {
     ///
     private func moveNote(_ noteID: Int, from sourceID: UUID, to destinationID: UUID) throws -> KanbanCard {
 
-        var snapshot = collections /* Collection snapshot carrying both sides of the Note move */
-        let moved = try PersonalCollectionNoteMovement.move( /* Note returned with its destination-local identity */
+        var snapshot = collections                            /* Collection snapshot carrying both sides of the Note move */
+        let moved = try PersonalCollectionNoteMovement.move(  /* Note returned with its destination-local identity        */
             noteID: noteID, from: sourceID, to: destinationID, in: &snapshot
         )
         try PersonalCollectionStore.saveChecked(snapshot)
@@ -7264,23 +7264,23 @@ struct PersonalListExamplesView: View {
 ///
 struct PersonalCollectionBoardView: View {
 
-    @Binding var collection: PersonalCollection     /* Live collection shown by the shared Board view */
-    @Binding var boardTargetListID: Int? /* Collection-local list requested from Saved */
-    @Binding var boardTargetCardID: Int? /* Collection-local card requested from Saved */
-    let retainedLists: [KanbanList]                 /* Other lists retaining possible attachments */
-    let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note destinations */
-    let onArchive: () throws -> Void                /* Persist archival of this collection */
-    let onDelete: () throws -> Void /* Persist permanent removal of this collection */
-    let onCommitDeletion: (PersonalCollection) throws -> Void /* Save nested deletion against current shared state */
-    let onCreateNote: (UUID, QuickCaptureSubmission, Date) throws -> Void /* Checked creation callback for a destination List */
-    let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard /* Checked movement callback returning the relocated Note */
-    let onUpdateMovedNote: (UUID, KanbanCard) -> Bool /* Persists edits in the Note's current collection */
-    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool /* Archives the Note in its current collection */
-    let onDeleteMovedNote: (UUID, KanbanCard) -> Bool /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark: (UUID, Int, Bool) -> Bool /* Persists the Note's collection-local saved state */
-    let registerNewNote: ((() -> Void)?) -> Void /* Registers or clears the presented List's Note action */
-    @Environment(\.dismiss) private var dismiss     /* Close the collection board */
-    @State private var showsNewNoteComposer = false /* Presentation state of the List-scoped Note draft */
+    @Binding var collection: PersonalCollection                            /* Live collection shown by the shared Board view           */
+    @Binding var boardTargetListID: Int?                                   /* Collection-local list requested from Saved               */
+    @Binding var boardTargetCardID: Int?                                   /* Collection-local card requested from Saved               */
+    let retainedLists: [KanbanList]                                        /* Other lists retaining possible attachments               */
+    let availablePersonalLists: [PersonalCollection]                       /* Personal Lists offered as Note destinations              */
+    let onArchive: () throws -> Void                                       /* Persist archival of this collection                      */
+    let onDelete: () throws -> Void                                        /* Persist permanent removal of this collection             */
+    let onCommitDeletion: (PersonalCollection) throws -> Void              /* Save nested deletion against current shared state        */
+    let onCreateNote: (UUID, QuickCaptureSubmission, Date) throws -> Void  /* Checked creation callback for a destination List         */
+    let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard          /* Checked movement callback returning the relocated Note   */
+    let onUpdateMovedNote: (UUID, KanbanCard) -> Bool                      /* Persists edits in the Note's current collection          */
+    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool                     /* Archives the Note in its current collection              */
+    let onDeleteMovedNote: (UUID, KanbanCard) -> Bool                      /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark: (UUID, Int, Bool) -> Bool               /* Persists the Note's collection-local saved state         */
+    let registerNewNote: ((() -> Void)?) -> Void                           /* Registers or clears the presented List's Note action     */
+    @Environment(\.dismiss) private var dismiss                            /* Close the collection board                               */
+    @State private var showsNewNoteComposer = false                        /* Presentation state of the List-scoped Note draft         */
 
     ///
     /// @fcn        PersonalCollectionBoardView.body
@@ -7383,9 +7383,9 @@ struct PersonalCollectionBoardView: View {
 private struct PersonalCollectionSettingsView: View {
 
     let isNew: Bool                               /* Whether this form creates a new collection */
-    let onSave: (PersonalCollection) -> Void      /* Submit the complete collection draft */
-    @State private var draft: PersonalCollection  /* Isolated editable collection copy */
-    @Environment(\.dismiss) private var dismiss   /* Close the settings sheet */
+    let onSave: (PersonalCollection) -> Void      /* Submit the complete collection draft       */
+    @State private var draft: PersonalCollection  /* Isolated editable collection copy          */
+    @Environment(\.dismiss) private var dismiss   /* Close the settings sheet                   */
 
 
     ///
@@ -7621,13 +7621,13 @@ extension PersonalCollectionIcon {
 ///
 struct TodayCalendarView: View {
 
-    let lists: [KanbanList] /* Current Board snapshot */
-    let onArchiveCard: (Int) -> Void /* Canonical archive callback */
-    let onDeleteCard: (Int) -> Bool /* Confirmed deletion result */
-    let onOpenBoardCard: (Int, Int) -> Void /* Navigate using containing list and card identities */
+    let lists: [KanbanList]                  /* Current Board snapshot                             */
+    let onArchiveCard: (Int) -> Void         /* Canonical archive callback                         */
+    let onDeleteCard: (Int) -> Bool          /* Confirmed deletion result                          */
+    let onOpenBoardCard: (Int, Int) -> Void  /* Navigate using containing list and card identities */
 
-    @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now /* Visible month */
-    @State private var selectedDate = Calendar.current.startOfDay(for: .now) /* Selected local day */
+    @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now  /* Visible month      */
+    @State private var selectedDate = Calendar.current.startOfDay(for: .now)                                 /* Selected local day */
 
     private let weekdayColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7) /* Seven localized calendar columns */
 
@@ -7639,9 +7639,9 @@ struct TodayCalendarView: View {
     /// @return     ([String]) weekday headings in calendar-column order
     /// @post       Calendar preferences are unchanged
     ///
-    private var weekdaySymbols: [String] { /* Locale weekday headings ordered by the calendar */
-        let calendar = Calendar.current /* User's local calendar */
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols /* Locale weekday labels */
+    private var weekdaySymbols: [String] {                        /* Locale weekday headings ordered by the calendar */
+        let calendar = Calendar.current                           /* User's local calendar                           */
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols  /* Locale weekday labels                           */
 
         return (0..<symbols.count).map { symbols[(calendar.firstWeekday - 1 + $0) % symbols.count] }
     }
@@ -7655,17 +7655,17 @@ struct TodayCalendarView: View {
     /// @return     ([Date?]) grid cells, or an empty array when month metadata cannot be resolved
     /// @post       Displayed month and selection remain unchanged
     ///
-    private var monthDays: [Date?] { /* Month grid dates with leading alignment placeholders */
-        let calendar = Calendar.current /* User's local calendar */
+    private var monthDays: [Date?] {     /* Month grid dates with leading alignment placeholders */
+        let calendar = Calendar.current  /* User's local calendar                                */
 
-        guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start, /* First date in the displayed month */
-              let dayRange = calendar.range(of: .day, in: .month, for: displayedMonth) else { /* Valid day numbers for the displayed month */
+        guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start,  /* First date in the displayed month         */
+              let dayRange = calendar.range(of: .day, in: .month, for: displayedMonth) else {  /* Valid day numbers for the displayed month */
 
             return []
         }
 
-        let leadingDays = (calendar.component(.weekday, from: monthStart) - calendar.firstWeekday + 7) % 7 /* Empty cells before day one */
-        var days: [Date?] = Array(repeating: nil, count: leadingDays) /* Grid cells assembled after weekday alignment */
+        let leadingDays = (calendar.component(.weekday, from: monthStart) - calendar.firstWeekday + 7) % 7  /* Empty cells before day one                   */
+        var days: [Date?] = Array(repeating: nil, count: leadingDays)                                       /* Grid cells assembled after weekday alignment */
 
         days += dayRange.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: monthStart) }
         days += Array(repeating: nil, count: (7 - days.count % 7) % 7)
@@ -7837,10 +7837,10 @@ struct TodayCalendarView: View {
     ///
     private func calendarDayButton(_ date: Date) -> some View {
 
-        let calendar = Calendar.current /* User's local calendar */
-        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate) /* Selected day state */
-        let isToday = calendar.isDateInToday(date) /* Current day state */
-        let cardCount = cards(on: date).count /* Dated cards on this day */
+        let calendar = Calendar.current                                    /* User's local calendar   */
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)  /* Selected day state      */
+        let isToday = calendar.isDateInToday(date)                         /* Current day state       */
+        let cardCount = cards(on: date).count                              /* Dated cards on this day */
 
         return Button {
 
@@ -7895,8 +7895,8 @@ struct TodayCalendarView: View {
                     return nil
                 }
 
-                let starts = card.startDateKind.includesDate && (card.startDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false) /* Start date marker */
-                let due = card.dueDateKind.includesDate && (card.dueDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false) /* Due date marker */
+                let starts = card.startDateKind.includesDate && (card.startDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false)  /* Start date marker */
+                let due = card.dueDateKind.includesDate && (card.dueDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false)         /* Due date marker   */
 
                 guard starts || due else {
 
@@ -7944,17 +7944,17 @@ struct TodayCalendarView: View {
 ///
 struct PersonalSavedCardTarget: Equatable {
 
-    let collectionID: UUID /* Owning personal collection */
-    let listID: Int /* Containing collection-local list */
-    let cardID: Int /* Collection-local bookmarked record */
+    let collectionID: UUID  /* Owning personal collection         */
+    let listID: Int         /* Containing collection-local list   */
+    let cardID: Int         /* Collection-local bookmarked record */
 }
 
 
 private struct SavedCardResult: Identifiable {
 
-    let card: KanbanCard /* Saved card data */
-    let listID: Int /* List opened when selected */
-    let listTitle: String /* Containing list title */
+    let card: KanbanCard   /* Saved card data           */
+    let listID: Int        /* List opened when selected */
+    let listTitle: String  /* Containing list title     */
 
     ///
     /// @fcn        SavedCardResult.id
@@ -8230,18 +8230,18 @@ private struct SavedCardsView: View {
     }
 
 
-    let lists: [KanbanList] /* Current Board snapshot */
-    let savedCardIDs: Set<Int> /* Local bookmark set */
-    @Binding var collections: [PersonalCollection] /* Collections whose archived boards can be restored */
-    let onOpenBoardCard: (Int, Int) -> Void /* Open the exact bookmarked item */
-    let onOpenPersonalCard: (PersonalSavedCardTarget) -> Void /* Navigate to a bookmarked personal record */
-    let onRestoreBoard: (UUID) -> Void /* Restore a saved board by identity */
-    let onDeleteBoard: (UUID) -> Bool /* Save permanent collection removal and report success */
-    let onArchiveCard: (Int) -> Void /* Archive a Week bookmark's canonical card */
-    let onDeleteCard: (Int) -> Bool /* Report confirmed Week bookmark-card removal */
-    @State private var deletingBoard: PersonalCollection? /* Saved collection awaiting removal */
-    @State private var deletingCard: KanbanCard? /* Week bookmark awaiting removal */
-    @State private var inspectingBoard: PersonalCollection? /* Archived collection being browsed */
+    let lists: [KanbanList]                                    /* Current Board snapshot                               */
+    let savedCardIDs: Set<Int>                                 /* Local bookmark set                                   */
+    @Binding var collections: [PersonalCollection]             /* Collections whose archived boards can be restored    */
+    let onOpenBoardCard: (Int, Int) -> Void                    /* Open the exact bookmarked item                       */
+    let onOpenPersonalCard: (PersonalSavedCardTarget) -> Void  /* Navigate to a bookmarked personal record             */
+    let onRestoreBoard: (UUID) -> Void                         /* Restore a saved board by identity                    */
+    let onDeleteBoard: (UUID) -> Bool                          /* Save permanent collection removal and report success */
+    let onArchiveCard: (Int) -> Void                           /* Archive a Week bookmark's canonical card             */
+    let onDeleteCard: (Int) -> Bool                            /* Report confirmed Week bookmark-card removal          */
+    @State private var deletingBoard: PersonalCollection?      /* Saved collection awaiting removal                    */
+    @State private var deletingCard: KanbanCard?               /* Week bookmark awaiting removal                       */
+    @State private var inspectingBoard: PersonalCollection?    /* Archived collection being browsed                    */
 
     ///
     /// @fcn        SavedCardsView.savedCards
@@ -8575,13 +8575,13 @@ private struct SavedCardsView: View {
 ///     Provide confirmed list/card deletion without restoring or duplicating the Board
 ///
 private struct ArchivedCollectionContentsView: View {
-    @Binding var collection: PersonalCollection /* Canonical retained collection */
-    let onDeleteBoard: () -> Bool /* Parent reports saved collection removal */
-    let onRestoreBoard: () -> Void /* Parent saves restoration */
-    @Environment(\.dismiss) private var dismiss /* Return to Saved */
-    @State private var deletingList: KanbanList? /* Nested list awaiting removal */
-    @State private var deletingCard: KanbanCard? /* Retained card awaiting removal */
-    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation */
+    @Binding var collection: PersonalCollection     /* Canonical retained collection           */
+    let onDeleteBoard: () -> Bool                   /* Parent reports saved collection removal */
+    let onRestoreBoard: () -> Void                  /* Parent saves restoration                */
+    @Environment(\.dismiss) private var dismiss     /* Return to Saved                         */
+    @State private var deletingList: KanbanList?    /* Nested list awaiting removal            */
+    @State private var deletingCard: KanbanCard?    /* Retained card awaiting removal          */
+    @State private var confirmsDeleteBoard = false  /* Entire collection removal confirmation  */
 
 
     ///
@@ -8802,8 +8802,8 @@ struct TodayFocusFilterColor {
 
 struct TodayFocusSection: View {
 
-    let list: KanbanList? /* Canonical Week list matching the current local weekday */
-    let cards: [KanbanCard] /* Non-divider cards on that list */
+    let list: KanbanList?    /* Canonical Week list matching the current local weekday */
+    let cards: [KanbanCard]  /* Non-divider cards on that list                         */
     let entries: [TodayFocusEntry]
     let groupsBySection: Bool
     var visibleItemCount: Int = 4

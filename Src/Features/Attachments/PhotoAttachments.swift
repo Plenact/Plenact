@@ -496,12 +496,12 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
 ///     Browse all 400 offline illustrations without downloading or analyzing card content
 ///
 struct CardCoverLibrary: View {
-    let selectedImage: ExampleCoverImage? /* Current library cover, if any */
-    let onSelect: (ExampleCoverImage) -> Bool /* Owner validates and publishes an explicit choice */
+    let selectedImage: ExampleCoverImage?      /* Current library cover, if any                    */
+    let onSelect: (ExampleCoverImage) -> Bool  /* Owner validates and publishes an explicit choice */
     @State private var query = ""
-    @State private var category: CoverCategory? /* nil shows All Covers */
-    @Environment(\.dynamicTypeSize) private var textSize /* Use a single column for accessibility text */
-    @Environment(\.dismiss) private var dismiss /* Cancel or close a successful selection */
+    @State private var category: CoverCategory?           /* nil shows All Covers                       */
+    @Environment(\.dynamicTypeSize) private var textSize  /* Use a single column for accessibility text */
+    @Environment(\.dismiss) private var dismiss           /* Cancel or close a successful selection     */
 
     ///
     /// @fcn        CardCoverLibrary.body
@@ -608,11 +608,11 @@ struct CardCoverLibrary: View {
 ///     Load photos away from the main actor without creating or modifying files
 ///
 struct CardCoverPreview: View {
-    let attachment: KanbanAttachment /* Explicitly selected photo */
-    var height: CGFloat = 128 /* Fixed preview height, independent of source image dimensions */
+    let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
+    var height: CGFloat = 128         /* Fixed preview height, independent of source image dimensions */
     var unavailableTitle = "Cover unavailable"
-    @State private var image: UIImage? /* Downsampled image for this presentation */
-    @State private var unavailable = false /* Explicit missing/invalid-image feedback */
+    @State private var image: UIImage?      /* Downsampled image for this presentation */
+    @State private var unavailable = false  /* Explicit missing/invalid-image feedback */
 
     ///
     /// @fcn        CardCoverPreview.body
@@ -673,10 +673,10 @@ struct CardCoverPreview: View {
 ///     Make cover replacement recognizable without relying on numbered photo menus
 ///
 struct CardCoverPicker: View {
-    let photos: [KanbanAttachment] /* Current attached photo choices */
-    let selectedID: UUID? /* Current cover, if explicitly enabled */
-    let onSelect: (UUID) -> Void /* Owner validates and saves selection */
-    @Environment(\.dismiss) private var dismiss /* Cancel or return after choosing */
+    let photos: [KanbanAttachment]               /* Current attached photo choices       */
+    let selectedID: UUID?                        /* Current cover, if explicitly enabled */
+    let onSelect: (UUID) -> Void                 /* Owner validates and saves selection  */
+    @Environment(\.dismiss) private var dismiss  /* Cancel or return after choosing      */
 
     ///
     /// @fcn        CardCoverPicker.body
@@ -723,13 +723,13 @@ struct CardCoverPicker: View {
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 
-    let id:        UUID                     /* Stable attachment identity     */
-    let fileName:  String?                  /* Device-local media filename    */
-    let url:       URL?                     /* Remote web-link destination    */
-    let mediaKind: KanbanAttachmentKind?    /* Explicit media type when known */
-    let addedAt:   Date                     /* Attachment creation time       */
-    let exampleImage: ExampleCoverImage?    /* Immutable original example illustration, never user media */
-    var drawingFileName: String? = nil     /* Editable PencilKit strokes, absent in legacy photos */
+    let id:        UUID                   /* Stable attachment identity                                */
+    let fileName:  String?                /* Device-local media filename                               */
+    let url:       URL?                   /* Remote web-link destination                               */
+    let mediaKind: KanbanAttachmentKind?  /* Explicit media type when known                            */
+    let addedAt:   Date                   /* Attachment creation time                                  */
+    let exampleImage: ExampleCoverImage?  /* Immutable original example illustration, never user media */
+    var drawingFileName: String? = nil    /* Editable PencilKit strokes, absent in legacy photos       */
     var storedFileNames: [String] { [fileName, drawingFileName].compactMap { $0 } }
     var caption: String?                   /* Optional photo text; absent in legacy attachment records */
 
@@ -805,8 +805,8 @@ enum CardAttachmentStore {
     ///
     static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage {
 
-        guard let url = imageURL(for: attachment), /* Resolved attachment image URL */
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil), /* ImageIO source for the attachment */
+        guard let url = imageURL(for: attachment),                         /* Resolved attachment image URL     */
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil),  /* ImageIO source for the attachment */
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
@@ -895,12 +895,12 @@ enum CardAttachmentStore {
     ///
     static func saveMedia(_ mediaData: Data, kind: KanbanAttachmentKind, fileExtension: String) throws -> KanbanAttachment {
 
-        let attachmentID        = UUID() /* Stable identity for the new media file */
-        let normalizedExtension = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ". ")) /* Clean extension input */
-        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg")) : normalizedExtension /* Valid file extension */
-        let fileName            = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename */
-        let directoryURL        = try attachmentsDirectory() /* App-local media directory */
-        let fileURL             = directoryURL.appendingPathComponent(fileName, isDirectory: false) /* Destination file URL */
+        let attachmentID        = UUID()                                                                                                           /* Stable identity for the new media file */
+        let normalizedExtension = fileExtension.trimmingCharacters(in: CharacterSet(charactersIn: ". "))                                           /* Clean extension input                  */
+        let safeExtension       = normalizedExtension.isEmpty ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg")) : normalizedExtension  /* Valid file extension                   */
+        let fileName            = "\(attachmentID.uuidString).\(safeExtension)"                                                                    /* Unique stored filename                 */
+        let directoryURL        = try attachmentsDirectory()                                                                                       /* App-local media directory              */
+        let fileURL             = directoryURL.appendingPathComponent(fileName, isDirectory: false)                                                /* Destination file URL                   */
 
         try mediaData.write(to: fileURL, options: .atomic)
 
@@ -1151,10 +1151,10 @@ struct CardAttachmentSourceSheet: View {
 
     @Binding var photoSelection: [PhotosPickerItem] /* Current Photos-picker selection */
     
-    let onAddLink: ()          -> Void /* Callback opening manual link entry */
-    let onPasteClipboard: ()   -> Void /* Callback importing clipboard images or a link */
-    let onComingSoon: (String) -> Void /* Callback reporting unsupported source */
-    var onAddDrawing: (() -> Void)? = nil /* Opens the editable canvas when supported by the owner */
+    let onAddLink: ()          -> Void     /* Callback opening manual link entry                    */
+    let onPasteClipboard: ()   -> Void     /* Callback importing clipboard images or a link         */
+    let onComingSoon: (String) -> Void     /* Callback reporting unsupported source                 */
+    var onAddDrawing: (() -> Void)? = nil  /* Opens the editable canvas when supported by the owner */
 
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
 
@@ -1256,8 +1256,8 @@ struct CardLinkAttachmentSheet: View {
 
     let onSave: (URL) -> Void /* Callback receiving the validated URL */
 
-    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
-    @State private var urlDraft = "" /* User-entered URL text */
+    @Environment(\.dismiss) private var dismiss  /* Sheet dismissal action */
+    @State private var urlDraft = ""             /* User-entered URL text  */
 
     ///
     /// @fcn        CardLinkAttachmentSheet.validatedURL

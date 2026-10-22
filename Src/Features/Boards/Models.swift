@@ -24,8 +24,8 @@ import Foundation
 ///
 enum CardAssigneeKind: String, Codable, Sendable {
 
-    case registeredUser   /* Stable server user reference */
-    case manual           /* User-entered display name     */
+    case registeredUser  /* Stable server user reference */
+    case manual          /* User-entered display name    */
 }
 
 
@@ -37,10 +37,10 @@ enum CardAssigneeKind: String, Codable, Sendable {
 ///
 struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
-    let id:          UUID               /* Stable assignment row ID */
-    let kind:        CardAssigneeKind   /* Registered or manual     */
-    let userID:      String?            /* Stable registered user ID */
-    var displayName: String             /* Name shown on the card    */
+    let id:          UUID              /* Stable assignment row ID  */
+    let kind:        CardAssigneeKind  /* Registered or manual      */
+    let userID:      String?           /* Stable registered user ID */
+    var displayName: String            /* Name shown on the card    */
 
 
     ///
@@ -116,8 +116,8 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
     case card
     case note
 
-    var id: String { rawValue } /* Stable item-kind identity */
-    var title: String { self == .note ? "Note" : "Card" } /* User-facing name of the item kind */
+    var id: String { rawValue }                            /* Stable item-kind identity         */
+    var title: String { self == .note ? "Note" : "Card" }  /* User-facing name of the item kind */
 }
 
 
@@ -439,18 +439,18 @@ enum LocalReactionIdentity {
 
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
-    let id:                   Int                 /* Stable numeric identifier for the card             */
-    var word:                 String              /* Display word shown as the card's title             */
-    var listTitle:            String              /* Name of the list where the card resides            */
-    var isDivider:            Bool                /* Whether this item is a movable section divider     */
-    var isTitleChecked:       Bool                /* Whether the card's main title checkbox is selected */
-    var members:              [CardAssignee]      /* Registered and manual card assignments             */
-    var labelIDs:             [String]            /* Stable IDs of labels assigned to the card          */
+    let id:                   Int             /* Stable numeric identifier for the card             */
+    var word:                 String          /* Display word shown as the card's title             */
+    var listTitle:            String          /* Name of the list where the card resides            */
+    var isDivider:            Bool            /* Whether this item is a movable section divider     */
+    var isTitleChecked:       Bool            /* Whether the card's main title checkbox is selected */
+    var members:              [CardAssignee]  /* Registered and manual card assignments             */
+    var labelIDs:             [String]        /* Stable IDs of labels assigned to the card          */
 
-    var startDate:            Date?               /* Optional start date for the card                   */
-    var dueDate:              Date?               /* Optional due date for the card                     */
-    let createdAt:            Date?               /* Unknown for records created before timestamp support */
-    var descriptionOverride:  String?             /* Optional user-edited description                   */
+    var startDate:            Date?    /* Optional start date for the card                     */
+    var dueDate:              Date?    /* Optional due date for the card                       */
+    let createdAt:            Date?    /* Unknown for records created before timestamp support */
+    var descriptionOverride:  String?  /* Optional user-edited description                     */
     var startDateKind: CardDateKind
     var dueDateKind: CardDateKind
     var showsDueDateInList: Bool
@@ -463,14 +463,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         showsReactionsInPreviews != false && !isSectionDivider ? reactions ?? [] : []
     }
     var reactions: [ItemEmojiReaction]? = nil
-    var comments:             [KanbanComment]     /* Comments posted to the card's activity             */
-    var attachments:          [KanbanAttachment]? /* Photo attachments stored with the card             */
-    var coverAttachmentID:    UUID?              /* Explicitly chosen photo; nil disables this card's cover */
+    var comments:             [KanbanComment]      /* Comments posted to the card's activity                  */
+    var attachments:          [KanbanAttachment]?  /* Photo attachments stored with the card                  */
+    var coverAttachmentID:    UUID?                /* Explicitly chosen photo; nil disables this card's cover */
     var appearance: ItemAppearance? = nil
 
-    var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
-    var listDisplayFormat: ItemDisplayFormat? = nil /* Explicit override; nil preserves legacy rendering */
-    private var itemPresentation: ItemPresentation? /* Optional persisted item kind for legacy compatibility */
+    var dismissedActivityIDs: Set<String>            /* Generated activity entries removed by the user        */
+    var listDisplayFormat: ItemDisplayFormat? = nil  /* Explicit override; nil preserves legacy rendering     */
+    private var itemPresentation: ItemPresentation?  /* Optional persisted item kind for legacy compatibility */
 
     /// Missing presentation remains a Card; the default needs no new persisted key.
     var presentation: ItemPresentation { /* Effective item kind with the legacy Card fallback */
@@ -544,8 +544,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @details    Missing attachments, nonphotos, and dividers do not produce a cover
     /// @return     (KanbanAttachment?) selected photo metadata
     ///
-    var coverAttachment: KanbanAttachment? { /* Valid featured photo resolved from this record's attachments */
-        guard !isSectionDivider, let coverAttachmentID else { /* Identity of the requested featured attachment */
+    var coverAttachment: KanbanAttachment? {                   /* Valid featured photo resolved from this record's attachments */
+        guard !isSectionDivider, let coverAttachmentID else {  /* Identity of the requested featured attachment                */
 
             return nil
         }
@@ -553,8 +553,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         return attachments?.first { $0.id == coverAttachmentID && $0.kind == .photo }
     }
 
-    var attachmentsExcludingCover: [KanbanAttachment] { /* Gallery records without the valid featured cover */
-        let displayedCoverID = coverAttachment?.id /* Featured attachment omitted from the gallery */
+    var attachmentsExcludingCover: [KanbanAttachment] {  /* Gallery records without the valid featured cover */
+        let displayedCoverID = coverAttachment?.id       /* Featured attachment omitted from the gallery     */
         return (attachments ?? []).filter { $0.id != displayedCoverID }
     }
 
@@ -720,8 +720,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
     static func isDividerTitle(_ title: String) -> Bool {
         if namedDividerHeading(title) != nil { return true }
-        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
-        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−") /* Accepted divider dash characters */
+        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)  /* Title without surrounding spaces */
+        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")                 /* Accepted divider dash characters */
 
         guard !trimmedTitle.isEmpty,
               trimmedTitle.unicodeScalars.allSatisfy({ dashCharacters.contains($0) }) else {
@@ -767,25 +767,25 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
         self.showsReactionsInPreviews = showsReactionsInPreviews
         self.reactions = reactions?.isEmpty == true ? nil : reactions
-        self.id                   = id                      /* Stable numeric identifier for the card             */
-        self.word                 = word                    /* Display word shown as the card's title             */
-        self.listTitle            = listTitle               /* Name of the list where the card resides            */
-        self.isDivider            = isDivider               /* Whether this item renders as a section divider     */
-        self.isTitleChecked       = isTitleChecked          /* Whether the card's main title checkbox is selected */
-        self.startDate            = startDate               /* Optional start date for the card                   */
+        self.id                   = id              /* Stable numeric identifier for the card             */
+        self.word                 = word            /* Display word shown as the card's title             */
+        self.listTitle            = listTitle       /* Name of the list where the card resides            */
+        self.isDivider            = isDivider       /* Whether this item renders as a section divider     */
+        self.isTitleChecked       = isTitleChecked  /* Whether the card's main title checkbox is selected */
+        self.startDate            = startDate       /* Optional start date for the card                   */
         self.startDateKind = startDateKind
         self.dueDateKind = dueDateKind
         self.showsDueDateInList = showsDueDateInList ?? Self.defaultDueDateVisibility()
         self.dueDate              = dueDate                 /* Optional due date for the card                     */
         self.createdAt            = createdAt
-        self.comments             = comments                /* Array of comments associated with the card         */
-        self.members              = members                 /* Names of users assigned to the card                */
-        self.labelIDs             = labelIDs                /* Stable IDs of labels assigned to the card          */
-        self.attachments          = attachments             /* Photo attachment metadata for the card             */
+        self.comments             = comments     /* Array of comments associated with the card */
+        self.members              = members      /* Names of users assigned to the card        */
+        self.labelIDs             = labelIDs     /* Stable IDs of labels assigned to the card  */
+        self.attachments          = attachments  /* Photo attachment metadata for the card     */
         self.coverAttachmentID    = coverAttachmentID
-        self.dismissedActivityIDs = dismissedActivityIDs    /* Set of activity IDs that were dismissed by user    */
-        self.descriptionOverride  = descriptionOverride     /* Optional user-edited description                   */
-        self.subtitleOverride     = subtitleOverride        /* Optional user-edited subtitle                      */
+        self.dismissedActivityIDs = dismissedActivityIDs  /* Set of activity IDs that were dismissed by user */
+        self.descriptionOverride  = descriptionOverride   /* Optional user-edited description                */
+        self.subtitleOverride     = subtitleOverride      /* Optional user-edited subtitle                   */
         let retainedPresentation = [.note, .title, .text].contains(listDisplayFormat) ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
         self.itemPresentation     = retainedPresentation == .card ? nil : retainedPresentation
         self.appearance           = appearance?.isEmpty == true ? nil : appearance
@@ -813,8 +813,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     ///
     init(from decoder: Decoder) throws {
 
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Card fields */
-        let decodedMembers: [CardAssignee] /* Typed or migrated card assignments */
+        let container = try decoder.container(keyedBy: CodingKeys.self)  /* Card fields                        */
+        let decodedMembers: [CardAssignee]                               /* Typed or migrated card assignments */
 
         if let typedMembers = try? container.decode([CardAssignee].self, forKey: .members) { /* Current typed representation */
 
@@ -952,8 +952,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @return     (String) supporting text shown beneath the card title
     /// @post       Card state is unchanged
     ///
-    var subtitle: String { /* Supporting card text or user override */
-        if let subtitleOverride { /* Explicitly edited subtitle */
+    var subtitle: String {         /* Supporting card text or user override */
+        if let subtitleOverride {  /* Explicitly edited subtitle            */
 
             return subtitleOverride
         }
@@ -1138,12 +1138,12 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 ///
 struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
-    let id:        Int              /* Unique identifier for the kanban list */
-    private(set) var title: String  /* Title updated with retained card context */
-    var subtitleOverride: String? = nil /* nil preserves legacy generated copy; empty hides it */
-    var cards:     [KanbanCard]     /* Cards contained within the list       */
-    var archivedCards: [KanbanCard] /* Cards retained in this list's archive */
-    var isArchived: Bool = false    /* Whether this list is in the board archive */
+    let id:        Int                   /* Unique identifier for the kanban list               */
+    private(set) var title: String       /* Title updated with retained card context            */
+    var subtitleOverride: String? = nil  /* nil preserves legacy generated copy; empty hides it */
+    var cards:     [KanbanCard]          /* Cards contained within the list                     */
+    var archivedCards: [KanbanCard]      /* Cards retained in this list's archive               */
+    var isArchived: Bool = false         /* Whether this list is in the board archive           */
     var singleListViewMode: SingleListViewMode { appearance?.listViewMode ?? .cards }
     mutating func setSingleListViewMode(_ mode: SingleListViewMode) {
         var value = appearance ?? ItemAppearance()
@@ -1217,8 +1217,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///
     func makeItem(id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil, creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) -> KanbanCard {
 
-        let isDivider = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
-        let presentation = isDivider ? ItemPresentation.card : (presentationOverride ?? newItemPresentation) /* Item kind selected for the new record */
+        let isDivider = KanbanCard.isDividerTitle(title)                                                      /* Whether the title creates a section separator */
+        let presentation = isDivider ? ItemPresentation.card : (presentationOverride ?? newItemPresentation)  /* Item kind selected for the new record         */
         let checklists: [KanbanChecklist]? = presentation == .note ? [] : actions.map { titles in
             titles.isEmpty ? [] : [KanbanChecklist(title: "Actions", items: titles.map { KanbanChecklistItem(title: $0) })]
         }
@@ -1464,10 +1464,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 ///
 struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable {
 
-    let id:          UUID                /* Stable Action Detail ID */
-    var description: String              /* Supporting action text */
-    var checklists:  [KanbanChecklist]   /* Nested standard actions */
-    var comments:    [KanbanComment]     /* Action discussion       */
+    let id:          UUID               /* Stable Action Detail ID */
+    var description: String             /* Supporting action text  */
+    var checklists:  [KanbanChecklist]  /* Nested standard actions */
+    var comments:    [KanbanComment]    /* Action discussion       */
 
 
     ///
@@ -1506,9 +1506,9 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable {
 enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
     case webLink(URL)
-    case standard                                      /* Plain text action       */
-    case linkedCard(cardID: Int)                       /* Existing card reference */
-    case actionDetail(KanbanChecklistActionDetail)     /* Owned reduced detail    */
+    case standard                                   /* Plain text action       */
+    case linkedCard(cardID: Int)                    /* Existing card reference */
+    case actionDetail(KanbanChecklistActionDetail)  /* Owned reduced detail    */
 
 
     ///
@@ -1519,9 +1519,9 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///
     private enum Kind: String, Codable {
         case webLink
-        case standard       /* Plain text action kind  */
-        case linkedCard     /* Existing card link kind */
-        case actionDetail   /* Reduced detail kind     */
+        case standard      /* Plain text action kind  */
+        case linkedCard    /* Existing card link kind */
+        case actionDetail  /* Reduced detail kind     */
     }
 
 
@@ -1533,9 +1533,9 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///
     private enum CodingKeys: String, CodingKey {
         case url
-        case kind       /* Content discriminator */
-        case cardID     /* Linked card identity  */
-        case detail     /* Owned Action Detail   */
+        case kind    /* Content discriminator */
+        case cardID  /* Linked card identity  */
+        case detail  /* Owned Action Detail   */
     }
 
 
@@ -1552,8 +1552,8 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///
     init(from decoder: Decoder) throws {
 
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
-        let kind      = try container.decode(Kind.self, forKey: .kind)    /* Action kind      */
+        let container = try decoder.container(keyedBy: CodingKeys.self)  /* Persisted fields */
+        let kind      = try container.decode(Kind.self, forKey: .kind)   /* Action kind      */
 
         switch kind {
 
@@ -1624,9 +1624,9 @@ enum ChecklistItemType: String, CaseIterable, Identifiable {
 
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
-    let id:        UUID                           /* Stable checklist action ID */
-    var title:     String                         /* User-facing action text    */
-    var isCompleted: Bool                         /* Current completion state   */
+    let id:        UUID    /* Stable checklist action ID */
+    var title:     String  /* User-facing action text    */
+    var isCompleted: Bool  /* Current completion state   */
     var content: KanbanChecklistActionContent {
         didSet { retainActiveContent() }
     }
@@ -1747,10 +1747,10 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///     Keep missing content backward-compatible while requiring established item state
     ///
     private enum CodingKeys: String, CodingKey {
-        case id            /* Stable action identity */
-        case title         /* User-facing action text */
-        case isCompleted   /* Direct completion state */
-        case content       /* Action behavior payload */
+        case id           /* Stable action identity  */
+        case title        /* User-facing action text */
+        case isCompleted  /* Direct completion state */
+        case content      /* Action behavior payload */
         case retainedDetail, retainedCardID, retainedURL, linkedCollectionID
     }
 }
@@ -1767,9 +1767,9 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
 ///
 struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
 
-    let id:    UUID                    /* Stable checklist ID      */
-    let title: String                  /* Checklist display title */
-    let items: [KanbanChecklistItem]   /* Ordered action records  */
+    let id:    UUID                   /* Stable checklist ID     */
+    let title: String                 /* Checklist display title */
+    let items: [KanbanChecklistItem]  /* Ordered action records  */
 
     ///
     /// @fcn        KanbanChecklist.completedItemIndices
@@ -1851,9 +1851,9 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
     ///
     init(from decoder: Decoder) throws {
 
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
-        let id        = try container.decode(UUID.self, forKey: .id)      /* Checklist ID     */
-        let title     = try container.decode(String.self, forKey: .title) /* Checklist title  */
+        let container = try decoder.container(keyedBy: CodingKeys.self)    /* Persisted fields */
+        let id        = try container.decode(UUID.self, forKey: .id)       /* Checklist ID     */
+        let title     = try container.decode(String.self, forKey: .title)  /* Checklist title  */
 
         if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items) { /* Current actions */
 
@@ -1870,9 +1870,9 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
             return
         }
 
-        let legacyTitles           = try container.decode([String].self, forKey: .items) /* Legacy action text */
-        let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? [] /* Legacy completion */
-        let migratedItems          = legacyTitles.enumerated().map { index, itemTitle in /* Migrated actions */
+        let legacyTitles           = try container.decode([String].self, forKey: .items)                                /* Legacy action text */
+        let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? []  /* Legacy completion  */
+        let migratedItems          = legacyTitles.enumerated().map { index, itemTitle in                                /* Migrated actions   */
             KanbanChecklistItem(
                 id:          Self.migratedItemID(checklistID: id, itemIndex: index),
                 title:       itemTitle,
@@ -1913,10 +1913,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
     ///     Keep current item records and the legacy completion field available to custom Codable logic
     ///
     private enum CodingKeys: String, CodingKey {
-        case id                     /* Checklist identity       */
-        case title                  /* Checklist display title  */
-        case items                  /* Current or legacy actions */
-        case completedItemIndices   /* Revision 0 completion    */
+        case id                    /* Checklist identity        */
+        case title                 /* Checklist display title   */
+        case items                 /* Current or legacy actions */
+        case completedItemIndices  /* Revision 0 completion     */
     }
 
 
@@ -1943,8 +1943,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
             return UUID()
         }
 
-        let itemComponent = String(format: "%012llX", UInt64(itemIndex)) /* Position suffix */
-        let migratedValue = "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)" /* Migrated UUID text */
+        let itemComponent = String(format: "%012llX", UInt64(itemIndex))                                            /* Position suffix    */
+        let migratedValue = "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)"  /* Migrated UUID text */
 
         return UUID(uuidString: migratedValue) ?? UUID()
     }
@@ -1961,10 +1961,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
 ///     Preserve comment identity, author, content, and creation time as card data
 ///
 struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
-    let id:        UUID         /* Unique identifier for the comment                 */
-    let author:    String       /* Author of the comment                             */
-    let body:      String       /* Body text of the comment                          */
-    let createdAt: Date         /* Timestamp indicating when the comment was created */
+    let id:        UUID    /* Unique identifier for the comment                 */
+    let author:    String  /* Author of the comment                             */
+    let body:      String  /* Body text of the comment                          */
+    let createdAt: Date    /* Timestamp indicating when the comment was created */
 
 
     ///
@@ -1994,8 +1994,8 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
 ///
 /// An insertion boundary in one active Board list
 struct BoardCardDropTarget: Equatable {
-    let listID: Int /* Destination list identity for the drop */
-    let beforeCardID: Int? /* Insertion anchor; nil appends after existing cards */
+    let listID: Int         /* Destination list identity for the drop             */
+    let beforeCardID: Int?  /* Insertion anchor; nil appends after existing cards */
 }
 
 
@@ -2050,9 +2050,9 @@ enum BoardCardMovement {
             return false
         }
 
-        var updated = lists /* Board snapshot changed only after movement validation */
-        var card = updated[source].cards.remove(at: index) /* Record removed from its source for reinsertion */
-        let insertion: Int /* Destination offset after removing the source record */
+        var updated = lists                                 /* Board snapshot changed only after movement validation */
+        var card = updated[source].cards.remove(at: index)  /* Record removed from its source for reinsertion        */
+        let insertion: Int                                  /* Destination offset after removing the source record   */
 
         if let beforeCardID { /* Destination card serving as the insertion anchor */
 
@@ -2116,8 +2116,8 @@ enum BoardCardMovement {
             return nil
         }
 
-        let cards = list.cards.filter { $0.id != cardID } /* Destination rows excluding the dragged card */
-        let measured = cards.enumerated().filter { cardFrames[$0.element.id] != nil } /* Rows with geometry available for insertion targeting */
+        let cards = list.cards.filter { $0.id != cardID }                              /* Destination rows excluding the dragged card          */
+        let measured = cards.enumerated().filter { cardFrames[$0.element.id] != nil }  /* Rows with geometry available for insertion targeting */
 
         if let next = measured.first(where: { /* First measured row below the pointer midpoint */
 
@@ -2364,8 +2364,8 @@ enum NoteTextSharing {
 
             sections.append(PlanRichText.plain(body))
         }
-        let links = (note.attachments ?? []).compactMap { attachment -> String? in /* Web links appended to the shared Note text */
-            guard attachment.kind == .link, let url = attachment.url else { /* Address of a shareable link attachment */
+        let links = (note.attachments ?? []).compactMap { attachment -> String? in  /* Web links appended to the shared Note text */
+            guard attachment.kind == .link, let url = attachment.url else {         /* Address of a shareable link attachment     */
 
                 return nil
             }
@@ -2387,10 +2387,10 @@ enum NoteTextSharing {
 ///     Preserve destination, entered text, and one creation timestamp until persistence succeeds
 ///
 struct PersonalListNoteDraft {
-    var destinationID: UUID /* Personal List selected for the unsaved Note */
-    var title = "" /* Editable Note heading */
-    var body = "" /* Editable Note content preserved as entered */
-    let createdAt: Date = .now /* Draft creation time retained through saving */
+    var destinationID: UUID     /* Personal List selected for the unsaved Note */
+    var title = ""              /* Editable Note heading                       */
+    var body = ""               /* Editable Note content preserved as entered  */
+    let createdAt: Date = .now  /* Draft creation time retained through saving */
 
     var normalizedTitle: String { /* Note heading without surrounding whitespace */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2504,17 +2504,17 @@ enum PersonalCollectionNoteMovement {
     ) throws -> KanbanCard {
 
         guard sourceID != destinationID,
-              let sourceIndex = collections.firstIndex(where: { $0.id == sourceID && $0.isActive }), /* Active collection currently owning the Note */
-              let destinationIndex = collections.firstIndex(where: { /* Active personal List receiving the Note */
+              let sourceIndex = collections.firstIndex(where: { $0.id == sourceID && $0.isActive }),  /* Active collection currently owning the Note */
+              let destinationIndex = collections.firstIndex(where: {                                  /* Active personal List receiving the Note     */
                   $0.id == destinationID && $0.kind == .list && $0.isActive
               }) else {
 
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var source = collections[sourceIndex] /* Source collection snapshot receiving the removal */
-        var destination = collections[destinationIndex] /* Destination collection snapshot receiving the Note */
-        let sourceMatches = source.lists.indices.flatMap { listIndex in /* Matching Note positions used to reject ambiguity */
+        var source = collections[sourceIndex]                            /* Source collection snapshot receiving the removal   */
+        var destination = collections[destinationIndex]                  /* Destination collection snapshot receiving the Note */
+        let sourceMatches = source.lists.indices.flatMap { listIndex in  /* Matching Note positions used to reject ambiguity   */
             source.lists[listIndex].cards.indices.compactMap { cardIndex in
                 !source.lists[listIndex].isArchived && source.lists[listIndex].cards[cardIndex].id == noteID
                     ? (listIndex, cardIndex)
@@ -2531,8 +2531,8 @@ enum PersonalCollectionNoteMovement {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var moved = source.lists[sourceListIndex].cards.remove(at: cardIndex) /* Note detached from its source before relocation */
-        let destinationIDs = Set(destination.lists.flatMap(\.allCards).map(\.id)) /* Active and archived identities reserved in the destination */
+        var moved = source.lists[sourceListIndex].cards.remove(at: cardIndex)      /* Note detached from its source before relocation            */
+        let destinationIDs = Set(destination.lists.flatMap(\.allCards).map(\.id))  /* Active and archived identities reserved in the destination */
 
         var destinationCardID = moved.id /* Resulting Note identity adjusted only for a collision */
 
@@ -2765,8 +2765,8 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
     ///
     func makeCollection(existingTitles: [String]) -> PersonalCollection {
 
-        let icon:  PersonalCollectionIcon /* Collection symbol selected for this example */
-        let color: ProfileColor /* Collection accent selected for this example */
+        let icon:  PersonalCollectionIcon  /* Collection symbol selected for this example */
+        let color: ProfileColor            /* Collection accent selected for this example */
 
         switch self {
 
@@ -2832,15 +2832,15 @@ enum PersonalCollectionIcon: String, CaseIterable, Codable, Sendable {
 ///     Keep collection identity, presentation, board content, and bookmarks together
 ///
 struct PersonalCollection: Identifiable, Hashable, Codable {
-    let id: UUID                         /* Stable collection identity */
-    var title: String                    /* User-facing collection title */
-    let kind: PersonalCollectionKind     /* List or multi-column board */
-    var icon: PersonalCollectionIcon     /* Symbol shown for the collection */
-    var color: ProfileColor              /* Collection accent color */
-    var lists: [KanbanList]              /* Lists and cards owned by the collection */
-    var savedCardIDs: Set<Int>           /* Bookmarked cards retained by the collection */
-    var isArchived: Bool? = nil          /* Optional archive state for older saved data */
-    var boardAppearance: BoardAppearance? = nil /* Independent persisted List color defaults */
+    let id: UUID                                 /* Stable collection identity                  */
+    var title: String                            /* User-facing collection title                */
+    let kind: PersonalCollectionKind             /* List or multi-column board                  */
+    var icon: PersonalCollectionIcon             /* Symbol shown for the collection             */
+    var color: ProfileColor                      /* Collection accent color                     */
+    var lists: [KanbanList]                      /* Lists and cards owned by the collection     */
+    var savedCardIDs: Set<Int>                   /* Bookmarked cards retained by the collection */
+    var isArchived: Bool? = nil                  /* Optional archive state for older saved data */
+    var boardAppearance: BoardAppearance? = nil  /* Independent persisted List color defaults   */
     var collectionDescription: String? = nil
 
     /// The three shortcut Lists share their focused layout across Today and Plans.
@@ -3044,9 +3044,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1 /* Next identity beyond all retained collection records */
-        var destination = lists[listIndex] /* Column snapshot receiving the new Note */
-        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt, presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
+        let nextCardID = (lists.flatMap { $0.allCards.map(\.id) }.max() ?? -1) + 1                                                                                                                                     /* Next identity beyond all retained collection records      */
+        var destination = lists[listIndex]                                                                                                                                                                             /* Column snapshot receiving the new Note                    */
+        var note = destination.makeItem(id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt, presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences)  /* New record carrying the draft's content and creation time */
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -3143,9 +3143,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
     ///
     static func uniqueTitle(_ base: String, existingTitles: [String]) -> String {
 
-        let titles = Set(existingTitles.map { $0.lowercased() }) /* Existing names compared without case distinctions */
-        var candidate = base /* Proposed name retried until unique */
-        var number = 2 /* Numeric suffix for resolving name collisions */
+        let titles = Set(existingTitles.map { $0.lowercased() })  /* Existing names compared without case distinctions */
+        var candidate = base                                      /* Proposed name retried until unique                */
+        var number = 2                                            /* Numeric suffix for resolving name collisions      */
 
         while titles.contains(candidate.lowercased()) {
 
@@ -3166,11 +3166,11 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 ///
 struct PersonalCollectionBookmarkedCard: Identifiable, Hashable {
 
-    let collectionID: UUID /* Owning personal collection identity */
-    let collectionTitle: String /* Collection name shown in Saved */
-    let listID: Int /* Containing collection-local list identity */
-    let listTitle: String /* Containing list name shown in Saved */
-    let card: KanbanCard /* Complete bookmarked record */
+    let collectionID: UUID       /* Owning personal collection identity       */
+    let collectionTitle: String  /* Collection name shown in Saved            */
+    let listID: Int              /* Containing collection-local list identity */
+    let listTitle: String        /* Containing list name shown in Saved       */
+    let card: KanbanCard         /* Complete bookmarked record                */
 
     ///
     /// @fcn        PersonalCollectionBookmarkedCard.id
@@ -3338,8 +3338,8 @@ enum PersonalCollectionStore {
 ///
 struct ExampleLoadUndoSnapshot: Codable, Equatable {
 
-    let lists: [KanbanList]   /* Board lists to restore */
-    let todayListID: Int?     /* Previously selected Today list, when set */
+    let lists: [KanbanList]  /* Board lists to restore                   */
+    let todayListID: Int?    /* Previously selected Today list, when set */
     var week: DatedPlanningWeek? = nil
     var savedCardIDs: Set<Int>? = nil
     var importantCardIDs: Set<Int>? = nil
@@ -3489,8 +3489,8 @@ enum KanbanBoardPersistence {
     @MainActor
     static func loadListsInBackground(suiteName: String? = nil) async -> [KanbanList] {
 
-        let activity = DatabaseActivity.shared /* Shared persistence progress and failure reporter */
-        let operation = activity.begin("Loading Board...") /* Progress identity for the pending Board load */
+        let activity = DatabaseActivity.shared              /* Shared persistence progress and failure reporter */
+        let operation = activity.begin("Loading Board...")  /* Progress identity for the pending Board load     */
 
         defer {
 
@@ -3557,14 +3557,14 @@ enum KanbanBoardPersistence {
         onSuccess: (@MainActor () -> Void)? = nil
     ) {
 
-        let activity = DatabaseActivity.shared /* Shared persistence progress and failure reporter */
-        let operation = activity.begin("Saving Board...") /* Progress identity for the queued Board save */
+        let activity = DatabaseActivity.shared             /* Shared persistence progress and failure reporter */
+        let operation = activity.begin("Saving Board...")  /* Progress identity for the queued Board save      */
 
         // A serial queue preserves snapshot order even when edits arrive faster than encoding.
         queue.async {
-            let result = Result { /* Success or failure of the queued persistence operation */
-                let defaults = try persistenceDefaults(suiteName: suiteName) /* Validated preferences store receiving the Board document */
-                let data = try JSONEncoder().encode(lists) /* Encoded Board snapshot ready for storage */
+            let result = Result {                                             /* Success or failure of the queued persistence operation   */
+                let defaults = try persistenceDefaults(suiteName: suiteName)  /* Validated preferences store receiving the Board document */
+                let data = try JSONEncoder().encode(lists)                    /* Encoded Board snapshot ready for storage                 */
 
                 defaults.set(data, forKey: storageKey)
             }
@@ -3754,10 +3754,10 @@ enum SampleData {
     ///
     private static func actionDetail(title: String, description: String, steps: [String], comment: String) -> KanbanChecklistActionDetail {
 
-        let nestedItems = steps.map { KanbanChecklistItem(title: $0) }   /* Standard nested actions */
-        let checklist   = KanbanChecklist(title: title, items: nestedItems) /* Nested checklist    */
-        let sampleDate  = Date(timeIntervalSince1970: 1_790_467_200)     /* Stable sample date      */
-        let comments    = [KanbanComment(author: "Plenact Demo", body: comment, createdAt: sampleDate)] /* Sample discussion */
+        let nestedItems = steps.map { KanbanChecklistItem(title: $0) }                                   /* Standard nested actions */
+        let checklist   = KanbanChecklist(title: title, items: nestedItems)                              /* Nested checklist        */
+        let sampleDate  = Date(timeIntervalSince1970: 1_790_467_200)                                     /* Stable sample date      */
+        let comments    = [KanbanComment(author: "Plenact Demo", body: comment, createdAt: sampleDate)]  /* Sample discussion       */
 
         return KanbanChecklistActionDetail(
             description: description,
@@ -3841,8 +3841,8 @@ enum SampleData {
 
                 if listIndex < 3 && cardTitle == cardTitlesByDay[listIndex].first {
 
-                    let illustration = ExampleCoverImage.allCases[listIndex] /* Bundled cover selected for this example list */
-                    let attachment = KanbanAttachment(mediaKind: .photo, exampleImage: illustration) /* Photo record referencing the bundled cover */
+                    let illustration = ExampleCoverImage.allCases[listIndex]                          /* Bundled cover selected for this example list */
+                    let attachment = KanbanAttachment(mediaKind: .photo, exampleImage: illustration)  /* Photo record referencing the bundled cover   */
 
                     card.attachments = [attachment]
                     card.coverAttachmentID = attachment.id
@@ -3928,8 +3928,8 @@ enum SampleData {
 
         for listIndex in initializedLists.indices {
 
-            let targetListIndex = (listIndex + 1) % initializedLists.count   /* Next Board list */
-            let targetCards = baseLists[targetListIndex].cards.filter { !$0.isSectionDivider } /* Link targets */
+            let targetListIndex = (listIndex + 1) % initializedLists.count                      /* Next Board list */
+            let targetCards = baseLists[targetListIndex].cards.filter { !$0.isSectionDivider }  /* Link targets    */
 
             for cardIndex in initializedLists[listIndex].cards.indices {
 

@@ -21,10 +21,10 @@ import Foundation
 ///
 struct ProfileColor: Hashable, Codable {
 
-    var red: Double /* sRGB red component */
-    var green: Double /* sRGB green component */
-    var blue: Double /* sRGB blue component */
-    var legacyToken: String? /* Legacy palette token retained for compatible encoding */
+    var red: Double           /* sRGB red component                                    */
+    var green: Double         /* sRGB green component                                  */
+    var blue: Double          /* sRGB blue component                                   */
+    var legacyToken: String?  /* Legacy palette token retained for compatible encoding */
 
 
     ///
@@ -76,12 +76,12 @@ struct ProfileColor: Hashable, Codable {
     ///
     init(hue: Double, saturation: Double, brightness: Double) {
 
-        let hue = (hue - floor(hue)) * 6                                      /* Wrapped hue sector */
-        let saturation = min(max(saturation, 0), 1)                           /* Clamped saturation */
-        let brightness = min(max(brightness, 0), 1)                           /* Clamped brightness */
-        let chroma = brightness * saturation                                  /* Saturation-scaled color range */
-        let intermediate = chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1)) /* Secondary RGB component */
-        let components: (Double, Double, Double)                              /* RGB values for the active hue sector */
+        let hue = (hue - floor(hue)) * 6                                                   /* Wrapped hue sector                   */
+        let saturation = min(max(saturation, 0), 1)                                        /* Clamped saturation                   */
+        let brightness = min(max(brightness, 0), 1)                                        /* Clamped brightness                   */
+        let chroma = brightness * saturation                                               /* Saturation-scaled color range        */
+        let intermediate = chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))  /* Secondary RGB component              */
+        let components: (Double, Double, Double)                                           /* RGB values for the active hue sector */
 
         switch Int(floor(hue)) {
 
@@ -102,16 +102,16 @@ struct ProfileColor: Hashable, Codable {
         )
     }
 
-    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal") /* Teal palette color */
-    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue") /* Blue palette color */
-    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green") /* Green palette color */
-    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange") /* Orange palette color */
-    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite") /* Graphite palette color */
-    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white") /* White palette color */
-    static let charcoal = Self(red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal") /* Charcoal palette color */
-    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon") /* Lemon palette color */
-    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky") /* Sky palette color */
-    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral") /* Coral palette color */
+    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")               /* Teal palette color     */
+    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")               /* Blue palette color     */
+    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")            /* Green palette color    */
+    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")             /* Orange palette color   */
+    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")     /* Graphite palette color */
+    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white")                 /* White palette color    */
+    static let charcoal = Self(red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")  /* Charcoal palette color */
+    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")           /* Lemon palette color    */
+    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")            /* Sky palette color      */
+    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")        /* Coral palette color    */
 
 
     ///
@@ -146,11 +146,11 @@ struct ProfileColor: Hashable, Codable {
     /// @pre        RGB components contain the color to convert
     /// @post       The stored RGB components remain unchanged
     ///
-    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) { /* HSB channels derived from the stored RGB values */
-        let maximum = max(red, green, blue) /* Brightest RGB channel */
-        let minimum = min(red, green, blue) /* Darkest RGB channel */
-        let delta = maximum - minimum /* RGB channel range used to derive hue and saturation */
-        let hue: Double /* Hue angle selected from the dominant RGB channel */
+    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) {  /* HSB channels derived from the stored RGB values     */
+        let maximum = max(red, green, blue)                                               /* Brightest RGB channel                               */
+        let minimum = min(red, green, blue)                                               /* Darkest RGB channel                                 */
+        let delta = maximum - minimum                                                     /* RGB channel range used to derive hue and saturation */
+        let hue: Double                                                                   /* Hue angle selected from the dominant RGB channel    */
 
         if delta == 0 {
 
@@ -183,9 +183,9 @@ struct ProfileColor: Hashable, Codable {
     ///
     init(from decoder: Decoder) throws {
 
-        if let container = try? decoder.singleValueContainer(), /* Legacy single-value decoder */
-           let token = try? container.decode(String.self) { /* Legacy color token */
-            guard let color = Self.legacyColor(token) else { /* Recognized legacy palette color */
+        if let container = try? decoder.singleValueContainer(),  /* Legacy single-value decoder     */
+           let token = try? container.decode(String.self) {      /* Legacy color token              */
+            guard let color = Self.legacyColor(token) else {     /* Recognized legacy palette color */
 
                 throw DecodingError.dataCorrupted(.init(
                     codingPath:       decoder.codingPath,
@@ -401,8 +401,8 @@ struct TodayFocusEntry: Identifiable {
 
 struct LocalProfilePreferences: Hashable, Codable {
 
-    var defaultListID:       Int?   /* Preferred Today list   */
-    var usesReducedContent:  Bool   /* Hide supporting copy   */
+    var defaultListID:       Int?  /* Preferred Today list */
+    var usesReducedContent:  Bool  /* Hide supporting copy */
     var scrollsOverflowingTitles: Bool
     var enablesLowerCornerBack: Bool
     var usesLargeControls:   Bool   /* Use taller key actions */
@@ -415,8 +415,8 @@ struct LocalProfilePreferences: Hashable, Codable {
     var todayFocusIncludesImportant: Bool
     var todayFocusIncludesBookmarked: Bool
     var todayFocusHidesCompleted: Bool
-    var todayFocusItemCount: Int /* Visible row capacity: zero expands all matches; otherwise 1...12 */
-    var showsNavigationLabels: Bool /* Show labels beneath navigation icons */
+    var todayFocusItemCount: Int     /* Visible row capacity: zero expands all matches; otherwise 1...12 */
+    var showsNavigationLabels: Bool  /* Show labels beneath navigation icons                             */
 
 
     ///
@@ -592,16 +592,16 @@ struct LocalProfilePreferences: Hashable, Codable {
 ///
 struct LocalProfile: Identifiable, Hashable, Codable {
 
-    let id:          UUID                      /* Stable local profile ID */
-    let createdAt:   Date                      /* Profile creation date   */
-    var displayName: String                    /* User-facing name        */
-    var email:       String                    /* Optional local email    */
-    var context:     String                    /* Optional planning role  */
-    var avatarColor: ProfileColor              /* Avatar background color */
-    var avatarIcon:  ProfileAvatarIcon         /* Avatar icon token       */
-    var avatarForegroundColor: ProfileColor   /* Icon and initials color */
-    var avatarPhotoFileName: String?         /* Filename for the separately stored avatar photo */
-    var preferences: LocalProfilePreferences   /* Local personalization   */
+    let id:          UUID                     /* Stable local profile ID                         */
+    let createdAt:   Date                     /* Profile creation date                           */
+    var displayName: String                   /* User-facing name                                */
+    var email:       String                   /* Optional local email                            */
+    var context:     String                   /* Optional planning role                          */
+    var avatarColor: ProfileColor             /* Avatar background color                         */
+    var avatarIcon:  ProfileAvatarIcon        /* Avatar icon token                               */
+    var avatarForegroundColor: ProfileColor   /* Icon and initials color                         */
+    var avatarPhotoFileName: String?          /* Filename for the separately stored avatar photo */
+    var preferences: LocalProfilePreferences  /* Local personalization                           */
 
 
     ///
@@ -668,9 +668,9 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     ///
     var initials: String {   /* Avatar text */
 
-        let components = displayName.split(whereSeparator: \.isWhitespace)    /* Name components */
-        let characters = components.prefix(2).compactMap(\.first)             /* Initial letters */
-        let initials   = String(characters).uppercased()                      /* Avatar initials */
+        let components = displayName.split(whereSeparator: \.isWhitespace)  /* Name components */
+        let characters = components.prefix(2).compactMap(\.first)           /* Initial letters */
+        let initials   = String(characters).uppercased()                    /* Avatar initials */
 
         return initials.isEmpty ? "P" : initials
     }

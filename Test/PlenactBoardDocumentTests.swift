@@ -177,7 +177,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
         var undoCalls = 0
         TransferConfirmationPresenter.shared.showUndo(TransferConfirmation(title: "Morning", destination: "Thursday")) { undoCalls += 1; return true }
         try await Task.sleep(for: .milliseconds(200))
-        let notice = try XCTUnwrap(scene.windows.first { !$0.isHidden && $0.windowLevel > .alert })
+        let notice = try XCTUnwrap(window.subviews.first { $0.accessibilityIdentifier == "section.move.undo.overlay" })
+        XCTAssertFalse(scene.windows.contains { !$0.isHidden && $0.windowLevel > .alert }, "Persistent Undo must not create another window")
+        XCTAssertTrue(window.isKeyWindow)
         XCTAssertNil(notice.hitTest(CGPoint(x: 10, y: 10), with: nil))
         let hits = stride(from: CGFloat(0), through: notice.bounds.height, by: 10).filter {
             notice.hitTest(CGPoint(x: notice.bounds.midX, y: $0), with: nil) != nil
@@ -215,6 +217,26 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let entries = preferences.todayFocusEntries(in: cards)
         XCTAssertEqual(entries.first(where: { $0.id == 4 })?.heading, "Morning")
         XCTAssertTrue(entries.contains { $0.id == 2 }, "Collapsing Day content does not hide it from Focus")
+    }
+
+    func testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard() throws {
+        func card(_ id: Int, _ title: String) -> KanbanCard { KanbanCard(id: id, word: title, listTitle: "Day", checklists: []) }
+        var heading = card(1, "--- Morning")
+        heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
+        let cards = [card(0, "Before"), heading, card(2, "Hidden"), card(3, "--- Evening"), card(4, "Visible"), card(5, "Last")]
+        let move = try XCTUnwrap(DaySections.visibleMove(cards, sourceOffsets: IndexSet(integer: 4), destinationOffset: 2))
+        XCTAssertEqual(move.id, 5)
+        XCTAssertEqual(move.index, 3)
+        var result = DaySections.reordered(cards, itemID: move.id, to: move.index)
+        DaySections.reveal(move.id, in: &result)
+        XCTAssertEqual(result.map(\.id), [0, 1, 2, 5, 3, 4])
+        XCTAssertEqual(DaySections.visible(result).map(\.id), result.map(\.id))
+        XCTAssertEqual(Set(result.map(\.id)), Set(cards.map(\.id)))
+        XCTAssertEqual(result.first { $0.id == 2 }, cards[2], "Hidden content remains intact")
+        var lists = [KanbanList(id: 1, title: "Day", cards: cards)]
+        XCTAssertTrue(try BoardCardMovement.move(5, to: 1, before: 3, in: &lists))
+        XCTAssertEqual(lists[0].cards.map(\.id), [0, 1, 2, 5, 3, 4])
+        XCTAssertEqual(lists[0].cards.first { $0.id == 1 }?.appearance?.sectionCollapsed, false)
     }
 
     func testDaySectionMovementRetainsTheWholeBlockAndItsMetadata() throws {
@@ -10134,6 +10156,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
         controller.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(250))
 
+        TransferConfirmationPresenter.shared.showUndo(TransferConfirmation(title: "Other section", destination: "Another day")) { true }
+        defer { TransferConfirmationPresenter.shared.dismiss() }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(scene.windows.contains { !$0.isHidden && $0.windowLevel > .alert })
         let collection = try XCTUnwrap(collectionView(in: controller.view))
         let noteCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 0, section: 0)))
         let source = try XCTUnwrap(noteCell.contentView.interactions.compactMap {
@@ -10283,7 +10309,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 $0 + collection.numberOfItems(inSection: $1)
             }
 
-            XCTAssertEqual(itemCount, 4, "Insertion markers must not introduce extra reorderable rows")
+            XCTAssertEqual(itemCount, 4, "Three content rows plus Add card; no separate section creation row")
 
             let dragSources = collection.visibleCells.flatMap { cell in /* Registered drag-source views */
                 cell.contentView.interactions.compactMap { $0 as? UIDragInteraction }.filter {

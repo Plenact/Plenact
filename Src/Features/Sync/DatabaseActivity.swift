@@ -218,40 +218,60 @@ final class TransferConfirmationPresenter {
     static let shared = TransferConfirmationPresenter()
     private var window: UIWindow?
     private var dismissTask: Task<Void, Never>?
+    private var undoOverlay: TransferUndoOverlay?
+    private var undoHost: UIViewController?
 
     func dismiss() {
         dismissTask?.cancel()
         window?.isHidden = true
         window = nil
+        undoOverlay?.removeFromSuperview()
+        undoOverlay = nil
+        undoHost = nil
     }
 
     /// Unlike the transient confirmation, this remains available across navigation until used or dismissed.
     func showUndo(_ confirmation: TransferConfirmation, undo: @escaping () -> Bool) {
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }) else { return }
+            .first(where: { $0.activationState == .foregroundActive }),
+              let mainWindow = scene.windows.first(where: \.isKeyWindow) else { return }
         dismiss()
-        let window = TransferConfirmationWindow(windowScene: scene)
-        window.frame = scene.coordinateSpace.bounds
-        window.windowLevel = .alert + 1
-        window.backgroundColor = .clear
-        window.rootViewController = UIHostingController(rootView: SectionUndoToast(message: confirmation.message,
+        // Keep native drag sessions in their original window. A second, persistent
+        // UIWindow can intercept the system's drag routing even when taps pass through.
+        let overlay = TransferUndoOverlay(frame: mainWindow.bounds)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        overlay.backgroundColor = .clear
+        overlay.accessibilityIdentifier = "section.move.undo.overlay"
+        let host = UIHostingController(rootView: SectionUndoToast(message: confirmation.message,
             undo: { [weak self] in
                 let succeeded = undo()
                 if succeeded { self?.dismiss() }
                 return succeeded
             }, close: { [weak self] in self?.dismiss() },
-            onFrame: { [weak window] in window?.touchRegion = $0 }))
-        window.rootViewController?.view.backgroundColor = .clear
-        self.window = window
-        window.isHidden = false
+            onFrame: { [weak overlay] in overlay?.touchRegion = $0 }))
+        host.view.backgroundColor = .clear
+        host.view.frame = overlay.bounds
+        host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        overlay.addSubview(host.view)
+        mainWindow.addSubview(overlay)
+        undoOverlay = overlay
+        undoHost = host
         UIAccessibility.post(notification: .announcement, argument: confirmation.message + " Undo available.")
+        // UIKit may add a presentation above the root view during navigation.
+        // Retain the same panel and bring it above that presentation, without another window.
+        dismissTask = Task { [weak self, weak overlay, weak mainWindow] in
+            while !Task.isCancelled {
+                guard let self, let overlay, let mainWindow, self.undoOverlay === overlay else { return }
+                if mainWindow.subviews.last !== overlay { mainWindow.bringSubviewToFront(overlay) }
+                do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+            }
+        }
     }
 
     func show(_ confirmation: TransferConfirmation) {
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }) else { return }
-        dismissTask?.cancel()
-        window?.isHidden = true
+        dismiss()
         let window = TransferConfirmationWindow(windowScene: scene)
         window.frame = scene.coordinateSpace.bounds
         window.windowLevel = .alert + 1
@@ -267,6 +287,14 @@ final class TransferConfirmationPresenter {
             window.isHidden = true
             self.window = nil
         }
+    }
+}
+
+private final class TransferUndoOverlay: UIView {
+    var touchRegion: CGRect = .zero
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard touchRegion.contains(point) else { return nil }
+        return super.hitTest(point, with: event)
     }
 }
 

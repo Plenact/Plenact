@@ -20,6 +20,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
+- Tapping an important card's star, in the List view marks it not-important (with a star outline placeholder, to undo that if they want, as long as they stay in that view)
+
 - History of edits to each card!!! ?
 
 - Option for subtitles in italics?

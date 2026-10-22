@@ -22,11 +22,31 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 - Three setup cards for OTB, ITQ & SR now load in read-only mode, from tapping that view's header title and don't show on list. with all sections hidden too, except for that description which is great - and maybe some checklists with guidance or examples!
 
+- Card backgrounds
+    A. Notes
+    B. Lists?
+    C. Cards?
+    D. Boards?
+    *. Pictures?
+    *. Textures?
+    *. Gradients?
+	*. Thoughts?
+
 !
 
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!
+
+- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
+
+- Dragging on the Today view slogan rolls off gradually, and not immediate like present
+
+- Random header color selector option for cards
+
+- Tapping a card's dates, from the card preview in the List view raises a popup to modify the dates of that card in-place
+
+- Tapping the 'Important' star of a card marked 'Important' in the list view raises a prompt, "Do you want to mark not important?"
 
 - Tapping an important card's star, in the List view marks it not-important (with a star outline placeholder, to undo that if they want, as long as they stay in that view)
 

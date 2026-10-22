@@ -20,7 +20,7 @@ import Foundation
 ///
 enum LocalProfileStore {
 
-    private static let storageKey = "Plenact.LocalProfile.v1"   /* Versioned profile key */
+    static let storageKey = "Plenact.LocalProfile.v1"   /* Versioned profile key */
 
 
     ///
@@ -193,7 +193,8 @@ enum PlanPreferencesStore {
     ///
     /// @fcn        PlanPreferencesStore.load
     /// @brief      Load display preferences without creating new storage
-    /// @details    Decodes the stored preference value when valid and otherwise returns the established defaults.
+    /// @details    Prefers standalone planning preferences, falls back to saved profile preferences for legacy
+    ///             installations, and uses established defaults only when neither record is readable.
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -201,9 +202,32 @@ enum PlanPreferencesStore {
     ///             unavailable
     ///
     static func load(from defaults: UserDefaults = .standard) -> LocalProfilePreferences {
-        if let data = defaults.data(forKey: key),
-           let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: data) { return value }
-        return LocalProfileStore.load(from: defaults)?.preferences ?? LocalProfilePreferences()
+        resolved(preferencesData: defaults.data(forKey: key),
+                 profileData: defaults.data(forKey: LocalProfileStore.storageKey))
+    }
+
+
+    ///
+    /// @fcn        PlanPreferencesStore.resolved
+    /// @brief      Resolve display preferences consistently from observed or stored records
+    /// @details    A readable standalone record takes precedence, including an explicitly disabled shortcut.
+    ///             Otherwise reads the legacy profile's preferences; missing or unreadable records use defaults.
+    ///             Resolution never writes or migrates either record.
+    ///
+    /// @param[in]  preferencesData  Optional encoded standalone planning preferences
+    /// @param[in]  profileData      Optional encoded local profile containing legacy preferences
+    ///
+    /// @return     (LocalProfilePreferences) standalone, profile, or default preferences in that order
+    ///
+    static func resolved(preferencesData: Data?, profileData: Data?) -> LocalProfilePreferences {
+        if let preferencesData,
+           let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData) {
+            return value
+        }
+        if let profileData, let profile = try? JSONDecoder().decode(LocalProfile.self, from: profileData) {
+            return profile.preferences
+        }
+        return LocalProfilePreferences()
     }
 
 

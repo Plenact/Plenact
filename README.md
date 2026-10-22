@@ -16,6 +16,10 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
+- Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
+
+- Tapping 'Add Card' at the bottom of the list enters text inline, with its right-hand '+' opening a card instead
+
 - Three setup cards for OTB, ITQ & SR now load in read-only mode, from tapping that view's header title and don't show on list. with all sections hidden too, except for that description which is great - and maybe some checklists with guidance or examples!
 
 !

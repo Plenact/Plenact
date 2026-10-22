@@ -3,6 +3,21 @@ import CryptoKit
 
 /// Stable local date keys avoid timestamp shifts when a user changes time zone.
 enum PlanningDate {
+
+
+    ///
+    /// @fcn        PlanningDate.listTitle
+    /// @brief      Build a dated list title for nonheader contexts
+    /// @details    Appends month and day, adding a two-digit year when the represented year differs from the
+    ///             reference year.
+    ///
+    /// @param[in]  title     Display title or proposed title text
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  now       Reference time used instead of an implicit clock read
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) title suffixed with month/day and, for another year, a two-digit year
+    ///
     static func listTitle(_ title: String, on date: Date, now: Date = .now, calendar: Calendar = .current) -> String {
         let month = calendar.component(.month, from: date)
         let day = calendar.component(.day, from: date)
@@ -11,12 +26,38 @@ enum PlanningDate {
             ? "\(month)/\(day)" : "\(month)/\(day)/\(String(format: "%02d", year % 100))"
         return "\(title) (\(suffix))"
     }
+
+
+    ///
+    /// @fcn        PlanningDate.key
+    /// @brief      Create a stable local calendar-day storage key
+    /// @details    Uses Gregorian year, month, and day in the supplied calendar's time zone, independent of its
+    ///             week-start setting.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) zero-padded Gregorian yyyy-MM-dd key in the supplied time zone
+    ///
     static func key(_ date: Date, calendar: Calendar = .current) -> String {
         var gregorian = Calendar(identifier: .gregorian)
         gregorian.timeZone = calendar.timeZone
         let parts = gregorian.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
+
+
+    ///
+    /// @fcn        PlanningDate.date
+    /// @brief      Resolve a stored day key to a local date
+    /// @details    Parses three numeric components and constructs local noon in a Gregorian calendar with the
+    ///             supplied time zone; returns nil if construction fails.
+    ///
+    /// @param[in]  key       Storage key or stable lookup key used by this operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Date?) decoded local-noon date, or nil if parsing or date construction fails
+    ///
     static func date(_ key: String, calendar: Calendar = .current) -> Date? {
         let parts = key.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3 else { return nil }
@@ -24,13 +65,51 @@ enum PlanningDate {
         gregorian.timeZone = calendar.timeZone
         return gregorian.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12))
     }
+
+
+    ///
+    /// @fcn        PlanningDate.weekKey
+    /// @brief      Find the storage key for the containing week's start
+    /// @details    Uses the supplied calendar's week interval, falling back to the given date if that interval is
+    ///             unavailable.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) local day key identifying the start of the containing calendar week
+    ///
     static func weekKey(_ date: Date, calendar: Calendar = .current) -> String {
         key(calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date, calendar: calendar)
     }
+
+
+    ///
+    /// @fcn        PlanningDate.days
+    /// @brief      Resolve the seven local dates belonging to a week key
+    /// @details    Adds calendar days from the decoded start so daylight-saving transitions do not assume fixed
+    ///             twenty-four-hour intervals; invalid keys produce an empty array.
+    ///
+    /// @param[in]  weekKey   Local calendar-week start key
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([Date]) up to seven calendar-day dates, or an empty array if the key cannot be resolved
+    ///
     static func days(in weekKey: String, calendar: Calendar = .current) -> [Date] {
         guard let start = date(weekKey, calendar: calendar) else { return [] }
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
     }
+
+
+    ///
+    /// @fcn        PlanningDate.weekdayTitle
+    /// @brief      Return the English weekday name for a date
+    /// @details    Indexes the Sunday-first name table using the supplied calendar's weekday component.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) English weekday name corresponding to the calendar weekday component
+    ///
     static func weekdayTitle(_ date: Date, calendar: Calendar = .current) -> String {
         ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][calendar.component(.weekday, from: date) - 1]
     }
@@ -65,10 +144,34 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable {
         }
         return "\(firstLabel)-\(lastLabel) '\(yearSuffix)"
     }
+
+
+    ///
+    /// @fcn        DatedPlanningWeek.list
+    /// @brief      Find the active list mapped to a calendar day
+    /// @details    Resolves the day key through dayListIDs and returns nil when the mapping or active list is
+    ///             missing.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (KanbanList?) active list mapped to the requested day, or nil if missing
+    ///
     func list(on date: Date) -> KanbanList? {
         guard let id = dayListIDs[PlanningDate.key(date)] else { return nil }
         return collection.lists.first { $0.id == id && !$0.isArchived }
     }
+
+
+    ///
+    /// @fcn        DatedPlanningWeek.prepareDay
+    /// @brief      Ensure the week contains an active list for a day
+    /// @details    Reuses an existing mapped list or allocates and appends a new weekday list, then records its day
+    ///             mapping.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (Int) ID of the existing or newly appended active weekday list
+    ///
     mutating func prepareDay(_ date: Date) -> Int {
         if let existing = list(on: date) { return existing.id }
         let id = (collection.lists.map(\.id).max() ?? -1) + 1
@@ -76,6 +179,21 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable {
         dayListIDs[PlanningDate.key(date)] = id
         return id
     }
+
+
+    ///
+    /// @fcn        DatedPlanningWeek.make
+    /// @brief      Construct a dated week around existing or empty lists
+    /// @details    Maps weekday titles onto calendar days, creates missing day lists, and retains the supplied
+    ///             saved-card IDs in the new collection.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  lists     Lists participating in the operation
+    /// @param[in]  saved     Owner-local saved-card identities, updated when bookmarked content moves
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (DatedPlanningWeek) constructed value
+    ///
     static func make(for date: Date, lists: [KanbanList]? = nil, saved: Set<Int> = [],
                      calendar: Calendar = .current) -> Self {
         let start = PlanningDate.weekKey(date, calendar: calendar)
@@ -109,14 +227,54 @@ struct PlanningCalendarDocument: Hashable, Codable {
         value.firstWeekday = firstWeekday
         return value
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarDocument.week
+    /// @brief      Find the retained week containing a date
+    /// @details    Matches a week-start key using the supplied calendar override or the document's calendar and
+    ///             returns nil if absent.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (DatedPlanningWeek?) retained matching week, or nil if the calendar has no such week
+    ///
     func week(for date: Date, calendar: Calendar? = nil) -> DatedPlanningWeek? {
         weeks.first { $0.startKey == PlanningDate.weekKey(date, calendar: calendar ?? self.calendar) }
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarDocument.upsert
+    /// @brief      Insert or replace a dated week by its start key
+    /// @details    Replaces an existing matching week or appends it, then sorts all weeks chronologically by key.
+    ///
+    /// @param[in]  week  Dated planning week being inspected or saved
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func upsert(_ week: DatedPlanningWeek) {
         if let index = weeks.firstIndex(where: { $0.startKey == week.startKey }) { weeks[index] = week }
         else { weeks.append(week) }
         weeks.sort { $0.startKey < $1.startKey }
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarDocument.rollForward
+    /// @brief      Retain the outgoing week and select the requested week
+    /// @details    Captures current lists and bookmarks before choosing an existing, supplied, or empty destination
+    ///             week and updating currentWeekKey.
+    ///
+    /// @param[in]  date              Represented date for the operation
+    /// @param[in]  currentLists      Current live-week lists retained before selecting another week
+    /// @param[in]  saved             Owner-local saved-card identities, updated when bookmarked content moves
+    /// @param[in]  suppliedCalendar  Optional override for the document's calendar
+    /// @param[in]  newWeek           Optional prepared destination week to use when none is retained
+    ///
+    /// @return     (DatedPlanningWeek) selected incoming week after the outgoing week has been retained
+    ///
     mutating func rollForward(to date: Date, currentLists: [KanbanList], saved: Set<Int>,
                               calendar suppliedCalendar: Calendar? = nil, newWeek: DatedPlanningWeek? = nil) -> DatedPlanningWeek {
         let calendar = suppliedCalendar ?? self.calendar
@@ -135,8 +293,22 @@ struct PlanningCalendarDocument: Hashable, Codable {
 
 
 extension PlanningCalendarDocument {
-    /// Legacy Monday–Sunday boards were initially dated using the device's Sunday-start calendar.
-    /// Repartition by existing date associations; never relabel the old Sunday's content.
+
+
+    ///
+    /// @fcn        PlanningCalendarDocument.repairLegacyMondayFirstLayout
+    /// @brief      Repair a recognized legacy weekday mapping
+    /// @details    Checks the specific Monday-first legacy arrangement before invoking the calendar migration;
+    ///             unrelated layouts return false without alteration.
+    ///
+    /// @param[in]  now  Reference time used instead of an implicit clock read
+    ///
+    /// @return     (Bool) true when the recognized legacy layout was repaired; false when no repair applies
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
+    /// @note       Legacy Monday–Sunday boards were initially dated using the device's Sunday-start calendar.
+    ///             Repartition by existing date associations; never relabel the old Sunday's content.
+    ///
     @discardableResult
     mutating func repairLegacyMondayFirstLayout(now: Date = .now) throws -> Bool {
         guard firstWeekday == 1,
@@ -153,8 +325,24 @@ extension PlanningCalendarDocument {
         return true
     }
 
-    /// Repartition dated lists without changing their dates or dropping archived content.
-    /// Undated lists and board appearance stay with the middle of their original week.
+
+    ///
+    /// @fcn        PlanningCalendarDocument.changeFirstWeekday
+    /// @brief      Regroup retained planning days under a new week start
+    /// @details    Accepts Sunday or Monday, rebuilds dated ownership while preserving content and bookmarks, and
+    ///             rewrites IDs and links where ownership changes.
+    ///
+    /// @param[in]  weekday  Requested supported planning week-start value
+    /// @param[in]  now      Reference time used instead of an implicit clock read
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
+    ///             `CocoaError(.coderReadCorrupt)`. Errors from throwing dependencies propagate unless handled within
+    ///             this operation.
+    ///
+    /// @note       Repartition dated lists without changing their dates or dropping archived content. Undated lists
+    ///             and board appearance stay with the middle of their original week.
+    ///
     mutating func changeFirstWeekday(to weekday: Int, now: Date = .now) throws {
         guard weekday == 1 || weekday == 2 else { throw CocoaError(.validationMissingMandatoryProperty) }
         guard weekday != firstWeekday else { return }
@@ -204,6 +392,19 @@ extension PlanningCalendarDocument {
                 let occupied = Set(target.collection.lists.map(\.id))
                 let listID = occupied.contains(list.id) ? (occupied.max() ?? -1) + 1 : list.id
                 let mapping = cardIDs[source.id]!
+
+
+                ///
+                /// @fcn        PlanningCalendarDocument.changeFirstWeekday.relocated
+                /// @brief      Relocate a card during weekday regrouping
+                /// @details    Replaces its ID and list title using the enclosing migration maps and updates
+                ///             checklist references to retained and linked cards.
+                ///
+                /// @param[in]  card  Card or note being inspected or changed
+                ///
+                /// @return     (KanbanCard) card with destination-safe identity, list title, and migrated checklist
+                ///             references
+                ///
                 func relocated(_ card: KanbanCard) -> KanbanCard {
                     var result = card.replacingLocation(id: mapping[card.id]!, listTitle: list.title)
                     result.checklists = card.checklists.map { checklist in
@@ -274,6 +475,18 @@ extension PlanningCalendarDocument {
         let sourceWeekIDs = Set(sources.map(\.id))
         for key in Array(rebuilt.keys) {
             var week = rebuilt[key]!
+
+
+            ///
+            /// @fcn        PlanningCalendarDocument.changeFirstWeekday.preservingOwners
+            /// @brief      Qualify retained checklist references after regrouping
+            /// @details    Resolves implicit or former-week ownership through the migration's card-owner map so
+            ///             references still identify their retained cards.
+            ///
+            /// @param[in]  card  Card or note being inspected or changed
+            ///
+            /// @return     (KanbanCard) card with retained checklist references qualified to their migrated owners
+            ///
             func preservingOwners(_ card: KanbanCard) -> KanbanCard {
                 var card = card
                 card.checklists = card.checklists.map { checklist in
@@ -305,6 +518,20 @@ extension PlanningCalendarDocument {
 
 enum PlanningCalendarStore {
     static let key = "Plenact.CalendarWeeks.v1"
+
+
+    ///
+    /// @fcn        PlanningCalendarStore.load
+    /// @brief      Read and validate the retained planning calendar
+    /// @details    Returns nil for absent storage and rejects malformed encoding, unsupported versions, duplicate
+    ///             week identities, or a missing current week.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (PlanningCalendarDocument?) validated document, or nil when no saved value exists
+    /// @throws     Explicit failures include `CocoaError(.coderReadCorrupt)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func load(from defaults: UserDefaults = .standard) throws -> PlanningCalendarDocument? {
         guard let data = defaults.data(forKey: key) else { return nil }
         let result = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
@@ -315,6 +542,20 @@ enum PlanningCalendarStore {
         }
         return result
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarStore.save
+    /// @brief      Save a calendar without overwriting unreadable retained data
+    /// @details    Loads the existing value first so corruption or unsupported data is surfaced before the encoded
+    ///             replacement is written.
+    ///
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func save(_ document: PlanningCalendarDocument, to defaults: UserDefaults = .standard) throws {
         // Retained corrupt or unsupported data must not be silently overwritten.
         _ = try load(from: defaults)
@@ -393,6 +634,21 @@ private struct PlanningWeekRoute: Identifiable {
 
 /// Shared membership rules keep Calendar and Choose week indicators in agreement.
 enum PlanningCalendarContent {
+
+
+    ///
+    /// @fcn        PlanningCalendarContent.items
+    /// @brief      Select content represented on a calendar day
+    /// @details    Includes cards in that day's mapped list and cards with a date-bearing start or due value on that
+    ///             day; time-only values do not create calendar matches.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    /// @param[in]  sources   Live owner-qualified workspace items used to resolve retained references
+    ///
+    /// @return     ([PlanningSearchResult]) workspace items planned in the day's list or explicitly scheduled on that
+    ///             date
+    ///
     static func items(on date: Date, document: PlanningCalendarDocument, sources: [PlanningSearchResult]) -> [PlanningSearchResult] {
         let calendar = document.calendar
         let week = document.week(for: date)
@@ -416,6 +672,19 @@ struct PlanningCalendarView: View {
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
     @State private var route: PlanningWeekRoute?
     @State private var showsSearch = false
+
+
+    ///
+    /// @fcn        PlanningCalendarView.init
+    /// @brief      Initialize calendar navigation around a requested date
+    /// @details    Seeds the displayed month and selected local day using Calendar.current and retains the callback
+    ///             used when leaving for home.
+    ///
+    /// @param[in]  initialDate     Date initially selected when the view opens
+    /// @param[in]  onLeaveForHome  Callback used after navigation leaves the calendar for home
+    ///
+    /// @return     (PlanningCalendarView) initialized instance
+    ///
     init(initialDate: Date = .now, onLeaveForHome: @escaping () -> Void = {}) {
         self.onLeaveForHome = onLeaveForHome
         _month = State(initialValue: Calendar.current.dateInterval(of: .month, for: initialDate)?.start ?? initialDate)
@@ -438,14 +707,50 @@ struct PlanningCalendarView: View {
         let values = calendar.veryShortStandaloneWeekdaySymbols
         return (0..<7).map { values[(calendar.firstWeekday - 1 + $0) % 7] }
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarView.week
+    /// @brief      Resolve a retained week or an unsaved empty preview
+    /// @details    Uses the shared calendar document when available and otherwise constructs a week with the display
+    ///             calendar without saving it.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (DatedPlanningWeek) retained week or a newly constructed unsaved empty week
+    ///
     private func week(on date: Date) -> DatedPlanningWeek {
         access?.document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: displayCalendar)
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarView.items
+    /// @brief      Look up searchable content for a calendar date
+    /// @details    Uses the shared calendar-content selector and returns an empty result when calendar access is
+    ///             unavailable.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     ([PlanningSearchResult]) searchable items represented on the requested day, or an empty array
+    ///             without access
+    ///
     private func items(on date: Date) -> [PlanningSearchResult] {
         guard let access else { return [] }
         return PlanningCalendarContent.items(on: date, document: access.document, sources: access.searchableItems)
     }
 
+
+    ///
+    /// @fcn        PlanningCalendarView.open
+    /// @brief      Navigate to the selected calendar search result
+    /// @details    Routes retained-week content within the calendar; library content opens through its owner callback
+    ///             before leaving the calendar presentation.
+    ///
+    /// @param[in]  result  Resolved search or Activity match to render or open
+    ///
+    /// @return     (Void) no return value
+    ///
     private func open(_ result: PlanningSearchResult) {
         if let key = result.weekKey, let savedWeek = access?.document.weeks.first(where: { $0.startKey == key }) {
             route = PlanningWeekRoute(week: savedWeek, dayID: result.listID, cardID: result.card.id)
@@ -571,6 +876,18 @@ struct PlanningCalendarView: View {
         .padding(12)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarView.dayButton
+    /// @brief      Build a selectable calendar day cell
+    /// @details    Shows the day number, today styling, selection state, and an item-presence dot based on the day's
+    ///             searchable content.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (some View) a selectable calendar day cell
+    ///
     private func dayButton(_ date: Date) -> some View {
         let selected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
         let count = items(on: date).count
@@ -615,6 +932,18 @@ struct PlanningCalendarView: View {
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
+
+
+    ///
+    /// @fcn        PlanningCalendarView.moveMonth
+    /// @brief      Advance the displayed calendar month
+    /// @details    Adds the requested month offset and leaves the current month unchanged if calendar arithmetic
+    ///             fails.
+    ///
+    /// @param[in]  amount  Signed calendar-month offset
+    ///
+    /// @return     (Void) no return value
+    ///
     private func moveMonth(_ amount: Int) {
         if let next = Calendar.current.date(byAdding: .month, value: amount, to: month) { month = next }
     }
@@ -776,6 +1105,22 @@ extension EnvironmentValues {
 
 /// The existing Today index supplies all filters; provenance disambiguates board-local IDs.
 enum PlanningSharedSearchIndex {
+
+
+    ///
+    /// @fcn        PlanningSharedSearchIndex.results
+    /// @brief      Search retained weeks and active personal collections
+    /// @details    Runs the shared search over active lists and annotates each match with its owner, week key, and
+    ///             location title for later navigation.
+    ///
+    /// @param[in]  query   User-entered search text
+    /// @param[in]  scope   Search scope restricting the kind of shared results
+    /// @param[in]  access  Checked calendar and personal-owner access callbacks
+    /// @param[in]  labels  Label catalog used to resolve stored label IDs
+    ///
+    /// @return     ([TodaySearchResult]) calendar and Library matches annotated with owner and week navigation
+    ///             metadata
+    ///
     static func results(query: String, scope: TodaySearchScope, access: PlanningCalendarAccess,
                         labels: LabelLibrary) -> [TodaySearchResult] {
         let sources: [(UUID, String?, String, [KanbanList])] = access.document.weeks.map {
@@ -798,6 +1143,17 @@ struct SharedSearchLifecycleActions: ViewModifier {
     let kind: String
     let onArchive: () -> Void
     let onDelete: () -> Bool
+
+
+    ///
+    /// @fcn        SharedSearchLifecycleActions.body
+    /// @brief      Attach lifecycle controls when shared search permits them
+    /// @details    Installs archive and delete handling only when enabled; otherwise preserves the supplied content.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) attach lifecycle controls when shared search permits them
+    ///
     func body(content: Content) -> some View {
         if enabled { content.modifier(ContentLifecycleActions(title: title, kind: kind, onArchive: onArchive, onDelete: onDelete)) }
         else { content }
@@ -815,6 +1171,18 @@ struct PlanningSharedSearchPresentation: ViewModifier {
     var onLeaveForHome: () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
     @State private var route: PlanningSearchRoute?
+
+
+    ///
+    /// @fcn        PlanningSharedSearchPresentation.body
+    /// @brief      Present workspace-wide search and its selected route
+    /// @details    Supplies calendar-backed results and routes chosen matches through the shared destination
+    ///             presentation rather than an isolated search copy.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) present workspace-wide search and its selected route
+    ///
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $isPresented) {
@@ -921,6 +1289,21 @@ struct PlanningWeekSelector: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+
+    ///
+    /// @fcn        PlanningWeekSelector.init
+    /// @brief      Seed the week chooser's selected date and highlight
+    /// @details    Retains the calendar document, searchable sources, and selection callback while initializing its
+    ///             local date and week-key state.
+    ///
+    /// @param[in]  initialDate      Date initially selected when the view opens
+    /// @param[in]  document         Retained document containing the operation's current workspace records
+    /// @param[in]  selectedWeekKey  Week-start key initially highlighted in the chooser
+    /// @param[in]  sources          Live owner-qualified workspace items used to resolve retained references
+    /// @param[in]  onSelect         Callback invoked after the user confirms a selection
+    ///
+    /// @return     (PlanningWeekSelector) initialized instance
+    ///
     init(initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String, sources: [PlanningSearchResult] = [],
          onSelect: @escaping (DatedPlanningWeek, Date) -> Void) {
         self.document = document
@@ -931,6 +1314,18 @@ struct PlanningWeekSelector: View {
         _highlightedWeekKey = State(initialValue: selectedWeekKey)
     }
 
+
+    ///
+    /// @fcn        PlanningWeekSelector.choices
+    /// @brief      Build retained and nearby unsaved week choices
+    /// @details    Adds missing weeks within eight weeks of the reference date to a key-indexed copy and returns
+    ///             chronological choices without persisting them.
+    ///
+    /// @param[in]  document       Retained document containing the operation's current workspace records
+    /// @param[in]  referenceDate  Date around which available calendar choices are constructed
+    ///
+    /// @return     ([DatedPlanningWeek]) chronological retained and nearby unsaved week choices
+    ///
     static func choices(document: PlanningCalendarDocument, referenceDate: Date) -> [DatedPlanningWeek] {
         var choices = Dictionary(uniqueKeysWithValues: document.weeks.map { ($0.startKey, $0) })
         for offset in -8...8 {
@@ -942,6 +1337,17 @@ struct PlanningWeekSelector: View {
     }
 
 
+    ///
+    /// @fcn        PlanningWeekSelector.monthDays
+    /// @brief      Create a six-week calendar selection grid
+    /// @details    Begins at the calendar week containing the month's first day and returns up to forty-two dates;
+    ///             unavailable boundaries yield an empty grid.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([Date]) six-week grid dates starting at the week containing the month's first day
+    ///
     static func monthDays(_ date: Date, calendar: Calendar) -> [Date] {
         guard let first = calendar.dateInterval(of: .month, for: date)?.start,
               let gridStart = calendar.dateInterval(of: .weekOfYear, for: first)?.start else { return [] }
@@ -955,10 +1361,33 @@ struct PlanningWeekSelector: View {
         let symbols = document.calendar.veryShortStandaloneWeekdaySymbols
         return (0..<7).map { symbols[($0 + document.calendar.firstWeekday - 1) % 7] }
     }
+
+
+    ///
+    /// @fcn        PlanningWeekSelector.changeMonth
+    /// @brief      Move the selector's reference month
+    /// @details    Calculates from the first day of the displayed month to avoid drift from differing month lengths.
+    ///
+    /// @param[in]  amount  Signed calendar-month offset
+    ///
+    /// @return     (Void) no return value
+    ///
     private func changeMonth(_ amount: Int) {
         if let first = document.calendar.dateInterval(of: .month, for: referenceDate)?.start,
            let next = document.calendar.date(byAdding: .month, value: amount, to: first) { referenceDate = next }
     }
+
+
+    ///
+    /// @fcn        PlanningWeekSelector.select
+    /// @brief      Confirm one calendar date and its containing week
+    /// @details    Prevents duplicate selection, briefly updates the highlighted choice with Reduce Motion support,
+    ///             then invokes the callback and dismisses.
+    ///
+    /// @param[in]  date  Represented date for the operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func select(_ date: Date) {
         guard !isSelecting else { return }
         isSelecting = true
@@ -1054,6 +1483,18 @@ struct PlanningDaySelection {
     let week: DatedPlanningWeek
     let listID: Int
 
+
+    ///
+    /// @fcn        PlanningDaySelection.resolve
+    /// @brief      Resolve an active day-list navigation target
+    /// @details    Normalizes the day and uses a retained or unsaved week; returns nil if the day mapping does not
+    ///             identify an active list.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    ///
+    /// @return     (Self?) normalized date, containing week, and active day-list ID, or nil if mapping fails
+    ///
     static func resolve(_ date: Date, document: PlanningCalendarDocument) -> Self? {
         let date = document.calendar.startOfDay(for: date)
         let week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
@@ -1067,6 +1508,18 @@ struct PlanningDaySelector: View {
     @State private var date: Date
     let onSelect: (Date) -> Void
     @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        PlanningDaySelector.init
+    /// @brief      Seed a day chooser with its initial date
+    /// @details    Retains the date-selection callback and stores the initial date as editable local state.
+    ///
+    /// @param[in]  initialDate  Date initially selected when the view opens
+    /// @param[in]  onSelect     Callback invoked after the user confirms a selection
+    ///
+    /// @return     (PlanningDaySelector) initialized instance
+    ///
     init(initialDate: Date, onSelect: @escaping (Date) -> Void) {
         _date = State(initialValue: initialDate)
         self.onSelect = onSelect
@@ -1101,6 +1554,21 @@ struct PlanningSelectedDayView: View {
     @State private var isRevertingEdit = false
     @Environment(\.planningCalendarAccess) private var access
 
+
+    ///
+    /// @fcn        PlanningSelectedDayView.init
+    /// @brief      Initialize navigation and editing for a selected calendar day
+    /// @details    Retains the resolved selection and return callbacks and seeds the working week from the selection
+    ///             snapshot.
+    ///
+    /// @param[in]  selection               Text selection or resolved navigation selection to retain
+    /// @param[in]  currentUserName         Display name used in the selected-day interface
+    /// @param[in]  returnDestinationTitle  Accessible title describing the destination reached by Back
+    /// @param[in]  onClose                 Action used to leave the selected-day presentation
+    /// @param[in]  onSelectDay             Callback for changing the represented calendar day
+    ///
+    /// @return     (PlanningSelectedDayView) initialized instance
+    ///
     init(selection: PlanningDaySelection, currentUserName: String, returnDestinationTitle: String,
          onClose: @escaping () -> Void, onSelectDay: @escaping (Date) -> Void) {
         self.selection = selection
@@ -1171,6 +1639,17 @@ struct FullMonthExampleStore: Sendable {
         var createdAt = Date()
         let hashes: [String: String]
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.live
+    /// @brief      Locate the application's live example backup directories
+    /// @details    Resolves the Library, Documents, and Application Support locations and uses the application's
+    ///             preferences domain for backup and restoration.
+    ///
+    /// @return     (FullMonthExampleStore) constructed value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func live() throws -> Self {
         let fm = FileManager.default
         let library = try fm.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -1183,9 +1662,31 @@ struct FullMonthExampleStore: Sendable {
     var hasUserData: Bool {
         fm.fileExists(atPath: userData.path) && committedOperation() != "restore"
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.committedOperation
+    /// @brief      Read the completed dataset-switch marker
+    /// @details    Returns the marker text when readable and nil when no readable commit marker exists.
+    ///
+    /// @return     (String?) readable committed-operation marker, or nil if unavailable
+    ///
     private func committedOperation() -> String? {
         try? String(contentsOf: transition.appendingPathComponent("Committed"), encoding: .utf8)
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.digest
+    /// @brief      Hash a backup file without loading it entirely into memory
+    /// @details    Streams the file in one-megabyte chunks through SHA-256 and closes the handle even if reading
+    ///             fails.
+    ///
+    /// @param[in]  url  File URL for the requested audio resource
+    ///
+    /// @return     (String) lowercase hexadecimal SHA-256 digest of the file's bytes
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     private func digest(_ url: URL) throws -> String {
         // Stream large attachments rather than loading an entire video into memory.
         let handle = try FileHandle(forReadingFrom: url)
@@ -1194,6 +1695,21 @@ struct FullMonthExampleStore: Sendable {
         while let data = try handle.read(upToCount: 1_048_576), !data.isEmpty { hash.update(data: data) }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.hashes
+    /// @brief      Build a relative-path checksum inventory of a backup
+    /// @details    Enumerates regular files, rejects symbolic links, and propagates enumeration and file-reading
+    ///             failures.
+    ///
+    /// @param[in]  directory  Backup directory to enumerate, decode, or verify
+    ///
+    /// @return     ([String: String]) relative file paths mapped to their SHA-256 checksums
+    /// @throws     Explicit failures include `CocoaError(.fileReadUnknown)`,
+    ///             `CocoaError(.fileReadUnsupportedScheme)`, `enumerationError`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func hashes(in directory: URL) throws -> [String: String] {
         var result: [String: String] = [:]
         var enumerationError: Error?
@@ -1212,11 +1728,39 @@ struct FullMonthExampleStore: Sendable {
         if let enumerationError { throw enumerationError }
         return result
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.verify
+    /// @brief      Validate a backup before installation or recovery
+    /// @details    Requires the supported manifest version, matching file checksums, and a readable saved preferences
+    ///             dictionary.
+    ///
+    /// @param[in]  directory  Backup directory to enumerate, decode, or verify
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func verify(_ directory: URL) throws {
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: directory.appendingPathComponent("Manifest.json")))
         guard manifest.version == 1, try hashes(in: directory) == manifest.hashes else { throw CocoaError(.fileReadCorruptFile) }
         _ = try savedDomain(in: directory)
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.savedDomain
+    /// @brief      Decode the backed-up application preferences domain
+    /// @details    Reads Defaults.plist and requires a string-keyed property-list dictionary; other contents are
+    ///             treated as corrupt.
+    ///
+    /// @param[in]  directory  Backup directory to enumerate, decode, or verify
+    ///
+    /// @return     ([String: Any]) decoded string-keyed application preferences dictionary
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func savedDomain(in directory: URL) throws -> [String: Any] {
         let data = try Data(contentsOf: directory.appendingPathComponent("Defaults.plist"))
         guard let domain = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
@@ -1224,6 +1768,20 @@ struct FullMonthExampleStore: Sendable {
         }
         return domain
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.capture
+    /// @brief      Capture a verified snapshot of files and preferences
+    /// @details    Builds the snapshot in a temporary staging directory, synchronizes preferences, and retains
+    ///             cleanup for failures before publishing the backup.
+    ///
+    /// @param[in]  destination  Backup destination directory for the verified snapshot
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func capture(to destination: URL) throws {
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         let staging = root.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -1247,12 +1805,39 @@ struct FullMonthExampleStore: Sendable {
         values.isExcludedFromBackup = true
         try local.setResourceValues(values)
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.setDomain
+    /// @brief      Replace and verify the application preferences domain
+    /// @details    Synchronizes after writing and compares the stored dictionary with the requested value; a failed
+    ///             write or mismatch throws.
+    ///
+    /// @param[in]  domain  Complete application preferences dictionary to install and verify
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func setDomain(_ domain: [String: Any]) throws {
         defaults.setPersistentDomain(domain, forName: domainName)
         guard defaults.synchronize(), NSDictionary(dictionary: defaults.persistentDomain(forName: domainName) ?? [:]).isEqual(to: domain) else {
             throw CocoaError(.fileWriteUnknown)
         }
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.installFiles
+    /// @brief      Install backed-up Documents and Application Support trees
+    /// @details    Copies each immutable snapshot tree through staging before replacing its live directory, allowing
+    ///             interrupted installation to be retried from the snapshot.
+    ///
+    /// @param[in]  snapshot  Snapshot values or directory used for the operation
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     private func installFiles(from snapshot: URL) throws {
         // Each immutable source survives interrupted installation and can be retried at launch.
         for (name, target) in [("Documents", documents), ("ApplicationSupport", support)] {
@@ -1263,11 +1848,33 @@ struct FullMonthExampleStore: Sendable {
             try fm.moveItem(at: staged, to: target)
         }
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.finishCommitted
+    /// @brief      Clean up a successfully committed dataset transition
+    /// @details    Removes the retained user backup after a completed restore and deletes the transition directory.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     private func finishCommitted() throws {
         if committedOperation() == "restore", fm.fileExists(atPath: userData.path) { try fm.removeItem(at: userData) }
         try fm.removeItem(at: transition)
     }
-    /// Run before constructing any view or loading any saved model after an interrupted switch.
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.recoverInterruptedSwitch
+    /// @brief      Recover or finish an interrupted dataset transition
+    /// @details    Finishes committed cleanup or verifies and reinstalls the transition snapshot and preferences
+    ///             before removing its journal directory.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
+    /// @note       Run before constructing any view or loading any saved model after an interrupted switch.
+    ///
     func recoverInterruptedSwitch() throws {
         guard fm.fileExists(atPath: transition.path) else { return }
         if committedOperation() != nil { try finishCommitted(); return }
@@ -1276,6 +1883,19 @@ struct FullMonthExampleStore: Sendable {
         try setDomain(savedDomain(in: transition))
         try fm.removeItem(at: transition)
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.loadExample
+    /// @brief      Load the full-month example while retaining user data
+    /// @details    Recovers interrupted work first, captures the original user backup only when absent, verifies it,
+    ///             and journals the preferences switch before marking it committed.
+    ///
+    /// @param[in]  example  Bundled example content or dataset to use
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     func loadExample(_ example: FullMonthExample) throws {
         try recoverInterruptedSwitch()
         if !hasUserData { try capture(to: userData) }
@@ -1291,6 +1911,18 @@ struct FullMonthExampleStore: Sendable {
         }
         try? finishCommitted()
     }
+
+
+    ///
+    /// @fcn        FullMonthExampleStore.restoreUserData
+    /// @brief      Restore the verified original user dataset
+    /// @details    Requires a retained backup, journals the current state, reinstalls files and preferences, and
+    ///             attempts transition recovery if installation fails.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileNoSuchFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     func restoreUserData() throws {
         try recoverInterruptedSwitch()
         guard hasUserData else { throw CocoaError(.fileNoSuchFile) }
@@ -1311,6 +1943,19 @@ struct FullMonthExampleStore: Sendable {
 struct FullMonthExample: Sendable {
     let document: PlanningCalendarDocument
     let collections: [PersonalCollection]
+
+
+    ///
+    /// @fcn        FullMonthExample.make
+    /// @brief      Create a full month of calendar-backed demonstration content
+    /// @details    Builds dated weeks and examples around the reference month using the supplied calendar, with
+    ///             deterministic relationships among their lists and cards.
+    ///
+    /// @param[in]  now       Reference time used instead of an implicit clock read
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (FullMonthExample) constructed value
+    ///
     static func make(now: Date = .now, calendar: Calendar = .current) -> Self {
         let today = calendar.startOfDay(for: now)
         let month = calendar.dateInterval(of: .month, for: today)!
@@ -1363,6 +2008,21 @@ struct FullMonthExample: Sendable {
             }
         }
     }
+
+
+    ///
+    /// @fcn        FullMonthExample.defaultsDomain
+    /// @brief      Build the example dataset's preferences dictionary
+    /// @details    Encodes the generated calendar, collections, bookmarks, and importance data while retaining
+    ///             platform preferences and supported user display choices.
+    ///
+    /// @param[in]  original  Original preferences domain retained for comparison or transformation
+    ///
+    /// @return     ([String: Any]) preferences domain containing the generated example and supported preserved
+    ///             choices
+    /// @throws     Explicit failures include `CocoaError(.coderInvalidValue)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     func defaultsDomain(preserving original: [String: Any]) throws -> [String: Any] {
         guard let current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { throw CocoaError(.coderInvalidValue) }
         // Keep non-Plenact platform preferences; all app-owned data/settings remain in the backup.

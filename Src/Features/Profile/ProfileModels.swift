@@ -355,8 +355,35 @@ struct TodayFocusEntry: Identifiable {
         return nil
     }
 
-    /// Treat time-only schedules as today's wall clock and date-only ends as the full day.
+
+    ///
+    /// @fcn        TodayFocusEntry.isUpNext
+    /// @brief      Check whether an entry has an applicable upcoming schedule
+    /// @details    Treats time-only endpoints as the reference day's wall-clock times, date-only ends as the full
+    ///             calendar day, and applies the current-time eligibility rules without mutating the card.
+    ///
+    /// @param[in]  now       Reference time used instead of an implicit clock read
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Bool) true when the entry has an applicable nonelapsed date or time schedule
+    ///
+    /// @note       Treat time-only schedules as today's wall clock and date-only ends as the full day.
+    ///
     func isUpNext(at now: Date, calendar: Calendar) -> Bool {
+
+
+        ///
+        /// @fcn        TodayFocusEntry.isUpNext.resolved
+        /// @brief      Resolve a schedule endpoint for Up Next matching
+        /// @details    Anchors time-only values to the reference day and treats a date-only end as the following
+        ///             calendar-day boundary; nil endpoints remain nil.
+        ///
+        /// @param[in]  value  Optional schedule value; nil explicitly clears the endpoint
+        /// @param[in]  kind   Date, review, or collection kind selecting this operation's behavior
+        /// @param[in]  end    Whether this schedule endpoint is the inclusive date-only end of the day
+        ///
+        /// @return     (Date?) resolved endpoint or next-day date-only end boundary, or nil for an absent endpoint
+        ///
         func resolved(_ value: Date?, kind: CardDateKind, end: Bool) -> Date? {
             guard let value else { return nil }
             if kind == .time {
@@ -387,6 +414,18 @@ struct TodayFocusEntry: Identifiable {
         return start >= now && start < dayEnd
     }
 
+
+    ///
+    /// @fcn        TodayFocusEntry.scheduleDate
+    /// @brief      Resolve the preferred schedule date used for Focus ordering
+    /// @details    Prefers startDate to dueDate, anchors time-only values to the represented day, and normalizes
+    ///             date-only precision through the supplied calendar.
+    ///
+    /// @param[in]  day       Calendar day represented by the result
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Date?) anchored schedule date used for ordering, or nil when no applicable schedule exists
+    ///
     func scheduleDate(on day: Date, calendar: Calendar) -> Date? {
         guard let value = card.startDate ?? card.dueDate else { return nil }
         let kind = card.startDate == nil ? card.dueDateKind : card.startDateKind
@@ -492,8 +531,23 @@ struct LocalProfilePreferences: Hashable, Codable {
     }
 
 
-    /// Derive Focus without mutating Day order or interpreting the meaning of headings.
-    /// Section boundaries are captured before filtering; viewport capacity never removes matches.
+    ///
+    /// @fcn        LocalProfilePreferences.todayFocusEntries
+    /// @brief      Select and order the complete set of matching Focus entries
+    /// @details    Applies completion visibility and OR-combined filters while preserving section context; the
+    ///             display row limit does not truncate this result set.
+    ///
+    /// @param[in]  cards              Canonical card values in their current order
+    /// @param[in]  day                Calendar day represented by the result
+    /// @param[in]  calendar           Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  importantCardIDs   Important-card identities within the represented owner
+    /// @param[in]  bookmarkedCardIDs  Bookmarked-card identities within the represented owner
+    ///
+    /// @return     ([TodayFocusEntry]) all matching Focus entries with section context and the configured ordering
+    ///
+    /// @note       Derive Focus without mutating Day order or interpreting the meaning of headings. Section
+    ///             boundaries are captured before filtering; viewport capacity never removes matches.
+    ///
     func todayFocusEntries(in cards: [KanbanCard], on day: Date = .now, calendar: Calendar = .current, importantCardIDs: Set<Int> = [], bookmarkedCardIDs: Set<Int> = []) -> [TodayFocusEntry] {
         var sectionID: Int?
         var heading: String?
@@ -535,6 +589,16 @@ struct LocalProfilePreferences: Hashable, Codable {
         return entries
     }
 
+
+    ///
+    /// @fcn        LocalProfilePreferences.todayFocusItems
+    /// @brief      Project Focus entries into their card values
+    /// @details    Uses the shared Focus selection path for callers that do not need section metadata.
+    ///
+    /// @param[in]  cards  Canonical card values in their current order
+    ///
+    /// @return     ([KanbanCard]) cards selected by the shared Focus-entry projection
+    ///
     func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard] {
         todayFocusEntries(in: cards).map(\.card)
     }

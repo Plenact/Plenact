@@ -37,6 +37,21 @@ struct DailyEveningReview: Codable, Equatable {
 enum DailyReviewTransaction {
     static let key = "Plenact.DailyReviewTransaction.v1"
     static let keys = [PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1", DailyPlanStore.key, WeeklyReviewStore.key]
+
+
+    ///
+    /// @fcn        DailyReviewTransaction.begin
+    /// @brief      Capture preferences before a checked review transaction
+    /// @details    Snapshots the core keys and explicitly allowed additional keys into a recovery journal before
+    ///             mutation begins.
+    ///
+    /// @param[in]  defaults        Preferences store used for this operation
+    /// @param[in]  additionalKeys  Additional explicitly allowed preference keys to include in the recovery journal
+    ///
+    /// @return     (Data) encoded recovery journal capturing the allowed preference keys and their prior values
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func begin(in defaults: UserDefaults = .standard, additionalKeys: [String] = []) throws -> Data {
         guard defaults.object(forKey: key) == nil else { throw CocoaError(.fileWriteUnknown) }
         var previous: [String: Any] = [:]
@@ -48,6 +63,20 @@ enum DailyReviewTransaction {
         guard defaults.synchronize(), defaults.data(forKey: key) == data else { throw CocoaError(.fileWriteUnknown) }
         return data
     }
+
+
+    ///
+    /// @fcn        DailyReviewTransaction.recover
+    /// @brief      Restore a retained review transaction snapshot
+    /// @details    Validates journal keys and restores their captured values; legacy journals use the original key
+    ///             set so uncaptured preferences are preserved.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func recover(in defaults: UserDefaults = .standard) throws {
         guard defaults.object(forKey: key) != nil else { return }
         guard let data = defaults.data(forKey: key),
@@ -66,6 +95,22 @@ enum DailyReviewTransaction {
         defaults.removeObject(forKey: key)
         guard defaults.synchronize() else { defaults.set(data, forKey: key); throw CocoaError(.fileWriteUnknown) }
     }
+
+
+    ///
+    /// @fcn        DailyReviewTransaction.perform
+    /// @brief      Execute a review update with recoverable preferences
+    /// @details    Begins a journal, runs the throwing action, and completes the journal on success; a failure
+    ///             attempts restoration before being propagated.
+    ///
+    /// @param[in]  defaults        Preferences store used for this operation
+    /// @param[in]  additionalKeys  Additional explicitly allowed preference keys to include in the recovery journal
+    /// @param[in]  action          Throwing transaction body whose result is returned after a successful commit
+    ///
+    /// @return     (T) value returned by the successfully completed transaction action
+    /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func perform<T>(in defaults: UserDefaults = .standard, additionalKeys: [String] = [], _ action: () throws -> T) throws -> T {
         let snapshot = try begin(in: defaults, additionalKeys: additionalKeys)
         do {
@@ -83,6 +128,24 @@ enum DailyReviewTransaction {
 }
 
 enum TodayReviewSelection {
+
+
+    ///
+    /// @fcn        TodayReviewSelection.items
+    /// @brief      Select the day's unfinished review candidates
+    /// @details    Resolves priorities and relevant workspace content through calendar access while excluding
+    ///             reference-only material according to the supplied label IDs.
+    ///
+    /// @param[in]  plan               Daily plan supplying the retained priorities and review state
+    /// @param[in]  date               Represented date for the operation
+    /// @param[in]  access             Checked calendar and personal-owner access callbacks
+    /// @param[in]  referenceLabelIDs  Label IDs marking reference content that should be excluded from action
+    ///                                selection
+    /// @param[in]  calendar           Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([PlanningSearchResult]) owner-qualified unfinished items eligible for the represented day's
+    ///             evening review
+    ///
     static func items(plan: DailyPlan, date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar) -> [PlanningSearchResult] {
         let day = access.document.week(for: date, calendar: calendar)
         let listID = day?.dayListIDs[PlanningDate.key(date, calendar: calendar)]
@@ -94,6 +157,19 @@ enum TodayReviewSelection {
             return selected || (inWorkingList && item.card.presentation == .card)
         }
     }
+
+
+    ///
+    /// @fcn        TodayReviewSelection.pending
+    /// @brief      Find review items without a recorded decision
+    /// @details    Compares candidate identities against the saved evening review so already handled items are not
+    ///             offered again.
+    ///
+    /// @param[in]  items   Candidate workspace items to inspect
+    /// @param[in]  review  Optional recorded evening-review decisions
+    ///
+    /// @return     ([PlanningSearchResult]) candidate items without a matching persisted review decision
+    ///
     static func pending(_ items: [PlanningSearchResult], review: DailyEveningReview?) -> [PlanningSearchResult] {
         items.filter { item in
             guard !item.card.isTitleChecked else { return false }
@@ -130,12 +206,44 @@ struct TodayReviewView: View {
     }
     private var achievements: [PlanningSearchResult] { items.filter { $0.card.isTitleChecked } }
     private var queueAvailable: Bool { access?.library.contains { $0.isActive && $0.kind == .list && $0.title == "In the Queue" } == true }
+
+
+    ///
+    /// @fcn        TodayReviewView.text
+    /// @brief      Bind one evening-review text field
+    /// @details    Reads and writes the specified key path in the editable review value.
+    ///
+    /// @param[in]  key  Key path selecting the editable preference or optional contextual callback
+    ///
+    /// @return     (Binding<String>) read-write binding to the selected evening-review text property
+    ///
     private func text(_ key: WritableKeyPath<DailyEveningReview, String>) -> Binding<String> {
         Binding(get: { review[keyPath: key] }, set: { value in var updated = review; updated[keyPath: key] = value; plan.eveningReview = updated })
     }
+
+
+    ///
+    /// @fcn        TodayReviewView.propose
+    /// @brief      Stage a review action for confirmation
+    /// @details    Records the requested action and source item without immediately committing its workspace change.
+    ///
+    /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  source  Live source item with its calendar or Library location
+    ///
+    /// @return     (Void) no return value
+    ///
     private func propose(_ action: DailyReviewAction, source: PlanningSearchResult) {
         pendingSource = source; pendingAction = action
     }
+
+
+    ///
+    /// @fcn        TodayReviewView.advance
+    /// @brief      Advance the evening review to its next stage
+    /// @details    Uses the current review state to save progress and move through the guided review flow.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func advance() {
         let previous = plan.eveningReview
         var updated = review
@@ -148,6 +256,16 @@ struct TodayReviewView: View {
         if onSave() { if step == 2 { dismiss() } else { step += 1 } }
         else { plan.eveningReview = previous; operationError = true }
     }
+
+
+    ///
+    /// @fcn        TodayReviewView.perform
+    /// @brief      Apply the staged evening-review decision
+    /// @details    Uses the checked review callback and updates local progress only when the workspace action
+    ///             succeeds.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func perform() {
         guard let source = pendingSource, let action = pendingAction,
               let saved = access?.applyDailyReview?(source, action, plan, baseline) else {
@@ -278,6 +396,19 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
     var decisions: [DailyReviewDecision] = []
     var updatedAt: Date?
     var completedAt: Date?
+
+
+    ///
+    /// @fcn        WeeklyReviewRecord.init
+    /// @brief      Initialize the review period for a calendar week
+    /// @details    Derives the week's local start and end keys and retains its calendar context for later review
+    ///             lookup.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (WeeklyReviewRecord) initialized instance
+    ///
     init(date: Date, calendar: Calendar) {
         startKey = PlanningDate.weekKey(date, calendar: calendar)
         timeZoneID = calendar.timeZone.identifier
@@ -291,6 +422,17 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
         return value
     }
     var dayKeys: Set<String> { Set(PlanningDate.days(in: startKey, calendar: calendar).map { PlanningDate.key($0, calendar: calendar) }) }
+
+
+    ///
+    /// @fcn        WeeklyReviewRecord.dailyPlans
+    /// @brief      Find daily plans represented by this weekly review
+    /// @details    Filters the stored daily-plan document using the review's inclusive date range.
+    ///
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    ///
+    /// @return     ([DailyPlan]) retained daily plans falling within the weekly review's date range
+    ///
     func dailyPlans(in document: DailyPlanStore.Document) -> [DailyPlan] {
         document.plans.values.filter { dayKeys.contains($0.id) }.sorted { $0.id < $1.id }
     }
@@ -300,6 +442,20 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
 enum WeeklyReviewStore {
     static let key = "Plenact.WeeklyReviews.v1"
     struct Document: Codable { var version = 1; var records: [String: WeeklyReviewRecord] = [:] }
+
+
+    ///
+    /// @fcn        WeeklyReviewStore.load
+    /// @brief      Load and validate retained weekly review records
+    /// @details    Returns an empty document when storage is absent and propagates unreadable or unsupported stored
+    ///             data.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Document) validated weekly-review document, or an empty document for absent storage
+    /// @throws     Explicit failures include `DailyPlanStore.Failure.corrupt`, `DailyPlanStore.Failure.unsupported`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document {
         guard defaults.object(forKey: key) != nil else { return Document() }
         guard let data = defaults.data(forKey: key), let document = try? JSONDecoder().decode(Document.self, from: data) else { throw DailyPlanStore.Failure.corrupt }
@@ -312,6 +468,22 @@ enum WeeklyReviewStore {
         }
         return document
     }
+
+
+    ///
+    /// @fcn        WeeklyReviewStore.save
+    /// @brief      Save a weekly review against its expected baseline
+    /// @details    Validates the current retained value before replacing the draft so concurrent changes are reported
+    ///             rather than overwritten.
+    ///
+    /// @param[in]  draft     Editable value proposed for persistence
+    /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (WeeklyReviewRecord) saved weekly review including its updated persistence metadata
+    /// @throws     Explicit failures include `DailyPlanStore.Failure.conflict`, `DailyPlanStore.Failure.write`.
+    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///
     static func save(_ draft: WeeklyReviewRecord, replacing baseline: WeeklyReviewRecord?, to defaults: UserDefaults = .standard) throws -> WeeklyReviewRecord {
         var document = try load(from: defaults)
         guard document.records[draft.id] == baseline else { throw DailyPlanStore.Failure.conflict }
@@ -348,6 +520,20 @@ struct WeeklyReviewView: View {
     @State private var dateSource: PlanningSearchResult?
     @State private var targetDate = Date()
     @State private var chosenDate: (PlanningSearchResult, String)?
+
+
+    ///
+    /// @fcn        WeeklyReviewView.init
+    /// @brief      Seed weekly review editing for a represented date
+    /// @details    Retains the calendar and preferences store and creates an initial weekly draft without saving it
+    ///             during view construction.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (WeeklyReviewView) initialized instance
+    ///
     init(date: Date = .now, calendar: Calendar, defaults: UserDefaults = .standard) {
         self.calendar = calendar; self.defaults = defaults
         _selectedDate = State(initialValue: date)
@@ -360,6 +546,17 @@ struct WeeklyReviewView: View {
         let reference = Set(LabelLibraryStore.load().labels.filter { $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id }.map(\.id))
         return sources.filter { item in owners.contains(item.collectionID) && item.card.presentation == .card && !item.card.isTitleChecked && Set(item.card.labelIDs).isDisjoint(with: reference) && !draft.decisions.contains(where: { $0.source.resolve(in: [item]) != nil || $0.result.resolve(in: [item]) != nil }) }
     }
+
+
+    ///
+    /// @fcn        WeeklyReviewView.load
+    /// @brief      Load a weekly review into editable state
+    /// @details    Copies the selected record into the view and establishes the baseline used for checked saving.
+    ///
+    /// @param[in]  record  Retained review record to inspect or load
+    ///
+    /// @return     (Void) no return value
+    ///
     private func load(_ record: WeeklyReviewRecord) {
         do {
             let document = try WeeklyReviewStore.load(from: defaults)
@@ -370,7 +567,30 @@ struct WeeklyReviewView: View {
             loaded = true; loadFailed = false
         } catch { loaded = true; loadFailed = true; self.error = error.localizedDescription }
     }
+
+
+    ///
+    /// @fcn        WeeklyReviewView.binding
+    /// @brief      Bind a weekly-review text property
+    /// @details    Reads and writes the draft through the supplied writable key path.
+    ///
+    /// @param[in]  path  Stable hierarchy path or writable field key path used by the operation
+    ///
+    /// @return     (Binding<String>) read-write binding to the selected weekly-review draft field
+    ///
     private func binding(_ path: WritableKeyPath<WeeklyReviewRecord, String>) -> Binding<String> { Binding(get: { draft[keyPath: path] }, set: { draft[keyPath: path] = $0 }) }
+
+
+    ///
+    /// @fcn        WeeklyReviewView.save
+    /// @brief      Persist weekly review progress and optionally advance
+    /// @details    Uses the stored baseline for conflict detection and retains the editing view with feedback when
+    ///             saving fails.
+    ///
+    /// @param[in]  advance  Whether an accepted save should advance the guided review flow
+    ///
+    /// @return     (Void) no return value
+    ///
     private func save(advance: Bool) {
         let before = draft
         if advance { if draft.step == 2 { draft.completedAt = .now } else { draft.step += 1 } }
@@ -380,7 +600,28 @@ struct WeeklyReviewView: View {
             records.removeAll { $0.id == saved.id }; records.append(saved)
         } catch { draft = before; self.error = error.localizedDescription }
     }
+
+
+    ///
+    /// @fcn        WeeklyReviewView.propose
+    /// @brief      Stage an unfinished weekly item and action
+    /// @details    Records the candidate decision for the review's confirmation flow.
+    ///
+    /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  source  Live source item with its calendar or Library location
+    ///
+    /// @return     (Void) no return value
+    ///
     private func propose(_ action: DailyReviewAction, _ source: PlanningSearchResult) { pending = source; self.action = action }
+
+
+    ///
+    /// @fcn        WeeklyReviewView.apply
+    /// @brief      Commit the pending weekly-review action
+    /// @details    Uses the shared checked workspace action before accepting the resulting review state.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func apply() {
         guard let pending, let action, let saved = access?.applyWeeklyReview?(pending, action, draft, baseline) else { error = "The item or review changed, or saving failed. Your draft remains open."; return }
         baseline = saved; draft = saved

@@ -40,6 +40,16 @@ import Speech
 @main
 struct Plenact: App {
     @State private var recoveryError: String?
+
+
+    ///
+    /// @fcn        Plenact.init
+    /// @brief      Install notification handling and recover interrupted storage work
+    /// @details    Attempts review-journal and dataset-switch recovery at launch, retaining an error for the recovery
+    ///             interface if either operation fails.
+    ///
+    /// @return     (Plenact) initialized instance
+    ///
     init() {
         ReviewRhythmNotifications.shared.install()
         do {
@@ -394,6 +404,23 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior {
     var shortcutsBottom: CGFloat
     var enabled: Bool
 
+
+    ///
+    /// @fcn        TodaySectionSnapBehavior.destination
+    /// @brief      Choose an optional Today-section scroll destination
+    /// @details    Requires a meaningful directional swipe across the perspective or shortcut boundary; returns nil
+    ///             when snapping is disabled or the gesture does not cross a boundary.
+    ///
+    /// @param[in]  start            Starting horizontal position or original vertical scroll offset in points
+    /// @param[in]  proposed         Proposed vertical scroll offset at the end of the gesture
+    /// @param[in]  perspectiveTop   Vertical content offset where the lower perspective section starts
+    /// @param[in]  shortcutsBottom  Vertical content offset below the Today shortcut subtitles
+    /// @param[in]  viewport         Viewport extent in points along the relevant scroll axis
+    /// @param[in]  maximum          Largest vertical content offset allowed by the scroll bounds
+    /// @param[in]  enabled          Whether this optional behavior is enabled
+    ///
+    /// @return     (CGFloat?) snapped vertical offset, or nil to preserve native scrolling
+    ///
     static func destination(start: CGFloat, proposed: CGFloat, perspectiveTop: CGFloat,
                             shortcutsBottom: CGFloat, viewport: CGFloat, maximum: CGFloat,
                             enabled: Bool) -> CGFloat? {
@@ -410,6 +437,18 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior {
         return nil
     }
 
+
+    ///
+    /// @fcn        TodaySectionSnapBehavior.updateTarget
+    /// @brief      Apply the Today-section snap to a native scroll target
+    /// @details    Uses the original and proposed offsets with content bounds, replacing only the target's vertical
+    ///             origin when a snap is warranted.
+    ///
+    /// @param[in,out]  target   Proposed native scroll target, updated in place when the snapping rules apply
+    /// @param[in]      context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
         guard let y = Self.destination(start: context.originalTarget.rect.minY,
             proposed: target.rect.minY, perspectiveTop: perspectiveTop, shortcutsBottom: shortcutsBottom,
@@ -483,12 +522,35 @@ struct PlenactLaunchProgress: Equatable {
     enum Status { case waiting, running, complete }
     var stage: PlenactLaunchStage = .restore
     var finished = false
+
+
+    ///
+    /// @fcn        PlenactLaunchProgress.paced
+    /// @brief      Pace visible launch stages from elapsed time
+    /// @details    Limits the displayed stage to the supported range and withholds finished state until the minimum
+    ///             presentation interval has elapsed.
+    ///
+    /// @param[in]  elapsed  Elapsed time in seconds since the current animation or launch anchor
+    ///
+    /// @return     (PlenactLaunchProgress) constructed value
+    ///
     func paced(elapsed: TimeInterval) -> Self {
         let index = min(3, max(0, Int(max(0, elapsed) / 0.22)))
         return Self(stage: PlenactLaunchStage(rawValue: index) ?? .restore,
                     finished: finished && elapsed >= 0.84)
     }
 
+
+    ///
+    /// @fcn        PlenactLaunchProgress.status
+    /// @brief      Classify a launch stage as waiting, running, or complete
+    /// @details    Treats earlier stages and a finished launch as complete while identifying the current unfinished
+    ///             stage as running.
+    ///
+    /// @param[in]  step  Launch or review stage whose status should be evaluated
+    ///
+    /// @return     (Status) waiting, running, or complete for the requested launch stage
+    ///
     func status(for step: PlenactLaunchStage) -> Status {
         if finished || step.rawValue < stage.rawValue { return .complete }
         return step == stage ? .running : .waiting
@@ -607,10 +669,32 @@ struct BottomToolbarLayout {
     static let padRegular = Self(height: 84, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 25, newOffset: 14, tabMinimumHeight: 59, tabIconSize: 28, newButtonSize: 78, newIconSize: 29, tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 20, horizontalLabels: false, labelStyle: .caption)
     static let padCompact = Self(height: 86, safeAreaAllowance: 0, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 0, newOffset: 0, tabMinimumHeight: 78, tabIconSize: 28, newButtonSize: 78, newIconSize: 29, tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
 
+
+    ///
+    /// @fcn        BottomToolbarLayout.configuration
+    /// @brief      Select the toolbar dimensions for device and size mode
+    /// @details    Chooses among the phone and tablet compact or regular layout presets.
+    ///
+    /// @param[in]  isTablet  Whether the current device uses the tablet layout
+    /// @param[in]  compact   Whether the compact presentation is selected
+    ///
+    /// @return     (BottomToolbarLayout) constructed value
+    ///
     static func configuration(isTablet: Bool, compact: Bool) -> Self {
         if isTablet { return compact ? padCompact : padRegular }
         return compact ? phoneCompact : phoneRegular
     }
+
+
+    ///
+    /// @fcn        BottomToolbarLayout.reservedHeight
+    /// @brief      Calculate toolbar space beyond the existing bottom inset
+    /// @details    Adds only the remaining nonnegative safe-area allowance to the toolbar's height.
+    ///
+    /// @param[in]  bottomInset  Bottom safe-area inset already provided by the container
+    ///
+    /// @return     (CGFloat) toolbar height plus any safe-area allowance not already provided
+    ///
     func reservedHeight(bottomInset: CGFloat) -> CGFloat {
         height + max(0, safeAreaAllowance - bottomInset)
     }
@@ -630,14 +714,48 @@ final class TodayWelcomeCue: ObservableObject {
     private var departure: Date?
     private var generation = 0
     private let defaults: UserDefaults
+
+
+    ///
+    /// @fcn        TodayWelcomeCue.init
+    /// @brief      Create welcome-cue state using the supplied preferences store
+    /// @details    Retains the store used to record foreground departures; constructing the cue does not start its
+    ///             animation.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (TodayWelcomeCue) initialized instance
+    ///
     init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
+
+    ///
+    /// @fcn        TodayWelcomeCue.becameActive
+    /// @brief      Queue a welcome cue for an eligible foreground return
+    /// @details    Greets on first activation or after the configured departure interval and resets departure
+    ///             tracking.
+    ///
+    /// @param[in]  now  Reference time used instead of an implicit clock read
+    ///
+    /// @return     (Void) no return value
+    ///
     func becameActive(at now: Date = .now) {
         let shouldGreet = !hasActivated || departure.map { now.timeIntervalSince($0) >= Self.returnInterval } == true
         hasActivated = true
         departure = nil
         if shouldGreet { pending = true; requestID += 1 }
     }
+
+
+    ///
+    /// @fcn        TodayWelcomeCue.leftForeground
+    /// @brief      Remember departure and stop the current welcome cue
+    /// @details    Records the first departure timestamp in preferences and cancels any pending or illuminated cue.
+    ///
+    /// @param[in]  now  Reference time used instead of an implicit clock read
+    ///
+    /// @return     (Void) no return value
+    ///
     func leftForeground(at now: Date = .now) {
         if departure == nil {
             departure = now
@@ -645,19 +763,74 @@ final class TodayWelcomeCue: ObservableObject {
         }
         cancel()
     }
+
+
+    ///
+    /// @fcn        TodayWelcomeCue.cancel
+    /// @brief      Invalidate pending welcome animation work
+    /// @details    Advances the generation token and clears the target and illumination without animation.
+    ///
+    /// @return     (Void) no return value
+    ///
     func cancel() {
         generation += 1
         pending = false
         var transaction = Transaction(); transaction.disablesAnimations = true
         withTransaction(transaction) { illuminated = false; target = nil }
     }
+
+
+    ///
+    /// @fcn        TodayWelcomeCue.highlights
+    /// @brief      Check whether a particular welcome target is illuminated
+    /// @details    Requires both a matching target and the current illumination flag.
+    ///
+    /// @param[in]  candidate  Welcome target whose current illumination should be checked
+    ///
+    /// @return     (Bool) true only when the requested target is the illuminated target
+    ///
     func highlights(_ candidate: Target) -> Bool { target == candidate && illuminated }
 
+
+    ///
+    /// @fcn        TodayWelcomeCue.play
+    /// @brief      Play the pending profile and plan welcome cues
+    /// @details    Uses a generation token and cancellation checks around the injected asynchronous pauses, respects
+    ///             Reduce Motion, and clears its own target on completion.
+    ///
+    /// @param[in]  reduceMotion    Whether accessibility preferences require reduced motion
+    /// @param[in]  planPulseSpeed  Multiplier for the daily-plan welcome pulse speed
+    /// @param[in]  pause           Injected asynchronous delay used to pace the welcome sequence and honor
+    ///                             cancellation
+    ///
+    /// @return     (Void) no return value
+    ///
     func play(reduceMotion: Bool, planPulseSpeed: Double = 1, pause: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) async {
         guard pending else { return }
         pending = false
         let token = generation
+
+
+        ///
+        /// @fcn        TodayWelcomeCue.play.current
+        /// @brief      Check that this welcome sequence is still current
+        /// @details    Compares the captured generation with live state and rejects a cancelled task.
+        ///
+        /// @return     (Bool) true while this sequence's generation is current and its task is not cancelled
+        ///
         func current() -> Bool { token == generation && !Task.isCancelled }
+
+
+        ///
+        /// @fcn        TodayWelcomeCue.play.light
+        /// @brief      Set illumination using the requested motion policy
+        /// @details    Updates directly with Reduce Motion or animates using the plan-specific pulse-speed
+        ///             adjustment.
+        ///
+        /// @param[in]  value  New illumination state
+        ///
+        /// @return     (Void) no return value
+        ///
         func light(_ value: Bool) {
             if reduceMotion { illuminated = value }
             else { withAnimation(.easeInOut(duration: 0.5 / (target == .plan ? planPulseSpeed : 1))) { illuminated = value } }
@@ -697,6 +870,18 @@ struct TodayWelcomeGlow: ViewModifier {
     var circular = false
     private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+
+    ///
+    /// @fcn        TodayWelcomeGlow.body
+    /// @brief      Apply the quiet welcome highlight to a view
+    /// @details    Adds a decorative gold background and shadow and uses scale motion only when accessibility
+    ///             preferences allow it.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) the quiet welcome highlight to a view
+    ///
     func body(content: Content) -> some View {
         content
             .background {
@@ -1146,6 +1331,17 @@ private struct AppRootView: View {
             })
     }
 
+
+    ///
+    /// @fcn        AppRootView.setPlanningFirstWeekday
+    /// @brief      Save a supported planning week-start change
+    /// @details    Uses calendar migration and checked persistence before publishing the regrouped workspace; returns
+    ///             false with feedback when the change fails.
+    ///
+    /// @param[in]  weekday  Requested supported planning week-start value
+    ///
+    /// @return     (Bool) true when the week-start change is accepted; false when checked migration or saving fails
+    ///
     private func setPlanningFirstWeekday(_ weekday: Int) -> Bool {
         guard let previous = calendarDocument else { return false }
         guard previous.firstWeekday != weekday else { return true }
@@ -1174,6 +1370,15 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.persistCurrentPlanningWeek
+    /// @brief      Persist the current week's live lists and bookmarks
+    /// @details    Updates the retained calendar from the current workspace and reports save failures through
+    ///             database activity.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func persistCurrentPlanningWeek() {
         guard hasLoadedBoard, var document = calendarDocument,
               var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { return }
@@ -1191,6 +1396,15 @@ private struct AppRootView: View {
         catch { DatabaseActivity.shared.report("Could not save calendar weeks: \(error.localizedDescription)") }
     }
 
+
+    ///
+    /// @fcn        AppRootView.advancePlanningWeekIfNeeded
+    /// @brief      Advance the live workspace when the calendar week changes
+    /// @details    Retains the outgoing week and uses existing or default-template content for the incoming week
+    ///             before publishing its lists and markers.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func advancePlanningWeekIfNeeded() {
         guard !isSwitchingWorkspace, hasLoadedBoard, var document = calendarDocument,
               document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar) else { return }
@@ -1216,6 +1430,18 @@ private struct AppRootView: View {
         } catch { DatabaseActivity.shared.report("Could not advance this week: \(error.localizedDescription)") }
     }
 
+
+    ///
+    /// @fcn        AppRootView.preparePlanningWeek
+    /// @brief      Resolve a retained week or save a default-template week
+    /// @details    Returns an existing matching week immediately; otherwise generates the configured routine and its
+    ///             importance IDs and returns the new week only after checked saving succeeds.
+    ///
+    /// @param[in]  requested  Requested week snapshot to resolve or prepare
+    ///
+    /// @return     (DatedPlanningWeek?) retained or successfully prepared week, or nil if calendar access or
+    ///             preparation fails
+    ///
     private func preparePlanningWeek(_ requested: DatedPlanningWeek) -> DatedPlanningWeek? {
         guard let document = calendarDocument else { return nil }
         if let existing = document.weeks.first(where: { $0.startKey == requested.startKey }) { return existing }
@@ -1230,10 +1456,34 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.savePlanningWeek
+    /// @brief      Save a dated week and any explicit example importance
+    /// @details    Uses a recoverable preferences transaction to update calendar-backed state and publishes the
+    ///             current owner only after saving succeeds; the simple overload supplies no example markers.
+    ///
+    /// @param[in]  week  Dated planning week being inspected or saved
+    ///
+    /// @return     (Bool) true after the week and related marker changes save successfully; false on rejection
+    ///
     private func savePlanningWeek(_ week: DatedPlanningWeek) -> Bool {
         savePlanningWeek(week, exampleImportantIDs: [])
     }
 
+
+    ///
+    /// @fcn        AppRootView.savePlanningWeek
+    /// @brief      Save a dated week and any explicit example importance
+    /// @details    Uses a recoverable preferences transaction to update calendar-backed state and publishes the
+    ///             current owner only after saving succeeds; the simple overload supplies no example markers.
+    ///
+    /// @param[in]  week                 Dated planning week being inspected or saved
+    /// @param[in]  exampleImportantIDs  Destination card IDs explicitly marked important by an applied example
+    /// @param[in]  replaceImportant     Whether the owner's existing importance selections should be replaced
+    ///
+    /// @return     (Bool) true after the week and related marker changes save successfully; false on rejection
+    ///
     private func savePlanningWeek(_ week: DatedPlanningWeek, exampleImportantIDs: Set<Int>, replaceImportant: Bool = false) -> Bool {
         guard var document = calendarDocument else { return false }
         if let existing = document.weeks.first(where: { $0.startKey == week.startKey }), existing.id != week.id { return false }
@@ -1314,6 +1564,17 @@ private struct AppRootView: View {
             })
     }
 
+
+    ///
+    /// @fcn        AppRootView.sectionOwners
+    /// @brief      Build the canonical owner set used for section movement
+    /// @details    Combines personal collections and retained calendar weeks, substituting the current live week
+    ///             values where needed.
+    ///
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    ///
+    /// @return     ([PersonalCollection]) personal and calendar owners with the live current-week values substituted
+    ///
     private func sectionOwners(in document: PlanningCalendarDocument) -> [PersonalCollection] {
         var document = document
         if let index = document.weeks.firstIndex(where: { $0.startKey == document.currentWeekKey }) {
@@ -1323,6 +1584,22 @@ private struct AppRootView: View {
         return collections + document.weeks.map(\.collection)
     }
 
+
+    ///
+    /// @fcn        AppRootView.saveSectionOwners
+    /// @brief      Persist owners and metadata affected by a section transfer
+    /// @details    Rebuilds calendar and personal-owner storage from the supplied working owners and writes the
+    ///             related importance and daily-plan values through checked storage.
+    ///
+    /// @param[in]  owners      Canonical collection owners participating in the operation
+    /// @param[in]  original    Original planning calendar document retained for comparison or transformation
+    /// @param[in]  importance  Optional encoded owner-qualified importance selections to save
+    /// @param[in]  dailyPlans  Optional encoded daily-plan document accompanying the workspace change
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func saveSectionOwners(_ owners: [PersonalCollection], document original: PlanningCalendarDocument, importance: Data?, dailyPlans: Data?) throws {
         var document = original
         for index in document.weeks.indices {
@@ -1348,6 +1625,21 @@ private struct AppRootView: View {
         lists = current.collection.lists; savedCardIDs = current.collection.savedCardIDs; collections = library
     }
 
+
+    ///
+    /// @fcn        AppRootView.movePlanningSection
+    /// @brief      Move a whole section with checked persistence and Undo
+    /// @details    Resolves calendar and library destinations, optionally shifts dates, remaps importance and daily
+    ///             priorities, and retains a guarded receipt for restoration only after the transfer saves.
+    ///
+    /// @param[in]  heading           Named divider identifying the complete section to transfer
+    /// @param[in]  source            Optional source owner UUID; nil selects the current planning week
+    /// @param[in]  destination       Chosen calendar or personal-list destination
+    /// @param[in]  shiftDates        Whether date-bearing schedules should shift with the moved section
+    /// @param[in]  documentOverride  Optional prepared calendar document used instead of the retained document
+    ///
+    /// @return     (Bool) true after a valid section transfer is saved; false if validation or persistence fails
+    ///
     private func movePlanningSection(_ heading: KanbanCard, source: UUID?, destination: CardMoveDestination,
                                      shiftDates: Bool, documentOverride: PlanningCalendarDocument? = nil) -> Bool {
         do {
@@ -1359,6 +1651,19 @@ private struct AppRootView: View {
             guard let sourceList = owners.first(where: { $0.id == sourceID })?.lists.first(where: {
                 !$0.isArchived && $0.cards.contains { $0.id == heading.id && $0.createdAt == heading.createdAt }
             }) else { return false }
+
+
+            ///
+            /// @fcn        AppRootView.movePlanningSection.day
+            /// @brief      Resolve the calendar day associated with an owner list
+            /// @details    Searches the enclosing calendar document's day mappings and returns nil for lists without
+            ///             a dated mapping.
+            ///
+            /// @param[in]  owner  Owner identity used to qualify numeric item references
+            /// @param[in]  list   List supplying the current content and metadata
+            ///
+            /// @return     (Date?) local-noon date for the mapped list, or nil for an undated or missing list
+            ///
             func day(owner: UUID, list: Int) -> Date? {
                 document.weeks.first(where: { $0.id == owner })?.dayListIDs.first(where: { $0.value == list })
                     .flatMap { PlanningDate.date($0.key, calendar: document.calendar) }
@@ -1411,6 +1716,19 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.movePlanningList
+    /// @brief      Move a list between planning and personal owners
+    /// @details    Resolves the destination, updates cross-owner references and markers, and publishes only after the
+    ///             checked storage operation succeeds.
+    ///
+    /// @param[in]  listID         Numeric list identity within its owner
+    /// @param[in]  sourceID       Identity of the source owner
+    /// @param[in]  destinationID  Identity of the destination owner; nil uses the supported current-week route
+    ///
+    /// @return     (Bool) true after the list transfer is accepted and saved; false otherwise
+    ///
     private func movePlanningList(_ listID: Int, sourceID: UUID, destinationID: UUID?) -> Bool {
         do {
             guard var document = calendarDocument else { return false }
@@ -1483,6 +1801,23 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.mutateReviewItem
+    /// @brief      Apply an explicit review decision to its current source
+    /// @details    Uses the live item and review anchor to perform the requested completion or movement and returns
+    ///             its resulting workspace identity.
+    ///
+    /// @param[in]  live    Currently resolved workspace source item
+    /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  anchor  Calendar-day key anchoring the review decision
+    ///
+    /// @return     (PlanningSearchResult) source identity and content resulting from the explicit review action
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
+    ///             `CocoaError(.fileWriteUnknown)`, `CocoaError(.fileNoSuchFile)`,
+    ///             `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies propagate unless handled
+    ///             within this operation.
+    ///
     private func mutateReviewItem(_ live: PlanningSearchResult, action: DailyReviewAction, anchor: String) throws -> PlanningSearchResult {
         var result = live
         switch action {
@@ -1555,6 +1890,20 @@ private struct AppRootView: View {
         return result
     }
 
+
+    ///
+    /// @fcn        AppRootView.applyWeeklyReview
+    /// @brief      Commit a weekly review decision with its review record
+    /// @details    Uses the expected review baseline and recoverable workspace transaction so the item action and
+    ///             saved decision remain consistent; failures return nil with feedback.
+    ///
+    /// @param[in]  source    Live source item with its calendar or Library location
+    /// @param[in]  action    Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  draft     Editable value proposed for persistence
+    /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
+    ///
+    /// @return     (WeeklyReviewRecord?) saved weekly review record, or nil when the decision cannot be committed
+    ///
     private func applyWeeklyReview(_ source: PlanningSearchResult, action: DailyReviewAction, draft: WeeklyReviewRecord, baseline: WeeklyReviewRecord?) -> WeeklyReviewRecord? {
         let oldDocument = calendarDocument, oldLists = lists, oldCollections = collections, oldSaved = savedCardIDs
         do {
@@ -1576,6 +1925,20 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.applyDailyReview
+    /// @brief      Commit an evening review decision with its daily plan
+    /// @details    Checks the expected daily-plan baseline and saves the workspace action and review state together;
+    ///             failures return nil instead of advancing the review.
+    ///
+    /// @param[in]  source    Live source item with its calendar or Library location
+    /// @param[in]  action    Explicit review, toolbar, or contextual action selected by the caller
+    /// @param[in]  draft     Editable value proposed for persistence
+    /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
+    ///
+    /// @return     (DailyPlan?) saved daily plan, or nil when the review decision cannot be committed
+    ///
     private func applyDailyReview(_ source: PlanningSearchResult, action: DailyReviewAction, draft: DailyPlan, baseline: DailyPlan?) -> DailyPlan? {
         let previousDocument = calendarDocument
         let previousLists = lists
@@ -1604,6 +1967,19 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.movePriorityForVision
+    /// @brief      Move a planning priority to its chosen workspace list
+    /// @details    Resolves the live source and returns the moved result only after the checked workspace operation
+    ///             succeeds.
+    ///
+    /// @param[in]  source       Live source item with its calendar or Library location
+    /// @param[in]  destination  Owner-qualified destination list reference
+    ///
+    /// @return     (PlanningSearchResult?) moved live item at its new personal-list location, or nil if movement
+    ///             fails
+    ///
     private func movePriorityForVision(_ source: PlanningSearchResult, destination: WorkspaceListReference) -> PlanningSearchResult? {
         guard let live = planningCalendarAccess?.searchableItems.first(where: {
             $0.collectionID == source.collectionID && $0.card.id == source.card.id && $0.card.createdAt == source.card.createdAt
@@ -1619,6 +1995,20 @@ private struct AppRootView: View {
                                     listID: updatedList.id, listTitle: updatedList.title, card: moved)
     }
 
+
+    ///
+    /// @fcn        AppRootView.movePlanningCard
+    /// @brief      Transfer one card between calendar or library lists
+    /// @details    Works from the canonical document, preserves content through cross-owner movement, and publishes
+    ///             changes only after checked persistence succeeds.
+    ///
+    /// @param[in]  card              Card or note being inspected or changed
+    /// @param[in]  source            Optional source owner UUID; nil selects the current planning week
+    /// @param[in]  destination       Chosen calendar or personal-list destination
+    /// @param[in]  documentOverride  Optional prepared calendar document used instead of the retained document
+    ///
+    /// @return     (Bool) true after the card transfer saves successfully; false on invalid input or save failure
+    ///
     private func movePlanningCard(_ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
                                   documentOverride: PlanningCalendarDocument? = nil) -> Bool {
         do {
@@ -1698,12 +2088,34 @@ private struct AppRootView: View {
         .toolbar(.hidden, for: .tabBar)
     }
 
+
+    ///
+    /// @fcn        AppRootView.switchMonthExample
+    /// @brief      Request a protected example-dataset switch
+    /// @details    Coordinates the requested load or restore with the application's dataset-switch presentation and
+    ///             recovery state.
+    ///
+    /// @param[in]  restoring  Whether to restore original user data rather than load an example
+    ///
+    /// @return     (Void) no return value
+    ///
     private func switchMonthExample(restoring: Bool) {
         guard !isSwitchingWorkspace else { return }
         isRestoringWorkspace = restoring
         isSwitchingWorkspace = true
     }
 
+
+    ///
+    /// @fcn        AppRootView.performMonthExampleSwitch
+    /// @brief      Perform the example load or original-data restore
+    /// @details    Uses the verified backup store, reloads workspace state after success, and retains recovery
+    ///             feedback when switching fails.
+    ///
+    /// @param[in]  restoring  Whether to restore original user data rather than load an example
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     private func performMonthExampleSwitch(restoring: Bool) async {
         // Runs only after the navigation tree has disappeared and flushed its saved state.
@@ -1736,6 +2148,17 @@ private struct AppRootView: View {
         isSwitchingWorkspace = false
     }
 
+
+    ///
+    /// @fcn        AppRootView.reloadWorkspaceFromStorage
+    /// @brief      Reload live workspace state after a dataset change
+    /// @details    Reads the retained planning, library, and related preference values so the interface reflects the
+    ///             installed dataset.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     private func reloadWorkspaceFromStorage() throws {
         let document = try PlanningCalendarStore.load()
         guard let current = document?.weeks.first(where: { $0.startKey == document?.currentWeekKey }) else {
@@ -1757,6 +2180,15 @@ private struct AppRootView: View {
         workspaceGeneration = UUID()
     }
 
+
+    ///
+    /// @fcn        AppRootView.recoverWorkspace
+    /// @brief      Retry recovery of interrupted workspace storage operations
+    /// @details    Runs the checked recovery paths and refreshes live state when recovery succeeds, retaining
+    ///             actionable error feedback otherwise.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func recoverWorkspace() {
         isSwitchingWorkspace = true
         Task { @MainActor in
@@ -1771,6 +2203,15 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.loadExampleWeek
+    /// @brief      Apply the bundled example to the current calendar week
+    /// @details    Retains a full Undo snapshot and applies the example through the dated-template path so schedules,
+    ///             bookmarks, and importance align with Today.
+    ///
+    /// @return     (Bool) true when the example is applied and saved; false when loading is rejected
+    ///
     private func loadExampleWeek() -> Bool {
         guard let document = calendarDocument,
               var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }),
@@ -1795,6 +2236,15 @@ private struct AppRootView: View {
         }
     }
 
+
+    ///
+    /// @fcn        AppRootView.undoExampleWeek
+    /// @brief      Restore the workspace snapshot preceding the example load
+    /// @details    Restores the retained week and its owner-qualified markers through checked persistence, consuming
+    ///             the snapshot only after success.
+    ///
+    /// @return     (Bool) true when the pre-example state is restored; false when no valid restoration succeeds
+    ///
     private func undoExampleWeek() -> Bool {
         guard let snapshot = ExampleLoadUndoStore.load(),
               let current = calendarDocument?.weeks.first(where: { $0.startKey == calendarDocument?.currentWeekKey }) else {
@@ -1953,11 +2403,33 @@ private struct AppRootView: View {
         showsCenterNewCardSheet = true
     }
 
+
+    ///
+    /// @fcn        AppRootView.openToolbarCollection
+    /// @brief      Open personal list or board creation from the toolbar
+    /// @details    Switches to Plans and sets its pending collection-kind request so the owning view can present the
+    ///             corresponding creation flow.
+    ///
+    /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
+    ///
+    /// @return     (Void) no return value
+    ///
     private func openToolbarCollection(_ kind: PersonalCollectionKind) {
         selectedDestination = .lists
         toolbarCollectionRequest = kind
     }
 
+
+    ///
+    /// @fcn        AppRootView.selectToolbarDestination
+    /// @brief      Select a lower-toolbar destination and prepare its context
+    /// @details    Clears stale Revisit selection for Activity; Week selection ensures today's list, clears its card
+    ///             target, and increments the request that returns navigation to the week root.
+    ///
+    /// @param[in]  destination  Lower-toolbar destination to select
+    ///
+    /// @return     (Void) no return value
+    ///
     private func selectToolbarDestination(_ destination: AppDestination) {
         if destination == .saved { activityRevisitDestination = nil }
         if destination == .board {
@@ -1970,6 +2442,19 @@ private struct AppRootView: View {
         selectedDestination = destination
     }
 
+
+    ///
+    /// @fcn        AppRootView.tabButton
+    /// @brief      Build a toolbar destination with its tap and hold actions
+    /// @details    Uses the destination's icon and title while exposing its contextual long-press shortcut alongside
+    ///             normal selection.
+    ///
+    /// @param[in]  destination  Lower-toolbar destination to select
+    /// @param[in]  title        Display title or proposed title text
+    /// @param[in]  systemImage  SF Symbol name used by the toolbar destination
+    ///
+    /// @return     (some View) a toolbar destination with its tap and hold actions
+    ///
     private func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View {
 
         let geometry = bottomToolbarLayout
@@ -2579,6 +3064,19 @@ private struct TodayHomeView: View {
     @EnvironmentObject private var welcomeCue: TodayWelcomeCue
     @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
+
+
+    ///
+    /// @fcn        TodayHomeView.calendarDayList
+    /// @brief      Resolve the active list representing a particular day
+    /// @details    Uses the available current-week snapshot or retained calendar mapping and returns nil when no
+    ///             active matching list is available.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  snapshot  Snapshot values or directory used for the operation
+    ///
+    /// @return     (KanbanList?) active list mapped to the requested date, or nil when unavailable
+    ///
     private func calendarDayList(_ date: Date, in snapshot: [KanbanList]? = nil) -> KanbanList? {
         let lists = snapshot ?? self.lists
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
@@ -2986,6 +3484,14 @@ private struct TodayHomeView: View {
         presentQuickNoteEditor()
     }
 
+
+    ///
+    /// @fcn        TodayHomeView.presentQuickNoteEditor
+    /// @brief      Open the full-featured quick capture editor
+    /// @details    Selects the current quick-note creation presentation from the Today home view.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func presentQuickNoteEditor() {
 
         quickComposerInitialTitle = quickCaptureTitle
@@ -3581,6 +4087,16 @@ struct QuickCaptureTemplatesView: View {
         .presentationDetents([.large])
     }
 
+
+    ///
+    /// @fcn        QuickCaptureTemplatesView.templateButton
+    /// @brief      Build a quick-capture template selection button
+    /// @details    Uses the template's presentation and invokes the selection action for that particular template.
+    ///
+    /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
+    ///
+    /// @return     (some View) a quick-capture template selection button
+    ///
     private func templateButton(_ template: QuickCaptureTemplate) -> some View {
         Button {
             onSelect(template)
@@ -3656,10 +4172,34 @@ struct QuickCaptureSchedule: Equatable {
     var start: Date?
     var stop: Date?
     var includesTime = false
+
+
+    ///
+    /// @fcn        QuickCaptureSchedule.isValid
+    /// @brief      Validate the optional capture schedule
+    /// @details    Checks the schedule endpoints using their date kinds and the supplied calendar before new items
+    ///             are created.
+    ///
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Bool) true when the schedule satisfies its endpoint and calendar rules; false otherwise
+    ///
     func isValid(calendar: Calendar = .current) -> Bool {
         guard let start, let stop else { return true }
         return includesTime ? stop >= start : calendar.startOfDay(for: stop) >= calendar.startOfDay(for: start)
     }
+
+
+    ///
+    /// @fcn        QuickCaptureSchedule.apply
+    /// @brief      Copy the capture schedule onto a newly created card
+    /// @details    Normalizes the start and due values according to their date kinds and supplied calendar.
+    ///
+    /// @param[in,out]  card      Card or note being inspected or changed
+    /// @param[in]      calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Void) no return value
+    ///
     func apply(to card: inout KanbanCard, calendar: Calendar = .current) {
         let kind: CardDateKind = includesTime ? .dateAndTime : .date
         card.startDate = start.map { kind.normalized($0, calendar: calendar) }
@@ -3684,6 +4224,19 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable {
     var id: Self { self }
     var savesAudio: Bool { self != .text }
     var savesText: Bool { self != .audio }
+
+
+    ///
+    /// @fcn        VoiceCaptureSaveOption.body
+    /// @brief      Combine existing writing with a voice transcript
+    /// @details    Uses the selected save option to keep, replace, or combine content without changing the underlying
+    ///             recording.
+    ///
+    /// @param[in]  existing    Existing body text that may be retained or combined
+    /// @param[in]  transcript  Recognized voice transcript proposed for the capture body
+    ///
+    /// @return     (String) body text selected or combined according to this save option
+    ///
     func body(existing: String, transcript: String) -> String {
         let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard savesText, !text.isEmpty else { return existing }
@@ -3706,6 +4259,15 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     private var timeout: Task<Void, Never>?
     private var generation = 0
 
+
+    ///
+    /// @fcn        QuickCaptureVoice.start
+    /// @brief      Request recording access and begin voice capture
+    /// @details    Sets up the recording session and local file, publishes capture status, and reports authorization
+    ///             or recording setup failures.
+    ///
+    /// @return     (Void) no return value
+    ///
     func start() async {
         guard !isStarting, !isRecording else { return }
         isStarting = true
@@ -3731,11 +4293,33 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             errorMessage = "Recording couldn't start. Your draft is still here; please try again."
         }
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.stop
+    /// @brief      Stop the active voice recorder
+    /// @details    Ends recording through the recorder so its completion delegate can update capture and
+    ///             transcription state.
+    ///
+    /// @return     (Void) no return value
+    ///
     func stop() {
         guard isRecording else { return }
         recorder?.stop(); recorder = nil; isRecording = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.audioRecorderDidFinishRecording
+    /// @brief      Handle completion of a voice recording
+    /// @details    Updates recording state and starts transcription only for a successfully completed recording.
+    ///
+    /// @param[in]  recorder  Audio recorder delivering completion
+    /// @param[in]  flag      Whether the system reports successful completion
+    ///
+    /// @return     (Void) no return value
+    ///
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         Task { @MainActor [weak self] in
             guard let self, self.isRecording, self.recordingURL == recorder.url else { return }
@@ -3743,6 +4327,16 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             if !flag { self.errorMessage = "Recording was interrupted. Preview the recording before saving." }
         }
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.transcribe
+    /// @brief      Transcribe the captured audio when speech access permits
+    /// @details    Creates an asynchronous speech-recognition request, publishes its result, and reports
+    ///             authorization or recognition failures without discarding the recording.
+    ///
+    /// @return     (Void) no return value
+    ///
     func transcribe() async {
         guard let url = recordingURL, !isRecording, !isTranscribing else { return }
         isTranscribing = true; errorMessage = nil
@@ -3785,14 +4379,44 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             self.errorMessage = "Transcription took too long. Retry, enter text yourself, or save Audio instead."
         }
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.cancelTranscription
+    /// @brief      Cancel outstanding speech recognition work
+    /// @details    Stops and clears the retained recognition task so later capture work does not reuse it.
+    ///
+    /// @return     (Void) no return value
+    ///
     func cancelTranscription() {
         generation += 1; speechTask?.cancel(); speechTask = nil
         timeout?.cancel(); timeout = nil; isTranscribing = false
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.audioData
+    /// @brief      Read the current recording's encoded audio
+    /// @details    Loads the captured file and propagates file access failures rather than returning invented audio
+    ///             data.
+    ///
+    /// @return     (Data) recorded file bytes ready for attachment import
+    /// @throws     Explicit failures include `CocoaError(.fileReadNoSuchFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     func audioData() throws -> Data {
         guard let recordingURL, !isRecording else { throw CocoaError(.fileReadNoSuchFile) }
         return try Data(contentsOf: recordingURL)
     }
+
+
+    ///
+    /// @fcn        QuickCaptureVoice.cleanup
+    /// @brief      Release voice capture work and its temporary file
+    /// @details    Stops recording, cancels transcription, and removes retained temporary recording resources.
+    ///
+    /// @return     (Void) no return value
+    ///
     func cleanup() {
         cancelTranscription(); stop()
         if let recordingURL { try? FileManager.default.removeItem(at: recordingURL) }
@@ -3810,6 +4434,24 @@ struct QuickCapturePhoto: Identifiable {
 /// Store media only on explicit Add; a failed handoff removes just this draft's files.
 @MainActor
 enum QuickCaptureMediaCommit {
+
+
+    ///
+    /// @fcn        QuickCaptureMediaCommit.save
+    /// @brief      Import capture media and commit its attachment records
+    /// @details    Tracks newly created photo, audio, and drawing files; retains them only when the supplied owner
+    ///             commit accepts the records and removes them on failure.
+    ///
+    /// @param[in]  photos    Photo drafts to import before committing the owner update
+    /// @param[in]  audio     Optional recorded audio bytes to import
+    /// @param[in]  drawings  Editable drawing drafts to import
+    /// @param[in]  commit    Owner-save callback that accepts imported attachment records and reports whether they
+    ///                       were retained
+    ///
+    /// @return     (Bool) true if the owner accepts the imported records; false after a rejected commit and cleanup
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func save(_ photos: [QuickCapturePhoto], audio: Data? = nil, drawings: [DrawingCaptureDraft] = [], commit: ([KanbanAttachment]) -> Bool) throws -> Bool {
         var saved: [KanbanAttachment] = []
         do {
@@ -3835,17 +4477,86 @@ enum QuickCaptureMediaCommit {
 struct QuickCaptureCamera: UIViewControllerRepresentable {
     let onPhoto: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        QuickCaptureCamera.makeCoordinator
+    /// @brief      Create the native bridge coordinator
+    /// @details    Creates the coordinator retained by SwiftUI for QuickCaptureCamera so its delegate or observation
+    ///             state can span view updates.
+    ///
+    /// @return     (Coordinator) retained native bridge coordinator
+    ///
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+
+    ///
+    /// @fcn        QuickCaptureCamera.makeUIViewController
+    /// @brief      Create the camera picker used by quick capture
+    /// @details    Configures camera capture and assigns the coordinator as the picker delegate.
+    ///
+    /// @param[in]  context  Framework-supplied update context and coordinator access
+    ///
+    /// @return     (UIImagePickerController) camera picker configured to deliver captures to its coordinator
+    ///
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera; picker.delegate = context.coordinator
         return picker
     }
+
+
+    ///
+    /// @fcn        QuickCaptureCamera.updateUIViewController
+    /// @brief      Satisfy camera-picker updates without resetting capture
+    /// @details    The picker is configured during creation and has no incremental update work in this representable.
+    ///
+    /// @param[in]  controller  Native controller supplied to the lifecycle callback
+    /// @param[in]  context     Framework-supplied update context and coordinator access
+    ///
+    /// @return     (Void) no return value
+    ///
     func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let parent: QuickCaptureCamera
+
+
+        ///
+        /// @fcn        QuickCaptureCamera.Coordinator.init
+        /// @brief      Retain the camera representable for delegate callbacks
+        /// @details    Keeps the current parent value so capture and cancellation callbacks can reach its selection
+        ///             and dismissal actions.
+        ///
+        /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
+        ///
+        /// @return     (Coordinator) initialized instance
+        ///
         init(parent: QuickCaptureCamera) { self.parent = parent }
+
+
+        ///
+        /// @fcn        QuickCaptureCamera.Coordinator.imagePickerControllerDidCancel
+        /// @brief      Dismiss a cancelled camera capture
+        /// @details    Invokes the parent capture presentation's dismissal path without producing an image.
+        ///
+        /// @param[in]  picker  Native camera controller delivering the delegate callback
+        ///
+        /// @return     (Void) no return value
+        ///
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
+
+
+        ///
+        /// @fcn        QuickCaptureCamera.Coordinator.imagePickerController
+        /// @brief      Receive the photo selected by the camera picker
+        /// @details    Extracts the captured image, hands it to the parent callback when available, and finishes the
+        ///             picker presentation.
+        ///
+        /// @param[in]  picker  Native camera controller delivering the delegate callback
+        /// @param[in]  info    System image-picker metadata for the selected capture
+        ///
+        /// @return     (Void) no return value
+        ///
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let image = info[.originalImage] as? UIImage { parent.onPhoto(image) }
             parent.dismiss()
@@ -4061,6 +4772,16 @@ struct QuickNoteComposer: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
+
+
+    ///
+    /// @fcn        QuickNoteComposer.openCamera
+    /// @brief      Open camera capture when the device supports it
+    /// @details    Checks capture availability and authorization before presenting, retaining user-facing feedback
+    ///             when the camera cannot be used.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor private func openCamera() async {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
             mediaError = "A camera isn't available on this device. Choose Photo library instead."
@@ -4072,6 +4793,16 @@ struct QuickNoteComposer: View {
         if allowed { showsCamera = true }
         else { mediaError = "Camera access is unavailable. You can allow it in Settings → Plenact, or choose Photo library." }
     }
+
+
+    ///
+    /// @fcn        QuickNoteComposer.importPhotos
+    /// @brief      Import selected photo data into the capture draft
+    /// @details    Loads the current selections asynchronously and updates the in-memory photo draft without creating
+    ///             owner records yet.
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor private func importPhotos() async {
         guard !photoSelection.isEmpty else { return }
         importingPhotos = true
@@ -4086,11 +4817,29 @@ struct QuickNoteComposer: View {
         catch { mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here." }
     }
 
+
+    ///
+    /// @fcn        QuickNoteComposer.finishDraft
+    /// @brief      Clear a finished draft and reject late editor updates
+    /// @details    Disables draft edits before clearing retained draft content so keyboard dismissal cannot recreate
+    ///             it.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func finishDraft() {
         acceptsDraftEdits = false
         if let draftKey { ListCreationDraft.clear(key: draftKey) }
     }
 
+
+    ///
+    /// @fcn        QuickNoteComposer.registerKeyboardDraft
+    /// @brief      Register creation actions for the active keyboard context
+    /// @details    Provides the current composer actions to the shared keyboard context without committing a new
+    ///             item.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func registerKeyboardDraft() {
         PlenactKeyboard.shared.setContext(keyboardContextID, actions: KeyboardCardActions(
             exit: { finishDraft(); dismiss() },
@@ -4289,6 +5038,19 @@ private struct NewPersonalNoteComposer: View {
     @State private var createdAt = Date.now
     private let initialCollectionID: UUID
 
+
+    ///
+    /// @fcn        NewPersonalNoteComposer.init
+    /// @brief      Freeze available personal-list destinations for creation
+    /// @details    Retains the checked save callback and captures stable destination UUIDs so numeric selection
+    ///             values cannot drift as collections change.
+    ///
+    /// @param[in]  initialCollectionID     Initially selected personal-list owner UUID
+    /// @param[in]  availablePersonalLists  Snapshot of personal-list owners available when creation starts
+    /// @param[in]  onSave                  Owner-save callback that throws if the full capture cannot be retained
+    ///
+    /// @return     (NewPersonalNoteComposer) initialized instance
+    ///
     init(initialCollectionID: UUID, availablePersonalLists: [PersonalCollection],
          onSave: @escaping (UUID, QuickCaptureSubmission, Date) throws -> Void) {
         self.initialCollectionID = initialCollectionID
@@ -4302,6 +5064,18 @@ private struct NewPersonalNoteComposer: View {
             return KanbanList(id: index, title: owner.title, cards: [])
         }
     }
+
+
+    ///
+    /// @fcn        NewPersonalNoteComposer.save
+    /// @brief      Save a full capture to its selected personal-list owner
+    /// @details    Resolves the captured destination identity, calls the throwing owner-save callback, and returns
+    ///             false with feedback when creation is rejected.
+    ///
+    /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
+    ///
+    /// @return     (Bool) true after the selected owner's save succeeds; false when selection or saving fails
+    ///
     private func save(_ capture: QuickCaptureSubmission) -> Bool {
         guard destinationIDs.indices.contains(capture.listID) else { return false }
         let ownerID = destinationIDs[capture.listID]
@@ -4883,10 +5657,35 @@ struct LibraryRecentItem: Codable, Equatable, Identifiable {
 
 enum LibraryRecentStore {
     static let key = "Plenact.LibraryRecents.v1"
+
+
+    ///
+    /// @fcn        LibraryRecentStore.load
+    /// @brief      Read the Library's recent item history
+    /// @details    Decodes retained owner-qualified items and returns an empty array when storage is absent or
+    ///             unreadable.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     ([LibraryRecentItem]) decoded Library recents, or an empty array for absent or unreadable storage
+    ///
     static func load(from defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
         guard let data = defaults.data(forKey: key) else { return [] }
         return (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
     }
+
+
+    ///
+    /// @fcn        LibraryRecentStore.remember
+    /// @brief      Move an item to the front of Library recents
+    /// @details    Also records Activity history, deduplicates the selected item, limits Library history to eight,
+    ///             and persists when encoding succeeds.
+    ///
+    /// @param[in]  item      Item supplied to this operation
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     ([LibraryRecentItem]) updated deduplicated Library recents, limited to eight entries
+    ///
     static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
         ActivityRecentStore.remember(item, defaults: defaults)
         let items = Array(([item] + load(from: defaults).filter { $0 != item }).prefix(8))
@@ -4897,14 +5696,51 @@ enum LibraryRecentStore {
 
 enum ActivityRecentStore {
     static let key = "Plenact.ActivityRecents.v1"
+
+
+    ///
+    /// @fcn        ActivityRecentStore.load
+    /// @brief      Read Activity history with a legacy Library fallback
+    /// @details    Uses Library recents only when Activity storage is absent; malformed Activity data produces an
+    ///             empty array.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     ([LibraryRecentItem]) decoded Activity recents, legacy Library fallback, or an empty array for
+    ///             invalid Activity data
+    ///
     static func load(from defaults: UserDefaults = .standard) -> [LibraryRecentItem] {
         guard let data = defaults.data(forKey: key) else { return LibraryRecentStore.load(from: defaults) }
         return (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
     }
+
+
+    ///
+    /// @fcn        ActivityRecentStore.remember
+    /// @brief      Record a recently opened item for Activity
+    /// @details    Moves the owner-qualified identity to the front, removes duplicates, and retains at most twenty
+    ///             entries.
+    ///
+    /// @param[in]  item      Item supplied to this operation
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard) {
         let items = Array(([item] + load(from: defaults).filter { $0 != item }).prefix(20))
         if let data = try? JSONEncoder().encode(items) { defaults.set(data, forKey: key) }
     }
+
+
+    ///
+    /// @fcn        ActivityRecentStore.clear
+    /// @brief      Explicitly clear both Activity and Library recent history
+    /// @details    Writes empty encoded arrays to both keys so the legacy fallback cannot repopulate cleared history.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func clear(defaults: UserDefaults = .standard) {
         defaults.set(Data("[]".utf8), forKey: key)
         defaults.set(Data("[]".utf8), forKey: LibraryRecentStore.key)
@@ -4950,12 +5786,38 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
         default: "Your Plans · Collections, cards, and notes"
         }
     }
+
+
+    ///
+    /// @fcn        LibraryBrowseFilter.includes
+    /// @brief      Check whether an active collection belongs in this Library filter
+    /// @details    Requires a collection-browsing filter and matches list or board kind unless the All filter is
+    ///             selected.
+    ///
+    /// @param[in]  collection  Personal collection supplying the owner context
+    ///
+    /// @return     (Bool) true for an active collection of a kind included by this browsing filter
+    ///
     func includes(_ collection: PersonalCollection) -> Bool {
         collection.isActive && browsesCollections && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
 }
 
 enum LibrarySearchIndex {
+
+
+    ///
+    /// @fcn        LibrarySearchIndex.results
+    /// @brief      Search active lists across personal collections
+    /// @details    Annotates shared search matches with their collection UUID and title so equal numeric card IDs
+    ///             remain owner-qualified.
+    ///
+    /// @param[in]  query        User-entered search text
+    /// @param[in]  collections  Personal collection values available to the operation
+    /// @param[in]  labels       Label catalog used to resolve stored label IDs
+    ///
+    /// @return     ([TodaySearchResult]) owner-qualified personal-collection matches in the shared search order
+    ///
     static func results(query: String, collections: [PersonalCollection], labels: LabelLibrary) -> [TodaySearchResult] {
         collections.filter(\.isActive).flatMap { collection in
             TodaySearchIndex.results(query: query, scope: .all, lists: collection.lists.filter { !$0.isArchived }, library: labels).map { match in
@@ -4970,10 +5832,37 @@ enum LibrarySearchIndex {
 
 enum LibraryImportanceSelection {
     static let key = "Plenact.LibraryImportant.v1"
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.cardIDs
+    /// @brief      Read important-card IDs for one collection owner
+    /// @details    Decodes owner-qualified selections and returns an empty set for absent or malformed data.
+    ///
+    /// @param[in]  collectionID  UUID of the collection owning the referenced content
+    /// @param[in]  data          Encoded input or media bytes
+    ///
+    /// @return     (Set<Int>) important numeric card IDs belonging to the requested collection
+    ///
     static func cardIDs(collectionID: UUID, data: Data) -> Set<Int> {
         let items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
         return Set(items.filter { $0.collectionID == collectionID }.map(\.cardID))
     }
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.setting
+    /// @brief      Encode a card's requested importance state
+    /// @details    Removes the owner's existing selection, appends it when marked, and returns the original bytes if
+    ///             encoding fails.
+    ///
+    /// @param[in]  cardID        Numeric card identity within its owner
+    /// @param[in]  collectionID  UUID of the collection owning the referenced content
+    /// @param[in]  marked        Requested importance state for the owner-qualified card
+    /// @param[in]  data          Encoded input or media bytes
+    ///
+    /// @return     (Data) updated encoded selections, or the original data if encoding fails
+    ///
     static func setting(cardID: Int, collectionID: UUID, marked: Bool, data: Data) -> Data {
         var items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
         let item = LibraryRecentItem(collectionID: collectionID, cardID: cardID)
@@ -4981,7 +5870,21 @@ enum LibraryImportanceSelection {
         if marked { items.append(item) }
         return (try? JSONEncoder().encode(items)) ?? data
     }
-    /// Only call for freshly created demonstration owners, never on a user's existing weeks.
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.demoData
+    /// @brief      Mark recognized demonstration cards as important
+    /// @details    Matches the explicit demonstration-title set across supplied owners and preserves unrelated
+    ///             existing selections.
+    ///
+    /// @param[in]  owners  Canonical collection owners participating in the operation
+    /// @param[in]  data    Encoded input or media bytes
+    ///
+    /// @return     (Data) encoded selections including the recognized supplied demonstration cards
+    ///
+    /// @note       Only call for freshly created demonstration owners, never on a user's existing weeks.
+    ///
     static func demoData(in owners: [PersonalCollection], preserving data: Data = Data()) -> Data {
         let names: Set<String> = ["work", "gym", "dinner", "prepare dinner", "dinner with friends",
             "call accountant", "call the accountant"]
@@ -4994,6 +5897,19 @@ enum LibraryImportanceSelection {
         }
         return result
     }
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.contains
+    /// @brief      Check an owner-qualified card's importance flag
+    /// @details    Matches both collection UUID and card ID, treating malformed selection data as empty.
+    ///
+    /// @param[in]  cardID        Numeric card identity within its owner
+    /// @param[in]  collectionID  UUID of the collection owning the referenced content
+    /// @param[in]  data          Encoded input or media bytes
+    ///
+    /// @return     (Bool) true if both owner UUID and card ID match an important selection
+    ///
     static func contains(cardID: Int, collectionID: UUID, data: Data) -> Bool {
         let items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
         return items.contains(LibraryRecentItem(collectionID: collectionID, cardID: cardID))
@@ -5032,6 +5948,18 @@ struct LibraryImportanceAccess {
 struct OwnerImportanceControls: ViewModifier {
     let ownerID: UUID?
     @AppStorage("Plenact.LibraryImportant.v1") private var data = Data()
+
+
+    ///
+    /// @fcn        OwnerImportanceControls.body
+    /// @brief      Provide owner-qualified importance actions to descendant views
+    /// @details    Installs contains and set closures for the available owner and writes selections through the
+    ///             shared encoding helper.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) provide owner-qualified importance actions to descendant views
+    ///
     func body(content: Content) -> some View {
         content.environment(\.libraryImportance, ownerID.map { owner in
             LibraryImportanceAccess(contains: { cardID in
@@ -5063,6 +5991,21 @@ struct LibraryPlateItem: Identifiable {
     var id: String { "\(collection.id.uuidString).\(card.id)" }
 }
 enum LibraryPlateSelection {
+
+
+    ///
+    /// @fcn        LibraryPlateSelection.items
+    /// @brief      Rank unfinished Library content for the upcoming-items preview
+    /// @details    Considers date-bearing urgency and explicit importance across active owners and lists while
+    ///             excluding completed cards and section dividers.
+    ///
+    /// @param[in]  collections  Personal collection values available to the operation
+    /// @param[in]  important    Importance selections or the Important filter state
+    /// @param[in]  now          Reference time used instead of an implicit clock read
+    /// @param[in]  calendar     Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     ([LibraryPlateItem]) ranked upcoming or important unfinished Library items
+    ///
     static func items(in collections: [PersonalCollection], important: [LibraryRecentItem], now: Date = .now, calendar: Calendar = .current) -> [LibraryPlateItem] {
         let today = calendar.startOfDay(for: now)
         let horizon = calendar.date(byAdding: .day, value: 7, to: today) ?? today
@@ -5200,6 +6143,18 @@ enum TodaySloganCatalog {
         "close today knowing you gave something good a start",
     ]
 
+
+    ///
+    /// @fcn        TodaySloganCatalog.slogan
+    /// @brief      Choose the stable slogan for a local calendar day
+    /// @details    Uses a fixed Gregorian anchor in the requested time zone and a wrapped day offset so selection
+    ///             remains stable across relaunches and daylight-saving changes.
+    ///
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) catalog slogan selected for the represented local day
+    ///
     static func slogan(on date: Date, calendar: Calendar = .current) -> String {
         // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST.
         var local = Calendar(identifier: .gregorian)
@@ -5222,6 +6177,17 @@ private struct TodaySloganView: View {
         }
     }
 
+
+    ///
+    /// @fcn        TodaySloganView.sloganContent
+    /// @brief      Build the interactive Today slogan reader
+    /// @details    Provides light or dark styling, swipe-reading accessibility guidance, and a full-text alert on
+    ///             tap.
+    ///
+    /// @param[in]  slogan  Authored slogan text to display
+    ///
+    /// @return     (some View) the interactive today slogan reader
+    ///
     private func sloganContent(_ slogan: String) -> some View {
         InteractiveSloganPreview(text: slogan,
             textColor: (colorScheme == .dark
@@ -5239,6 +6205,21 @@ private struct TodaySloganView: View {
 }
 
 enum TodaySloganMotion {
+
+
+    ///
+    /// @fcn        TodaySloganMotion.position
+    /// @brief      Calculate the slogan's looping horizontal position
+    /// @details    Moves at 35.1 points per second, wraps after the trailing edge leaves view, and restarts fully
+    ///             offscreen manual positions at the right edge.
+    ///
+    /// @param[in]  elapsed    Elapsed time in seconds since the current animation or launch anchor
+    /// @param[in]  start      Starting horizontal position or original vertical scroll offset in points
+    /// @param[in]  viewport   Viewport extent in points along the relevant scroll axis
+    /// @param[in]  textWidth  Measured width of the slogan text in points
+    ///
+    /// @return     (CGFloat) looped horizontal text origin in points
+    ///
     static func position(elapsed: TimeInterval, start: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat {
         let distance = viewport + textWidth
         guard distance > 0 else { return 0 }
@@ -5250,6 +6231,21 @@ enum TodaySloganMotion {
         if proposed >= -textWidth { return proposed }
         return viewport - (-textWidth - proposed).truncatingRemainder(dividingBy: distance)
     }
+
+
+    ///
+    /// @fcn        TodaySloganMotion.draggedPosition
+    /// @brief      Apply unrestricted horizontal slogan dragging
+    /// @details    Adds the gesture translation to the captured start; viewport and text width do not constrain
+    ///             manual reading movement.
+    ///
+    /// @param[in]  start        Starting horizontal position or original vertical scroll offset in points
+    /// @param[in]  translation  Horizontal gesture displacement from its captured start
+    /// @param[in]  viewport     Viewport extent in points along the relevant scroll axis
+    /// @param[in]  textWidth    Measured width of the slogan text in points
+    ///
+    /// @return     (CGFloat) starting horizontal position plus gesture translation
+    ///
     static func draggedPosition(start: CGFloat, translation: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat {
         start + translation
     }
@@ -5270,6 +6266,18 @@ struct InteractiveSloganPreview: View {
     @State private var dragStart: CGFloat? = nil
     @State private var draggedOffset: CGFloat? = nil
 
+
+    ///
+    /// @fcn        InteractiveSloganPreview.position
+    /// @brief      Resolve the slogan's manual or automatic position
+    /// @details    Prefers an active drag offset and otherwise applies elapsed-time motion from the retained anchor
+    ///             with the initial reading pause.
+    ///
+    /// @param[in]  date   Represented date for the operation
+    /// @param[in]  width  Available horizontal extent in points
+    ///
+    /// @return     (CGFloat) active drag offset or the calculated automatic text origin
+    ///
     private func position(at date: Date, width: CGFloat) -> CGFloat {
         if let draggedOffset { return draggedOffset }
         let start = anchorOffset ?? width
@@ -5335,14 +6343,50 @@ struct InteractiveSloganPreview: View {
 
 private struct PreviewTextWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
+
+
+    ///
+    /// @fcn        PreviewTextWidthKey.reduce
+    /// @brief      Accept the latest measured preview text width
+    /// @details    Replaces the accumulated preference with the next measurement from the view hierarchy.
+    ///
+    /// @param[in,out]  value      Accumulated preference value replaced by the next child measurement
+    /// @param[in]      nextValue  Closure supplying the next child preference value
+    ///
+    /// @return     (Void) no return value
+    ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 private struct PreviewViewportWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
+
+
+    ///
+    /// @fcn        PreviewViewportWidthKey.reduce
+    /// @brief      Accept the latest measured preview viewport width
+    /// @details    Uses the next child preference as the current available reading width.
+    ///
+    /// @param[in,out]  value      Accumulated preference value replaced by the next child measurement
+    /// @param[in]      nextValue  Closure supplying the next child preference value
+    ///
+    /// @return     (Void) no return value
+    ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 private struct PreviewVisibility: ViewModifier {
     @Binding var visible: Bool
+
+
+    ///
+    /// @fcn        PreviewVisibility.body
+    /// @brief      Track whether an animated preview is visible
+    /// @details    Uses scroll visibility where supported and falls back to appearance callbacks on older supported
+    ///             systems.
+    ///
+    /// @param[in]  content  View content to decorate with this modifier
+    ///
+    /// @return     (some View) track whether an animated preview is visible
+    ///
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *) {
             content.onScrollVisibilityChange(threshold: 0.1) { visible = $0 }
@@ -5670,6 +6714,17 @@ struct BoardListsView: View {
         LibrarySearchIndex.results(query: searchText, collections: collections.filter { browseFilter.includes($0) }, labels: LabelLibraryStore.load())
     }
 
+
+    ///
+    /// @fcn        BoardListsView.openLibrarySearchResult
+    /// @brief      Open a Library match in its owning collection
+    /// @details    Uses the result's owner and card identity to select the existing content rather than creating a
+    ///             duplicate.
+    ///
+    /// @param[in]  result  Resolved search or Activity match to render or open
+    ///
+    /// @return     (Void) no return value
+    ///
     private func openLibrarySearchResult(_ result: TodaySearchResult) {
         guard let collection = collections.first(where: { $0.id == result.ownerID && $0.isActive }) else { return }
         isLibrarySearchFocused = false
@@ -5678,6 +6733,16 @@ struct BoardListsView: View {
         openedCollection = collection
     }
 
+
+    ///
+    /// @fcn        BoardListsView.librarySearchRow
+    /// @brief      Build a navigable Library search-result preview
+    /// @details    Uses the result's card content and location to distinguish matching items across owners.
+    ///
+    /// @param[in]  result  Resolved search or Activity match to render or open
+    ///
+    /// @return     (some View) a navigable library search-result preview
+    ///
     private func librarySearchRow(_ result: TodaySearchResult) -> some View {
         let card = collections.first { $0.id == result.ownerID }?.lists.first { $0.id == result.listID }?.cards.first { $0.id == result.cardID }
         return Button { openLibrarySearchResult(result) } label: {
@@ -6316,6 +7381,17 @@ struct BoardListsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+
+    ///
+    /// @fcn        BoardListsView.collectionPreview
+    /// @brief      Build a short text preview of a collection
+    /// @details    Extracts suitable list or card content for the Library row without altering the underlying
+    ///             collection.
+    ///
+    /// @param[in]  collection  Personal collection supplying the owner context
+    ///
+    /// @return     (String) brief textual content preview for the Library collection row
+    ///
     private func collectionPreview(_ collection: PersonalCollection) -> String {
         showsCollectionPreviews ? collection.contentPreview : ""
     }
@@ -6543,6 +7619,17 @@ struct BoardListsView: View {
         }
     }
 
+
+    ///
+    /// @fcn        BoardListsView.previewDaySectionExample
+    /// @brief      Present a named-day-section example
+    /// @details    Uses the reusable routine-template preview so users can inspect it before choosing an application
+    ///             date.
+    ///
+    /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
+    ///
+    /// @return     (Void) no return value
+    ///
     private func previewDaySectionExample(_ template: PlanningRoutineTemplate) {
         examplePreview = LibraryExamplePreview(title: template.name,
             summary: "A day organized into colored sections. Collapse, reorder, or move whole sections after applying. Previewing does not change your plans.",
@@ -6594,6 +7681,16 @@ struct BoardListsView: View {
         }
     }
 
+
+    ///
+    /// @fcn        BoardListsView.listExampleMenu
+    /// @brief      Build actions for a particular personal-list example
+    /// @details    Routes preview and creation choices through the existing example-selection callbacks.
+    ///
+    /// @param[in]  example  Bundled example content or dataset to use
+    ///
+    /// @return     (some View) actions for a particular personal-list example
+    ///
     private func listExampleMenu(_ example: PersonalListExample) -> some View {
         let draft = example.makeCollection(existingTitles: [])
         return Menu(example.rawValue) {
@@ -7077,6 +8174,22 @@ struct PersonalListExamplesView: View {
     @State private var hasUndoableWeek: Bool
     @State private var operationError: String?
 
+
+    ///
+    /// @fcn        PersonalListExamplesView.init
+    /// @brief      Configure example-selection routes and initial Undo availability
+    /// @details    Retains the optional week, board, and mixed-template callbacks and seeds the displayed week-Undo
+    ///             state from the caller.
+    ///
+    /// @param[in]  onLoadExampleWeek      Optional checked callback to load the bundled example week
+    /// @param[in]  onUndoExampleWeek      Optional checked callback to restore the pre-example week
+    /// @param[in]  hasUndoableWeek        Whether an example-week restoration is initially available
+    /// @param[in]  onSelectBoardExample   Optional callback for selecting a board example
+    /// @param[in]  onSelectMixedTemplate  Optional callback for selecting a mixed-presentation template
+    /// @param[in]  onSelect               Callback invoked after the user confirms a selection
+    ///
+    /// @return     (PersonalListExamplesView) initialized instance
+    ///
     init(
         onLoadExampleWeek: (() -> Bool)? = nil,
         onUndoExampleWeek: (() -> Bool)? = nil,
@@ -7984,11 +9097,38 @@ enum ActivityFocus: String, CaseIterable, Identifiable {
     }
 }
 enum ActivityFocusSelection {
+
+
+    ///
+    /// @fcn        ActivityFocusSelection.isDueSoon
+    /// @brief      Find unfinished date-bearing work due before the upcoming horizon
+    /// @details    Excludes dividers and completed cards, requires a date-bearing due value, and includes overdue
+    ///             work before the seven-calendar-day boundary.
+    ///
+    /// @param[in]  card      Card or note being inspected or changed
+    /// @param[in]  now       Reference time used instead of an implicit clock read
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (Bool) true for eligible unfinished work due before the seven-day boundary, including overdue work
+    ///
     static func isDueSoon(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> Bool {
         guard !card.isSectionDivider, !card.isTitleChecked, card.dueDateKind.includesDate, let due = card.dueDate,
               let horizon = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: now)) else { return false }
         return due < horizon
     }
+
+
+    ///
+    /// @fcn        ActivityFocusSelection.dueReason
+    /// @brief      Describe a card's due status for Activity
+    /// @details    Compares its due date with the reference time and local day to produce the contextual reason text.
+    ///
+    /// @param[in]  card      Card or note being inspected or changed
+    /// @param[in]  now       Reference time used instead of an implicit clock read
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) overdue, due-today, or due text; an empty string when no due date exists
+    ///
     static func dueReason(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> String {
         guard let due = card.dueDate else { return "" }
         if due < calendar.startOfDay(for: now) || (card.dueDateKind.includesTime && due < now) {
@@ -8176,6 +9316,19 @@ private struct SavedCardsView: View {
         let isCurrent: Bool
         var id: String { item.id }
     }
+
+
+    ///
+    /// @fcn        SavedCardsView.matches
+    /// @brief      Match saved content against the current search text
+    /// @details    Searches the supplied title and location so users can find items by either content or owner
+    ///             context.
+    ///
+    /// @param[in]  title     Display title or proposed title text
+    /// @param[in]  location  Human-readable owner and list location used for matching
+    ///
+    /// @return     (Bool) true when the current search matches the supplied title or location
+    ///
     private func matches(_ title: String, _ location: String) -> Bool {
         query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         (title + " " + location).localizedStandardContains(query.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -8196,6 +9349,17 @@ private struct SavedCardsView: View {
             return ActivityRecentResult(item: item, card: card, list: list, location: list.title + " · " + week.compactRangeTitle, week: week, isCurrent: current)
         }
     }
+
+
+    ///
+    /// @fcn        SavedCardsView.openRecent
+    /// @brief      Navigate to an owner-qualified recent Activity item
+    /// @details    Resolves the retained item against available workspace content and opens its current destination.
+    ///
+    /// @param[in]  result  Resolved search or Activity match to render or open
+    ///
+    /// @return     (Void) no return value
+    ///
     private func openRecent(_ result: ActivityRecentResult) {
         historicalTarget = result
     }
@@ -8775,6 +9939,17 @@ struct TodayPerspectiveSection: View {
         .accessibilityIdentifier("today.perspective")
     }
 
+
+    ///
+    /// @fcn        TodayPerspectiveSection.heading
+    /// @brief      Build a consistent perspective-section heading
+    /// @details    Combines the authored title and symbol using the shared lower-Today section styling.
+    ///
+    /// @param[in]  title   Display title or proposed title text
+    /// @param[in]  symbol  SF Symbol name used by the control
+    ///
+    /// @return     (some View) a consistent perspective-section heading
+    ///
     private func heading(_ title: String, symbol: String) -> some View {
         Label(title, systemImage: symbol).font(.headline)
             .accessibilityAddTraits(.isHeader)
@@ -8783,6 +9958,21 @@ struct TodayPerspectiveSection: View {
 
 /// Deliberate combination colors preserve hue differences that RGB averaging would erase.
 struct TodayFocusFilterColor {
+
+
+    ///
+    /// @fcn        TodayFocusFilterColor.rgb
+    /// @brief      Choose the distinct RGB color for a Focus-filter combination
+    /// @details    Uses the selected-filter bit combination and light or dark palette; returns nil for the unfiltered
+    ///             All state.
+    ///
+    /// @param[in]  upNext      Whether the Up Next filter is selected
+    /// @param[in]  important   Importance selections or the Important filter state
+    /// @param[in]  bookmarked  Whether the Bookmarked filter is selected
+    /// @param[in]  dark        Whether to use the dark-appearance palette
+    ///
+    /// @return     ((red: Double, green: Double, blue: Double)?) selected combination color, or nil for All
+    ///
     static func rgb(upNext: Bool, important: Bool, bookmarked: Bool, dark: Bool = false) -> (red: Double, green: Double, blue: Double)? {
         let selection = (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
         // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral.
@@ -8794,6 +9984,21 @@ struct TodayFocusFilterColor {
         return (Double((hex >> 16) & 255) / 255,
                 Double((hex >> 8) & 255) / 255, Double(hex & 255) / 255)
     }
+
+
+    ///
+    /// @fcn        TodayFocusFilterColor.color
+    /// @brief      Resolve the Focus combination color for display
+    /// @details    Converts the shared RGB selection into a SwiftUI color and uses the unfiltered fallback when no
+    ///             specific filter is active.
+    ///
+    /// @param[in]  upNext      Whether the Up Next filter is selected
+    /// @param[in]  important   Importance selections or the Important filter state
+    /// @param[in]  bookmarked  Whether the Bookmarked filter is selected
+    /// @param[in]  dark        Whether to use the dark-appearance palette
+    ///
+    /// @return     (Color) palette color for the selected filters, or the All-state fallback
+    ///
     static func color(upNext: Bool = false, important: Bool = false, bookmarked: Bool = false, dark: Bool) -> Color {
         guard let rgb = rgb(upNext: upNext, important: important, bookmarked: bookmarked, dark: dark) else { return dark ? .white : .black }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
@@ -8846,6 +10051,17 @@ struct TodayFocusSection: View {
 
     @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28
 
+
+    ///
+    /// @fcn        TodayFocusSection.beginsGroup
+    /// @brief      Check whether an entry begins a visible Focus section
+    /// @details    Requires section grouping and a known entry; the first entry or a change from the preceding
+    ///             section ID begins a group.
+    ///
+    /// @param[in]  entry  Focus entry carrying its card and section context
+    ///
+    /// @return     (Bool) true for the first visible entry or a changed section when grouping is enabled
+    ///
     private func beginsGroup(_ entry: TodayFocusEntry) -> Bool {
         guard groupsBySection, let index = entries.firstIndex(where: { $0.id == entry.id }) else { return false }
         return index == 0 || entries[index - 1].sectionID != entry.sectionID
@@ -9256,6 +10472,17 @@ struct LibraryDaySectionExamples: View {
     var query = ""
     let onPreview: (PlanningRoutineTemplate) -> Void
     let onApply: (PlanningRoutineTemplate) -> Void
+
+
+    ///
+    /// @fcn        LibraryDaySectionExamples.matches
+    /// @brief      Search the bundled named-day-section examples
+    /// @details    Matches template names, headings, and member text while retaining the predefined example order.
+    ///
+    /// @param[in]  query  User-entered search text
+    ///
+    /// @return     ([PlanningRoutineTemplate]) matching bundled day-section templates in catalog order
+    ///
     static func matches(query: String) -> [PlanningRoutineTemplate] {
         PlanningRoutineLibrary.sectionExamples.filter { template in
             LibraryStarterSearch.matches(query, texts: [template.name, "Day section examples colored sections routines dividers collapse move"]
@@ -9353,6 +10580,18 @@ struct WorkspaceLabelUsage: Identifiable {
     var id: String { label.id }
 }
 enum WorkspaceBrowseIndex {
+
+
+    ///
+    /// @fcn        WorkspaceBrowseIndex.owners
+    /// @brief      Combine active calendar and Library owners for browsing
+    /// @details    Builds the common owner projection used by list and label pickers without persisting changes.
+    ///
+    /// @param[in]  document  Retained document containing the operation's current workspace records
+    /// @param[in]  library   Personal owners to combine with calendar-backed weeks
+    ///
+    /// @return     ([PersonalCollection]) active browsable calendar and personal collection owners
+    ///
     static func owners(document: PlanningCalendarDocument?, library: [PersonalCollection]) -> [PersonalCollection] {
         (document?.weeks.map { week in
             var owner = week.collection
@@ -9360,11 +10599,35 @@ enum WorkspaceBrowseIndex {
             return owner
         } ?? []) + library.filter(\.isActive)
     }
+
+
+    ///
+    /// @fcn        WorkspaceBrowseIndex.lists
+    /// @brief      Build owner-qualified list destinations
+    /// @details    Projects browsable owner lists into references that retain both collection and list identity.
+    ///
+    /// @param[in]  owners  Canonical collection owners participating in the operation
+    ///
+    /// @return     ([WorkspaceListDestination]) owner-qualified active list destinations
+    ///
     static func lists(in owners: [PersonalCollection]) -> [WorkspaceListDestination] {
         owners.filter(\.isActive).flatMap { owner in
             owner.lists.filter { !$0.isArchived }.map { WorkspaceListDestination(owner: owner, list: $0) }
         }
     }
+
+
+    ///
+    /// @fcn        WorkspaceBrowseIndex.labels
+    /// @brief      Collect label usage across browsable workspace content
+    /// @details    Resolves card label IDs through the supplied catalog and retains owner context for each usage
+    ///             destination.
+    ///
+    /// @param[in]  owners   Canonical collection owners participating in the operation
+    /// @param[in]  catalog  Catalog used to resolve the referenced display metadata
+    ///
+    /// @return     ([WorkspaceLabelUsage]) resolved label-usage groups and their workspace destinations
+    ///
     static func labels(in owners: [PersonalCollection], catalog: LabelLibrary) -> [WorkspaceLabelUsage] {
         var matches: [String: [PlanningSearchResult]] = [:]
         for destination in lists(in: owners) {
@@ -9383,7 +10646,20 @@ enum WorkspaceBrowseIndex {
 }
 enum TodayListPins {
     static let key = "Plenact.TodayListShortcuts.v1"
-    /// Seed only a fresh installation; saved empty collections or shortcut selections stay empty.
+
+
+    ///
+    /// @fcn        TodayListPins.loadInitialCollections
+    /// @brief      Load the initial collections needed by Today shortcuts
+    /// @details    Reads the supplied preferences without discarding existing owner data and uses the established
+    ///             starter path when appropriate.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     ([PersonalCollection]) existing collections or successfully saved first-install tutorial owners
+    ///
+    /// @note       Seed only a fresh installation; saved empty collections or shortcut selections stay empty.
+    ///
     static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection] {
         let existing = PersonalCollectionStore.load(from: defaults)
         let savedKeys = ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
@@ -9401,13 +10677,48 @@ enum TodayListPins {
         }
     }
 
+
+    ///
+    /// @fcn        TodayListPins.normalized
+    /// @brief      Deduplicate and limit Today shortcut references
+    /// @details    Preserves the first occurrence of each owner-qualified list reference and retains at most six
+    ///             pins.
+    ///
+    /// @param[in]  pins  Owner-qualified Today shortcut list references
+    ///
+    /// @return     ([WorkspaceListReference]) first occurrences of up to six unique shortcut references
+    ///
     static func normalized(_ pins: [WorkspaceListReference]) -> [WorkspaceListReference] {
         var seen = Set<WorkspaceListReference>()
         return Array(pins.filter { seen.insert($0).inserted }.prefix(6))
     }
+
+
+    ///
+    /// @fcn        TodayListPins.decode
+    /// @brief      Decode stored Today shortcut references
+    /// @details    Returns the normalized decoded references or an empty selection if decoding fails; intentionally
+    ///             empty saved choices remain empty.
+    ///
+    /// @param[in]  data  Encoded input or media bytes
+    ///
+    /// @return     ([WorkspaceListReference]) decoded normalized pins, or an empty array if the data is unreadable
+    ///
     static func decode(_ data: Data) -> [WorkspaceListReference] {
         normalized((try? JSONDecoder().decode([WorkspaceListReference].self, from: data)) ?? [])
     }
+
+
+    ///
+    /// @fcn        TodayListPins.encode
+    /// @brief      Encode normalized Today shortcut references
+    /// @details    Serializes the normalized selection for preferences storage, using the helper's fallback bytes if
+    ///             encoding fails.
+    ///
+    /// @param[in]  pins  Owner-qualified Today shortcut list references
+    ///
+    /// @return     (Data) encoded normalized pins, or empty Data if encoding fails
+    ///
     static func encode(_ pins: [WorkspaceListReference]) -> Data {
         (try? JSONEncoder().encode(normalized(pins))) ?? Data()
     }
@@ -9418,6 +10729,20 @@ struct TodayShortcutEditor: View {
     let owners: [PersonalCollection]
     let onSave: ([WorkspaceListReference]) -> Void
     @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        TodayShortcutEditor.init
+    /// @brief      Initialize the Today shortcut editor with normalized pins
+    /// @details    Seeds the editable pin selection through the shared normalization helper and retains the available
+    ///             owners and save callback.
+    ///
+    /// @param[in]  pins    Owner-qualified Today shortcut list references
+    /// @param[in]  owners  Canonical collection owners participating in the operation
+    /// @param[in]  onSave  Checked save callback; its result or thrown error determines whether editing can finish
+    ///
+    /// @return     (TodayShortcutEditor) initialized instance
+    ///
     init(pins: [WorkspaceListReference], owners: [PersonalCollection], onSave: @escaping ([WorkspaceListReference]) -> Void) {
         _pins = State(initialValue: TodayListPins.normalized(pins))
         self.owners = owners; self.onSave = onSave
@@ -9550,6 +10875,18 @@ private struct PinnedListDayContent: View {
     @Environment(\.planningCalendarAccess) private var access
     @State private var labels = LabelLibraryStore.load()
     @State private var reverting = false
+
+
+    ///
+    /// @fcn        PinnedListDayContent.save
+    /// @brief      Save edits to a pinned list through its canonical owner
+    /// @details    Uses calendar-week or personal-collection access as appropriate and returns false when the owner
+    ///             cannot be saved.
+    ///
+    /// @param[in]  collection  Personal collection supplying the owner context
+    ///
+    /// @return     (Bool) true after the canonical owner accepts the edited collection; false otherwise
+    ///
     private func save(_ collection: PersonalCollection) -> Bool {
         if var week {
             week.collection = collection
@@ -9625,6 +10962,17 @@ private struct TodayFocusCardDetailView: View {
     let currentUserName: String
     let onDelete: (Int) -> Bool
 
+
+    ///
+    /// @fcn        TodayFocusCardDetailView.keyboardNavigation
+    /// @brief      Build keyboard navigation among current Focus entries
+    /// @details    Resolves previous and next candidates from the live Focus context before changing the detail
+    ///             selection.
+    ///
+    /// @param[in]  card  Card or note being inspected or changed
+    ///
+    /// @return     (CardKeyboardNavigation) available previous and next actions scoped to the current Focus entries
+    ///
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation {
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
         return CardKeyboardNavigation(

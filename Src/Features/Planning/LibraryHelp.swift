@@ -13,6 +13,17 @@ struct PlenactHelpArticle: Identifiable {
     let symbol: String
     let sections: [PlenactHelpSection]
     var opensPlan = false
+
+
+    ///
+    /// @fcn        PlenactHelpArticle.matches
+    /// @brief      Match a help article against a search query
+    /// @details    Uses the article's searchable text and normalized query without changing the help catalog.
+    ///
+    /// @param[in]  query  User-entered search text
+    ///
+    /// @return     (Bool) true when the help article matches the normalized query
+    ///
     func matches(_ query: String) -> Bool {
         let text = ([group, title, summary] + sections.flatMap { [$0.title] + $0.paragraphs }).joined(separator: " ")
         return query.split(whereSeparator: \.isWhitespace).allSatisfy { text.localizedStandardContains(String($0)) }
@@ -20,6 +31,18 @@ struct PlenactHelpArticle: Identifiable {
 }
 enum PlenactHelpCatalog {
     static let groups = ["Plan a life that matters", "Make Plenact your own", "Your Planning Rhythm", "Your first week with v1.0"]
+
+
+    ///
+    /// @fcn        PlenactHelpCatalog.section
+    /// @brief      Construct a help section from authored paragraphs
+    /// @details    Splits the supplied text into the paragraph representation used by the article view.
+    ///
+    /// @param[in]  title       Display title or proposed title text
+    /// @param[in]  paragraphs  Authored multiline paragraph text used to construct help content
+    ///
+    /// @return     (PlenactHelpSection) help section containing the supplied title and parsed paragraphs
+    ///
     private static func section(_ title: String, _ paragraphs: String...) -> PlenactHelpSection { PlenactHelpSection(title: title, paragraphs: paragraphs) }
     static let articles: [PlenactHelpArticle] = [
         .init(id: "life", group: groups[0], title: "Use the planning system for your life", summary: "Turn what matters into a realistic next step", symbol: "sun.horizon", sections: [
@@ -96,6 +119,17 @@ enum PlenactHelpCatalog {
             section("Recovering unavailable links", "An archived, removed, or cross-Board moved source can leave an unavailable priority link. The saved title remains as context. Find the current original and choose it again; remove the old link when appropriate. Removing a link alone does not delete the source.")
         ])
     ]
+
+
+    ///
+    /// @fcn        PlenactHelpCatalog.results
+    /// @brief      Filter the help catalog by the current query
+    /// @details    Uses each article's shared matching rules and preserves catalog order.
+    ///
+    /// @param[in]  query  User-entered search text
+    ///
+    /// @return     ([PlenactHelpArticle]) matching articles in help-catalog order
+    ///
     static func results(for query: String) -> [PlenactHelpArticle] { articles.filter { $0.matches(query) } }
 }
 

@@ -188,11 +188,35 @@ enum ProfileAvatarPhotoStore {
 /// Planning preferences are available even before a local profile is created.
 enum PlanPreferencesStore {
     static let key = "Plenact.PlanPreferences.v1"
+
+
+    ///
+    /// @fcn        PlanPreferencesStore.load
+    /// @brief      Load display preferences without creating new storage
+    /// @details    Decodes the stored preference value when valid and otherwise returns the established defaults.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (LocalProfilePreferences) decoded display preferences, or the established defaults when
+    ///             unavailable
+    ///
     static func load(from defaults: UserDefaults = .standard) -> LocalProfilePreferences {
         if let data = defaults.data(forKey: key),
            let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: data) { return value }
         return LocalProfileStore.load(from: defaults)?.preferences ?? LocalProfilePreferences()
     }
+
+
+    ///
+    /// @fcn        PlanPreferencesStore.save
+    /// @brief      Persist the supplied display preferences
+    /// @details    Encodes the complete preference value before writing it to the configured preferences key.
+    ///
+    /// @param[in]  value     Value to normalize, encode, or save as described above
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func save(_ value: LocalProfilePreferences, to defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: key)

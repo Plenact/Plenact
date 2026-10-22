@@ -22,16 +22,50 @@ struct PlanningTemplateLibraryRows: View {
     @State private var applying: PlanningRoutineTemplate?
     @State private var deleting: PlanningRoutineTemplate?
     @State private var message: String?
+
+
+    ///
+    /// @fcn        PlanningTemplateLibraryRows.reload
+    /// @brief      Reload the retained routine-template library
+    /// @details    Refreshes visible library state from the checked store and reports load failures through the
+    ///             view's error state.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func reload() {
         do { library = try PlanningRoutineStore.load() }
         catch { library = nil; message = "Templates couldn't be read. Your saved data has been retained. Please retry." }
     }
+
+
+    ///
+    /// @fcn        PlanningTemplateLibraryRows.update
+    /// @brief      Apply and save a library edit against its baseline
+    /// @details    Mutates a working copy through the supplied closure and publishes it only after the checked
+    ///             routine-library save succeeds.
+    ///
+    /// @param[in]  change  Mutation to apply to a working library copy before checked saving
+    ///
+    /// @return     (Bool) true after the edited library saves successfully; false when loading or saving fails
+    ///
     @discardableResult private func update(_ change: (inout PlanningRoutineLibrary) -> Void) -> Bool {
         guard let baseline = library else { return false }
         var next = baseline; change(&next)
         do { try PlanningRoutineStore.save(next, baseline: baseline); library = next; return true }
         catch { message = "Templates couldn't be saved, or changed elsewhere. Close this draft and retry after reloading."; return false }
     }
+
+
+    ///
+    /// @fcn        PlanningTemplateLibraryRows.capture
+    /// @brief      Capture the requested day or week as a routine
+    /// @details    Builds a reusable template from the current planning context and adds it through the checked
+    ///             library-update path.
+    ///
+    /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
+    ///
+    /// @return     (Void) no return value
+    ///
     private func capture(_ kind: PlanningRoutineTemplate.Kind) {
         guard let access, let week = access.document.week(for: sourceDate) else {
             message = "There is no saved plan for that date yet. Open and plan its week first."; return
@@ -130,6 +164,19 @@ struct PlanningTemplateEditor: View {
     @State var template: PlanningRoutineTemplate
     let onSave: (PlanningRoutineTemplate) -> Bool
     private let original: PlanningRoutineTemplate
+
+
+    ///
+    /// @fcn        PlanningTemplateEditor.init
+    /// @brief      Create an editable copy of a routine template
+    /// @details    Retains the original template for comparison and the checked save callback while seeding local
+    ///             draft state.
+    ///
+    /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
+    /// @param[in]  onSave    Save callback returning true only when the owner accepts the edited value
+    ///
+    /// @return     (PlanningTemplateEditor) initialized instance
+    ///
     init(template: PlanningRoutineTemplate, onSave: @escaping (PlanningRoutineTemplate) -> Bool) {
         _template = State(initialValue: template)
         self.original = template
@@ -193,6 +240,17 @@ private struct PlanningTemplateListEditor: View {
             }
         }
     }
+
+
+    ///
+    /// @fcn        PlanningTemplateListEditor.add
+    /// @brief      Append a template item with the chosen presentation
+    /// @details    Creates an editable template entry in the working list for later saving and application.
+    ///
+    /// @param[in]  presentation  Card, note, or board presentation selected by the caller
+    ///
+    /// @return     (Void) no return value
+    ///
     private func add(_ presentation: ItemPresentation) {
         let next = ((allLists.flatMap(\.allCards) + list.cards).map(\.id).max() ?? -1) + 1
         list.cards.append(KanbanCard(id: next, word: presentation == .note ? "New note" : "New card", listTitle: list.title,
@@ -271,6 +329,16 @@ struct PlanningTemplateApplyView: View {
     @State private var exampleImportantIDs: Set<Int> = []
     @State private var message: String?
     @State private var confirmsReplace = false
+
+
+    ///
+    /// @fcn        PlanningTemplateApplyView.prepare
+    /// @brief      Build a preview of applying the selected routine
+    /// @details    Computes the target week and example importance mapping without writing the preview into the
+    ///             calendar.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func prepare() {
         guard let access else { preview = nil; return }
         baseline = access.document.week(for: date)
@@ -281,6 +349,16 @@ struct PlanningTemplateApplyView: View {
         }
         catch { preview = nil; message = "This template couldn't be prepared. Your plans have not changed." }
     }
+
+
+    ///
+    /// @fcn        PlanningTemplateApplyView.apply
+    /// @brief      Commit the prepared template through checked calendar access
+    /// @details    Confirms the source baseline still matches and uses the example-aware save callback when
+    ///             importance markers must accompany the applied week.
+    ///
+    /// @return     (Void) no return value
+    ///
     private func apply() {
         guard let access, let preview else { return }
         let persisted: PlanningCalendarDocument?
@@ -349,6 +427,18 @@ struct PlanningTemplateApplyView: View {
 
 /// Token matching is shared by saved routines and all built-in starting points.
 enum LibraryStarterSearch {
+
+
+    ///
+    /// @fcn        LibraryStarterSearch.matches
+    /// @brief      Match a starter against a normalized query
+    /// @details    Searches the supplied descriptive strings and treats an empty query as an unfiltered match.
+    ///
+    /// @param[in]  query  User-entered search text
+    /// @param[in]  texts  Searchable starter descriptions to match against the query
+    ///
+    /// @return     (Bool) true for an empty query or matching supplied descriptive text
+    ///
     static func matches(_ query: String, texts: [String]) -> Bool {
         let content = texts.joined(separator: " ")
         return query.split(whereSeparator: \.isWhitespace).allSatisfy {
@@ -359,6 +449,22 @@ enum LibraryStarterSearch {
 
 /// Use the same item factory as Quick capture, reserving archived identities and retaining the live week.
 enum LibraryTemplateCapture {
+
+
+    ///
+    /// @fcn        LibraryTemplateCapture.adding
+    /// @brief      Build a week containing a new reusable capture
+    /// @details    Uses the full capture content to extend a copy of the source week for subsequent template
+    ///             creation.
+    ///
+    /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
+    /// @param[in]  source   Original dated week to extend without mutating it
+    ///
+    /// @return     (DatedPlanningWeek) copied source week containing the full captured content for reusable-template
+    ///             creation
+    /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
+    ///             dependencies propagate unless handled within this operation.
+    ///
     static func adding(_ capture: QuickCaptureSubmission, to source: DatedPlanningWeek) throws -> DatedPlanningWeek {
         guard let index = source.collection.lists.firstIndex(where: { $0.id == capture.listID && !$0.isArchived }),
               capture.schedule?.isValid() != false else { throw CocoaError(.validationMissingMandatoryProperty) }
@@ -383,6 +489,18 @@ struct LibraryQuickTemplateComposer: View {
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var originalWeek: DatedPlanningWeek?
+
+
+    ///
+    /// @fcn        LibraryQuickTemplateComposer.save
+    /// @brief      Save a captured card or note as a routine template
+    /// @details    Builds and persists the reusable template through the checked library store and returns false with
+    ///             feedback on failure.
+    ///
+    /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
+    ///
+    /// @return     (Bool) true after the captured reusable template is saved; false on rejection or failure
+    ///
     private func save(_ capture: QuickCaptureSubmission) -> Bool {
         guard let access, let originalWeek,
               let current = access.document.weeks.first(where: { $0.id == originalWeek.id }) else { return false }

@@ -25,6 +25,15 @@ struct ReviewRhythmPreferences: Codable, Equatable {
     var weeklyWeekday = 1 // Calendar weekday: Sunday.
     var dailyNotifications = false
     var weeklyNotifications = false
+
+
+    ///
+    /// @fcn        ReviewRhythmPreferences.normalized
+    /// @brief      Clamp review reminder choices to supported ranges
+    /// @details    Normalizes day and minute values before they are used for invitations or notification scheduling.
+    ///
+    /// @return     (ReviewRhythmPreferences) constructed value
+    ///
     func normalized() -> Self {
         var copy = self
         if !(0..<1440).contains(copy.dailyMinutes) { copy.dailyMinutes = 1230 }
@@ -36,10 +45,36 @@ struct ReviewRhythmPreferences: Codable, Equatable {
 enum ReviewRhythmStore {
     static let key = "Plenact.ReviewRhythm.v1"
     static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1"
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.load
+    /// @brief      Read review invitation preferences
+    /// @details    Decodes the stored value and normalizes it, falling back to defaults when no valid value is
+    ///             available.
+    ///
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (ReviewRhythmPreferences) normalized decoded review timing or default invitation preferences
+    ///
     static func load(from defaults: UserDefaults = .standard) -> ReviewRhythmPreferences {
         guard let data = defaults.data(forKey: key), let value = try? JSONDecoder().decode(ReviewRhythmPreferences.self, from: data) else { return ReviewRhythmPreferences() }
         return value.normalized()
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.save
+    /// @brief      Persist normalized review invitation preferences
+    /// @details    Encodes the normalized value before replacing the preferences key.
+    ///
+    /// @param[in]  value     Value to normalize, encode, or save as described above
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
+    ///             propagate unless handled within this operation.
+    ///
     static func save(_ value: ReviewRhythmPreferences, to defaults: UserDefaults = .standard) throws {
         if defaults.object(forKey: key) != nil {
             guard let data = defaults.data(forKey: key) else { throw CocoaError(.fileReadCorruptFile) }
@@ -47,10 +82,41 @@ enum ReviewRhythmStore {
         }
         defaults.set(try JSONEncoder().encode(value.normalized()), forKey: key)
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.periodID
+    /// @brief      Identify the daily or weekly review period
+    /// @details    Uses local calendar-day or week keys so invitation deferrals belong to the intended review period.
+    ///
+    /// @param[in]  kind      Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    ///
+    /// @return     (String) local daily or weekly period key for the requested review kind
+    ///
     static func periodID(_ kind: ReviewRhythmKind, date: Date, calendar: Calendar) -> String {
         let key = kind == .daily ? PlanningDate.key(date, calendar: calendar) : PlanningDate.weekKey(date, calendar: calendar)
         return kind.rawValue + "|" + key + "|" + calendar.timeZone.identifier + "|" + String(calendar.firstWeekday)
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.isDue
+    /// @brief      Check whether a review invitation should be shown now
+    /// @details    Combines enabled timing, period completion, and an optional deferral rather than automatically
+    ///             moving unfinished work.
+    ///
+    /// @param[in]  kind           Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  now            Reference time used instead of an implicit clock read
+    /// @param[in]  preferences    User display and creation preferences
+    /// @param[in]  calendar       Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  completed      Whether the represented review period is already complete
+    /// @param[in]  deferredUntil  Optional time before which the invitation should remain hidden
+    ///
+    /// @return     (Bool) true only when the enabled invitation time is reached and neither completion nor deferral
+    ///             suppresses it
+    ///
     static func isDue(_ kind: ReviewRhythmKind, now: Date, preferences: ReviewRhythmPreferences,
                       calendar: Calendar, completed: Bool, deferredUntil: Date?) -> Bool {
         guard !completed, deferredUntil.map({ $0 <= now }) ?? true else { return false }
@@ -61,6 +127,22 @@ enum ReviewRhythmStore {
         case .weekly: return value.weeklyInvitations && calendar.component(.weekday, from: now) == value.weeklyWeekday && minutes >= value.weeklyMinutes
         }
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.deferInvitation
+    /// @brief      Record a review invitation deferral for its period
+    /// @details    Stores the period identifier and requested future invitation time in the supplied preferences
+    ///             store.
+    ///
+    /// @param[in]  kind      Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  date      Represented date for the operation
+    /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  until     Time at which the review invitation becomes eligible again
+    /// @param[in]  defaults  Preferences store used for this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     static func deferInvitation(_ kind: ReviewRhythmKind, date: Date, calendar: Calendar,
                                 until: Date, defaults: UserDefaults = .standard) {
         var values = (defaults.data(forKey: dismissalsKey).flatMap { try? JSONDecoder().decode([String: Date].self, from: $0) }) ?? [:]
@@ -74,6 +156,18 @@ enum ReviewRhythmStore {
         }
         if let data = try? JSONEncoder().encode(values) { defaults.set(data, forKey: dismissalsKey) }
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmStore.notificationRequests
+    /// @brief      Build enabled daily and weekly notification requests
+    /// @details    Uses normalized review timing and stable identifiers to produce repeating calendar notifications
+    ///             without requesting permission itself.
+    ///
+    /// @param[in]  value  Value to normalize, encode, or save as described above
+    ///
+    /// @return     ([UNNotificationRequest]) repeating requests for the enabled daily and weekly reminders
+    ///
     static func notificationRequests(_ value: ReviewRhythmPreferences) -> [UNNotificationRequest] {
         let value = value.normalized()
         return ReviewRhythmKind.allCases.compactMap { kind in
@@ -100,8 +194,32 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     @Published var pending: ReviewRhythmRoute?
     private var isReconciling = false
     private var needsReconcile = false
+
+
+    ///
+    /// @fcn        ReviewRhythmNotifications.install
+    /// @brief      Install the review notification-center delegate
+    /// @details    Makes this notification handler the delegate for the current notification center.
+    ///
+    /// @return     (Void) no return value
+    ///
     func install() { UNUserNotificationCenter.current().delegate = self }
-    /// Permission is requested only after an explicit Save with a reminder switch enabled.
+
+
+    ///
+    /// @fcn        ReviewRhythmNotifications.synchronize
+    /// @brief      Reconcile enabled review reminders with notification permission
+    /// @details    Requests authorization only for an explicit permitted action, serializes overlapping
+    ///             reconciliation passes, rereads preferences, and replaces the stable daily and weekly requests when
+    ///             authorized.
+    ///
+    /// @param[in]  requestPermission  Whether this explicit user action may request notification authorization
+    ///
+    /// @return     (Bool) true when reminder synchronization succeeds under the current authorization state
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    ///
+    /// @note       Permission is requested only after an explicit Save with a reminder switch enabled.
+    ///
     func synchronize(requestPermission: Bool = false) async throws -> Bool {
         let center = UNUserNotificationCenter.current()
         let preferences = ReviewRhythmStore.load()
@@ -125,6 +243,20 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         } while needsReconcile
         return !wantsNotifications || status == .authorized || status == .provisional || status == .ephemeral
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmNotifications.userNotificationCenter
+    /// @brief      Handle a review notification-center callback
+    /// @details    Routes notification responses to the matching review or supplies foreground presentation options,
+    ///             and completes the system callback.
+    ///
+    /// @param[in]  center             Notification center delivering the delegate callback
+    /// @param[in]  response           User response to a delivered review notification
+    /// @param[in]  completionHandler  System callback that must be completed after notification handling
+    ///
+    /// @return     (Void) no return value
+    ///
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                            withCompletionHandler completionHandler: @escaping () -> Void) {
         if let raw = response.notification.request.content.userInfo["plenactReview"] as? String,
@@ -134,6 +266,20 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         }
         completionHandler()
     }
+
+
+    ///
+    /// @fcn        ReviewRhythmNotifications.userNotificationCenter
+    /// @brief      Handle a review notification-center callback
+    /// @details    Routes notification responses to the matching review or supplies foreground presentation options,
+    ///             and completes the system callback.
+    ///
+    /// @param[in]  center             Notification center delivering the delegate callback
+    /// @param[in]  notification       Review notification delivered while the application is active
+    /// @param[in]  completionHandler  System callback that must be completed after notification handling
+    ///
+    /// @return     (Void) no return value
+    ///
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound])
@@ -151,6 +297,19 @@ struct ReviewRhythmPanel: View {
     @AppStorage(DailyPlanStore.key) private var dailyData = Data()
     @AppStorage(WeeklyReviewStore.key) private var weeklyData = Data()
     private var calendar: Calendar { access?.document.calendar ?? .current }
+
+
+    ///
+    /// @fcn        ReviewRhythmPanel.due
+    /// @brief      Determine whether this panel should invite a review
+    /// @details    Combines the current period's saved completion and deferral state with the shared review-rhythm
+    ///             timing rules.
+    ///
+    /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
+    /// @param[in]  now   Reference time used instead of an implicit clock read
+    ///
+    /// @return     (Bool) true if the current review period is eligible for an invitation
+    ///
     private func due(_ kind: ReviewRhythmKind, at now: Date) -> Bool {
         let completed: Bool
         if kind == .daily {
@@ -216,6 +375,18 @@ struct ReviewRhythmSettingsView: View {
     @State private var preferences = ReviewRhythmStore.load()
     @State private var saving = false
     @State private var error: String?
+
+
+    ///
+    /// @fcn        ReviewRhythmSettingsView.time
+    /// @brief      Expose a stored minute-of-day setting as a date binding
+    /// @details    Converts between the selected time and the review preference key path for the settings time
+    ///             picker.
+    ///
+    /// @param[in]  key  Key path selecting the editable preference or optional contextual callback
+    ///
+    /// @return     (Binding<Date>) date binding converting the stored review minute-of-day value for the time picker
+    ///
     private func time(_ key: WritableKeyPath<ReviewRhythmPreferences, Int>) -> Binding<Date> {
         Binding(get: {
             Calendar.current.date(bySettingHour: preferences[keyPath: key] / 60,

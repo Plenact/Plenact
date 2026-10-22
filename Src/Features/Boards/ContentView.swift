@@ -2113,6 +2113,7 @@ struct ContentView: View {
     /// Navigation stack path for card-detail destinations.
     @State private var listToCopy: KanbanList?
     @State private var listToMove: KanbanList?
+    @State private var listToRename: KanbanList?
     @Environment(\.planningDirectItemReturn) private var directItemReturn
     @State private var openedDirectItem = false
     @State private var navigationPath = NavigationPath()                                /* Card-detail destinations in the Board navigation stack       */
@@ -2632,7 +2633,8 @@ struct ContentView: View {
     /// @fcn        ContentView.addList
     /// @brief      Append a uniquely named empty list to the board
     /// @details    Allocates an ID beyond active and archived lists, avoids case-insensitive title collisions, and
-    ///             makes the new list the visible target.
+    ///             makes the new list the visible target. Presents its metadata editor with the title focused and
+    ///             selected so typing immediately replaces the generated name.
     ///
     /// @return     (Void) no return value
     ///
@@ -2649,9 +2651,11 @@ struct ContentView: View {
             suffix  += 1
         }
 
-        lists.append(KanbanList(id: nextListID, title: newTitle, cards: []))
+        let newList = KanbanList(id: nextListID, title: newTitle, cards: [])
+        lists.append(newList)
         visibleListID = nextListID
         boardTargetListID = nextListID
+        listToRename = newList
     }
 
 
@@ -4021,6 +4025,13 @@ struct ContentView: View {
                     .environment(\.workspaceBottomBarHeight, 0)
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
+            }
+            .sheet(item: $listToRename) { list in
+                ListInfoEditorSheet(list: list, focusesTitleOnAppear: true) { title, subtitle, presentation in
+                    editBoardList(list.id, title: title, subtitle: subtitle,
+                                  newItemPresentation: presentation, in: &lists)
+                }
+                .databaseActivityOverlay()
             }
             .sheet(item: $listToMove) { source in
                 MoveListDestinationSheet(source: source, access: planningCalendarAccess, currentID: personalCollectionID)
@@ -6246,10 +6257,164 @@ func editBoardList(_ listID: Int, title: String, subtitle: String, newItemPresen
 }
 
 
+
+
+/// Native title input keeps initial selection and keyboard submission under the editor's control.
+private struct ListTitleField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var focused: Bool
+    let selectsInitialTitle: Bool
+    let onNext: () -> Void
+
+
+    ///
+    /// @fcn        ListTitleField.makeCoordinator
+    /// @brief      Create the delegate for list-title text and keyboard events
+    /// @details    Retains the current bindings and tracks whether the initial generated title was selected.
+    ///
+    /// @return     (Coordinator) delegate retained across native view updates
+    ///
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+
+    ///
+    /// @fcn        ListTitleField.makeUIView
+    /// @brief      Create the title input with a visible Next return key
+    /// @details    Uses native text selection, Dynamic Type, and sentence capitalization. Text changes update the
+    ///             draft through the coordinator; creating the field never saves the list.
+    ///
+    /// @param[in]  context  SwiftUI lifecycle context containing the title delegate
+    ///
+    /// @return     (UITextField) accessible single-line list-title editor
+    ///
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField()
+        field.placeholder = "List title"
+        field.font = .preferredFont(forTextStyle: .body)
+        field.adjustsFontForContentSizeCategory = true
+        field.autocapitalizationType = .sentences
+        field.returnKeyType = .next
+        field.accessibilityLabel = "List title"
+        field.accessibilityIdentifier = "list-editor-title"
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+        return field
+    }
+
+
+    ///
+    /// @fcn        ListTitleField.updateUIView
+    /// @brief      Synchronize draft text and requested title focus
+    /// @details    Updates changed text only and defers first-responder reconciliation until after SwiftUI's update.
+    ///             The deferred callback reads the coordinator's latest parent so Next cannot restore stale focus.
+    ///
+    /// @param[in]  field    Existing native title field
+    /// @param[in]  context  SwiftUI lifecycle context containing the current delegate
+    ///
+    /// @return     (Void) no return value
+    ///
+    func updateUIView(_ field: UITextField, context: Context) {
+        context.coordinator.parent = self
+        if field.text != text { field.text = text }
+        let coordinator = context.coordinator
+        DispatchQueue.main.async { [weak field, weak coordinator] in
+            guard let field, let coordinator, field.window != nil else { return }
+            if coordinator.parent.focused, !field.isFirstResponder { field.becomeFirstResponder() }
+            else if !coordinator.parent.focused, field.isFirstResponder { field.resignFirstResponder() }
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: ListTitleField
+        private var selectedInitialTitle = false
+
+
+        ///
+        /// @fcn        ListTitleField.Coordinator.init
+        /// @brief      Retain the title editor's bindings and Next action
+        /// @details    Later native updates replace this parent value with the latest SwiftUI state.
+        ///
+        /// @param[in]  parent  Title editor supplying draft and focus bindings
+        ///
+        /// @return     (Coordinator) initialized text-field delegate
+        ///
+        init(_ parent: ListTitleField) { self.parent = parent }
+
+
+        ///
+        /// @fcn        ListTitleField.Coordinator.changed
+        /// @brief      Publish native title edits into the working draft
+        /// @details    Normalizes an absent text-field value to an empty title; persistence still requires Save.
+        ///
+        /// @param[in]  field  Native title field delivering an editing-change event
+        ///
+        /// @return     (Void) no return value
+        ///
+        @objc func changed(_ field: UITextField) { parent.text = field.text ?? "" }
+
+
+        ///
+        /// @fcn        ListTitleField.Coordinator.textFieldDidBeginEditing
+        /// @brief      Focus the title and select its initial generated name once
+        /// @details    Only new-list editors request selection. Existing-list editing and subsequent focus changes
+        ///             retain normal caret behavior; deferred selection requires the field to remain first responder.
+        ///
+        /// @param[in]  field  Native title field that began editing
+        ///
+        /// @return     (Void) no return value
+        ///
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            if !parent.focused { parent.focused = true }
+            guard parent.selectsInitialTitle, !selectedInitialTitle else { return }
+            selectedInitialTitle = true
+            DispatchQueue.main.async { [weak field] in
+                guard let field, field.isFirstResponder else { return }
+                field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument)
+            }
+        }
+
+
+        ///
+        /// @fcn        ListTitleField.Coordinator.textFieldDidEndEditing
+        /// @brief      Clear title focus when native editing ends
+        /// @details    Leaves the parent unchanged if it already advanced focus to the subtitle.
+        ///
+        /// @param[in]  field  Native title field that ended editing
+        ///
+        /// @return     (Void) no return value
+        ///
+        func textFieldDidEndEditing(_ field: UITextField) {
+            if parent.focused { parent.focused = false }
+        }
+
+
+        ///
+        /// @fcn        ListTitleField.Coordinator.textFieldShouldReturn
+        /// @brief      Advance from the title to the subtitle without saving
+        /// @details    Invokes the editor's Next action and suppresses default return behavior so the title remains
+        ///             single-line and focus transfer belongs to the parent editor.
+        ///
+        /// @param[in]  field  Native title field whose Next key was pressed
+        ///
+        /// @return     (Bool) false to suppress the text field's default Return handling
+        ///
+        func textFieldShouldReturn(_ field: UITextField) -> Bool {
+            parent.onNext()
+            return false
+        }
+    }
+}
+
+
 /// Edits List display text without saving until the owner accepts the draft.
 struct ListInfoEditorSheet: View {
 
     let onSave: (String, String, ItemPresentation) -> Bool
+    private let focusesTitleOnAppear: Bool
+    @State private var titleFocused = false
+    @FocusState private var subtitleFocused: Bool
     @State private var defaultPresentation: ItemPresentation
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
@@ -6260,15 +6425,16 @@ struct ListInfoEditorSheet: View {
     /// @fcn        ListInfoEditorSheet.init
     /// @brief      Initialize list metadata editing with a save callback
     /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
-    ///             presentation-aware initializer.
+    ///             presentation-aware initializer. New-list callers can request initial title focus and selection.
     ///
-    /// @param[in]  list    List supplying the current content and metadata
-    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    /// @param[in]  list                  List supplying the current content and metadata
+    /// @param[in]  focusesTitleOnAppear  Whether to raise the keyboard and select the initial title on opening
+    /// @param[in]  onSave                Save callback returning true only when the owner accepts the edited value
     ///
     /// @return     (ListInfoEditorSheet) initialized instance
     ///
-    init(list: KanbanList, onSave: @escaping (String, String) -> Bool) {
-        self.init(list: list) { title, subtitle, _ in onSave(title, subtitle) }
+    init(list: KanbanList, focusesTitleOnAppear: Bool = false, onSave: @escaping (String, String) -> Bool) {
+        self.init(list: list, focusesTitleOnAppear: focusesTitleOnAppear) { title, subtitle, _ in onSave(title, subtitle) }
     }
 
 
@@ -6276,14 +6442,16 @@ struct ListInfoEditorSheet: View {
     /// @fcn        ListInfoEditorSheet.init
     /// @brief      Initialize list metadata editing with a save callback
     /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
-    ///             presentation-aware initializer.
+    ///             presentation-aware initializer. New-list callers can request initial title focus and selection.
     ///
-    /// @param[in]  list    List supplying the current content and metadata
-    /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
+    /// @param[in]  list                  List supplying the current content and metadata
+    /// @param[in]  focusesTitleOnAppear  Whether to raise the keyboard and select the initial title on opening
+    /// @param[in]  onSave                Save callback returning true only when the owner accepts the edited value
     ///
     /// @return     (ListInfoEditorSheet) initialized instance
     ///
-    init(list: KanbanList, onSave: @escaping (String, String, ItemPresentation) -> Bool) {
+    init(list: KanbanList, focusesTitleOnAppear: Bool = false, onSave: @escaping (String, String, ItemPresentation) -> Bool) {
+        self.focusesTitleOnAppear = focusesTitleOnAppear
         _defaultPresentation = State(initialValue: list.newItemPresentation)
         self.onSave = onSave
         _title = State(initialValue: list.title)
@@ -6295,12 +6463,14 @@ struct ListInfoEditorSheet: View {
         NavigationStack {
             Form {
                 Section("Title") {
-                    TextField("List title", text: $title).textInputAutocapitalization(.sentences)
-                        .accessibilityIdentifier("list-editor-title")
+                    ListTitleField(text: $title, focused: $titleFocused,
+                        selectsInitialTitle: focusesTitleOnAppear,
+                        onNext: { titleFocused = false; subtitleFocused = true })
                 }
                 Section {
                     TextField("Subtitle", text: $subtitle, axis: .vertical).textInputAutocapitalization(.sentences)
                         .lineLimit(2...5)
+                        .focused($subtitleFocused)
                         .accessibilityIdentifier("list-editor-subtitle")
                 } header: {
                     Text("Subtitle")
@@ -6318,6 +6488,15 @@ struct ListInfoEditorSheet: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+            .task {
+                if focusesTitleOnAppear { titleFocused = true }
+            }
+            .onChange(of: titleFocused) { _, focused in
+                if focused { subtitleFocused = false }
+            }
+            .onChange(of: subtitleFocused) { _, focused in
+                if focused { titleFocused = false }
             }
             .navigationTitle("Edit list")
             .navigationBarTitleDisplayMode(.inline)

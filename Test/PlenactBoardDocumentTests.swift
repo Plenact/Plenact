@@ -9694,6 +9694,76 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle
+    /// @brief      Start naming a new Board list immediately and advance to its subtitle
+    /// @details    Mounts the new-list editor, checks native first-responder and full-title selection, types a
+    ///             replacement name, and invokes the keyboard return delegate. Focus changes must not call Save
+    ///             or mutate the supplied list, and the title's return key must be labeled Next.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     XCTest setup failures or cancelled fixture delays
+    ///
+    @MainActor
+    func testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle() async throws {
+        var list = KanbanList(id: 7, title: "New List 2", cards: [])
+        list.subtitleOverride = "Initial subtitle"
+        let original = list
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer {
+            window.endEditing(true)
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+
+
+        ///
+        /// @fcn        testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle.descendants
+        /// @brief      Collect the native descendants of the hosted editor
+        /// @details    Includes the supplied view so callers can find both single-line fields and the multiline
+        ///             subtitle editor without relying on private SwiftUI container classes.
+        ///
+        /// @param[in]  view  Native subtree to inspect
+        ///
+        /// @return     ([UIView]) root and all descendant views in traversal order
+        ///
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        var saveCalls = 0
+        let host = UIHostingController(rootView: ListInfoEditorSheet(list: list, focusesTitleOnAppear: true) { _, _, _ in
+            saveCalls += 1
+            return true
+        })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(350))
+        let titleField = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextField }.first { $0.text == list.title })
+        XCTAssertTrue(titleField.isFirstResponder)
+        XCTAssertEqual(titleField.returnKeyType, .next)
+        let selection = try XCTUnwrap(titleField.selectedTextRange)
+        XCTAssertEqual(titleField.text(in: selection), list.title)
+        titleField.insertText("Roadmap")
+        try await Task.sleep(for: .milliseconds(60))
+        XCTAssertEqual(titleField.text, "Roadmap")
+        _ = titleField.delegate?.textFieldShouldReturn?(titleField)
+        try await Task.sleep(for: .milliseconds(150))
+        let subtitle = try XCTUnwrap(descendants(host.view).first { view in
+            (view as? UITextField)?.text == list.subtitle || (view as? UITextView)?.text == list.subtitle
+        })
+        XCTAssertTrue(subtitle.isFirstResponder)
+        XCTAssertFalse(titleField.isFirstResponder)
+        XCTAssertEqual(titleField.text, "Roadmap")
+        XCTAssertEqual(saveCalls, 0)
+        XCTAssertEqual(list, original)
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords
     /// @brief      Verify that quick Capture Templates Preserve Title And Create Independent Records

@@ -1897,8 +1897,9 @@ struct CardPhotoGallery: View {
     ///
     /// @fcn        CardPhotoGallery.photoTile
     /// @brief      Build one photo-gallery tile and its actions
-    /// @details    Uses the attachment and gallery position for the photo preview, caption, selection, and available
-    ///             gallery controls.
+    /// @details    Uses the attachment and gallery position for the photo preview, caption, and gallery controls.
+    ///             Touch and hold exposes Set as Cover through the existing owner callback; tapping opens the photo
+    ///             and dragging still reorders it. The cover action is also available to accessibility users.
     ///
     /// @param[in]  photo  Photo attachment represented by the editor or gallery tile
     /// @param[in]  index  Current zero-based gallery photo index
@@ -1929,8 +1930,12 @@ struct CardPhotoGallery: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Photo \(index + 1)")
             .accessibilityValue(photo.caption ?? "No caption")
-            .accessibilityHint("Opens the full photo. Touch and hold to drag it to another gallery position.")
+            .accessibilityHint("Opens the full photo. Touch and hold to set it as the cover, or drag it to another gallery position.")
             .accessibilityIdentifier("photoGallery.photo.\(photo.id)")
+            .accessibilityAction(named: Text("Set as Cover")) { onSetCover(photo.id) }
+            .contextMenu {
+                Button("Set as Cover", systemImage: "photo") { onSetCover(photo.id) }
+            }
             .draggable("plenact.gallery.\(photo.id.uuidString)")
             .dropDestination(for: String.self) { items, _ in
                 guard items.count == 1,

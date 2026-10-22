@@ -3340,6 +3340,9 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable {
 
     let lists: [KanbanList]   /* Board lists to restore */
     let todayListID: Int?     /* Previously selected Today list, when set */
+    var week: DatedPlanningWeek? = nil
+    var savedCardIDs: Set<Int>? = nil
+    var importantCardIDs: Set<Int>? = nil
 }
 
 
@@ -3372,10 +3375,14 @@ enum ExampleLoadUndoStore {
     static func save(
         lists: [KanbanList],
         todayListID: Int?,
+        week: DatedPlanningWeek? = nil,
+        savedCardIDs: Set<Int>? = nil,
+        importantCardIDs: Set<Int>? = nil,
         to defaults: UserDefaults = .standard
     ) -> Bool {
 
-        let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: todayListID) /* Week state and Today selection retained for undo */
+        let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: todayListID,
+            week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs) /* Week state and Today selection retained for undo */
 
         guard let data = try? JSONEncoder().encode(snapshot) else { /* Encoded recovery snapshot ready for storage */
 

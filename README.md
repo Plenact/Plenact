@@ -16,6 +16,10 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
+- Three setup cards for OTB, ITQ & SR now load in read-only mode, from tapping that view's header title and don't show on list. with all sections hidden too, except for that description which is great - and maybe some checklists with guidance or examples!
+
+!
+
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!

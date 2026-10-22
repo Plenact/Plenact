@@ -63,3 +63,5 @@ The `.webloc` files are local resource shortcuts, not source dependencies. This 
 - [Optional lower-left Back shortcut](Design/Lower-Corner-Back.md)
 
 - [Day sections and example routines](Design/Day-Sections.md)
+
+- [Examples and Today’s Focus](Design/Examples-Todays-Focus.md)

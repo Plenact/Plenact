@@ -25,6 +25,118 @@ import PencilKit
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    func testUntimedBundledExamplesPopulateEveryFocusFilterCombinationLateInTheDay() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-01", calendar: calendar))
+        let late = try XCTUnwrap(calendar.date(bySettingHour: 23, minute: 45, second: 0, of: date))
+        let templates = PlanningRoutineLibrary.seeded.templates.filter { $0.id != PlanningRoutineLibrary.jmrID }
+        for template in templates {
+            var original = DatedPlanningWeek.make(for: date, calendar: calendar)
+            original.collection.lists[0].archivedCards = [KanbanCard(id: 500, word: "Retained", listTitle: "Archive", checklists: [])]
+            let before = original
+            let result = try PlanningTemplateApplication.apply(template, to: original, date: date, calendar: calendar, mode: .add)
+            let id = try XCTUnwrap(result.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+            let list = try XCTUnwrap(result.collection.lists.first { $0.id == id })
+            let important = PlanningTemplateApplication.exampleImportantIDs(template, in: original)
+            XCTAssertTrue(important.allSatisfy { $0 > 500 })
+            for mask in 0..<8 {
+                let preferences = LocalProfilePreferences(todayFocusIncludesImportant: mask & 1 != 0,
+                    todayFocusIncludesBookmarked: mask & 2 != 0, todayFocusIncludesUpNext: mask & 4 != 0)
+                let entries = preferences.todayFocusEntries(in: list.cards, on: late, calendar: calendar,
+                    importantCardIDs: important, bookmarkedCardIDs: result.collection.savedCardIDs)
+                XCTAssertFalse(entries.isEmpty, "\(template.name), filter mask \(mask) must demonstrate Focus even late in the day")
+                XCTAssertTrue(entries.allSatisfy { !$0.card.isSectionDivider && !$0.card.isTitleChecked })
+            }
+            XCTAssertEqual(original, before)
+        }
+    }
+
+    func testLegacyBundledFocusMetadataUpgradeDoesNotRewriteStoredPlansOrCustomTemplates() throws {
+        let suite = "ExampleFocusMigration." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var library = PlanningRoutineLibrary.seeded
+        for index in library.templates.indices { library.templates[index].exampleFocus = nil }
+        library.bundledRoutineRevision = 3
+        library.templates[0].name = "My custom edited week"
+        let custom = library.templates[0]
+        let originalBytes = try JSONEncoder().encode(library)
+        defaults.set(originalBytes, forKey: PlanningRoutineStore.key)
+        let weekBytes = Data("unchanged calendar".utf8)
+        defaults.set(weekBytes, forKey: PlanningCalendarStore.key)
+        let upgraded = try PlanningRoutineStore.load(from: defaults)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
+        XCTAssertEqual(upgraded.templates[0], custom)
+        XCTAssertNil(upgraded.templates[0].exampleFocus)
+        XCTAssertTrue(upgraded.templates.dropFirst().allSatisfy { $0.exampleFocus != nil })
+        XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), originalBytes)
+        XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
+    }
+
+    func testCustomTemplateDoesNotInventFocusMarksOrDates() throws {
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: calendar))
+        var source = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let id = try XCTUnwrap(source.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+        let index = try XCTUnwrap(source.collection.lists.firstIndex { $0.id == id })
+        source.collection.lists[index].cards = [KanbanCard(id: 10, word: "My unscheduled task", listTitle: "Monday", checklists: [])]
+        let custom = try PlanningRoutineTemplate.capture(name: "My day", week: source, day: date, calendar: calendar)
+        XCTAssertNil(custom.exampleFocus)
+        let blank = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let result = try PlanningTemplateApplication.apply(custom, to: blank, date: date, calendar: calendar, mode: .add)
+        XCTAssertTrue(PlanningTemplateApplication.exampleImportantIDs(custom, in: blank).isEmpty)
+        XCTAssertTrue(result.collection.savedCardIDs.isEmpty)
+        let card = try XCTUnwrap(result.collection.lists.first { $0.id == id }?.cards.first)
+        XCTAssertNil(card.startDate)
+        XCTAssertNil(card.dueDate)
+    }
+
+    func testMonthExampleRetainsFocusChoicesAndProvidesMatchingTodayItems() throws {
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-10-21", calendar: calendar))
+        let late = try XCTUnwrap(calendar.date(bySettingHour: 23, minute: 45, second: 0, of: date))
+        let example = FullMonthExample.make(now: late, calendar: calendar)
+        let selected = LocalProfilePreferences(todayFocusItemCount: 6, todayFocusIncludesImportant: true, todayFocusIncludesBookmarked: true, todayFocusIncludesUpNext: true)
+        let domain = try example.defaultsDomain(preserving: [PlanPreferencesStore.key: JSONEncoder().encode(selected)])
+        let preserved = try JSONDecoder().decode(LocalProfilePreferences.self, from: XCTUnwrap(domain[PlanPreferencesStore.key] as? Data))
+        XCTAssertTrue(preserved.todayFocusIncludesImportant)
+        XCTAssertTrue(preserved.todayFocusIncludesBookmarked)
+        XCTAssertTrue(preserved.todayFocusIncludesUpNext)
+        XCTAssertEqual(preserved.todayFocusItemCount, 6)
+        let week = try XCTUnwrap(example.document.week(for: date))
+        let listID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
+        let cards = try XCTUnwrap(week.collection.lists.first { $0.id == listID }).cards
+        let importantData = try XCTUnwrap(domain[LibraryImportanceSelection.key] as? Data)
+        let important = LibraryImportanceSelection.cardIDs(collectionID: week.id, data: importantData)
+        let bookmarks = Set(try XCTUnwrap(domain["Plenact.SavedCardIDs.v1"] as? [Int]))
+        for mask in 1..<8 {
+            let preferences = LocalProfilePreferences(todayFocusIncludesImportant: mask & 1 != 0,
+                todayFocusIncludesBookmarked: mask & 2 != 0, todayFocusIncludesUpNext: mask & 4 != 0)
+            XCTAssertFalse(preferences.todayFocusEntries(in: cards, on: late, calendar: calendar,
+                importantCardIDs: important, bookmarkedCardIDs: bookmarks).isEmpty, "Month filter mask \(mask)")
+        }
+    }
+
+    func testExampleWeekUndoRetainsCalendarAndFocusFlagsWithLegacyCompatibility() throws {
+        let suite = "ExampleWeekFocusUndo." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let calendar = routineCalendar()
+        let date = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: calendar))
+        let week = DatedPlanningWeek.make(for: date, calendar: calendar)
+        XCTAssertTrue(ExampleLoadUndoStore.save(lists: week.collection.lists, todayListID: 0, week: week,
+            savedCardIDs: [3], importantCardIDs: [5], to: defaults))
+        let snapshot = try XCTUnwrap(ExampleLoadUndoStore.load(from: defaults))
+        XCTAssertEqual(snapshot.week, week)
+        XCTAssertEqual(snapshot.savedCardIDs, [3])
+        XCTAssertEqual(snapshot.importantCardIDs, [5])
+        XCTAssertTrue(ExampleLoadUndoStore.save(lists: week.collection.lists, todayListID: 0, to: defaults))
+        let legacy = try XCTUnwrap(ExampleLoadUndoStore.load(from: defaults))
+        XCTAssertNil(legacy.week)
+        XCTAssertNil(legacy.importantCardIDs)
+    }
+
     @MainActor
     func testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo() throws {
         func card(_ id: Int, _ title: String) -> KanbanCard { KanbanCard(id: id, word: title, listTitle: "Source", checklists: []) }
@@ -273,7 +385,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)
         XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), bytes, "Loading examples does not write user data")
         try PlanningRoutineStore.validate(upgraded)
         for example in PlanningRoutineLibrary.sectionExamples {
@@ -828,7 +940,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(upgraded.templates[index].collection.lists[0].cards[0].labelIDs, ["custom-tag"])
         XCTAssertFalse(upgraded.templates[index].collection.lists[0].cards[1].labelIDs.isEmpty)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
     }
 
     @MainActor
@@ -1103,7 +1215,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(upgraded.templates[0], legacy.templates[0])
         XCTAssertEqual(upgraded.templates[1], legacy.templates[1])
         XCTAssertEqual(upgraded.defaultWeekID, PlanningRoutineLibrary.jmrID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), oldBytes)
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
         var customChoice = upgraded; customChoice.defaultWeekID = nil

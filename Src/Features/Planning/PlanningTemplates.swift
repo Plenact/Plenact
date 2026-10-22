@@ -1,5 +1,11 @@
 import Foundation
 
+struct PlanningExampleFocus: Codable, Hashable {
+    var important: Set<Int> = []
+    var bookmarked: Set<Int> = []
+    var allDay: Set<Int> = []
+}
+
 /// Reusable local plans are separate snapshots, never live views of a scheduled day or week.
 struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     enum Kind: String, Codable, CaseIterable { case day = "Day", week = "Week" }
@@ -12,6 +18,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     var collection: PersonalCollection
     /// Calendar weekday -> source list identity; Day templates contain one source list.
     var weekdays: [Int: Int]
+    var exampleFocus: PlanningExampleFocus? = nil
     var calendar: Calendar {
         var value = Calendar(identifier: .gregorian)
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
@@ -19,6 +26,25 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
         return value
     }
     var itemCount: Int { collection.lists.flatMap(\.cards).filter { !$0.isSectionDivider }.count }
+    /// Explicit bundled demonstrations only; ordinary captured templates have no demo markers.
+    func demonstratingFocus() -> Self {
+        var copy = self
+        var focus = PlanningExampleFocus()
+        for list in collection.lists {
+            let tasks = list.cards.filter { !$0.isSectionDivider && $0.displayFormat == .card }
+            if id == PlanningRoutineLibrary.jmrID {
+                focus.important.formUnion(tasks.filter { ["Work", "Gym"].contains($0.word) }.map(\.id))
+                focus.bookmarked.formUnion(tasks.filter { $0.word == "Gym" }.map(\.id))
+            } else {
+                if let first = tasks.first { focus.important.insert(first.id) }
+                if let bookmark = tasks.dropFirst().first ?? tasks.first { focus.bookmarked.insert(bookmark.id) }
+                if let untimed = tasks.first(where: { $0.startDate == nil && $0.dueDate == nil }) { focus.allDay.insert(untimed.id) }
+            }
+        }
+        copy.exampleFocus = focus
+        return copy
+    }
+
     static func capture(name: String, week: DatedPlanningWeek, day: Date? = nil, calendar: Calendar) throws -> Self {
         var collection = week.collection
         collection.savedCardIDs = []
@@ -117,7 +143,7 @@ struct PlanningRoutineLibrary: Codable, Equatable {
         }
         var template = try! PlanningRoutineTemplate.capture(name: "Jmr", week: week, calendar: calendar)
         template.id = jmrID
-        return template
+        return template.demonstratingFocus()
     }()
     /// Optional examples are added to the library without replacing an existing routine.
     static let sectionExamples: [PlanningRoutineTemplate] = {
@@ -155,7 +181,7 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             week.collection.lists[index].cards = cards
             var template = try! PlanningRoutineTemplate.capture(name: name, week: week, day: day, calendar: calendar)
             template.id = id
-            return template
+            return template.demonstratingFocus()
         }
     }()
     static let seeded: Self = {
@@ -174,14 +200,14 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])])
         list.subtitleOverride = "Leave room for the unexpected"
         vacation.collection.lists = [list]; vacation.weekdays = [2: 0]
-        return Self(templates: [work, vacation, jmr] + sectionExamples, defaultWeekID: jmrID, bundledRoutineRevision: 3)
+        return Self(templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples, defaultWeekID: jmrID, bundledRoutineRevision: 4)
     }()
 }
 
 enum PlanningRoutineStore {
     static let key = "Plenact.PlanningTemplates.v1"
     static func validate(_ value: PlanningRoutineLibrary) throws {
-        guard value.version == 1, (0...3).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0...4).contains(value.bundledRoutineRevision ?? 0),
               Set(value.templates.map(\.id)).count == value.templates.count,
               value.defaultWeekID == nil || value.templates.contains(where: { $0.id == value.defaultWeekID && $0.kind == .week }) else { throw CocoaError(.coderReadCorrupt) }
         for template in value.templates {
@@ -232,6 +258,18 @@ enum PlanningRoutineStore {
             }
             result.bundledRoutineRevision = 3
         }
+        if (result.bundledRoutineRevision ?? 0) < 4 {
+            // Add presentation markers only to recognizable bundled layouts; never rewrite scheduled days.
+            let seeds = PlanningRoutineLibrary.seeded.templates
+            for index in result.templates.indices where result.templates[index].exampleFocus == nil {
+                let template = result.templates[index]
+                if let seed = seeds.first(where: { $0.id == template.id && $0.name == template.name }),
+                   seed.collection.lists.map({ $0.cards.map(\.word) }) == template.collection.lists.map({ $0.cards.map(\.word) }) {
+                    result.templates[index] = template.demonstratingFocus()
+                }
+            }
+            result.bundledRoutineRevision = 4
+        }
         return result
     }
     static func save(_ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard) throws {
@@ -249,6 +287,11 @@ enum PlanningRoutineStore {
         Set(try load(from: defaults).templates.flatMap { $0.collection.lists }.flatMap(\.allCards)
             .flatMap { $0.attachments ?? [] }.flatMap(\.storedFileNames))
     }
+    static func newWeekImportantIDs(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws -> Set<Int> {
+        let library = try load(from: defaults)
+        guard let template = library.templates.first(where: { $0.id == library.defaultWeekID }) else { return [] }
+        return PlanningTemplateApplication.exampleImportantIDs(template, in: DatedPlanningWeek.make(for: date, calendar: calendar))
+    }
     static func newWeek(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws -> DatedPlanningWeek {
         let library = try load(from: defaults)
         let blank = DatedPlanningWeek.make(for: date, calendar: calendar)
@@ -259,6 +302,12 @@ enum PlanningRoutineStore {
 
 enum PlanningTemplateApplication {
     enum Mode: String, CaseIterable { case add = "Add to existing", replace = "Replace" }
+    static func exampleImportantIDs(_ template: PlanningRoutineTemplate, in original: DatedPlanningWeek) -> Set<Int> {
+        let start = (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        return Set(template.collection.lists.flatMap(\.cards).enumerated().compactMap { index, card in
+            template.exampleFocus?.important.contains(card.id) == true ? start + index : nil
+        })
+    }
     static func apply(_ template: PlanningRoutineTemplate, to original: DatedPlanningWeek, date: Date,
                       calendar: Calendar, mode: Mode, now: Date = .now) throws -> DatedPlanningWeek {
         try PlanningRoutineStore.validate(PlanningRoutineLibrary(templates: [template], defaultWeekID: nil))
@@ -350,7 +399,20 @@ enum PlanningTemplateApplication {
                 result.collection.lists[index].subtitleOverride = source.subtitleOverride
                 result.collection.lists[index].newItemPresentation = source.newItemPresentation
             }
-            result.collection.lists[index].cards += source.cards.map { fresh($0, title: result.collection.lists[index].title) }
+            let created = source.cards.map { card -> KanbanCard in
+                var item = fresh(card, title: result.collection.lists[index].title)
+                if template.exampleFocus?.allDay.contains(card.id) == true,
+                   item.startDate == nil, item.dueDate == nil, let destinationDate {
+                    item.dueDate = calendar.startOfDay(for: destinationDate)
+                    item.dueDateKind = .date
+                    item.showsDueDateInList = true
+                }
+                if template.collection.savedCardIDs.contains(card.id) || template.exampleFocus?.bookmarked.contains(card.id) == true {
+                    result.collection.savedCardIDs.insert(item.id)
+                }
+                return item
+            }
+            result.collection.lists[index].cards += created
         }
         if !original.hasContent { result.collection.boardAppearance = template.collection.boardAppearance }
         result.explicitlySaved = true

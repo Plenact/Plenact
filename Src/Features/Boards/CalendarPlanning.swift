@@ -347,6 +347,7 @@ struct PlanningCalendarAccess {
     var openWeek: (DatedPlanningWeek) -> Void = { _ in }
     var moveList: ((Int, UUID, UUID?) -> Bool)? = nil
     var openWeekOnDay: ((DatedPlanningWeek, Date) -> Void)? = nil
+    var saveExampleWeek: ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
     var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
     var searchableItems: [PlanningSearchResult] {
         document.weeks.flatMap { week in
@@ -1342,6 +1343,9 @@ struct FullMonthExample: Sendable {
                 nextID += 1
                 return card
             }
+            if let bookmark = week.collection.lists[index].cards.first(where: { !$0.isTitleChecked && $0.dueDateKind == .date && !$0.isSectionDivider }) {
+                week.collection.savedCardIDs.insert(bookmark.id)
+            }
             document.upsert(week)
         }
         // Example Library content is independent of every dated week.
@@ -1367,9 +1371,28 @@ struct FullMonthExample: Sendable {
         result[PlanningCalendarStore.key] = try encoder.encode(document)
         result["Plenact.Board.v1"] = try encoder.encode(current.collection.lists)
         result["Plenact.PersonalCollections.v1"] = try encoder.encode(collections)
-        result["Plenact.SavedCardIDs.v1"] = [Int]()
-        result[LibraryImportanceSelection.key] = LibraryImportanceSelection.demoData(
-            in: document.weeks.map(\.collection) + collections)
+        result["Plenact.SavedCardIDs.v1"] = Array(current.collection.savedCardIDs).sorted()
+        var importance = LibraryImportanceSelection.demoData(in: document.weeks.map(\.collection) + collections)
+        for week in document.weeks {
+            for list in week.collection.lists {
+                if let card = list.cards.first(where: { !$0.isTitleChecked && $0.displayFormat == .card }) {
+                    importance = LibraryImportanceSelection.setting(cardID: card.id, collectionID: week.id, marked: true, data: importance)
+                }
+            }
+        }
+        result[LibraryImportanceSelection.key] = importance
+        if let data = original[PlanPreferencesStore.key] as? Data,
+           let existing = try? JSONDecoder().decode(LocalProfilePreferences.self, from: data) {
+            var preferences = LocalProfilePreferences()
+            preferences.todayFocusIncludesImportant = existing.todayFocusIncludesImportant
+            preferences.todayFocusIncludesBookmarked = existing.todayFocusIncludesBookmarked
+            preferences.todayFocusIncludesUpNext = existing.todayFocusIncludesUpNext
+            preferences.todayFocusHidesCompleted = existing.todayFocusHidesCompleted
+            preferences.todayFocusGroupsBySection = existing.todayFocusGroupsBySection
+            preferences.todayFocusOrder = existing.todayFocusOrder
+            preferences.todayFocusItemCount = existing.todayFocusItemCount
+            result[PlanPreferencesStore.key] = try encoder.encode(preferences)
+        }
         result[TodayListPins.key] = TodayListPins.encode(collections.map { WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id) })
         return result
     }

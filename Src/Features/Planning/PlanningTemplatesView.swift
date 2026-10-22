@@ -363,6 +363,7 @@ enum LibraryTemplateCapture {
             created[0].coverAttachmentID = capture.attachments.first { $0.kind == .photo }?.id
         }
         next.collection.lists[index].cards.append(contentsOf: created)
+        if let first = created.first { DaySections.reveal(first.id, in: &next.collection.lists[index].cards) }
         return next
     }
 }

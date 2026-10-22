@@ -225,6 +225,28 @@ final class TransferConfirmationPresenter {
         window = nil
     }
 
+    /// Unlike the transient confirmation, this remains available across navigation until used or dismissed.
+    func showUndo(_ confirmation: TransferConfirmation, undo: @escaping () -> Bool) {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else { return }
+        dismiss()
+        let window = TransferConfirmationWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        window.windowLevel = .alert + 1
+        window.backgroundColor = .clear
+        window.rootViewController = UIHostingController(rootView: SectionUndoToast(message: confirmation.message,
+            undo: { [weak self] in
+                let succeeded = undo()
+                if succeeded { self?.dismiss() }
+                return succeeded
+            }, close: { [weak self] in self?.dismiss() },
+            onFrame: { [weak window] in window?.touchRegion = $0 }))
+        window.rootViewController?.view.backgroundColor = .clear
+        self.window = window
+        window.isHidden = false
+        UIAccessibility.post(notification: .announcement, argument: confirmation.message + " Undo available.")
+    }
+
     func show(_ confirmation: TransferConfirmation) {
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }) else { return }
@@ -249,8 +271,12 @@ final class TransferConfirmationPresenter {
 }
 
 private final class TransferConfirmationWindow: UIWindow {
+    var touchRegion: CGRect = .zero
     override var canBecomeKey: Bool { false }
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? { nil }
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard touchRegion.contains(point) else { return nil }
+        return super.hitTest(point, with: event)
+    }
 }
 
 private struct TransferConfirmationToast: View {
@@ -279,6 +305,38 @@ private struct TransferConfirmationToast: View {
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { visible = true }
             do { try await Task.sleep(for: .seconds(3)) } catch { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { visible = false }
+        }
+    }
+}
+
+private struct SectionUndoToast: View {
+    let message: String
+    let undo: () -> Bool
+    let close: () -> Void
+    let onFrame: (CGRect) -> Void
+    @State private var failed = false
+    var body: some View {
+        VStack {
+            Spacer()
+            VStack(alignment: .leading, spacing: 8) {
+                Text(failed ? "Couldn't undo this move. Your current content has been retained." : message).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Undo", systemImage: "arrow.uturn.backward") { failed = !undo() }
+                        .font(.headline).frame(minHeight: 44)
+                        .accessibilityIdentifier("section.move.undo")
+                    Spacer()
+                    Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Dismiss move confirmation")
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(16)
+            .frame(maxWidth: 520, alignment: .leading)
+            .background(Color(red: 0.18, green: 0.39, blue: 0.29), in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame($0) }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 100)
         }
     }
 }

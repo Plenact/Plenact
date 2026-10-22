@@ -74,6 +74,22 @@ enum DailyPlanStore {
         }
         return document
     }
+    /// Keep explicit priorities linked to content when its whole section changes owner or list.
+    static func relocatingSection(_ receipt: SectionTransferReceipt, in document: Document) -> Document {
+        guard let owner = receipt.after.first(where: { $0.id == receipt.destination.ownerID }),
+              let list = owner.lists.first(where: { $0.id == receipt.destination.listID }) else { return document }
+        var result = document
+        for key in result.plans.keys {
+            result.plans[key]?.priorities = (document.plans[key]?.priorities ?? []).map { priority in
+                guard priority.ownerID == receipt.source.ownerID, let newID = receipt.mapping[priority.cardID],
+                      let card = list.cards.first(where: { $0.id == newID && $0.createdAt == priority.sourceCreatedAt }) else { return priority }
+                return DailyPlanPriority(PlanningSearchResult(weekKey: nil, collectionID: owner.id, collectionTitle: owner.title,
+                    listID: list.id, listTitle: list.title, card: card))
+            }
+        }
+        return result
+    }
+
     /// Merge one day into the latest document, preserving every other day's plan.
     @discardableResult
     static func save(_ plan: DailyPlan, replacing expected: DailyPlan?, to defaults: UserDefaults = .standard) throws -> DailyPlan {

@@ -333,6 +333,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var cardBackground: KanbanListTint? = nil
     var cardTitleColor: ListPreviewTextColor? = nil
     var cardTextColor: ListPreviewTextColor? = nil
+    var sectionCollapsed: Bool? = nil
     var hideEmptySubtitle: Bool? = nil
     var cardDetail: BoardCardDetail? = nil
     var listViewMode: SingleListViewMode? = nil
@@ -347,7 +348,7 @@ struct ItemAppearance: Hashable, Codable, Sendable {
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var isEmpty: Bool { cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
+    var isEmpty: Bool { sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil }
 }
 
 /// Creation-only defaults; stored colors remain ordinary editable appearance fields.
@@ -3055,6 +3056,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
             note.coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id
         }
         destination.cards.append(note)
+        DaySections.reveal(note.id, in: &destination.cards)
         lists[listIndex] = destination
     }
 
@@ -4602,5 +4604,182 @@ struct DayTimeDistribution {
             latestEnd = max(latestEnd, end)
         }
         hasOverlaps = overlap
+    }
+}
+
+/// Named dividers own subsequent content up to the next named divider.
+/// Plain separators do not change ownership; all operations retain original item identities.
+enum DaySections {
+    static func owner(of id: Int, in cards: [KanbanCard]) -> KanbanCard? {
+        var heading: KanbanCard?
+        for card in cards {
+            if card.sectionHeading != nil { heading = card }
+            if card.id == id { return heading }
+        }
+        return nil
+    }
+    static func visible(_ cards: [KanbanCard]) -> [KanbanCard] {
+        var collapsed = false
+        return cards.filter { card in
+            if card.sectionHeading != nil {
+                collapsed = card.appearance?.sectionCollapsed == true
+                return true
+            }
+            return !collapsed
+        }
+    }
+    static func reveal(_ id: Int, in cards: inout [KanbanCard]) {
+        guard let heading = owner(of: id, in: cards),
+              let index = cards.firstIndex(where: { $0.id == heading.id }),
+              cards[index].appearance?.sectionCollapsed == true else { return }
+        cards[index].appearance?.sectionCollapsed = false
+    }
+    static func reordered(_ cards: [KanbanCard], itemID: Int, to destination: Int) -> [KanbanCard] {
+        guard let source = cards.firstIndex(where: { $0.id == itemID }) else { return cards }
+        guard cards[source].sectionHeading != nil else {
+            var result = cards
+            BoardCardReordering.move(itemID, to: destination, in: &result)
+            return result
+        }
+        let starts = cards.indices.filter { cards[$0].sectionHeading != nil }
+        guard let position = starts.firstIndex(of: source) else { return cards }
+        let target = starts.lastIndex(where: { $0 <= min(max(0, destination), cards.count - 1) }) ?? 0
+        var result = cards
+        for _ in 0..<abs(target - position) {
+            result = moved(result, sectionID: itemID, offset: target > position ? 1 : -1)
+        }
+        return result
+    }
+    static func moved(_ cards: [KanbanCard], sectionID: Int, offset: Int) -> [KanbanCard] {
+        let starts = cards.indices.filter { cards[$0].sectionHeading != nil }
+        guard offset == -1 || offset == 1,
+              let position = starts.firstIndex(where: { cards[$0].id == sectionID }),
+              starts.indices.contains(position + offset) else { return cards }
+        let start = starts[position]
+        let end = position + 1 < starts.count ? starts[position + 1] : cards.count
+        let target = offset < 0 ? starts[position - 1] : (position + 2 < starts.count ? starts[position + 2] : cards.count)
+        var result = cards
+        let block = Array(cards[start..<end])
+        result.removeSubrange(start..<end)
+        result.insert(contentsOf: block, at: target > start ? target - block.count : target)
+        return result
+    }
+}
+
+/// An in-memory, single-action undo receipt. Affected owners must still match before undo.
+struct SectionTransferReceipt {
+    let before: [PersonalCollection]
+    let after: [PersonalCollection]
+    let source: WorkspaceListReference
+    let destination: WorkspaceListReference
+    let mapping: [Int: Int]
+    let heading: KanbanCard
+
+    func undo(in owners: [PersonalCollection]) throws -> [PersonalCollection] {
+        guard after.allSatisfy({ expected in owners.first(where: { $0.id == expected.id }) == expected }) else {
+            throw CocoaError(.fileWriteFileExists)
+        }
+        return owners.map { owner in before.first(where: { $0.id == owner.id }) ?? owner }
+    }
+}
+
+enum SectionTransfer {
+    static func move(heading: KanbanCard, source: WorkspaceListReference, destination: WorkspaceListReference,
+                     owners: inout [PersonalCollection], sourceDay: Date? = nil, destinationDay: Date? = nil,
+                     shiftDates: Bool = false, calendar: Calendar = .current) throws -> SectionTransferReceipt {
+        guard source != destination,
+              let from = owners.firstIndex(where: { $0.id == source.ownerID && $0.isActive }),
+              let to = owners.firstIndex(where: { $0.id == destination.ownerID && $0.isActive }),
+              let fromList = owners[from].lists.firstIndex(where: { $0.id == source.listID && !$0.isArchived }),
+              let toList = owners[to].lists.firstIndex(where: { $0.id == destination.listID && !$0.isArchived }),
+              let start = owners[from].lists[fromList].cards.firstIndex(where: { $0.id == heading.id && $0.createdAt == heading.createdAt }),
+              owners[from].lists[fromList].cards[start].sectionHeading != nil else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let original = owners
+        let sourceCards = owners[from].lists[fromList].cards
+        let end = sourceCards.indices.dropFirst(start + 1).first { sourceCards[$0].sectionHeading != nil } ?? sourceCards.count
+        let block = Array(sourceCards[start..<end])
+        let ids = Set(block.map(\.id))
+        guard ids.count == block.count else { throw CocoaError(.fileReadCorruptFile) }
+        let sameOwner = source.ownerID == destination.ownerID
+        let reserved = Set(owners[to].lists.flatMap(\.allCards).map(\.id))
+        var next = max(reserved.max() ?? -1, ids.max() ?? -1)
+        var mapping: [Int: Int] = [:]
+        for card in block {
+            if !sameOwner && reserved.contains(card.id) {
+                let (value, overflow) = next.addingReportingOverflow(1)
+                guard !overflow else { throw CocoaError(.validationNumberTooLarge) }
+                next = value; mapping[card.id] = next
+            } else { mapping[card.id] = card.id }
+        }
+        let dated = block.flatMap { card -> [Date] in
+            [card.startDateKind == .time ? nil : card.startDate, card.dueDateKind == .time ? nil : card.dueDate].compactMap { $0 }
+        }
+        let anchor = sourceDay ?? dated.min()
+        let delta: Int
+        if shiftDates, let destinationDay, let anchor {
+            delta = calendar.dateComponents([.day], from: calendar.startOfDay(for: anchor), to: calendar.startOfDay(for: destinationDay)).day ?? 0
+        } else { delta = 0 }
+        // Freeze implicit links before moving their owner, including nested and retained links.
+        func checklist(_ sourceChecklist: KanbanChecklist, owner: UUID, freeze: Bool) -> KanbanChecklist {
+            let items = sourceChecklist.items.map { original -> KanbanChecklistItem in
+                var item = original
+                if case .actionDetail(var detail) = item.content {
+                    detail.checklists = detail.checklists.map { checklist($0, owner: owner, freeze: freeze) }
+                    item.content = .actionDetail(detail)
+                } else if var detail = item.retainedDetail {
+                    detail.checklists = detail.checklists.map { checklist($0, owner: owner, freeze: freeze) }
+                    item.retainedDetail = detail
+                }
+                let linked: Bool = { if case .linkedCard = item.content { return true }; return item.retainedCardID != nil }()
+                if freeze && linked && item.linkedCollectionID == nil { item.linkedCollectionID = source.ownerID }
+                if (item.linkedCollectionID ?? owner) == source.ownerID {
+                    if let id = item.retainedCardID, let newID = mapping[id] {
+                        item.retainedCardID = newID; item.linkedCollectionID = destination.ownerID
+                    }
+                    if case .linkedCard(let id) = item.content, let newID = mapping[id] {
+                        item.content = .linkedCard(cardID: newID); item.linkedCollectionID = destination.ownerID
+                    }
+                }
+                return item
+            }
+            return KanbanChecklist(id: sourceChecklist.id, title: sourceChecklist.title, items: items,
+                                   completedItemIndices: sourceChecklist.completedItemIndices)
+        }
+        var snapshot = owners
+        let moved = block.map { card -> KanbanCard in
+            var result = card.replacingLocation(id: mapping[card.id]!, listTitle: snapshot[to].lists[toList].title)
+            if delta != 0 {
+                if let value = result.startDate, result.startDateKind != .time { result.startDate = calendar.date(byAdding: .day, value: delta, to: value) }
+                if let value = result.dueDate, result.dueDateKind != .time { result.dueDate = calendar.date(byAdding: .day, value: delta, to: value) }
+            }
+            result.checklists = result.checklists.map { checklist($0, owner: source.ownerID, freeze: !sameOwner) }
+            return result
+        }
+        snapshot[from].lists[fromList].cards.removeSubrange(start..<end)
+        snapshot[to].lists[toList].cards.append(contentsOf: moved)
+        if !sameOwner {
+            for id in ids where snapshot[from].savedCardIDs.remove(id) != nil { snapshot[to].savedCardIDs.insert(mapping[id]!) }
+            for index in snapshot.indices {
+                let owner = snapshot[index].id
+                func redirect(_ card: KanbanCard) -> KanbanCard {
+                    var result = card
+                    // Moved cards were already redirected; do not apply an ID mapping twice.
+                    if owner == destination.ownerID && moved.contains(where: { $0.id == card.id }) { return result }
+                    result.checklists = result.checklists.map { checklist($0, owner: owner, freeze: false) }
+                    return result
+                }
+                for listIndex in snapshot[index].lists.indices {
+                    snapshot[index].lists[listIndex].cards = snapshot[index].lists[listIndex].cards.map(redirect)
+                    snapshot[index].lists[listIndex].archivedCards = snapshot[index].lists[listIndex].archivedCards.map(redirect)
+                }
+            }
+        }
+        let changed = Set(snapshot.indices.filter { snapshot[$0] != original[$0] }.map { snapshot[$0].id })
+        let receipt = SectionTransferReceipt(before: original.filter { changed.contains($0.id) }, after: snapshot.filter { changed.contains($0.id) },
+            source: source, destination: destination, mapping: mapping, heading: moved[0])
+        owners = snapshot
+        return receipt
     }
 }

@@ -119,6 +119,45 @@ struct PlanningRoutineLibrary: Codable, Equatable {
         template.id = jmrID
         return template
     }()
+    /// Optional examples are added to the library without replacing an existing routine.
+    static let sectionExamples: [PlanningRoutineTemplate] = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 2
+        let day = PlanningDate.date("2026-10-12", calendar: calendar)!
+        let examples: [(String, UUID, [(String, ItemAccent, [String])])] = [
+            ("A day in chapters", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840011")!, [
+                ("Morning", .orange, ["Ease into the day", "Choose what matters today"]),
+                ("Midday", .blue, ["Make room for focused work", "Take a lunch break"]),
+                ("Evening", .purple, ["Dinner and connection", "Close the loop"])]),
+            ("A build session", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840012")!, [
+                ("Setup", .teal, ["Gather tools and materials", "Choose the outcome"]),
+                ("Build", .blue, ["Make the first version", "Try it and adjust"]),
+                ("Teardown", .orange, ["Put tools away", "Capture the next step"])]),
+            ("A workout journey", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840013")!, [
+                ("Prepare", .orange, ["Pack water and headphones", "Travel to the gym"]),
+                ("Workout", .green, ["Warm up", "Move in a way that fits today"]),
+                ("Return home", .purple, ["Cool down and head home", "Refuel and rest"])])]
+        return examples.map { name, id, sections in
+            var week = DatedPlanningWeek.make(for: day, calendar: calendar)
+            let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
+            let index = week.collection.lists.firstIndex { $0.id == listID }!
+            var cards: [KanbanCard] = []
+            for (heading, color, titles) in sections {
+                cards.append(KanbanCard(id: cards.count, word: "--- " + heading,
+                    listTitle: week.collection.lists[index].title, checklists: [],
+                    appearance: ItemAppearance(accent: color)))
+                for title in titles {
+                    cards.append(KanbanCard(id: cards.count, word: title,
+                        listTitle: week.collection.lists[index].title, checklists: []))
+                }
+            }
+            week.collection.lists[index].cards = cards
+            var template = try! PlanningRoutineTemplate.capture(name: name, week: week, day: day, calendar: calendar)
+            template.id = id
+            return template
+        }
+    }()
     static let seeded: Self = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -135,14 +174,14 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])])
         list.subtitleOverride = "Leave room for the unexpected"
         vacation.collection.lists = [list]; vacation.weekdays = [2: 0]
-        return Self(templates: [work, vacation, jmr], defaultWeekID: jmrID, bundledRoutineRevision: 2)
+        return Self(templates: [work, vacation, jmr] + sectionExamples, defaultWeekID: jmrID, bundledRoutineRevision: 3)
     }()
 }
 
 enum PlanningRoutineStore {
     static let key = "Plenact.PlanningTemplates.v1"
     static func validate(_ value: PlanningRoutineLibrary) throws {
-        guard value.version == 1, (0...2).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0...3).contains(value.bundledRoutineRevision ?? 0),
               Set(value.templates.map(\.id)).count == value.templates.count,
               value.defaultWeekID == nil || value.templates.contains(where: { $0.id == value.defaultWeekID && $0.kind == .week }) else { throw CocoaError(.coderReadCorrupt) }
         for template in value.templates {
@@ -186,6 +225,12 @@ enum PlanningRoutineStore {
                 }
             }
             result.bundledRoutineRevision = 2
+        }
+        if (result.bundledRoutineRevision ?? 0) < 3 {
+            for example in PlanningRoutineLibrary.sectionExamples where !result.templates.contains(where: { $0.id == example.id }) {
+                result.templates.append(example)
+            }
+            result.bundledRoutineRevision = 3
         }
         return result
     }

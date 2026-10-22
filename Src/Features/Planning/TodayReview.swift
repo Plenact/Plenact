@@ -37,11 +37,13 @@ struct DailyEveningReview: Codable, Equatable {
 enum DailyReviewTransaction {
     static let key = "Plenact.DailyReviewTransaction.v1"
     static let keys = [PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1", DailyPlanStore.key, WeeklyReviewStore.key]
-    static func begin(in defaults: UserDefaults = .standard) throws -> Data {
+    static func begin(in defaults: UserDefaults = .standard, additionalKeys: [String] = []) throws -> Data {
         guard defaults.object(forKey: key) == nil else { throw CocoaError(.fileWriteUnknown) }
         var previous: [String: Any] = [:]
-        for name in keys { previous[name] = defaults.object(forKey: name) }
-        let data = try PropertyListSerialization.data(fromPropertyList: ["version": 1, "previous": previous], format: .binary, options: 0)
+        guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1"]) else { throw CocoaError(.fileWriteUnknown) }
+        let capturedKeys = Array(Set(keys + additionalKeys))
+        for name in capturedKeys { previous[name] = defaults.object(forKey: name) }
+        let data = try PropertyListSerialization.data(fromPropertyList: ["version": 1, "previous": previous, "keys": capturedKeys], format: .binary, options: 0)
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else { throw CocoaError(.fileWriteUnknown) }
         return data
@@ -51,8 +53,12 @@ enum DailyReviewTransaction {
         guard let data = defaults.data(forKey: key),
               let snapshot = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               snapshot["version"] as? Int == 1,
-              let previous = snapshot["previous"] as? [String: Any], Set(previous.keys).isSubset(of: Set(keys)) else { throw CocoaError(.fileReadCorruptFile) }
-        for name in keys {
+              let previous = snapshot["previous"] as? [String: Any] else { throw CocoaError(.fileReadCorruptFile) }
+        let capturedKeys = snapshot["keys"] as? [String] ?? keys
+        guard Set(keys).isSubset(of: Set(capturedKeys)),
+              Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1"])),
+              Set(previous.keys).isSubset(of: Set(capturedKeys)) else { throw CocoaError(.fileReadCorruptFile) }
+        for name in capturedKeys {
             if let value = previous[name] { defaults.set(value, forKey: name) }
             else { defaults.removeObject(forKey: name) }
         }
@@ -60,8 +66,8 @@ enum DailyReviewTransaction {
         defaults.removeObject(forKey: key)
         guard defaults.synchronize() else { defaults.set(data, forKey: key); throw CocoaError(.fileWriteUnknown) }
     }
-    static func perform<T>(in defaults: UserDefaults = .standard, _ action: () throws -> T) throws -> T {
-        let snapshot = try begin(in: defaults)
+    static func perform<T>(in defaults: UserDefaults = .standard, additionalKeys: [String] = [], _ action: () throws -> T) throws -> T {
+        let snapshot = try begin(in: defaults, additionalKeys: additionalKeys)
         do {
             let result = try action()
             guard defaults.synchronize() else { throw CocoaError(.fileWriteUnknown) }

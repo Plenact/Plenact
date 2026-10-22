@@ -1268,7 +1268,115 @@ private struct AppRootView: View {
                 return movePlanningCard(card, source: source,
                     destination: CardMoveDestination(collectionID: week.id, listID: list.id, title: "\(week.rangeTitle) / \(list.title)", group: "Calendar"),
                     documentOverride: document)
+            }, moveSection: { heading, source, destination, shift in
+                movePlanningSection(heading, source: source, destination: destination, shiftDates: shift)
+            }, moveSectionToDate: { heading, source, date, shift in
+                guard var document = calendarDocument else { return false }
+                var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+                let listID = week.prepareDay(date)
+                document.upsert(week)
+                return movePlanningSection(heading, source: source,
+                    destination: CardMoveDestination(collectionID: week.id, listID: listID,
+                        title: date.formatted(date: .abbreviated, time: .omitted), group: "Calendar"),
+                    shiftDates: shift, documentOverride: document)
             })
+    }
+
+    private func sectionOwners(in document: PlanningCalendarDocument) -> [PersonalCollection] {
+        var document = document
+        if let index = document.weeks.firstIndex(where: { $0.startKey == document.currentWeekKey }) {
+            document.weeks[index].collection.lists = lists
+            document.weeks[index].collection.savedCardIDs = savedCardIDs
+        }
+        return collections + document.weeks.map(\.collection)
+    }
+
+    private func saveSectionOwners(_ owners: [PersonalCollection], document original: PlanningCalendarDocument, importance: Data?, dailyPlans: Data?) throws {
+        var document = original
+        for index in document.weeks.indices {
+            if let owner = owners.first(where: { $0.id == document.weeks[index].id }) { document.weeks[index].collection = owner }
+        }
+        let libraryIDs = Set(collections.map(\.id))
+        let library = owners.filter { libraryIDs.contains($0.id) }
+        guard let current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }) else { throw CocoaError(.fileReadCorruptFile) }
+        _ = try PlanningCalendarStore.load()
+        if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1") { _ = try JSONDecoder().decode([PersonalCollection].self, from: data) }
+        if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1") { _ = try JSONDecoder().decode([KanbanList].self, from: data) }
+        try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key]) {
+            try PlanningCalendarStore.save(document)
+            try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
+            try PersonalCollectionStore.saveChecked(library)
+            SavedCardPersistence.save(current.collection.savedCardIDs)
+            if let importance { UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key) }
+            else { UserDefaults.standard.removeObject(forKey: LibraryImportanceSelection.key) }
+            if let dailyPlans { UserDefaults.standard.set(dailyPlans, forKey: DailyPlanStore.key) }
+            else { UserDefaults.standard.removeObject(forKey: DailyPlanStore.key) }
+        }
+        calendarDocument = document
+        lists = current.collection.lists; savedCardIDs = current.collection.savedCardIDs; collections = library
+    }
+
+    private func movePlanningSection(_ heading: KanbanCard, source: UUID?, destination: CardMoveDestination,
+                                     shiftDates: Bool, documentOverride: PlanningCalendarDocument? = nil) -> Bool {
+        do {
+            guard let document = documentOverride ?? calendarDocument,
+                  let currentID = document.weeks.first(where: { $0.startKey == document.currentWeekKey })?.id else { return false }
+            let sourceID = source ?? currentID
+            let destinationID = destination.collectionID ?? currentID
+            var owners = sectionOwners(in: document)
+            guard let sourceList = owners.first(where: { $0.id == sourceID })?.lists.first(where: {
+                !$0.isArchived && $0.cards.contains { $0.id == heading.id && $0.createdAt == heading.createdAt }
+            }) else { return false }
+            func day(owner: UUID, list: Int) -> Date? {
+                document.weeks.first(where: { $0.id == owner })?.dayListIDs.first(where: { $0.value == list })
+                    .flatMap { PlanningDate.date($0.key, calendar: document.calendar) }
+            }
+            let receipt = try SectionTransfer.move(heading: heading,
+                source: WorkspaceListReference(ownerID: sourceID, listID: sourceList.id),
+                destination: WorkspaceListReference(ownerID: destinationID, listID: destination.listID), owners: &owners,
+                sourceDay: day(owner: sourceID, list: sourceList.id), destinationDay: day(owner: destinationID, list: destination.listID),
+                shiftDates: shiftDates, calendar: document.calendar)
+            let beforeImportance = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key)
+            if let beforeImportance, !beforeImportance.isEmpty { _ = try JSONDecoder().decode([LibraryRecentItem].self, from: beforeImportance) }
+            var afterImportance = beforeImportance
+            if sourceID != destinationID {
+                var data = beforeImportance ?? Data()
+                for (id, mapped) in receipt.mapping {
+                    let important = LibraryImportanceSelection.contains(cardID: id, collectionID: sourceID, data: beforeImportance ?? Data())
+                    data = LibraryImportanceSelection.setting(cardID: id, collectionID: sourceID, marked: false, data: data)
+                    data = LibraryImportanceSelection.setting(cardID: mapped, collectionID: destinationID, marked: important, data: data)
+                }
+                afterImportance = data
+            }
+            let beforePlans = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+            let plans = try DailyPlanStore.load()
+            let relocatedPlans = DailyPlanStore.relocatingSection(receipt, in: plans)
+            let plansChanged = plans.plans != relocatedPlans.plans
+            let afterPlans = plansChanged ? try JSONEncoder().encode(relocatedPlans) : beforePlans
+            try saveSectionOwners(owners, document: document, importance: afterImportance, dailyPlans: afterPlans)
+            CreatedContentReveal.shared.request(listID: destination.listID, card: receipt.heading)
+            TransferConfirmationPresenter.shared.showUndo(
+                TransferConfirmation(title: receipt.heading.sectionHeading ?? "Section", destination: destination.title)) {
+                    do {
+                        guard let current = calendarDocument,
+                              UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) == afterImportance,
+                              UserDefaults.standard.data(forKey: DailyPlanStore.key) == afterPlans else { throw CocoaError(.fileWriteFileExists) }
+                        let restored = try receipt.undo(in: sectionOwners(in: current))
+                        try saveSectionOwners(restored, document: current, importance: beforeImportance, dailyPlans: beforePlans)
+                        if let original = receipt.before.first(where: { $0.id == sourceID })?.lists.first(where: { $0.id == sourceList.id })?.cards.first(where: { $0.id == heading.id }) {
+                            CreatedContentReveal.shared.request(listID: sourceList.id, card: original)
+                        }
+                        return true
+                    } catch {
+                        DatabaseActivity.shared.report("Could not undo the section move. Content may have changed since it moved; your current edits have been retained.")
+                        return false
+                    }
+                }
+            return true
+        } catch {
+            DatabaseActivity.shared.report("Could not move this section. Your content has been retained.")
+            return false
+        }
     }
 
     private func movePlanningList(_ listID: Int, sourceID: UUID, destinationID: UUID?) -> Bool {
@@ -2380,6 +2488,7 @@ private struct AppRootView: View {
             for index in created.indices { schedule?.apply(to: &created[index]) }
             if !attachments.isEmpty { created[0].attachments = attachments; created[0].coverAttachmentID = attachments.first(where: { $0.kind == .photo })?.id }
             updatedList.cards.append(contentsOf: created)
+            if let first = created.first { DaySections.reveal(first.id, in: &updatedList.cards) }
             var updatedLists = lists
             updatedLists[listIndex] = updatedList
             if checkedSave || !attachments.isEmpty || schedule != nil {
@@ -5464,6 +5573,7 @@ struct BoardListsView: View {
     @State private var weekExampleAction: String?
     @State private var libraryStarterError: String?
     @State private var examplePreview: LibraryExamplePreview?
+    @State private var daySectionExampleToApply: PlanningRoutineTemplate?
 
 
     ///
@@ -6359,6 +6469,7 @@ struct BoardListsView: View {
     private var examplesMenu: some View {
         Menu("Examples", systemImage: "sparkles") {
             Button("Browse all examples", systemImage: "books.vertical") { browseFilter = .examples; searchText = "" }
+            daySectionExamplesMenu
             listExamplesMenu
             Menu("Board examples", systemImage: "rectangle.3.group") {
                 ForEach(PersonalBoardExample.allCases) { example in
@@ -6374,6 +6485,23 @@ struct BoardListsView: View {
                 Button("Restore User Data", systemImage: "arrow.uturn.backward") { onRestoreUserData() }
             }
         }
+    }
+
+    private var daySectionExamplesMenu: some View {
+        Menu("Day section examples", systemImage: "rectangle.3.group") {
+            ForEach(PlanningRoutineLibrary.sectionExamples) { template in
+                Menu(template.name) {
+                    Button("Preview sections", systemImage: "eye") { previewDaySectionExample(template) }
+                    Button("Use on a day…", systemImage: "calendar.badge.plus") { daySectionExampleToApply = template }
+                }
+            }
+        }
+    }
+
+    private func previewDaySectionExample(_ template: PlanningRoutineTemplate) {
+        examplePreview = LibraryExamplePreview(title: template.name,
+            summary: "A day organized into colored sections. Collapse, reorder, or move whole sections after applying. Previewing does not change your plans.",
+            lists: template.collection.lists)
     }
 
     private var fullMonthExamplesMenu: some View {
@@ -6493,9 +6621,12 @@ struct BoardListsView: View {
         }
         let weekMatches = LibraryStarterSearch.matches(searchText, texts: ["Example Week Work Week Board calendar seven days"] + SampleData.lists.flatMap { [$0.title] + $0.cards.map(\.word) })
         let monthMatches = LibraryStarterSearch.matches(searchText, texts: ["A month in motion Full-month example calendar fictional plans"])
-        if listExamples.isEmpty && boardExamples.isEmpty && !weekMatches && !monthMatches {
+        let sectionExamples = LibraryDaySectionExamples.matches(query: searchText)
+        if listExamples.isEmpty && boardExamples.isEmpty && sectionExamples.isEmpty && !weekMatches && !monthMatches {
             ContentUnavailableView("No matching examples", systemImage: "sparkles", description: Text("Try a different name, topic, or example type."))
         }
+        LibraryDaySectionExamples(query: searchText, onPreview: previewDaySectionExample,
+            onApply: { daySectionExampleToApply = $0 })
         if !listExamples.isEmpty {
             Section("List examples") {
                 ForEach(listExamples) { example in
@@ -6697,6 +6828,9 @@ struct BoardListsView: View {
             }
             .sheet(item: $examplePreview) { preview in
                 LibraryExamplePreviewView(preview: preview)
+            }
+            .sheet(item: $daySectionExampleToApply) { template in
+                PlanningTemplateApplyView(template: template)
             }
 
             .sheet(item: $editingCollection) { collection in
@@ -9068,6 +9202,46 @@ private struct TodayPanelSurface: ViewModifier {
     }
 }
 
+/// Searchable, read-only discovery; examples are applied only through the checked Day template flow.
+struct LibraryDaySectionExamples: View {
+    var query = ""
+    let onPreview: (PlanningRoutineTemplate) -> Void
+    let onApply: (PlanningRoutineTemplate) -> Void
+    static func matches(query: String) -> [PlanningRoutineTemplate] {
+        PlanningRoutineLibrary.sectionExamples.filter { template in
+            LibraryStarterSearch.matches(query, texts: [template.name, "Day section examples colored sections routines dividers collapse move"]
+                + template.collection.lists.flatMap { $0.cards.map(\.word) })
+        }
+    }
+    var body: some View {
+        let examples = Self.matches(query: query)
+        if !examples.isEmpty {
+            Section {
+                ForEach(examples) { template in
+                    DisclosureGroup {
+                        Text("Three colored sections, six example items. Make this rhythm your own.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        ForEach(template.collection.lists.flatMap(\.cards).filter { $0.sectionHeading != nil }) { heading in
+                            Label(heading.sectionHeading ?? "", systemImage: "circle.fill")
+                                .foregroundStyle(heading.appearance?.accent?.color ?? .secondary)
+                        }
+                        Button("Preview sections", systemImage: "eye") { onPreview(template) }
+                        Button("Use on a day…", systemImage: "calendar.badge.plus") { onApply(template) }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label(template.name, systemImage: "rectangle.3.group")
+                            Text(template.collection.lists.flatMap(\.cards).compactMap(\.sectionHeading).joined(separator: " → "))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }.padding(.vertical, 4)
+                    }
+                }
+            } header: { Text("Day section examples") } footer: {
+                Text("Explore a daily rhythm, a build session, or a workout journey. Preview freely, then choose a day to apply. Existing plans stay unchanged until you confirm.")
+            }
+        }
+    }
+}
+
 private struct LibraryExamplePreview: Identifiable {
     var id = UUID()
     let title: String
@@ -9088,10 +9262,11 @@ private struct LibraryExamplePreviewView: View {
                             if preview.lists.count > 1 { Text(list.title).font(.title2.bold()) }
                             ForEach(list.cards) { card in
                                 if card.isSectionDivider {
-                                    Divider().padding(.vertical, 6)
+                                    NamedSectionDivider(card: card)
                                 } else {
                                     KanbanCardView(card: card, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
                                         onUpdateCard: { _ in }, onDeleteCard: {}, onArchiveCard: {}, onToggle: {})
+                                        .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
                                         .allowsHitTesting(false)
                                 }
                             }

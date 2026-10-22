@@ -25,6 +25,285 @@ import PencilKit
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
+    @MainActor
+    func testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo() throws {
+        func card(_ id: Int, _ title: String) -> KanbanCard { KanbanCard(id: id, word: title, listTitle: "Source", checklists: []) }
+        var source = PersonalCollection(title: "Source", kind: .board, icon: .project, color: .blue)
+        var target = PersonalCollection(title: "Target", kind: .list, icon: .notes, color: .teal)
+        var observer = PersonalCollection(title: "Links", kind: .board, icon: .project, color: .blue)
+        var heading = card(1, "--- Morning")
+        heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
+        var member = card(2, "Breakfast")
+        member.attachments = [KanbanAttachment(url: URL(string: "https://example.com/breakfast"), mediaKind: .link)]
+        member.isTitleChecked = true
+        var internalLink = KanbanChecklistItem(title: "Inside", content: .linkedCard(cardID: 2))
+        internalLink.retainedCardID = 2
+        let externalLink = KanbanChecklistItem(title: "Outside", content: .linkedCard(cardID: 6))
+        member.checklists = [KanbanChecklist(title: "Links", items: [internalLink, externalLink])]
+        var watcher = card(8, "Watch")
+        var nested = KanbanChecklistItem(title: "Nested", content: .linkedCard(cardID: 2))
+        nested.linkedCollectionID = source.id
+        watcher.checklists = [KanbanChecklist(title: "Outer", items: [KanbanChecklistItem(title: "Detail", content: .actionDetail(
+            KanbanChecklistActionDetail(description: "Context", checklists: [KanbanChecklist(title: "Inner", items: [nested])])) )])]
+        var hiddenDetail = KanbanChecklistItem(title: "Inactive detail")
+        hiddenDetail.retainedDetail = KanbanChecklistActionDetail(description: "Hidden context", checklists: [KanbanChecklist(title: "Retained", items: [nested])])
+        watcher.checklists.append(KanbanChecklist(title: "Inactive", items: [hiddenDetail]))
+        source.lists = [KanbanList(id: 10, title: "Source", cards: [card(0, "Ungrouped"), heading, member, card(3, "---"), card(4, "Walk"), card(5, "--- Evening"), card(6, "Dinner")])]
+        source.savedCardIDs = [2, 6]
+        target.lists = [KanbanList(id: 20, title: "Target", cards: [card(2, "Existing")], archivedCards: [card(4, "Archived")])]
+        observer.lists = [KanbanList(id: 30, title: "Links", cards: [], archivedCards: [watcher])]
+        var owners = [source, target, observer]
+        let original = owners
+        let receipt = try SectionTransfer.move(heading: heading,
+            source: WorkspaceListReference(ownerID: source.id, listID: 10), destination: WorkspaceListReference(ownerID: target.id, listID: 20), owners: &owners)
+        XCTAssertEqual(owners[0].lists[0].cards.map(\.id), [0, 5, 6])
+        XCTAssertEqual(owners[1].lists[0].cards.map(\.word), ["Existing", "--- Morning", "Breakfast", "---", "Walk"])
+        let relocated = try XCTUnwrap(owners[1].lists[0].cards.first { $0.word == "Breakfast" })
+        XCTAssertNotEqual(relocated.id, 2)
+        XCTAssertEqual(relocated.attachments, member.attachments)
+        XCTAssertEqual(relocated.createdAt, member.createdAt)
+        XCTAssertTrue(relocated.isTitleChecked)
+        XCTAssertEqual(owners[1].lists[0].cards[1].appearance, heading.appearance)
+        XCTAssertEqual(owners[0].savedCardIDs, [6])
+        XCTAssertTrue(owners[1].savedCardIDs.contains(relocated.id))
+        XCTAssertEqual(relocated.checklists[0].items[0].content, .linkedCard(cardID: relocated.id))
+        XCTAssertEqual(relocated.checklists[0].items[0].linkedCollectionID, target.id)
+        XCTAssertEqual(relocated.checklists[0].items[1].linkedCollectionID, source.id)
+        guard case .actionDetail(let detail) = owners[2].lists[0].archivedCards[0].checklists[0].items[0].content else { return XCTFail("Missing detail") }
+        XCTAssertEqual(detail.checklists[0].items[0].content, .linkedCard(cardID: relocated.id))
+        XCTAssertEqual(detail.checklists[0].items[0].linkedCollectionID, target.id)
+        let retained = try XCTUnwrap(owners[2].lists[0].archivedCards[0].checklists[1].items[0].retainedDetail)
+        XCTAssertEqual(retained.checklists[0].items[0].content, .linkedCard(cardID: relocated.id))
+        var plan = DailyPlan(date: .now, calendar: .current)
+        plan.priorities = [DailyPlanPriority(PlanningSearchResult(weekKey: nil, collectionID: source.id, collectionTitle: source.title,
+            listID: 10, listTitle: "Source", card: member))]
+        var plans = DailyPlanStore.Document(); plans.plans[plan.id] = plan
+        let updatedPlans = DailyPlanStore.relocatingSection(receipt, in: plans)
+        XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.ownerID, target.id)
+        XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.cardID, relocated.id)
+        XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.sourceCreatedAt, member.createdAt)
+        XCTAssertEqual(try receipt.undo(in: owners), original)
+        var edited = owners
+        edited[1].lists[0].cards[0].word = "Edited after moving"
+        XCTAssertThrowsError(try receipt.undo(in: edited))
+        XCTAssertEqual(edited[1].lists[0].cards[0].word, "Edited after moving")
+        var unrelated = PersonalCollection(title: "Unrelated", kind: .board, icon: .project, color: .blue)
+        unrelated.lists = []
+        XCTAssertEqual(try receipt.undo(in: owners + [unrelated]), original + [unrelated])
+    }
+
+    func testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Chicago")!
+        let fromDay = try XCTUnwrap(PlanningDate.date("2026-10-31", calendar: calendar))
+        let toDay = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
+        var owner = PersonalCollection(title: "Week", kind: .board, icon: .project, color: .blue)
+        let heading = KanbanCard(id: 1, word: "--- Build", listTitle: "Saturday", checklists: [])
+        var dated = KanbanCard(id: 2, word: "Work", listTitle: "Saturday", checklists: [])
+        dated.startDate = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: fromDay)
+        dated.startDateKind = .dateAndTime
+        dated.dueDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: fromDay))
+        dated.dueDateKind = .date
+        var timed = dated.replacingLocation(id: 3, listTitle: "Saturday"); timed.startDateKind = .time; timed.dueDateKind = .time
+        owner.lists = [KanbanList(id: 10, title: "Saturday", cards: [heading, dated, timed]), KanbanList(id: 11, title: "Monday", cards: [])]
+        var owners = [owner]
+        let source = WorkspaceListReference(ownerID: owner.id, listID: 10)
+        let target = WorkspaceListReference(ownerID: owner.id, listID: 11)
+        let original = owners
+        let receipt = try SectionTransfer.move(heading: heading, source: source, destination: target, owners: &owners,
+            sourceDay: fromDay, destinationDay: toDay, shiftDates: true, calendar: calendar)
+        XCTAssertTrue(owners[0].lists[0].cards.isEmpty)
+        let result = owners[0].lists[1].cards
+        XCTAssertEqual(result.map(\.id), [1, 2, 3])
+        XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(result[1].startDate)), 9)
+        XCTAssertEqual(calendar.component(.minute, from: try XCTUnwrap(result[1].startDate)), 15)
+        XCTAssertTrue(calendar.isDate(try XCTUnwrap(result[1].startDate), inSameDayAs: toDay))
+        XCTAssertEqual(PlanningDate.key(try XCTUnwrap(result[1].dueDate), calendar: calendar), "2026-11-03")
+        XCTAssertEqual(result[2].startDate, timed.startDate)
+        XCTAssertEqual(result[2].dueDate, timed.dueDate)
+        XCTAssertEqual(try receipt.undo(in: owners), original)
+        owners = original
+        XCTAssertThrowsError(try SectionTransfer.move(heading: heading, source: source, destination: source, owners: &owners))
+        XCTAssertEqual(owners, original)
+        let missing = WorkspaceListReference(ownerID: UUID(), listID: 11)
+        XCTAssertThrowsError(try SectionTransfer.move(heading: heading, source: source, destination: missing, owners: &owners))
+        XCTAssertEqual(owners, original)
+        _ = try SectionTransfer.move(heading: heading, source: source, destination: target, owners: &owners, sourceDay: fromDay, destinationDay: toDay, shiftDates: false, calendar: calendar)
+        XCTAssertEqual(owners[0].lists[1].cards[1].startDate, dated.startDate)
+    }
+
+    @MainActor
+    func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws {
+        let suite = "SectionMoveJournal." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let before = Data("before".utf8)
+        defaults.set(before, forKey: LibraryImportanceSelection.key)
+        defaults.set(Data("board".utf8), forKey: "Plenact.Board.v1")
+        XCTAssertThrowsError(try DailyReviewTransaction.perform(in: defaults, additionalKeys: [LibraryImportanceSelection.key]) {
+            defaults.set(Data("after".utf8), forKey: LibraryImportanceSelection.key)
+            defaults.set(Data("changed".utf8), forKey: "Plenact.Board.v1")
+            throw CocoaError(.fileWriteUnknown)
+        })
+        XCTAssertEqual(defaults.data(forKey: LibraryImportanceSelection.key), before)
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), Data("board".utf8))
+        XCTAssertNil(defaults.object(forKey: DailyReviewTransaction.key))
+        // Old journals did not capture importance; recovering them must not remove it.
+        let legacy = try PropertyListSerialization.data(fromPropertyList: ["version": 1, "previous": ["Plenact.Board.v1": Data("old".utf8)]], format: .binary, options: 0)
+        defaults.set(legacy, forKey: DailyReviewTransaction.key)
+        try DailyReviewTransaction.recover(in: defaults)
+        XCTAssertEqual(defaults.data(forKey: LibraryImportanceSelection.key), before)
+        XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), Data("old".utf8))
+    }
+
+    @MainActor
+    func testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { TransferConfirmationPresenter.shared.dismiss(); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let heading = KanbanCard(id: 1, word: "--- Morning", listTitle: "Monday", checklists: [])
+        var moves = 0
+        let movement = CardMovementAccess(destinations: [CardMoveDestination(collectionID: UUID(), listID: 2, title: "On the Table", group: "Plans")],
+            moveSection: { _, _, _, _ in moves += 1; return true }, moveSectionToDate: { _, _, _, _ in moves += 1; return true })
+        let host = UIHostingController(rootView: SectionMoveSheet(heading: heading).environment(\.cardMovementAccess, movement))
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(moves, 0)
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-section-move-chooser.png")
+        try XCTUnwrap(image.pngData()).write(to: url); print("SECTION_MOVE_RENDER=" + url.path)
+        var undoCalls = 0
+        TransferConfirmationPresenter.shared.showUndo(TransferConfirmation(title: "Morning", destination: "Thursday")) { undoCalls += 1; return true }
+        try await Task.sleep(for: .milliseconds(200))
+        let notice = try XCTUnwrap(scene.windows.first { !$0.isHidden && $0.windowLevel > .alert })
+        XCTAssertNil(notice.hitTest(CGPoint(x: 10, y: 10), with: nil))
+        let hits = stride(from: CGFloat(0), through: notice.bounds.height, by: 10).filter {
+            notice.hitTest(CGPoint(x: notice.bounds.midX, y: $0), with: nil) != nil
+        }
+        XCTAssertFalse(hits.isEmpty, "Undo must receive taps")
+        XCTAssertLessThan(hits.count, Int(notice.bounds.height / 20), "Touches outside the notice pass through")
+        XCTAssertEqual(undoCalls, 0)
+    }
+
+    func testDaySectionsKeepPlainDividersInsideTheirNamedSection() throws {
+        func card(_ id: Int, _ title: String) -> KanbanCard {
+            KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
+        }
+        var heading = card(1, "--- Morning")
+        heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
+        let cards = [card(0, "Ungrouped"), heading, card(2, "Breakfast"), card(3, "---"),
+            card(4, "Walk"), card(5, "--- Evening"), card(6, "Dinner")]
+        XCTAssertEqual(DaySections.visible(cards).map(\.id), [0, 1, 5, 6])
+        XCTAssertEqual(DaySections.owner(of: 4, in: cards)?.id, 1)
+        XCTAssertNil(DaySections.owner(of: 0, in: cards))
+        let decoded = try JSONDecoder().decode([KanbanCard].self, from: JSONEncoder().encode(cards))
+        XCTAssertEqual(decoded, cards)
+        XCTAssertTrue(decoded[1].appearance?.sectionCollapsed == true)
+        var expanded = cards
+        DaySections.reveal(4, in: &expanded)
+        XCTAssertEqual(DaySections.visible(expanded).map(\.id), cards.map(\.id))
+        XCTAssertEqual(expanded[1].appearance?.accent, .orange)
+        XCTAssertEqual(cards[1].appearance?.sectionCollapsed, true)
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.sectionCollapsed)
+        XCTAssertTrue(legacy.isEmpty)
+        XCTAssertFalse(ItemAppearance(sectionCollapsed: true).isEmpty)
+        var preferences = LocalProfilePreferences(todayFocusGroupsBySection: true)
+        preferences.todayFocusHidesCompleted = false
+        let entries = preferences.todayFocusEntries(in: cards)
+        XCTAssertEqual(entries.first(where: { $0.id == 4 })?.heading, "Morning")
+        XCTAssertTrue(entries.contains { $0.id == 2 }, "Collapsing Day content does not hide it from Focus")
+    }
+
+    func testDaySectionMovementRetainsTheWholeBlockAndItsMetadata() throws {
+        func card(_ id: Int, _ title: String) -> KanbanCard {
+            KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
+        }
+        var morning = card(1, "--- Morning")
+        morning.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
+        let cards = [card(0, "Before sections"), morning, card(2, "Breakfast"), card(3, "---"),
+            card(4, "Walk"), card(5, "--- Midday"), card(6, "Work"), card(7, "--- Night"), card(8, "Rest")]
+        let moved = DaySections.moved(cards, sectionID: 1, offset: 1)
+        XCTAssertEqual(moved.map(\.id), [0, 5, 6, 1, 2, 3, 4, 7, 8])
+        XCTAssertEqual(DaySections.moved(moved, sectionID: 1, offset: -1), cards)
+        XCTAssertEqual(DaySections.moved(cards, sectionID: 7, offset: -1).map(\.id), [0, 1, 2, 3, 4, 7, 8, 5, 6])
+        XCTAssertEqual(DaySections.moved(cards, sectionID: 1, offset: -1), cards)
+        XCTAssertEqual(DaySections.reordered(cards, itemID: 1, to: 8).map(\.id), [0, 5, 6, 7, 8, 1, 2, 3, 4])
+        XCTAssertEqual(DaySections.reordered(cards, itemID: 7, to: 0).map(\.id), [0, 7, 8, 1, 2, 3, 4, 5, 6])
+        XCTAssertEqual(DaySections.moved(cards, sectionID: 7, offset: 1), cards)
+        XCTAssertEqual(DaySections.moved(cards, sectionID: 3, offset: 1), cards, "A plain line is not a section")
+        for item in cards { XCTAssertEqual(moved.first { $0.id == item.id }, item) }
+    }
+
+    func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws {
+        let suite = "DaySectionExamples." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var library = PlanningRoutineLibrary.seeded
+        library.templates.removeAll { template in PlanningRoutineLibrary.sectionExamples.contains { $0.id == template.id } }
+        library.bundledRoutineRevision = 2
+        library.templates[0].name = "My own week"
+        let original = library.templates
+        let bytes = try JSONEncoder().encode(library)
+        defaults.set(bytes, forKey: PlanningRoutineStore.key)
+        let upgraded = try PlanningRoutineStore.load(from: defaults)
+        XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)
+        XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
+        XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), bytes, "Loading examples does not write user data")
+        try PlanningRoutineStore.validate(upgraded)
+        for example in PlanningRoutineLibrary.sectionExamples {
+            XCTAssertEqual(example.kind, .day)
+            let cards = try XCTUnwrap(example.collection.lists.first).cards
+            XCTAssertEqual(cards.filter { $0.sectionHeading != nil }.count, 3)
+            XCTAssertTrue(cards.filter { $0.sectionHeading != nil }.allSatisfy { $0.appearance?.accent != nil })
+            XCTAssertTrue(cards.allSatisfy { !$0.isTitleChecked })
+            let day = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: example.calendar))
+            let blank = DatedPlanningWeek.make(for: day, calendar: example.calendar)
+            let applied = try PlanningTemplateApplication.apply(example, to: blank, date: day, calendar: example.calendar, mode: .add)
+            let listID = try XCTUnwrap(applied.dayListIDs[PlanningDate.key(day, calendar: example.calendar)])
+            let result = try XCTUnwrap(applied.collection.lists.first { $0.id == listID }).cards
+            XCTAssertEqual(result.map(\.word), cards.map(\.word))
+            XCTAssertEqual(result.map(\.appearance), cards.map(\.appearance))
+            XCTAssertEqual(Set(result.map(\.id)).count, result.count)
+        }
+    }
+
+    @MainActor
+    func testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+        let cards = try XCTUnwrap(PlanningRoutineLibrary.sectionExamples.first?.collection.lists.first).cards
+        var writes = 0
+        for scheme in [ColorScheme.light, .dark] {
+            let host = UIHostingController(rootView: NavigationStack {
+                List {
+                    ForEach(DaySections.visible(cards)) { card in
+                        if card.sectionHeading != nil {
+                            DaySectionRow(card: card, cards: cards, onUpdate: { _ in writes += 1 }, onMove: { _ in writes += 1 })
+                        } else {
+                            Text(card.word).padding(12).modifier(DaySectionRail(cardID: card.id, cards: cards))
+                        }
+                    }
+                }.navigationTitle("A day in chapters")
+            }.environment(\.colorScheme, scheme).environment(\.dynamicTypeSize, .accessibility1))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host; window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-day-sections-\(scheme).png")
+            try XCTUnwrap(image.pngData()).write(to: url)
+            print("DAY_SECTION_RENDER=" + url.path)
+        }
+        XCTAssertEqual(writes, 0)
+    }
+
     func testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile() throws {
         let old = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
         XCTAssertFalse(old.randomizesNewCardHeaders)
@@ -527,7 +806,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(upgraded.templates[index].collection.lists[0].cards[0].labelIDs, ["custom-tag"])
         XCTAssertFalse(upgraded.templates[index].collection.lists[0].cards[1].labelIDs.isEmpty)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 2)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
     }
 
     @MainActor
@@ -798,11 +1077,11 @@ final class PlenactBoardDocumentTests: XCTestCase {
         try PlanningCalendarStore.save(document, to: defaults)
         let weekBytes = defaults.data(forKey: PlanningCalendarStore.key)
         let upgraded = try PlanningRoutineStore.load(from: defaults)
-        XCTAssertEqual(upgraded.templates.count, 3)
+        XCTAssertEqual(upgraded.templates.count, 6)
         XCTAssertEqual(upgraded.templates[0], legacy.templates[0])
         XCTAssertEqual(upgraded.templates[1], legacy.templates[1])
         XCTAssertEqual(upgraded.defaultWeekID, PlanningRoutineLibrary.jmrID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 2)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 3)
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), oldBytes)
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
         var customChoice = upgraded; customChoice.defaultWeekID = nil
@@ -814,6 +1093,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
     }
 
+
+    @MainActor
+    func testLibraryDaySectionExamplesSearchIncludesHeadingsAndMemberItems() {
+        XCTAssertEqual(LibraryDaySectionExamples.matches(query: "day sections").count, 3)
+        XCTAssertEqual(LibraryDaySectionExamples.matches(query: "morning").map(\.name), ["A day in chapters"])
+        XCTAssertEqual(LibraryDaySectionExamples.matches(query: "tools teardown").map(\.name), ["A build session"])
+        XCTAssertEqual(LibraryDaySectionExamples.matches(query: "headphones home").map(\.name), ["A workout journey"])
+        XCTAssertTrue(LibraryDaySectionExamples.matches(query: "nonexistent example zzz").isEmpty)
+    }
 
     func testLibraryStarterFiltersScopeSearchAndExcludePersonalCollections() throws {
         let list = PersonalCollection(title: "Vacation private plans", kind: .list)
@@ -878,7 +1166,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         var saved = 0
         let privateCollection = PersonalCollection(title: "Private unrelated project", kind: .list)
         for width in [393.0, 744.0] {
-            for (filter, query) in [(LibraryBrowseFilter.templates, ""), (.examples, ""), (.templates, "vacation"), (.examples, "month motion")] {
+            for (filter, query) in [(LibraryBrowseFilter.templates, ""), (.examples, ""), (.templates, "vacation"), (.examples, "month motion"), (.examples, "day sections")] {
                 let host = UIHostingController(rootView: BoardListsView(retainedWeekLists: [], collections: .constant([privateCollection]),
                     registerListNewNote: { _ in }, onOpenSaved: { saved += 1 },
                     onLoadExampleWeek: { saved += 1; return true }, onLoadExampleMonth: { saved += 1 },
@@ -888,7 +1176,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 try await Task.sleep(for: .milliseconds(300))
                 host.view.layoutIfNeeded()
                 let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) }
-                let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-library-\(filter.rawValue)-\(Int(width))-\(query.isEmpty ? "all" : "search").png")
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-library-\(filter.rawValue)-\(Int(width))-\(query.isEmpty ? "all" : query.replacingOccurrences(of: " ", with: "-")).png")
                 try XCTUnwrap(image.pngData()).write(to: url)
                 print("LIBRARY_FILTER_RENDER=" + url.path)
             }

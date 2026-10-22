@@ -61,3 +61,5 @@ The `.webloc` files are local resource shortcuts, not source dependencies. This 
 - [Unified Card and Note creation](Design/Unified-Item-Creation.md)
 
 - [Optional lower-left Back shortcut](Design/Lower-Corner-Back.md)
+
+- [Day sections and example routines](Design/Day-Sections.md)

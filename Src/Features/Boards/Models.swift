@@ -2077,6 +2077,7 @@ enum BoardCardMovement {
 
         card.listTitle = updated[destination].title
         updated[destination].cards.insert(card, at: insertion)
+        DaySections.reveal(cardID, in: &updated[destination].cards)
         lists = updated
 
         return true
@@ -4633,6 +4634,17 @@ enum DaySections {
               let index = cards.firstIndex(where: { $0.id == heading.id }),
               cards[index].appearance?.sectionCollapsed == true else { return }
         cards[index].appearance?.sectionCollapsed = false
+    }
+    /// Translate native List offsets through the visible projection, keeping hidden members in storage.
+    static func visibleMove(_ cards: [KanbanCard], sourceOffsets: IndexSet, destinationOffset: Int) -> (id: Int, index: Int)? {
+        let rows = visible(cards)
+        guard let source = sourceOffsets.first, rows.indices.contains(source),
+              (0...rows.count).contains(destinationOffset),
+              let canonicalSource = cards.firstIndex(where: { $0.id == rows[source].id }) else { return nil }
+        let boundary: Int
+        if destinationOffset == rows.count { boundary = cards.count }
+        else { boundary = cards.firstIndex(where: { $0.id == rows[destinationOffset].id }) ?? cards.count }
+        return (rows[source].id, canonicalSource < boundary ? boundary - 1 : boundary)
     }
     static func reordered(_ cards: [KanbanCard], itemID: Int, to destination: Int) -> [KanbanCard] {
         guard let source = cards.firstIndex(where: { $0.id == itemID }) else { return cards }

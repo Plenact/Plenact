@@ -419,7 +419,6 @@ struct BoardGalleryView: View {
     let onOpen: (KanbanCard, Int) -> Void
     var onUpdate: (KanbanCard) -> Void = { _ in }
     var onMoveSection: (Int, Int, Int) -> Void = { _, _, _ in }
-    var onCreate: (QuickCaptureSubmission) -> Bool = { _ in false }
     var showsListHeadings = true
     var boardAppearance = BoardAppearance()
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -458,7 +457,6 @@ struct BoardGalleryView: View {
                         if list.cards.isEmpty {
                             Text("Room for your next idea").font(.subheadline).foregroundStyle(.secondary)
                         }
-                        DaySectionCreationButton(listID: list.id, onCreate: onCreate)
                     }
                     .padding(16)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
@@ -600,39 +598,6 @@ struct DaySectionRow: View {
         appearance.accent = color
         updated.appearance = appearance.isEmpty ? nil : appearance
         onUpdate(updated)
-    }
-}
-struct DaySectionCreationButton: View {
-    let listID: Int
-    let onCreate: (QuickCaptureSubmission) -> Bool
-    @State private var isPresented = false
-    @State private var name = ""
-    var body: some View {
-        Button("Add section", systemImage: "text.badge.plus") { name = ""; isPresented = true }
-            .frame(minHeight: 44)
-            .sheet(isPresented: $isPresented) {
-                NavigationStack {
-                    Form {
-                        TextField("Section name", text: $name).textInputAutocapitalization(.sentences)
-                        Text("The section continues until the next named section. Choose a color or collapse it from its section options.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    .navigationTitle("New section")
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { isPresented = false } }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Add") {
-                                let capture = QuickCaptureSubmission(listID: listID,
-                                    title: "--- " + name.trimmingCharacters(in: .whitespacesAndNewlines),
-                                    body: "", subtitle: "", presentation: .note, actions: nil, attachments: [], schedule: nil)
-                                if onCreate(capture) { isPresented = false }
-                            }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-                    }
-                }
-            }
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
     }
 }
 struct DaySectionRail: ViewModifier {
@@ -2393,6 +2358,7 @@ struct ContentView: View {
         let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
         guard reordered != cards else { return }
         cards = reordered
+        DaySections.reveal(cardID, in: &cards)
 
         withAnimation(.easeInOut(duration: 0.2)) {
             lists[listIndex].cards = cards
@@ -3115,7 +3081,7 @@ struct ContentView: View {
                                 visibleListID = listID
                                 onListViewed(listID)
                                 navigationPath.append(card)
-                            }, onUpdate: updateCard, onMoveSection: moveSection, onCreate: addCard,
+                            }, onUpdate: updateCard, onMoveSection: moveSection,
                                 showsListHeadings: !isStandaloneListView, boardAppearance: currentBoardAppearance)
                             .environment(\.cardMovementSource, personalCollectionID)
                             .environment(\.boardViewportMemory, viewportMemory)
@@ -5058,25 +5024,12 @@ struct KanbanListView: View {
                     }
                 }
                 .onMove { sourceOffsets, destinationOffset in
-
-                    guard editMode == .active, !list.cards.contains(where: { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true }) else {
-
-                        return
-                    }
-
-                    guard let sourceIndex = sourceOffsets.first, /* Original drag source row */
-                          list.cards.indices.contains(sourceIndex) else {
-                        return
-                    }
-
-                    let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset /* Destination after source removal */
-
-                    onMoveCard(list.cards[sourceIndex].id, finalIndex)
+                    guard editMode == .active,
+                          let move = DaySections.visibleMove(list.cards, sourceOffsets: sourceOffsets, destinationOffset: destinationOffset) else { return }
+                    onMoveCard(move.id, move.index)
                 }
+                .moveDisabled(editMode != .active)
 
-                .moveDisabled(editMode != .active || list.cards.contains { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true })
-
-                DaySectionCreationButton(listID: list.id, onCreate: onAddCard)
 
                 Button {
                     activeSheet = .newCard
@@ -6771,23 +6724,12 @@ struct TodayListDetailView: View {
                         }
 
                         .onMove { sourceOffsets, destinationOffset in
-
                             guard editMode == .active,
-                                  !focusedList.cards.contains(where: { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true }),
-                                  let sourceIndex = sourceOffsets.first,
-                                  focusedList.cards.indices.contains(sourceIndex) else {
-
-                                return
-                            }
-
-                            let finalIndex = sourceIndex < destinationOffset ? destinationOffset - 1 : destinationOffset /* Destination after source removal */
-
-                            moveCard(focusedList.cards[sourceIndex].id, toIndex: finalIndex)
+                                  let move = DaySections.visibleMove(focusedList.cards, sourceOffsets: sourceOffsets, destinationOffset: destinationOffset) else { return }
+                            moveCard(move.id, toIndex: move.index)
                         }
+                        .moveDisabled(editMode != .active)
 
-                        .moveDisabled(editMode != .active || focusedList.cards.contains { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true })
-
-                        DaySectionCreationButton(listID: listID, onCreate: addCard)
 
                         Button { showsNewCard = true } label: {
                             HStack {
@@ -7124,6 +7066,7 @@ struct TodayListDetailView: View {
         let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
         guard reordered != cards else { return }
         cards = reordered
+        DaySections.reveal(cardID, in: &cards)
 
         withAnimation(.easeInOut(duration: 0.2)) {
             lists[listIndex].cards = cards

@@ -12,9 +12,9 @@ named divider; items before the first heading remain ungrouped. An unnamed plain
 divider remains a visual separator inside its current section. Repeated heading
 names are allowed: the divider's stable item ID identifies each section.
 
-The existing `--- Heading` syntax continues to work, and Add section is available
-beside content creation in Day, focused List, Board columns, and Gallery layouts.
-Tap a heading to rename it. Leave the name empty to return to a plain separator.
+Create a named section by entering `--- Heading` in the existing Card/Note creation
+flow. Enter `---` alone for a plain divider. There is no separate Add section button
+in Day, focused List, Board columns, or Gallery layouts. Tap a heading to rename it. Leave the name empty to return to a plain separator.
 Deleting a divider removes only that divider, preserving the existing delete
 behavior; it does not delete its contents.
 
@@ -30,9 +30,9 @@ behavior; it does not delete its contents.
   carries the heading and all of its content together, including plain dividers,
   retaining every item's identity and metadata. Items before the first section stay
   in place. Native heading reordering also preserves the entire block.
-- Individual row reordering is available when sections are expanded; expand sections
-  first to avoid ambiguous offsets in the collapsed projection. Whole-section menu
-  movement remains available while collapsed.
+- Individual rows can reorder while other sections are collapsed. Visible-row offsets
+  map to canonical item identities so hidden content stays intact. A card moved into
+  a collapsed section reveals that section. Whole-section menu movement remains available.
 - Creating content inside a collapsed section expands its owner in the saved
   snapshot so existing scroll-to-new-item behavior can reveal it.
 
@@ -116,3 +116,5 @@ transaction rollback and legacy recovery, and the chooser/Undo touch boundaries.
 ### Library discovery
 
 The Library’s **Examples** filter includes a searchable **Day section examples** group with all three routines and their section names. The upper-right **+ → Examples → Day section examples** menu offers the same choices. Preview sections shows the colored headings and member rails without creating content. **Use on a day…** opens the existing Day template preview/apply workflow, including its destination, Add/Replace controls, and confirmation safeguards. Browsing does not change saved templates or scheduled plans.
+
+The persistent Undo panel is hosted inside the existing app window, with touches limited to the panel. It does not create a second window that could interfere with native press-and-hold drag routing. Native drag checks also run with the Undo panel showing.

@@ -500,8 +500,10 @@ struct LocalProfilePreferences: Hashable, Codable {
         var entries: [TodayFocusEntry] = []
         for card in cards {
             if card.isSectionDivider {
-                sectionID = card.id
-                heading = card.sectionHeading
+                if let name = card.sectionHeading {
+                    sectionID = card.id
+                    heading = name
+                }
             } else if (!todayFocusHidesCompleted || !card.isTitleChecked)
                 && ((!todayFocusIncludesImportant && !todayFocusIncludesBookmarked && !todayFocusIncludesUpNext)
                     || (todayFocusIncludesUpNext && TodayFocusEntry(card: card, sectionID: sectionID, heading: heading).isUpNext(at: day, calendar: calendar))
@@ -513,7 +515,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         if todayFocusOrder == .chronological {
             // Stable ties and undated items retain the user's original sequence.
             let sectionOrder = Dictionary(uniqueKeysWithValues:
-                cards.enumerated().filter { $0.element.isSectionDivider }.map { ($0.element.id, $0.offset + 1) })
+                cards.enumerated().filter { $0.element.sectionHeading != nil }.map { ($0.element.id, $0.offset + 1) })
             entries = entries.enumerated().sorted { lhs, rhs in
                 if todayFocusGroupsBySection {
                     let l = lhs.element.sectionID.flatMap { sectionOrder[$0] } ?? 0

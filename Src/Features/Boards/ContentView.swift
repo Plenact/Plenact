@@ -402,7 +402,7 @@ struct BoardGalleryGroup: Identifiable {
     var cards: [KanbanCard]
     static func groups(in list: KanbanList) -> [BoardGalleryGroup] {
         var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]
-        for card in list.cards {
+        for card in DaySections.visible(list.cards) {
             if card.isSectionDivider {
                 groups.append(BoardGalleryGroup(id: groups.count, divider: card, cards: []))
             } else { groups[groups.count - 1].cards.append(card) }
@@ -417,6 +417,9 @@ struct BoardGalleryView: View {
     let lists: [KanbanList]
     let listTitle: (KanbanList) -> String
     let onOpen: (KanbanCard, Int) -> Void
+    var onUpdate: (KanbanCard) -> Void = { _ in }
+    var onMoveSection: (Int, Int, Int) -> Void = { _, _, _ in }
+    var onCreate: (QuickCaptureSubmission) -> Bool = { _ in false }
     var showsListHeadings = true
     var boardAppearance = BoardAppearance()
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -437,13 +440,16 @@ struct BoardGalleryView: View {
                         }
                         ForEach(BoardGalleryGroup.groups(in: list)) { group in
                             if let divider = group.divider {
-                                Button { onOpen(divider, list.id) } label: { NamedSectionDivider(card: divider) }
-                                    .buttonStyle(.plain).accessibilityLabel(divider.sectionHeading ?? "Section divider")
+                                DaySectionRow(card: divider, cards: list.cards, onUpdate: onUpdate,
+                                    onMove: { onMoveSection(list.id, divider.id, $0) },
+                                    onOpen: { onOpen(divider, list.id) })
+                                    .accessibilityLabel(divider.sectionHeading ?? "Section divider")
                                     .id(divider.id)
                             }
                             LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                                 ForEach(group.cards) { card in
-                                    Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card, appearance: list.appearance, boardAppearance: boardAppearance) }
+                                    Button { onOpen(card, list.id) } label: { BoardGalleryTile(card: card, appearance: list.appearance, boardAppearance: boardAppearance)
+                                        .modifier(DaySectionRail(cardID: card.id, cards: list.cards)) }
                                         .buttonStyle(.plain).accessibilityHint("Opens this item in " + listTitle(list))
                                         .id(card.id)
                                 }
@@ -452,6 +458,7 @@ struct BoardGalleryView: View {
                         if list.cards.isEmpty {
                             Text("Room for your next idea").font(.subheadline).foregroundStyle(.secondary)
                         }
+                        DaySectionCreationButton(listID: list.id, onCreate: onCreate)
                     }
                     .padding(16)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
@@ -517,14 +524,127 @@ struct NamedSectionDivider: View {
         HStack(spacing: 10) {
             if let heading = card.sectionHeading {
                 Text(heading).font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(card.appearance?.accent?.color ?? .secondary).fixedSize(horizontal: false, vertical: true)
+                if card.appearance?.sectionCollapsed == true {
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                }
             }
-            Rectangle().fill(Color.secondary.opacity(0.35)).frame(height: 1)
+            Rectangle().fill((card.appearance?.accent?.color ?? Color.secondary).opacity(0.35)).frame(height: 1)
                 .frame(maxWidth: .infinity).accessibilityHidden(true)
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
         .contentShape(Rectangle())
+    }
+}
+
+/// Separate controls keep section actions out of the heading's navigation tap.
+struct DaySectionRow: View {
+    let card: KanbanCard
+    let cards: [KanbanCard]
+    let onUpdate: (KanbanCard) -> Void
+    let onMove: (Int) -> Void
+    var onOpen: (() -> Void)? = nil
+    @Environment(\.cardMovementAccess) private var movement
+    @State private var showsMove = false
+    @ViewBuilder private var heading: some View {
+        if let onOpen {
+            Button(action: onOpen) { NamedSectionDivider(card: card) }.buttonStyle(.plain)
+        } else {
+            NavigationLink(value: card) { NamedSectionDivider(card: card) }
+                .buttonStyle(.plain)
+                .modifier(HideNavigationLinkIndicator())
+        }
+    }
+    private var headings: [KanbanCard] { cards.filter { $0.sectionHeading != nil } }
+    var body: some View {
+        HStack(spacing: 0) {
+            heading
+            if card.sectionHeading != nil {
+                Button {
+                    var updated = card
+                    var appearance = updated.appearance ?? ItemAppearance()
+                    appearance.sectionCollapsed = appearance.sectionCollapsed != true
+                    updated.appearance = appearance
+                    onUpdate(updated)
+                } label: {
+                    Image(systemName: card.appearance?.sectionCollapsed == true ? "chevron.down" : "chevron.up")
+                        .frame(width: 44, height: 44)
+                }.buttonStyle(.borderless)
+                    .accessibilityLabel(card.appearance?.sectionCollapsed == true ? "Expand section" : "Collapse section")
+                Menu {
+                    if movement.moveSection != nil {
+                        Button("Move section to…", systemImage: "arrowshape.turn.up.right") { showsMove = true }
+                    }
+                    Menu("Section color", systemImage: "paintpalette") {
+                        Button("Default") { setColor(nil) }
+                        ForEach(ItemAccent.allCases, id: \.self) { color in
+                            Button { setColor(color) } label: {
+                                Label(color.rawValue.capitalized, systemImage: "circle.fill").foregroundStyle(color.color)
+                            }
+                        }
+                    }
+                    Button("Move section earlier", systemImage: "arrow.up") { onMove(-1) }
+                        .disabled(headings.first?.id == card.id)
+                    Button("Move section later", systemImage: "arrow.down") { onMove(1) }
+                        .disabled(headings.last?.id == card.id)
+                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                    .accessibilityLabel("Section options for " + (card.sectionHeading ?? ""))
+            }
+        }
+        .sheet(isPresented: $showsMove) { SectionMoveSheet(heading: card) }
+    }
+    private func setColor(_ color: ItemAccent?) {
+        var updated = card
+        var appearance = updated.appearance ?? ItemAppearance()
+        appearance.accent = color
+        updated.appearance = appearance.isEmpty ? nil : appearance
+        onUpdate(updated)
+    }
+}
+struct DaySectionCreationButton: View {
+    let listID: Int
+    let onCreate: (QuickCaptureSubmission) -> Bool
+    @State private var isPresented = false
+    @State private var name = ""
+    var body: some View {
+        Button("Add section", systemImage: "text.badge.plus") { name = ""; isPresented = true }
+            .frame(minHeight: 44)
+            .sheet(isPresented: $isPresented) {
+                NavigationStack {
+                    Form {
+                        TextField("Section name", text: $name).textInputAutocapitalization(.sentences)
+                        Text("The section continues until the next named section. Choose a color or collapse it from its section options.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                    .navigationTitle("New section")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { isPresented = false } }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Add") {
+                                let capture = QuickCaptureSubmission(listID: listID,
+                                    title: "--- " + name.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    body: "", subtitle: "", presentation: .note, actions: nil, attachments: [], schedule: nil)
+                                if onCreate(capture) { isPresented = false }
+                            }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+}
+struct DaySectionRail: ViewModifier {
+    let cardID: Int
+    let cards: [KanbanCard]
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .leading) {
+            if let color = DaySections.owner(of: cardID, in: cards)?.appearance?.accent {
+                RoundedRectangle(cornerRadius: 2).fill(color.color).frame(width: 3)
+                    .padding(.vertical, 6).allowsHitTesting(false).accessibilityHidden(true)
+            }
+        }
     }
 }
 
@@ -2146,6 +2266,7 @@ struct ContentView: View {
             calendar: planningCalendarAccess?.document.calendar ?? .current) else { return false }
         var snapshot = lists
         snapshot[listIndex].cards.append(contentsOf: created)
+        if let first = created.first { DaySections.reveal(first.id, in: &snapshot[listIndex].cards) }
         do {
             if let onCommitDeletion { try onCommitDeletion(snapshot + archivedLists, savedCardIDs) }
             else { try KanbanBoardPersistence.saveListsChecked(snapshot + archivedLists) }
@@ -2252,6 +2373,11 @@ struct ContentView: View {
     /// @post       The card occupies the clamped valid destination; missing IDs or unchanged
     ///             positions do nothing. Card content remains unchanged
     ///
+    private func moveSection(in listID: Int, sectionID: Int, offset: Int) {
+        guard let index = lists.firstIndex(where: { $0.id == listID }) else { return }
+        lists[index].cards = DaySections.moved(lists[index].cards, sectionID: sectionID, offset: offset)
+    }
+
     private func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int) {
 
         guard let listIndex = lists.firstIndex(where: { /* Position of the list containing the reordered card */
@@ -2264,10 +2390,9 @@ struct ContentView: View {
 
         var cards = lists[listIndex].cards /* Mutable card-order copy */
 
-        guard BoardCardReordering.move(cardID, to: destinationIndex, in: &cards) else {
-
-            return
-        }
+        let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+        guard reordered != cards else { return }
+        cards = reordered
 
         withAnimation(.easeInOut(duration: 0.2)) {
             lists[listIndex].cards = cards
@@ -2990,7 +3115,8 @@ struct ContentView: View {
                                 visibleListID = listID
                                 onListViewed(listID)
                                 navigationPath.append(card)
-                            }, showsListHeadings: !isStandaloneListView, boardAppearance: currentBoardAppearance)
+                            }, onUpdate: updateCard, onMoveSection: moveSection, onCreate: addCard,
+                                showsListHeadings: !isStandaloneListView, boardAppearance: currentBoardAppearance)
                             .environment(\.cardMovementSource, personalCollectionID)
                             .environment(\.boardViewportMemory, viewportMemory)
                         } else {
@@ -3067,6 +3193,7 @@ struct ContentView: View {
                                             draggedCardID:         draggedCardID,
                                             dropBeforeCardID:      cardDropTarget?.listID == list.id ? cardDropTarget?.beforeCardID : nil,
                                             isCardDropTarget:      cardDropTarget?.listID == list.id,
+                                            onMoveSection: { sectionID, offset in moveSection(in: list.id, sectionID: sectionID, offset: offset) },
                                             onCardDragBegan:       beginCardDrag,
                                             onCardDragChanged:     updateCardDrag,
                                             onCardDragEnded:       { cardID, commit, point in
@@ -4518,6 +4645,7 @@ struct KanbanListView: View {
     var draggedCardID: Int? = nil /* Active native-drag record identity */
     var dropBeforeCardID: Int? = nil /* Card identity marking the current insertion boundary */
     var isCardDropTarget = false /* Whether this list contains the current insertion target */
+    var onMoveSection: (Int, Int) -> Void = { _, _ in }
     var onCardDragBegan: (Int, CGPoint) -> Void = { _, _ in } /* Reports a card identity and initial global pointer */
     var onCardDragChanged: (Int, CGPoint) -> Void = { _, _ in } /* Reports a card identity and updated global pointer */
     var onCardDragEnded: (Int, Bool, CGPoint?) -> Void = { _, _, _ in } /* Ends a card drag with commit intent and final pointer */
@@ -4642,7 +4770,7 @@ struct KanbanListView: View {
     /// @post       No card order or layout state is modified
     ///
     private var cardCollectionContentHeight: CGFloat { /* Total card content height including row spacing */
-        let rowHeight = list.cards.reduce(CGFloat.zero) { height, card in /* Accumulated measured or estimated card heights */
+        let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero) { height, card in /* Accumulated measured or estimated card heights */
             height + (card.isSectionDivider ? 44 : (usesNoteList ? (measuredCardHeights[card.id] ?? 72) : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card))) + (usesNoteList ? 0 : 8))
         }
 
@@ -4818,21 +4946,19 @@ struct KanbanListView: View {
 
             List {
 
-                ForEach(list.cards) { card in
+                ForEach(DaySections.visible(list.cards)) { card in
 
                     if card.isSectionDivider {
 
-                        NavigationLink(value: card) {
-
-                            NamedSectionDivider(card: card)
-                        }
+                        DaySectionRow(card: card, cards: list.cards, onUpdate: onUpdateCard,
+                            onMove: { onMoveSection(card.id, $0) })
 
                         .buttonStyle(.plain)
                         .modifier(HideNavigationLinkIndicator())
                         .id(card.id)
                         .accessibilityLabel(card.sectionHeading.map { "Edit section heading: " + $0 } ?? "Edit section divider")
                         .background {
-                            if editMode != .active {
+                            if editMode != .active && card.sectionHeading == nil {
                                 BoardCardDragSource(token: cardDragToken,
                                                     onBegan: { onCardDragBegan(card.id, $0) },
                                                     onChanged: { onCardDragChanged(card.id, $0) },
@@ -4899,6 +5025,7 @@ struct KanbanListView: View {
                             .buttonStyle(.plain)
                             .modifier(HideNavigationLinkIndicator())
                         .id(card.id)
+                            .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
                             .background {
                                 if editMode != .active {
 
@@ -4932,7 +5059,7 @@ struct KanbanListView: View {
                 }
                 .onMove { sourceOffsets, destinationOffset in
 
-                    guard editMode == .active else {
+                    guard editMode == .active, !list.cards.contains(where: { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true }) else {
 
                         return
                     }
@@ -4947,7 +5074,9 @@ struct KanbanListView: View {
                     onMoveCard(list.cards[sourceIndex].id, finalIndex)
                 }
 
-                .moveDisabled(editMode != .active)
+                .moveDisabled(editMode != .active || list.cards.contains { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true })
+
+                DaySectionCreationButton(listID: list.id, onCreate: onAddCard)
 
                 Button {
                     activeSheet = .newCard
@@ -6581,13 +6710,15 @@ struct TodayListDetailView: View {
                                 .id("day.scheduleOverview")
                         }
 
-                        ForEach(focusedList.cards) { card in
+                        ForEach(DaySections.visible(focusedList.cards)) { card in
 
                             if card.isSectionDivider {
 
-                                NavigationLink(value: card) {
-                                    NamedSectionDivider(card: card)
-                                }
+                                DaySectionRow(card: card, cards: focusedList.cards, onUpdate: updateCard,
+                                    onMove: { offset in
+                                        guard let index = lists.firstIndex(where: { $0.id == listID }) else { return }
+                                        lists[index].cards = DaySections.moved(lists[index].cards, sectionID: card.id, offset: offset)
+                                    })
                                     .buttonStyle(.plain)
                                     .modifier(HideNavigationLinkIndicator())
                                     .id(card.id)
@@ -6598,7 +6729,7 @@ struct TodayListDetailView: View {
                                         onDelete: { deleteCard(card.id) }
                                     ))
                                     .contentShape(Rectangle())
-                                    .background { cardDragSource(for: card.id) }
+                                    .background { if card.sectionHeading == nil { cardDragSource(for: card.id) } }
                                     .opacity(draggedCardID == card.id ? 0.45 : 1)
                                     .listRowInsets(focusedList.singleListViewMode == .noteList ? EdgeInsets() : EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowSeparator(.hidden)
@@ -6615,6 +6746,7 @@ struct TodayListDetailView: View {
 
                                 NavigationLink(value: card) {
                                     cardPreview(card)
+                                        .modifier(DaySectionRail(cardID: card.id, cards: focusedList.cards))
                                 }
 
                                 .buttonStyle(.plain)
@@ -6641,6 +6773,7 @@ struct TodayListDetailView: View {
                         .onMove { sourceOffsets, destinationOffset in
 
                             guard editMode == .active,
+                                  !focusedList.cards.contains(where: { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true }),
                                   let sourceIndex = sourceOffsets.first,
                                   focusedList.cards.indices.contains(sourceIndex) else {
 
@@ -6652,7 +6785,9 @@ struct TodayListDetailView: View {
                             moveCard(focusedList.cards[sourceIndex].id, toIndex: finalIndex)
                         }
 
-                        .moveDisabled(editMode != .active)
+                        .moveDisabled(editMode != .active || focusedList.cards.contains { $0.sectionHeading != nil && $0.appearance?.sectionCollapsed == true })
+
+                        DaySectionCreationButton(listID: listID, onCreate: addCard)
 
                         Button { showsNewCard = true } label: {
                             HStack {
@@ -6986,10 +7121,9 @@ struct TodayListDetailView: View {
 
         var cards = lists[listIndex].cards /* Mutable focused-list card order */
 
-        guard BoardCardReordering.move(cardID, to: destinationIndex, in: &cards) else {
-
-            return
-        }
+        let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+        guard reordered != cards else { return }
+        cards = reordered
 
         withAnimation(.easeInOut(duration: 0.2)) {
             lists[listIndex].cards = cards
@@ -7112,6 +7246,7 @@ struct TodayListDetailView: View {
             calendar: access.document.calendar) else { return false }
         var updated = lists[listIndex]
         updated.cards.append(contentsOf: created)
+        if let first = created.first { DaySections.reveal(first.id, in: &updated.cards) }
         if var week = access.document.weeks.first(where: { week in
             if let dayMovementSource { return week.id == dayMovementSource }
             let key = representedDate.flatMap { access.document.week(for: $0)?.startKey } ?? access.document.currentWeekKey
@@ -7144,6 +7279,8 @@ struct CardMovementAccess {
     var destinations: [CardMoveDestination] = []
     var move: ((KanbanCard, UUID?, CardMoveDestination) -> Bool)? = nil
     var moveToDate: ((KanbanCard, UUID?, Date) -> Bool)? = nil
+    var moveSection: ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = nil
+    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)? = nil
 }
 private struct CardMovementAccessKey: EnvironmentKey {
     static let defaultValue = CardMovementAccess()
@@ -7161,10 +7298,95 @@ extension EnvironmentValues {
         set { self[CardMovementSourceKey.self] = newValue }
     }
 }
+struct SectionMoveSheet: View {
+    let heading: KanbanCard
+    var onMoved: () -> Void = {}
+    @Environment(\.cardMovementAccess) private var movement
+    @Environment(\.cardMovementSource) private var source
+    @Environment(\.planningCalendarAccess) private var planning
+    @Environment(\.dismiss) private var dismiss
+    @State private var chooseDate = false
+    @State private var date = Date()
+    @State private var destination: CardMoveDestination?
+    @State private var shiftDates = false
+    @State private var failed = false
+    private var destinations: [CardMoveDestination] {
+        movement.destinations.filter { item in
+            let current = planning?.document.weeks.first { $0.startKey == planning?.document.currentWeekKey }?.id
+            let ownerID = item.collectionID ?? current
+            let sourceID = source ?? current
+            guard ownerID == sourceID else { return true }
+            let owner = planning?.document.weeks.first { $0.id == sourceID }?.collection
+                ?? planning?.library.first { $0.id == sourceID }
+            return owner?.lists.first(where: { $0.id == item.listID })?.cards.contains(where: { $0.id == heading.id && $0.createdAt == heading.createdAt }) != true
+        }
+    }
+    private var destinationDay: Date? {
+        guard let destination, let document = planning?.document else { return nil }
+        let owner = destination.collectionID ?? document.weeks.first { $0.startKey == document.currentWeekKey }?.id
+        return document.weeks.first { $0.id == owner }?.dayListIDs.first { $0.value == destination.listID }
+            .flatMap { PlanningDate.date($0.key, calendar: document.calendar) }
+    }
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text("Move “" + (heading.sectionHeading ?? "Section") + "” and everything beneath it up to the next named section.")
+                }
+                Section("Destination") {
+                    Toggle("Choose another day", isOn: $chooseDate)
+                    if chooseDate {
+                        DatePicker("Day", selection: $date, displayedComponents: .date).datePickerStyle(.graphical)
+                    } else {
+                        Picker("List", selection: $destination) {
+                            Text("Choose a list").tag(CardMoveDestination?.none)
+                            ForEach(["Week", "Calendar", "Plans"], id: \.self) { group in
+                                Section(group) {
+                                    ForEach(destinations.filter { $0.group == group }) { item in
+                                        Text(item.title).tag(Optional(item))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if chooseDate || destinationDay != nil {
+                    Section("Dates") {
+                        Toggle("Shift dates to destination day", isOn: $shiftDates)
+                        Text(shiftDates
+                            ? "Dated items move by the same number of days. Time-only schedules keep their clock times. From a general list, the earliest dated item anchors the shift."
+                            : "Keep all existing dates and times.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                Section { Text("An Undo action remains available after moving, including when you navigate to another view.").font(.footnote).foregroundStyle(.secondary) }
+            }
+            .navigationTitle("Move section")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Move") {
+                        let succeeded: Bool
+                        if chooseDate { succeeded = movement.moveSectionToDate?(heading, source, date, shiftDates) == true }
+                        else if let destination { succeeded = movement.moveSection?(heading, source, destination, shiftDates && destinationDay != nil) == true }
+                        else { return }
+                        if succeeded { dismiss(); onMoved() } else { failed = true }
+                    }.disabled(!chooseDate && destination == nil)
+                }
+            }
+            .alert("Section couldn't be moved", isPresented: $failed) {
+                Button("OK", role: .cancel) {}
+            } message: { Text("Your content has been retained. Check the destination and try again.") }
+        }
+    }
+}
+
 struct CardDestinationMenu: View {
     let card: KanbanCard
     var onMoved: () -> Void = {}
     var locationTitle: String? = nil
+    @State private var showsSectionMove = false
     @State private var showsDatePicker = false
     @State private var selectedMoveDate = Date()
 
@@ -7174,7 +7396,16 @@ struct CardDestinationMenu: View {
         access.destinations
     }
     var body: some View {
-        if access.move != nil {
+        if card.sectionHeading != nil, access.moveSection != nil {
+            Button { showsSectionMove = true } label: {
+                if let locationTitle {
+                    SlideableHeaderText(text: locationTitle).font(.caption).foregroundStyle(.secondary).italic()
+                } else {
+                    Label("Move section to…", systemImage: "arrowshape.turn.up.right")
+                }
+            }
+            .sheet(isPresented: $showsSectionMove) { SectionMoveSheet(heading: card, onMoved: onMoved) }
+        } else if access.move != nil {
             Menu {
                 ForEach(["Week", "Calendar", "Plans"], id: \.self) { group in
                     Menu(group) {

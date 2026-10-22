@@ -2658,8 +2658,31 @@ struct CardDetailView: View {
                         .submitLabel(.done)
                         .onSubmit { dismissEditing() }
                         .onChange(of: titleText) { _, newValue in syncCardState(title: newValue) }
-                    Text("Organize the items beneath this divider. Leave the heading blank for a simple line.")
+                    Text("A named section includes everything beneath it until the next named section. Leave the heading blank for a simple line.")
                         .font(.subheadline).foregroundStyle(.secondary)
+                    if !titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Toggle("Collapse section", isOn: Binding(
+                            get: { appearance?.sectionCollapsed == true },
+                            set: { value in
+                                var updated = appearance ?? ItemAppearance()
+                                updated.sectionCollapsed = value
+                                appearance = updated
+                                syncCardState()
+                            }))
+                        Picker("Section color", selection: Binding<ItemAccent?>(
+                            get: { appearance?.accent },
+                            set: { value in
+                                var updated = appearance ?? ItemAppearance()
+                                updated.accent = value
+                                appearance = updated.isEmpty ? nil : updated
+                                syncCardState()
+                            })) {
+                                Text("Default").tag(ItemAccent?.none)
+                                ForEach(ItemAccent.allCases, id: \.self) { color in
+                                    Text(color.rawValue.capitalized).tag(Optional(color))
+                                }
+                            }
+                    }
                     Spacer(minLength: 0)
                 }
 

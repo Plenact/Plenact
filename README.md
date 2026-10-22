@@ -32,6 +32,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 ## Upcoming Development Work
 
+- Giving other user the ability to view/share selected content &/or accounts
+
 - A partner app for Plenact, that accesses and navigates your lists. Consider multiple apps, as different interfaces and tools into your core Plenact data and life plans
 
 - Website Go!!! Android & Desktop applications too

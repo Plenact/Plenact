@@ -5123,7 +5123,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let long = "Make room for today because there is more to this title than fits in the header, and every word should remain readable."
         var overflow: [Bool] = []
         let host = UIHostingController(rootView: VStack(spacing: 20) {
-            SlideableHeaderText(text: long, onOverflowChange: { overflow.append($0) }).font(.headline)
+            SlideableHeaderText(text: long, onTap: {}, onOverflowChange: { overflow.append($0) }).font(.headline)
             SlideableHeaderText(text: "Short").font(.subheadline)
         }.frame(width: 220).padding().defaultAppStorage(defaults))
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)

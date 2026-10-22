@@ -268,13 +268,17 @@ struct PlanningTemplateApplyView: View {
     @State private var mode: PlanningTemplateApplication.Mode = .add
     @State private var baseline: DatedPlanningWeek?
     @State private var preview: DatedPlanningWeek?
+    @State private var exampleImportantIDs: Set<Int> = []
     @State private var message: String?
     @State private var confirmsReplace = false
     private func prepare() {
         guard let access else { preview = nil; return }
         baseline = access.document.week(for: date)
         let target = baseline ?? DatedPlanningWeek.make(for: date, calendar: access.document.calendar)
-        do { preview = try PlanningTemplateApplication.apply(template, to: target, date: date, calendar: access.document.calendar, mode: mode) }
+        do {
+            preview = try PlanningTemplateApplication.apply(template, to: target, date: date, calendar: access.document.calendar, mode: mode)
+            exampleImportantIDs = PlanningTemplateApplication.exampleImportantIDs(template, in: target)
+        }
         catch { preview = nil; message = "This template couldn't be prepared. Your plans have not changed." }
     }
     private func apply() {
@@ -285,7 +289,9 @@ struct PlanningTemplateApplyView: View {
         guard access.document.week(for: date) == baseline, persisted?.week(for: date) == baseline else {
             message = "This week changed while you were previewing it. Refresh the preview before applying."; return
         }
-        if access.saveWeek(preview) { dismiss() }
+        let saved = exampleImportantIDs.isEmpty ? access.saveWeek(preview)
+            : (access.saveExampleWeek?(preview, exampleImportantIDs) ?? access.saveWeek(preview))
+        if saved { dismiss() }
         else { message = "The template couldn't be applied. Your preview is still open; refresh and retry." }
     }
     var body: some View {
@@ -293,6 +299,10 @@ struct PlanningTemplateApplyView: View {
             List {
                 Section {
                     Text(template.name).font(.headline)
+                    if template.exampleFocus != nil {
+                        Text("Includes Important and Bookmarked examples for Today’s Focus. Untimed examples include an all-day item for Up Next. Only content applied to today appears in Today’s Focus.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     DatePicker(template.kind == .week ? "Destination week" : "Destination day", selection: $date, displayedComponents: .date)
                     Picker("Apply as", selection: $mode) {
                         ForEach(PlanningTemplateApplication.Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }

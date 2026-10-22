@@ -1141,6 +1141,8 @@ private struct AppRootView: View {
                 boardTargetCardID = nil
                 boardTargetListID = week.startKey == calendarDocument?.currentWeekKey ? listID : nil
                 selectedDestination = .board
+            }, saveExampleWeek: { week, importantIDs in
+                savePlanningWeek(week, exampleImportantIDs: importantIDs)
             })
     }
 
@@ -1195,9 +1197,17 @@ private struct AppRootView: View {
         do {
             let newWeek = document.week(for: .now) == nil ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
             let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs, newWeek: newWeek)
-            try DailyReviewTransaction.perform {
+            let importantIDs = newWeek == nil ? Set<Int>() : try PlanningRoutineStore.newWeekImportantIDs(for: .now, calendar: document.calendar)
+            var importance = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
+            if !importantIDs.isEmpty && !importance.isEmpty { _ = try JSONDecoder().decode([LibraryRecentItem].self, from: importance) }
+            for id in importantIDs {
+                importance = LibraryImportanceSelection.setting(cardID: id, collectionID: next.id, marked: true, data: importance)
+            }
+            try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key]) {
                 try PlanningCalendarStore.save(document)
                 try KanbanBoardPersistence.saveListsChecked(next.collection.lists)
+                SavedCardPersistence.save(next.collection.savedCardIDs)
+                if !importantIDs.isEmpty { UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key) }
             }
             calendarDocument = document
             lists = next.collection.lists; savedCardIDs = next.collection.savedCardIDs
@@ -1212,7 +1222,8 @@ private struct AppRootView: View {
         do {
             guard let date = PlanningDate.date(requested.startKey, calendar: document.calendar) else { return nil }
             let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar)
-            return savePlanningWeek(prepared) ? prepared : nil
+            let importantIDs = try PlanningRoutineStore.newWeekImportantIDs(for: date, calendar: document.calendar)
+            return savePlanningWeek(prepared, exampleImportantIDs: importantIDs) ? prepared : nil
         } catch {
             DatabaseActivity.shared.report("Could not prepare this week from its template. Your saved plans were retained.")
             return nil
@@ -1220,14 +1231,35 @@ private struct AppRootView: View {
     }
 
     private func savePlanningWeek(_ week: DatedPlanningWeek) -> Bool {
+        savePlanningWeek(week, exampleImportantIDs: [])
+    }
+
+    private func savePlanningWeek(_ week: DatedPlanningWeek, exampleImportantIDs: Set<Int>, replaceImportant: Bool = false) -> Bool {
         guard var document = calendarDocument else { return false }
         if let existing = document.weeks.first(where: { $0.startKey == week.startKey }), existing.id != week.id { return false }
         document.upsert(week)
-        if document == calendarDocument { return true }
+        if document == calendarDocument && exampleImportantIDs.isEmpty && !replaceImportant { return true }
         do {
-            try DailyReviewTransaction.perform {
+            let oldData = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
+            if (!exampleImportantIDs.isEmpty || replaceImportant) && !oldData.isEmpty {
+                _ = try JSONDecoder().decode([LibraryRecentItem].self, from: oldData)
+            }
+            var importance = oldData
+            if replaceImportant {
+                for id in LibraryImportanceSelection.cardIDs(collectionID: week.id, data: importance) {
+                    importance = LibraryImportanceSelection.setting(cardID: id, collectionID: week.id, marked: false, data: importance)
+                }
+            }
+            for id in exampleImportantIDs {
+                importance = LibraryImportanceSelection.setting(cardID: id, collectionID: week.id, marked: true, data: importance)
+            }
+            try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key]) {
                 try PlanningCalendarStore.save(document)
-                if week.startKey == document.currentWeekKey { try KanbanBoardPersistence.saveListsChecked(week.collection.lists) }
+                if week.startKey == document.currentWeekKey {
+                    try KanbanBoardPersistence.saveListsChecked(week.collection.lists)
+                    SavedCardPersistence.save(week.collection.savedCardIDs)
+                }
+                if importance != oldData { UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key) }
             }
             calendarDocument = document
             if week.startKey == document.currentWeekKey {
@@ -1740,15 +1772,23 @@ private struct AppRootView: View {
     }
 
     private func loadExampleWeek() -> Bool {
+        guard let document = calendarDocument,
+              var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey }),
+              let date = PlanningDate.date(current.startKey, calendar: document.calendar) else { return false }
+        current.collection.lists = lists; current.collection.savedCardIDs = savedCardIDs
+        let importance = LibraryImportanceSelection.cardIDs(collectionID: current.id,
+            data: UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data())
         let todayListID = TodayListSelection.currentDayList(in: lists.filter { !$0.isArchived }, date: .now)?.id
-        guard ExampleLoadUndoStore.save(lists: lists, todayListID: todayListID) else {
+        guard ExampleLoadUndoStore.save(lists: lists, todayListID: todayListID, week: current,
+            savedCardIDs: savedCardIDs, importantCardIDs: importance) else {
             DatabaseActivity.shared.report("Could not save the previous Week Board, so the example was not loaded.")
             return false
         }
         do {
-            try KanbanBoardPersistence.saveListsChecked(SampleData.lists)
-            lists = SampleData.lists
-            return true
+            let template = PlanningRoutineLibrary.seeded.templates[0]
+            let importantIDs = PlanningTemplateApplication.exampleImportantIDs(template, in: current)
+            let example = try PlanningTemplateApplication.apply(template, to: current, date: date, calendar: document.calendar, mode: .replace)
+            return savePlanningWeek(example, exampleImportantIDs: importantIDs, replaceImportant: true)
         } catch {
             DatabaseActivity.shared.report("Could not load the example Week Board: \(error.localizedDescription)")
             return false
@@ -1756,19 +1796,23 @@ private struct AppRootView: View {
     }
 
     private func undoExampleWeek() -> Bool {
-        guard let snapshot = ExampleLoadUndoStore.load() else {
+        guard let snapshot = ExampleLoadUndoStore.load(),
+              let current = calendarDocument?.weeks.first(where: { $0.startKey == calendarDocument?.currentWeekKey }) else {
             DatabaseActivity.shared.report("The saved Week Board snapshot could not be restored.")
             return false
         }
-        do {
-            try KanbanBoardPersistence.saveListsChecked(snapshot.lists)
-            lists = snapshot.lists
-            ExampleLoadUndoStore.clear()
-            return true
-        } catch {
-            DatabaseActivity.shared.report("Could not restore the previous Week Board: \(error.localizedDescription)")
+        var restored = snapshot.week ?? current
+        guard restored.id == current.id else {
+            DatabaseActivity.shared.report("Return to the original week before restoring this example load.")
             return false
         }
+        restored.collection.lists = snapshot.lists
+        restored.collection.savedCardIDs = snapshot.savedCardIDs ?? savedCardIDs
+        if savePlanningWeek(restored, exampleImportantIDs: snapshot.importantCardIDs ?? [], replaceImportant: snapshot.importantCardIDs != nil) {
+            ExampleLoadUndoStore.clear()
+            return true
+        }
+        return false
     }
 
 
@@ -3074,6 +3118,7 @@ private struct TodayHomeView: View {
                             list:            focus,
                             cards:           cards,
                             entries:         focusPreferences.todayFocusEntries(in: focus?.cards ?? [], on: context.date,
+                                calendar: planningCalendarAccess?.document.calendar ?? .current,
                                 importantCardIDs: importantFocusIDs,
                                 bookmarkedCardIDs: focusBookmarks),
                             groupsBySection: focusPreferences.todayFocusGroupsBySection,
@@ -9069,11 +9114,15 @@ struct TodayFocusSection: View {
                     } else if openCards.isEmpty {
                         Label(cards.allSatisfy(\.isTitleChecked)
                             ? "Everything on this list is complete"
-                            : "No items match your Focus choices", systemImage: cards.allSatisfy(\.isTitleChecked)
+                            : "No unfinished items match your Focus filters", systemImage: cards.allSatisfy(\.isTitleChecked)
                                 ? "checkmark.circle.fill" : "line.3.horizontal.decrease.circle")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(minHeight: 40, alignment: .leading)
+                        if !cards.allSatisfy(\.isTitleChecked) {
+                            Button("Show all items") { onChangeFilters(false, false, false) }
+                                .font(.subheadline).frame(minHeight: 44)
+                        }
                     } else {
                         focusRows
                             .accessibilityLabel("Today's Focus items")

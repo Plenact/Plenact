@@ -3238,6 +3238,7 @@ struct ContentView: View {
             return
         }
 
+        guard !updatedList.cards[cardIndex].isEditingLocked else { return }
         var updatedCard     = updatedList.cards[cardIndex] /* Mutable card copy */
 
         updatedCard.isTitleChecked.toggle()
@@ -3298,6 +3299,7 @@ struct ContentView: View {
                 continue
             }
 
+            guard updatedList.cards[cardIndex].acceptsContentUpdate(updatedCard) else { return }
             updatedList.cards[cardIndex] = updatedCard
             lists[listIndex]             = updatedList
 
@@ -6859,6 +6861,7 @@ struct KanbanCardView: View {
 
                     .buttonStyle(.plain)
                     .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+                    .disabled(card.isEditingLocked)
                     }
 
                     ItemAppearanceMark(appearance: card.appearance)
@@ -7057,6 +7060,7 @@ struct KanbanCardView: View {
 
         .buttonStyle(.plain)
         .accessibilityLabel("\(card.displayFormat.title) actions")
+        .disabled(card.isEditingLocked)
     }
 
     ///
@@ -7069,6 +7073,9 @@ struct KanbanCardView: View {
     ///
     @ViewBuilder
     private var cardBadges: some View { /* Enabled discussion, checklist-progress, and due-date indicators */
+        if card.isEditingLocked {
+            Label("Read-only", systemImage: "lock.fill")
+        }
         if displaySettings.showCommentCounts && (!compactCards || card.commentCount > 0) {
 
             Label("\(card.commentCount)", systemImage: "text.bubble")
@@ -7957,6 +7964,7 @@ struct TodayListDetailView: View {
             $0.id == listID
         }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == cardID }) else { return } /* Position of the requested card within the focused list */
+        guard !lists[listIndex].cards[cardIndex].isEditingLocked else { return }
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
     }
 
@@ -8040,6 +8048,7 @@ struct TodayListDetailView: View {
             $0.cards.contains(where: { $0.id == updatedCard.id })
         }),
               let cardIndex = lists[listIndex].cards.firstIndex(where: { $0.id == updatedCard.id }) else { return } /* Existing position of the submitted card snapshot */
+        guard lists[listIndex].cards[cardIndex].acceptsContentUpdate(updatedCard) else { return }
         lists[listIndex].cards[cardIndex] = updatedCard
     }
 
@@ -8718,7 +8727,7 @@ struct SingleListNoteRow: View {
                     Image(systemName: "note.text").foregroundStyle(.secondary)
                         .frame(width: 36, height: 44).accessibilityHidden(true)
                 } else {
-                    Button(action: onToggle) {
+                    Button(action: { if !card.isEditingLocked { onToggle() } }) {
                         Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
                             .font(.title3).foregroundStyle(card.isTitleChecked ? Color.green : .secondary)
                             .frame(width: 36, height: 44).contentShape(Rectangle())

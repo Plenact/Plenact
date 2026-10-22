@@ -9764,6 +9764,144 @@ final class PlenactBoardDocumentTests: XCTestCase {
     }
 
 
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testEditingLockRoundTripsAndSurvivesCopyArchiveAndRelocation
+    /// @brief      Persist Card and Note locks without changing legacy editable records
+    /// @details    Verifies omitted legacy lock keys, explicit locking and unlocking, owner storage, list copying,
+    ///             archive restoration, and destination identity changes while retaining attachments and content.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Fixture encoding, decoding, or checked storage failures
+    ///
+    func testEditingLockRoundTripsAndSurvivesCopyArchiveAndRelocation() throws {
+        let suite = "EditingLock." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for presentation in ItemPresentation.allCases {
+            var card = KanbanCard(id: 6, word: "Protected", listTitle: "Projects", checklists: [],
+                attachments: [KanbanAttachment(exampleImage: .mountains)], descriptionOverride: "Keep this writing",
+                presentation: presentation, createdAt: Date(timeIntervalSince1970: 1234))
+            let legacyData = try JSONEncoder().encode(card)
+            XCTAssertNil(try XCTUnwrap(JSONSerialization.jsonObject(with: legacyData) as? [String: Any])["editingLocked"])
+            XCTAssertFalse(try JSONDecoder().decode(KanbanCard.self, from: legacyData).isEditingLocked)
+            card.isEditingLocked = true
+            XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)), card)
+            XCTAssertTrue(card.replacingLocation(id: 40, listTitle: "Elsewhere").isEditingLocked)
+            var list = KanbanList(id: 2, title: "Projects", cards: [card])
+            let copy = ListCopying.copy(list, into: [list], crossBoard: true)
+            XCTAssertTrue(try XCTUnwrap(copy.cards.first).isEditingLocked)
+            XCTAssertEqual(copy.cards.first?.attachments, card.attachments)
+            list.archiveCard(id: card.id)
+            XCTAssertTrue(try XCTUnwrap(list.archivedCards.first).isEditingLocked)
+            list.restoreArchivedCard(id: card.id)
+            XCTAssertEqual(list.cards, [card])
+            var owner = PersonalCollection(title: "Protected owner", kind: .board)
+            owner.lists = [list]
+            try PersonalCollectionStore.saveChecked([owner], to: defaults)
+            XCTAssertEqual(PersonalCollectionStore.load(from: defaults).first?.lists.first?.cards.first, card)
+            card.isEditingLocked = false
+            XCTAssertFalse(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)).isEditingLocked)
+        }
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLockedContentRejectsEditsAndAllowsOnlyAnUnchangedUnlock
+    /// @brief      Protect locked content from stale editors and bulk completion clearing
+    /// @details    Rejects title, completion, nested checklist, attachment, and unlock-with-edit proposals. A pure
+    ///             unlock remains accepted, and clearing list checkmarks changes only unlocked cards.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     XCTest fixture unwrapping failures
+    ///
+    func testLockedContentRejectsEditsAndAllowsOnlyAnUnchangedUnlock() throws {
+        var locked = KanbanCard(id: 1, word: "Protected", listTitle: "Tasks", isTitleChecked: true,
+            checklists: [KanbanChecklist(title: "Steps", items: ["Retain this step"], completedItemIndices: [0])],
+            attachments: [KanbanAttachment(exampleImage: .garden)], isEditingLocked: true)
+        XCTAssertTrue(locked.acceptsContentUpdate(locked))
+        var edited = locked
+        edited.word = "Unexpected replacement"
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        edited.isEditingLocked = false
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        edited = locked
+        edited.isTitleChecked = false
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        edited = locked
+        edited.checklists = []
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        edited = locked
+        edited.attachments = []
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        edited = locked
+        edited.isEditingLocked = false
+        XCTAssertTrue(locked.acceptsContentUpdate(edited))
+        var editable = locked.replacingLocation(id: 2, listTitle: "Tasks")
+        editable.isEditingLocked = false
+        let list = KanbanList(id: 0, title: "Tasks", cards: [locked, editable])
+        let (reset, cleared) = ListCheckmarkReset.reset(list)
+        XCTAssertEqual(cleared.first, locked)
+        XCTAssertFalse(try XCTUnwrap(cleared.last).isTitleChecked)
+        var clearedList = list
+        clearedList.cards = cleared
+        XCTAssertTrue(reset.canRestore(clearedList))
+        XCTAssertEqual(reset.restoring(clearedList), list.cards)
+        locked.isEditingLocked = false
+        XCTAssertTrue(locked.acceptsContentUpdate(edited))
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLockedCardAndNoteDetailsDoNotMountEditableTextInputs
+    /// @brief      Render locked Cards and Notes for reading without opening editors or saving
+    /// @details    Mounts both item kinds with body text, nested checklist content, and an attached picture. The
+    ///             locked presentation must not contain enabled text fields or editable text views, and rendering
+    ///             must never invoke the owner update callback.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     XCTest fixture setup or cancelled layout delays
+    ///
+    @MainActor
+    func testLockedCardAndNoteDetailsDoNotMountEditableTextInputs() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        testLockedCardAndNoteDetailsDoNotMountEditableTextInputs.descendants
+        /// @brief      Collect hosted native views for input inspection
+        /// @details    Includes the root and recursively traverses child views without assuming private containers.
+        ///
+        /// @param[in]  view  Native subtree to inspect
+        ///
+        /// @return     ([UIView]) root and all descendants in traversal order
+        ///
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        for presentation in ItemPresentation.allCases {
+            let card = KanbanCard(id: 3, word: "Protected writing", listTitle: "Projects",
+                checklists: [KanbanChecklist(title: "Read these steps", items: ["Preserved action"])],
+                attachments: [KanbanAttachment(exampleImage: .mountains)], descriptionOverride: "The retained body",
+                presentation: presentation, isEditingLocked: true)
+            var saves = 0
+            let host = UIHostingController(rootView: CardDetailView(card: card, labelLibrary: .constant(.starter),
+                onTitleToggle: { _ in saves += 1 }))
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            host.view.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            XCTAssertFalse(descendants(host.view).compactMap { $0 as? UITextField }.contains { $0.isEnabled })
+            XCTAssertFalse(descendants(host.view).compactMap { $0 as? UITextView }.contains { $0.isEditable })
+            XCTAssertEqual(saves, 0)
+            window.rootViewController = nil
+        }
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords
     /// @brief      Verify that quick Capture Templates Preserve Title And Create Independent Records

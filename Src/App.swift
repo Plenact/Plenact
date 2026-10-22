@@ -1871,6 +1871,7 @@ private struct AppRootView: View {
             if action == .archive { owner.lists[index].archiveCard(id: live.card.id) }
             else {
                 guard live.card.presentation == .card else { throw CocoaError(.coderInvalidValue) }
+                guard !live.card.isEditingLocked else { throw CocoaError(.validationMissingMandatoryProperty) }
                 owner.lists[index].cards[cardIndex].isTitleChecked = true
                 result = PlanningSearchResult(weekKey: live.weekKey, collectionID: owner.id, collectionTitle: live.collectionTitle, listID: live.listID, listTitle: live.listTitle, card: owner.lists[index].cards[cardIndex])
             }
@@ -2944,6 +2945,7 @@ private struct AppRootView: View {
             return
         }
 
+        guard !lists[listIndex].cards[cardIndex].isEditingLocked else { return }
         lists[listIndex].cards[cardIndex].isTitleChecked.toggle()
     }
 
@@ -7069,6 +7071,7 @@ struct BoardListsView: View {
             return false
         }
 
+        guard updated.lists[listIndex].cards[cardIndex].acceptsContentUpdate(note) else { return false }
         updated.lists[listIndex].cards[cardIndex] = note
         return persistMovedNoteCollection(updated, failureMessage: "Could not save the Note edit.")
     }
@@ -10209,6 +10212,7 @@ struct TodayFocusSection: View {
 
                         .buttonStyle(.plain)
                         .accessibilityLabel("Mark \(card.word) \(card.isTitleChecked ? "incomplete" : "complete")")
+                        .disabled(card.isEditingLocked)
 
                         Button { onOpenCard(card) } label: {
                             HStack {
@@ -10987,6 +10991,7 @@ private struct TodayFocusCardDetailView: View {
                 onTitleToggle: { updated in
                     guard let owner = lists.firstIndex(where: { $0.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt }) }),
                           let index = lists[owner].cards.firstIndex(where: { $0.id == card.id }) else { return }
+                    guard lists[owner].cards[index].acceptsContentUpdate(updated) else { return }
                     lists[owner].cards[index] = updated
                 },
                 onArchive: {

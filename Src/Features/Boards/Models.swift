@@ -652,6 +652,12 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var listTitle:            String          /* Name of the list where the card resides            */
     var isDivider:            Bool            /* Whether this item is a movable section divider     */
     var isTitleChecked:       Bool            /* Whether the card's main title checkbox is selected */
+    private var editingLocked: Bool? = nil     /* Missing means editable for older saved records     */
+
+    var isEditingLocked: Bool {
+        get { editingLocked == true }
+        set { editingLocked = newValue ? true : nil }
+    }
     var members:              [CardAssignee]  /* Registered and manual card assignments             */
     var labelIDs:             [String]        /* Stable IDs of labels assigned to the card          */
 
@@ -679,6 +685,25 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     var dismissedActivityIDs: Set<String>            /* Generated activity entries removed by the user        */
     var listDisplayFormat: ItemDisplayFormat? = nil  /* Explicit override; nil preserves legacy rendering     */
     private var itemPresentation: ItemPresentation?  /* Optional persisted item kind for legacy compatibility */
+
+    ///
+    /// @fcn        KanbanCard.acceptsContentUpdate
+    /// @brief      Reject content changes to a locked item while allowing an explicit unlock
+    /// @details    Editable items accept normal owner updates. A locked item accepts an unchanged snapshot or a
+    ///             snapshot differing only by its cleared lock flag, preventing stale editors from modifying content
+    ///             as part of unlocking. Structural movement uses replacingLocation and retains the lock.
+    ///
+    /// @param[in]  updated  Proposed complete card value for this owner
+    ///
+    /// @return     (Bool) whether the proposed edit respects the current lock
+    ///
+    func acceptsContentUpdate(_ updated: KanbanCard) -> Bool {
+        guard isEditingLocked else { return true }
+        var unlocked = self
+        unlocked.isEditingLocked = false
+        return updated == self || updated == unlocked
+    }
+
 
     /// Missing presentation remains a Card; the default needs no new persisted key.
     var presentation: ItemPresentation { /* Effective item kind with the legacy Card fallback */
@@ -742,7 +767,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             startDateKind:         startDateKind,
             dueDateKind:           dueDateKind,
             reactions:            reactions,
-            showsReactionsInPreviews: showsReactionsInPreviews
+            showsReactionsInPreviews: showsReactionsInPreviews,
+            isEditingLocked: isEditingLocked
         )
     }
 
@@ -1001,14 +1027,16 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
     /// @param[in]  presentation          Card or writing-first Note interface
     /// @param[in]  createdAt             Known creation time; nil preserves unknown legacy dates
+    /// @param[in]  isEditingLocked       Whether content editing is protected until explicitly unlocked
     ///
     /// @return     (KanbanCard) configured card instance
     ///
     /// @pre        Supplied values are valid for the caller's Board state
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
-    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date, dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil) {
+    init(id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false, startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil, comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [], attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [], descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card, createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil, sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date, dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil, isEditingLocked: Bool = false) {
 
+        self.editingLocked = isEditingLocked ? true : nil
         self.showsReactionsInPreviews = showsReactionsInPreviews
         self.reactions = reactions?.isEmpty == true ? nil : reactions
         self.id                   = id              /* Stable numeric identifier for the card             */
@@ -1096,7 +1124,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
             startDateKind:         try container.decodeIfPresent(CardDateKind.self, forKey: .startDateKind) ?? .date,
             dueDateKind:           try container.decodeIfPresent(CardDateKind.self, forKey: .dueDateKind) ?? .date,
             reactions: try container.decodeIfPresent([ItemEmojiReaction].self, forKey: .reactions),
-            showsReactionsInPreviews: try container.decodeIfPresent(Bool.self, forKey: .showsReactionsInPreviews)
+            showsReactionsInPreviews: try container.decodeIfPresent(Bool.self, forKey: .showsReactionsInPreviews),
+            isEditingLocked: try container.decodeIfPresent(Bool.self, forKey: .editingLocked) ?? false
         )
     }
 
@@ -1122,6 +1151,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
         case checklists
         case reactions
         case showsReactionsInPreviews
+        case editingLocked
         case comments
         case members
         case labelIDs
@@ -5153,7 +5183,7 @@ struct ListCheckmarkReset: Equatable {
     ///
     private static func transform(_ cards: [KanbanCard], change: (String, Bool) -> Bool) -> [KanbanCard] {
         cards.map { original in
-            guard !original.isSectionDivider else { return original }
+            guard !original.isSectionDivider, !original.isEditingLocked else { return original }
             var card = original
             let key = "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
             card.isTitleChecked = change(key, card.isTitleChecked)

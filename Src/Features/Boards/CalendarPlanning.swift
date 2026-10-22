@@ -2014,7 +2014,7 @@ struct FullMonthExample: Sendable {
     /// @fcn        FullMonthExample.defaultsDomain
     /// @brief      Build the example dataset's preferences dictionary
     /// @details    Encodes the generated calendar, collections, bookmarks, and importance data while retaining
-    ///             platform preferences and supported user display choices.
+    ///             platform preferences, Focus choices, and the user's optional lower-corner Back setting.
     ///
     /// @param[in]  original  Original preferences domain retained for comparison or transformation
     ///
@@ -2041,9 +2041,14 @@ struct FullMonthExample: Sendable {
             }
         }
         result[LibraryImportanceSelection.key] = importance
-        if let data = original[PlanPreferencesStore.key] as? Data,
-           let existing = try? JSONDecoder().decode(LocalProfilePreferences.self, from: data) {
+        let savedPreferences = (original[PlanPreferencesStore.key] as? Data).flatMap {
+            try? JSONDecoder().decode(LocalProfilePreferences.self, from: $0)
+        } ?? (original[LocalProfileStore.storageKey] as? Data).flatMap {
+            try? JSONDecoder().decode(LocalProfile.self, from: $0)
+        }?.preferences
+        if let existing = savedPreferences {
             var preferences = LocalProfilePreferences()
+            preferences.enablesLowerCornerBack = existing.enablesLowerCornerBack
             preferences.todayFocusIncludesImportant = existing.todayFocusIncludesImportant
             preferences.todayFocusIncludesBookmarked = existing.todayFocusIncludesBookmarked
             preferences.todayFocusIncludesUpNext = existing.todayFocusIncludesUpNext

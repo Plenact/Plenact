@@ -8996,14 +8996,15 @@ enum ListItemCreation {
     }
 }
 
-/// Opt-in invisible Back target. A reserved inset prevents covering list rows or toolbar buttons.
+/// Configurable invisible Back target, enabled by default. A reserved inset protects content and toolbar controls.
 struct LowerCornerBackShortcut: ViewModifier {
     let action: (() -> Void)?
     @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
     @Environment(\.workspaceBottomBarHeight) private var toolbarHeight
     @State private var keyboardVisible = false
     private var enabled: Bool {
-        (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.enablesLowerCornerBack ?? false
+        PlanPreferencesStore.resolved(preferencesData: preferencesData, profileData: profileData).enablesLowerCornerBack
     }
 
 

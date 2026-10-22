@@ -509,7 +509,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         todayFocusIncludesBookmarked: Bool = false,
         todayFocusIncludesUpNext: Bool = false,
         scrollsOverflowingTitles: Bool = true,
-        enablesLowerCornerBack: Bool = false
+        enablesLowerCornerBack: Bool = true
     ) {
 
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
@@ -638,7 +638,7 @@ struct LocalProfilePreferences: Hashable, Codable {
             todayFocusIncludesBookmarked: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesBookmarked) ?? false,
             todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false,
             scrollsOverflowingTitles: try container.decodeIfPresent(Bool.self, forKey: .scrollsOverflowingTitles) ?? true,
-            enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? false
+            enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? true
         )
     }
 }

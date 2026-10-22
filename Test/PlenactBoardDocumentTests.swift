@@ -131,9 +131,9 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///
     /// @fcn        PlenactBoardDocumentTests.testMonthExampleRetainsFocusChoicesAndProvidesMatchingTodayItems
     /// @brief      Verify that month Example Retains Focus Choices And Provides Matching Today Items
-    /// @details    Exercises `PlanningDate.date`, `FullMonthExample.make`, `example.defaultsDomain`. Checks
-    ///             `XCTAssertTrue(preserved.todayFocusIncludesImportant)`;
-    ///             `XCTAssertTrue(preserved.todayFocusIncludesBookmarked)`.
+    /// @details    Verifies that the example retains Focus choices and supplies matching dated content. Also
+    ///             preserves the corner-Back choice from standalone or legacy profile preferences and honors an
+    ///             explicit opt-out so changing datasets does not silently change navigation behavior.
     ///
     /// @return     (Void) no return value
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
@@ -143,13 +143,23 @@ final class PlenactBoardDocumentTests: XCTestCase {
         let date = try XCTUnwrap(PlanningDate.date("2026-10-21", calendar: calendar))
         let late = try XCTUnwrap(calendar.date(bySettingHour: 23, minute: 45, second: 0, of: date))
         let example = FullMonthExample.make(now: late, calendar: calendar)
-        let selected = LocalProfilePreferences(todayFocusItemCount: 6, todayFocusIncludesImportant: true, todayFocusIncludesBookmarked: true, todayFocusIncludesUpNext: true)
+        let selected = LocalProfilePreferences(todayFocusItemCount: 6, todayFocusIncludesImportant: true, todayFocusIncludesBookmarked: true, todayFocusIncludesUpNext: true, enablesLowerCornerBack: true)
         let domain = try example.defaultsDomain(preserving: [PlanPreferencesStore.key: JSONEncoder().encode(selected)])
         let preserved = try JSONDecoder().decode(LocalProfilePreferences.self, from: XCTUnwrap(domain[PlanPreferencesStore.key] as? Data))
         XCTAssertTrue(preserved.todayFocusIncludesImportant)
         XCTAssertTrue(preserved.todayFocusIncludesBookmarked)
         XCTAssertTrue(preserved.todayFocusIncludesUpNext)
         XCTAssertEqual(preserved.todayFocusItemCount, 6)
+        XCTAssertTrue(preserved.enablesLowerCornerBack)
+        let legacyProfile = LocalProfile(displayName: "Synthetic", preferences: selected)
+        let legacyDomain = try example.defaultsDomain(preserving: [LocalProfileStore.storageKey: JSONEncoder().encode(legacyProfile)])
+        let legacyPreferences = try JSONDecoder().decode(LocalProfilePreferences.self, from: XCTUnwrap(legacyDomain[PlanPreferencesStore.key] as? Data))
+        XCTAssertTrue(legacyPreferences.enablesLowerCornerBack)
+        var disabled = selected
+        disabled.enablesLowerCornerBack = false
+        let disabledDomain = try example.defaultsDomain(preserving: [PlanPreferencesStore.key: JSONEncoder().encode(disabled)])
+        let disabledPreferences = try JSONDecoder().decode(LocalProfilePreferences.self, from: XCTUnwrap(disabledDomain[PlanPreferencesStore.key] as? Data))
+        XCTAssertFalse(disabledPreferences.enablesLowerCornerBack)
         let week = try XCTUnwrap(example.document.week(for: date))
         let listID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
         let cards = try XCTUnwrap(week.collection.lists.first { $0.id == listID }).cards
@@ -3679,25 +3689,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testLowerCornerBackPreferenceDefaultsOffAndPersistsWithoutProfile
-    /// @brief      Verify that lower Corner Back Preference Defaults Off And Persists Without Profile
-    /// @details    Exercises `PlanPreferencesStore.save`, `PlanPreferencesStore.load`, `LocalProfileStore.load`.
-    ///             Checks `XCTAssertFalse(legacy.enablesLowerCornerBack)`;
-    ///             `XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)`.
+    /// @fcn        PlenactBoardDocumentTests.testLowerCornerBackPreferenceDefaultsOnAndPersistsWithoutProfile
+    /// @brief      Enable corner Back by default while retaining an explicit user opt-out
+    /// @details    New preferences and older records without the field enable the shortcut. Explicitly saved false
+    ///             values still round-trip and remain disabled; reading defaults never creates a profile or record.
     ///
     /// @return     (Void) no return value
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    func testLowerCornerBackPreferenceDefaultsOffAndPersistsWithoutProfile() throws {
+    func testLowerCornerBackPreferenceDefaultsOnAndPersistsWithoutProfile() throws {
         let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
-        XCTAssertFalse(legacy.enablesLowerCornerBack)
+        XCTAssertTrue(legacy.enablesLowerCornerBack)
+        XCTAssertTrue(LocalProfilePreferences().enablesLowerCornerBack)
         let suite = "CornerBack." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+        XCTAssertNil(defaults.object(forKey: PlanPreferencesStore.key))
         var preferences = legacy
         preferences.enablesLowerCornerBack = true
         PlanPreferencesStore.save(preferences, to: defaults)
         XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+        preferences.enablesLowerCornerBack = false
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertFalse(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
         XCTAssertNil(LocalProfileStore.load(from: defaults))
         XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(preferences)), preferences)
     }
@@ -3747,6 +3762,39 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertEqual(heights["root"], heights["off"])
         XCTAssertEqual(try XCTUnwrap(heights["on"]) - XCTUnwrap(heights["toolbar"]), 56, accuracy: 1)
         XCTAssertEqual(activations, 0)
+    }
+
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCornerBackResolvesLegacyProfileAndHonorsExplicitPreference
+    /// @brief      Keep legacy profile settings and standalone shortcut settings consistent
+    /// @details    Exercises an installation with profile-only preferences, an unreadable standalone record, and
+    ///             an explicit standalone opt-out. Resolving preferences must not migrate or modify either record.
+    ///
+    /// @return     (Void) no return value
+    /// @throws     XCTest fixture creation or JSON encoding errors
+    ///
+    func testCornerBackResolvesLegacyProfileAndHonorsExplicitPreference() throws {
+        let suite = "CornerBackLegacy." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var preferences = LocalProfilePreferences()
+        preferences.enablesLowerCornerBack = true
+        let profile = LocalProfile(displayName: "Synthetic", preferences: preferences)
+        let profileData = try JSONEncoder().encode(profile)
+        defaults.set(profileData, forKey: LocalProfileStore.storageKey)
+        XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+        XCTAssertTrue(PlanPreferencesStore.resolved(preferencesData: nil, profileData: profileData).enablesLowerCornerBack)
+        XCTAssertTrue(PlanPreferencesStore.resolved(preferencesData: Data("invalid".utf8), profileData: profileData).enablesLowerCornerBack)
+        XCTAssertNil(defaults.object(forKey: PlanPreferencesStore.key))
+        preferences.enablesLowerCornerBack = false
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertFalse(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+        XCTAssertFalse(PlanPreferencesStore.resolved(preferencesData: defaults.data(forKey: PlanPreferencesStore.key),
+                                                  profileData: profileData).enablesLowerCornerBack)
+        XCTAssertEqual(defaults.data(forKey: LocalProfileStore.storageKey), profileData)
     }
 
 

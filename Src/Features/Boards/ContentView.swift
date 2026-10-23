@@ -18,6 +18,7 @@
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit.UIGestureRecognizerSubclass
 
 
 ///
@@ -409,7 +410,7 @@ enum BoardListSwipePriority {
                 // Leave the vertical scrolling pan independent; prioritize the
                 // native row-action/editing pans before horizontal Board paging.
                 let gestures = (list.gestureRecognizers ?? []).filter {
-                    $0 is UIPanGestureRecognizer && $0 !== list.panGestureRecognizer
+                    $0 is UIPanGestureRecognizer && $0 !== list.panGestureRecognizer && !($0 is BoardCardSwipeGate)
                 }
                 for gesture in gestures { board.panGestureRecognizer.require(toFail: gesture) }
                 return gestures.count
@@ -417,6 +418,194 @@ enum BoardListSwipePriority {
             ancestor = view.superview
         }
         return 0
+    }
+}
+
+/// Physical Card coordinates decide gesture ownership once, at touch-down.
+enum BoardCardSwipeRouting {
+
+
+    ///
+    /// @fcn        BoardCardSwipeRouting.routesToBoard(start:bounds:)
+    /// @brief      Reserve the rightmost quarter of a Card for Board navigation
+    /// @details    Uses the physical Card bounds, independent of text direction or screen width.
+    ///             Only a start inside the Card and at or beyond seventy-five percent is routed.
+    ///
+    /// @param[in]  start   Initial touch in the same coordinates as bounds
+    /// @param[in]  bounds  Actual Card preview bounds
+    ///
+    /// @return     (Bool) true for the right quarter, false for the delete region or invalid bounds
+    ///
+    static func routesToBoard(start: CGPoint, bounds: CGRect) -> Bool {
+        bounds.width > 0 && bounds.contains(start) && (start.x - bounds.minX) / bounds.width >= 0.75
+    }
+}
+
+/// A failure gate lets UIKit retain its native Delete action and the Board retain native paging.
+@MainActor
+final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
+    let markers = NSHashTable<BoardCardSwipeZone.Marker>.weakObjects()
+    weak var board: UIScrollView?
+
+
+    ///
+    /// @fcn        BoardCardSwipeGate.touchesBegan(_:with:)
+    /// @brief      Choose the Card's swipe region at the beginning of a touch
+    /// @details    Fails immediately outside enabled right-quarter markers, leaving native Delete
+    ///             gestures unaffected elsewhere. Accepted touches still require leftward intent.
+    ///
+    /// @param[in]  touches  New native touches
+    /// @param[in]  event    Native touch event
+    ///
+    /// @return     (Void) establishes whether the gesture may reserve Board navigation
+    ///
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        guard let touch = touches.first,
+              markers.allObjects.contains(where: { marker in
+                  marker.isEnabled && marker.window != nil && BoardCardSwipeRouting.routesToBoard(
+                      start: touch.location(in: marker), bounds: marker.bounds)
+              }) else { state = .failed; return }
+    }
+
+
+    ///
+    /// @fcn        BoardCardSwipeGate.gestureRecognizerShouldBegin(_:)
+    /// @brief      Reserve only predominantly leftward horizontal movement
+    /// @details    Vertical scrolling and rightward swipes keep their existing native behavior.
+    ///
+    /// @param[in]  gestureRecognizer  Gate whose movement is being evaluated
+    ///
+    /// @return     (Bool) true when the gesture is a left swipe
+    ///
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        let velocity = velocity(in: view)
+        return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
+    }
+
+
+    ///
+    /// @fcn        BoardCardSwipeGate.gestureRecognizer(_:shouldRecognizeSimultaneouslyWith:)
+    /// @brief      Allow the Board to scroll while its Delete-blocking gate is active
+    /// @details    The gate never translates content itself or replaces a UIKit delegate.
+    ///
+    /// @param[in]  gestureRecognizer       This gate
+    /// @param[in]  otherGestureRecognizer  Potential simultaneous recognizer
+    ///
+    /// @return     (Bool) true only for the enclosing Board pan
+    ///
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        otherGestureRecognizer === board?.panGestureRecognizer
+    }
+
+
+    ///
+    /// @fcn        BoardCardSwipeGate.install(marker:)
+    /// @brief      Attach one shared routing gate to an embedded native List
+    /// @details    Requires a horizontal Board ancestor. Single List and Day views receive no gate.
+    ///             Native row-action pans wait for it; Board paging may run simultaneously with it.
+    ///
+    /// @param[in]  marker  Card preview's geometry marker
+    ///
+    /// @return     (Void) registers geometry without changing native gesture delegates
+    ///
+    static func install(marker: BoardCardSwipeZone.Marker) {
+        guard marker.window != nil else { return }
+        var ancestor = marker.superview
+        var list: UIScrollView?
+        while let view = ancestor {
+            if let scroll = view as? UIScrollView, scroll is UICollectionView || scroll is UITableView {
+                list = scroll; break
+            }
+            ancestor = view.superview
+        }
+        guard let list else { return }
+        ancestor = list.superview
+        while let view = ancestor {
+            if let board = view as? UIScrollView,
+               board.alwaysBounceHorizontal || board.contentSize.width > board.bounds.width + 1 {
+                let gate: BoardCardSwipeGate
+                if let existing = list.gestureRecognizers?.compactMap({ $0 as? BoardCardSwipeGate }).first { gate = existing }
+                else {
+                    gate = BoardCardSwipeGate(target: nil, action: nil)
+                    gate.delegate = gate
+                    gate.cancelsTouchesInView = false
+                    gate.delaysTouchesBegan = false
+                    gate.maximumNumberOfTouches = 1
+                    gate.board = board
+                    list.addGestureRecognizer(gate)
+                }
+                gate.board = board
+                gate.markers.add(marker)
+                for gesture in list.gestureRecognizers ?? [] where gesture is UIPanGestureRecognizer
+                    && gesture !== list.panGestureRecognizer && gesture !== gate {
+                    gesture.require(toFail: gate)
+                }
+                BoardListSwipePriority.install(for: list)
+                return
+            }
+            ancestor = view.superview
+        }
+    }
+}
+
+/// Clear geometry probe used only by Card rows inside Board columns.
+struct BoardCardSwipeZone: UIViewRepresentable {
+    var enabled = true
+
+    final class Marker: UIView {
+        var isEnabled = true
+
+
+        ///
+        /// @fcn        BoardCardSwipeZone.Marker.didMoveToWindow()
+        /// @brief      Register the Card region after its native List hierarchy is mounted
+        /// @details    Defers discovery so enclosing scroll views have completed their layout.
+        ///
+        /// @return     (Void) schedules native routing setup
+        ///
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            DispatchQueue.main.async { [weak self] in
+                if let self { BoardCardSwipeGate.install(marker: self) }
+            }
+        }
+    }
+
+
+    ///
+    /// @fcn        BoardCardSwipeZone.makeUIView(context:)
+    /// @brief      Create a transparent noninteractive Card geometry marker
+    /// @details    The enclosing List receives touches; this view only supplies the Card bounds.
+    ///
+    /// @param[in]  context  SwiftUI bridge context
+    ///
+    /// @return     (Marker) native geometry marker
+    ///
+    func makeUIView(context: Context) -> Marker {
+        let marker = Marker()
+        marker.isUserInteractionEnabled = false
+        marker.isEnabled = enabled
+        return marker
+    }
+
+
+    ///
+    /// @fcn        BoardCardSwipeZone.updateUIView(_:context:)
+    /// @brief      Refresh Edit-mode eligibility and native routing registration
+    /// @details    Weak marker registration avoids retaining removed or recycled Card rows.
+    ///
+    /// @param[in]  marker   Existing Card marker
+    /// @param[in]  context  SwiftUI bridge context
+    ///
+    /// @return     (Void) updates routing without intercepting taps or long presses
+    ///
+    func updateUIView(_ marker: Marker, context: Context) {
+        marker.isEnabled = enabled
+        DispatchQueue.main.async { [weak marker] in
+            if let marker { BoardCardSwipeGate.install(marker: marker) }
+        }
     }
 }
 
@@ -5535,6 +5724,9 @@ struct KanbanListView: View {
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
+                        .background {
+                            if !hidesPanelHeader { BoardCardSwipeZone(enabled: editMode != .active) }
+                        }
                         .modifier(ListItemSwipeDelete(enabled: editMode != .active,
                             onRequest: { deletingCard = card }))
                     }

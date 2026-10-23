@@ -1,6 +1,6 @@
 # Plenact for iOS
 
-Version: 1.3   (10/20/26)
+Version: 1.4   (10/23/26)
 
 Plenact is an iPhone planning and organization app being built around a calm, list-based daily workflow. The current revision provides a Today front door and a horizontally navigable kanban Board for tasks, routines, ideas, and open work
 
@@ -26,10 +26,6 @@ How hard would it be to re-organize, modularize, segment and re-order the archit
 
 !
 
-- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
-
-!
-
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!
@@ -39,6 +35,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 - Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
 
 - Dragging on the Today view slogan rolls off gradually, and not immediate like present
+
+- So if taps on a cards importance stars increase it, a hold there then decreases italics
 
 - Card backgrounds
     A. Notes
@@ -53,6 +51,8 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 - Careful keyboard upper buttons selection and actions for all keyboard locations in app
 
 - Lower toolbar background cut in half after applying Jmr template?
+
+- If all cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
 
 - Random header color selector option for cards
 

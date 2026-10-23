@@ -16,11 +16,33 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-- Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
+Yes!!!!! You are amazing, Alex, this work is beautiful. Thank you so much
 
-- Tapping 'Add Card' at the bottom of the list enters text inline, with its right-hand '+' opening a card instead
+And an idea, I have been brewing over for the longest time now: Re-organize Project now
+
+Hey Alex, for professional Swift applications, how many lines of Swift code are typically in each .swift file, excluding comments, whitepace, empty lines or lines with just brackets on them? How is this for personal Swift applications? Published Swift applications?
+
+How hard would it be to re-organize, modularize, segment and re-order the architecture and subdirectory organization of Plenact now to follow this model? How close can we get to XYZ lines of source in each file?
+
+
+
+!
+
+Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
+
+!!
+
+- Remove or update the prefix header text of 'Recent' above '' in the Activity view, where I think it feels redundant now
 
 - Three setup cards for OTB, ITQ & SR now load in read-only mode, from tapping that view's header title and don't show on list. with all sections hidden too, except for that description which is great - and maybe some checklists with guidance or examples!
+
+- Bug! Where after applying the Jmr template, I think it was, half of the lower toolbar's background disappears!
+
+- Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
+
+- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
+
+- Dragging on the Today view slogan rolls off gradually, and not immediate like present
 
 - Card backgrounds
     A. Notes
@@ -32,15 +54,9 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
     *. Gradients?
 	*. Thoughts?
 
-!
+- Careful keyboard upper buttons selection and actions for all keyboard locations in app
 
-Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
-
-!!
-
-- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
-
-- Dragging on the Today view slogan rolls off gradually, and not immediate like present
+- Lower toolbar background cut in half after applying Jmr template?
 
 - Random header color selector option for cards
 
@@ -109,6 +125,32 @@ The emerging product model is **Lists organize; Cards describe activities; check
 Potential audiences include individuals, teams, therapy and recovery centers, and people recovering from traumatic brain injuries or with similar accessibility needs. These are product-design audiences, not claims that Plenact provides treatment or has clinical validation
 
 The earlier question of a parent surface for Planner, Labels, Notes, and Attachments is now taking shape through Today as the front door and Board as the current source of truth. Schedule, Projects, Notes, and Team remain possible future destinations rather than implemented navigation
+
+## Desktop Expansion Thoughts
+
+I especially like your decision to establish a stable checkpoint with the database before beginning the Windows port.
+
+That gives us a reliable foundation for developing the Windows application without disrupting the existing iPhone version.
+
+I'd recommend this sequence:
+
+1. Stabilize the iOS application — Finish your current features and establish a tested Git checkpoint.
+
+2. Formalize the database architecture — Define the data models, persistence contracts, identifiers, and migration strategy.
+
+3. Design synchronization — Determine how Windows and iOS will access and update shared records, including offline changes and conflicts.
+
+4. Build the native Windows application — Use C# and WinUI 3, preserving Plenact's existing planning model.
+
+5. Validate cross-platform behavior — Verify that changes made on one device appear correctly on the other.
+
+One important detail: Plenact currently uses local JSON persistence, so synchronizing between Windows and iPhone will require additional infrastructure. We should design that deliberately rather than simply sharing database files.
+
+Our guiding principle should be: One Plenact data model, multiple native experiences.
+
+That will put us in a much stronger position for Windows, macOS, Android, and eventually web support.
+
+I'm excited about where this is heading. We're moving from an iPhone application toward a genuinely cross-platform Personal Operating System! 🚀
 
 ## Exploratory Roadmap
 

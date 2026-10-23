@@ -6719,6 +6719,55 @@ private struct ArchivedCardsView: View {
 }
 
 
+/// Keeps a Card's picture or icon visible while exposing its completion state and action.
+private struct CardVisualCompletion: ViewModifier {
+    let card: KanbanCard
+    let onToggle: () -> Void
+
+
+    ///
+    /// @fcn        CardVisualCompletion.body(content:)
+    /// @brief      Add completion interaction and a contrasting badge to a checkable visual
+    /// @details    Preserves Notes as ordinary previews. Completed Cards retain their image with
+    ///             a lower-right checkmark; editing locks disable the completion action.
+    ///
+    /// @param[in]  content  Existing picture or icon preview
+    ///
+    /// @return     (some View) original visual with accessible completion when applicable
+    ///
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if card.presentation == .card && !card.isSectionDivider {
+            Button {
+                guard !card.isEditingLocked else { return }
+                onToggle()
+            } label: {
+                content
+                    .overlay(alignment: .bottomTrailing) {
+                        if card.isTitleChecked {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, .green)
+                                .padding(2)
+                                .background(Circle().fill(Color(.systemBackground)))
+                                .padding(2)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(card.isEditingLocked)
+            .accessibilityLabel(card.isTitleChecked ? "Mark \(card.word) unfinished" : "Mark \(card.word) complete")
+            .accessibilityValue(card.isTitleChecked ? "Completed" : "Not completed")
+            .accessibilityIdentifier("card.visualCompletion")
+        } else {
+            content
+        }
+    }
+}
+
 ///
 /// Displays a compact summary of a kanban card
 ///
@@ -6910,6 +6959,7 @@ struct KanbanCardView: View {
                 }
             } else if card.displayFormat == .picture && !compactCards {
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
+                    .modifier(CardVisualCompletion(card: card, onToggle: onToggle))
                     .overlay(alignment: .topTrailing) {
                         ImportantItemIndicator(cardID: card.id).padding(10)
                     }
@@ -6932,7 +6982,7 @@ struct KanbanCardView: View {
                         }
                         .frame(width: 44, height: 44)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .accessibilityHidden(true)
+                        .modifier(CardVisualCompletion(card: card, onToggle: onToggle))
                     } else if card.presentation == .note {
 
                         Image(systemName: "note.text")

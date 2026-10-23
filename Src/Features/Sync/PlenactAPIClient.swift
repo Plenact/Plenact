@@ -1,8 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       PlenactAPIClient.swift
-// @brief      HTTPS client and Keychain session boundary for the Plenact shared demo API
-// @details    Provides the authenticated client for the app's synthetic shared-demo service, not
-//             production multi-tenant synchronization; ordinary local Board data is not uploaded
+// @brief      HTTPS transport and Keychain sessions for the shared demo API
+// @details    Defines authentication, directory, Board snapshot, and assignment payloads with
+//             version-conflict and transport errors. Stores bearer sessions in Keychain and sends
+//             explicit authenticated requests for synthetic shared-demo content; local workspace
+//             records are not uploaded implicitly.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -39,6 +41,7 @@ struct PlenactRemoteUser: Codable, Equatable, Identifiable {
     ///     Keep the user identity response coding contract explicit
     ///
     enum CodingKeys: String, CodingKey {
+
         case userID      = "user_id"
         case username
         case displayName = "display_name"
@@ -67,6 +70,7 @@ struct PlenactRemoteSession: Codable, Equatable {
     ///     Keep the bearer session response coding contract explicit
     ///
     enum CodingKeys: String, CodingKey {
+
         case accessToken  = "access_token"
         case expiresAtUTC = "expires_at_utc"
         case user
@@ -81,6 +85,7 @@ struct PlenactRemoteSession: Codable, Equatable {
 ///     Decode the active account collection without exposing private account fields
 ///
 struct PlenactUserDirectoryResponse: Decodable {
+
     let users: [PlenactRemoteUser] /* Active users visible in the directory */
 }
 
@@ -92,6 +97,7 @@ struct PlenactUserDirectoryResponse: Decodable {
 ///     Decode the new member identity without returning its password hash
 ///
 private struct PlenactCreatedUserResponse: Decodable {
+
     let user: PlenactRemoteUser /* Newly provisioned account identity */
 }
 
@@ -117,6 +123,7 @@ private struct PlenactLoginRequest: Encodable {
 ///     Keep logout request shape aligned with the authentication endpoint
 ///
 private struct PlenactLogoutRequest: Encodable {
+
     let action = "logout" /* Session-revocation operation */
 }
 
@@ -141,6 +148,7 @@ private struct PlenactCreateMemberRequest: Encodable {
     ///     Keep the invited-member request coding contract explicit
     ///
     enum CodingKeys: String, CodingKey {
+
         case username
         case displayName = "display_name"
         case password
@@ -168,6 +176,7 @@ struct PlenactBoardWriteRequest: Encodable {
     ///     Preserve the API's expected revision, document, and seed field names
     ///
     enum CodingKeys: String, CodingKey {
+
         case expectedRevision = "expected_revision"
         case document
         case seedKind = "seed_kind"
@@ -196,6 +205,7 @@ private struct PlenactAssignmentRequest: Encodable {
     ///     Keep the assignment endpoint's expected revision and target fields explicit
     ///
     enum CodingKeys: String, CodingKey {
+
         case expectedRevision = "expected_revision"
         case cardID = "card_id"
         case action
@@ -223,6 +233,7 @@ private struct PlenactAPIErrorResponse: Decodable {
     ///     Decode the error code and optional current revision from service responses
     ///
     enum CodingKeys: String, CodingKey {
+
         case error
         case currentRevision = "current_revision"
     }
@@ -236,6 +247,7 @@ private struct PlenactAPIErrorResponse: Decodable {
 ///     Provide concise user-facing errors for configuration, authentication, and revision conflicts
 ///
 enum PlenactAPIError: LocalizedError {
+
     case endpointNotConfigured
     case invalidEndpoint
     case invalidResponse
@@ -426,8 +438,8 @@ struct PlenactAPIClient {
     /// @brief      Create a client using the configured HTTPS endpoint or an injected URL
     /// @details    Validates and normalizes the endpoint before storing the URLSession transport
     ///
-    /// @param[in]  baseURL Optional API base URL override
-    /// @param[in]  session URL session used to send requests
+    /// @param[in]  baseURL  Optional API base URL override
+    /// @param[in]  session  URL session used to send requests
     ///
     /// @return     (PlenactAPIClient) configured transport client
     ///
@@ -1012,6 +1024,7 @@ struct PlenactAPIClient {
 ///     Pair the server revision number with the accepted Board document
 ///
 struct PlenactBoardWriteResponse: Decodable {
+
     let revision: Int64                 /* Newly accepted snapshot revision    */
     let document: PlenactBoardDocument  /* Stored document returned by the API */
 }
@@ -1024,6 +1037,7 @@ struct PlenactBoardWriteResponse: Decodable {
 ///     Report the current Board revision and whether assignment state changed
 ///
 struct PlenactAssignmentResponse: Decodable {
+
     let revision: Int64  /* Current Board revision           */
     let changed:  Bool   /* Whether assignment state changed */
 }

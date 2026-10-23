@@ -1,14 +1,13 @@
 // --------------------------------------------------------------------------------------------------
 // @file       App.swift
-// @brief      Application entry point and Today-first navigation shell
-// @details    Owns the shared Week snapshot, personal collections, local profile, and bookmarks.
-//             Composes Today, Week, Library, and Saved; implements date-scoped list selection,
-//             quick card capture, local search, label browsing, and card-date calendar views.
-//             Coordinates board archive/restore operations and local persistence callbacks
+// @brief      Application entry point, workspace ownership, and Today-first navigation
+// @details    Composes Today, Week, Plans, and Activity around retained calendar and personal
+//             owners. Coordinates recovery, full-featured capture, shared search, direct item
+//             routes, bookmarks, personal importance levels, and checked persistence callbacks.
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   10/8/26
+// @last rev   10/23/26
 //
 // @notes      Archived lists remain in the complete Week snapshot but are excluded from active
 //             view bindings. Restored Week archives become separate personal boards.
@@ -39,6 +38,7 @@ import Speech
 ///
 @main
 struct Plenact: App {
+
     @State private var recoveryError: String?
 
 
@@ -98,6 +98,7 @@ struct Plenact: App {
 /// @note   Add cases only when the corresponding application view is implemented
 ///
 private enum AppDestination: Hashable {
+
     case today  /* Today's planning entry point             */
     case board  /* Complete kanban workspace                */
     case lists  /* Library of Week and personal collections */
@@ -114,6 +115,7 @@ private enum AppDestination: Hashable {
 /// @note   Both picker modes operate on existing board lists
 ///
 private enum TodayListPickerMode: String, Identifiable {
+
     case chooseToday  /* Set the selected list as today's plan */
     case browseAll    /* Open a selected list on the Board     */
 
@@ -391,18 +393,18 @@ private struct TodayScrollOffsetPreferenceKey: PreferenceKey {
 }
 
 
-/// Reports actual content movement using native scroll geometry when available.
 ///
-/// Tracks Today scroll movement to control the header fade
+/// Snaps deliberate scrolling between Today content regions
 ///
 /// @section    Purpose
-///     Use native scroll geometry where available and a coordinate-space fallback otherwise
+///     Changes the native settling target only when a directional swipe crosses a configured
+///     section boundary; otherwise preserves normal scrolling.
 ///
-/// Only crossing between Today’s two spaces changes the native settling destination.
 struct TodaySectionSnapBehavior: ScrollTargetBehavior {
-    var perspectiveTop: CGFloat
+
+    var perspectiveTop:  CGFloat
     var shortcutsBottom: CGFloat
-    var enabled: Bool
+    var enabled:         Bool
 
 
     ///
@@ -458,6 +460,14 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior {
     }
 }
 
+
+///
+/// Tracks Today scrolling for header fading
+///
+/// @section    Purpose
+///     Keeps the fade binding synchronized with native scroll geometry, with a coordinate-space
+///     fallback on older systems.
+///
 private struct TodayScrollFadeTracking: ViewModifier {
 
     @Binding var isScrolled: Bool           /* Header fade visibility state */
@@ -496,14 +506,14 @@ private struct TodayScrollFadeTracking: ViewModifier {
 
 
 ///
-/// Owns the primary app navigation and shared board state
+/// Identifies stages in the launch presentation
 ///
 /// @section    Purpose
-///     Keep Today and Board in the same navigation shell and share one in-memory board snapshot
-///
-/// @note   Board persistence remains owned by the existing board persistence path
+///     Provides ordered restoration, planning, readiness, and welcome symbols and labels without
+///     owning workspace restoration state.
 ///
 enum PlenactLaunchStage: Int, CaseIterable {
+
     case restore, plans, ready, welcome
     var symbol: String {
         switch self { case .restore: "folder"; case .plans: "calendar"; case .ready: "slider.horizontal.3"; case .welcome: "sun.max" }
@@ -518,7 +528,24 @@ enum PlenactLaunchStage: Int, CaseIterable {
     }
 }
 
+
+///
+/// Represents progress through the launch presentation
+///
+/// @section    Purpose
+///     Separates the current launch stage from completion so visible pacing can finish
+///     independently of restoration work.
+///
 struct PlenactLaunchProgress: Equatable {
+
+
+    ///
+    /// Classifies a launch indicator's progress
+    ///
+    /// @section    Purpose
+    ///     Distinguishes stages that have not started, are running, or have completed for
+    ///     consistent indicator rendering.
+    ///
     enum Status { case waiting, running, complete }
     var stage: PlenactLaunchStage = .restore
     var finished = false
@@ -557,7 +584,16 @@ struct PlenactLaunchProgress: Equatable {
     }
 }
 
+
+///
+/// Renders the launch-stage indicator row
+///
+/// @section    Purpose
+///     Maps progress to stage symbols and animation while respecting the user's Reduce Motion
+///     preference.
+///
 struct PlenactLaunchIndicators: View {
+
     let progress: PlenactLaunchProgress
     var animates = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -579,7 +615,16 @@ struct PlenactLaunchIndicators: View {
     }
 }
 
+
+///
+/// Paces launch indicators against elapsed time
+///
+/// @section    Purpose
+///     Retains a local animation anchor and supplies paced progress through a timeline without
+///     changing workspace data.
+///
 struct PlenactLaunchSequence: View {
+
     let progress: PlenactLaunchProgress
     var animates: Bool
     @State private var startedAt = Date()
@@ -591,7 +636,16 @@ struct PlenactLaunchSequence: View {
     }
 }
 
+
+///
+/// Presents the launch artwork and progress overlay
+///
+/// @section    Purpose
+///     Combines logo, shadow, and stage indicators while adapting decorative movement to
+///     accessibility preferences.
+///
 struct PlenactLoadingView: View {
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var animatesLogo = true
     var fadesShadow = false
@@ -641,25 +695,33 @@ struct PlenactLoadingView: View {
     }
 }
 
-/// Independent device-specific toolbar geometry. Keep each preset explicit when tuning a device.
+
+///
+/// Defines device-specific bottom-toolbar geometry
+///
+/// @section    Purpose
+///     Keeps explicit phone and tablet presets available for independent tuning without changing
+///     navigation behavior.
+///
 struct BottomToolbarLayout {
-    var height: CGFloat
-    var safeAreaAllowance: CGFloat
-    var rowSpacing: CGFloat
-    var horizontalPadding: CGFloat
-    var topPadding: CGFloat
-    var bottomPadding: CGFloat
-    var tabsOffset: CGFloat
-    var newOffset: CGFloat
-    var tabMinimumHeight: CGFloat
-    var tabIconSize: CGFloat
-    var newButtonSize: CGFloat
-    var newIconSize: CGFloat
-    var tabLabelSpacing: CGFloat
-    var newLabelSpacing: CGFloat
+
+    var height:             CGFloat
+    var safeAreaAllowance:  CGFloat
+    var rowSpacing:         CGFloat
+    var horizontalPadding:  CGFloat
+    var topPadding:         CGFloat
+    var bottomPadding:      CGFloat
+    var tabsOffset:         CGFloat
+    var newOffset:          CGFloat
+    var tabMinimumHeight:   CGFloat
+    var tabIconSize:        CGFloat
+    var newButtonSize:      CGFloat
+    var newIconSize:        CGFloat
+    var tabLabelSpacing:    CGFloat
+    var newLabelSpacing:    CGFloat
     var backgroundTopInset: CGFloat
-    var horizontalLabels: Bool
-    var labelStyle: Font.TextStyle
+    var horizontalLabels:   Bool
+    var labelStyle:         Font.TextStyle
 
     // iPhone layouts: edits here do not affect iPad.
     static let phoneRegular = Self(height: 74, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4, tabsOffset: 25, newOffset: 14, tabMinimumHeight: 54, tabIconSize: 23, newButtonSize: 68, newIconSize: 24, tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 28, horizontalLabels: false, labelStyle: .caption)
@@ -700,9 +762,25 @@ struct BottomToolbarLayout {
     }
 }
 
-/// One greeting per process launch, then only after a meaningful foreground absence.
+
+///
+/// Coordinates occasional welcome cues
+///
+/// @section    Purpose
+///     Tracks launch and meaningful foreground absence, then targets the appropriate planning or
+///     profile entry point.
+///
 @MainActor
 final class TodayWelcomeCue: ObservableObject {
+
+
+    ///
+    /// Identifies the destination of a welcome cue
+    ///
+    /// @section    Purpose
+    ///     Distinguishes the profile and planning settings targets used by the welcome
+    ///     presentation.
+    ///
     enum Target: Equatable { case profile, plan }
     static let lastDepartureKey = "Plenact.Welcome.lastDeparture.v1"
     static let returnInterval: TimeInterval = 4 * 60 * 60
@@ -864,8 +942,16 @@ final class TodayWelcomeCue: ObservableObject {
     }
 }
 
-/// Decoration only: does not change layout, intercept gestures, or add accessibility elements.
+
+///
+/// Renders the decorative welcome glow
+///
+/// @section    Purpose
+///     Highlights the requested control without changing layout, intercepting touches, or creating
+///     accessibility elements.
+///
 struct TodayWelcomeGlow: ViewModifier {
+
     let highlighted: Bool
     var circular = false
     private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)
@@ -896,7 +982,16 @@ struct TodayWelcomeGlow: ViewModifier {
     }
 }
 
+
+///
+/// Owns the application's workspace and navigation composition
+///
+/// @section    Purpose
+///     Coordinates calendar and Library persistence, recovery, capture, search, and tab
+///     destinations while passing checked mutation callbacks to child views.
+///
 private struct AppRootView: View {
+
     @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
     @StateObject private var welcomeCue = TodayWelcomeCue()
     @Environment(\.accessibilityReduceMotion) private var reduceLaunchMotion
@@ -908,10 +1003,10 @@ private struct AppRootView: View {
     @State private var confirmsExampleMonth = false
     @State private var confirmsRestoreUserData = false
     @State private var workspaceNotice: String?
-    @State private var lists: [KanbanList]                 = []                                      /* Complete in-memory Week snapshot  */
+    @State private var lists:           [KanbanList]                 = []                            /* Complete in-memory Week snapshot  */
     @State private var collections                         = TodayListPins.loadInitialCollections()  /* Device-local personal collections */
-    @State private var calendarDocument: PlanningCalendarDocument?
-    @State private var displayedPlanningWeek: DatedPlanningWeek?
+    @State private var calendarDocument:        PlanningCalendarDocument?
+    @State private var displayedPlanningWeek:   DatedPlanningWeek?
     @State private var displayedPlanningListID: Int?
     @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
     @AppStorage(ReviewRhythmStore.key) private var reviewRhythmPreferencesData = Data()
@@ -920,24 +1015,24 @@ private struct AppRootView: View {
     @State private var launchProgress = PlenactLaunchProgress()
     @State private var hasLoadedBoard                      = false                     /* Whether the initial Week snapshot has loaded */
     @State private var profile                             = LocalProfileStore.load()  /* Optional local identity and settings         */
-    @State private var selectedDestination: AppDestination = .today                    /* Currently selected primary destination       */
+    @State private var selectedDestination:       AppDestination = .today              /* Currently selected primary destination       */
     @State private var bottomNavigationSafeInset: CGFloat = 34
-    private var bottomToolbarLayout: BottomToolbarLayout {
+    private var bottomToolbarLayout:              BottomToolbarLayout {
         .configuration(isTablet: UIDevice.current.userInterfaceIdiom == .pad, compact: verticalSizeClass == .compact)
     }
     private var bottomNavigationHeight: CGFloat {
         bottomToolbarLayout.reservedHeight(bottomInset: bottomNavigationSafeInset)
     }
     @State private var visibleNoteIDs: Set<UUID> = []
-    private var isNotePresented: Bool { !visibleNoteIDs.isEmpty }
+    private var isNotePresented:       Bool { !visibleNoteIDs.isEmpty }
     @State private var weekRootRequest                     = 0                            /* Explicit Week toolbar taps return to the Board root */
     @State private var savedCardIDs                        = SavedCardPersistence.load()  /* Device-local saved cards                            */
     @State private var savedPersonalCardTarget: PersonalSavedCardTarget?                  /* Personal bookmark requested from Saved              */
     @State private var newLibraryListRequest = 0
     @State private var quickCreateRequest                  = 0      /* Center-bar quick-create request          */
     @State private var showsCenterNewCardSheet             = false  /* Destination picker for New outside Today */
-    @State private var centerNewPresentation: ItemPresentation = .card
-    @State private var centerNewListID: Int?
+    @State private var centerNewPresentation:    ItemPresentation = .card
+    @State private var centerNewListID:          Int?
     @State private var toolbarCollectionRequest: PersonalCollectionKind?
     @State private var showsToolbarTodayPlan = false
     @State private var showsToolbarCalendar = false
@@ -945,9 +1040,9 @@ private struct AppRootView: View {
     @State private var showsToolbarRevisit = false
     @State private var activityRevisitDestination: ToolbarRevisitDestination?
 
-    @State private var boardTargetListID:                  Int?           /* List requested by a Today-to-Board navigation     */
-    @State private var boardTargetCardID:                  Int?           /* Card requested by a Today-to-Board navigation     */
-    @State private var activePersonalListNewNote:          (() -> Void)?  /* Callback to create a new note in active pers list */
+    @State private var boardTargetListID:         Int?                    /* List requested by a Today-to-Board navigation     */
+    @State private var boardTargetCardID:         Int?                    /* Card requested by a Today-to-Board navigation     */
+    @State private var activePersonalListNewNote: (() -> Void)?           /* Callback to create a new note in active pers list */
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass                         /* Layout size class used to compact the landscape bar */
 
@@ -1479,9 +1574,12 @@ private struct AppRootView: View {
     /// @details    Uses a recoverable preferences transaction to update calendar-backed state and publishes the
     ///             current owner only after saving succeeds; the simple overload supplies no example markers.
     ///
-    /// @param[in]  week                 Dated planning week being inspected or saved
-    /// @param[in]  exampleImportantIDs  Destination card IDs explicitly marked important by an applied example
-    /// @param[in]  replaceImportant     Whether the owner's existing importance selections should be replaced
+    /// @param[in]  week                      Dated planning week being inspected or saved
+    /// @param[in]  exampleImportantIDs       Destination card IDs explicitly marked important by an applied example
+    /// @param[in]  replaceImportant          Whether the owner's existing importance selections should be replaced
+    ///
+    /// @param[in]  restoredImportanceLevels  Optional exact Card-to-level snapshot restored with
+    ///             the Week, including levels above one
     ///
     /// @return     (Bool) true after the week and related marker changes save successfully; false on rejection
     ///
@@ -2387,19 +2485,15 @@ private struct AppRootView: View {
 
 
     ///
-    /// @fcn        AppRootView.tabButton(_:title:systemImage:)
-    /// @brief      Render one primary destination button
-    /// @details    Applies selected styling and accessibility traits, and conditionally displays
-    ///             the caption according to local profile preferences
+    /// @fcn        AppRootView.openToolbarItem(_:)
+    /// @brief      Open the requested Card or Note creation flow
+    /// @details    Uses an open personal List's Note action when available; otherwise seeds the
+    ///             shared composer with the selected presentation and Today's destination when
+    ///             appropriate.
     ///
-    /// @param[in]  destination  Destination selected when tapped
-    /// @param[in]  title        Visible caption and accessibility label
-    /// @param[in]  systemImage  SF Symbol naming the destination
+    /// @param[in]  presentation  Card or Note presentation requested for the new item
     ///
-    /// @return     (some View) configured destination button
-    ///
-    /// @post       Week returns to the Board root at the actual local weekday list,
-    ///             creating a blank weekday list if missing without replacing existing content
+    /// @return     (Void) updates creation presentation state without creating a record
     ///
     private func openToolbarItem(_ presentation: ItemPresentation) {
         if selectedDestination == .lists, presentation == .note, let action = activePersonalListNewNote {
@@ -2580,8 +2674,11 @@ private struct AppRootView: View {
 
     ///
     /// @fcn        AppRootView.openSavedDestination()
-    /// @brief      Select the existing Saved tab from Library
-    /// @return     (Void) changes navigation destination without duplicating Saved content
+    /// @brief      Select the Activity destination
+    /// @details    Changes the primary navigation selection to the existing Saved-backed Activity
+    ///             surface without constructing a second copy of its history or bookmarks.
+    ///
+    /// @return     (Void) updates the selected application destination
     ///
     private func openSavedDestination() {
 
@@ -2991,19 +3088,27 @@ private struct AppRootView: View {
 
         ///
         /// @fcn        AppRootView.addCard(to:title:description:)
-        /// @brief      Append a new card to the requested Week list
-        /// @details    Allocates an ID across active and archived cards/lists, recognizes divider
-        ///             titles, and stores an empty description as no override; persistence follows
-        ///             root observation
+        /// @brief      Create full capture content in the active Week List
+        /// @details    Builds destination-local items with the submitted presentation, writing,
+        ///             actions, attachments, and schedule. Explicit checked saves, media, or
+        ///             scheduling persist calendar and Board snapshots through a recovery
+        ///             transaction before publication; failure returns false and retains the draft.
         ///
-        /// @param[in]  listID       Existing destination list identity
-        /// @param[in]  title        Card title supplied by the composer or quick capture
-        /// @param[in]  description  Optional supporting text; empty text becomes nil
+        /// @param[in]  listID        Existing destination list identity
+        /// @param[in]  title         Card title supplied by the composer or quick capture
+        /// @param[in]  description   Optional supporting text; empty text becomes nil
         ///
-        /// @return     (Void) appends the new card when the list exists
+        /// @param[in]  subtitle      Supporting preview subtitle supplied by the creation draft
+        /// @param[in]  presentation  Card or Note presentation requested for the new item
+        /// @param[in]  actions       Optional checklist action titles supplied by the capture mode
+        /// @param[in]  attachments   Retained media attachment records committed for the new item
+        /// @param[in]  schedule      Optional validated start and stop values applied during creation
+        /// @param[in]  checkedSave   Whether creation must complete checked persistence before
+        ///             publishing the result
         ///
-        /// @pre        The caller has validated and trimmed the title
-        /// @post       An absent list leaves the snapshot unchanged
+        /// @return     (Bool) true when valid content was accepted and published; false for an
+        ///             unavailable destination or failed checked save
+        ///
         ///
         @discardableResult
         private func addCard(to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil, actions: [String]? = nil, attachments: [KanbanAttachment] = [], schedule: QuickCaptureSchedule? = nil, checkedSave: Bool = false) -> Bool {
@@ -3068,6 +3173,7 @@ private struct AppRootView: View {
 /// @note   The selected list is stored locally for the current calendar date
 ///
 private struct TodayHomeView: View {
+
     @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = 30
     @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = 18.75
     @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
@@ -3095,31 +3201,31 @@ private struct TodayHomeView: View {
     }
 
 
-    @Binding var lists:     [KanbanList]                                                /* Shared local Board lists                           */
-    @Binding var archivedLists: [KanbanList]                                            /* Archived Week lists retained for example-load undo */
-    @Binding var savedCardIDs: Set<Int>                                                 /* Device-local bookmarks used by card details        */
-    let profile:            LocalProfile?                                               /* Current local profile and preferences              */
-    let onSaveProfile:      (LocalProfile)        -> Void                               /* Save local identity and personalization            */
-    let onRemoveProfile:    ()                    -> Void                               /* Remove only local profile information              */
-    let onAddCard: (Int, String, String, String, ItemPresentation?, [String]?) -> Void  /* Create canonical Week records                      */
-    let onAddCapture: (QuickCaptureSubmission) -> Bool
-    let onToggleCardCompletion: (Int, Int) -> Void          /* Toggle local card completion                  */
-    let onOpenBoardList:    (Int)                 -> Void   /* Route to Board at the selected list ID        */
-    let onOpenBoardCard:    (Int, Int)             -> Void  /* Route to a Week card by list/card IDs         */
-    let onArchiveCard: (Int) -> Void                        /* Retain a canonical Week card                  */
-    let onDeleteCard: (Int) -> Bool                         /* Report successful confirmed Week card removal */
-    let onArchiveList: (Int) -> Void                        /* Retain a canonical Week list                  */
-    let onDeleteList: (Int) -> Bool                         /* Report successful confirmed Week list removal */
-    let quickCreateRequest: Int                             /* Center-bar requests for the Today composer    */
+    @Binding var lists:         [KanbanList]                                                        /* Shared local Board lists                           */
+    @Binding var archivedLists: [KanbanList]                                                        /* Archived Week lists retained for example-load undo */
+    @Binding var savedCardIDs:  Set<Int>                                                            /* Device-local bookmarks used by card details        */
+    let profile:                LocalProfile?                                                       /* Current local profile and preferences              */
+    let onSaveProfile:          (LocalProfile)        -> Void                                       /* Save local identity and personalization            */
+    let onRemoveProfile:        ()                    -> Void                                       /* Remove only local profile information              */
+    let onAddCard:              (Int, String, String, String, ItemPresentation?, [String]?) -> Void /* Create canonical Week records                      */
+    let onAddCapture:           (QuickCaptureSubmission) -> Bool
+    let onToggleCardCompletion: (Int, Int) -> Void             /* Toggle local card completion                  */
+    let onOpenBoardList:        (Int)                 -> Void  /* Route to Board at the selected list ID        */
+    let onOpenBoardCard:        (Int, Int)             -> Void /* Route to a Week card by list/card IDs         */
+    let onArchiveCard:          (Int) -> Void                  /* Retain a canonical Week card                  */
+    let onDeleteCard:           (Int) -> Bool                  /* Report successful confirmed Week card removal */
+    let onArchiveList:          (Int) -> Void                  /* Retain a canonical Week list                  */
+    let onDeleteList:           (Int) -> Bool                  /* Report successful confirmed Week list removal */
+    let quickCreateRequest:     Int                            /* Center-bar requests for the Today composer    */
 
-    @State private var selectedTodayListID: Int?             /* Board list selected for today's plan  */
-    @State private var listPickerMode: TodayListPickerMode?  /* Active list picker presentation mode  */
-    @State private var showsAccountSettings = false          /* Account & Settings sheet presentation */
+    @State private var selectedTodayListID: Int?                 /* Board list selected for today's plan  */
+    @State private var listPickerMode:      TodayListPickerMode? /* Active list picker presentation mode  */
+    @State private var showsAccountSettings = false              /* Account & Settings sheet presentation */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
-    @State private var focusFiltersChangedAt: Date?
-    @State private var perspectiveSectionTop: CGFloat = 0
+    @State private var focusFiltersChangedAt:  Date?
+    @State private var perspectiveSectionTop:  CGFloat = 0
     @State private var shortcutsSectionBottom: CGFloat = 0
-    @State private var openedFocusCard: KanbanCard?
+    @State private var openedFocusCard:        KanbanCard?
     @State private var showsTodayList = false               /* Focused single-list presentation         */
     @State private var showsTodayPlan = false
     @State private var perspectivePlanDate: Date = .now
@@ -3135,10 +3241,10 @@ private struct TodayHomeView: View {
     @State private var quickComposerInitialTitle = ""  /* Quick-capture title handed to full editor    */
     @State private var showsQuickNoteEditor = false    /* Full-size quick card editor presentation     */
     @State private var showsTemplates = false
-    @State private var pendingTemplate: QuickCaptureTemplate?
+    @State private var pendingTemplate:             QuickCaptureTemplate?
     @State private var composerInitialPresentation: ItemPresentation?
-    @State private var composerTemplate: QuickCaptureTemplate?
-    @State private var captureAction: TodayCaptureAction?
+    @State private var composerTemplate:            QuickCaptureTemplate?
+    @State private var captureAction:               TodayCaptureAction?
     @State private var showsPlanSettings = false
     @State private var showsSearch          = false             /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false   /* Deferred center-plus request             */
@@ -3309,6 +3415,13 @@ private struct TodayHomeView: View {
     /// @param[in]  onOpenBoardCard         Callback opening a Week card by list/card IDs
     /// @param[in]  quickCreateRequest      Observable request counter for the central New control
     ///
+    /// @param[in]  onAddCapture            Checked callback creating the complete capture submission in its
+    ///             destination
+    /// @param[in]  onArchiveCard           Optional owner action retaining the selected Card in its archive
+    /// @param[in]  onDeleteCard            Checked owner action permanently removing the selected Card
+    /// @param[in]  onArchiveList           Optional owner action retaining the selected List in its archive
+    /// @param[in]  onDeleteList            Checked owner action permanently removing the selected List
+    ///
     /// @return     (TodayHomeView) configured Today screen
     ///
     /// @pre        lists reflects the current in-memory board state
@@ -3475,12 +3588,15 @@ private struct TodayHomeView: View {
 
 
     ///
-    /// @fcn        TodayHomeView.presentQuickNoteEditor()
-    /// @brief      Move the inline draft into the full card composer
-    /// @details    Clears inline capture while the composer owns the draft; an unsubmitted title
-    ///             is restored when that composer is dismissed
+    /// @fcn        TodayHomeView.openCapture(_:)
+    /// @brief      Prepare the selected quick-capture mode
+    /// @details    Cancels the welcome cue, clears the template, and retains the capture action.
+    ///             Requests a Today List first when no destination is selected; otherwise opens the
+    ///             full composer.
     ///
-    /// @return     (Void) opens the full editor with the current quick-capture title
+    /// @param[in]  action  Requested quick-capture mode, including photo, voice, or drawing entry
+    ///
+    /// @return     (Void) opens capture or requests its missing destination
     ///
     private func openCapture(_ action: TodayCaptureAction) {
         welcomeCue.cancel()
@@ -4045,8 +4161,15 @@ private struct TodayHomeView: View {
 }
 
 
-/// Offers local starting points without creating or replacing stored content.
+///
+/// Presents local quick-capture starting points
+///
+/// @section    Purpose
+///     Returns a selected template to the capture flow without creating or replacing stored
+///     content.
+///
 struct QuickCaptureTemplatesView: View {
+
     let onSelect: (QuickCaptureTemplate) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var filter: ItemPresentation?
@@ -4137,14 +4260,17 @@ struct QuickCaptureTemplatesView: View {
 }
 
 
-/// Creates a card with optional supporting detail in a chosen board list.
+///
+/// Selects Card or Note creation presentation
 ///
 /// @section    Purpose
-///     Collect card text and destination before submitting through the parent callback
+///     Binds the requested item kind in a segmented control without creating records or changing
+///     destination defaults.
 ///
 struct ContentCreationKindPicker: View {
+
     @Binding var presentation: ItemPresentation
-    var body: some View {
+    var body:                  some View {
         Picker("Create as", selection: $presentation) {
             Label("Card", systemImage: "rectangle").tag(ItemPresentation.card)
             Label("Note", systemImage: "note.text").tag(ItemPresentation.note)
@@ -4152,17 +4278,35 @@ struct ContentCreationKindPicker: View {
     }
 }
 
+
+///
+/// Defines the quick-capture entry modes
+///
+/// @section    Purpose
+///     Supplies each mode's label, symbol, and initial Card or Note presentation without creating a
+///     record.
+///
 enum TodayCaptureAction: String, CaseIterable, Identifiable {
+
     case note, checklist, photo, voice, drawing
-    var id: Self { self }
-    var title: String { switch self { case .note: "Note"; case .checklist: "Checklist"; case .photo: "Photo"; case .voice: "Voice"; case .drawing: "Drawing" } }
-    var symbol: String { switch self { case .note: "square.and.pencil"; case .checklist: "checklist"; case .photo: "camera"; case .voice: "mic"; case .drawing: "pencil.tip.crop.circle.badge.plus" } }
+    var id:           Self { self }
+    var title:        String { switch self { case .note: "Note"; case .checklist: "Checklist"; case .photo: "Photo"; case .voice: "Voice"; case .drawing: "Drawing" } }
+    var symbol:       String { switch self { case .note: "square.and.pencil"; case .checklist: "checklist"; case .photo: "camera"; case .voice: "mic"; case .drawing: "pencil.tip.crop.circle.badge.plus" } }
     var presentation: ItemPresentation { self == .note ? .note : .card }
 }
 
+
+///
+/// Presents the quick-capture mode buttons
+///
+/// @section    Purpose
+///     Delegates selection to the caller so capture presentation and storage remain under the
+///     owning view's control.
+///
 struct TodayCaptureActions: View {
+
     let onSelect: (TodayCaptureAction) -> Void
-    var body: some View {
+    var body:     some View {
         HStack(spacing: 8) {
             ForEach(TodayCaptureAction.allCases) { action in
                 Button { onSelect(action) } label: {
@@ -4178,9 +4322,17 @@ struct TodayCaptureActions: View {
     }
 }
 
+
+///
+/// Carries optional scheduling values for a capture draft
+///
+/// @section    Purpose
+///     Validates start and stop values with the supplied calendar before a new item is committed.
+///
 struct QuickCaptureSchedule: Equatable {
+
     var start: Date?
-    var stop: Date?
+    var stop:  Date?
     var includesTime = false
 
 
@@ -4218,22 +4370,39 @@ struct QuickCaptureSchedule: Equatable {
     }
 }
 
+
+///
+/// Carries a complete new-item submission
+///
+/// @section    Purpose
+///     Keeps destination, writing, presentation, checklist actions, attachments, and optional
+///     scheduling together for a checked owner-level save.
+///
 struct QuickCaptureSubmission {
-    let listID: Int
-    let title: String
-    let body: String
-    let subtitle: String
+
+    let listID:       Int
+    let title:        String
+    let body:         String
+    let subtitle:     String
     let presentation: ItemPresentation
-    let actions: [String]?
-    let attachments: [KanbanAttachment]
-    let schedule: QuickCaptureSchedule?
+    let actions:      [String]?
+    let attachments:  [KanbanAttachment]
+    let schedule:     QuickCaptureSchedule?
 }
 
+
+///
+/// Selects which parts of voice capture to retain
+///
+/// @section    Purpose
+///     Controls whether the saved item contains recorded audio, transcribed writing, or both.
+///
 enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable {
+
     case audio = "Audio", text = "Text", both = "Both"
-    var id: Self { self }
+    var id:         Self { self }
     var savesAudio: Bool { self != .text }
-    var savesText: Bool { self != .audio }
+    var savesText:  Bool { self != .audio }
 
 
     ///
@@ -4256,17 +4425,26 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable {
     }
 }
 
+
+///
+/// Coordinates voice recording and transcription
+///
+/// @section    Purpose
+///     Publishes capture status and errors, retains recording and speech tasks, and uses generation
+///     tracking to reject obsolete asynchronous work.
+///
 @MainActor
 final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelegate {
+
     @Published private(set) var isRecording = false
     @Published private(set) var isStarting = false
     @Published private(set) var isTranscribing = false
     @Published private(set) var recordingURL: URL?
     @Published var transcript = ""
     @Published var errorMessage: String?
-    private var recorder: AVAudioRecorder?
-    private var speechTask: SFSpeechRecognitionTask?
-    private var timeout: Task<Void, Never>?
+    private var recorder:        AVAudioRecorder?
+    private var speechTask:      SFSpeechRecognitionTask?
+    private var timeout:         Task<Void, Never>?
     private var generation = 0
 
 
@@ -4434,14 +4612,30 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     }
 }
 
+
+///
+/// Retains a selected photograph before creation
+///
+/// @section    Purpose
+///     Keeps encoded bytes and their extension with a temporary identity; image decoding does not
+///     persist an attachment.
+///
 struct QuickCapturePhoto: Identifiable {
+
     let id = UUID()
-    let data: Data
+    let data:          Data
     let fileExtension: String
-    var image: UIImage? { UIImage(data: data) }
+    var image:         UIImage? { UIImage(data: data) }
 }
 
-/// Store media only on explicit Add; a failed handoff removes just this draft's files.
+
+///
+/// Commits quick-capture media with failure cleanup
+///
+/// @section    Purpose
+///     Writes files only for explicit submission and removes this draft's newly created files when
+///     the owner rejects the handoff.
+///
 @MainActor
 enum QuickCaptureMediaCommit {
 
@@ -4484,7 +4678,16 @@ enum QuickCaptureMediaCommit {
     }
 }
 
+
+///
+/// Bridges the system camera into quick capture
+///
+/// @section    Purpose
+///     Delivers a selected image through the caller's callback and dismisses on capture or
+///     cancellation.
+///
 struct QuickCaptureCamera: UIViewControllerRepresentable {
+
     let onPhoto: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -4527,7 +4730,17 @@ struct QuickCaptureCamera: UIViewControllerRepresentable {
     /// @return     (Void) no return value
     ///
     func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
+
+
+    ///
+    /// Handles camera selection and cancellation delegates
+    ///
+    /// @section    Purpose
+    ///     Retains the camera representable so UIKit delegate events reach its image callback and
+    ///     dismissal action.
+    ///
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
         let parent: QuickCaptureCamera
 
 
@@ -4574,21 +4787,29 @@ struct QuickCaptureCamera: UIViewControllerRepresentable {
     }
 }
 
+
+///
+/// Edits a full Card or Note creation draft
+///
+/// @section    Purpose
+///     Combines writing, templates, scheduling, and media with checked submission callbacks;
+///     retained drafts survive cancellation and failed saves.
+///
 struct QuickNoteComposer: View {
 
     @State private var keyboardContextID = UUID()
     @StateObject private var attachmentDraft = CreationAttachmentDraft()
     @Binding var lists: [KanbanList]                         /* Current destination lists */
-    let onSave: (Int, String, String, String, ItemPresentation?, [String]?) -> Void
-    let template: QuickCaptureTemplate?
-    let captureAction: TodayCaptureAction?
-    let draftKey: String?
+    let onSave:         (Int, String, String, String, ItemPresentation?, [String]?) -> Void
+    let template:       QuickCaptureTemplate?
+    let captureAction:  TodayCaptureAction?
+    let draftKey:       String?
     @State private var acceptsDraftEdits = true
-    let onSaveCapture: ((QuickCaptureSubmission) -> Bool)?
-    @State private var drawings: [DrawingCaptureDraft] = []
+    let onSaveCapture:                ((QuickCaptureSubmission) -> Bool)?
+    @State private var drawings:      [DrawingCaptureDraft] = []
     @State private var drawingToEdit: DrawingCaptureDraft?
     @State private var offeredDrawing = false
-    @State private var photos: [QuickCapturePhoto] = []
+    @State private var photos:         [QuickCapturePhoto] = []
     @State private var photoSelection: [PhotosPickerItem] = []
     @State private var showsPhotoSources = false
     @State private var showsPhotoLibrary = false
@@ -4623,7 +4844,7 @@ struct QuickNoteComposer: View {
     @State private var title = ""            /* New card title                   */
     @State private var description = ""      /* Optional card detail             */
     @State private var selectedListID: Int?  /* Destination selected in the form */
-    @State private var actions: [KanbanChecklistItem]
+    @State private var actions:        [KanbanChecklistItem]
 
 
     ///
@@ -4632,11 +4853,18 @@ struct QuickNoteComposer: View {
     /// @details    Seeds the optional destination without mutating lists; the form validates
     ///             that the selected identity still exists before permitting Add
     ///
-    /// @param[in]  lists          Binding to available destination lists
-    /// @param[in]  initialListID  Optional initially selected destination identity
-    /// @param[in]  initialTitle   Existing inline title transferred into the composer
-    /// @param[in]  template       Optional local starting point with explicit Card/Note presentation
-    /// @param[in]  onSave         Callback receiving destination, text, and optional template presentation/actions
+    /// @param[in]  lists                Binding to available destination lists
+    /// @param[in]  initialListID        Optional initially selected destination identity
+    /// @param[in]  initialTitle         Existing inline title transferred into the composer
+    /// @param[in]  template             Optional local starting point with explicit Card/Note presentation
+    /// @param[in]  onSave               Callback receiving destination, text, and optional template presentation/actions
+    /// @param[in]  draftKey             Optional preference key for retaining unsaved composer writing
+    /// @param[in]  captureAction        Optional capture mode used to configure initial creation controls
+    /// @param[in]  initialPresentation  Optional explicit Card or Note presentation before applying
+    ///             destination defaults
+    /// @param[in]  onSaveCapture        Optional checked full-submission callback; rejected saves keep
+    ///             the draft available
+    ///
     /// @return     (QuickNoteComposer) initialized unsaved composer
     ///
     init(
@@ -5044,8 +5272,9 @@ struct QuickNoteComposer: View {
 ///     Offer a roomy, writing-first draft that is committed only after explicit Save
 ///
 private struct NewPersonalNoteComposer: View {
-    let availablePersonalLists: [PersonalCollection]
-    let onSave: (UUID, QuickCaptureSubmission, Date) throws -> Void
+
+    let availablePersonalLists:        [PersonalCollection]
+    let onSave:                        (UUID, QuickCaptureSubmission, Date) throws -> Void
     @State private var destinationIDs: [UUID]
     @State private var createdAt = Date.now
     private let initialCollectionID: UUID
@@ -5108,16 +5337,24 @@ private struct NewPersonalNoteComposer: View {
 }
 
 
+///
+/// Identifies a search match and its navigation provenance
+///
+/// @section    Purpose
+///     Carries the matching list or card alongside optional collection and week ownership so local
+///     numeric identities remain unambiguous.
+///
 struct TodaySearchResult: Identifiable {
 
-    let listID: Int        /* Board list opened when this result is selected */
-    let cardID: Int?       /* Stable card identity, or nil for a list result */
-    let cardTitle: String  /* Matching card title                            */
-    let listTitle: String  /* Containing list title                          */
-    let detail: String     /* Supporting detail shown under the title        */
-    var ownerID: UUID? = nil
-    var weekKey: String? = nil
+    let listID:     Int    /* Board list opened when this result is selected */
+    let cardID:     Int?   /* Stable card identity, or nil for a list result */
+    let cardTitle:  String /* Matching card title                            */
+    let listTitle:  String /* Containing list title                          */
+    let detail:     String /* Supporting detail shown under the title        */
+    var ownerID:    UUID? = nil
+    var weekKey:    String? = nil
     var ownerTitle: String? = nil
+
 
     ///
     /// @fcn        TodaySearchResult.id
@@ -5138,6 +5375,7 @@ struct TodaySearchResult: Identifiable {
 ///     Supply stable picker choices for the Today search screen
 ///
 enum TodaySearchScope: String, CaseIterable, Identifiable {
+
     case all = "All"
     case boards = "Lists"
     case labels = "Labels"
@@ -5162,6 +5400,7 @@ enum TodaySearchScope: String, CaseIterable, Identifiable {
 ///     Centralize bounded, deduplicated search-history preference access
 ///
 enum RecentSearchStore {
+
     private static let key = "Plenact.RecentSearches.v1" /* Versioned local search-history key */
 
 
@@ -5348,13 +5587,13 @@ enum TodaySearchIndex {
 ///
 struct TodaySearchView: View {
 
-    let lists: [KanbanList]                  /* Current locally stored Board snapshot    */
+    let lists:           [KanbanList]        /* Current locally stored Board snapshot    */
     let onOpenBoardList: (Int) -> Void       /* Navigate to a result's containing list   */
     let onOpenBoardCard: (Int, Int) -> Void  /* Route to a Week card by list/card IDs    */
-    let onArchiveCard: (Int) -> Void         /* Canonical Week archive                   */
-    let onDeleteCard: (Int) -> Bool          /* Confirmed canonical Week deletion result */
-    let onArchiveList: (Int) -> Void         /* Canonical Week list archive              */
-    let onDeleteList: (Int) -> Bool          /* Confirmed canonical list deletion result */
+    let onArchiveCard:   (Int) -> Void       /* Canonical Week archive                   */
+    let onDeleteCard:    (Int) -> Bool       /* Confirmed canonical Week deletion result */
+    let onArchiveList:   (Int) -> Void       /* Canonical Week list archive              */
+    let onDeleteList:    (Int) -> Bool       /* Confirmed canonical list deletion result */
 
     var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = nil
     var onSelectResult: ((TodaySearchResult) -> Void)? = nil
@@ -5636,9 +5875,9 @@ struct TodaySearchView: View {
 ///
 private struct CalendarCardResult: Identifiable {
 
-    let cardID: Int        /* Stable card identity                  */
-    let title: String      /* Card title shown on the selected date */
-    let listID: Int        /* Board list opened when selected       */
+    let cardID:    Int     /* Stable card identity                  */
+    let title:     String  /* Card title shown on the selected date */
+    let listID:    Int     /* Board list opened when selected       */
     let listTitle: String  /* Containing Board list                 */
     let dateLabel: String  /* Start/due marker for this date        */
 
@@ -5656,18 +5895,29 @@ private struct CalendarCardResult: Identifiable {
 
 
 ///
-/// Displays a recognizable organizing space within the Library
+/// Retains an owner-qualified recently viewed item reference
 ///
 /// @section    Purpose
-///     Share readable collection identity and card counts across Week and personal entries
+///     Stores collection and local Card identity in visit order so Library and Activity history
+///     can resolve canonical live content.
 ///
 struct LibraryRecentItem: Codable, Equatable, Identifiable {
+
     let collectionID: UUID
-    let cardID: Int
-    var id: String { "\(collectionID.uuidString).\(cardID)" }
+    let cardID:       Int
+    var id:           String { "\(collectionID.uuidString).\(cardID)" }
 }
 
+
+///
+/// Stores owner-qualified Library visit history
+///
+/// @section    Purpose
+///     Decodes and saves recent-item references through the supplied preferences store without
+///     copying the underlying Cards.
+///
 enum LibraryRecentStore {
+
     static let key = "Plenact.LibraryRecents.v1"
 
 
@@ -5706,7 +5956,16 @@ enum LibraryRecentStore {
     }
 }
 
+
+///
+/// Stores Activity's recent-item history
+///
+/// @section    Purpose
+///     Falls back to legacy Library history only when Activity storage is absent and maintains its
+///     own encoded recent references.
+///
 enum ActivityRecentStore {
+
     static let key = "Plenact.ActivityRecents.v1"
 
 
@@ -5759,9 +6018,18 @@ enum ActivityRecentStore {
     }
 }
 
+
+///
+/// Defines the Library's browse categories
+///
+/// @section    Purpose
+///     Provides labels and search prompts for user collections, labels, examples, templates, and
+///     help.
+///
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
+
     case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", examples = "Examples", templates = "Templates", help = "Help"
-    var id: String { rawValue }
+    var id:           String { rawValue }
     var searchPrompt: String {
         switch self {
         case .all: "Find in your Plans"
@@ -5780,7 +6048,7 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
         switch self { case .all: .blue; case .lists: .teal; case .boards: .indigo; case .labels: .purple; case .templates: .orange; case .examples: .pink; case .help: .teal }
     }
     var browsesCollections: Bool { self == .all || self == .lists || self == .boards }
-    var searchHint: String {
+    var searchHint:         String {
         switch self {
         case .templates: "Search saved routines and template starting points"
         case .examples: "Search example names, descriptions, and previews"
@@ -5815,6 +6083,14 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable {
     }
 }
 
+
+///
+/// Searches active personal collections
+///
+/// @section    Purpose
+///     Uses shared text matching and annotates matches with collection provenance so navigation
+///     resolves the correct owner.
+///
 enum LibrarySearchIndex {
 
 
@@ -5842,15 +6118,32 @@ enum LibrarySearchIndex {
     }
 }
 
-/// A legacy presence-only selection decodes as the first deliberate importance gesture.
+
+///
+/// Retains an owner-qualified personal importance mark
+///
+/// @section    Purpose
+///     Decodes missing legacy levels as one star and exposes a bounded level without changing the
+///     original Card record.
+///
 struct LibraryImportanceItem: Codable {
-    let collectionID: UUID
-    let cardID: Int
-    var level: Int? = nil
+
+    let collectionID:  UUID
+    let cardID:        Int
+    var level:         Int? = nil
     var resolvedLevel: Int { min(5, max(0, level ?? 1)) }
 }
 
+
+///
+/// Persists personal importance levels independently of Card content
+///
+/// @section    Purpose
+///     Resolves legacy marks as one star, clamps levels to zero through five, and adjusts by one
+///     deliberate gesture while preserving unrelated owners.
+///
 enum LibraryImportanceSelection {
+
     static let key = "Plenact.LibraryImportant.v1"
 
 
@@ -5896,8 +6189,8 @@ enum LibraryImportanceSelection {
     /// @details    Matches the explicit demonstration-title set across supplied owners and preserves unrelated
     ///             existing selections.
     ///
-    /// @param[in]  owners  Canonical collection owners participating in the operation
-    /// @param[in]  data    Encoded input or media bytes
+    /// @param[in]  owners               Canonical collection owners participating in the operation
+    /// @param[in]  data                 Encoded input or media bytes
     /// @param[in]  includesAllExamples  Include every non-divider in an explicitly chosen example
     ///
     /// @return     (Data) encoded selections including the recognized supplied demonstration cards
@@ -5953,6 +6246,7 @@ enum LibraryImportanceSelection {
     static func contains(cardID: Int, collectionID: UUID, data: Data) -> Bool {
         level(cardID: cardID, collectionID: collectionID, data: data) > 0
     }
+
 
     ///
     /// @fcn        LibraryImportanceSelection.level(cardID:collectionID:data:)
@@ -6013,12 +6307,20 @@ enum LibraryImportanceSelection {
 
 }
 
-/// Compact symbolic attention, with a fixed footprint for Tucked and a wider fan alternative.
+
+///
+/// Renders symbolic layers for an importance level
+///
+/// @section    Purpose
+///     Uses a fixed Tucked footprint or wider Fanned arrangement, with overlapping gold stars
+///     rather than a visible numeric rank.
+///
 struct ImportanceStarCluster: View {
-    let level: Int
-    var style: ImportanceStarStyle = .tucked
+
+    let level:         Int
+    var style:         ImportanceStarStyle = .tucked
     private var count: Int { min(5, max(0, level)) }
-    var body: some View {
+    var body:          some View {
         ZStack(alignment: .topLeading) {
             ForEach(Array((0..<count).reversed()), id: \.self) { depth in
                 Image(systemName: "star.fill")
@@ -6053,9 +6355,17 @@ struct ImportanceStarCluster: View {
     }
 }
 
-/// Importance is a personal mark; tapping gives exactly one more gesture of attention.
+
+///
+/// Provides incremental importance gestures
+///
+/// @section    Purpose
+///     A tap increases one level up to five; a hold decreases one level to zero and excludes the
+///     control from whole-Card lifting.
+///
 struct ImportantItemIndicator: View {
-    let cardID: Int
+
+    let cardID:  Int
     var ownerID: UUID? = nil
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
     @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
@@ -6101,6 +6411,7 @@ struct ImportantItemIndicator: View {
         }
     }
 
+
     ///
     /// @fcn        ImportantItemIndicator.adjustImportance(by:)
     /// @brief      Apply one mutually exclusive tap or hold gesture to the current importance
@@ -6123,14 +6434,32 @@ struct ImportantItemIndicator: View {
 
 }
 
+
+///
+/// Exposes importance operations for the current owner
+///
+/// @section    Purpose
+///     Supplies presence, marking, level lookup, and incremental adjustment callbacks without
+///     giving child views direct storage ownership.
+///
 struct LibraryImportanceAccess {
+
     let contains: (Int) -> Bool
-    let set: (Int, Bool) -> Void
-    var level: (Int) -> Int = { _ in 0 }
-    var adjust: (Int, Int) -> Void = { _, _ in }
+    let set:      (Int, Bool) -> Void
+    var level:    (Int) -> Int = { _ in 0 }
+    var adjust:   (Int, Int) -> Void = { _, _ in }
 }
-/// Reuse Library's owner-qualified importance state in dated Day and Week editors.
+
+
+///
+/// Injects personal importance controls for a resolved owner
+///
+/// @section    Purpose
+///     Shares the encoded owner-qualified marks with dated Week and Day editors without moving
+///     importance into Card content.
+///
 struct OwnerImportanceControls: ViewModifier {
+
     let ownerID: UUID?
     @AppStorage("Plenact.LibraryImportant.v1") private var data = Data()
 
@@ -6159,25 +6488,62 @@ struct OwnerImportanceControls: ViewModifier {
     }
 }
 
+
+///
+/// Defines optional importance access in the environment
+///
+/// @section    Purpose
+///     Defaults to no owner adapter so isolated previews and unrelated destinations do not mutate
+///     an assumed workspace.
+///
 private struct LibraryImportanceKey: EnvironmentKey {
+
     static let defaultValue: LibraryImportanceAccess? = nil
 }
+
+
+///
+/// Provides owner-scoped importance through SwiftUI's environment
+///
+/// @section    Purpose
+///     Forwards access through LibraryImportanceKey while leaving persistence and validation with
+///     the injected callbacks.
+///
 extension EnvironmentValues {
+
     var libraryImportance: LibraryImportanceAccess? {
         get { self[LibraryImportanceKey.self] }
         set { self[LibraryImportanceKey.self] = newValue }
     }
 }
 
+
+///
+/// Represents a ranked upcoming Library item
+///
+/// @section    Purpose
+///     Pairs its canonical owner, list, and Card with the reason, rank, and reference date used by
+///     the preview.
+///
 struct LibraryPlateItem: Identifiable {
+
     let collection: PersonalCollection
-    let list: KanbanList
-    let card: KanbanCard
-    let reason: String
-    let rank: Int
-    let date: Date
-    var id: String { "\(collection.id.uuidString).\(card.id)" }
+    let list:       KanbanList
+    let card:       KanbanCard
+    let reason:     String
+    let rank:       Int
+    let date:       Date
+    var id:         String { "\(collection.id.uuidString).\(card.id)" }
 }
+
+
+///
+/// Builds the upcoming Library preview selection
+///
+/// @section    Purpose
+///     Ranks unfinished, non-divider content by date-bearing urgency and importance while retaining
+///     owner-qualified identities.
+///
 enum LibraryPlateSelection {
 
 
@@ -6228,19 +6594,47 @@ enum LibraryPlateSelection {
     }
 }
 
+
+///
+/// Defines the environment callback for opening a Library item
+///
+/// @section    Purpose
+///     Uses an inert default so views outside a Library route do not create visit-history side
+///     effects.
+///
 private struct LibraryItemOpenedKey: EnvironmentKey {
+
     static let defaultValue: (Int) -> Void = { _ in }
 }
+
+
+///
+/// Exposes the current Library item-open callback
+///
+/// @section    Purpose
+///     Lets descendants report a viewed Card to the owner without coupling them to its
+///     recent-history storage.
+///
 extension EnvironmentValues {
+
     var libraryItemOpened: (Int) -> Void {
         get { self[LibraryItemOpenedKey.self] }
         set { self[LibraryItemOpenedKey.self] = newValue }
     }
 }
 
+
+///
+/// Renders one upcoming Library preview tile
+///
+/// @section    Purpose
+///     Displays the item's reason and owner styling in a Dynamic Type-scaled tile without changing
+///     the source record.
+///
 struct LibraryPlateTile: View {
-    let item: LibraryPlateItem
-    @ScaledMetric(relativeTo: .body) private var tileWidth: CGFloat = 132
+
+    let item:                                                LibraryPlateItem
+    @ScaledMetric(relativeTo: .body) private var tileWidth:  CGFloat = 132
     @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 110
 
     var body: some View {
@@ -6266,8 +6660,16 @@ struct LibraryPlateTile: View {
     }
 }
 
-/// Original encouragements selected by local calendar day, repeating every sixty days.
+
+///
+/// Supplies a repeating catalog of original encouragements
+///
+/// @section    Purpose
+///     Selects one slogan by local calendar day on a sixty-day cycle for predictable Today
+///     presentation.
+///
 enum TodaySloganCatalog {
+
     static let slogans: [String] = [
         "small steps today, bringing your plans to life",
         "a fresh page today, with room for what matters",
@@ -6354,8 +6756,16 @@ enum TodaySloganCatalog {
     }
 }
 
-/// A quiet, readable encouragement in Today's existing space above Quick capture.
+
+///
+/// Presents Today's brief encouragement
+///
+/// @section    Purpose
+///     Occupies the existing space above Quick capture and uses shared preview behavior for
+///     overflowing writing.
+///
 private struct TodaySloganView: View {
+
     @State private var showsFullSlogan = false
     @Environment(\.colorScheme) private var colorScheme
 
@@ -6392,6 +6802,14 @@ private struct TodaySloganView: View {
     }
 }
 
+
+///
+/// Calculates horizontal positions for slogan motion
+///
+/// @section    Purpose
+///     Uses elapsed time and measured extents to support looping movement and smooth continuation
+///     after manual dragging.
+///
 enum TodaySloganMotion {
 
 
@@ -6439,19 +6857,26 @@ enum TodaySloganMotion {
     }
 }
 
-/// Time-based movement lets a drag pick up the visible position without jumping
-/// to an animation's destination. Manual reading resumes automatically after 1s.
+
+///
+/// Supports automatic and manual slogan reading
+///
+/// @section    Purpose
+///     Uses elapsed-time positions so dragging begins at the visible location and automatic
+///     movement resumes after the reading pause.
+///
 struct InteractiveSloganPreview: View {
-    let text: String
+
+    let text:      String
     let textColor: Color
-    let onTap: () -> Void
+    let onTap:     () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var textWidth: CGFloat = 0
     @State private var visible = false
     @State private var anchorDate = Date()
-    @State private var anchorOffset: CGFloat? = nil
-    @State private var dragStart: CGFloat? = nil
+    @State private var anchorOffset:  CGFloat? = nil
+    @State private var dragStart:     CGFloat? = nil
     @State private var draggedOffset: CGFloat? = nil
 
 
@@ -6529,7 +6954,16 @@ struct InteractiveSloganPreview: View {
     }
 }
 
+
+///
+/// Collects the intrinsic preview-text width
+///
+/// @section    Purpose
+///     Accepts the latest child measurement so overflowing content can be distinguished from text
+///     that already fits.
+///
 private struct PreviewTextWidthKey: PreferenceKey {
+
     static let defaultValue: CGFloat = 0
 
 
@@ -6545,7 +6979,16 @@ private struct PreviewTextWidthKey: PreferenceKey {
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
+
+
+///
+/// Collects the available preview viewport width
+///
+/// @section    Purpose
+///     Propagates the latest visible width used to bound and schedule preview movement.
+///
 private struct PreviewViewportWidthKey: PreferenceKey {
+
     static let defaultValue: CGFloat = 0
 
 
@@ -6561,7 +7004,17 @@ private struct PreviewViewportWidthKey: PreferenceKey {
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
+
+
+///
+/// Reports whether a moving preview is visible
+///
+/// @section    Purpose
+///     Uses supported scroll visibility or appearance callbacks so offscreen previews can stop
+///     unnecessary movement.
+///
 private struct PreviewVisibility: ViewModifier {
+
     @Binding var visible: Bool
 
 
@@ -6584,27 +7037,45 @@ private struct PreviewVisibility: ViewModifier {
     }
 }
 
-/// Keeps short previews still and reveals overflowing text without changing row size.
+
+///
+/// Reveals overflowing collection preview writing
+///
+/// @section    Purpose
+///     Measures text and viewport extents, keeps fitting text still, and suspends movement when
+///     accessibility or visibility requires it.
+///
 struct GentleCollectionPreview: View {
+
     let text: String
     var scrolls = false
-    var textFont: Font = .caption
-    var textColor: Color = .secondary
+    var textFont:        Font = .caption
+    var textColor:       Color = .secondary
     var pointsPerSecond: Double = 14
-    var startPause: Double = 2.5
-    var endPause: Double = 2.5
+    var startPause:      Double = 2.5
+    var endPause:        Double = 2.5
     var travelsAcross = false
+
+
+    ///
+    /// Identifies a particular preview movement configuration
+    ///
+    /// @section    Purpose
+    ///     Combines text, travel distance, and activity state so changes restart the appropriate
+    ///     animation task.
+    ///
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var textWidth: CGFloat = 0
+    @State private var textWidth:     CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
-    @State private var offset: CGFloat = 0
-    @State private var opacity: Double = 1
+    @State private var offset:        CGFloat = 0
+    @State private var opacity:       Double = 1
     @State private var visible = false
     private struct Loop: Hashable {
-        let text: String
+
+        let text:     String
         let distance: CGFloat
-        let active: Bool
+        let active:   Bool
     }
     private var loop: Loop {
         Loop(text: text, distance: travelsAcross ? textWidth + viewportWidth : max(0, textWidth - viewportWidth),
@@ -6662,7 +7133,16 @@ struct GentleCollectionPreview: View {
     }
 }
 
+
+///
+/// Resolves collection identity colors for Library presentation
+///
+/// @section    Purpose
+///     Matches the default On the Table identity to its banner while preserving explicit custom
+///     colors.
+///
 extension PersonalCollection {
+
     /// Match the default On the Table identity to its banner without changing custom colors.
     var libraryIdentityColor: Color {
         if kind == .list, title == "On the Table", color == .coral {
@@ -6672,14 +7152,22 @@ extension PersonalCollection {
     }
 }
 
+
+///
+/// Presents a personal collection in the Library directory
+///
+/// @section    Purpose
+///     Combines identity, active content count, and an optional moving preview while adapting its
+///     layout for text size.
+///
 struct LibraryCollectionRow: View {
 
-    let title: String     /* User-owned collection or Week Board title       */
+    let title:    String  /* User-owned collection or Week Board title       */
     let subtitle: String  /* Collection kind and active-list context         */
-    let icon: String      /* SF Symbol representing the organizing space     */
-    let color: Color      /* Collection accent, not its only identifying cue */
-    let count: Int        /* Active non-divider card count                   */
-    var preview: String = ""
+    let icon:     String  /* SF Symbol representing the organizing space     */
+    let color:    Color   /* Collection accent, not its only identifying cue */
+    let count:    Int     /* Active non-divider card count                   */
+    var preview:  String = ""
     var scrollsPreview = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
@@ -6744,15 +7232,16 @@ struct LibraryCollectionRow: View {
 
 
 ///
-/// Presents personal collections in the Library
+/// Presents the Library browse-filter choices
 ///
 /// @section    Purpose
-///     Browse personal organizing spaces independently from the dedicated Week destination
+///     Keeps the selected checkmark visible during dismissal and delegates the accepted filter
+///     choice to the Library owner.
 ///
-/// Keeps the chosen checkmark visible briefly before dismissing the filter picker.
 private struct CollectionFilterPopover: View {
+
     let selection: LibraryBrowseFilter
-    let onSelect: (LibraryBrowseFilter) -> Void
+    let onSelect:  (LibraryBrowseFilter) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -6801,7 +7290,16 @@ private struct CollectionFilterPopover: View {
     }
 }
 
+
+///
+/// Presents the Library and its collection editors
+///
+/// @section    Purpose
+///     Coordinates filtered browsing, examples, templates, labels, and checked collection changes
+///     while keeping draft creation separate from saved owners.
+///
 struct BoardListsView: View {
+
     @State private var openedHelpArticle: PlenactHelpArticle?
     @Environment(\.planningCalendarAccess) private var planningAccess
     @State private var browsedLabel: KanbanLabel?
@@ -6817,16 +7315,16 @@ struct BoardListsView: View {
     @Binding var collections: [PersonalCollection]             /* Shared device-local collections             */
     var newListRequest = 0
     var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
-    let registerListNewNote: ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
-    let onOpenSaved: () -> Void                       /* Select the existing canonical Saved destination */
-    var onLoadExampleWeek: (() -> Bool)? = nil
-    var onUndoExampleWeek: (() -> Bool)? = nil
-    var onLoadExampleMonth: (() -> Void)? = nil
-    var onRestoreUserData: (() -> Void)? = nil
+    let registerListNewNote:      ((() -> Void)?) -> Void /* Registers the directory's scoped Note action    */
+    let onOpenSaved:              () -> Void              /* Select the existing canonical Saved destination */
+    var onLoadExampleWeek:        (() -> Bool)? = nil
+    var onUndoExampleWeek:        (() -> Bool)? = nil
+    var onLoadExampleMonth:       (() -> Void)? = nil
+    var onRestoreUserData:        (() -> Void)? = nil
     var hasUserDataBackup = false
-    var savedPersonalCardTarget: PersonalSavedCardTarget? = nil  /* Saved bookmark waiting for Library navigation  */
-    var onClearSavedPersonalCardTarget: () -> Void = {}          /* Acknowledge a handled or invalid Saved request */
-    @State private var archivingCollection: PersonalCollection?  /* Collection awaiting archive confirmation       */
+    var savedPersonalCardTarget:                    PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation  */
+    var onClearSavedPersonalCardTarget:             () -> Void = {}                /* Acknowledge a handled or invalid Saved request */
+    @State private var archivingCollection:         PersonalCollection?            /* Collection awaiting archive confirmation       */
     @FocusState private var isLibrarySearchFocused: Bool
     @State private var showsRecentShelf = false
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
@@ -6835,22 +7333,22 @@ struct BoardListsView: View {
     @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
     @State private var showsCollectionFilter = false
-    @State var browseFilter: LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
+    @State var browseFilter:                                      LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
     @State var searchText = ""                                  /* Directory search query                     */
-    @State private var importanceExampleDrafts: Set<UUID> = []
-    @State private var editingCollection: PersonalCollection?   /* Collection draft being edited              */
-    @State private var openedCollection: PersonalCollection?    /* Collection board presented full-screen     */
-    @State private var boardTargetListID: Int?                  /* Exact collection list requested from Saved */
-    @State private var boardTargetCardID: Int?                  /* Exact collection card requested from Saved */
-    @State private var deletingCollection: PersonalCollection?  /* Collection awaiting delete confirmation    */
-    @State private var createdNoteDestination: PersonalCollection?
-    @State private var newNoteDraftDestination: PersonalCollection?  /* Personal List selected for the presented Note draft */
+    @State private var importanceExampleDrafts:  Set<UUID> = []
+    @State private var editingCollection:        PersonalCollection? /* Collection draft being edited              */
+    @State private var openedCollection:         PersonalCollection? /* Collection board presented full-screen     */
+    @State private var boardTargetListID:        Int?                /* Exact collection list requested from Saved */
+    @State private var boardTargetCardID:        Int?                /* Exact collection card requested from Saved */
+    @State private var deletingCollection:       PersonalCollection? /* Collection awaiting delete confirmation    */
+    @State private var createdNoteDestination:   PersonalCollection?
+    @State private var newNoteDraftDestination:  PersonalCollection? /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID?               /* Last opened List used as the next Note destination  */
-    @State private var libraryQuickTemplate: QuickCaptureTemplate?
-    @State private var weekExampleAction: String?
-    @State private var libraryStarterError: String?
-    @State private var examplePreview: LibraryExamplePreview?
+    @State private var libraryQuickTemplate:     QuickCaptureTemplate?
+    @State private var weekExampleAction:        String?
+    @State private var libraryStarterError:      String?
+    @State private var examplePreview:           LibraryExamplePreview?
     @State private var daySectionExampleToApply: PlanningRoutineTemplate?
 
 
@@ -7132,15 +7630,19 @@ struct BoardListsView: View {
 
 
     ///
-    /// @fcn        BoardListsView.createNote(in:title:body:)
-    /// @brief      Save a new Note into an active personal List before publishing it
-    /// @details    Resolves the current collection by stable identity, allocates within that
-    ///             collection's retained records, and leaves all content unchanged on save failure
+    /// @fcn        BoardListsView.createNote(in:capture:createdAt:)
+    /// @brief      Save a full capture into an active personal List
+    /// @details    Resolves the current collection, forwards writing, presentation, attachments,
+    ///             actions, and scheduling, and saves the complete collection snapshot before
+    ///             publication. Successful creation requests the new item's reveal.
+    ///
     /// @param[in]  collectionID  Active personal List identity
-    /// @param[in]  title         Validated Note title
-    /// @param[in]  body          Note body preserved as entered
+    /// @param[in]  capture       Complete destination-scoped creation submission with writing, media,
+    ///             and scheduling
     /// @param[in]  createdAt     Creation time retained from the unsaved draft
-    /// @return     (Void) saves and publishes one new Note record
+    ///
+    /// @return     (Void) saves and publishes the requested Card or Note without changing unrelated
+    ///             owners
     /// @throws     CocoaError for unavailable destinations; encoding error for failed persistence
     ///
     private func createNote(in collectionID: UUID, capture: QuickCaptureSubmission, createdAt: Date) throws {
@@ -7518,6 +8020,8 @@ struct BoardListsView: View {
     /// @param[in]  icon      SF Symbol name
     /// @param[in]  color     Icon tint and background accent
     /// @param[in]  count     Card count displayed at the trailing edge
+    ///
+    /// @param[in]  preview   Optional collection excerpt displayed beneath the directory row context
     ///
     /// @return     (some View) full-row hit-test content
     ///
@@ -8372,16 +8876,16 @@ struct BoardListsView: View {
 ///
 struct PersonalListExamplesView: View {
 
-    var onLoadExampleWeek: (() -> Bool)? = nil
-    var onUndoExampleWeek: (() -> Bool)? = nil
-    let onSelect: (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
+    var onLoadExampleWeek:     (() -> Bool)? = nil
+    var onUndoExampleWeek:     (() -> Bool)? = nil
+    let onSelect:              (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
     var onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil
-    var onSelectBoardExample: ((PersonalBoardExample) -> Void)? = nil
+    var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
     @State private var confirmsLoadWeek = false
     @State private var confirmsUndoWeek = false
     @State private var hasUndoableWeek: Bool
-    @State private var operationError: String?
+    @State private var operationError:  String?
 
 
     ///
@@ -8586,23 +9090,23 @@ struct PersonalListExamplesView: View {
 ///
 struct PersonalCollectionBoardView: View {
 
-    @Binding var collection: PersonalCollection                            /* Live collection shown by the shared Board view           */
-    @Binding var boardTargetListID: Int?                                   /* Collection-local list requested from Saved               */
-    @Binding var boardTargetCardID: Int?                                   /* Collection-local card requested from Saved               */
-    let retainedLists: [KanbanList]                                        /* Other lists retaining possible attachments               */
-    let availablePersonalLists: [PersonalCollection]                       /* Personal Lists offered as Note destinations              */
-    let onArchive: () throws -> Void                                       /* Persist archival of this collection                      */
-    let onDelete: () throws -> Void                                        /* Persist permanent removal of this collection             */
-    let onCommitDeletion: (PersonalCollection) throws -> Void              /* Save nested deletion against current shared state        */
-    let onCreateNote: (UUID, QuickCaptureSubmission, Date) throws -> Void  /* Checked creation callback for a destination List         */
-    let onMoveNote: (KanbanCard, UUID, UUID) throws -> KanbanCard          /* Checked movement callback returning the relocated Note   */
-    let onUpdateMovedNote: (UUID, KanbanCard) -> Bool                      /* Persists edits in the Note's current collection          */
-    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool                     /* Archives the Note in its current collection              */
-    let onDeleteMovedNote: (UUID, KanbanCard) -> Bool                      /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark: (UUID, Int, Bool) -> Bool               /* Persists the Note's collection-local saved state         */
-    let registerNewNote: ((() -> Void)?) -> Void                           /* Registers or clears the presented List's Note action     */
-    @Environment(\.dismiss) private var dismiss                            /* Close the collection board                               */
-    @State private var showsNewNoteComposer = false                        /* Presentation state of the List-scoped Note draft         */
+    @Binding var collection:        PersonalCollection                                  /* Live collection shown by the shared Board view           */
+    @Binding var boardTargetListID: Int?                                                /* Collection-local list requested from Saved               */
+    @Binding var boardTargetCardID: Int?                                                /* Collection-local card requested from Saved               */
+    let retainedLists:              [KanbanList]                                        /* Other lists retaining possible attachments               */
+    let availablePersonalLists:     [PersonalCollection]                                /* Personal Lists offered as Note destinations              */
+    let onArchive:                  () throws -> Void                                   /* Persist archival of this collection                      */
+    let onDelete:                   () throws -> Void                                   /* Persist permanent removal of this collection             */
+    let onCommitDeletion:           (PersonalCollection) throws -> Void                 /* Save nested deletion against current shared state        */
+    let onCreateNote:               (UUID, QuickCaptureSubmission, Date) throws -> Void /* Checked creation callback for a destination List         */
+    let onMoveNote:                 (KanbanCard, UUID, UUID) throws -> KanbanCard       /* Checked movement callback returning the relocated Note   */
+    let onUpdateMovedNote:          (UUID, KanbanCard) -> Bool                          /* Persists edits in the Note's current collection          */
+    let onArchiveMovedNote:         (UUID, KanbanCard) -> Bool                          /* Archives the Note in its current collection              */
+    let onDeleteMovedNote:          (UUID, KanbanCard) -> Bool                          /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark:  (UUID, Int, Bool) -> Bool                           /* Persists the Note's collection-local saved state         */
+    let registerNewNote:            ((() -> Void)?) -> Void                             /* Registers or clears the presented List's Note action     */
+    @Environment(\.dismiss) private var dismiss                                         /* Close the collection board                               */
+    @State private var showsNewNoteComposer = false                                     /* Presentation state of the List-scoped Note draft         */
 
     ///
     /// @fcn        PersonalCollectionBoardView.body
@@ -8704,10 +9208,10 @@ struct PersonalCollectionBoardView: View {
 ///
 private struct PersonalCollectionSettingsView: View {
 
-    let isNew: Bool                               /* Whether this form creates a new collection */
-    let onSave: (PersonalCollection) -> Void      /* Submit the complete collection draft       */
-    @State private var draft: PersonalCollection  /* Isolated editable collection copy          */
-    @Environment(\.dismiss) private var dismiss   /* Close the settings sheet                   */
+    let isNew:                Bool                         /* Whether this form creates a new collection */
+    let onSave:               (PersonalCollection) -> Void /* Submit the complete collection draft       */
+    @State private var draft: PersonalCollection           /* Isolated editable collection copy          */
+    @Environment(\.dismiss) private var dismiss            /* Close the settings sheet                   */
 
 
     ///
@@ -8943,9 +9447,9 @@ extension PersonalCollectionIcon {
 ///
 struct TodayCalendarView: View {
 
-    let lists: [KanbanList]                  /* Current Board snapshot                             */
-    let onArchiveCard: (Int) -> Void         /* Canonical archive callback                         */
-    let onDeleteCard: (Int) -> Bool          /* Confirmed deletion result                          */
+    let lists:           [KanbanList]        /* Current Board snapshot                             */
+    let onArchiveCard:   (Int) -> Void       /* Canonical archive callback                         */
+    let onDeleteCard:    (Int) -> Bool       /* Confirmed deletion result                          */
     let onOpenBoardCard: (Int, Int) -> Void  /* Navigate using containing list and card identities */
 
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now  /* Visible month      */
@@ -9259,24 +9763,32 @@ struct TodayCalendarView: View {
 
 
 ///
-/// Associates a bookmarked card with its containing Week list
+/// Identifies a saved Card in a personal collection
 ///
 /// @section    Purpose
-///     Preserve navigation context for Saved card rows
+///     Carries the owner UUID and local List and Card identities needed to open the correct
+///     retained source.
 ///
 struct PersonalSavedCardTarget: Equatable {
 
     let collectionID: UUID  /* Owning personal collection         */
-    let listID: Int         /* Containing collection-local list   */
-    let cardID: Int         /* Collection-local bookmarked record */
+    let listID:       Int   /* Containing collection-local list   */
+    let cardID:       Int   /* Collection-local bookmarked record */
 }
 
 
+///
+/// Identifies a bookmarked Card within the Week snapshot
+///
+/// @section    Purpose
+///     Retains the containing list ID and title so selecting a Saved row can resolve its original
+///     content.
+///
 private struct SavedCardResult: Identifiable {
 
-    let card: KanbanCard   /* Saved card data           */
-    let listID: Int        /* List opened when selected */
-    let listTitle: String  /* Containing list title     */
+    let card:      KanbanCard /* Saved card data           */
+    let listID:    Int        /* List opened when selected */
+    let listTitle: String     /* Containing list title     */
 
     ///
     /// @fcn        SavedCardResult.id
@@ -9291,20 +9803,30 @@ private struct SavedCardResult: Identifiable {
 }
 
 
-/// Shows device-local bookmarks for cards in the current Board.
 ///
-/// Presents local card bookmarks and archived board snapshots
+/// Defines the active Activity content selection
 ///
 /// @section    Purpose
-///     Provide access to saved cards and save-first board restoration
+///     Distinguishes the available Saved and focus categories while keeping the underlying Cards in
+///     their original owners.
 ///
 enum ActivityFocus: String, CaseIterable, Identifiable {
+
     case saved = "Saved", dueSoon = "Due soon", labels = "By label"
-    var id: String { rawValue }
+    var id:     String { rawValue }
     var symbol: String {
         switch self { case .saved: "bookmark"; case .dueSoon: "clock"; case .labels: "tag" }
     }
 }
+
+
+///
+/// Selects Activity content by its focus rules
+///
+/// @section    Purpose
+///     Evaluates due-soon and other derived views without changing completion, importance, or
+///     stored Card data.
+///
 enum ActivityFocusSelection {
 
 
@@ -9348,9 +9870,17 @@ enum ActivityFocusSelection {
     }
 }
 
+
+///
+/// Defines the toolbar's revisit destinations
+///
+/// @section    Purpose
+///     Supplies labels, symbols, and explanations for recent, bookmarked, and archived content.
+///
 enum ToolbarRevisitDestination: String, CaseIterable, Identifiable {
+
     case recent, bookmarked, archived
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String {
         switch self { case .recent: "Recently viewed"; case .bookmarked: "Bookmarked"; case .archived: "Archived content" }
     }
@@ -9366,9 +9896,18 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable {
     }
 }
 
+
+///
+/// Presents the toolbar's revisit choices
+///
+/// @section    Purpose
+///     Delegates destination selection to the caller so the existing Activity navigation remains
+///     authoritative.
+///
 struct ToolbarRevisitMenu: View {
+
     let onChoose: (ToolbarRevisitDestination) -> Void
-    var body: some View {
+    var body:     some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Revisit").font(.headline).accessibilityAddTraits(.isHeader).padding(.bottom, 8)
             ForEach(ToolbarRevisitDestination.allCases) { choice in
@@ -9392,18 +9931,27 @@ struct ToolbarRevisitMenu: View {
     }
 }
 
+
+///
+/// Presents recent, bookmarked, and archived Activity content
+///
+/// @section    Purpose
+///     Resolves retained references against live calendar and Library owners and presents direct
+///     item routes that return to Activity.
+///
 private struct SavedCardsView: View {
-    let planningDocument: PlanningCalendarDocument?
+
+    let planningDocument:   PlanningCalendarDocument?
     var revisitDestination: Binding<ToolbarRevisitDestination?> = .constant(nil)
-    private var revisit: ToolbarRevisitDestination? { revisitDestination.wrappedValue }
+    private var revisit:    ToolbarRevisitDestination? { revisitDestination.wrappedValue }
     @AppStorage(ActivityRecentStore.key) private var recentData = Data()
     @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
     @State private var query = ""
     @State private var showsSearch = false
     @State private var confirmsClear = false
     @State private var historicalTarget: ActivityRecentResult?
-    @State private var focus: ActivityFocus = .saved
-    @State private var selectedLabelID: String?
+    @State private var focus:            ActivityFocus = .saved
+    @State private var selectedLabelID:  String?
     @State private var focusLabelLibrary = LabelLibraryStore.load()
     private var focusCalendar: Calendar { planningDocument?.calendar ?? .current }
 
@@ -9516,14 +10064,22 @@ private struct SavedCardsView: View {
     }
 
 
+    ///
+    /// Resolves a retained Activity reference to live content
+    ///
+    /// @section    Purpose
+    ///     Pairs the recent-item identity with its Card, List, location, and optional dated Week
+    ///     for direct navigation.
+    ///
     private struct ActivityRecentResult: Identifiable {
-        let item: LibraryRecentItem
-        let card: KanbanCard
-        let list: KanbanList
-        let location: String
-        let week: DatedPlanningWeek?
+
+        let item:      LibraryRecentItem
+        let card:      KanbanCard
+        let list:      KanbanList
+        let location:  String
+        let week:      DatedPlanningWeek?
         let isCurrent: Bool
-        var id: String { item.id }
+        var id:        String { item.id }
     }
 
 
@@ -9604,18 +10160,18 @@ private struct SavedCardsView: View {
     }
 
 
-    let lists: [KanbanList]                                    /* Current Board snapshot                               */
-    let savedCardIDs: Set<Int>                                 /* Local bookmark set                                   */
-    @Binding var collections: [PersonalCollection]             /* Collections whose archived boards can be restored    */
-    let onOpenBoardCard: (Int, Int) -> Void                    /* Open the exact bookmarked item                       */
-    let onOpenPersonalCard: (PersonalSavedCardTarget) -> Void  /* Navigate to a bookmarked personal record             */
-    let onRestoreBoard: (UUID) -> Void                         /* Restore a saved board by identity                    */
-    let onDeleteBoard: (UUID) -> Bool                          /* Save permanent collection removal and report success */
-    let onArchiveCard: (Int) -> Void                           /* Archive a Week bookmark's canonical card             */
-    let onDeleteCard: (Int) -> Bool                            /* Report confirmed Week bookmark-card removal          */
-    @State private var deletingBoard: PersonalCollection?      /* Saved collection awaiting removal                    */
-    @State private var deletingCard: KanbanCard?               /* Week bookmark awaiting removal                       */
-    @State private var inspectingBoard: PersonalCollection?    /* Archived collection being browsed                    */
+    let lists:                          [KanbanList]                      /* Current Board snapshot                               */
+    let savedCardIDs:                   Set<Int>                          /* Local bookmark set                                   */
+    @Binding var collections:           [PersonalCollection]              /* Collections whose archived boards can be restored    */
+    let onOpenBoardCard:                (Int, Int) -> Void                /* Open the exact bookmarked item                       */
+    let onOpenPersonalCard:             (PersonalSavedCardTarget) -> Void /* Navigate to a bookmarked personal record             */
+    let onRestoreBoard:                 (UUID) -> Void                    /* Restore a saved board by identity                    */
+    let onDeleteBoard:                  (UUID) -> Bool                    /* Save permanent collection removal and report success */
+    let onArchiveCard:                  (Int) -> Void                     /* Archive a Week bookmark's canonical card             */
+    let onDeleteCard:                   (Int) -> Bool                     /* Report confirmed Week bookmark-card removal          */
+    @State private var deletingBoard:   PersonalCollection?               /* Saved collection awaiting removal                    */
+    @State private var deletingCard:    KanbanCard?                       /* Week bookmark awaiting removal                       */
+    @State private var inspectingBoard: PersonalCollection?               /* Archived collection being browsed                    */
 
     ///
     /// @fcn        SavedCardsView.savedCards
@@ -9957,9 +10513,10 @@ private struct SavedCardsView: View {
 ///     Provide confirmed list/card deletion without restoring or duplicating the Board
 ///
 private struct ArchivedCollectionContentsView: View {
+
     @Binding var collection: PersonalCollection     /* Canonical retained collection           */
-    let onDeleteBoard: () -> Bool                   /* Parent reports saved collection removal */
-    let onRestoreBoard: () -> Void                  /* Parent saves restoration                */
+    let onDeleteBoard:       () -> Bool             /* Parent reports saved collection removal */
+    let onRestoreBoard:      () -> Void             /* Parent saves restoration                */
     @Environment(\.dismiss) private var dismiss     /* Return to Saved                         */
     @State private var deletingList: KanbanList?    /* Nested list awaiting removal            */
     @State private var deletingCard: KanbanCard?    /* Retained card awaiting removal          */
@@ -10082,12 +10639,13 @@ private struct ArchivedCollectionContentsView: View {
 ///
 /// Optional perspective below Today’s action area; all content derives from canonical lists.
 struct TodayPerspectiveSection: View {
-    let completed: [KanbanCard]
+
+    let completed:    [KanbanCard]
     let tomorrowList: KanbanList?
-    let onReview: (ReviewRhythmRoute) -> Void
-    let onSettings: () -> Void
-    let onReflect: () -> Void
-    let onPrepare: () -> Void
+    let onReview:     (ReviewRhythmRoute) -> Void
+    let onSettings:   () -> Void
+    let onReflect:    () -> Void
+    let onPrepare:    () -> Void
 
     private var tomorrowItems: [KanbanCard] {
         tomorrowList?.cards.filter { !$0.isSectionDivider && !$0.isTitleChecked } ?? []
@@ -10174,7 +10732,14 @@ struct TodayPerspectiveSection: View {
     }
 }
 
-/// Deliberate combination colors preserve hue differences that RGB averaging would erase.
+
+///
+/// Resolves colors for combined Today Focus filters
+///
+/// @section    Purpose
+///     Keeps deliberately chosen combination hues distinct instead of blending selections into an
+///     ambiguous average.
+///
 struct TodayFocusFilterColor {
 
 
@@ -10223,33 +10788,41 @@ struct TodayFocusFilterColor {
     }
 }
 
+
+///
+/// Presents Today's filtered focus items
+///
+/// @section    Purpose
+///     Renders derived entries with optional section grouping, importance controls, and direct
+///     detail navigation without duplicating the Day's records.
+///
 struct TodayFocusSection: View {
 
-    let list: KanbanList?    /* Canonical Week list matching the current local weekday */
-    let cards: [KanbanCard]  /* Non-divider cards on that list                         */
-    let entries: [TodayFocusEntry]
-    let groupsBySection: Bool
-    var visibleItemCount: Int = 4
-    let chronological: Bool
+    let list:              KanbanList?  /* Canonical Week list matching the current local weekday */
+    let cards:             [KanbanCard] /* Non-divider cards on that list                         */
+    let entries:           [TodayFocusEntry]
+    let groupsBySection:   Bool
+    var visibleItemCount:  Int = 4
+    let chronological:     Bool
     private var openCards: [KanbanCard] { entries.map(\.card) }
     var includesImportant = false
     var includesBookmarked = false
     var includesUpNext = false
-    var filtersChangedAt: Date? = nil
+    var filtersChangedAt:  Date? = nil
     var bookmarkedCardIDs: Set<Int> = []
-    var importantCardIDs: Set<Int> = []
-    var onChangeFilters: (Bool, Bool, Bool) -> Void = { _, _, _ in }
-    let onToggleCard: (Int) -> Void /* Toggle local completion state */
-    let onOpenCard: (KanbanCard) -> Void
-    let onDeleteCard: (Int) -> Bool
-    let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
+    var importantCardIDs:  Set<Int> = []
+    var onChangeFilters:   (Bool, Bool, Bool) -> Void = { _, _, _ in }
+    let onToggleCard:      (Int) -> Void /* Toggle local completion state */
+    let onOpenCard:        (KanbanCard) -> Void
+    let onDeleteCard:      (Int) -> Bool
+    let onOpenTodayList:   () -> Void /* Open the focused single-list Today view */
 
-    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var isPad:                                           Bool { UIDevice.current.userInterfaceIdiom == .pad }
     @ScaledMetric(relativeTo: .body) private var phoneRowHeight: CGFloat = 48
-    @ScaledMetric(relativeTo: .body) private var padRowHeight: CGFloat = 54
-    @ScaledMetric(relativeTo: .body) private var phoneTaskSize: CGFloat = 18
-    @ScaledMetric(relativeTo: .body) private var padTaskSize: CGFloat = 20
-    private var rowHeight: CGFloat { isPad ? padRowHeight : phoneRowHeight }
+    @ScaledMetric(relativeTo: .body) private var padRowHeight:   CGFloat = 54
+    @ScaledMetric(relativeTo: .body) private var phoneTaskSize:  CGFloat = 18
+    @ScaledMetric(relativeTo: .body) private var padTaskSize:    CGFloat = 20
+    private var rowHeight:                                       CGFloat { isPad ? padRowHeight : phoneRowHeight }
     @Environment(\.displayScale) private var displayScale
     @State private var measuredListingHeight: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
@@ -10257,7 +10830,7 @@ struct TodayFocusSection: View {
     @State private var showsFilterChooser = false
     @State private var showsFilterSummary = false
     @State private var filterChooserDismissedAt: Date?
-    private var filterSummaryRequestedAt: Date? {
+    private var filterSummaryRequestedAt:        Date? {
         guard includesUpNext || includesImportant || includesBookmarked else { return nil }
         return [filtersChangedAt, filterChooserDismissedAt].compactMap { $0 }.max()
     }
@@ -10289,11 +10862,11 @@ struct TodayFocusSection: View {
         visibleItemCount == 0 ? max(entries.count, 1) : ((1...12).contains(visibleItemCount) ? visibleItemCount : 4)
     }
     private var visibleHeadingCount: Int { entries.prefix(rowCapacity).filter { beginsGroup($0) }.count }
-    private var rowsHeight: CGFloat {
+    private var rowsHeight:          CGFloat {
         rowHeight * CGFloat(min(entries.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
     }
     private var listingCapacity: CGFloat { rowHeight * CGFloat(rowCapacity) + headingHeight * CGFloat(visibleHeadingCount) + 3 / displayScale }
-    private var listingHeight: CGFloat {
+    private var listingHeight:   CGFloat {
         measuredListingHeight ?? rowsHeight
     }
 
@@ -10684,11 +11257,19 @@ private struct TodayPanelSurface: ViewModifier {
     }
 }
 
-/// Searchable, read-only discovery; examples are applied only through the checked Day template flow.
+
+///
+/// Presents searchable Day-section examples
+///
+/// @section    Purpose
+///     Keeps discovery read-only and routes actual use through the checked Day template application
+///     flow.
+///
 struct LibraryDaySectionExamples: View {
+
     var query = ""
     let onPreview: (PlanningRoutineTemplate) -> Void
-    let onApply: (PlanningRoutineTemplate) -> Void
+    let onApply:   (PlanningRoutineTemplate) -> Void
 
 
     ///
@@ -10735,14 +11316,32 @@ struct LibraryDaySectionExamples: View {
     }
 }
 
+
+///
+/// Carries an unsaved Library example preview
+///
+/// @section    Purpose
+///     Groups a title, explanation, and sample Lists for read-only presentation without registering
+///     a new collection.
+///
 private struct LibraryExamplePreview: Identifiable {
+
     var id = UUID()
-    let title: String
+    let title:   String
     let summary: String
-    let lists: [KanbanList]
+    let lists:   [KanbanList]
 }
 
+
+///
+/// Displays a Library example without editing its records
+///
+/// @section    Purpose
+///     Renders sample Lists and importance styling in an isolated preview; applying an example
+///     remains a separate checked action.
+///
 private struct LibraryExamplePreviewView: View {
+
     let preview: LibraryExamplePreview
     @Environment(\.dismiss) private var dismiss
     var body: some View {
@@ -10785,22 +11384,59 @@ private struct LibraryExamplePreviewView: View {
 
 
 // Shared owner-qualified browsing prevents card/list IDs on different boards from colliding.
+
+
+///
+/// Identifies a workspace List by owner and local ID
+///
+/// @section    Purpose
+///     Persists a composite reference so equal list IDs in different Boards or calendar Weeks
+///     remain distinct.
+///
 struct WorkspaceListReference: Hashable, Codable, Identifiable {
+
     let ownerID: UUID
-    let listID: Int
-    var id: String { "\(ownerID):\(listID)" }
+    let listID:  Int
+    var id:      String { "\(ownerID):\(listID)" }
 }
+
+
+///
+/// Resolves a workspace List reference to its owner
+///
+/// @section    Purpose
+///     Carries the live collection and List used by shortcut and destination pickers.
+///
 struct WorkspaceListDestination: Identifiable {
-    let owner: PersonalCollection
-    let list: KanbanList
+
+    let owner:     PersonalCollection
+    let list:      KanbanList
     var reference: WorkspaceListReference { WorkspaceListReference(ownerID: owner.id, listID: list.id) }
-    var id: String { reference.id }
+    var id:        String { reference.id }
 }
+
+
+///
+/// Groups workspace matches for one label
+///
+/// @section    Purpose
+///     Retains the label catalog entry alongside owner-qualified Card matches for Library browsing.
+///
 struct WorkspaceLabelUsage: Identifiable {
-    let label: KanbanLabel
+
+    let label:   KanbanLabel
     let matches: [PlanningSearchResult]
-    var id: String { label.id }
+    var id:      String { label.id }
 }
+
+
+///
+/// Builds common workspace browsing projections
+///
+/// @section    Purpose
+///     Combines calendar and personal owners and derives available Lists and label usage without
+///     writing content.
+///
 enum WorkspaceBrowseIndex {
 
 
@@ -10866,7 +11502,17 @@ enum WorkspaceBrowseIndex {
         }
     }
 }
+
+
+///
+/// Persists the user's Today List shortcuts
+///
+/// @section    Purpose
+///     Loads, normalizes, and resolves owner-qualified pins against available workspace
+///     collections.
+///
 enum TodayListPins {
+
     static let key = "Plenact.TodayListShortcuts.v1"
 
 
@@ -10946,10 +11592,19 @@ enum TodayListPins {
     }
 }
 
+
+///
+/// Edits the Today shortcut selection as a draft
+///
+/// @section    Purpose
+///     Normalizes the initial pins and publishes the chosen references only through the caller's
+///     save action.
+///
 struct TodayShortcutEditor: View {
+
     @State private var pins: [WorkspaceListReference]
-    let owners: [PersonalCollection]
-    let onSave: ([WorkspaceListReference]) -> Void
+    let owners:              [PersonalCollection]
+    let onSave:              ([WorkspaceListReference]) -> Void
     @Environment(\.dismiss) private var dismiss
 
 
@@ -10970,7 +11625,7 @@ struct TodayShortcutEditor: View {
         self.owners = owners; self.onSave = onSave
     }
     private var available: [WorkspaceListDestination] { WorkspaceBrowseIndex.lists(in: owners) }
-    var body: some View {
+    var body:              some View {
         NavigationStack {
             List {
                 Section {
@@ -11017,7 +11672,16 @@ struct TodayShortcutEditor: View {
     }
 }
 
+
+///
+/// Browses workspace Cards carrying a selected label
+///
+/// @section    Purpose
+///     Resolves live owner-qualified matches, filters their displayed context, and opens the chosen
+///     source item.
+///
 struct LibraryLabelMatchesView: View {
+
     let label: KanbanLabel
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
@@ -11065,7 +11729,16 @@ struct LibraryLabelMatchesView: View {
     }
 }
 
+
+///
+/// Resolves and opens a pinned workspace List
+///
+/// @section    Purpose
+///     Chooses the dated Week or personal owner associated with the reference and preserves the
+///     caller's return destination.
+///
 struct WorkspacePinnedListView: View {
+
     let reference: WorkspaceListReference
     var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
@@ -11087,12 +11760,22 @@ struct WorkspacePinnedListView: View {
         }
     }
 }
+
+
+///
+/// Hosts editable content for a resolved pinned List
+///
+/// @section    Purpose
+///     Retains the owner snapshot and routes checked changes through calendar access, including
+///     rollback when a save fails.
+///
 private struct PinnedListDayContent: View {
+
     @State var collection: PersonalCollection
-    let reference: WorkspaceListReference
-    let date: Date?
-    let week: DatedPlanningWeek?
-    let onClose: () -> Void
+    let reference:         WorkspaceListReference
+    let date:              Date?
+    let week:              DatedPlanningWeek?
+    let onClose:           () -> Void
     var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
     @State private var labels = LabelLibraryStore.load()
@@ -11145,9 +11828,17 @@ private struct PinnedListDayContent: View {
 }
 
 
+///
+/// Presents pinned Lists as Today shortcuts
+///
+/// @section    Purpose
+///     Uses a three-column grid and adapts icon size to the shortcut count while delegating
+///     navigation to the caller.
+///
 struct TodayShortcutGrid: View {
-    let pinned: [WorkspaceListDestination]
-    let onOpen: (WorkspaceListReference) -> Void
+
+    let pinned:                 [WorkspaceListDestination]
+    let onOpen:                 (WorkspaceListReference) -> Void
     private var usesLargeIcons: Bool { pinned.count <= 3 }
 
     var body: some View {
@@ -11174,15 +11865,22 @@ struct TodayShortcutGrid: View {
 }
 
 
-/// A direct Focus destination: dismissing the detail returns to Today, without a Day screen.
+///
+/// Hosts a direct Today Focus Card destination
+///
+/// @section    Purpose
+///     Dismisses back to Today and forwards edits to the owning workspace rather than inserting an
+///     intermediate Day route.
+///
 private struct TodayFocusCardDetailView: View {
+
     @State private var keyboardCard: KanbanCard?
-    let card: KanbanCard
-    @Binding var lists: [KanbanList]
-    @Binding var labelLibrary: LabelLibrary
-    @Binding var savedCardIDs: Set<Int>
-    let currentUserName: String
-    let onDelete: (Int) -> Bool
+    let card:                        KanbanCard
+    @Binding var lists:              [KanbanList]
+    @Binding var labelLibrary:       LabelLibrary
+    @Binding var savedCardIDs:       Set<Int>
+    let currentUserName:             String
+    let onDelete:                    (Int) -> Bool
 
 
     ///

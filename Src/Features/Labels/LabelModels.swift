@@ -1,8 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LabelModels.swift
-// @brief      Shared label catalog models, persistence, palette, and chip presentation
-// @details    Defines reusable categorized labels, stable card assignments, local catalog storage,
-//             and the compact chip used in card views
+// @brief      Reusable label identities, catalog storage, and chip presentation
+// @details    Defines categorized labels, stable Card assignment IDs, a serializable color palette,
+//             and device-local catalog persistence. Provides compact SwiftUI chips while keeping
+//             label names and category ownership in the catalog rather than each Card.
 //
 // @notes      Card assignments store label IDs; the shared catalog owns label names, categories, and colors
 //
@@ -24,6 +25,7 @@ import SwiftUI
 ///             presentation
 ///
 enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
+
     case mint
     case yellow
     case orange
@@ -92,7 +94,8 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
 /// @note       Labels refer to categories using the stable category ID
 ///
 struct KanbanLabelCategory: Identifiable, Hashable, Codable {
-    let id: String    /* Stable category identity  */
+
+    let id:   String  /* Stable category identity  */
     var name: String  /* User-facing category name */
 }
 
@@ -109,10 +112,11 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable {
 /// @note       Cards store the label ID rather than copying these presentation values
 ///
 struct KanbanLabel: Identifiable, Hashable, Codable {
-    let id: String               /* Stable label identity           */
-    var name: String             /* User-facing label name          */
-    var categoryID: String       /* Stable owning-category identity */
-    var color: KanbanLabelColor  /* Persisted palette selection     */
+
+    let id:         String           /* Stable label identity           */
+    var name:       String           /* User-facing label name          */
+    var categoryID: String           /* Stable owning-category identity */
+    var color:      KanbanLabelColor /* Persisted palette selection     */
 }
 
 
@@ -129,6 +133,7 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 ///             available
 ///
 struct LabelLibrary: Hashable, Codable {
+
     static let dayAreaLabels: [KanbanLabel] = [
         KanbanLabel(id: "day-work", name: "Work", categoryID: "work", color: .blue),
         KanbanLabel(id: "day-health", name: "Health", categoryID: "health", color: .green),
@@ -165,7 +170,7 @@ struct LabelLibrary: Hashable, Codable {
 
 
     var categories: [KanbanLabelCategory]  /* Reusable label categories  */
-    var labels: [KanbanLabel]              /* Reusable label definitions */
+    var labels:     [KanbanLabel]          /* Reusable label definitions */
 
     /// Stable IDs used to assign representative starter labels to sample cards
     static let starterLabelIDs = [ /* Label IDs used by deterministic SampleData */

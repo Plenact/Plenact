@@ -1,23 +1,59 @@
+// --------------------------------------------------------------------------------------------------
+// @file       ReviewRhythm.swift
+// @brief      Daily and weekly review invitations and optional reminders
+// @details    Retains normalized invitation times, dismissal history, and notification choices.
+//             Derives prompts from saved review progress, reconciles system reminders, and routes
+//             invitations into the existing review workflows without applying task decisions
+//             automatically.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 import UserNotifications
 
-/// An invitation opens a review; it never performs a task decision.
+
+///
+/// Identifies the kind of review invitation
+///
+/// @section    Purpose
+///     Selects daily or weekly review navigation and leaves all content decisions to the user
+///     inside that workflow.
+///
 enum ReviewRhythmKind: String, Codable, CaseIterable {
+
     case daily, weekly
-    var title: String { self == .daily ? "Make room for tomorrow" : "Make room for the coming week" }
+    var title:   String { self == .daily ? "Make room for tomorrow" : "Make room for the coming week" }
     var message: String {
         self == .daily ? "Ready to decide what stays on the Table, goes into the Queue, or gets a day?"
             : "What in the Queue would you like to bring into the coming week?"
     }
     var notificationID: String { "Plenact.ReviewRhythm." + rawValue }
 }
+
+
+///
+/// Identifies a requested daily or weekly review
+///
+/// @section    Purpose
+///     Pairs review kind with the represented date for sheet and notification navigation.
+///
 struct ReviewRhythmRoute: Identifiable {
+
     let id = UUID()
     let kind: ReviewRhythmKind
     let date: Date
 }
 
+
+///
+/// Retains review invitation and notification preferences
+///
+/// @section    Purpose
+///     Stores local minute-of-day and weekday choices separately from in-app invitation and system
+///     notification switches.
+///
 struct ReviewRhythmPreferences: Codable, Equatable {
+
     var dailyInvitations = true
     var weeklyInvitations = true
     var dailyMinutes = 20 * 60 + 30
@@ -42,7 +78,17 @@ struct ReviewRhythmPreferences: Codable, Equatable {
         return copy
     }
 }
+
+
+///
+/// Persists and evaluates review invitations
+///
+/// @section    Purpose
+///     Loads normalized settings, records dismissals, and determines eligible review prompts
+///     against saved review progress.
+///
 enum ReviewRhythmStore {
+
     static let key = "Plenact.ReviewRhythm.v1"
     static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1"
 
@@ -188,8 +234,17 @@ enum ReviewRhythmStore {
     }
 }
 
+
+///
+/// Coordinates review reminder notifications
+///
+/// @section    Purpose
+///     Installs notification handling, reconciles requested reminders, and publishes a pending
+///     review route without making review decisions automatically.
+///
 @MainActor
 final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
+
     static let shared = ReviewRhythmNotifications()
     @Published var pending: ReviewRhythmRoute?
     private var isReconciling = false
@@ -286,10 +341,19 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     }
 }
 
+
+///
+/// Presents eligible review invitations in Today
+///
+/// @section    Purpose
+///     Combines retained settings, dismissal history, and daily or weekly progress, then delegates
+///     opening and settings navigation.
+///
 struct ReviewRhythmPanel: View {
-    let onOpen: (ReviewRhythmRoute) -> Void
-    let onSettings: () -> Void
-    var defaults: UserDefaults = .standard
+
+    let onOpen:      (ReviewRhythmRoute) -> Void
+    let onSettings:  () -> Void
+    var defaults:    UserDefaults = .standard
     var nowOverride: Date? = nil
     @Environment(\.planningCalendarAccess) private var access
     @AppStorage(ReviewRhythmStore.key) private var preferencesData = Data()
@@ -358,7 +422,16 @@ struct ReviewRhythmPanel: View {
     }
 }
 
+
+///
+/// Resolves a review invitation to its editor
+///
+/// @section    Purpose
+///     Opens daily evening review or weekly review with the route's date and the workspace calendar
+///     context.
+///
 struct ReviewRhythmDestination: View {
+
     let route: ReviewRhythmRoute
     @Environment(\.planningCalendarAccess) private var access
     var body: some View {
@@ -370,7 +443,16 @@ struct ReviewRhythmDestination: View {
     }
 }
 
+
+///
+/// Edits review invitation and reminder settings
+///
+/// @section    Purpose
+///     Retains a local preferences draft, requests notification reconciliation on save, and keeps
+///     failures visible for retry.
+///
 struct ReviewRhythmSettingsView: View {
+
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = ReviewRhythmStore.load()
     @State private var saving = false

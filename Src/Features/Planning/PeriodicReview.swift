@@ -1,21 +1,60 @@
+// --------------------------------------------------------------------------------------------------
+// @file       PeriodicReview.swift
+// @brief      Custom-period reflection, objectives, and review persistence
+// @details    Defines dated review periods and objective status or progress, derives intersecting
+//             weekly context, and validates versioned storage. Presents baseline-backed reflection
+//             drafts with explicit saves and completion rather than changing workspace content
+//             during browsing.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 
+
+///
+/// Defines the retained state of a review objective
+///
+/// @section    Purpose
+///     Distinguishes active, achieved, paused, and released objectives without deleting their
+///     reflection history.
+///
 enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable {
+
     case active = "Active", achieved = "Achieved", paused = "Paused", released = "Let go"
     var id: String { rawValue }
 }
+
+
+///
+/// Retains one objective and its current reflection
+///
+/// @section    Purpose
+///     Keeps stable identity, status, progress writing, and a proposed next step within a periodic
+///     review.
+///
 struct ReviewObjective: Codable, Equatable, Identifiable {
+
     var id = UUID()
     var title = ""
     var status: ObjectiveStatus = .active
     var progress = ""
     var nextStep = ""
 }
+
+
+///
+/// Represents a user-defined review period
+///
+/// @section    Purpose
+///     Retains local date bounds, reflections, starting and current objectives, priorities, and
+///     completion progress with calendar context.
+///
 struct PeriodicReviewRecord: Codable, Equatable, Identifiable {
+
     var id = UUID()
-    var title: String
-    let startKey: String
-    let endKey: String
+    var title:      String
+    let startKey:   String
+    let endKey:     String
     let timeZoneID: String
     var step = 0
     var highlights = ""
@@ -23,10 +62,10 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable {
     var direction = ""
     var risks = ""
     var startingObjectives: [ReviewObjective] = []
-    var objectives: [ReviewObjective] = []
-    var priorities: [DailyPlanPriority] = []
-    var updatedAt: Date?
-    var completedAt: Date?
+    var objectives:         [ReviewObjective] = []
+    var priorities:         [DailyPlanPriority] = []
+    var updatedAt:          Date?
+    var completedAt:        Date?
 
 
     ///
@@ -69,9 +108,27 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable {
         }.sorted { $0.startKey < $1.startKey }
     }
 }
+
+
+///
+/// Persists validated custom-period reviews
+///
+/// @section    Purpose
+///     Checks period invariants and versioned documents and compares saved baselines before
+///     replacing retained records.
+///
 @MainActor
 enum PeriodicReviewStore {
+
     static let key = "Plenact.PeriodicReviews.v1"
+
+
+    ///
+    /// Wraps periodic review records in a versioned document
+    ///
+    /// @section    Purpose
+    ///     Retains keyed review snapshots and schema version separately from editor state.
+    ///
     struct Document: Codable, Equatable { var version = 1; var records: [String: PeriodicReviewRecord] = [:] }
 
 
@@ -170,19 +227,28 @@ enum PeriodicReviewStore {
     }
 }
 
+
+///
+/// Presents the custom-period review workflow
+///
+/// @section    Purpose
+///     Loads weekly context and retained records, edits objectives and reflections, and preserves
+///     the draft when checked saving fails.
+///
 struct PeriodicReviewView: View {
-    let calendar: Calendar
-    private let defaults: UserDefaults
+
+    let calendar:                Calendar
+    private let defaults:        UserDefaults
     private let initialReviewID: UUID?
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var document = PeriodicReviewStore.Document()
     @State private var weekly = WeeklyReviewStore.Document()
-    @State private var draft: PeriodicReviewRecord?
+    @State private var draft:    PeriodicReviewRecord?
     @State private var baseline: PeriodicReviewRecord?
     @State private var title = ""
     @State private var start: Date
-    @State private var end: Date
+    @State private var end:   Date
     @State private var objectiveTitle = ""
     @State private var error: String?
     @State private var loaded = false
@@ -209,7 +275,7 @@ struct PeriodicReviewView: View {
         _start = State(initialValue: calendar.dateInterval(of: .month, for: date)?.start ?? date)
         _end = State(initialValue: date)
     }
-    private var dirty: Bool { draft != baseline || !objectiveTitle.isEmpty || (draft == nil && !title.isEmpty) }
+    private var dirty:   Bool { draft != baseline || !objectiveTitle.isEmpty || (draft == nil && !title.isEmpty) }
     private var sources: [PlanningSearchResult] { access?.searchableItems ?? [] }
 
 

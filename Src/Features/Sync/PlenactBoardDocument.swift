@@ -1,8 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       PlenactBoardDocument.swift
-// @brief      Versioned Board document exchanged with the shared demo API
-// @details    Defines the Board shape used by the explicit shared-demo service flow; local Board
-//             state is not implicitly uploaded
+// @brief      Versioned Board payload and shared-demo response contracts
+// @details    Defines the app-owned Board JSON shape, validation, and snapshot decoding for
+//             explicit shared-demo exchange. Keeps server revision and actor provenance in response
+//             envelopes rather than embedding them in canonical local Card content.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -36,6 +37,7 @@ struct PlenactBoardDocument: Codable, Equatable {
     ///     Keep schema, board key, and label library field names explicit
     ///
     enum CodingKeys: String, CodingKey {
+
         case schemaVersion = "schema_version"
         case boardKey      = "board_key"
         case lists
@@ -160,11 +162,11 @@ struct PlenactBoardDocument: Codable, Equatable {
 ///
 struct PlenactBoardSnapshotResponse: Decodable {
 
-    let revision:     Int64                 /* Current immutable revision */
-    let document:     PlenactBoardDocument  /* Complete Board content     */
-    let storedAtUTC:  String                /* Server storage timestamp   */
-    let storedByUserID: String              /* Verified storage actor     */
-    let storageOrigin: String               /* Controlled write origin    */
+    let revision:       Int64                /* Current immutable revision */
+    let document:       PlenactBoardDocument /* Complete Board content     */
+    let storedAtUTC:    String               /* Server storage timestamp   */
+    let storedByUserID: String               /* Verified storage actor     */
+    let storageOrigin:  String               /* Controlled write origin    */
 
 
     ///
@@ -174,6 +176,7 @@ struct PlenactBoardSnapshotResponse: Decodable {
     ///     Decode revision and storage metadata independently of the Board document
     ///
     enum CodingKeys: String, CodingKey {
+
         case revision
         case document
         case storedAtUTC    = "stored_at_utc"

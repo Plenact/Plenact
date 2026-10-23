@@ -1,25 +1,60 @@
+// --------------------------------------------------------------------------------------------------
+// @file       PlanningTemplates.swift
+// @brief      Reusable routine snapshots, bundled starters, and application policy
+// @details    Defines Day and Week templates with source calendar conventions, versioned routine
+//             storage, and bundled defaults. Builds destination-safe content by remapping
+//             identities and links, shifting relative dates, and preserving example focus markers
+//             before checked publication.
+//
+// --------------------------------------------------------------------------------------------------
+
 import Foundation
 
+
+///
+/// Retains demonstration markers for routine examples
+///
+/// @section    Purpose
+///     Keeps important, bookmarked, and all-day source IDs available for remapping when examples
+///     are applied to a live destination.
+///
 struct PlanningExampleFocus: Codable, Hashable {
-    var important: Set<Int> = []
+
+    var important:  Set<Int> = []
     var bookmarked: Set<Int> = []
-    var allDay: Set<Int> = []
+    var allDay:     Set<Int> = []
 }
 
-/// Reusable local plans are separate snapshots, never live views of a scheduled day or week.
+
+///
+/// Retains a reusable Day or Week planning snapshot
+///
+/// @section    Purpose
+///     Stores source calendar conventions and List mappings separately from live scheduled content,
+///     including optional example focus markers.
+///
 struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
+
+
+    ///
+    /// Distinguishes Day routines from Week routines
+    ///
+    /// @section    Purpose
+    ///     Selects template scope while the enclosing snapshot retains its source calendar and List
+    ///     mapping.
+    ///
     enum Kind: String, Codable, CaseIterable { case day = "Day", week = "Week" }
     var id = UUID()
-    var name: String
-    var kind: Kind
-    var anchorKey: String
-    var timeZoneID: String
+    var name:         String
+    var kind:         Kind
+    var anchorKey:    String
+    var timeZoneID:   String
     var firstWeekday: Int
-    var collection: PersonalCollection
+    var collection:   PersonalCollection
     /// Calendar weekday -> source list identity; Day templates contain one source list.
-    var weekdays: [Int: Int]
+    var weekdays:     [Int: Int]
     var exampleFocus: PlanningExampleFocus? = nil
-    var calendar: Calendar {
+    var calendar:     Calendar {
         var value = Calendar(identifier: .gregorian)
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
         value.firstWeekday = firstWeekday
@@ -132,9 +167,18 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     }
 }
 
+
+///
+/// Retains the versioned routine library and bundled defaults
+///
+/// @section    Purpose
+///     Keeps editable templates, the preferred Week routine, and one-time bundled revision state
+///     separate from scheduled Weeks.
+///
 struct PlanningRoutineLibrary: Codable, Equatable {
+
     var version = 1
-    var templates: [PlanningRoutineTemplate]
+    var templates:     [PlanningRoutineTemplate]
     var defaultWeekID: UUID?
     /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr.
     var bundledRoutineRevision: Int? = nil
@@ -243,7 +287,16 @@ struct PlanningRoutineLibrary: Codable, Equatable {
     }()
 }
 
+
+///
+/// Validates and persists the reusable routine library
+///
+/// @section    Purpose
+///     Checks template identities and structure before loading or saving and retains checked
+///     updates to the stored library.
+///
 enum PlanningRoutineStore {
+
     static let key = "Plenact.PlanningTemplates.v1"
 
 
@@ -426,7 +479,24 @@ enum PlanningRoutineStore {
     }
 }
 
+
+///
+/// Builds a proposed calendar Week from a routine
+///
+/// @section    Purpose
+///     Remaps identities and links, shifts relative dates, and maps example focus markers before
+///     callers publish a checked result.
+///
 enum PlanningTemplateApplication {
+
+
+    ///
+    /// Selects additive or replacement template application
+    ///
+    /// @section    Purpose
+    ///     Controls how generated content joins the destination while leaving confirmation and
+    ///     persistence with the caller.
+    ///
     enum Mode: String, CaseIterable { case add = "Add to existing", replace = "Replace" }
 
 

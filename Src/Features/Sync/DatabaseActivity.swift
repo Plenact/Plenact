@@ -1,7 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       DatabaseActivity.swift
-// @brief      Shared database activity state and SwiftUI overlay
-// @details    Publishes in-flight operation messages and dismissible errors for database requests
+// @brief      Database activity presentation and content-transfer confirmations
+// @details    Publishes active database requests and dismissible errors through a shared observable
+//             state. Hosts transient move or copy notices and guarded section-move Undo using
+//             windows and overlays that limit interception to the interactive notice panel.
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,6 +17,7 @@ import SwiftUI
 ///
 @MainActor
 final class DatabaseActivity: ObservableObject {
+
     /// Process-wide activity state observed by database-backed views.
     static let shared = DatabaseActivity() /* Process-wide activity state observed by database-backed views */
 
@@ -202,24 +205,48 @@ extension View {
 }
 
 
+///
+/// Describes a completed content transfer
+///
+/// @section    Purpose
+///     Combines title, destination, and move-or-copy action into a confirmation message without
+///     retaining mutable workspace content.
+///
 struct TransferConfirmation: Equatable {
+
+
+    ///
+    /// Distinguishes successful moves from copies
+    ///
+    /// @section    Purpose
+    ///     Selects the verb in transfer confirmation messages without affecting the completed
+    ///     operation.
+    ///
     enum Action { case moved, copied }
-    let title: String
+    let title:       String
     let destination: String
-    var action: Action = .moved
-    var message: String {
+    var action:      Action = .moved
+    var message:     String {
         "\(action == .moved ? "Moved" : "Copied") ‘\(title)’ to \(destination)."
     }
 }
 
-/// A noninteractive window keeps confirmations visible across sheets and full-screen editors.
+
+///
+/// Presents transfer confirmations above active editors
+///
+/// @section    Purpose
+///     Uses a noninteractive notice window and a narrowly interactive Undo overlay so unrelated
+///     workspace touches continue to reach their views.
+///
 @MainActor
 final class TransferConfirmationPresenter {
+
     static let shared = TransferConfirmationPresenter()
-    private var window: UIWindow?
+    private var window:      UIWindow?
     private var dismissTask: Task<Void, Never>?
     private var undoOverlay: TransferUndoOverlay?
-    private var undoHost: UIViewController?
+    private var undoHost:    UIViewController?
 
 
     ///
@@ -324,7 +351,16 @@ final class TransferConfirmationPresenter {
     }
 }
 
+
+///
+/// Restricts Undo-overlay interaction to its notice panel
+///
+/// @section    Purpose
+///     Passes touches outside the retained panel rectangle through to the existing application
+///     interface.
+///
 private final class TransferUndoOverlay: UIView {
+
     var touchRegion: CGRect = .zero
 
 
@@ -345,8 +381,17 @@ private final class TransferUndoOverlay: UIView {
     }
 }
 
+
+///
+/// Hosts a non-key transfer confirmation window
+///
+/// @section    Purpose
+///     Returns no touch hit so notices remain visible across presentations without intercepting
+///     underlying interactions.
+///
 private final class TransferConfirmationWindow: UIWindow {
-    var touchRegion: CGRect = .zero
+
+    var touchRegion:           CGRect = .zero
     override var canBecomeKey: Bool { false }
 
 
@@ -366,7 +411,16 @@ private final class TransferConfirmationWindow: UIWindow {
     }
 }
 
+
+///
+/// Displays a transient successful-transfer notice
+///
+/// @section    Purpose
+///     Animates the supplied message while respecting Reduce Motion and leaving application content
+///     interactive.
+///
 private struct TransferConfirmationToast: View {
+
     let message: String
     @State private var visible = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -396,10 +450,19 @@ private struct TransferConfirmationToast: View {
     }
 }
 
+
+///
+/// Presents the single-action section-move Undo notice
+///
+/// @section    Purpose
+///     Delegates Undo and dismissal, reports its interactive frame, and displays failure without
+///     discarding current content.
+///
 private struct SectionUndoToast: View {
+
     let message: String
-    let undo: () -> Bool
-    let close: () -> Void
+    let undo:    () -> Bool
+    let close:   () -> Void
     let onFrame: (CGRect) -> Void
     @State private var failed = false
     var body: some View {

@@ -1,9 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LocalProfileStoreTests.swift
-// @brief      Local profile persistence tests
-// @details    Exercises local profile round trips, legacy preference/color decoding, avatar
-//             file storage, and synthetic photo cropping. Profile values use isolated preferences;
-//             the avatar-file test creates and removes its own fixture through the photo store
+// @brief      Local identity, preference compatibility, and avatar regression tests
+// @details    Exercises profile round trips, legacy preference and color decoding, avatar storage,
+//             and synthetic image cropping. Uses isolated preference domains and removes generated
+//             avatar fixtures without contacting authentication services.
 //
 // @notes      Local identity is not authentication. These tests do not contact a remote service
 //

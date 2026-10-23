@@ -1,9 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       CardDetailView.swift
-// @brief      Detailed kanban card presentation and supporting components
-// @details    Presents editable card text, completion, dates, labels, assignments, attachments,
-//             checklist actions, and activity. Includes reduced Action Detail and member draft
-//             editors, reusable section/row components, and custom swipe-to-delete interactions
+// @brief      Full Card and Note editors, read-only presentation, and native text bridges
+// @details    Presents writing, checklists, dates, labels, assignments, attachments, covers,
+//             reactions, and activity. Coordinates editing locks, importance actions, section
+//             layout, linked actions, keyboard navigation, rich text, and explicit drafts through
+//             owner-supplied callbacks.
 //
 // @notes      CardDetailView holds local working state and emits complete snapshots through the
 //             optional onTitleToggle callback, which handles more than completion alone.
@@ -30,6 +31,7 @@ import UniformTypeIdentifiers
 /// @note   Boundary actions are disabled in ChecklistBlock when no movement is possible
 ///
 enum ChecklistMoveDirection {
+
     case top
     case up
     case down
@@ -41,22 +43,40 @@ enum ChecklistMoveDirection {
 
 
 ///
-/// Presents the complete detail view for a selected kanban card
+/// Defines checklist link candidates in the environment
 ///
 /// @section    Purpose
-///     Render the selected card's title, context, metadata, checklists, activity, and navigation action
-///
-/// @note   The detail surface is intentionally scrollable so every card section remains accessible on iPhone
+///     Defaults to an empty set of Cards until the owning workspace injects eligible canonical link
+///     destinations.
 ///
 private struct ChecklistCandidatesKey: EnvironmentKey { static let defaultValue: [KanbanCard] = [] }
+
+
+///
+/// Supplies checklist link candidates to Card editors
+///
+/// @section    Purpose
+///     Injects the currently eligible canonical Cards without coupling checklist controls to a
+///     particular owner store.
+///
 extension EnvironmentValues {
+
     var checklistLinkCandidates: [KanbanCard] {
         get { self[ChecklistCandidatesKey.self] }
         set { self[ChecklistCandidatesKey.self] = newValue }
     }
 }
 
+
+///
+/// Presents and edits the complete Card or Note record
+///
+/// @section    Purpose
+///     Coordinates writing, checklists, dates, attachments, appearance, reactions, and importance
+///     through owner callbacks; locked content uses a read-only presentation.
+///
 struct CardDetailView: View {
+
     @Environment(\.cardKeyboardNavigation) private var keyboardNavigation
     @State private var keyboardContextID = UUID()
     @Environment(\.workspaceNoteVisibility) private var workspaceNoteVisibility
@@ -67,10 +87,10 @@ struct CardDetailView: View {
     @Environment(\.libraryItemOpened) private var libraryItemOpened
     @Environment(\.libraryImportance) private var libraryImportance
     @State private var isActivityCollapsed = false
-    @State private var startDateKind: CardDateKind
-    @State private var dueDateKind: CardDateKind
+    @State private var startDateKind:      CardDateKind
+    @State private var dueDateKind:        CardDateKind
     @State private var showsDueDateInList: Bool
-    @State private var sectionLayout: CardSectionLayout
+    @State private var sectionLayout:      CardSectionLayout
     @State private var showsLayoutEditor = false
     @Environment(\.workspaceBottomBarHeight) private var workspaceBottomBarHeight
 
@@ -179,6 +199,7 @@ struct CardDetailView: View {
     ///     the card
     ///
     private enum GeneratedActivity: String, CaseIterable, Identifiable {
+
         case addedCard       /* Card was added to the board           */
         case createdCard     /* Card was created on the board         */
         case initialComment  /* Initial comment was added to the card */
@@ -231,6 +252,7 @@ struct CardDetailView: View {
     /// @note   This filter is presentation state and is not persisted with the card
     ///
     private enum ActivityFilter: String, CaseIterable, Identifiable {
+
         case all           /* All activity entries for the card       */
         case comments      /* User-added comments for the card        */
         case cardActivity  /* Generated activity entries for the card */
@@ -270,28 +292,29 @@ struct CardDetailView: View {
     ///     Keep text-field focus state explicit across title, subtitle, description, and comment entry
     ///
     private enum EditableField: Hashable {
+
         case title        /* The title field is being edited       */
         case subtitle     /* The subtitle field is being edited    */
         case description  /* The description field is being edited */
         case comment      /* The comment field is being edited     */
     }
 
-    let card: KanbanCard                                     /* The kanban card being displayed in detail                    */
-    let listedOnDate: Date?
-    @Binding var labelLibrary: LabelLibrary     /* Shared label catalog available to every card             */
-    let availableLists: [KanbanList]            /* Other lists that can receive this card                   */
-    let memberColors: [String: Color]           /* Shared icon colors keyed by normalized member name       */
-    let currentUserName: String                 /* Current actor name shown in card activity                */
-    @Binding var savedCardIDs: Set<Int>         /* Local identities saved for quick access                  */
-    let onTitleToggle: ((KanbanCard) -> Void)?  /* Callback invoked when the card title checkbox is toggled */
-    let onMoveToList: ((Int) -> Void)?          /* Callback invoked to move the card to a selected list     */
-    let personalCollectionID: UUID?             /* Original personal collection owning this detail session  */
+    let card:                  KanbanCard                    /* The kanban card being displayed in detail                    */
+    let listedOnDate:          Date?
+    @Binding var labelLibrary: LabelLibrary            /* Shared label catalog available to every card             */
+    let availableLists:        [KanbanList]            /* Other lists that can receive this card                   */
+    let memberColors:          [String: Color]         /* Shared icon colors keyed by normalized member name       */
+    let currentUserName:       String                  /* Current actor name shown in card activity                */
+    @Binding var savedCardIDs: Set<Int>                /* Local identities saved for quick access                  */
+    let onTitleToggle:         ((KanbanCard) -> Void)? /* Callback invoked when the card title checkbox is toggled */
+    let onMoveToList:          ((Int) -> Void)?        /* Callback invoked to move the card to a selected list     */
+    let personalCollectionID:  UUID?                   /* Original personal collection owning this detail session  */
     @Environment(\.cardMovementAccess) private var cardMovementAccess
-    let availablePersonalLists: [PersonalCollection]                          /* Personal Lists offered as Note movement destinations     */
-    let onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)?  /* Moves the Note and returns its destination-local record  */
-    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Persists edits after the Note changes collections        */
-    let onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)?                     /* Archives the Note in its current collection              */
-    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?                      /* Permanently removes the Note from its current collection */
+    let availablePersonalLists:    [PersonalCollection]                       /* Personal Lists offered as Note movement destinations     */
+    let onMoveNoteToPersonalList:  ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves the Note and returns its destination-local record  */
+    let onUpdateMovedNote:         ((UUID, KanbanCard) -> Bool)?              /* Persists edits after the Note changes collections        */
+    let onArchiveMovedNote:        ((UUID, KanbanCard) -> Bool)?              /* Archives the Note in its current collection              */
+    let onDeleteMovedNote:         ((UUID, KanbanCard) -> Bool)?              /* Permanently removes the Note from its current collection */
     let onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)?               /* Persists the relocated Note's saved state                */
     /// Optional callback that archives the latest synchronized card snapshot.
     let onArchive: (() -> Void)? /* Archives the record through its original owner */
@@ -300,51 +323,51 @@ struct CardDetailView: View {
 
     @Environment(\.dismiss) private var dismiss              /* Dismiss action for the card detail view                      */
     @State private var richTextFocusedField: EditableField? // UIKit editors retain focus independently of SwiftUI text fields.
-    @State private var editingHeaderField: EditableField?
-    @FocusState private var focusedField: EditableField?     /* current focused editable field within the card detail view   */
+    @State private var editingHeaderField:   EditableField?
+    @FocusState private var focusedField:    EditableField?  /* current focused editable field within the card detail view   */
 
-    @State private var checklists: [KanbanChecklist]  /* The checklist groups associated with the selected card   */
-    @State private var checklistToFocus: UUID?        /* Newly added checklist whose first item should be focused */
-    @State private var titleChecked: Bool             /* Whether the card title itself is checked                 */
+    @State private var checklists:               [KanbanChecklist] /* The checklist groups associated with the selected card   */
+    @State private var checklistToFocus:         UUID?             /* Newly added checklist whose first item should be focused */
+    @State private var titleChecked:             Bool              /* Whether the card title itself is checked                 */
     @State private var showsReactionsInPreviews: Bool?
-    @State private var reactions: [ItemEmojiReaction]?
+    @State private var reactions:                [ItemEmojiReaction]?
     @State private var reactionAuthorID = LocalReactionIdentity.current()
-    @State private var titleText: String                     /* Editable card title displayed in the detail header           */
+    @State private var titleText:  String                    /* Editable card title displayed in the detail header           */
     @State private var appearance: ItemAppearance?
     @State private var showsAppearanceCover = false
-    @State private var subtitleText: String                         /* Editable card subtitle displayed in the detail header        */
-    @State private var startDate: Date?                             /* Optional start date for the selected card                    */
-    @State private var dueDate: Date?                               /* Optional due date for the selected card                      */
-    @State private var descriptionText: String                      /* Editable description shown on this card                      */
-    @State private var activeSheet: ActiveSheet?                    /* The date picker or member editor currently presented         */
-    @State private var comments: [KanbanComment]                    /* Comments saved to this card's activity                       */
-    @State private var members: [CardAssignee]                      /* Registered and manual card assignments                       */
-    @State private var selectedLabelIDs: [String]                   /* Stable IDs of labels assigned to this card                   */
-    @State private var attachments: [KanbanAttachment]              /* Photo attachments currently assigned to the card             */
-    @State private var isEditingLocked: Bool
-    @State private var lockedSnapshot: KanbanCard?
-    @State private var coverAttachmentID: UUID?                     /* Explicit cover selection; nil means disabled                 */
+    @State private var subtitleText:       String                   /* Editable card subtitle displayed in the detail header        */
+    @State private var startDate:          Date?                    /* Optional start date for the selected card                    */
+    @State private var dueDate:            Date?                    /* Optional due date for the selected card                      */
+    @State private var descriptionText:    String                   /* Editable description shown on this card                      */
+    @State private var activeSheet:        ActiveSheet?             /* The date picker or member editor currently presented         */
+    @State private var comments:           [KanbanComment]          /* Comments saved to this card's activity                       */
+    @State private var members:            [CardAssignee]           /* Registered and manual card assignments                       */
+    @State private var selectedLabelIDs:   [String]                 /* Stable IDs of labels assigned to this card                   */
+    @State private var attachments:        [KanbanAttachment]       /* Photo attachments currently assigned to the card             */
+    @State private var isEditingLocked:    Bool
+    @State private var lockedSnapshot:     KanbanCard?
+    @State private var coverAttachmentID:  UUID?                    /* Explicit cover selection; nil means disabled                 */
     @State private var selectedCoverPhoto: PhotosPickerItem?        /* One photo explicitly selected for a cover                    */
-    @State private var coverImportID: UUID?                         /* Superseded requests cannot enable an old cover               */
+    @State private var coverImportID:      UUID?                    /* Superseded requests cannot enable an old cover               */
     @State private var showsCoverPicker = false                     /* Visual chooser for already attached photos                   */
     @State private var showsCoverLibrary = false                    /* Offline category-based illustration chooser                  */
     @State private var selectedPhotoItems: [PhotosPickerItem] = []  /* Photos selected from the system photo library                */
     @State private var commentDraft = ""                            /* Text currently entered in the comment composer               */
     @State private var dismissedActivityIDs: Set<String>            /* IDs of activity entries that have been dismissed by the user */
-    @State private var activityFilter: ActivityFilter = .all        /* The currently selected activity filter for the card          */
+    @State private var activityFilter:       ActivityFilter = .all  /* The currently selected activity filter for the card          */
     @State private var showingAttachmentNotice = false              /* Whether an attachment notice is presented                    */
     @State private var attachmentNoticeMessage = ""                 /* Explanation shown for failed or unavailable sources          */
     @State private var showingDeleteConfirmation = false            /* Whether permanent card deletion awaits confirmation          */
     @State private var hasMovedCard = false                         /* Stops editor callbacks from writing back to the old owner    */
     @State private var hasDeletedCard = false                       /* Prevents stale snapshots after confirmed deletion            */
     @State private var displayFormat: ItemDisplayFormat
-    @State private var presentation: ItemPresentation      /* Current Card or Note rendering mode                      */
+    @State private var presentation:  ItemPresentation     /* Current Card or Note rendering mode                      */
     @State private var showsNoteDetails = false            /* Visibility of supplementary Note fields                  */
     @State private var hasEditedDescription = false        /* Whether the body draft should replace the stored value   */
-    @State private var recordID: Int                       /* Current identity after any collection-local reassignment */
-    @State private var currentListTitle: String            /* Owning list name updated after Note movement             */
+    @State private var recordID:                    Int    /* Current identity after any collection-local reassignment */
+    @State private var currentListTitle:            String /* Owning list name updated after Note movement             */
     @State private var currentPersonalCollectionID: UUID?  /* Current personal collection after Note movement          */
-    @State private var movedNoteIsSaved: Bool?             /* Saved-state override for a relocated Note                */
+    @State private var movedNoteIsSaved:            Bool?  /* Saved-state override for a relocated Note                */
 
 
     ///
@@ -406,19 +429,28 @@ struct CardDetailView: View {
     /// @details    Seeds all working fields from the supplied card, including stored checklists,
     ///             assignments, attachments, and dismissed activity IDs
     ///
-    /// @param[in]  card           Complete card snapshot being edited
-    /// @param[in]  labelLibrary   Shared reusable label catalog binding
-    /// @param[in]  availableLists Other active lists used for movement and linked-card lookup
-    /// @param[in]  memberColors   Icon colors keyed by normalized display name
-    /// @param[in]  currentUserName Actor name used by generated activity and Action Detail comments
-    /// @param[in]  savedCardIDs   Binding to this Board's device-local bookmarks
-    /// @param[in]  onTitleToggle  Optional callback receiving every complete edited card snapshot
-    /// @param[in]  onMoveToList   Optional callback receiving a destination list ID
-    /// @param[in]  personalCollectionID  Current local collection for cross-collection Note moves
-    /// @param[in]  availablePersonalLists Active personal Lists offered as Note destinations
-    /// @param[in]  onMoveNoteToPersonalList Save-first Note movement callback
-    /// @param[in]  onArchive      Optional callback archiving the latest synchronized card
-    /// @param[in]  onDelete       Optional save-first deletion callback; false retains the editor and drafts
+    /// @param[in]  card                       Complete card snapshot being edited
+    /// @param[in]  labelLibrary               Shared reusable label catalog binding
+    /// @param[in]  availableLists             Other active lists used for movement and linked-card lookup
+    /// @param[in]  memberColors               Icon colors keyed by normalized display name
+    /// @param[in]  currentUserName            Actor name used by generated activity and Action Detail comments
+    /// @param[in]  savedCardIDs               Binding to this Board's device-local bookmarks
+    /// @param[in]  onTitleToggle              Optional callback receiving every complete edited card snapshot
+    /// @param[in]  onMoveToList               Optional callback receiving a destination list ID
+    /// @param[in]  personalCollectionID       Current local collection for cross-collection Note moves
+    /// @param[in]  availablePersonalLists     Active personal Lists offered as Note destinations
+    /// @param[in]  onMoveNoteToPersonalList   Save-first Note movement callback
+    /// @param[in]  onArchive                  Optional callback archiving the latest synchronized card
+    /// @param[in]  onDelete                   Optional save-first deletion callback; false retains the editor and drafts
+    ///
+    /// @param[in]  onUpdateMovedNote          Optional checked callback saving further edits after a Note
+    ///             moves to another owner
+    /// @param[in]  onArchiveMovedNote         Optional owner callback archiving a Note after it moves
+    /// @param[in]  onDeleteMovedNote          Optional checked callback deleting a Note after it moves
+    /// @param[in]  onToggleMovedNoteBookmark  Optional callback changing a moved Note's personal
+    ///             bookmark
+    /// @param[in]  listedOnDate               Optional represented Day date supplying context for the detail
+    ///             presentation
     ///
     /// @return     (CardDetailView) configured card detail presentation
     /// @post       Initialization does not submit edits or mutate caller-owned bindings
@@ -1130,6 +1162,9 @@ struct CardDetailView: View {
     /// @param[in]  clearStartDate  Whether to remove the card's start date
     /// @param[in]  clearDueDate    Whether to remove the card's due date
     ///
+    /// @param[in]  editingLocked   Optional explicit editing-lock value used for lock or unlock
+    ///             snapshots
+    ///
     /// @return     (Bool) false when locking, deletion, or a rejected relocated-Note update prevents submission
     ///
     /// @post       Explicit overrides do not modify local State; nil callbacks perform no parent
@@ -1202,6 +1237,7 @@ struct CardDetailView: View {
         }
         return true
     }
+
 
     ///
     /// @fcn        CardDetailView.setEditingLocked
@@ -1900,6 +1936,8 @@ struct CardDetailView: View {
     ///
     /// @param[in]  checklistID  Identifier of the checklist receiving the new item
     ///
+    /// @param[in]  text         Submitted checklist action writing, including supported multiline input
+    ///
     /// @return     (Void) updates the matching checklist and submits the card snapshot
     ///
     /// @post       The new item appears above the checklist's Add item... control
@@ -2216,6 +2254,10 @@ struct CardDetailView: View {
     /// @fcn        CardDetailView.saveDisplayAppearance(_:format:)
     /// @brief      Save display and decoration together while retaining the complete record
     /// @details    Rejected updates restore the local draft and keep Appearance open
+    /// @param[in]  updated  Proposed appearance overrides, or nil to restore inherited styling
+    /// @param[in]  format   Explicit Card, Note, or picture preview format to retain with the
+    ///             appearance
+    ///
     /// @return     (Bool) whether the canonical update accepted the snapshot
     ///
     private func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool {
@@ -2323,14 +2365,14 @@ struct CardDetailView: View {
 
 
     ///
-    /// @fcn        CardDetailView.addMenu(using:)
-    /// @brief      Build the Note toolbar menu for adding structured details
-    /// @details    Offers checklist, start-date, due-date, and comment actions, revealing the
-    ///             Details section when checklist or comment entry is selected
+    /// @fcn        CardDetailView.cardCoverPanel(onDone:)
+    /// @brief      Present the current item's cover controls
+    /// @details    Wraps the shared cover controls in a sheet-sized navigation surface with an
+    ///             explicit Done action and database error presentation.
     ///
-    /// @param[in]  scrollProxy  Scroll proxy used by detail-entry actions
+    /// @param[in]  onDone  Action invoked by the cover panel's Done button
     ///
-    /// @return     (some View) accessible Add menu for the current Note
+    /// @return     (some View) cover editing panel
     ///
     private func cardCoverPanel(onDone: @escaping () -> Void) -> some View {
         NavigationStack {
@@ -2508,14 +2550,17 @@ struct CardDetailView: View {
         .presentationDetents([.medium, .large])
     }
 
+
     ///
-    /// @fcn        CardDetailView.body
-    /// @brief      Build the item detail presentation using its persisted Note or Card choice
-    /// @details    Notes lead with writing and hide metadata until Details is requested.
-    ///             Both interfaces share working state, complete snapshots, and lifecycle callbacks
-    /// @return     (some View) rendered item detail screen
-    /// @post       Main edits synchronize immediately; deletion suppresses further snapshots.
-    ///             Changing presentation retains content and does not relocate the item
+    /// @fcn        CardDetailView.cardSection(_:using:)
+    /// @brief      Render one configured Card detail section
+    /// @details    Selects the section-specific content and actions from the current working
+    ///             snapshot, using the scroll proxy when additions need to be revealed.
+    ///
+    /// @param[in]  section      Card section whose retained content and controls should be rendered
+    /// @param[in]  scrollProxy  Detail scroll proxy used to reveal newly requested content
+    ///
+    /// @return     (some View) requested detail section
     ///
     @ViewBuilder
     private func cardSection(_ section: CardSection, using scrollProxy: ScrollViewProxy) -> some View {
@@ -3314,6 +3359,7 @@ struct CardDetailView: View {
 ///     Keep creation metadata visible beneath the Note title without truncating date or time
 ///
 struct NoteCreationDateLabel: View {
+
     let createdAt: Date /* Original Note creation time shown in the metadata row */
 
     var body: some View { /* Formatted Note creation metadata */
@@ -3595,8 +3641,8 @@ private struct ChecklistActionDetailView: View {
 ///
 private struct CardMembersSheet: View {
 
-    let onSave: ([CardAssignee]) -> Void  /* Save typed card assignments                        */
-    let memberColors: [String: Color]     /* Shared icon colors keyed by normalized member name */
+    let onSave:       ([CardAssignee]) -> Void /* Save typed card assignments                        */
+    let memberColors: [String: Color]          /* Shared icon colors keyed by normalized member name */
 
     @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet               */
     @State private var members: [CardAssignee]   /* Local typed assignments being edited       */
@@ -3821,7 +3867,7 @@ private struct CardMembersSheet: View {
 struct DetailSection<Content: View>: View {
 
     @State private var isCollapsed = false
-    let collapsible: Bool
+    let collapsible:    Bool
     let title:          String         /* The title of the detail section                    */
     var trailing:       String?        /* The optional trailing symbol of the detail section */
     var trailingAction: (() -> Void)?  /* The optional action for the trailing symbol        */
@@ -3838,6 +3884,8 @@ struct DetailSection<Content: View>: View {
     /// @param[in]  trailing        Optional SF Symbol name shown at the trailing edge
     /// @param[in]  trailingAction  Optional action invoked by the trailing symbol
     /// @param[in]  content         Content rendered below the section heading
+    ///
+    /// @param[in]  collapsible     Whether the section heading exposes its local collapse control
     ///
     /// @return     (DetailSection) configured detail section
     /// @post       Content and trailing action are retained without being invoked
@@ -3926,9 +3974,9 @@ struct DetailSection<Content: View>: View {
 ///
 struct ActionTile: View {
 
-    let title: String       /* The title of the action tile                  */
-    let icon:  String       /* The icon representing the action tile         */
-    let color: Color        /* The color of the action tile                  */
+    let title:  String      /* The title of the action tile                  */
+    let icon:   String      /* The icon representing the action tile         */
+    let color:  Color       /* The color of the action tile                  */
     let action: () -> Void  /* The action to perform when the tile is tapped */
 
     ///
@@ -4015,22 +4063,22 @@ struct DetailRow: View {
 ///
 struct ChecklistBlock: View {
 
-    let checklist: KanbanChecklist                /* The checklist data rendered by the block                                */
-    let linkedCardsByID: [Int: KanbanCard]        /* Linked cards keyed by stable ID                                         */
-    let onDelete: ()        -> Void               /* The action invoked when the checklist is deleted                        */
-    let onAddItem: (String) -> Void               /* The action invoked when a new item is added                             */
-    let onToggleItem: (Int) -> Void               /* The action invoked when an item is toggled                              */
-    let onUpdateItem: (Int, String) -> Void       /* The action invoked when item text is edited                             */
-    let onDeleteItem: (Int)  -> Void              /* The action invoked when an item is deleted                              */
-    let onOpenActionDetail: (UUID) -> Void        /* The action invoked for reduced detail                                   */
-    let onRename: (String)   -> Void              /* The action invoked when the checklist title is renamed                  */
-    let onToggleAllItems: () -> Void              /* The action invoked when all items are toggled                           */
-    let onMove: (ChecklistMoveDirection) -> Void  /* The action invoked when the checklist is moved                          */
-    let canMoveUp: Bool                           /* Whether the checklist can be moved up in the list                       */
-    let canMoveDown: Bool                         /* Whether the checklist can be moved down in the list                     */
-    let focusFirstItem: Bool                      /* Whether the first item should be focused when the checklist is rendered */
-    let onFirstItemFocused: () -> Void            /* The action invoked when the first item receives focus                   */
-    var onChangeType: ((KanbanChecklistItem) -> Bool)? = nil
+    let checklist:                KanbanChecklist                  /* The checklist data rendered by the block                                */
+    let linkedCardsByID:          [Int: KanbanCard]                /* Linked cards keyed by stable ID                                         */
+    let onDelete:                 ()        -> Void                /* The action invoked when the checklist is deleted                        */
+    let onAddItem:                (String) -> Void                 /* The action invoked when a new item is added                             */
+    let onToggleItem:             (Int) -> Void                    /* The action invoked when an item is toggled                              */
+    let onUpdateItem:             (Int, String) -> Void            /* The action invoked when item text is edited                             */
+    let onDeleteItem:             (Int)  -> Void                   /* The action invoked when an item is deleted                              */
+    let onOpenActionDetail:       (UUID) -> Void                   /* The action invoked for reduced detail                                   */
+    let onRename:                 (String)   -> Void               /* The action invoked when the checklist title is renamed                  */
+    let onToggleAllItems:         () -> Void                       /* The action invoked when all items are toggled                           */
+    let onMove:                   (ChecklistMoveDirection) -> Void /* The action invoked when the checklist is moved                          */
+    let canMoveUp:                Bool                             /* Whether the checklist can be moved up in the list                       */
+    let canMoveDown:              Bool                             /* Whether the checklist can be moved down in the list                     */
+    let focusFirstItem:           Bool                             /* Whether the first item should be focused when the checklist is rendered */
+    let onFirstItemFocused:       () -> Void                       /* The action invoked when the first item receives focus                   */
+    var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil
     @State private var typeDraft: KanbanChecklistItem?
     @State private var requestedType = ChecklistItemType.standard
 
@@ -4141,16 +4189,19 @@ struct ChecklistBlock: View {
         }
     }
 
+
     ///
-    /// @fcn        ChecklistBlock.body
-    /// @brief      Build the checklist group
-    /// @details    Renders completion counts and typed rows with collapse/hide-completed controls.
-    ///             Offers check-all, bounded movement, rename via menu or 0.5-second title hold,
-    ///             deletion, and item creation
+    /// @fcn        ChecklistBlock.chooseType(_:for:)
+    /// @brief      Change a checklist action type while retaining prior content
+    /// @details    Reuses retained detail, Card, or URL values where available. Requests a type
+    ///             editor when a destination is missing and opens action detail only after the
+    ///             owner accepts the change.
     ///
-    /// @return     (some View) rendered checklist group
-    /// @post       Content mutations delegate to parent callbacks; collapse/filter/rename presentation
-    ///             remain local. Blank rename input and boundary movement controls are disabled
+    /// @param[in]  type  Requested checklist action type
+    /// @param[in]  item  Checklist item whose active type is changing; retained inactive content
+    ///             may be reused
+    ///
+    /// @return     (Void) updates the item through its owner or presents the required draft editor
     ///
     private func chooseType(_ type: ChecklistItemType, for item: KanbanChecklistItem) {
         var updated = item
@@ -4359,25 +4410,26 @@ struct ChecklistBlock: View {
 ///     Provide reliable physical-device swipe behavior inside the card's custom ScrollView layout
 ///
 struct ChecklistItemRow: View {
+
     @Environment(\.planningCalendarAccess) private var planningAccess
-    let planningLinkID: UUID?
+    let planningLinkID:     UUID?
     let linkedCollectionID: UUID?
     @Environment(\.cardMovementSource) private var linkedSourceID
 
-    let item: String             /* The editable item text               */
-    let isCompleted: Bool        /* The current completion state         */
-    let linkedCardID: Int?       /* Stable linked card ID, when present  */
-    let linkedCard: KanbanCard?  /* Resolved linked card, when available */
-    var webURL: URL? = nil
-    let onOpenDetail: (() -> Void)?  /* Action Detail presentation callback                           */
-    let onToggle: () -> Void         /* The action invoked by the checkbox                            */
-    let onUpdate: (String) -> Void   /* The action invoked by text editing                            */
-    let onDelete: () -> Void         /* The action invoked by delete                                  */
-    let shouldFocus: Bool            /* Indicates whether the text field should receive focus         */
-    let onFocusHandled: () -> Void   /* The action invoked when the text field focus has been handled */
+    let item:           String      /* The editable item text               */
+    let isCompleted:    Bool        /* The current completion state         */
+    let linkedCardID:   Int?        /* Stable linked card ID, when present  */
+    let linkedCard:     KanbanCard? /* Resolved linked card, when available */
+    var webURL:         URL? = nil
+    let onOpenDetail:   (() -> Void)?    /* Action Detail presentation callback                           */
+    let onToggle:       () -> Void       /* The action invoked by the checkbox                            */
+    let onUpdate:       (String) -> Void /* The action invoked by text editing                            */
+    let onDelete:       () -> Void       /* The action invoked by delete                                  */
+    let shouldFocus:    Bool             /* Indicates whether the text field should receive focus         */
+    let onFocusHandled: () -> Void       /* The action invoked when the text field focus has been handled */
 
-    @State private var horizontalOffset: CGFloat = 0  /* Current swipe translation */
-    @FocusState private var isTextFocused: Bool       /* Text-editor focus state   */
+    @State private var horizontalOffset:   CGFloat = 0 /* Current swipe translation */
+    @FocusState private var isTextFocused: Bool        /* Text-editor focus state   */
 
 
     ///
@@ -4386,16 +4438,21 @@ struct ChecklistItemRow: View {
     /// @details    Optional navigation inputs determine the title control while completion and deletion
     ///             remain available for every action type
     ///
-    /// @param[in]  item           Display title or editable standard-action text
-    /// @param[in]  isCompleted    Current completion state
-    /// @param[in]  linkedCardID   Optional stable linked-card reference
-    /// @param[in]  linkedCard     Resolved linked card, or nil for an unavailable destination
-    /// @param[in]  onOpenDetail   Optional reduced Action Detail presentation callback
-    /// @param[in]  onToggle       Completion action
-    /// @param[in]  onUpdate       Standard-action text update callback
-    /// @param[in]  onDelete       Record deletion callback
-    /// @param[in]  shouldFocus    Whether a standard editor requests focus on appearance
-    /// @param[in]  onFocusHandled Callback acknowledging the scheduled focus request
+    /// @param[in]  item                Display title or editable standard-action text
+    /// @param[in]  isCompleted         Current completion state
+    /// @param[in]  linkedCardID        Optional stable linked-card reference
+    /// @param[in]  linkedCard          Resolved linked card, or nil for an unavailable destination
+    /// @param[in]  onOpenDetail        Optional reduced Action Detail presentation callback
+    /// @param[in]  onToggle            Completion action
+    /// @param[in]  onUpdate            Standard-action text update callback
+    /// @param[in]  onDelete            Record deletion callback
+    /// @param[in]  shouldFocus         Whether a standard editor requests focus on appearance
+    /// @param[in]  onFocusHandled      Callback acknowledging the scheduled focus request
+    ///
+    /// @param[in]  planningLinkID      Optional owner-qualified destination for a dated linked Card
+    /// @param[in]  linkedCollectionID  Optional explicit collection owner for a linked Card's local
+    ///             ID
+    /// @param[in]  webURL              Optional web-link destination for the checklist action
     ///
     /// @return     (ChecklistItemRow) configured action row
     /// @post       Initialization installs inputs without invoking any callbacks
@@ -4559,9 +4616,9 @@ struct ChecklistItemRow: View {
 ///
 struct ActivityRow: View {
 
-    let text: String          /* The main text content of the activity row */
-    let actorColor: Color     /* The icon color for the activity actor     */
-    let onDelete: () -> Void  /* Activity deletion callback                */
+    let text:       String     /* The main text content of the activity row */
+    let actorColor: Color      /* The icon color for the activity actor     */
+    let onDelete:   () -> Void /* Activity deletion callback                */
 
 
     ///
@@ -4605,9 +4662,9 @@ struct ActivityRow: View {
 ///
 struct CommentActivityRow: View {
 
-    let comment: KanbanComment  /* The comment data rendered by the row           */
-    let memberColor: Color      /* The assigned icon color for the comment author */
-    let onDelete: () -> Void    /* The action invoked when the comment is deleted */
+    let comment:     KanbanComment /* The comment data rendered by the row           */
+    let memberColor: Color         /* The assigned icon color for the comment author */
+    let onDelete:    () -> Void    /* The action invoked when the comment is deleted */
 
     ///
     /// @fcn        CommentActivityRow.body
@@ -4652,10 +4709,10 @@ struct CommentActivityRow: View {
 ///
 struct ActivitySwipeRow<Content: View>: View {
 
-        let onDelete: () -> Void                          /* The action invoked when the row is deleted     */
-        let deletionAccessibilityLabel: String            /* Accessibility label for the swipe action       */
-        @ViewBuilder let content: () -> Content           /* The content view rendered inside the swipe row */
-        @State private var horizontalOffset: CGFloat = 0  /* The current horizontal offset of the swipe row */
+        let onDelete:                        () -> Void    /* The action invoked when the row is deleted     */
+        let deletionAccessibilityLabel:      String        /* Accessibility label for the swipe action       */
+        @ViewBuilder let content:            () -> Content /* The content view rendered inside the swipe row */
+        @State private var horizontalOffset: CGFloat = 0   /* The current horizontal offset of the swipe row */
 
 
         ///
@@ -4663,9 +4720,9 @@ struct ActivitySwipeRow<Content: View>: View {
         /// @brief      Configure a reusable trailing destructive action
         /// @details    Retains the deletion callback, accessibility label, and content builder
         ///
-        /// @param[in]  onDelete Delete action invoked by the exposed button or a full left swipe
-        /// @param[in]  deletionAccessibilityLabel Accessible description for the delete action
-        /// @param[in]  content Row content shown above the destructive background
+        /// @param[in]  onDelete                    Delete action invoked by the exposed button or a full left swipe
+        /// @param[in]  deletionAccessibilityLabel  Accessible description for the delete action
+        /// @param[in]  content                     Row content shown above the destructive background
         ///
         /// @return     (ActivitySwipeRow) configured activity row
         /// @post       Content construction and deletion are deferred until rendering/interaction
@@ -4767,13 +4824,33 @@ struct ActivitySwipeRow<Content: View>: View {
 
 // Rich text remains in the existing string fields, with a versioned, portable run representation.
 // Ordinary text stays ordinary text; legacy descriptions and comments need no migration.
+
+
+///
+/// Encodes and decodes Plenact's retained rich text
+///
+/// @section    Purpose
+///     Converts between stored runs, attributed editing content, and plain text while supporting
+///     the versioned string prefix.
+///
 enum PlanRichText {
+
     static let prefix = "plenact-rich-v1:"
+
+
+    ///
+    /// Represents one stored run of rich text
+    ///
+    /// @section    Purpose
+    ///     Retains writing and optional font, color, bold, and italic attributes independently of
+    ///     UIKit editor state.
+    ///
     struct Run: Codable, Equatable {
-        var text: String
-        var bold: Bool = false
-        var italic: Bool = false
-        var color: String? = nil
+
+        var text:     String
+        var bold:     Bool = false
+        var italic:   Bool = false
+        var color:    String? = nil
         var fontName: String? = nil
         var fontSize: Double? = nil
     }
@@ -4900,10 +4977,19 @@ enum PlanRichText {
     }
 }
 
+
+///
+/// Bridges rich-text editing into SwiftUI
+///
+/// @section    Purpose
+///     Binds the stored text representation to a native text view with configurable focus,
+///     placeholder, and minimum height.
+///
 struct RichTextEditor: UIViewRepresentable {
-    let placeholder: String
+
+    let placeholder:   String
     @Binding var text: String
-    var focus: Binding<Bool>? = nil
+    var focus:         Binding<Bool>? = nil
     var minimumHeight: CGFloat = 80
     var verticalInset: CGFloat = 6
 
@@ -5003,8 +5089,18 @@ struct RichTextEditor: UIViewRepresentable {
         guard let width = proposal.width else { return nil }
         return CGSize(width: width, height: max(minimumHeight, uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height))
     }
+
+
+    ///
+    /// Synchronizes native rich-text changes and focus
+    ///
+    /// @section    Purpose
+    ///     Retains current bindings, tracks the text view and placeholder weakly, and guards
+    ///     deferred focus updates against re-entry.
+    ///
     class Coordinator: NSObject, UITextViewDelegate {
-        var parent: RichTextEditor
+
+        var parent:    RichTextEditor
         weak var view: UITextView?
         weak var hint: UILabel?
         private var focusUpdatePending = false
@@ -5220,32 +5316,76 @@ struct RichTextEditor: UIViewRepresentable {
     }
 }
 
+
+///
+/// Defines the workspace Note-visibility reporting callback
+///
+/// @section    Purpose
+///     Uses an inert default so standalone editors can report appearance without requiring a root
+///     toolbar owner.
+///
 private struct WorkspaceNoteVisibilityKey: EnvironmentKey {
+
     static let defaultValue: (UUID, Bool) -> Void = { _, _ in }
 }
+
+
+///
+/// Exposes Note visibility reporting to nested editors
+///
+/// @section    Purpose
+///     Passes editor identity and visibility to the injected owner so workspace chrome can follow
+///     the active presentation.
+///
 extension EnvironmentValues {
+
     var workspaceNoteVisibility: (UUID, Bool) -> Void {
         get { self[WorkspaceNoteVisibilityKey.self] }
         set { self[WorkspaceNoteVisibilityKey.self] = newValue }
     }
 }
 
+
+///
+/// Defines the workspace bottom-bar height environment value
+///
+/// @section    Purpose
+///     Defaults to zero when content is hosted outside the main workspace chrome.
+///
 private struct WorkspaceBottomBarHeightKey: EnvironmentKey {
+
     static let defaultValue: CGFloat = 0
 }
 
+
+///
+/// Exposes reserved bottom-bar space to workspace content
+///
+/// @section    Purpose
+///     Lets descendants account for the owning toolbar's height without querying a particular
+///     native view hierarchy.
+///
 extension EnvironmentValues {
+
     var workspaceBottomBarHeight: CGFloat {
         get { self[WorkspaceBottomBarHeightKey.self] }
         set { self[WorkspaceBottomBarHeightKey.self] = newValue }
     }
 }
 
-/// Shared section control, matching the individual checklist chevron.
+
+///
+/// Presents a shared expandable-section control
+///
+/// @section    Purpose
+///     Matches checklist chevron behavior while leaving the retained collapse state with the owning
+///     editor.
+///
 struct SectionCollapseButton: View {
-    let title: String
+
+    let title:                String
     @Binding var isCollapsed: Bool
-    var body: some View {
+    var body:                 some View {
         Button { isCollapsed.toggle() } label: {
             Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
                 .font(.caption.weight(.semibold))
@@ -5258,9 +5398,18 @@ struct SectionCollapseButton: View {
     }
 }
 
+
+///
+/// Edits the visibility and ordering of Card sections
+///
+/// @section    Purpose
+///     Keeps layout changes in local state and saves through a checked callback without deleting
+///     hidden section content.
+///
 struct CardLayoutEditor: View {
+
     @State var layout: CardSectionLayout
-    let onSave: (CardSectionLayout) -> Bool
+    let onSave:        (CardSectionLayout) -> Bool
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
@@ -5289,9 +5438,17 @@ struct CardLayoutEditor: View {
     }
 }
 
-/// Select an existing action once on entry to editing, then allow normal caret/selection changes.
+
+///
+/// Bridges checklist action text to native editing
+///
+/// @section    Purpose
+///     Selects existing writing on initial entry, then permits ordinary caret changes and delegates
+///     focus and submission through bindings.
+///
 struct ChecklistTextField: UIViewRepresentable {
-    @Binding var text: String
+
+    @Binding var text:  String
     @Binding var focus: Bool
 
 
@@ -5367,7 +5524,17 @@ struct ChecklistTextField: UIViewRepresentable {
         guard let width = proposal.width else { return nil }
         return CGSize(width: width, height: max(24, uiView.intrinsicContentSize.height))
     }
+
+
+    ///
+    /// Handles checklist text-field editing and submission
+    ///
+    /// @section    Purpose
+    ///     Publishes native text and focus changes through the representable's latest bindings and
+    ///     supports initial selection behavior.
+    ///
     class Coordinator: NSObject, UITextFieldDelegate {
+
         var parent: ChecklistTextField
 
 
@@ -5442,11 +5609,19 @@ struct ChecklistTextField: UIViewRepresentable {
     }
 }
 
-/// Date selection is a draft until Save, allowing calendar and clock controls to be adjusted together.
+
+///
+/// Edits scheduling values as an explicit draft
+///
+/// @section    Purpose
+///     Allows calendar and clock choices to change together and publishes them only when the user
+///     saves.
+///
 struct CardDateEditorSheet: View {
-    let title: String
+
+    let title:            String
     let hasExistingValue: Bool
-    let onSave: (Date?, CardDateKind) -> Bool
+    let onSave:           (Date?, CardDateKind) -> Bool
     @Environment(\.dismiss) private var dismiss
     @State private var date: Date
     @State private var kind: CardDateKind
@@ -5509,12 +5684,21 @@ struct CardDateEditorSheet: View {
     }
 }
 
+
+///
+/// Edits a checklist item's action type as a draft
+///
+/// @section    Purpose
+///     Selects plain, linked-Card, or URL behavior from available candidates and publishes the
+///     resulting item only through checked saving.
+///
 struct ChecklistItemTypeEditor: View {
-    let item: KanbanChecklistItem
-    let candidates: [KanbanCard]
-    let onSave: (KanbanChecklistItem) -> Bool
-    @State private var type: ChecklistItemType
-    @State private var cardID: Int?
+
+    let item:                   KanbanChecklistItem
+    let candidates:             [KanbanCard]
+    let onSave:                 (KanbanChecklistItem) -> Bool
+    @State private var type:    ChecklistItemType
+    @State private var cardID:  Int?
     @State private var urlText: String
     @Environment(\.dismiss) private var dismiss
 
@@ -5585,17 +5769,54 @@ struct ChecklistItemTypeEditor: View {
 }
 
 // Shared accessory actions are scoped to the visible editor, never persisted.
+
+
+///
+/// Carries optional previous and next Card navigation actions
+///
+/// @section    Purpose
+///     Leaves unavailable neighbors nil so keyboard controls can reflect the current owner's
+///     navigable content.
+///
 struct CardKeyboardNavigation {
+
     var previous: (() -> Void)? = nil
-    var next: (() -> Void)? = nil
+    var next:     (() -> Void)? = nil
 }
+
+
+///
+/// Defines default Card keyboard navigation in the environment
+///
+/// @section    Purpose
+///     Uses empty actions until an owning List supplies valid neighboring destinations.
+///
 private struct CardKeyboardNavigationKey: EnvironmentKey { static let defaultValue = CardKeyboardNavigation() }
+
+
+///
+/// Exposes owner-supplied Card keyboard navigation
+///
+/// @section    Purpose
+///     Passes previous and next actions to detail editors without giving them ownership of List
+///     ordering.
+///
 extension EnvironmentValues {
+
     var cardKeyboardNavigation: CardKeyboardNavigation {
         get { self[CardKeyboardNavigationKey.self] }
         set { self[CardKeyboardNavigationKey.self] = newValue }
     }
 }
+
+
+///
+/// Resolves neighboring Cards in display order
+///
+/// @section    Purpose
+///     Flattens eligible active List content and finds adjacent identities without modifying the
+///     Board.
+///
 enum CardKeyboardNeighbors {
 
 
@@ -5618,27 +5839,56 @@ enum CardKeyboardNeighbors {
         return (index > 0 ? items[index - 1] : nil, index + 1 < items.count ? items[index + 1] : nil)
     }
 }
+
+
+///
+/// Carries context-specific keyboard toolbar actions
+///
+/// @section    Purpose
+///     Keeps exit, Card navigation, attachment, checklist, and border choices optional for
+///     different editing surfaces.
+///
 struct KeyboardCardActions {
-    var exit: (() -> Void)? = nil
-    var previous: (() -> Void)? = nil
-    var next: (() -> Void)? = nil
-    var attachment: (() -> Void)? = nil
-    var checklist: (() -> Void)? = nil
+
+    var exit:             (() -> Void)? = nil
+    var previous:         (() -> Void)? = nil
+    var next:             (() -> Void)? = nil
+    var attachment:       (() -> Void)? = nil
+    var checklist:        (() -> Void)? = nil
     var showsUpperBorder: Bool? = nil
 }
+
+
+///
+/// Carries rich-text formatting callbacks for a native input
+///
+/// @section    Purpose
+///     Separates trait, color, and font changes from toolbar construction and underlying text
+///     storage.
+///
 struct KeyboardFormatting {
+
     let toggle: (UIFontDescriptor.SymbolicTraits) -> Void
-    let color: (String) -> Void
-    let font: (String?, Double?) -> Void
+    let color:  (String) -> Void
+    let font:   (String?, Double?) -> Void
 }
 
+
+///
+/// Coordinates keyboard actions for active editing contexts
+///
+/// @section    Purpose
+///     Retains an ordered context stack and a weak native input so toolbar actions follow the
+///     current Card or capture editor.
+///
 @MainActor
 final class PlenactKeyboard {
+
     static let shared = PlenactKeyboard()
-    private var observers: [NSObjectProtocol] = []
-    private var contexts: [(UUID, KeyboardCardActions)] = []
+    private var observers:        [NSObjectProtocol] = []
+    private var contexts:         [(UUID, KeyboardCardActions)] = []
     private weak var activeInput: UIView?
-    var actions: KeyboardCardActions { contexts.last?.1 ?? KeyboardCardActions() }
+    var actions:                  KeyboardCardActions { contexts.last?.1 ?? KeyboardCardActions() }
 
 
     ///
@@ -5734,15 +5984,24 @@ final class PlenactKeyboard {
     }
 }
 
+
+///
+/// Renders the native Plenact keyboard accessory toolbar
+///
+/// @section    Purpose
+///     Connects contextual navigation, Undo, and optional rich-text formatting to the active input
+///     without retaining it strongly.
+///
 @MainActor
 final class PlenactKeyboardToolbar: UIView {
+
     private weak var input: UIView?
     private let formatting: KeyboardFormatting?
     private let keyboardBackdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
     private let upperEdge = CAShapeLayer()
-    private var buttonViews: [(UIBarButtonItem, UIButton)] = []
-    private var undoButton: UIBarButtonItem?
-    private var redoButton: UIBarButtonItem?
+    private var buttonViews:       [(UIBarButtonItem, UIButton)] = []
+    private var undoButton:        UIBarButtonItem?
+    private var redoButton:        UIBarButtonItem?
     private var contextualButtons: [(UIBarButtonItem, KeyPath<KeyboardCardActions, (() -> Void)?>)] = []
 
 
@@ -5997,13 +6256,21 @@ final class PlenactKeyboardToolbar: UIView {
 }
 
 
+///
+/// Presents authored emoji reactions and reaction actions
+///
+/// @section    Purpose
+///     Groups matching emoji for display and delegates toggling or adding to the owner using the
+///     current author identity.
+///
 struct ItemReactionStrip: View {
-    let reactions: [ItemEmojiReaction]
-    let authorID: UUID?
-    let onToggle: (String) -> Void
-    let onAdd: () -> Void
+
+    let reactions:      [ItemEmojiReaction]
+    let authorID:       UUID?
+    let onToggle:       (String) -> Void
+    let onAdd:          () -> Void
     private var emojis: [String] { reactions.reduce(into: []) { if !$0.contains($1.emoji) { $0.append($1.emoji) } } }
-    var body: some View {
+    var body:           some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 ForEach(emojis, id: \.self) { emoji in
@@ -6031,7 +6298,16 @@ struct ItemReactionStrip: View {
     }
 }
 
+
+///
+/// Presents suggested and custom emoji choices
+///
+/// @section    Purpose
+///     Reports a selected reaction through the callback and dismisses without writing Card state
+///     directly.
+///
 struct ItemReactionPicker: View {
+
     let selected: Set<String>
     let onChoose: (String) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -6079,9 +6355,17 @@ struct ItemReactionPicker: View {
     }
 }
 
-/// Read-only summary: preview gestures continue to open, reorder, or delete the item.
+
+///
+/// Displays a noninteractive reaction summary
+///
+/// @section    Purpose
+///     Keeps Card preview opening, reordering, and swipe gestures available rather than adding
+///     reaction mutation controls.
+///
 struct ItemReactionPreview: View {
-    let card: KanbanCard
+
+    let card:           KanbanCard
     private var emojis: [String] {
         card.previewReactions.reduce(into: []) { if !$0.contains($1.emoji) { $0.append($1.emoji) } }
     }
@@ -6126,10 +6410,17 @@ struct ItemReactionPreview: View {
 }
 
 
-/// Presents all retained Card or Note content without installing any editing controls.
+///
+/// Presents locked Card and Note content for reading
+///
+/// @section    Purpose
+///     Displays retained sections and attachments without editing controls and optionally explains
+///     how an editable lock can be removed.
+///
 struct ReadOnlyCardContent: View {
-    let card: KanbanCard
-    let labels: LabelLibrary
+
+    let card:             KanbanCard
+    let labels:           LabelLibrary
     let onOpenAttachment: (KanbanAttachment) -> Void
     var showsUnlockHint = true
 
@@ -6201,8 +6492,16 @@ struct ReadOnlyCardContent: View {
     }
 }
 
-/// Static completion marks and expanded nested action details remain readable while editing is locked.
+
+///
+/// Renders nested checklist content without mutation controls
+///
+/// @section    Purpose
+///     Keeps completion marks and expanded action details readable while respecting the Card's
+///     editing lock.
+///
 private struct ReadOnlyChecklistContent: View {
+
     let checklists: [KanbanChecklist]
 
     var body: some View {

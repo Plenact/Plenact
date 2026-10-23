@@ -1,13 +1,30 @@
+// --------------------------------------------------------------------------------------------------
+// @file       TodayPlan.swift
+// @brief      Daily intentions, owner-qualified priorities, check-ins, and history
+// @details    Defines compatible daily planning documents and checked baseline saves. Presents
+//             intention setting, live priority selection or creation, morning guidance, contextual
+//             check-ins, retained history, and Today summaries without duplicating canonical Cards.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 
-/// A priority is a link, not a second Card. The original owner prevents numeric-ID collisions.
+
+///
+/// Links a daily priority to its original workspace item
+///
+/// @section    Purpose
+///     Retains owner-qualified identity and creation time with a display snapshot so local numeric
+///     IDs cannot resolve to another owner's Card.
+///
 struct DailyPlanPriority: Codable, Hashable, Identifiable {
-    let ownerID: UUID
-    let cardID: Int
-    let title: String
-    let location: String
+
+    let ownerID:         UUID
+    let cardID:          Int
+    let title:           String
+    let location:        String
     let sourceCreatedAt: Date?
-    var id: String { "\(ownerID):\(cardID)" }
+    var id:              String { "\(ownerID):\(cardID)" }
 
 
     ///
@@ -44,18 +61,27 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable {
     }
 }
 
+
+///
+/// Retains intentions, priorities, and review history for one day
+///
+/// @section    Purpose
+///     Uses a local date key and time-zone identity while keeping linked workspace items distinct
+///     from copied planning snapshots.
+///
 struct DailyPlan: Codable, Equatable, Identifiable {
-    let id: String
+
+    let id:         String
     let timeZoneID: String
     var intention = ""
     var constraints = ""
     var concerns = ""
-    var priorities: [DailyPlanPriority] = []
-    var updatedAt: Date? = nil
-    var checkIn: DailyCheckIn? = nil
-    var checkIns: [DailyCheckInEntry]? = nil
-    var eveningReview: DailyEveningReview? = nil
-    var visionStep: Int? = nil
+    var priorities:        [DailyPlanPriority] = []
+    var updatedAt:         Date? = nil
+    var checkIn:           DailyCheckIn? = nil
+    var checkIns:          [DailyCheckInEntry]? = nil
+    var eveningReview:     DailyEveningReview? = nil
+    var visionStep:        Int? = nil
     var visionCompletedAt: Date? = nil
 
 
@@ -76,14 +102,43 @@ struct DailyPlan: Codable, Equatable, Identifiable {
     }
 }
 
+
+///
+/// Persists validated daily planning documents
+///
+/// @section    Purpose
+///     Loads versioned plans and saves against baselines, reporting corruption, unsupported
+///     formats, conflicts, and write failures explicitly.
+///
 @MainActor
 enum DailyPlanStore {
+
     static let key = "Plenact.DailyPlans.v1"
+
+
+    ///
+    /// Wraps daily plans in a versioned document
+    ///
+    /// @section    Purpose
+    ///     Keys retained plans by represented local day and preserves a schema version for
+    ///     compatibility checks.
+    ///
     struct Document: Codable {
+
         var version = 1
         var plans: [String: DailyPlan] = [:]
     }
+
+
+    ///
+    /// Defines recoverable daily-plan storage failures
+    ///
+    /// @section    Purpose
+    ///     Distinguishes unsupported, corrupt, conflicting, and unwritable data and supplies
+    ///     actionable localized messages.
+    ///
     enum Failure: LocalizedError {
+
         case unsupported, corrupt, conflict, write
         var errorDescription: String? {
             switch self {
@@ -192,12 +247,21 @@ enum DailyPlanStore {
     }
 }
 
+
+///
+/// Presents the shared daily planning workspace
+///
+/// @section    Purpose
+///     Loads a baseline-backed plan, coordinates priorities and review destinations, and keeps
+///     unsaved writing available when persistence fails.
+///
 struct TodayPlanView: View {
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.planningCalendarAccess) private var access
-    @State private var date: Date
-    private let defaults: UserDefaults
-    @State private var draft: DailyPlan
+    @State private var date:     Date
+    private let defaults:        UserDefaults
+    @State private var draft:    DailyPlan
     @State private var baseline: DailyPlan?
     @State private var loaded = false
     @State private var loadError: String?
@@ -211,7 +275,7 @@ struct TodayPlanView: View {
     @State private var showsWeeklyReview = false
     @State private var showsPeriodicReview = false
     @State private var confirmsDiscard = false
-    @State private var openedItem: PlanningSearchResult?
+    @State private var openedItem:  PlanningSearchResult?
     private let opensEveningReview: Bool
 
 
@@ -234,7 +298,7 @@ struct TodayPlanView: View {
         self.defaults = defaults
         _draft = State(initialValue: DailyPlan(date: date, calendar: calendar))
     }
-    private var sources: [PlanningSearchResult] { access?.searchableItems ?? [] }
+    private var sources:    [PlanningSearchResult] { access?.searchableItems ?? [] }
     private var hasChanges: Bool {
         guard loaded, loadError == nil else { return false }
         return draft != (baseline ?? DailyPlan(date: date, calendar: planCalendar))
@@ -492,8 +556,17 @@ struct TodayPlanView: View {
     }
 }
 
+
+///
+/// Selects live workspace items as daily priorities
+///
+/// @section    Purpose
+///     Searches supplied owner-qualified sources and updates linked priority references without
+///     duplicating their Cards.
+///
 struct DailyPriorityPicker: View {
-    let sources: [PlanningSearchResult]
+
+    let sources:             [PlanningSearchResult]
     @Binding var priorities: [DailyPlanPriority]
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -534,6 +607,14 @@ struct DailyPriorityPicker: View {
     }
 }
 
+
+///
+/// Creates a new item for inclusion as a daily priority
+///
+/// @section    Purpose
+///     Uses the selected calendar or personal owner and returns its searchable reference only after
+///     content and attachments are accepted.
+///
 @MainActor
 enum DailyPriorityCreation {
 
@@ -577,7 +658,16 @@ enum DailyPriorityCreation {
     }
 }
 
+
+///
+/// Edits a new daily priority item before creation
+///
+/// @section    Purpose
+///     Retains writing, destination, and attachment drafts and reports the created owner-qualified
+///     result through the caller's callback.
+///
 private struct NewDailyPriorityView: View {
+
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     let onCreate: (PlanningSearchResult) -> Void
@@ -586,7 +676,7 @@ private struct NewDailyPriorityView: View {
     @State private var title = ""
     @State private var bodyText = ""
     @State private var presentation: ItemPresentation = .card
-    @State private var destination: WorkspaceListReference?
+    @State private var destination:  WorkspaceListReference?
     @State private var initialized = false
     @State private var error: String?
     @State private var confirmsDiscard = false
@@ -696,7 +786,13 @@ private struct NewDailyPriorityView: View {
     }
 }
 
-/// Morning suggestions are a projection of canonical dated content, never automatic moves.
+
+///
+/// Derives morning priority suggestions
+///
+/// @section    Purpose
+///     Projects canonical dated content and existing priorities without moving items automatically.
+///
 enum TodayVisionSelection {
 
 
@@ -732,10 +828,19 @@ enum TodayVisionSelection {
     }
 }
 
+
+///
+/// Guides morning intention and priority selection
+///
+/// @section    Purpose
+///     Edits the shared Daily plan, offers live workspace candidates, and routes deliberate
+///     movement and saving through checked callbacks.
+///
 struct TodayVisionView: View {
+
     @Binding var plan: DailyPlan
-    let date: Date
-    let onSave: () -> Bool
+    let date:          Date
+    let onSave:        () -> Bool
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var step = 0
@@ -750,7 +855,7 @@ struct TodayVisionView: View {
         result.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
         return result
     }
-    private var sources: [PlanningSearchResult] { access?.searchableItems ?? [] }
+    private var sources:    [PlanningSearchResult] { access?.searchableItems ?? [] }
     private var candidates: [PlanningSearchResult] {
         guard let access else { return [] }
         let labels = LabelLibraryStore.load().labels.filter { $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id }
@@ -903,16 +1008,32 @@ struct TodayVisionView: View {
 }
 
 
+///
+/// Retains the current daily check-in state
+///
+/// @section    Purpose
+///     Stores the chosen focus, changed-context writing, and optional submission time independently
+///     of historical check-in entries.
+///
 struct DailyCheckIn: Codable, Equatable {
+
     var focus: DailyPlanPriority? = nil
     var changed = ""
     var savedAt: Date? = nil
 }
 
-/// Stored as values so custom feelings and future preset changes preserve the original entry.
+
+///
+/// Retains a submitted feeling as values
+///
+/// @section    Purpose
+///     Preserves the original emoji and label even when presets change or the user chooses a custom
+///     feeling.
+///
 struct CheckInMood: Codable, Equatable {
-    let emoji: String
-    let label: String
+
+    let emoji:   String
+    let label:   String
     var display: String { emoji + " " + label }
 
 
@@ -939,9 +1060,18 @@ struct CheckInMood: Codable, Equatable {
     }
 }
 
+
+///
+/// Defines preset and custom check-in mood choices
+///
+/// @section    Purpose
+///     Maps named choices to retained emoji and label values while leaving none and custom choices
+///     unresolved for user input.
+///
 enum CheckInMoodChoice: String, CaseIterable, Identifiable {
+
     case none, great, good, okay, low, struggling, custom
-    var id: Self { self }
+    var id:   Self { self }
     var mood: CheckInMood? {
         switch self {
         case .none, .custom: nil
@@ -961,25 +1091,42 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable {
     }
 }
 
-/// A submitted moment retains its own context even as the shared plan changes.
+
+///
+/// Retains one submitted check-in moment
+///
+/// @section    Purpose
+///     Stores its writing, focus, plan context, and available progress snapshot so subsequent plan
+///     edits do not rewrite history.
+///
 struct DailyCheckInEntry: Codable, Equatable, Identifiable {
-    let id: String
-    let savedAt: Date
-    let changed: String
-    let focus: DailyPlanPriority?
-    let intention: String
-    let constraints: String
-    let concerns: String
-    let priorities: [DailyPlanPriority]
+
+    let id:             String
+    let savedAt:        Date
+    let changed:        String
+    let focus:          DailyPlanPriority?
+    let intention:      String
+    let constraints:    String
+    let concerns:       String
+    let priorities:     [DailyPlanPriority]
     let completedTasks: Int?
-    let totalTasks: Int?
-    let notes: Int?
-    let unavailable: Int?
-    let legacy: Bool
-    var mood: CheckInMood? = nil
+    let totalTasks:     Int?
+    let notes:          Int?
+    let unavailable:    Int?
+    let legacy:         Bool
+    var mood:           CheckInMood? = nil
 }
 
+
+///
+/// Provides compatible check-in history projections
+///
+/// @section    Purpose
+///     Exposes retained entries and converts a legacy submitted check-in without inventing
+///     unavailable plan or progress snapshots.
+///
 extension DailyPlan {
+
     /// Legacy records have no historical plan/progress snapshot. Do not invent one.
     var checkInHistory: [DailyCheckInEntry] {
         if let checkIns { return checkIns }
@@ -1016,17 +1163,25 @@ extension DailyPlan {
     }
 }
 
-/// Saved records only: opening or browsing this view never writes a plan.
+
+///
+/// Browses retained daily planning history
+///
+/// @section    Purpose
+///     Reads saved intentions, check-ins, and reviews without writing a plan merely because history
+///     is opened.
+///
 struct DailyHistoryReviewView: View {
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.scenePhase) private var scenePhase
     @State private var date: Date
     @State private var document = DailyPlanStore.Document()
-    @State private var loadError: String?
+    @State private var loadError:       String?
     @AppStorage private var storedData: Data
-    private let calendar: Calendar
-    private let defaults: UserDefaults
+    private let calendar:               Calendar
+    private let defaults:               UserDefaults
 
 
     ///
@@ -1046,7 +1201,7 @@ struct DailyHistoryReviewView: View {
         self.calendar = calendar; self.defaults = defaults
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
     }
-    private var plan: DailyPlan? { document.plans[PlanningDate.key(date, calendar: calendar)] }
+    private var plan:    DailyPlan? { document.plans[PlanningDate.key(date, calendar: calendar)] }
     private var isToday: Bool { calendar.isDateInToday(date) }
 
 
@@ -1193,7 +1348,14 @@ struct DailyHistoryReviewView: View {
     }
 }
 
-/// Live progress counts tasks only; Notes and unavailable links remain separate context.
+
+///
+/// Summarizes live progress for linked daily priorities
+///
+/// @section    Purpose
+///     Counts task completion while retaining Notes and unavailable links as separate context
+///     rather than treating them as unfinished tasks.
+///
 enum DailyCheckInProgress {
 
 
@@ -1241,10 +1403,19 @@ enum DailyCheckInProgress {
     }
 }
 
+
+///
+/// Presents a new check-in against the shared Daily plan
+///
+/// @section    Purpose
+///     Resolves live priorities, records current context and progress on submission, and leaves the
+///     draft available when saving fails.
+///
 struct TodayCheckInView: View {
+
     @Binding var plan: DailyPlan
-    let date: Date
-    let onSave: () -> Bool
+    let date:          Date
+    let onSave:        () -> Bool
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var showsPicker = false
@@ -1412,18 +1583,26 @@ struct TodayCheckInView: View {
     }
 }
 
-/// Read-only front door to the same saved daily plan used by every daily review.
+
+///
+/// Presents the saved Daily plan summary in Today
+///
+/// @section    Purpose
+///     Uses the same retained plan as the review workflows and delegates opening without modifying
+///     history.
+///
 struct TodayPlanSummaryPanel: View {
-    @ScaledMetric(relativeTo: .title2) private var headingSize: CGFloat = 26
+
+    @ScaledMetric(relativeTo: .title2) private var headingSize:    CGFloat = 26
     @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 19
-    let date: Date
-    let calendar: Calendar
-    let sources: [PlanningSearchResult]
-    let onOpen: () -> Void
-    let welcomesPlan: Bool
-    private let defaults: UserDefaults
-    @AppStorage private var storedData: Data
+    @ScaledMetric(relativeTo: .body) private var bodySize:         CGFloat = 19
+    let date:                                                      Date
+    let calendar:                                                  Calendar
+    let sources:                                                   [PlanningSearchResult]
+    let onOpen:                                                    () -> Void
+    let welcomesPlan:                                              Bool
+    private let defaults:                                          UserDefaults
+    @AppStorage private var storedData:                            Data
     @Environment(\.scenePhase) private var scenePhase
     @State private var plan: DailyPlan?
     @State private var readFailed = false

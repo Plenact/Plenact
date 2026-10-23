@@ -1,8 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       PlenactDemoAccountSection.swift
-// @brief      Shared demo login, directory, and SampleData initialization controls
-// @details    Exposes authentication and a synthetic shared-demo Board separately from local
-//             profile and Board storage; this is not production multi-tenant synchronization
+// @brief      Explicit shared-demo authentication, directory, and sample Board controls
+// @details    Provides login, member provisioning, assignments, and optimistic shared Board writes
+//             through the demo API client. Keeps remote session state and explicit SampleData
+//             initialization separate from the device's local profile, planning owners, and
+//             ordinary Board edits.
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -32,7 +34,7 @@ struct PlenactDemoAccountSection: View {
     @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?   /* Last fetched server snapshot    */
     @State private var remoteDraft:          PlenactBoardDocument?           /* Editable remote-only Board copy */
 
-    @State private var currentRevision:      Int64?  /* Last fetched server revision                */
+    @State private var currentRevision: Int64?       /* Last fetched server revision                */
     @State private var activeOperationCount = 0      /* Number of in-flight demo service operations */
 
     ///

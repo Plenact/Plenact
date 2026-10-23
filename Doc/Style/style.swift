@@ -1,6 +1,6 @@
 import Foundation
 
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // @file       style.swift
 // @brief      Swift style template with disciplined, human-readable engineering headers
 // @details    This file combines modern Swift conventions with a function/header style that matches
@@ -15,6 +15,7 @@ import Foundation
 //             File headers use @file, @brief, and @details; add notes and sections when relevant
 //             Keep @author, @created, and @last rev header tags only in App.swift
 //             Function headers use @fcn, @brief, @details, and @return, plus @param for each input
+//             Type headers describe the declaration and include a focused @section Purpose
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
 //             Vertically align both /* and */ markers in consecutive trailing block-comment groups
@@ -31,10 +32,10 @@ import Foundation
 // @section    Legal Disclaimer
 //      Company confidential and for template/reference use only
 //
-// --------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 
-// -------------------------------------- MARK: - Metadata ------------------------------------- //
+// -------------------------------------- MARK: - Metadata -------------------------------------- //
 
 
 ///
@@ -71,10 +72,10 @@ enum AppMetadata {
 ///
 enum AppError: LocalizedError, Sendable {
 
-    case missingConfiguration    /* Missing required configuration          */
-    case invalidInput(String)    /* Invalid input with associated message   */
-    case networkFailure(String)  /* Network failure with associated message */
-    case unknown                 /* Unknown error                           */
+    case missingConfiguration       /* Missing required configuration          */
+    case invalidInput(String)       /* Invalid input with associated message   */
+    case networkFailure(String)     /* Network failure with associated message */
+    case unknown                    /* Unknown error                           */
 
     ///
     /// @fcn        AppError.errorDescription
@@ -95,10 +96,10 @@ enum AppError: LocalizedError, Sendable {
             case .missingConfiguration:
                 return "Missing required configuration."
 
-            case .invalidInput(let message): /* Example input-validation message */
+            case .invalidInput(let message):                /* Example input-validation message   */
                 return "Invalid input: \(message)"
 
-            case .networkFailure(let message): /* Example network-failure message */
+            case .networkFailure(let message):              /* Example network-failure message    */
                 return "Network request failed: \(message)"
 
             case .unknown:
@@ -132,10 +133,10 @@ struct Item: Identifiable, Codable, Sendable {
     /// @brief      Initialize a model with defaults and explicit values
     /// @details    Default values keep the data structure practical while preserving readability
     ///
-    /// @param[in]  id          Unique identifier for the item
-    /// @param[in]  title       Display title
-    /// @param[in]  detail      Optional secondary content
-    /// @param[in]  createdAt   Timestamp for creation or retrieval
+    /// @param[in]  id         Unique identifier for the item
+    /// @param[in]  title      Display title
+    /// @param[in]  detail     Optional secondary content
+    /// @param[in]  createdAt  Timestamp for creation or retrieval
     ///
     /// @return     (Item) configured instance
     ///
@@ -208,7 +209,7 @@ final class ItemService: ItemServiceProtocol {
 }
 
 
-// -------------------------------------- MARK: - View Model ----------------------------------- //
+// -------------------------------------- MARK: - View Model ------------------------------------ //
 
 
 ///
@@ -233,7 +234,7 @@ final class ItemListViewModel: ObservableObject {
     /// @brief      Create the view model with a concrete service dependency
     /// @details    Default injection keeps the model easy to test and replace
     ///
-    /// @param[in]  service     concrete service implementation
+    /// @param[in]  service  concrete service implementation
     ///
     /// @return     (ItemListViewModel) configured instance
     ///
@@ -281,7 +282,7 @@ final class ItemListViewModel: ObservableObject {
 }
 
 
-// -------------------------------------- MARK: - Utility -------------------------------------- //
+// -------------------------------------- MARK: - Utility --------------------------------------- //
 
 
 ///
@@ -307,7 +308,7 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
 }
 
 
-// -------------------------------------- MARK: - Entry Point ---------------------------------- //
+// -------------------------------------- MARK: - Entry Point ----------------------------------- //
 
 
 ///

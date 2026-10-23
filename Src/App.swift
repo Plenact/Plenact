@@ -6072,9 +6072,7 @@ struct ImportantItemIndicator: View {
     var body: some View {
         if level > 0 {
             Button {
-                if let owner = ownerID ?? source {
-                    importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner, direction: 1, data: importantData)
-                } else { importance?.adjust(cardID, 1) }
+                adjustImportance(by: 1)
             } label: {
                 ImportanceStarCluster(level: level, style: PlanPreferencesStore.resolved(
                     preferencesData: preferencesData, profileData: profileData).importanceStarStyle)
@@ -6082,16 +6080,47 @@ struct ImportantItemIndicator: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .background(ImportanceInteractionRegion())
+            .highPriorityGesture(
+                LongPressGesture(minimumDuration: 0.55, maximumDistance: 12)
+                    .exclusively(before: TapGesture())
+                    .onEnded { result in
+                        switch result {
+                        case .first(let completed):
+                            if completed { adjustImportance(by: -1) }
+                        case .second:
+                            adjustImportance(by: 1)
+                        }
+                    }
+            )
+            .accessibilityHint("Tap to increase importance. Touch and hold to decrease it by one star.")
             .accessibilityLabel(level == 5 ? "Maximum importance" : "Increase importance")
             .accessibilityValue("\(level) of five")
             .accessibilityIdentifier("item.important")
-            .accessibilityAction(named: "Decrease importance") {
-                if let owner = ownerID ?? source {
-                    importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner, direction: -1, data: importantData)
-                } else { importance?.adjust(cardID, -1) }
-            }
+            .accessibilityAction(named: "Decrease importance") { adjustImportance(by: -1) }
         }
     }
+
+    ///
+    /// @fcn        ImportantItemIndicator.adjustImportance(by:)
+    /// @brief      Apply one mutually exclusive tap or hold gesture to the current importance
+    /// @details    Shares owner-qualified persistence with menu actions. A successful hold gives
+    ///             one selection haptic and never repeats while the finger remains down.
+    ///
+    /// @param[in]  direction  Positive adds a layer; negative removes one
+    ///
+    /// @return     (Void) changes importance by at most one bounded step
+    ///
+    private func adjustImportance(by direction: Int) {
+        let previous = level
+        guard direction > 0 ? previous < 5 : previous > 0 else { return }
+        if let owner = ownerID ?? source {
+            importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner,
+                direction: direction, data: importantData)
+        } else { importance?.adjust(cardID, direction) }
+        if direction < 0 { UISelectionFeedbackGenerator().selectionChanged() }
+    }
+
 }
 
 struct LibraryImportanceAccess {

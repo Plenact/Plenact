@@ -32,21 +32,7 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 - Bug! Where after applying the Jmr template, I think it was, half of the lower toolbar's background disappears!
 
-- Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
-
 - Dragging on the Today view slogan rolls off gradually, and not immediate like present
-
-- So if taps on a cards importance stars increase it, a hold there then decreases italics
-
-- Card backgrounds
-    A. Notes
-    B. Lists?
-    C. Cards?
-    D. Boards?
-    *. Pictures?
-    *. Textures?
-    *. Gradients?
-	*. Thoughts?
 
 - Careful keyboard upper buttons selection and actions for all keyboard locations in app
 

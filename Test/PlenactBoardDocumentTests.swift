@@ -4237,6 +4237,30 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testBoardCardSwipeRoutingUsesTheInitialPhysicalRightQuarter
+    /// @brief      Verify the seventy-five percent boundary across preview sizes and positions
+    /// @details    Uses actual Card coordinates rather than screen coordinates, with no ownership
+    ///             change based on later finger travel. Invalid and out-of-Card starts are rejected.
+    ///
+    /// @return     (Void) records routing assertions
+    ///
+    func testBoardCardSwipeRoutingUsesTheInitialPhysicalRightQuarter() {
+        for width: CGFloat in [100, 240, 320, 480] {
+            let bounds = CGRect(x: 20, y: 10, width: width, height: 80)
+            for fraction: CGFloat in [0, 0.25, 0.5, 0.749] {
+                XCTAssertFalse(BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: 20 + width * fraction, y: 30), bounds: bounds))
+            }
+            for fraction: CGFloat in [0.75, 0.85, 0.99] {
+                XCTAssertTrue(BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: 20 + width * fraction, y: 30), bounds: bounds))
+            }
+            XCTAssertFalse(BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: bounds.maxX + 1, y: 30), bounds: bounds))
+            XCTAssertFalse(BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: bounds.midX, y: 100), bounds: bounds))
+        }
+        XCTAssertFalse(BoardCardSwipeRouting.routesToBoard(start: .zero, bounds: .zero))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling
     /// @brief      Verify that week And Library Boards Prioritize Inner List Swipes Without Disabling Scrolling
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
@@ -4280,6 +4304,10 @@ final class PlenactBoardDocumentTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(350))
             let list = try XCTUnwrap(collections(in: host.view).first)
             XCTAssertGreaterThan(BoardListSwipePriority.install(for: list), 0)
+            let gate = try XCTUnwrap(list.gestureRecognizers?.compactMap { $0 as? BoardCardSwipeGate }.first)
+            XCTAssertEqual(gate.markers.allObjects.count, 2)
+            XCTAssertTrue(gate.markers.allObjects.allSatisfy { $0.bounds.width > 0 })
+            XCTAssertFalse(gate.cancelsTouchesInView)
             XCTAssertTrue(list.isScrollEnabled)
             XCTAssertTrue(list.panGestureRecognizer.isEnabled)
             var ancestor = list.superview
@@ -4290,6 +4318,17 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }
             XCTAssertTrue(try XCTUnwrap(board).isScrollEnabled)
             XCTAssertTrue(try XCTUnwrap(board).panGestureRecognizer.isEnabled)
+            XCTAssertTrue(gate.gestureRecognizer(gate, shouldRecognizeSimultaneouslyWith: try XCTUnwrap(board).panGestureRecognizer))
+            XCTAssertFalse(gate.gestureRecognizer(gate, shouldRecognizeSimultaneouslyWith: list.panGestureRecognizer))
+            if personal {
+                let standalone = UIHostingController(rootView: ContentView(lists: .constant([lists[0]]), allowsAddingLists: false,
+                    fillsAvailableListWidth: true, retainedAttachmentLists: { [] }, personalCollectionID: owner, viewportOwnerID: owner))
+                window.rootViewController = standalone
+                try await Task.sleep(for: .milliseconds(350))
+                let standaloneList = try XCTUnwrap(collections(in: standalone.view).first)
+                XCTAssertFalse(standaloneList.gestureRecognizers?.contains { $0 is BoardCardSwipeGate } == true,
+                    "A standalone List must retain full-width native swipe-to-delete")
+            }
             print("BOARD_LIST_NATIVE_PANS=" + (list.gestureRecognizers ?? []).map { String(describing: type(of: $0)) }.joined(separator: ","))
             window.rootViewController = nil
         }

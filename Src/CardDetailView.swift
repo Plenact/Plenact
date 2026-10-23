@@ -1,9 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       CardDetailView.swift
-// @brief      Detailed kanban card presentation and supporting components
-// @details    Defines the card detail screen, sections, actions, metadata rows, and activity feed
-//             This root-level source is legacy and is not included in the active Xcode target;
-//             the compiled implementation is maintained in Src/Features/Boards/CardDetailView.swift
+// @brief      Legacy Card detail reference retained outside the application target
+// @details    Retains the earlier Card detail screen, checklist controls, activity rows, and
+//             metadata editors. The active compiled implementation is
+//             Src/Features/Boards/CardDetailView.swift; this reference is not the current feature
+//             or persistence integration point.
 //
 // @notes      Supporting views are intentionally small and reusable within the detail screen
 //
@@ -25,6 +26,7 @@ import UniformTypeIdentifiers
 /// @note   Boundary actions are disabled in ChecklistBlock when no movement is possible
 ///
 enum ChecklistMoveDirection {
+
     case top
     case up
     case down
@@ -136,6 +138,7 @@ struct CardDetailView: View {
     ///     the card
     ///
     private enum GeneratedActivity: String, CaseIterable, Identifiable {
+
         case addedCard       /* Card was added to the board           */
         case createdCard     /* Card was created on the board         */
         case initialComment  /* Initial comment was added to the card */
@@ -188,6 +191,7 @@ struct CardDetailView: View {
     /// @note   This filter is presentation state and is not persisted with the card
     ///
     private enum ActivityFilter: String, CaseIterable, Identifiable {
+
         case all           /* All activity entries for the card       */
         case comments      /* User-added comments for the card        */
         case cardActivity  /* Generated activity entries for the card */
@@ -228,44 +232,45 @@ struct CardDetailView: View {
     ///     Keep text-field focus state explicit across title, subtitle, description, and comment entry
     ///
     private enum EditableField: Hashable {
+
         case title        /* The title field is being edited       */
         case subtitle     /* The subtitle field is being edited    */
         case description  /* The description field is being edited */
         case comment      /* The comment field is being edited     */
     }
 
-    let card: KanbanCard                          /* The kanban card being displayed in detail                */
-    @Binding var labelLibrary: LabelLibrary       /* Shared label catalog available to every card             */
-    let availableLists: [KanbanList]              /* Other lists that can receive this card                   */
-    let memberColors:   [String: Color]           /* Shared icon colors keyed by normalized member name       */
-    let currentUserName: String                   /* Current actor name shown in card activity                */
-    let onTitleToggle:   ((KanbanCard) -> Void)?  /* Callback invoked when the card title checkbox is toggled */
-    let onMoveToList:    ((Int) -> Void)?         /* Callback invoked to move the card to a selected list     */
+    let card:                  KanbanCard              /* The kanban card being displayed in detail                */
+    @Binding var labelLibrary: LabelLibrary            /* Shared label catalog available to every card             */
+    let availableLists:        [KanbanList]            /* Other lists that can receive this card                   */
+    let memberColors:          [String: Color]         /* Shared icon colors keyed by normalized member name       */
+    let currentUserName:       String                  /* Current actor name shown in card activity                */
+    let onTitleToggle:         ((KanbanCard) -> Void)? /* Callback invoked when the card title checkbox is toggled */
+    let onMoveToList:          ((Int) -> Void)?        /* Callback invoked to move the card to a selected list     */
 
     @Environment(\.dismiss) private var dismiss           /* Dismiss action for the card detail view                    */
     @FocusState private var focusedField: EditableField?  /* current focused editable field within the card detail view */
 
-    @State private var checklists:         [KanbanChecklist]   /* The checklist groups associated with the selected card   */
-    @State private var checklistToFocus:   UUID?               /* Newly added checklist whose first item should be focused */
-    @State private var titleChecked:       Bool                /* Whether the card title itself is checked                 */
-    @State private var titleText:          String              /* Editable card title displayed in the detail header       */
-    @State private var subtitleText:       String              /* Editable card subtitle displayed in the detail header    */
-    @State private var startDate:          Date?               /* Optional start date for the selected card                */
-    @State private var dueDate:            Date?               /* Optional due date for the selected card                  */
-    @State private var descriptionText:    String              /* Editable description shown on this card                  */
-    @State private var activeSheet:        ActiveSheet?        /* The date picker or member editor currently presented     */
-    @State private var comments:           [KanbanComment]     /* Comments saved to this card's activity                   */
-    @State private var members:            [String]            /* Users assigned to the selected card                      */
-    @State private var selectedLabelIDs:   [String]            /* Stable IDs of labels assigned to this card               */
-    @State private var attachments:        [KanbanAttachment]  /* Photo attachments currently assigned to the card         */
+    @State private var checklists:       [KanbanChecklist]     /* The checklist groups associated with the selected card   */
+    @State private var checklistToFocus: UUID?                 /* Newly added checklist whose first item should be focused */
+    @State private var titleChecked:     Bool                  /* Whether the card title itself is checked                 */
+    @State private var titleText:        String                /* Editable card title displayed in the detail header       */
+    @State private var subtitleText:     String                /* Editable card subtitle displayed in the detail header    */
+    @State private var startDate:        Date?                 /* Optional start date for the selected card                */
+    @State private var dueDate:          Date?                 /* Optional due date for the selected card                  */
+    @State private var descriptionText:  String                /* Editable description shown on this card                  */
+    @State private var activeSheet:      ActiveSheet?          /* The date picker or member editor currently presented     */
+    @State private var comments:         [KanbanComment]       /* Comments saved to this card's activity                   */
+    @State private var members:          [String]              /* Users assigned to the selected card                      */
+    @State private var selectedLabelIDs: [String]              /* Stable IDs of labels assigned to this card               */
+    @State private var attachments:      [KanbanAttachment]    /* Photo attachments currently assigned to the card         */
 
     @State private var selectedPhotoItems: [PhotosPickerItem] = [] /* Photos selected from the system photo library          */
 
-    @State private var commentDraft = ""                      /* Text currently entered in the comment composer               */
-    @State private var dismissedActivityIDs: Set<String>      /* IDs of activity entries that have been dismissed by the user */
-    @State private var activityFilter: ActivityFilter = .all  /* The currently selected activity filter for the card          */
-    @State private var showingAttachmentNotice = false        /* Whether an attachment notice is presented                    */
-    @State private var attachmentNoticeMessage = ""           /* Explanation shown for failed or unavailable sources          */
+    @State private var commentDraft = ""                           /* Text currently entered in the comment composer               */
+    @State private var dismissedActivityIDs: Set<String>           /* IDs of activity entries that have been dismissed by the user */
+    @State private var activityFilter:       ActivityFilter = .all /* The currently selected activity filter for the card          */
+    @State private var showingAttachmentNotice = false             /* Whether an attachment notice is presented                    */
+    @State private var attachmentNoticeMessage = ""                /* Explanation shown for failed or unavailable sources          */
 
 
     ///
@@ -274,13 +279,13 @@ struct CardDetailView: View {
     /// @details    Seeds editable state from the supplied card and stores the label catalog,
     ///             destination lists, member colors, and parent callbacks
     ///
-    /// @param[in]  card        The kanban card being displayed in detail
-    /// @param[in]  labelLibrary  Shared catalog used to resolve and assign card labels
-    /// @param[in]  availableLists  Other lists available as move destinations
-    /// @param[in]  memberColors  Display colors keyed by normalized member name
+    /// @param[in]  card             The kanban card being displayed in detail
+    /// @param[in]  labelLibrary     Shared catalog used to resolve and assign card labels
+    /// @param[in]  availableLists   Other lists available as move destinations
+    /// @param[in]  memberColors     Display colors keyed by normalized member name
     /// @param[in]  currentUserName  Actor name shown in card activity
-    /// @param[in]  onTitleToggle  Optional callback receiving updated card state
-    /// @param[in]  onMoveToList  Optional callback for moving the card to a list
+    /// @param[in]  onTitleToggle    Optional callback receiving updated card state
+    /// @param[in]  onMoveToList     Optional callback for moving the card to a list
     /// @return     (CardDetailView) configured card detail presentation
     /// @post       Local editing state reflects the supplied card values
     ///
@@ -1835,8 +1840,8 @@ struct CardDetailView: View {
 ///
 private struct CardMembersSheet: View {
 
-    let onSave: ([String]) -> Void     /* Callback to be invoked when the list of members is saved */
-    let memberColors: [String: Color]  /* Shared icon colors keyed by normalized member name       */
+    let onSave:       ([String]) -> Void /* Callback to be invoked when the list of members is saved */
+    let memberColors: [String: Color]    /* Shared icon colors keyed by normalized member name       */
 
     @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet                                */
     @State private var members: [String]         /* Local copy of the members list for editing within the sheet */
@@ -2133,9 +2138,9 @@ struct DetailSection<Content: View>: View {
 ///
 struct ActionTile: View {
 
-    let title: String       /* The title of the action tile                  */
-    let icon:  String       /* The icon representing the action tile         */
-    let color: Color        /* The color of the action tile                  */
+    let title:  String      /* The title of the action tile                  */
+    let icon:   String      /* The icon representing the action tile         */
+    let color:  Color       /* The color of the action tile                  */
     let action: () -> Void  /* The action to perform when the tile is tapped */
 
     ///
@@ -2220,19 +2225,19 @@ struct DetailRow: View {
 ///
 struct ChecklistBlock: View {
 
-    let checklist: KanbanChecklist                /* The checklist data rendered by the block                                */
-    let onDelete: ()        -> Void               /* The action invoked when the checklist is deleted                        */
-    let onAddItem: ()       -> Void               /* The action invoked when a new item is added                             */
-    let onToggleItem: (Int) -> Void               /* The action invoked when an item is toggled                              */
-    let onUpdateItem: (Int, String) -> Void       /* The action invoked when item text is edited                             */
-    let onDeleteItem: (Int)  -> Void              /* The action invoked when an item is deleted                              */
-    let onRename: (String)   -> Void              /* The action invoked when the checklist title is renamed                  */
-    let onToggleAllItems: () -> Void              /* The action invoked when all items are toggled                           */
-    let onMove: (ChecklistMoveDirection) -> Void  /* The action invoked when the checklist is moved                          */
-    let canMoveUp: Bool                           /* Whether the checklist can be moved up in the list                       */
-    let canMoveDown: Bool                         /* Whether the checklist can be moved down in the list                     */
-    let focusFirstItem: Bool                      /* Whether the first item should be focused when the checklist is rendered */
-    let onFirstItemFocused: () -> Void            /* The action invoked when the first item receives focus                   */
+    let checklist:          KanbanChecklist                  /* The checklist data rendered by the block                                */
+    let onDelete:           ()        -> Void                /* The action invoked when the checklist is deleted                        */
+    let onAddItem:          ()       -> Void                 /* The action invoked when a new item is added                             */
+    let onToggleItem:       (Int) -> Void                    /* The action invoked when an item is toggled                              */
+    let onUpdateItem:       (Int, String) -> Void            /* The action invoked when item text is edited                             */
+    let onDeleteItem:       (Int)  -> Void                   /* The action invoked when an item is deleted                              */
+    let onRename:           (String)   -> Void               /* The action invoked when the checklist title is renamed                  */
+    let onToggleAllItems:   () -> Void                       /* The action invoked when all items are toggled                           */
+    let onMove:             (ChecklistMoveDirection) -> Void /* The action invoked when the checklist is moved                          */
+    let canMoveUp:          Bool                             /* Whether the checklist can be moved up in the list                       */
+    let canMoveDown:        Bool                             /* Whether the checklist can be moved down in the list                     */
+    let focusFirstItem:     Bool                             /* Whether the first item should be focused when the checklist is rendered */
+    let onFirstItemFocused: () -> Void                       /* The action invoked when the first item receives focus                   */
 
     @State private var isRenaming = false          /* Whether the checklist title is currently being renamed          */
     @State private var titleDraft = ""             /* The draft text for the checklist title being edited             */
@@ -2442,16 +2447,16 @@ struct ChecklistBlock: View {
 ///
 struct ChecklistItemRow: View {
 
-    let item: String                /* The editable item text                                        */
-    let isCompleted: Bool           /* The current completion state                                  */
-    let onToggle: () -> Void        /* The action invoked by the checkbox                            */
-    let onUpdate: (String) -> Void  /* The action invoked by text editing                            */
-    let onDelete: () -> Void        /* The action invoked by delete                                  */
-    let shouldFocus: Bool           /* Indicates whether the text field should receive focus         */
-    let onFocusHandled: () -> Void  /* The action invoked when the text field focus has been handled */
+    let item:           String           /* The editable item text                                        */
+    let isCompleted:    Bool             /* The current completion state                                  */
+    let onToggle:       () -> Void       /* The action invoked by the checkbox                            */
+    let onUpdate:       (String) -> Void /* The action invoked by text editing                            */
+    let onDelete:       () -> Void       /* The action invoked by delete                                  */
+    let shouldFocus:    Bool             /* Indicates whether the text field should receive focus         */
+    let onFocusHandled: () -> Void       /* The action invoked when the text field focus has been handled */
 
-    @State private var horizontalOffset: CGFloat = 0  /* Current swipe translation        */
-    @FocusState private var isTextFocused: Bool       /* Checklist text-field focus state */
+    @State private var horizontalOffset:   CGFloat = 0 /* Current swipe translation        */
+    @FocusState private var isTextFocused: Bool        /* Checklist text-field focus state */
 
 
     ///
@@ -2559,9 +2564,9 @@ struct ChecklistItemRow: View {
 ///
 struct ActivityRow: View {
 
-    let text: String          /* The main text content of the activity row */
-    let actorColor: Color     /* The icon color for the activity actor     */
-    let onDelete: () -> Void  /* Activity deletion callback                */
+    let text:       String     /* The main text content of the activity row */
+    let actorColor: Color      /* The icon color for the activity actor     */
+    let onDelete:   () -> Void /* Activity deletion callback                */
 
 
     ///
@@ -2603,9 +2608,9 @@ struct ActivityRow: View {
 ///
 struct CommentActivityRow: View {
 
-    let comment: KanbanComment  /* The comment data rendered by the row           */
-    let memberColor: Color      /* The assigned icon color for the comment author */
-    let onDelete: () -> Void    /* The action invoked when the comment is deleted */
+    let comment:     KanbanComment /* The comment data rendered by the row           */
+    let memberColor: Color         /* The assigned icon color for the comment author */
+    let onDelete:    () -> Void    /* The action invoked when the comment is deleted */
 
     ///
     /// @fcn        CommentActivityRow.body
@@ -2649,10 +2654,10 @@ struct CommentActivityRow: View {
 ///
 struct ActivitySwipeRow<Content: View>: View {
 
-        let onDelete: () -> Void                          /* The action invoked when the row is deleted     */
-        let deletionAccessibilityLabel: String            /* Accessibility label for the swipe action       */
-        @ViewBuilder let content: () -> Content           /* The content view rendered inside the swipe row */
-        @State private var horizontalOffset: CGFloat = 0  /* The current horizontal offset of the swipe row */
+        let onDelete:                        () -> Void    /* The action invoked when the row is deleted     */
+        let deletionAccessibilityLabel:      String        /* Accessibility label for the swipe action       */
+        @ViewBuilder let content:            () -> Content /* The content view rendered inside the swipe row */
+        @State private var horizontalOffset: CGFloat = 0   /* The current horizontal offset of the swipe row */
 
 
         ///
@@ -2660,9 +2665,9 @@ struct ActivitySwipeRow<Content: View>: View {
         /// @brief      Initialize a swipe-to-delete activity row
         /// @details    Stores the deletion callback, accessibility label, and row content builder
         ///
-        /// @param[in]  onDelete  Action invoked when the row is deleted
+        /// @param[in]  onDelete                    Action invoked when the row is deleted
         /// @param[in]  deletionAccessibilityLabel  Accessible description for the delete action
-        /// @param[in]  content  Row content displayed above the destructive background
+        /// @param[in]  content                     Row content displayed above the destructive background
         /// @return     (ActivitySwipeRow) configured activity row
         /// @post       Swipe state starts at its default closed position
         ///

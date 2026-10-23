@@ -1,16 +1,44 @@
+// --------------------------------------------------------------------------------------------------
+// @file       LibraryHelp.swift
+// @brief      Offline Library help catalog and article presentation
+// @details    Defines grouped help articles and paragraph sections, shared catalog searching, and
+//             Library discovery rows. Presents authored guidance with optional planning navigation
+//             while leaving workspace content unchanged during reading.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 
+
+///
+/// Represents one authored help section
+///
+/// @section    Purpose
+///     Keeps a section heading and ordered paragraphs together with a title-derived display
+///     identity.
+///
 struct PlenactHelpSection: Identifiable {
-    let title: String
+
+    let title:      String
     let paragraphs: [String]
-    var id: String { title }
+    var id:         String { title }
 }
+
+
+///
+/// Represents an offline Library help article
+///
+/// @section    Purpose
+///     Combines search metadata, symbol, sections, and an optional planning entry point without
+///     embedding mutable user content.
+///
 struct PlenactHelpArticle: Identifiable {
-    let id: String
-    let group: String
-    let title: String
-    let summary: String
-    let symbol: String
+
+    let id:       String
+    let group:    String
+    let title:    String
+    let summary:  String
+    let symbol:   String
     let sections: [PlenactHelpSection]
     var opensPlan = false
 
@@ -29,7 +57,17 @@ struct PlenactHelpArticle: Identifiable {
         return query.split(whereSeparator: \.isWhitespace).allSatisfy { text.localizedStandardContains(String($0)) }
     }
 }
+
+
+///
+/// Provides the bundled help catalog and search rules
+///
+/// @section    Purpose
+///     Organizes authored articles into groups and constructs paragraph-based sections for
+///     consistent offline presentation.
+///
 enum PlenactHelpCatalog {
+
     static let groups = ["Plan a life that matters", "Make Plenact your own", "Your Planning Rhythm", "Your first week with v1.0"]
 
 
@@ -133,10 +171,19 @@ enum PlenactHelpCatalog {
     static func results(for query: String) -> [PlenactHelpArticle] { articles.filter { $0.matches(query) } }
 }
 
+
+///
+/// Presents matching help articles in the Library
+///
+/// @section    Purpose
+///     Uses the shared catalog search and delegates article opening to the surrounding Library
+///     view.
+///
 struct LibraryHelpRows: View {
-    let query: String
+
+    let query:  String
     var onOpen: (PlenactHelpArticle) -> Void = { _ in }
-    var body: some View {
+    var body:   some View {
         let matches = PlenactHelpCatalog.results(for: query)
         Section {
             VStack(alignment: .leading, spacing: 8) {
@@ -168,7 +215,17 @@ struct LibraryHelpRows: View {
         if matches.isEmpty { Section { ContentUnavailableView.search(text: query) } }
     }
 }
+
+
+///
+/// Displays a bundled help article
+///
+/// @section    Purpose
+///     Renders its authored sections and optionally opens the planning destination using injected
+///     workspace context.
+///
 struct PlenactHelpArticleView: View {
+
     let article: PlenactHelpArticle
     @Environment(\.dismiss) private var dismiss
     @Environment(\.planningCalendarAccess) private var access

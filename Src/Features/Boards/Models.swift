@@ -1,8 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       Models.swift
-// @brief      Domain models and deterministic sample data for the Plenact board
-// @details    Defines cards, lists, derived display values, weekday starter content, and optional
-//             synthetic personal-list examples that create independent unsaved collection drafts
+// @brief      Canonical workspace models, transformations, and local persistence
+// @details    Defines Cards, Notes, Lists, personal collections, rich checklist actions,
+//             appearance, scheduling, reactions, and editing locks. Provides compatible decoding,
+//             owner-safe copying and movement, named sections and guarded Undo, checked local
+//             persistence, and unsaved bundled examples.
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
@@ -111,22 +113,35 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 }
 
 
-/// Selects an item's interface without changing its identity or retained content.
+///
+/// Defines the item's editing presentation
+///
+/// @section    Purpose
+///     Selects Card or Note interface while preserving identity and all retained content.
+///
 enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable {
+
     case card
     case note
 
-    var id: String { rawValue }                            /* Stable item-kind identity         */
+    var id:    String { rawValue }                         /* Stable item-kind identity         */
     var title: String { self == .note ? "Note" : "Card" }  /* User-facing name of the item kind */
 }
 
 
-/// Per-item list rendering; Card/Note creation defaults remain independent.
+///
+/// Defines per-item List preview rendering
+///
+/// @section    Purpose
+///     Separates Card, Note, and picture preview choices from creation-time Card or Note
+///     presentation defaults.
+///
 enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable {
+
     case card, note, divider, picture, title, text
 
-    var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var id:     String { rawValue }
+    var title:  String { rawValue.capitalized }
     var symbol: String {
         switch self {
         case .card: "rectangle.stack"
@@ -139,8 +154,16 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Local starting points; choosing one never creates a stored record.
+
+///
+/// Provides authored quick-capture starting points
+///
+/// @section    Purpose
+///     Supplies local draft content without creating records until the user explicitly submits the
+///     composer.
+///
 enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
+
     case usefulStep, smallPlan, errands, idea, reference, reflection
     case blankCard, blankNote
 
@@ -220,26 +243,59 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable {
 }
 
 
+///
+/// Defines persisted item accent choices
+///
+/// @section    Purpose
+///     Keeps a compact, Codable palette identity that presentation extensions resolve into standard
+///     and header colors.
+///
 enum ItemAccent: String, CaseIterable, Codable, Sendable {
+
     case teal, blue, purple, rose, orange, green, coral, graphite
 }
 
+
+///
+/// Defines persisted muted List surface tints
+///
+/// @section    Purpose
+///     Provides stable cases, identities, and user-facing labels, including the inherited default
+///     tint.
+///
 enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable {
+
     case neutral, blue, green, orange, red
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String { self == .neutral ? "Default" : rawValue.capitalized }
 }
 
-/// Board defaults are separate from explicit per-List overrides.
+
+///
+/// Defines Board-wide Card detail defaults
+///
+/// @section    Purpose
+///     Keeps compact or detailed Board presentation separate from explicit List-level overrides.
+///
 enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable {
+
     case compact, detailed
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String { rawValue.capitalized }
 }
 
+
+///
+/// Defines built-in collection background choices
+///
+/// @section    Purpose
+///     Identifies procedural, bundled photographic, custom-photo, and plain backgrounds
+///     independently of rendering code.
+///
 enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable {
+
     case linen, sage, ocean, plum, sandstone, midnight, photo, tabletop, forestPath, sunlitWall, plain
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String {
         switch self {
         case .linen: "Warm linen"
@@ -257,8 +313,17 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
     }
 }
 
+
+///
+/// Retains a collection background selection
+///
+/// @section    Purpose
+///     Pairs a preset with an optional photo filename and resolves built-in List defaults without
+///     copying attachment data.
+///
 struct CollectionBackground: Hashable, Codable, Sendable {
-    var preset: CollectionBackgroundPreset
+
+    var preset:        CollectionBackgroundPreset
     var photoFileName: String? = nil
 
 
@@ -302,16 +367,25 @@ struct CollectionBackground: Hashable, Codable, Sendable {
     }
 }
 
+
+///
+/// Retains Board-wide appearance defaults
+///
+/// @section    Purpose
+///     Stores optional banner, List, Card, background, and text-color overrides; individual Lists
+///     and items can retain more specific choices.
+///
 struct BoardAppearance: Hashable, Codable, Sendable {
+
     static let weekStorageKey = "Plenact.WeekAppearance.v1"
-    var bannerBackground: ItemAccent? = nil
-    var listBackground: KanbanListTint? = nil
-    var cardBackground: KanbanListTint? = nil
-    var cardDetail: BoardCardDetail? = nil
+    var bannerBackground:     ItemAccent? = nil
+    var listBackground:       KanbanListTint? = nil
+    var cardBackground:       KanbanListTint? = nil
+    var cardDetail:           BoardCardDetail? = nil
     var collectionBackground: CollectionBackground? = nil
-    var cardTitleColor: ListPreviewTextColor? = nil
-    var cardTextColor: ListPreviewTextColor? = nil
-    var addItemTextColor: ProfileColor? = nil
+    var cardTitleColor:       ListPreviewTextColor? = nil
+    var cardTextColor:        ListPreviewTextColor? = nil
+    var addItemTextColor:     ProfileColor? = nil
 
 
     ///
@@ -443,34 +517,61 @@ struct BoardAppearance: Hashable, Codable, Sendable {
     }
 }
 
+
+///
+/// Defines adaptive preview text color choices
+///
+/// @section    Purpose
+///     Persists named palette values whose light and dark rendering is resolved by presentation
+///     extensions.
+///
 enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable {
+
     case graphite, blue, teal, green, plum, rose, amber
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String { rawValue.capitalized }
 }
 
+
+///
+/// Selects a focused List's presentation mode
+///
+/// @section    Purpose
+///     Switches between Card previews and the denser Note List layout without converting the
+///     underlying records.
+///
 enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable {
+
     case cards, noteList
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String { self == .cards ? "Cards" : "Note List" }
 }
 
+
+///
+/// Retains per-item and per-List appearance overrides
+///
+/// @section    Purpose
+///     Keeps colors, icon, collapse state, layout, and display preferences optional so absent
+///     values continue to inherit defaults.
+///
 struct ItemAppearance: Hashable, Codable, Sendable {
-    var accent: ItemAccent?
-    var icon: PersonalCollectionIcon?
-    var background: ItemAccent? = nil
-    var listBackground: KanbanListTint? = nil
-    var cardBackground: KanbanListTint? = nil
-    var cardTitleColor: ListPreviewTextColor? = nil
-    var cardTextColor: ListPreviewTextColor? = nil
-    var addItemTextColor: ProfileColor? = nil
-    var sectionCollapsed: Bool? = nil
-    var hideEmptySubtitle: Bool? = nil
-    var cardDetail: BoardCardDetail? = nil
-    var listViewMode: SingleListViewMode? = nil
-    var iconColor: ProfileColor? = nil
-    var showsIconInHeader: Bool? = nil
-    var listBackgroundOpacity: Double? = nil
+
+    var accent:                        ItemAccent?
+    var icon:                          PersonalCollectionIcon?
+    var background:                    ItemAccent? = nil
+    var listBackground:                KanbanListTint? = nil
+    var cardBackground:                KanbanListTint? = nil
+    var cardTitleColor:                ListPreviewTextColor? = nil
+    var cardTextColor:                 ListPreviewTextColor? = nil
+    var addItemTextColor:              ProfileColor? = nil
+    var sectionCollapsed:              Bool? = nil
+    var hideEmptySubtitle:             Bool? = nil
+    var cardDetail:                    BoardCardDetail? = nil
+    var listViewMode:                  SingleListViewMode? = nil
+    var iconColor:                     ProfileColor? = nil
+    var showsIconInHeader:             Bool? = nil
+    var listBackgroundOpacity:         Double? = nil
     var resolvedListBackgroundOpacity: Double {
         guard let value = listBackgroundOpacity, value.isFinite else { return 1 }
         return min(1, max(0, value))
@@ -494,9 +595,17 @@ struct ItemAppearance: Hashable, Codable, Sendable {
     var isEmpty: Bool { sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil }
 }
 
-/// Creation-only defaults; stored colors remain ordinary editable appearance fields.
+
+///
+/// Applies creation-only random Card color preferences
+///
+/// @section    Purpose
+///     Chooses persisted editable appearance fields for new Cards while leaving existing records,
+///     Notes, and dividers unchanged.
+///
 enum NewCardAppearanceDefaults {
-    static let headerPalette: [ItemAccent] = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
+
+    static let headerPalette:     [ItemAccent] = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
     static let backgroundPalette: [KanbanListTint] = [.blue, .green, .orange, .red]
 
 
@@ -525,17 +634,18 @@ enum NewCardAppearanceDefaults {
     }
 }
 
+
 ///
-/// Represents one card displayed on a kanban list
+/// Distinguishes date-only scheduling from a timed value
 ///
 /// @section    Purpose
-///     Keep one item's identity and content together across Card and Note presentations
-///
-/// @note   Derived values are deterministic so the board and previews remain reproducible
+///     Preserves scheduling intent so calendar-day comparisons and visible date badges do not infer
+///     a time the user did not choose.
 ///
 enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable {
+
     case date, time, dateAndTime
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String {
         switch self { case .date: "Date only"; case .time: "Time only"; case .dateAndTime: "Date & time" }
     }
@@ -582,10 +692,18 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable {
     }
 }
 
-/// Authored marks are independent of labels, importance, bookmarks, and completion.
+
+///
+/// Retains one authored emoji reaction
+///
+/// @section    Purpose
+///     Keeps author identity and emoji independent of labels, importance, bookmarks, and
+///     completion.
+///
 struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
+
     var id = UUID()
-    let emoji: String
+    let emoji:    String
     let authorID: UUID
     var createdAt = Date()
 
@@ -630,8 +748,16 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
-/// A stable local author survives profile creation; reading never creates an identity.
+
+///
+/// Resolves a stable local reaction author
+///
+/// @section    Purpose
+///     Preserves identity across profile creation and avoids creating an identifier merely by
+///     reading reactions.
+///
 enum LocalReactionIdentity {
+
     static let key = "Plenact.LocalReactionAuthor.v1"
 
 
@@ -665,46 +791,56 @@ enum LocalReactionIdentity {
     }
 }
 
+
+///
+/// Represents a retained Card, Note, or section divider
+///
+/// @section    Purpose
+///     Preserves identity, writing, checklists, scheduling, attachments, appearance, and
+///     compatibility fields; optional editing lock protects content without changing its
+///     presentation kind.
+///
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
-    let id:                   Int             /* Stable numeric identifier for the card             */
-    var word:                 String          /* Display word shown as the card's title             */
-    var listTitle:            String          /* Name of the list where the card resides            */
-    var isDivider:            Bool            /* Whether this item is a movable section divider     */
-    var isTitleChecked:       Bool            /* Whether the card's main title checkbox is selected */
+    let id:                    Int             /* Stable numeric identifier for the card             */
+    var word:                  String          /* Display word shown as the card's title             */
+    var listTitle:             String          /* Name of the list where the card resides            */
+    var isDivider:             Bool            /* Whether this item is a movable section divider     */
+    var isTitleChecked:        Bool            /* Whether the card's main title checkbox is selected */
     private var editingLocked: Bool? = nil     /* Missing means editable for older saved records     */
 
     var isEditingLocked: Bool {
         get { editingLocked == true }
         set { editingLocked = newValue ? true : nil }
     }
-    var members:              [CardAssignee]  /* Registered and manual card assignments             */
-    var labelIDs:             [String]        /* Stable IDs of labels assigned to the card          */
+    var members:  [CardAssignee]              /* Registered and manual card assignments             */
+    var labelIDs: [String]                    /* Stable IDs of labels assigned to the card          */
 
-    var startDate:            Date?    /* Optional start date for the card                     */
-    var dueDate:              Date?    /* Optional due date for the card                       */
-    let createdAt:            Date?    /* Unknown for records created before timestamp support */
-    var descriptionOverride:  String?  /* Optional user-edited description                     */
-    var startDateKind: CardDateKind
-    var dueDateKind: CardDateKind
-    var showsDueDateInList: Bool
-    var sectionLayout: CardSectionLayout?
-    var subtitleOverride:     String?             /* Optional user-edited board subtitle                */
+    var startDate:           Date?     /* Optional start date for the card                     */
+    var dueDate:             Date?     /* Optional due date for the card                       */
+    let createdAt:           Date?     /* Unknown for records created before timestamp support */
+    var descriptionOverride: String?   /* Optional user-edited description                     */
+    var startDateKind:       CardDateKind
+    var dueDateKind:         CardDateKind
+    var showsDueDateInList:  Bool
+    var sectionLayout:       CardSectionLayout?
+    var subtitleOverride:    String?              /* Optional user-edited board subtitle                */
 
-    var checklists:           [KanbanChecklist]   /* List of checklists associated with the card        */
+    var checklists:               [KanbanChecklist] /* List of checklists associated with the card        */
     var showsReactionsInPreviews: Bool? = nil
-    var previewReactions: [ItemEmojiReaction] {
+    var previewReactions:         [ItemEmojiReaction] {
         showsReactionsInPreviews != false && !isSectionDivider ? reactions ?? [] : []
     }
-    var reactions: [ItemEmojiReaction]? = nil
-    var comments:             [KanbanComment]      /* Comments posted to the card's activity                  */
-    var attachments:          [KanbanAttachment]?  /* Photo attachments stored with the card                  */
-    var coverAttachmentID:    UUID?                /* Explicitly chosen photo; nil disables this card's cover */
-    var appearance: ItemAppearance? = nil
+    var reactions:         [ItemEmojiReaction]? = nil
+    var comments:          [KanbanComment]         /* Comments posted to the card's activity                  */
+    var attachments:       [KanbanAttachment]?     /* Photo attachments stored with the card                  */
+    var coverAttachmentID: UUID?                   /* Explicitly chosen photo; nil disables this card's cover */
+    var appearance:        ItemAppearance? = nil
 
-    var dismissedActivityIDs: Set<String>            /* Generated activity entries removed by the user        */
-    var listDisplayFormat: ItemDisplayFormat? = nil  /* Explicit override; nil preserves legacy rendering     */
-    private var itemPresentation: ItemPresentation?  /* Optional persisted item kind for legacy compatibility */
+    var dismissedActivityIDs:     Set<String>              /* Generated activity entries removed by the user        */
+    var listDisplayFormat:        ItemDisplayFormat? = nil /* Explicit override; nil preserves legacy rendering     */
+    private var itemPresentation: ItemPresentation?        /* Optional persisted item kind for legacy compatibility */
+
 
     ///
     /// @fcn        KanbanCard.acceptsContentUpdate
@@ -755,8 +891,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @fcn        KanbanCard.replacingLocation(id:listTitle:)
     /// @brief      Rebuild the same complete card under a destination-local identity and List title
     /// @details    Retains all supporting fields and the selected Card/Note presentation
-    /// @param[in]  id        Identity allocated by the destination collection
-    /// @param[in]  listTitle Name of the destination List
+    /// @param[in]  id         Identity allocated by the destination collection
+    /// @param[in]  listTitle  Name of the destination List
     /// @return     (KanbanCard) complete record with only its location identity changed
     ///
     func replacingLocation(id: Int, listTitle: String) -> KanbanCard {
@@ -970,17 +1106,17 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 
 
     ///
-    /// @fcn        KanbanCard.isDividerTitle(_:)
-    /// @brief      Recognize a divider marker in a card title
-    /// @details    Accepts supported dash characters, including iOS smart-punctuation variants
+    /// @fcn        KanbanCard.namedDividerHeading(_:)
+    /// @brief      Extract a heading from supported named-divider syntax
+    /// @details    Trims input, requires at least three supported dash characters followed by
+    ///             whitespace, and returns the remaining nonempty heading without changing the
+    ///             title.
     ///
     /// @param[in]  title  Candidate card title
     ///
-    /// @return     (Bool) whether the title is a recognized divider marker
+    /// @return     (String?) trimmed section heading, or nil when named-divider syntax does not
+    ///             match
     ///
-    /// @post       The title and card state remain unchanged
-    ///
-    /// A named divider uses three or more dashes followed by a space and its heading.
     static func namedDividerHeading(_ title: String) -> String? {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let space = trimmed.firstIndex(where: { $0.isWhitespace }) else { return nil }
@@ -1029,25 +1165,37 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     /// @details    Creates a board card with a stable identifier, displayed word, list membership,
     ///             and the per-card title checkbox state used in the detail view
     ///
-    /// @param[in]  id                    Stable numeric identifier for the card
-    /// @param[in]  word                  Display word shown as the card's title
-    /// @param[in]  listTitle             Name of the list where the card resides
-    /// @param[in]  isDivider             Whether this item is a section divider
-    /// @param[in]  isTitleChecked        Whether the card's main title checkbox is selected
-    /// @param[in]  startDate             Optional start date for the card
-    /// @param[in]  dueDate               Optional due date for the card
-    /// @param[in]  checklists            Checklist groups; nil selects the seeded defaults
-    /// @param[in]  comments              Activity comments associated with the card
-    /// @param[in]  members               Registered and manual card assignments
-    /// @param[in]  labelIDs              Stable identifiers of assigned labels
-    /// @param[in]  attachments           Optional photo attachment metadata
-    /// @param[in]  coverAttachmentID     Explicit cover photo identity; nil keeps the card text-only
-    /// @param[in]  dismissedActivityIDs  Generated activity entries dismissed by the user
-    /// @param[in]  descriptionOverride   Optional user-edited description
-    /// @param[in]  subtitleOverride      Optional user-edited Board subtitle
-    /// @param[in]  presentation          Card or writing-first Note interface
-    /// @param[in]  createdAt             Known creation time; nil preserves unknown legacy dates
-    /// @param[in]  isEditingLocked       Whether content editing is protected until explicitly unlocked
+    /// @param[in]  id                        Stable numeric identifier for the card
+    /// @param[in]  word                      Display word shown as the card's title
+    /// @param[in]  listTitle                 Name of the list where the card resides
+    /// @param[in]  isDivider                 Whether this item is a section divider
+    /// @param[in]  isTitleChecked            Whether the card's main title checkbox is selected
+    /// @param[in]  startDate                 Optional start date for the card
+    /// @param[in]  dueDate                   Optional due date for the card
+    /// @param[in]  checklists                Checklist groups; nil selects the seeded defaults
+    /// @param[in]  comments                  Activity comments associated with the card
+    /// @param[in]  members                   Registered and manual card assignments
+    /// @param[in]  labelIDs                  Stable identifiers of assigned labels
+    /// @param[in]  attachments               Optional photo attachment metadata
+    /// @param[in]  coverAttachmentID         Explicit cover photo identity; nil keeps the card text-only
+    /// @param[in]  dismissedActivityIDs      Generated activity entries dismissed by the user
+    /// @param[in]  descriptionOverride       Optional user-edited description
+    /// @param[in]  subtitleOverride          Optional user-edited Board subtitle
+    /// @param[in]  presentation              Card or writing-first Note interface
+    /// @param[in]  createdAt                 Known creation time; nil preserves unknown legacy dates
+    /// @param[in]  isEditingLocked           Whether content editing is protected until explicitly unlocked
+    ///
+    /// @param[in]  appearance                Optional item-specific appearance overrides
+    /// @param[in]  listDisplayFormat         Optional explicit List preview format, leaving nil to inherit
+    ///             the item presentation
+    /// @param[in]  sectionLayout             Optional retained ordering and visibility of detail sections
+    /// @param[in]  showsDueDateInList        Optional per-item due-date preview override
+    /// @param[in]  startDateKind             Optional date-only or date-and-time interpretation of the start
+    ///             value
+    /// @param[in]  dueDateKind               Optional date-only or date-and-time interpretation of the due value
+    /// @param[in]  reactions                 Retained authored emoji reactions for the item
+    /// @param[in]  showsReactionsInPreviews  Optional override controlling reaction summaries in
+    ///             List previews
     ///
     /// @return     (KanbanCard) configured card instance
     ///
@@ -1157,6 +1305,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
     ///     Preserve established Board JSON keys while upgrading only the member value shape
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id
         case word
         case listTitle
@@ -1482,12 +1631,12 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable {
 ///
 struct KanbanList: Identifiable, Hashable, Codable, Sendable {
 
-    let id:        Int                   /* Unique identifier for the kanban list               */
-    private(set) var title: String       /* Title updated with retained card context            */
-    var subtitleOverride: String? = nil  /* nil preserves legacy generated copy; empty hides it */
-    var cards:     [KanbanCard]          /* Cards contained within the list                     */
-    var archivedCards: [KanbanCard]      /* Cards retained in this list's archive               */
-    var isArchived: Bool = false         /* Whether this list is in the board archive           */
+    let id:                 Int           /* Unique identifier for the kanban list               */
+    private(set) var title: String        /* Title updated with retained card context            */
+    var subtitleOverride:   String? = nil /* nil preserves legacy generated copy; empty hides it */
+    var cards:              [KanbanCard]  /* Cards contained within the list                     */
+    var archivedCards:      [KanbanCard]  /* Cards retained in this list's archive               */
+    var isArchived:         Bool = false  /* Whether this list is in the board archive           */
     var singleListViewMode: SingleListViewMode { appearance?.listViewMode ?? .cards }
 
 
@@ -1607,7 +1756,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
         return cards.first { $0.displayFormat == .card && !$0.isTitleChecked }?.id
     }
 
-    var appearance: ItemAppearance? = nil
+    var appearance:                      ItemAppearance? = nil
     private var defaultItemPresentation: ItemPresentation? /* Optional persisted default kind for newly created records */
 
     /// Applies only at creation; changing this preference never converts retained items.
@@ -1622,12 +1771,16 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @brief      Create an item using this list's default interface
     /// @details    Notes start with an empty body and no seeded checklists. Dividers remain Cards.
     ///             Existing Card creation keeps its established checklist defaults
-    /// @param[in]  id           Caller-allocated stable identity
-    /// @param[in]  title        Validated item title
-    /// @param[in]  description  Optional supplied body
-    /// @param[in]  createdAt    Creation time captured once for this new item
+    /// @param[in]  id                    Caller-allocated stable identity
+    /// @param[in]  title                 Validated item title
+    /// @param[in]  description           Optional supplied body
+    /// @param[in]  createdAt             Creation time captured once for this new item
     /// @param[in]  presentationOverride  Explicit template kind; nil preserves the List default
-    /// @param[in]  actions      Template actions; nil preserves ordinary Card checklist defaults
+    /// @param[in]  actions               Template actions; nil preserves ordinary Card checklist defaults
+    /// @param[in]  subtitle              Supporting preview subtitle supplied by the creation draft
+    /// @param[in]  creationPreferences   Creation-only appearance and scheduling preferences applied
+    ///             to new items
+    ///
     /// @return     (KanbanCard) new record without modifying the list
     ///
     func makeItem(id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now, presentationOverride: ItemPresentation? = nil, actions: [String]? = nil, creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()) -> KanbanCard {
@@ -1666,11 +1819,11 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     /// @brief      Initialize a board list and its retained cards
     /// @details    Creates the list with active cards and an optional archived-card snapshot
     ///
-    /// @param[in]  id            Stable list identity
-    /// @param[in]  title         Displayed list title
-    /// @param[in]  cards         Active cards in the list
-    /// @param[in]  archivedCards Cards retained in this list's archive
-    /// @param[in]  newItemPresentation Interface for newly created items only
+    /// @param[in]  id                   Stable list identity
+    /// @param[in]  title                Displayed list title
+    /// @param[in]  cards                Active cards in the list
+    /// @param[in]  archivedCards        Cards retained in this list's archive
+    /// @param[in]  newItemPresentation  Interface for newly created items only
     ///
     /// @return     (KanbanList) configured board list
     /// @post       The list is active; archive status defaults to false
@@ -1692,6 +1845,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable {
     ///     Preserve backward-compatible decoding when archived fields are absent
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id, title, cards, archivedCards, isArchived, defaultItemPresentation, subtitleOverride, appearance
     }
 
@@ -1946,6 +2100,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///     Keep the encoded representation explicit and stable across associated-value changes
     ///
     private enum Kind: String, Codable {
+
         case webLink
         case standard      /* Plain text action kind  */
         case linkedCard    /* Existing card link kind */
@@ -1960,6 +2115,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
     ///     Separate the content discriminator from its optional associated payload
     ///
     private enum CodingKeys: String, CodingKey {
+
         case url
         case kind    /* Content discriminator */
         case cardID  /* Linked card identity  */
@@ -2034,33 +2190,40 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable {
 
 
 ///
-/// Represents one stable action within a card checklist
+/// Identifies the editable kind of a checklist action
 ///
 /// @section    Purpose
-///     Preserve checklist-item identity, editable text, and completion independently from its
-///     position so richer action types can be introduced without replacing the checklist model
-///
-/// @note   Revision 0 checklist strings migrate to standard items during decoding
+///     Distinguishes a standard checkbox, owned detail, linked Card, and web link independently of
+///     retained inactive content.
 ///
 enum ChecklistItemType: String, CaseIterable, Identifiable {
+
     case standard, linkedCard, actionDetail, webLink
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String {
         switch self { case .standard: "Standard"; case .linkedCard: "Linked Card"; case .actionDetail: "Action Detail"; case .webLink: "Web Link" }
     }
 }
 
+
+///
+/// Represents one checklist action with stable identity
+///
+/// @section    Purpose
+///     Retains completion, active action content, and inactive linked or detailed values so
+///     changing action type does not silently discard prior content.
+///
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable {
 
-    let id:        UUID    /* Stable checklist action ID */
-    var title:     String  /* User-facing action text    */
-    var isCompleted: Bool  /* Current completion state   */
-    var content: KanbanChecklistActionContent {
+    let id:          UUID   /* Stable checklist action ID */
+    var title:       String /* User-facing action text    */
+    var isCompleted: Bool   /* Current completion state   */
+    var content:     KanbanChecklistActionContent {
         didSet { retainActiveContent() }
     }
-    var retainedDetail: KanbanChecklistActionDetail? = nil
-    var retainedCardID: Int? = nil
-    var retainedURL: URL? = nil
+    var retainedDetail:     KanbanChecklistActionDetail? = nil
+    var retainedCardID:     Int? = nil
+    var retainedURL:        URL? = nil
     var linkedCollectionID: UUID? = nil
 
 
@@ -2184,6 +2347,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///     Keep missing content backward-compatible while requiring established item state
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id           /* Stable action identity  */
         case title        /* User-facing action text */
         case isCompleted  /* Direct completion state */
@@ -2350,6 +2514,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
     ///     Keep current item records and the legacy completion field available to custom Codable logic
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id                    /* Checklist identity        */
         case title                 /* Checklist display title   */
         case items                 /* Current or legacy actions */
@@ -2398,6 +2563,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable {
 ///     Preserve comment identity, author, content, and creation time as card data
 ///
 struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
+
     let id:        UUID    /* Unique identifier for the comment                 */
     let author:    String  /* Author of the comment                             */
     let body:      String  /* Body text of the comment                          */
@@ -2410,10 +2576,10 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
     /// @details    Uses the supplied content and defaults the identity and timestamp when omitted
     ///
     ///
-    /// @param[in]  id        Comment identity
-    /// @param[in]  author    Display name of the comment author
-    /// @param[in]  body      Comment text
-    /// @param[in]  createdAt Comment creation time
+    /// @param[in]  id         Comment identity
+    /// @param[in]  author     Display name of the comment author
+    /// @param[in]  body       Comment text
+    /// @param[in]  createdAt  Comment creation time
     ///
     /// @return     (KanbanComment) configured activity entry
     /// @post       The comment retains the supplied author and text
@@ -2429,9 +2595,15 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable {
 
 
 ///
-/// An insertion boundary in one active Board list
+/// Identifies a Card insertion boundary in an active List
+///
+/// @section    Purpose
+///     Carries the target List and insertion context used to move content without replacing native
+///     row identity.
+///
 struct BoardCardDropTarget: Equatable {
-    let listID: Int         /* Destination list identity for the drop             */
+
+    let listID:       Int   /* Destination list identity for the drop             */
     let beforeCardID: Int?  /* Insertion anchor; nil appends after existing cards */
 }
 
@@ -2719,8 +2891,15 @@ enum BoardListReordering {
     }
 
 
-    /// Identifies a horizontal Board edge for direct list navigation.
+    ///
+    /// Identifies a horizontal Board boundary
+    ///
+    /// @section    Purpose
+    ///     Represents the leading or trailing edge for direct List navigation and drag-related
+    ///     paging.
+    ///
     enum BoardListBoundary {
+
         case first
         case last
     }
@@ -2769,6 +2948,7 @@ enum BoardListReordering {
 ///     Preserve collection behavior and presentation independently of its title
 ///
 enum PersonalCollectionKind: String, CaseIterable, Codable {
+
     case list  = "List"
     case board = "Board"
 }
@@ -2824,6 +3004,7 @@ enum NoteTextSharing {
 ///     Preserve destination, entered text, and one creation timestamp until persistence succeeds
 ///
 struct PersonalListNoteDraft {
+
     var destinationID: UUID     /* Personal List selected for the unsaved Note */
     var title = ""              /* Editable Note heading                       */
     var body = ""               /* Editable Note content preserved as entered  */
@@ -2926,10 +3107,10 @@ enum PersonalCollectionNoteMovement {
     /// @brief      Move one active Note to an active personal List
     /// @details    Preserves all Note fields and bookmarks. Card IDs are collection-local; an ID
     ///             collision in the destination receives a fresh destination-local ID
-    /// @param[in]     noteID        Active source Note ID
-    /// @param[in]     sourceID      Owning collection identity
-    /// @param[in]     destinationID Target active personal List identity
-    /// @param[in,out] collections   Complete local collection snapshot
+    /// @param[in]     noteID         Active source Note ID
+    /// @param[in]     sourceID       Owning collection identity
+    /// @param[in]     destinationID  Target active personal List identity
+    /// @param[in,out] collections    Complete local collection snapshot
     /// @return     (KanbanCard) moved Note with its destination-local identity and title
     /// @throws     CocoaError when the source, Note, or destination is invalid or ambiguous
     ///
@@ -3251,6 +3432,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable {
 ///     Keep collection icon choices explicit and persistable
 ///
 enum PersonalCollectionIcon: String, CaseIterable, Codable, Sendable {
+
     case notes = "note.text"
     case tasks = "checklist"
     case shopping = "cart"
@@ -3269,15 +3451,16 @@ enum PersonalCollectionIcon: String, CaseIterable, Codable, Sendable {
 ///     Keep collection identity, presentation, board content, and bookmarks together
 ///
 struct PersonalCollection: Identifiable, Hashable, Codable {
-    let id: UUID                                 /* Stable collection identity                  */
-    var title: String                            /* User-facing collection title                */
-    let kind: PersonalCollectionKind             /* List or multi-column board                  */
-    var icon: PersonalCollectionIcon             /* Symbol shown for the collection             */
-    var color: ProfileColor                      /* Collection accent color                     */
-    var lists: [KanbanList]                      /* Lists and cards owned by the collection     */
-    var savedCardIDs: Set<Int>                   /* Bookmarked cards retained by the collection */
-    var isArchived: Bool? = nil                  /* Optional archive state for older saved data */
-    var boardAppearance: BoardAppearance? = nil  /* Independent persisted List color defaults   */
+
+    let id:                    UUID                   /* Stable collection identity                  */
+    var title:                 String                 /* User-facing collection title                */
+    let kind:                  PersonalCollectionKind /* List or multi-column board                  */
+    var icon:                  PersonalCollectionIcon /* Symbol shown for the collection             */
+    var color:                 ProfileColor           /* Collection accent color                     */
+    var lists:                 [KanbanList]           /* Lists and cards owned by the collection     */
+    var savedCardIDs:          Set<Int>               /* Bookmarked cards retained by the collection */
+    var isArchived:            Bool? = nil            /* Optional archive state for older saved data */
+    var boardAppearance:       BoardAppearance? = nil /* Independent persisted List color defaults   */
     var collectionDescription: String? = nil
 
     /// The three shortcut Lists share their focused layout across Today and Plans.
@@ -3460,14 +3643,26 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 
 
     ///
-    /// @fcn        PersonalCollection.addNote(title:body:)
-    /// @brief      Append one writing-first item to an active personal List
-    /// @details    Allocates across active and archived collection records; rejects blank titles,
-    ///             non-List collections, and collections without an active destination
-    /// @param[in]  title  User-entered Note title
-    /// @param[in]  body   Note body preserved exactly
-    /// @param[in]  createdAt  Creation time retained from the draft, or captured at creation
-    /// @return     (Void) appends one Note while preserving every existing record
+    /// @fcn        PersonalCollection.addNote(title:body:createdAt:presentation:subtitle:attachments:creationPreferences:actions:schedule:calendar:)
+    /// @brief      Append a fully configured Card or Note to a personal List
+    /// @details    Rejects unavailable destinations, blank titles, and invalid schedules. Allocates
+    ///             beyond retained identities, applies the selected presentation and creation
+    ///             defaults, retains media, and reveals the containing section without changing the
+    ///             List's creation default.
+    ///
+    /// @param[in]  title                User-entered Note title
+    /// @param[in]  body                 Note body preserved exactly
+    /// @param[in]  createdAt            Creation time retained from the draft, or captured at creation
+    /// @param[in]  presentation         Card or Note presentation requested for the new item
+    /// @param[in]  subtitle             Supporting preview subtitle supplied by the creation draft
+    /// @param[in]  attachments          Retained media attachment records committed for the new item
+    /// @param[in]  creationPreferences  Creation-only appearance and scheduling preferences applied
+    ///             to new items
+    /// @param[in]  actions              Optional checklist action titles supplied by the capture mode
+    /// @param[in]  schedule             Optional validated start and stop values applied during creation
+    /// @param[in]  calendar             Calendar supplying local-day and scheduling interpretation rules
+    ///
+    /// @return     (Void) appends the requested item to the active destination List
     /// @throws     CocoaError when the destination or title is invalid
     ///
     mutating func addNote(title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note, subtitle: String = "", attachments: [KanbanAttachment] = [], creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
@@ -3603,11 +3798,11 @@ struct PersonalCollection: Identifiable, Hashable, Codable {
 ///
 struct PersonalCollectionBookmarkedCard: Identifiable, Hashable {
 
-    let collectionID: UUID       /* Owning personal collection identity       */
-    let collectionTitle: String  /* Collection name shown in Saved            */
-    let listID: Int              /* Containing collection-local list identity */
-    let listTitle: String        /* Containing list name shown in Saved       */
-    let card: KanbanCard         /* Complete bookmarked record                */
+    let collectionID:    UUID       /* Owning personal collection identity       */
+    let collectionTitle: String     /* Collection name shown in Saved            */
+    let listID:          Int        /* Containing collection-local list identity */
+    let listTitle:       String     /* Containing list name shown in Saved       */
+    let card:            KanbanCard /* Complete bookmarked record                */
 
     ///
     /// @fcn        PersonalCollectionBookmarkedCard.id
@@ -3627,6 +3822,7 @@ struct PersonalCollectionBookmarkedCard: Identifiable, Hashable {
 ///     Persist user-owned collection metadata and board content locally
 ///
 enum PersonalCollectionStore {
+
     /// Versioned storage key for saved personal collections.
     private static let key = "Plenact.PersonalCollections.v1" /* Versioned personal collection persistence key */
 
@@ -3777,10 +3973,10 @@ enum PersonalCollectionStore {
 ///
 struct ExampleLoadUndoSnapshot: Codable, Equatable {
 
-    let lists: [KanbanList]  /* Board lists to restore                   */
-    let todayListID: Int?    /* Previously selected Today list, when set */
-    var week: DatedPlanningWeek? = nil
-    var savedCardIDs: Set<Int>? = nil
+    let lists:            [KanbanList] /* Board lists to restore                   */
+    let todayListID:      Int?         /* Previously selected Today list, when set */
+    var week:             DatedPlanningWeek? = nil
+    var savedCardIDs:     Set<Int>? = nil
     var importantCardIDs: Set<Int>? = nil
     var importanceLevels: [Int: Int]? = nil
 }
@@ -3803,9 +3999,15 @@ enum ExampleLoadUndoStore {
     /// @brief      Save a pre-example Board snapshot
     /// @details    Returns false when the snapshot cannot be encoded
     ///
-    /// @param[in]  lists        Board lists to preserve
-    /// @param[in]  todayListID  Selected Today list identity, if any
-    /// @param[in]  defaults     Defaults store to update
+    /// @param[in]  lists             Board lists to preserve
+    /// @param[in]  todayListID       Selected Today list identity, if any
+    /// @param[in]  defaults          Defaults store to update
+    ///
+    /// @param[in]  week              Optional complete dated Week retained for example-load restoration
+    /// @param[in]  savedCardIDs      Optional personal bookmark snapshot retained for Undo
+    /// @param[in]  importantCardIDs  Optional legacy importance-presence snapshot retained for Undo
+    /// @param[in]  importanceLevels  Optional exact zero-through-five importance levels retained
+    ///             for Undo
     ///
     /// @return     (Bool) whether the encoded snapshot was saved
     ///
@@ -4395,17 +4597,31 @@ enum SampleData {
 }
 
 
-/// A destination identifies both the owning board and its column; nil denotes Week.
+///
+/// Identifies an owner-qualified Card movement destination
+///
+/// @section    Purpose
+///     Pairs the destination List with its Board owner; legacy nil ownership denotes the active
+///     Week context.
+///
 struct CardMoveDestination: Identifiable, Hashable {
+
     let collectionID: UUID?
-    let listID: Int
-    let title: String
-    let group: String
-    var columnTitle: String? = nil
-    var id: String { "\(collectionID?.uuidString ?? "week"):\(listID)" }
+    let listID:       Int
+    let title:        String
+    let group:        String
+    var columnTitle:  String? = nil
+    var id:           String { "\(collectionID?.uuidString ?? "week"):\(listID)" }
 }
 
-/// Builds both sides before publication, retaining hidden fields and relocating bookmarks.
+
+///
+/// Builds both sides of a cross-Board Card transfer
+///
+/// @section    Purpose
+///     Preserves hidden fields, allocates destination-safe identity, and relocates bookmarks before
+///     publishing changed owners.
+///
 enum CrossBoardCardMovement {
 
 
@@ -4479,14 +4695,21 @@ enum CrossBoardCardMovement {
     }
 }
 
-/// Offline, mixed-format starters that remain drafts until explicitly saved.
-/// Synthetic, offline board drafts. Generation never writes collections or shared preferences.
+
+///
+/// Builds offline mixed-format Board examples
+///
+/// @section    Purpose
+///     Returns synthetic unsaved collection drafts without writing collections or personal
+///     preference storage.
+///
 enum PersonalBoardExample: String, CaseIterable, Identifiable {
+
     case garden = "Garden seasons"
     case home = "A home to love"
     case travel = "Travel dreams"
     case life = "Life in Motion · Zoom playground"
-    var id: String { rawValue }
+    var id:      String { rawValue }
     var summary: String {
         switch self {
         case .garden: "Planting ideas, growing plans, seasonal care, and garden reflections."
@@ -4620,11 +4843,20 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable {
     }
 }
 
+
+///
+/// Defines mixed-format starter List drafts
+///
+/// @section    Purpose
+///     Provides authored planning, exploration, and project examples without saving a collection
+///     until the user accepts the draft.
+///
 enum MixedListTemplate: String, CaseIterable, Identifiable {
+
     case planDay = "Plan a day"
     case exploreIdea = "Explore an idea"
     case startProject = "Start a project"
-    var id: String { rawValue }
+    var id:      String { rawValue }
     var summary: String {
         switch self {
         case .planDay: "Make room for what matters, then choose a few useful next steps."
@@ -4706,6 +4938,14 @@ enum MixedListTemplate: String, CaseIterable, Identifiable {
     }
 }
 
+
+///
+/// Builds personal collections from bundled examples
+///
+/// @section    Purpose
+///     Allocates an available title and copies sample content without replacing the active calendar
+///     Week.
+///
 extension PersonalCollection {
 
 
@@ -4728,7 +4968,13 @@ extension PersonalCollection {
     }
 }
 
-/// Shared paste/submission policy: keep line order and duplicates, omit empty lines.
+
+///
+/// Normalizes multiline item-title submissions
+///
+/// @section    Purpose
+///     Preserves nonempty line order and duplicates while omitting whitespace-only entries.
+///
 enum MultilineEntry {
 
 
@@ -4748,6 +4994,14 @@ enum MultilineEntry {
     }
 }
 
+
+///
+/// Creates List items from multiline title input
+///
+/// @section    Purpose
+///     Allocates owner-local identities, interprets divider syntax, and applies the requested
+///     content, presentation, and creation defaults.
+///
 extension KanbanList {
 
 
@@ -4776,10 +5030,18 @@ extension KanbanList {
     }
 }
 
-/// Per-card presentation only; hiding sections never removes their content.
+
+///
+/// Identifies configurable sections within a Card
+///
+/// @section    Purpose
+///     Controls presentation ordering and visibility without removing the content stored in hidden
+///     sections.
+///
 enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable {
+
     case quickActions, media, description, details, checklists, activity
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String {
         switch self {
         case .quickActions: "Quick Actions"
@@ -4791,16 +5053,33 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable {
         }
     }
 }
+
+
+///
+/// Retains Card section ordering and visibility
+///
+/// @section    Purpose
+///     Normalizes repeated or omitted section identifiers for display while preserving the data in
+///     hidden sections.
+///
 struct CardSectionLayout: Hashable, Codable, Sendable {
-    var order: [CardSection] = CardSection.allCases
-    var hidden: Set<CardSection> = []
+
+    var order:    [CardSection] = CardSection.allCases
+    var hidden:   Set<CardSection> = []
     var sections: [CardSection] {
         var seen: Set<CardSection> = []
         return (order + CardSection.allCases).filter { seen.insert($0).inserted && !hidden.contains($0) }
     }
 }
 
-/// Allocate destination-local identities and remap links between cards in a copied list.
+
+///
+/// Copies a List into a destination owner
+///
+/// @section    Purpose
+///     Allocates fresh local identities and remaps internal Card links while preserving retained
+///     content.
+///
 enum ListCopying {
 
 
@@ -4860,7 +5139,13 @@ enum ListCopying {
 }
 
 
-/// Moves a whole list between distinct boards, reserving active and archived identities.
+///
+/// Moves a whole List between distinct Board owners
+///
+/// @section    Purpose
+///     Reserves active and archived identities and builds source and destination snapshots before
+///     checked publication.
+///
 enum CrossBoardListMovement {
 
 
@@ -5034,15 +5319,31 @@ enum CrossBoardListMovement {
 }
 
 
+///
+/// Carries the visible content of a scheduling badge
+///
+/// @section    Purpose
+///     Combines a title, formatted value, and system symbol and derives a concise accessibility
+///     label.
+///
 struct CardScheduleBadge: Equatable {
-    let title: String
-    let value: String
+
+    let title:       String
+    let value:       String
     let systemImage: String
-    var label: String { title.isEmpty ? value : title + " · " + value }
+    var label:       String { title.isEmpty ? value : title + " · " + value }
 }
 
-/// Creation-only guidance: never called when opening or emptying an existing List.
+
+///
+/// Provides built-in List starter and session guidance content
+///
+/// @section    Purpose
+///     Creates empty Lists by default, supplies read-only session guide snapshots, and
+///     conservatively removes untouched legacy welcome Cards.
+///
 enum DefaultListTutorial {
+
 
     ///
     /// @fcn        DefaultListTutorial.guidance(for:)
@@ -5125,7 +5426,7 @@ enum DefaultListTutorial {
     /// @details    Builds the welcome content and default appearance for the requested list; callers control when a
     ///             starter is installed.
     ///
-    /// @param[in]  title  Display title or proposed title text
+    /// @param[in]  title                Display title or proposed title text
     /// @param[in]  includesWelcomeCard  Internal legacy fixture generation; new Lists start empty
     ///
     /// @return     (PersonalCollection) fresh special-list collection with default appearance
@@ -5180,10 +5481,17 @@ enum DefaultListTutorial {
 }
 
 
-/// A temporary, checkmarks-only undo snapshot; never replaces card content.
+///
+/// Retains temporary Undo state for List checkmarks
+///
+/// @section    Purpose
+///     Restores only captured completion values and never replaces current writing or unrelated
+///     Card content.
+///
 struct ListCheckmarkReset: Equatable {
+
     let previous: [String: Bool]
-    let cleared: [String: Bool]
+    let cleared:  [String: Bool]
 
 
     ///
@@ -5304,22 +5612,39 @@ struct ListCheckmarkReset: Equatable {
     }
 }
 
-/// Read-only Day schedule projection. Durations are task-hours, never tracked time.
+
+///
+/// Derives a read-only Day time distribution
+///
+/// @section    Purpose
+///     Counts planned task durations and completion by category, keeping untimed Cards and Notes
+///     distinct from tracked time.
+///
 struct DayTimeDistribution {
+
+
+    ///
+    /// Represents one category in the Day's planned-time distribution
+    ///
+    /// @section    Purpose
+    ///     Keeps category identity and color alongside planned and completed task durations for
+    ///     read-only schedule summaries.
+    ///
     struct Segment: Identifiable {
-        let id: String
-        let title: String
-        let color: KanbanLabelColor
-        var planned: TimeInterval
+
+        let id:        String
+        let title:     String
+        let color:     KanbanLabelColor
+        var planned:   TimeInterval
         var completed: TimeInterval
     }
-    let segments: [Segment]
-    let taskCount: Int
+    let segments:       [Segment]
+    let taskCount:      Int
     let completedCount: Int
-    let untimedCount: Int
-    let hasOverlaps: Bool
-    var total: TimeInterval { segments.reduce(0) { $0 + $1.planned } }
-    var completedTime: TimeInterval { segments.reduce(0) { $0 + $1.completed } }
+    let untimedCount:   Int
+    let hasOverlaps:    Bool
+    var total:          TimeInterval { segments.reduce(0) { $0 + $1.planned } }
+    var completedTime:  TimeInterval { segments.reduce(0) { $0 + $1.completed } }
 
 
     ///
@@ -5417,8 +5742,14 @@ struct DayTimeDistribution {
     }
 }
 
-/// Named dividers own subsequent content up to the next named divider.
-/// Plain separators do not change ownership; all operations retain original item identities.
+
+///
+/// Resolves named section membership and operations
+///
+/// @section    Purpose
+///     Treats a named divider as owner of subsequent items until the next named divider while
+///     retaining identities through collapse and reordering.
+///
 enum DaySections {
 
 
@@ -5569,14 +5900,22 @@ enum DaySections {
     }
 }
 
-/// An in-memory, single-action undo receipt. Affected owners must still match before undo.
+
+///
+/// Retains one guarded section-transfer Undo receipt
+///
+/// @section    Purpose
+///     Restores affected owners only while their current snapshots still match the completed move,
+///     including full importance levels where retained.
+///
 struct SectionTransferReceipt {
-    let before: [PersonalCollection]
-    let after: [PersonalCollection]
-    let source: WorkspaceListReference
+
+    let before:      [PersonalCollection]
+    let after:       [PersonalCollection]
+    let source:      WorkspaceListReference
     let destination: WorkspaceListReference
-    let mapping: [Int: Int]
-    let heading: KanbanCard
+    let mapping:     [Int: Int]
+    let heading:     KanbanCard
 
 
     ///
@@ -5599,6 +5938,14 @@ struct SectionTransferReceipt {
     }
 }
 
+
+///
+/// Transfers a complete named section between owners
+///
+/// @section    Purpose
+///     Validates boundaries and destinations, remaps identities and links, optionally shifts dates,
+///     and creates a guarded Undo receipt before publishing owner snapshots.
+///
 enum SectionTransfer {
 
 

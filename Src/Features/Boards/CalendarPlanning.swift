@@ -1,7 +1,23 @@
+// --------------------------------------------------------------------------------------------------
+// @file       CalendarPlanning.swift
+// @brief      Dated workspace ownership, calendar browsing, and shared navigation
+// @details    Defines local date keys, dated Weeks, calendar document migration, and checked
+//             storage. Provides shared owner access, search and direct return routes, date and Week
+//             selection, and reversible full-month example loading with user-data backups.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 import CryptoKit
 
-/// Stable local date keys avoid timestamp shifts when a user changes time zone.
+
+///
+/// Provides stable local planning date conventions
+///
+/// @section    Purpose
+///     Formats and resolves local date and Week keys using explicit calendar context rather than
+///     shifted timestamp identities.
+///
 enum PlanningDate {
 
 
@@ -115,14 +131,23 @@ enum PlanningDate {
     }
 }
 
+
+///
+/// Represents a calendar Week and its dated List mapping
+///
+/// @section    Purpose
+///     Retains collection ownership, date keys, and explicit-save state so day navigation remains
+///     independent of numeric List IDs.
+///
 struct DatedPlanningWeek: Identifiable, Hashable, Codable {
-    var startKey: String
-    var collection: PersonalCollection
-    var dayListIDs: [String: Int]
+
+    var startKey:        String
+    var collection:      PersonalCollection
+    var dayListIDs:      [String: Int]
     var explicitlySaved: Bool = false
-    var id: UUID { collection.id }
-    var hasContent: Bool { collection.lists.contains { !$0.allCards.isEmpty } }
-    var rangeTitle: String {
+    var id:              UUID { collection.id }
+    var hasContent:      Bool { collection.lists.contains { !$0.allCards.isEmpty } }
+    var rangeTitle:      String {
         let days = PlanningDate.days(in: startKey)
         guard let first = days.first, let last = days.last else { return startKey }
         return "\(first.formatted(.dateTime.month(.abbreviated).day())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
@@ -215,14 +240,22 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable {
     }
 }
 
-/// Calendar weeks remain separate from the Library collection directory.
+
+///
+/// Retains calendar Weeks independently of the Library directory
+///
+/// @section    Purpose
+///     Keeps the current Week key, calendar conventions, and dated owner snapshots available for
+///     validation and migration.
+///
 struct PlanningCalendarDocument: Hashable, Codable {
+
     var version = 1
-    var currentWeekKey: String
-    var firstWeekday: Int = Calendar.current.firstWeekday
-    var weeks: [DatedPlanningWeek]
+    var currentWeekKey:     String
+    var firstWeekday:       Int = Calendar.current.firstWeekday
+    var weeks:              [DatedPlanningWeek]
     var checklistLinkWeeks: [UUID: UUID]? = nil
-    var calendar: Calendar {
+    var calendar:           Calendar {
         var value = Calendar.current
         value.firstWeekday = firstWeekday
         return value
@@ -292,6 +325,13 @@ struct PlanningCalendarDocument: Hashable, Codable {
 }
 
 
+///
+/// Repairs and migrates retained calendar layout conventions
+///
+/// @section    Purpose
+///     Applies recognized legacy weekday mappings while preserving source identities and
+///     date-qualified ownership.
+///
 extension PlanningCalendarDocument {
 
 
@@ -516,7 +556,16 @@ extension PlanningCalendarDocument {
     }
 }
 
+
+///
+/// Persists validated dated calendar documents
+///
+/// @section    Purpose
+///     Checks document versions and owner uniqueness on load and uses checked writes for retained
+///     Week snapshots.
+///
 enum PlanningCalendarStore {
+
     static let key = "Plenact.CalendarWeeks.v1"
 
 
@@ -563,34 +612,52 @@ enum PlanningCalendarStore {
     }
 }
 
+
+///
+/// Identifies a live workspace Card search match
+///
+/// @section    Purpose
+///     Carries owner, List, and optional Week provenance alongside the canonical Card so navigation
+///     avoids local-ID collisions.
+///
 struct PlanningSearchResult: Identifiable, Hashable {
-    let weekKey: String?
-    let collectionID: UUID
+
+    let weekKey:         String?
+    let collectionID:    UUID
     let collectionTitle: String
-    let listID: Int
-    let listTitle: String
-    let card: KanbanCard
-    var id: String { "\(collectionID):\(card.id)" }
+    let listID:          Int
+    let listTitle:       String
+    let card:            KanbanCard
+    var id:              String { "\(collectionID):\(card.id)" }
 }
 
+
+///
+/// Exposes calendar and Library operations to descendants
+///
+/// @section    Purpose
+///     Supplies current owner snapshots and checked save, navigation, review, and movement
+///     callbacks from the workspace root.
+///
 struct PlanningCalendarAccess {
-    var document: PlanningCalendarDocument
-    var library: [PersonalCollection]
-    var saveWeek: (DatedPlanningWeek) -> Bool
-    var openCurrentWeek: () -> Void
-    var openToday: () -> Void
-    var openLibraryCard: (PersonalSavedCardTarget) -> Void
-    var saveLibrary: (PersonalCollection) -> Bool
+
+    var document:          PlanningCalendarDocument
+    var library:           [PersonalCollection]
+    var saveWeek:          (DatedPlanningWeek) -> Bool
+    var openCurrentWeek:   () -> Void
+    var openToday:         () -> Void
+    var openLibraryCard:   (PersonalSavedCardTarget) -> Void
+    var saveLibrary:       (PersonalCollection) -> Bool
     var applyWeeklyReview: ((PlanningSearchResult, DailyReviewAction, WeeklyReviewRecord, WeeklyReviewRecord?) -> WeeklyReviewRecord?)? = nil
-    var applyDailyReview: ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = nil
-    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)? = nil
-    var setFirstWeekday: (Int) -> Bool = { _ in false }
-    var openWeek: (DatedPlanningWeek) -> Void = { _ in }
-    var moveList: ((Int, UUID, UUID?) -> Bool)? = nil
-    var openWeekOnDay: ((DatedPlanningWeek, Date) -> Void)? = nil
-    var saveExampleWeek: ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
-    var allRetainedLists: [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
-    var searchableItems: [PlanningSearchResult] {
+    var applyDailyReview:  ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = nil
+    var moveForDailyPlan:  ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)? = nil
+    var setFirstWeekday:   (Int) -> Bool = { _ in false }
+    var openWeek:          (DatedPlanningWeek) -> Void = { _ in }
+    var moveList:          ((Int, UUID, UUID?) -> Bool)? = nil
+    var openWeekOnDay:     ((DatedPlanningWeek, Date) -> Void)? = nil
+    var saveExampleWeek:   ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
+    var allRetainedLists:  [KanbanList] { document.weeks.flatMap { $0.collection.lists } + library.flatMap(\.lists) }
+    var searchableItems:   [PlanningSearchResult] {
         document.weeks.flatMap { week in
             week.collection.lists.filter { !$0.isArchived }.flatMap { list in
                 list.cards.filter { !$0.isSectionDivider }.map {
@@ -608,13 +675,41 @@ struct PlanningCalendarAccess {
         }
     }
 }
+
+
+///
+/// Defines optional workspace access in the environment
+///
+/// @section    Purpose
+///     Uses nil by default so detached views cannot assume a writable calendar owner.
+///
 private struct PlanningCalendarAccessKey: EnvironmentKey {
+
     static let defaultValue: PlanningCalendarAccess? = nil
 }
+
+
+///
+/// Defines the currently displayed Week environment value
+///
+/// @section    Purpose
+///     Defaults to no Week key so consumers distinguish general workspace contexts from a dated
+///     Board.
+///
 private struct PlanningDisplayedWeekKey: EnvironmentKey {
+
     static let defaultValue: String? = nil
 }
+
+
+///
+/// Provides shared calendar access and displayed Week context
+///
+/// @section    Purpose
+///     Stores injected owner callbacks separately from the currently browsed Week key.
+///
 extension EnvironmentValues {
+
     var planningDisplayedWeekKey: String? {
         get { self[PlanningDisplayedWeekKey.self] }
         set { self[PlanningDisplayedWeekKey.self] = newValue }
@@ -625,14 +720,29 @@ extension EnvironmentValues {
     }
 }
 
+
+///
+/// Carries a selected Week and optional item destination
+///
+/// @section    Purpose
+///     Keeps Week, Day, and Card targeting together for one identifiable presentation route.
+///
 private struct PlanningWeekRoute: Identifiable {
-    var week: DatedPlanningWeek
-    var dayID: Int? = nil
+
+    var week:   DatedPlanningWeek
+    var dayID:  Int? = nil
     var cardID: Int? = nil
-    var id: UUID { week.id }
+    var id:     UUID { week.id }
 }
 
-/// Shared membership rules keep Calendar and Choose week indicators in agreement.
+
+///
+/// Defines shared calendar content membership rules
+///
+/// @section    Purpose
+///     Keeps calendar day indicators and Week chooser summaries consistent about which retained
+///     items count as content.
+///
 enum PlanningCalendarContent {
 
 
@@ -663,7 +773,16 @@ enum PlanningCalendarContent {
     }
 }
 
+
+///
+/// Browses planning dates and their stored content
+///
+/// @section    Purpose
+///     Coordinates month selection, shared search, and Week routes through injected workspace
+///     access.
+///
 struct PlanningCalendarView: View {
+
     var onLeaveForHome: () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
@@ -691,7 +810,7 @@ struct PlanningCalendarView: View {
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
     }
     private var displayCalendar: Calendar { access?.document.calendar ?? .current }
-    private var rows: [[Date]] {
+    private var rows:            [[Date]] {
         let calendar = displayCalendar
         guard let first = calendar.dateInterval(of: .month, for: month)?.start,
               let start = calendar.dateInterval(of: .weekOfYear, for: first)?.start,
@@ -949,9 +1068,18 @@ struct PlanningCalendarView: View {
     }
 }
 
+
+///
+/// Renders a workspace search match with its source context
+///
+/// @section    Purpose
+///     Shows Card or Note identity, completion state, and owner/List labels without mutating the
+///     source item.
+///
 private struct PlanningCalendarResultRow: View {
+
     let result: PlanningSearchResult
-    var body: some View {
+    var body:   some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: result.card.displayFormat == .card ? (result.card.isTitleChecked ? "checkmark.square.fill" : "square") : "doc.text")
                 .foregroundStyle(result.card.isTitleChecked ? Color.green : Color.secondary)
@@ -967,10 +1095,19 @@ private struct PlanningCalendarResultRow: View {
     }
 }
 
+
+///
+/// Hosts a dated Week with checked owner-level saving
+///
+/// @section    Purpose
+///     Supports optional Day and Card targeting while coordinating shared navigation and the
+///     caller's home exit.
+///
 struct PlanningCalendarWeekView: View {
-    @State var week: DatedPlanningWeek
-    let initialDayID: Int?
-    let initialCardID: Int?
+
+    @State var week:    DatedPlanningWeek
+    let initialDayID:   Int?
+    let initialCardID:  Int?
     let onLeaveForHome: () -> Void
     var isWeekTab = false
     var initialBoardListID: Int? = nil
@@ -983,9 +1120,9 @@ struct PlanningCalendarWeekView: View {
     @State private var dayID: Int?
     @State private var isRevertingEdit = false
     @State private var labels = LabelLibraryStore.load()
-    private var isStored: Bool { access?.document.weeks.contains { $0.startKey == week.startKey } == true }
+    private var isStored:  Bool { access?.document.weeks.contains { $0.startKey == week.startKey } == true }
     private var isCurrent: Bool { week.startKey == access?.document.currentWeekKey }
-    var body: some View {
+    var body:              some View {
         ContentView(
             lists: $week.collection.lists.activeLists, archivedLists: $week.collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID,
@@ -1083,27 +1220,71 @@ struct PlanningCalendarWeekView: View {
 }
 
 
+///
+/// Defines an optional direct-item return action
+///
+/// @section    Purpose
+///     Allows a detail opened from Activity or another direct destination to return to its caller
+///     instead of opening the source List.
+///
 private struct PlanningDirectItemReturnKey: EnvironmentKey {
+
     static let defaultValue: (() -> Void)? = nil
 }
+
+
+///
+/// Exposes direct-detail return navigation through the environment
+///
+/// @section    Purpose
+///     Keeps the caller's return action available to nested Card presentation without changing
+///     source ownership.
+///
 extension EnvironmentValues {
+
     var planningDirectItemReturn: (() -> Void)? {
         get { self[PlanningDirectItemReturnKey.self] }
         set { self[PlanningDirectItemReturnKey.self] = newValue }
     }
 }
 
+
+///
+/// Defines an optional return-to-home navigation action
+///
+/// @section    Purpose
+///     Uses an absent default so nested calendar screens leave their outer navigation unchanged
+///     unless an owner supplies an exit.
+///
 private struct PlanningHomeExitKey: EnvironmentKey {
+
     static let defaultValue: (() -> Void)? = nil
 }
+
+
+///
+/// Exposes the workspace home-exit callback
+///
+/// @section    Purpose
+///     Allows nested destinations to request the caller's established home route without owning tab
+///     state.
+///
 extension EnvironmentValues {
+
     var planningHomeExit: (() -> Void)? {
         get { self[PlanningHomeExitKey.self] }
         set { self[PlanningHomeExitKey.self] = newValue }
     }
 }
 
-/// The existing Today index supplies all filters; provenance disambiguates board-local IDs.
+
+///
+/// Builds owner-qualified shared workspace search results
+///
+/// @section    Purpose
+///     Reuses Today matching and filters while carrying provenance that disambiguates Board-local
+///     numeric identities.
+///
 enum PlanningSharedSearchIndex {
 
 
@@ -1136,13 +1317,21 @@ enum PlanningSharedSearchIndex {
     }
 }
 
-/// Existing snapshot-only contexts retain their lifecycle actions; shared results open the owner first.
+
+///
+/// Adds lifecycle actions to shared-search contexts
+///
+/// @section    Purpose
+///     Keeps snapshot-only actions where valid and resolves an owning workspace before exposing
+///     mutable source operations.
+///
 struct SharedSearchLifecycleActions: ViewModifier {
-    let enabled: Bool
-    let title: String
-    let kind: String
+
+    let enabled:   Bool
+    let title:     String
+    let kind:      String
     let onArchive: () -> Void
-    let onDelete: () -> Bool
+    let onDelete:  () -> Bool
 
 
     ///
@@ -1160,15 +1349,31 @@ struct SharedSearchLifecycleActions: ViewModifier {
     }
 }
 
+
+///
+/// Identifies one shared-search navigation request
+///
+/// @section    Purpose
+///     Retains the selected result and its composite identity for destination presentation.
+///
 private struct PlanningSearchRoute: Identifiable {
+
     let result: TodaySearchResult
-    var id: String { result.id }
+    var id:     String { result.id }
 }
 
-/// Every toolbar opens this exact Today search UI, including scopes and shared recent history.
+
+///
+/// Presents the common workspace search interface
+///
+/// @section    Purpose
+///     Uses the same Today search scopes and recent history from every toolbar and delegates result
+///     navigation to its owner.
+///
 struct PlanningSharedSearchPresentation: ViewModifier {
+
     @Binding var isPresented: Bool
-    var onLeaveForHome: () -> Void = {}
+    var onLeaveForHome:       () -> Void = {}
     @Environment(\.planningCalendarAccess) private var access
     @State private var route: PlanningSearchRoute?
 
@@ -1207,11 +1412,20 @@ struct PlanningSharedSearchPresentation: ViewModifier {
     }
 }
 
+
+///
+/// Opens a shared-search result in its personal collection
+///
+/// @section    Purpose
+///     Targets the resolved List and Card and sends checked edits back through injected workspace
+///     access, reverting rejected changes.
+///
 struct PlanningSearchLibraryView: View {
+
     @State var collection: PersonalCollection
-    let initialListID: Int
-    let initialCardID: Int?
-    let onLeaveForHome: () -> Void
+    let initialListID:     Int
+    let initialCardID:     Int?
+    let onLeaveForHome:    () -> Void
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var targetListID: Int?
@@ -1247,11 +1461,19 @@ struct PlanningSearchLibraryView: View {
     }
 }
 
-/// Date-preserving week migration can separate two lists containing linked checklist cards.
+
+///
+/// Resolves checklist Card links across dated Week ownership
+///
+/// @section    Purpose
+///     Preserves date-qualified references when calendar migration separates Lists that previously
+///     shared an owner.
+///
 struct PlanningChecklistLink: View {
-    let itemID: UUID
-    let cardID: Int
-    let title: String
+
+    let itemID:  UUID
+    let cardID:  Int
+    let title:   String
     var ownerID: UUID? = nil
     @Environment(\.planningCalendarAccess) private var access
     @State private var showsCard = false
@@ -1277,13 +1499,19 @@ struct PlanningChecklistLink: View {
 }
 
 
-/// Direct week selection changes the browsed board without changing Today's active week.
+///
+/// Selects the Week currently being browsed
+///
+/// @section    Purpose
+///     Changes the displayed Board without silently replacing Today's active calendar Week.
+///
 struct PlanningWeekSelector: View {
-    let document: PlanningCalendarDocument
-    let sources: [PlanningSearchResult]
-    let onSelect: (DatedPlanningWeek, Date) -> Void
-    @State private var referenceDate: Date
-    @State private var selectedDate: Date
+
+    let document:                          PlanningCalendarDocument
+    let sources:                           [PlanningSearchResult]
+    let onSelect:                          (DatedPlanningWeek, Date) -> Void
+    @State private var referenceDate:      Date
+    @State private var selectedDate:       Date
     @State private var highlightedWeekKey: String
     @State private var isSelecting = false
     @Environment(\.dismiss) private var dismiss
@@ -1478,9 +1706,17 @@ struct PlanningWeekSelector: View {
 }
 
 
+///
+/// Resolves a date to an active Day List
+///
+/// @section    Purpose
+///     Combines the normalized date, owning Week, and List ID so retained and unsaved Weeks follow
+///     the same navigation rules.
+///
 struct PlanningDaySelection {
-    let date: Date
-    let week: DatedPlanningWeek
+
+    let date:   Date
+    let week:   DatedPlanningWeek
     let listID: Int
 
 
@@ -1504,9 +1740,18 @@ struct PlanningDaySelection {
     }
 }
 
+
+///
+/// Presents a draft date selection for Day navigation
+///
+/// @section    Purpose
+///     Retains the initial choice locally and reports the selected date through the caller's
+///     callback.
+///
 struct PlanningDaySelector: View {
+
     @State private var date: Date
-    let onSelect: (Date) -> Void
+    let onSelect:            (Date) -> Void
     @Environment(\.dismiss) private var dismiss
 
 
@@ -1542,14 +1787,22 @@ struct PlanningDaySelector: View {
     }
 }
 
-/// Keeps date browsing in one Day surface and saves edits to the selected week's owner.
+
+///
+/// Hosts a selected date in one focused Day surface
+///
+/// @section    Purpose
+///     Resolves the correct dated owner and sends checked edits back to that Week while preserving
+///     date navigation.
+///
 struct PlanningSelectedDayView: View {
-    let selection: PlanningDaySelection
-    let currentUserName: String
+
+    let selection:              PlanningDaySelection
+    let currentUserName:        String
     let returnDestinationTitle: String
-    let onClose: () -> Void
-    let onSelectDay: (Date) -> Void
-    @State private var week: DatedPlanningWeek
+    let onClose:                () -> Void
+    let onSelectDay:            (Date) -> Void
+    @State private var week:    DatedPlanningWeek
     @State private var labels = LabelLibraryStore.load()
     @State private var isRevertingEdit = false
     @Environment(\.planningCalendarAccess) private var access
@@ -1623,18 +1876,38 @@ struct PlanningSelectedDayView: View {
 }
 
 // Full-month examples use a separate, verified offline snapshot of the entire local workspace.
+
+
+///
+/// Manages reversible full-month example workspace transitions
+///
+/// @section    Purpose
+///     Keeps user-data backups, transition files, and preference domains separate so loading
+///     examples can preserve a recoverable workspace.
+///
 struct FullMonthExampleStore: Sendable {
-    let root: URL
-    let documents: URL
-    let support: URL
-    let domainName: String
+
+    let root:             URL
+    let documents:        URL
+    let support:          URL
+    let domainName:       String
     private var defaults: UserDefaults {
         domainName == Bundle.main.bundleIdentifier ? .standard : UserDefaults(suiteName: domainName)!
     }
-    private var userData: URL { root.appendingPathComponent("UserData", isDirectory: true) }
+    private var userData:   URL { root.appendingPathComponent("UserData", isDirectory: true) }
     private var transition: URL { root.appendingPathComponent("Transition", isDirectory: true) }
-    private var fm: FileManager { .default }
+    private var fm:         FileManager { .default }
+
+
+    ///
+    /// Describes a versioned example-workspace backup
+    ///
+    /// @section    Purpose
+    ///     Records creation time and file hashes used to verify retained backup content before
+    ///     restoration.
+    ///
     private struct Manifest: Codable {
+
         var version = 1
         var createdAt = Date()
         let hashes: [String: String]
@@ -1659,7 +1932,7 @@ struct FullMonthExampleStore: Sendable {
                     domainName: Bundle.main.bundleIdentifier!)
     }
     var needsRecovery: Bool { fm.fileExists(atPath: transition.path) && committedOperation() == nil }
-    var hasUserData: Bool {
+    var hasUserData:   Bool {
         fm.fileExists(atPath: userData.path) && committedOperation() != "restore"
     }
 
@@ -1940,8 +2213,17 @@ struct FullMonthExampleStore: Sendable {
     }
 }
 
+
+///
+/// Builds a synthetic month of planning examples
+///
+/// @section    Purpose
+///     Keeps dated calendar Weeks and personal collections together as a generated snapshot rather
+///     than mutating the live workspace.
+///
 struct FullMonthExample: Sendable {
-    let document: PlanningCalendarDocument
+
+    let document:    PlanningCalendarDocument
     let collections: [PersonalCollection]
 
 

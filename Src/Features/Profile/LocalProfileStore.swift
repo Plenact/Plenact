@@ -1,13 +1,16 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LocalProfileStore.swift
-// @brief      Local profile persistence
-// @details    Encodes one optional local profile without accounts, passwords, or network access
+// @brief      Device-local profile, avatar files, and planning preference storage
+// @details    Loads and saves optional local identity, retains avatar photo files separately from
+//             Codable profile data, and exposes planning preferences before a profile exists.
+//             Profile removal does not delete workspace collections, labels, or Card attachments.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
 // -------------------------------------- MARK: - Profile Store -------------------------------- //
+
 
 ///
 /// Loads, saves, and removes the local profile on the current installation
@@ -185,8 +188,15 @@ enum ProfileAvatarPhotoStore {
 }
 
 
-/// Planning preferences are available even before a local profile is created.
+///
+/// Persists planning preferences without requiring a profile
+///
+/// @section    Purpose
+///     Keeps plan controls available before local profile creation and resolves compatible stored
+///     defaults.
+///
 enum PlanPreferencesStore {
+
     static let key = "Plenact.PlanPreferences.v1"
 
 

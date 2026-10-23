@@ -1,8 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       CardLabelsSheet.swift
-// @brief      Categorized label browser and card assignment editor
-// @details    Lets users browse a shared label catalog, toggle card assignments, and create labels
-//             or categories from the card detail flow
+// @brief      Draft label catalog browsing and Card assignment editing
+// @details    Browses labels by category, edits the selected Card's label IDs, and creates catalog
+//             entries in a local draft. Returns catalog and assignment changes together on Save;
+//             cancellation leaves the owner's retained values unchanged.
 //
 // @notes      Catalog and assignment edits remain local to this sheet until the user saves
 //
@@ -27,7 +28,7 @@ struct CardLabelsSheet: View {
     let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
 
     @Environment(\.dismiss) private var dismiss                   /* Dismiss action for sheet */
-    @State private var library: LabelLibrary                      /* Draft label library      */
+    @State private var library:          LabelLibrary             /* Draft label library      */
     @State private var selectedLabelIDs: [String]                 /* Currently selected IDs   */
     @State private var labelNameDraft                  = ""       /* Draft name for new label */
     @State private var categorySelection               = ""       /* Currently selected cat.  */
@@ -87,9 +88,9 @@ struct CardLabelsSheet: View {
     /// @details    Creates local drafts from the shared catalog and this card's current label
     ///             assignments
     ///
-    /// @param[in]  library          Shared category and label definitions
-    /// @param[in]  selectedLabelIDs Stable IDs currently assigned to the card
-    /// @param[in]  onSave           Callback receiving the edited library and assignments
+    /// @param[in]  library           Shared category and label definitions
+    /// @param[in]  selectedLabelIDs  Stable IDs currently assigned to the card
+    /// @param[in]  onSave            Callback receiving the edited library and assignments
     ///
     /// @return     (CardLabelsSheet) configured label browser and assignment editor
     ///

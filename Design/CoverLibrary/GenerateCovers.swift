@@ -1,9 +1,28 @@
+// --------------------------------------------------------------------------------------------------
+// @file       GenerateCovers.swift
+// @brief      Offline illustration generation from authored cover metadata
+// @details    Decodes the supplied cover catalog and renders semantic artwork with AppKit into the
+//             requested output directory. Provides deterministic palettes, supported glyphs, raster
+//             encoding, and command-line generation; this utility is separate from the iOS
+//             application target.
+//
+// --------------------------------------------------------------------------------------------------
+
 import AppKit
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
 // Rebuild the 352 expanded offline covers from semantic metadata. Existing covers stay untouched.
+
+
+///
+/// Decodes one authored cover-library entry
+///
+/// @section    Purpose
+///     Carries catalog identity, category, artwork symbol, tags, and optional context for offline
+///     cover asset generation.
+///
 struct Cover: Decodable { let name: String; let category: String; let symbol: String; let tags: [String]; let context: String? }
 let source = URL(fileURLWithPath: CommandLine.arguments[1])
 let output = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)

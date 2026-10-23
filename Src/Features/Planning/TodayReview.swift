@@ -1,6 +1,25 @@
+// --------------------------------------------------------------------------------------------------
+// @file       TodayReview.swift
+// @brief      Daily and weekly reflections with checked content decisions
+// @details    Defines review actions, retained decisions, evening reflection, and weekly records.
+//             Protects multi-store mutations with recovery snapshots, derives live review
+//             candidates, and saves review progress against baselines so failed or conflicting
+//             operations retain the user's draft.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 
+
+///
+/// Defines deliberate actions available during review
+///
+/// @section    Purpose
+///     Distinguishes leaving content in place, completion, archival, and movement to built-in Lists
+///     or a specified date.
+///
 enum DailyReviewAction: Codable, Equatable {
+
     case keep, keepTomorrow, table, complete, archive, queue, tomorrow, date(String)
     var title: String {
         switch self {
@@ -15,26 +34,54 @@ enum DailyReviewAction: Codable, Equatable {
         }
     }
 }
+
+
+///
+/// Records an accepted review decision
+///
+/// @section    Purpose
+///     Retains before-and-after owner-qualified references, the selected action, and its recording
+///     time for review history.
+///
 struct DailyReviewDecision: Codable, Equatable, Identifiable {
+
     var id = UUID()
     let source: DailyPlanPriority
     let result: DailyPlanPriority
     let action: DailyReviewAction
     var recordedAt = Date()
 }
+
+
+///
+/// Retains evening reflection and review progress
+///
+/// @section    Purpose
+///     Stores the current step, completion time, reflection writing, achievements, and accepted
+///     decisions within a Daily plan.
+///
 struct DailyEveningReview: Codable, Equatable {
+
     var step = 0
     var completedAt: Date?
     var helped = ""
     var difficult = ""
     var tomorrow = ""
-    var decisions: [DailyReviewDecision] = []
+    var decisions:    [DailyReviewDecision] = []
     var achievements: [DailyPlanPriority] = []
 }
 
-/// Stored before mutation and cleared only after both source data and review progress are saved.
+
+///
+/// Protects multi-store review decisions with recovery state
+///
+/// @section    Purpose
+///     Records original preferences before mutation and clears the transaction only after source
+///     content and review progress have both saved.
+///
 @MainActor
 enum DailyReviewTransaction {
+
     static let key = "Plenact.DailyReviewTransaction.v1"
     static let keys = [PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1", DailyPlanStore.key, WeeklyReviewStore.key]
 
@@ -127,6 +174,14 @@ enum DailyReviewTransaction {
     }
 }
 
+
+///
+/// Derives the unfinished content eligible for daily review
+///
+/// @section    Purpose
+///     Resolves retained priorities and relevant workspace sources while excluding reference-only
+///     material using the supplied labels.
+///
 enum TodayReviewSelection {
 
 
@@ -178,18 +233,27 @@ enum TodayReviewSelection {
     }
 }
 
+
+///
+/// Guides the user through an evening review
+///
+/// @section    Purpose
+///     Keeps pending decisions separate from committed progress and applies source changes through
+///     checked workspace operations.
+///
 struct TodayReviewView: View {
+
     @Binding var plan: DailyPlan
-    let date: Date
-    let baseline: DailyPlan?
-    let onSave: () -> Bool
-    let onCommitted: (DailyPlan) -> Void
+    let date:          Date
+    let baseline:      DailyPlan?
+    let onSave:        () -> Bool
+    let onCommitted:   (DailyPlan) -> Void
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var step = 0
     @State private var pendingSource: PlanningSearchResult?
     @State private var pendingAction: DailyReviewAction?
-    @State private var dateSource: PlanningSearchResult?
+    @State private var dateSource:    PlanningSearchResult?
     @State private var selectedDate = Date()
     @State private var chosenDateDecision: (PlanningSearchResult, String)?
     @State private var operationError = false
@@ -199,12 +263,12 @@ struct TodayReviewView: View {
         return value
     }
     private var review: DailyEveningReview { plan.eveningReview ?? DailyEveningReview() }
-    private var items: [PlanningSearchResult] {
+    private var items:  [PlanningSearchResult] {
         guard let access else { return [] }
         let labels = LabelLibraryStore.load().labels.filter { $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id }
         return TodayReviewSelection.items(plan: plan, date: date, access: access, referenceLabelIDs: Set(labels.map(\.id)), calendar: calendar)
     }
-    private var achievements: [PlanningSearchResult] { items.filter { $0.card.isTitleChecked } }
+    private var achievements:   [PlanningSearchResult] { items.filter { $0.card.isTitleChecked } }
     private var queueAvailable: Bool { access?.library.contains { $0.isActive && $0.kind == .list && $0.title == "In the Queue" } == true }
 
 
@@ -381,10 +445,19 @@ struct TodayReviewView: View {
     }
 }
 
+
+///
+/// Retains the reflection and decisions for a calendar Week
+///
+/// @section    Purpose
+///     Stores calendar conventions, progress, writing, priorities, and completion state so daily
+///     records resolve to the correct review period.
+///
 struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
-    let id: String
-    let startKey: String
-    let timeZoneID: String
+
+    let id:           String
+    let startKey:     String
+    let timeZoneID:   String
     let firstWeekday: Int
     var step = 0
     var highlights = ""
@@ -392,9 +465,9 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
     var direction = ""
     var constraints = ""
     var risks = ""
-    var priorities: [DailyPlanPriority] = []
-    var decisions: [DailyReviewDecision] = []
-    var updatedAt: Date?
+    var priorities:  [DailyPlanPriority] = []
+    var decisions:   [DailyReviewDecision] = []
+    var updatedAt:   Date?
     var completedAt: Date?
 
 
@@ -438,9 +511,27 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable {
     }
 }
 
+
+///
+/// Persists validated weekly review documents
+///
+/// @section    Purpose
+///     Loads versioned records and saves against retained baselines so concurrent changes and
+///     malformed data are surfaced.
+///
 @MainActor
 enum WeeklyReviewStore {
+
     static let key = "Plenact.WeeklyReviews.v1"
+
+
+    ///
+    /// Wraps weekly review records in a versioned document
+    ///
+    /// @section    Purpose
+    ///     Keys records by their calendar-qualified review identity and retains the schema version
+    ///     for compatibility checks.
+    ///
     struct Document: Codable { var version = 1; var records: [String: WeeklyReviewRecord] = [:] }
 
 
@@ -500,14 +591,23 @@ enum WeeklyReviewStore {
     }
 }
 
+
+///
+/// Presents a weekly reflection and planning workflow
+///
+/// @section    Purpose
+///     Loads daily context and existing records, edits a baseline-backed draft, and saves
+///     deliberate decisions through checked owner access.
+///
 struct WeeklyReviewView: View {
-    let calendar: Calendar
+
+    let calendar:         Calendar
     private let defaults: UserDefaults
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDate: Date
-    @State private var draft: WeeklyReviewRecord
-    @State private var baseline: WeeklyReviewRecord?
+    @State private var draft:        WeeklyReviewRecord
+    @State private var baseline:     WeeklyReviewRecord?
     @State private var daily = DailyPlanStore.Document()
     @State private var records: [WeeklyReviewRecord] = []
     @State private var loaded = false
@@ -515,8 +615,8 @@ struct WeeklyReviewView: View {
     @State private var error: String?
     @State private var showsPicker = false
     @State private var confirmsDiscard = false
-    @State private var pending: PlanningSearchResult?
-    @State private var action: DailyReviewAction?
+    @State private var pending:    PlanningSearchResult?
+    @State private var action:     DailyReviewAction?
     @State private var dateSource: PlanningSearchResult?
     @State private var targetDate = Date()
     @State private var chosenDate: (PlanningSearchResult, String)?
@@ -539,9 +639,9 @@ struct WeeklyReviewView: View {
         _selectedDate = State(initialValue: date)
         _draft = State(initialValue: WeeklyReviewRecord(date: date, calendar: calendar))
     }
-    private var dirty: Bool { loaded && !loadFailed && draft != (baseline ?? WeeklyReviewRecord(date: selectedDate, calendar: calendar)) }
+    private var dirty:   Bool { loaded && !loadFailed && draft != (baseline ?? WeeklyReviewRecord(date: selectedDate, calendar: calendar)) }
     private var sources: [PlanningSearchResult] { access?.searchableItems ?? [] }
-    private var queue: [PlanningSearchResult] {
+    private var queue:   [PlanningSearchResult] {
         let owners = Set(access?.library.filter { $0.isActive && $0.kind == .list && $0.title == "In the Queue" }.map(\.id) ?? [])
         let reference = Set(LabelLibraryStore.load().labels.filter { $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id }.map(\.id))
         return sources.filter { item in owners.contains(item.collectionID) && item.card.presentation == .card && !item.card.isTitleChecked && Set(item.card.labelIDs).isDisjoint(with: reference) && !draft.decisions.contains(where: { $0.source.resolve(in: [item]) != nil || $0.result.resolve(in: [item]) != nil }) }

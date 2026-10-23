@@ -1,9 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       Models.swift
-// @brief      Domain models and deterministic sample data for the Plenact board
-// @details    Defines cards, lists, derived display values, and preview content generation
-//             This root-level source is legacy and is not included in the active Xcode target;
-//             the compiled models are maintained in Src/Features/Boards/Models.swift
+// @brief      Legacy Board model reference retained outside the application target
+// @details    Retains the earlier Card, List, checklist, comment, persistence, and deterministic
+//             sample models. The active compiled models are Src/Features/Boards/Models.swift;
+//             current migrations and feature fields belong to that implementation.
 //
 // @notes      Sample data is deterministic so previews and UI behavior remain reproducible
 //
@@ -27,23 +27,23 @@ import Foundation
 ///
 struct KanbanCard: Identifiable, Hashable, Codable {
 
-    let id:                   Int     /* Stable numeric identifier for the card             */
-    let word:                 String  /* Display word shown as the card's title             */
-    var listTitle:            String  /* Name of the list where the card resides            */
-    var isDivider:            Bool    /* Whether this item is a movable section divider     */
-    var isTitleChecked:       Bool    /* Whether the card's main title checkbox is selected */
+    let id:             Int           /* Stable numeric identifier for the card             */
+    let word:           String        /* Display word shown as the card's title             */
+    var listTitle:      String        /* Name of the list where the card resides            */
+    var isDivider:      Bool          /* Whether this item is a movable section divider     */
+    var isTitleChecked: Bool          /* Whether the card's main title checkbox is selected */
 
-    var members:              [String]  /* User names assigned to the card           */
-    var labelIDs:             [String]  /* Stable IDs of labels assigned to the card */
+    var members:  [String]              /* User names assigned to the card           */
+    var labelIDs: [String]              /* Stable IDs of labels assigned to the card */
 
-    var startDate:            Date?    /* Optional start date for the card    */
-    var dueDate:              Date?    /* Optional due date for the card      */
-    var descriptionOverride:  String?  /* Optional user-edited description    */
-    var subtitleOverride:     String?  /* Optional user-edited board subtitle */
+    var startDate:           Date?     /* Optional start date for the card    */
+    var dueDate:             Date?     /* Optional due date for the card      */
+    var descriptionOverride: String?   /* Optional user-edited description    */
+    var subtitleOverride:    String?   /* Optional user-edited board subtitle */
 
-    var checklists:           [KanbanChecklist]    /* List of checklists associated with the card */
-    var comments:             [KanbanComment]      /* Comments posted to the card's activity      */
-    var attachments:          [KanbanAttachment]?  /* Photo attachments stored with the card      */
+    var checklists:  [KanbanChecklist]             /* List of checklists associated with the card */
+    var comments:    [KanbanComment]               /* Comments posted to the card's activity      */
+    var attachments: [KanbanAttachment]?           /* Photo attachments stored with the card      */
 
     var dismissedActivityIDs: Set<String>         /* Generated activity entries removed by the user     */
 
@@ -328,9 +328,9 @@ struct KanbanCard: Identifiable, Hashable, Codable {
 ///
 struct KanbanList: Identifiable, Hashable, Codable {
 
-    let id:        Int           /* Unique identifier for the kanban list */
-    let title:     String        /* Title of the kanban list              */
-    var cards:     [KanbanCard]  /* Cards contained within the list       */
+    let id:    Int               /* Unique identifier for the kanban list */
+    let title: String            /* Title of the kanban list              */
+    var cards: [KanbanCard]      /* Cards contained within the list       */
 
 
     ///
@@ -363,9 +363,9 @@ struct KanbanList: Identifiable, Hashable, Codable {
 ///
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral {
 
-    let id:        UUID    /* Stable checklist action ID */
-    var title:     String  /* User-facing action text    */
-    var isCompleted: Bool  /* Current completion state   */
+    let id:          UUID   /* Stable checklist action ID */
+    var title:       String /* User-facing action text    */
+    var isCompleted: Bool   /* Current completion state   */
 
 
     ///
@@ -566,6 +566,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable {
     ///     Keep current item records and the legacy completion field available to custom Codable logic
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id                    /* Checklist identity        */
         case title                 /* Checklist display title   */
         case items                 /* Current or legacy actions */

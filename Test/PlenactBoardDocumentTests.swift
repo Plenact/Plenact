@@ -1,9 +1,11 @@
 // --------------------------------------------------------------------------------------------------
 // @file       PlenactBoardDocumentTests.swift
-// @brief      Board contracts, local persistence, and presentation regression tests
-// @details    Covers versioned shared-demo documents, archive/restore compatibility, isolated
-//             preference stores, canonical search/selection helpers, background-save failures,
-//             and hosted SwiftUI sizing/re-layout. API activity uses an in-process URLProtocol
+// @brief      Workspace model, persistence, interaction, and presentation regressions
+// @details    Covers Board contracts, calendar and review recovery, templates, ownership-safe
+//             transfers, sections and Undo, importance, inline creation, locks, and attachment
+//             retention. Hosts native and SwiftUI interaction fixtures for sizing, selection,
+//             gesture routing, navigation, and temporary guidance; API fixtures use an in-process
+//             URLProtocol.
 //
 // @notes      Synthetic fixtures do not access the live demo database. Corruption tests verify
 //             load-time byte retention, not protection against a later write to fallback content
@@ -18,10 +20,11 @@ import PencilKit
 
 
 ///
-/// Verifies the Plenact-specific Board snapshot contract
+/// Verifies workspace persistence and interaction contracts
 ///
 /// @section    Purpose
-///     Protect document validation, retained local content, and presentation-only behavior
+///     Protects owner-qualified models, migrations, checked mutations, calendar and review
+///     workflows, gestures, navigation, and hosted presentation behavior with synthetic fixtures.
 ///
 final class PlenactBoardDocumentTests: XCTestCase {
 
@@ -3183,6 +3186,15 @@ final class PlenactBoardDocumentTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: name) }
         for key in DailyReviewTransaction.keys { defaults.set(Data(key.utf8), forKey: key) }
         defaults.removeObject(forKey: DailyPlanStore.key)
+
+
+        ///
+        /// Injects a deterministic review-transaction failure in a test
+        ///
+        /// @section    Purpose
+        ///     Forces rollback after preferences have changed so the test can verify restoration of
+        ///     all retained keys.
+        ///
         enum Forced: Error { case failure }
         XCTAssertThrowsError(try DailyReviewTransaction.perform(in: defaults) {
             for key in DailyReviewTransaction.keys { defaults.set("changed", forKey: key) }
@@ -10992,11 +11004,14 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testListNoteDefaultAppliesOnlyToNewNondividerItems()
-    /// @brief      Apply list defaults at creation without converting retained records
-    /// @details    Verifies blank Note bodies, no seeded Note checklists, and unchanged Card defaults
+    /// @fcn        PlenactBoardDocumentTests.testRichTextFormattingPreservesSelectedRunsAndCardPersistence()
+    /// @brief      Verify selected-run rich-text formatting and retained content
+    /// @details    Applies bold, italic, and color changes to the selected native text range,
+    ///             checks unaffected writing and selection, and round-trips formatted Card and
+    ///             comment content through Codable.
     ///
-    /// @return     (Void) records creation/default assertion failures
+    /// @return     (Void) records rich-text editing and persistence assertions
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
     ///
     @MainActor
     func testRichTextFormattingPreservesSelectedRunsAndCardPersistence() throws {
@@ -11525,12 +11540,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody()
-    /// @brief      Create a Note in the active personal List without replacing retained content
-    /// @details    Reserves archived IDs, preserves body whitespace, and rejects invalid targets
-    ///             without mutating the collection
+    /// @fcn        PlenactBoardDocumentTests.testPersonalCreationHonorsSelectedKindWithoutChangingListDefault()
+    /// @brief      Verify explicit creation kind leaves the List default unchanged
+    /// @details    Creates a Card and a Note in the same personal List, checks subtitle trimming
+    ///             and body retention, and round-trips the collection while preserving its Note
+    ///             creation default.
     ///
-    /// @return     (Void) records new-Note and save/cancel boundary assertions
+    /// @return     (Void) records explicit-presentation and persistence assertions
     /// @throws     Synthetic fixture setup errors
     ///
     func testPersonalCreationHonorsSelectedKindWithoutChangingListDefault() throws {
@@ -12012,6 +12028,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///             destination records and invalid move snapshots unchanged
     ///
     /// @return     (Void) records cross-collection move assertions
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
     ///
     func testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision() throws {
 
@@ -12083,6 +12100,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     /// @details    Moves the original Note record and updates only its containing List title
     ///
     /// @return     (Void) records stable-ID and source-removal assertions
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
     ///
     func testPersonalNoteMovePreservesNonconflictingID() throws {
 
@@ -13401,6 +13419,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertNil(targetListID)
         }
 
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testPersonalCollectionListWidthReachesTheHostedCardContainer()
     /// @brief      Verify the real personal collection adapter widens Standard list and card containers
@@ -14523,6 +14542,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
         dividerSource.finish()
         XCTAssertEqual(lists[0].cards, [note, card, divider])
     }
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout()
@@ -15897,6 +15917,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
     ///             current-weekday list unchanged when it is already available
     ///
     /// @return     (Void) records assertion failures for the behavior described above
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
     ///
     func testQuickCaptureCreatesMissingCurrentWeekdayList() throws {
 
@@ -16247,15 +16268,34 @@ final class PlenactBoardDocumentTests: XCTestCase {
         XCTAssertNoThrow(try PlenactAPIClient(baseURL: secureURL))
     }
 }
+
+
+///
+/// Observes Note navigation during hosted presentation tests
+///
+/// @section    Purpose
+///     Retains the navigation path and visible editor identities so tests can assert toolbar
+///     visibility through push and pop transitions.
+///
 @MainActor
 private final class NoteNavigationProbe: ObservableObject {
+
     @Published var path: [KanbanCard] = []
-    var visibleNotes: Set<UUID> = []
-    var noteIsVisible: Bool { !visibleNotes.isEmpty }
+    var visibleNotes:    Set<UUID> = []
+    var noteIsVisible:   Bool { !visibleNotes.isEmpty }
 }
+
+
+///
+/// Hosts a Note detail navigation stack for regression testing
+///
+/// @section    Purpose
+///     Reports editor visibility to the probe while using real CardDetailView destinations.
+///
 private struct NoteNavigationTestView: View {
+
     @ObservedObject var probe: NoteNavigationProbe
-    var body: some View {
+    var body:                  some View {
         NavigationStack(path: $probe.path) {
             Text("Week")
                 .navigationDestination(for: KanbanCard.self) { card in CardDetailView(card: card) }
@@ -16266,17 +16306,35 @@ private struct NoteNavigationTestView: View {
     }
 }
 
+
+///
+/// Controls direct-detail presentation in hosted tests
+///
+/// @section    Purpose
+///     Publishes the presentation flag independently of source ownership so return behavior can be
+///     asserted.
+///
 @MainActor
 private final class DirectReturnTestProbe: ObservableObject {
+
     @Published var presented = false
 }
 
+
+///
+/// Hosts direct Card routes for return-navigation tests
+///
+/// @section    Purpose
+///     Opens calendar or personal-owner detail content and checks that Back returns to the original
+///     presentation rather than invoking home navigation.
+///
 private struct DirectReturnTestView: View {
+
     @ObservedObject var probe: DirectReturnTestProbe
-    let owner: PersonalCollection
-    let week: DatedPlanningWeek?
-    let listID: Int
-    var body: some View {
+    let owner:                 PersonalCollection
+    let week:                  DatedPlanningWeek?
+    let listID:                Int
+    var body:                  some View {
         Text("Origin remains here")
             .fullScreenCover(isPresented: $probe.presented) {
                 if let week {

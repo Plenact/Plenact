@@ -1,9 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       ChecklistMigrationTests.swift
-// @brief      Checklist-item persistence compatibility tests
-// @details    Verifies revision 0 string migration, deterministic action IDs, completion-index
-//             compatibility, rich action round trips, starter weekday content, and manual/
-//             registered card-assignee decoding. Uses synthetic in-memory Board fixtures
+// @brief      Checklist and assignee persistence compatibility tests
+// @details    Verifies revision-zero string migration, stable action IDs, completion-index
+//             compatibility, rich action round trips, weekday starters, and manual or registered
+//             assignee decoding. Uses synthetic in-memory fixtures without migrating saved
+//             application data.
 //
 // @notes      Tests protect Codable compatibility without migrating saved application data
 //

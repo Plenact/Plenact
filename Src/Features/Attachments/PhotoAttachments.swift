@@ -1,13 +1,14 @@
 // --------------------------------------------------------------------------------------------------
 // @file       PhotoAttachments.swift
-// @brief      Media attachment models, local file storage, and picker/gallery components
-// @details    Imports image selections, stores photo and video bytes in the app container, and
-//             presents attached photos, videos, and web links
+// @brief      Attachment storage, media editing, covers, and appearance controls
+// @details    Defines local photo, video, audio, and link attachments; imports, previews, and
+//             arranges media and cover choices. Provides PencilKit capture and export, draft
+//             attachment commits with failure cleanup, collection backgrounds, and Board or item
+//             appearance editors including inline capture colors.
 //
 // @notes      Cards persist attachment metadata and IDs; image data remains outside the board JSON
 //
 // @section    Opens
-//      Function Headers
 //      Variable Comments
 //
 // --------------------------------------------------------------------------------------------------
@@ -21,12 +22,14 @@ import UIKit
 
 
 ///
-/// Identifies the supported content types for card attachments
+/// Identifies supported Card attachment media
 ///
 /// @section    Purpose
-///     Distinguish local photo/video media from remotely accessible links
+///     Distinguishes retained photos, videos, audio, and web links for storage and preview
+///     selection.
 ///
 enum KanbanAttachmentKind: String, Codable, Sendable {
+
     case photo
     case video
     case audio
@@ -41,6 +44,7 @@ enum KanbanAttachmentKind: String, Codable, Sendable {
 ///     Organize artwork without imposing categories on people's cards
 ///
 enum CoverCategory: String, CaseIterable, Identifiable {
+
     case home = "Home & Everyday"
     case nature = "Nature & Garden"
     case work = "Work & Learning"
@@ -85,6 +89,7 @@ enum CoverCategory: String, CaseIterable, Identifiable {
 ///     Keep example drafts side-effect-free and independent of personal media files
 ///
 enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
+
     case garden, mountains, workspace
     case readingCorner = "reading-corner", tidyHome = "tidy-home", laundryDay = "laundry-day", homeRepairs = "home-repairs"
     case wateringPlants = "watering-plants", forestPath = "forest-path", flowerBouquet = "flower-bouquet", sunrise
@@ -458,7 +463,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
     /// @brief      Provide a readable artwork label without embedded image text
     /// @return     (String) human-readable name
     ///
-    var title: String { rawValue.replacingOccurrences(of: "-", with: " ").capitalized } /* Readable artwork name */
+    var title:                     String { rawValue.replacingOccurrences(of: "-", with: " ").capitalized } /* Readable artwork name */
     private static let tagCatalog: [String: [String]] = {
         guard let url = Bundle.main.url(forResource: "cover-tags", withExtension: "json", subdirectory: "CardCoverImages"),
               let data = try? Data(contentsOf: url), let tags = try? JSONDecoder().decode([String: [String]].self, from: data) else { return [:] }
@@ -521,8 +526,9 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable {
 ///     Browse all 400 offline illustrations without downloading or analyzing card content
 ///
 struct CardCoverLibrary: View {
-    let selectedImage: ExampleCoverImage?      /* Current library cover, if any                    */
-    let onSelect: (ExampleCoverImage) -> Bool  /* Owner validates and publishes an explicit choice */
+
+    let selectedImage: ExampleCoverImage?          /* Current library cover, if any                    */
+    let onSelect:      (ExampleCoverImage) -> Bool /* Owner validates and publishes an explicit choice */
     @State private var query = ""
     @State private var category: CoverCategory?           /* nil shows All Covers                       */
     @Environment(\.dynamicTypeSize) private var textSize  /* Use a single column for accessibility text */
@@ -633,8 +639,9 @@ struct CardCoverLibrary: View {
 ///     Load photos away from the main actor without creating or modifying files
 ///
 struct CardCoverPreview: View {
+
     let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
-    var height: CGFloat = 128         /* Fixed preview height, independent of source image dimensions */
+    var height:     CGFloat = 128     /* Fixed preview height, independent of source image dimensions */
     var unavailableTitle = "Cover unavailable"
     @State private var image: UIImage?      /* Downsampled image for this presentation */
     @State private var unavailable = false  /* Explicit missing/invalid-image feedback */
@@ -698,9 +705,10 @@ struct CardCoverPreview: View {
 ///     Make cover replacement recognizable without relying on numbered photo menus
 ///
 struct CardCoverPicker: View {
-    let photos: [KanbanAttachment]               /* Current attached photo choices       */
+
+    let photos:     [KanbanAttachment]           /* Current attached photo choices       */
     let selectedID: UUID?                        /* Current cover, if explicitly enabled */
-    let onSelect: (UUID) -> Void                 /* Owner validates and saves selection  */
+    let onSelect:   (UUID) -> Void               /* Owner validates and saves selection  */
     @Environment(\.dismiss) private var dismiss  /* Cancel or return after choosing      */
 
     ///
@@ -740,23 +748,23 @@ struct CardCoverPicker: View {
 
 
 ///
-/// Identifies one photo, video, or web link attached to a card
+/// Represents one retained media attachment or web link
 ///
 /// @section    Purpose
-///     Persist stable attachment identity and lightweight file or URL metadata without embedding
-///     image bytes in the board
+///     Keeps attachment identity, local filename or remote URL, media kind, creation time, example
+///     artwork, and optional caption together.
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
 
-    let id:        UUID                   /* Stable attachment identity                                */
-    let fileName:  String?                /* Device-local media filename                               */
-    let url:       URL?                   /* Remote web-link destination                               */
-    let mediaKind: KanbanAttachmentKind?  /* Explicit media type when known                            */
-    let addedAt:   Date                   /* Attachment creation time                                  */
-    let exampleImage: ExampleCoverImage?  /* Immutable original example illustration, never user media */
-    var drawingFileName: String? = nil    /* Editable PencilKit strokes, absent in legacy photos       */
+    let id:              UUID                  /* Stable attachment identity                                */
+    let fileName:        String?               /* Device-local media filename                               */
+    let url:             URL?                  /* Remote web-link destination                               */
+    let mediaKind:       KanbanAttachmentKind? /* Explicit media type when known                            */
+    let addedAt:         Date                  /* Attachment creation time                                  */
+    let exampleImage:    ExampleCoverImage?    /* Immutable original example illustration, never user media */
+    var drawingFileName: String? = nil         /* Editable PencilKit strokes, absent in legacy photos       */
     var storedFileNames: [String] { [fileName, drawingFileName].compactMap { $0 } }
-    var caption: String?                   /* Optional photo text; absent in legacy attachment records */
+    var caption:         String?           /* Optional photo text; absent in legacy attachment records */
 
     ///
     /// @fcn        KanbanAttachment.kind
@@ -779,12 +787,15 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable {
     /// @brief      Create attachment metadata for local media or a remote link
     /// @details    Stores the supplied stable identity, location metadata, and creation date
     ///
-    /// @param[in]  id        Stable attachment identity
-    /// @param[in]  fileName  Local media filename, when stored on this device
-    /// @param[in]  url       Remote web URL, when the attachment is a link
-    /// @param[in]  mediaKind Explicit photo, video, or link content type
-    /// @param[in]  addedAt   Attachment creation time
+    /// @param[in]  id            Stable attachment identity
+    /// @param[in]  fileName      Local media filename, when stored on this device
+    /// @param[in]  url           Remote web URL, when the attachment is a link
+    /// @param[in]  mediaKind     Explicit photo, video, or link content type
+    /// @param[in]  addedAt       Attachment creation time
     /// @param[in]  exampleImage  Optional bundled illustration for synthetic examples
+    ///
+    /// @param[in]  caption       Optional retained photo caption, absent for attachments without
+    ///             authored writing
     ///
     /// @return     (KanbanAttachment) configured attachment metadata
     ///
@@ -1176,10 +1187,10 @@ struct CardAttachmentSourceSheet: View {
 
     @Binding var photoSelection: [PhotosPickerItem] /* Current Photos-picker selection */
     
-    let onAddLink: ()          -> Void     /* Callback opening manual link entry                    */
-    let onPasteClipboard: ()   -> Void     /* Callback importing clipboard images or a link         */
-    let onComingSoon: (String) -> Void     /* Callback reporting unsupported source                 */
-    var onAddDrawing: (() -> Void)? = nil  /* Opens the editable canvas when supported by the owner */
+    let onAddLink:        ()          -> Void /* Callback opening manual link entry                    */
+    let onPasteClipboard: ()   -> Void        /* Callback importing clipboard images or a link         */
+    let onComingSoon:     (String) -> Void    /* Callback reporting unsupported source                 */
+    var onAddDrawing:     (() -> Void)? = nil /* Opens the editable canvas when supported by the owner */
 
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
 
@@ -1370,7 +1381,15 @@ struct CardLinkAttachmentSheet: View {
 }
 
 
+///
+/// Maps stored List tints to SwiftUI colors
+///
+/// @section    Purpose
+///     Keeps model tint cases independent of presentation while supplying the muted List surface
+///     colors.
+///
 extension KanbanListTint {
+
     var color: Color {
         switch self {
         case .neutral: Color(.systemGray6)
@@ -1382,7 +1401,15 @@ extension KanbanListTint {
     }
 }
 
+
+///
+/// Maps stored item accents to presentation colors
+///
+/// @section    Purpose
+///     Supplies standard and dark-header variants without altering the persisted accent identity.
+///
 extension ItemAccent {
+
     var color: Color {
         switch self {
             case .teal: .teal
@@ -1443,7 +1470,16 @@ extension ItemAccent {
     }
 }
 
+
+///
+/// Displays an item's optional appearance icon
+///
+/// @section    Purpose
+///     Uses the configured icon tint with a secondary fallback and hides purely decorative artwork
+///     from accessibility.
+///
 struct ItemAppearanceMark: View {
+
     let appearance: ItemAppearance?
 
     var body: some View {
@@ -1455,7 +1491,16 @@ struct ItemAppearanceMark: View {
     }
 }
 
+
+///
+/// Applies an item's decorative banner background
+///
+/// @section    Purpose
+///     Resolves appearance and accessibility contrast while leaving content and mutation behavior
+///     with the wrapped view.
+///
 private struct ItemBannerBackground: ViewModifier {
+
     let appearance: ItemAppearance?
     @Environment(\.colorSchemeContrast) private var contrast
 
@@ -1481,6 +1526,14 @@ private struct ItemBannerBackground: ViewModifier {
     }
 }
 
+
+///
+/// Adds the shared appearance banner modifier to views
+///
+/// @section    Purpose
+///     Keeps call sites independent of the modifier implementation and accepts absent appearance
+///     overrides.
+///
 extension View {
 
 
@@ -1498,10 +1551,17 @@ extension View {
     }
 }
 
-/// Shows the complete selected image at its natural aspect ratio, using the existing thumbnail loader.
+
+///
+/// Displays a complete item picture preview
+///
+/// @section    Purpose
+///     Reuses the thumbnail loader and preserves the selected image's natural aspect ratio.
+///
 struct ItemPicturePreview: View {
+
     let attachment: KanbanAttachment?
-    var title: String? = nil
+    var title:      String? = nil
 
     private var accessibleDescription: String {
         let text = [title, attachment?.caption]
@@ -1548,9 +1608,17 @@ struct ItemPicturePreview: View {
     }
 }
 
-/// Shared row menu; changes only the canonical record's display metadata.
+
+///
+/// Presents canonical item display-format choices
+///
+/// @section    Purpose
+///     Updates only display metadata through the supplied owner action without changing Card or
+///     Note identity.
+///
 struct ItemDisplayFormatMenu: View {
-    let card: KanbanCard
+
+    let card:     KanbanCard
     let onUpdate: (KanbanCard) -> Void
 
     var body: some View {
@@ -1570,10 +1638,17 @@ struct ItemDisplayFormatMenu: View {
     }
 }
 
-/// Shared optional preview profile control; Unchanged is stored as no override.
+
+///
+/// Edits an optional Card preview display profile
+///
+/// @section    Purpose
+///     Stores Unchanged as no override so inherited presentation remains available.
+///
 struct CardDisplayProfilePicker: View {
+
     @Binding var selection: BoardCardDetail?
-    var body: some View {
+    var body:               some View {
         Picker("Card display", selection: $selection) {
             Text("Unchanged").tag(Optional<BoardCardDetail>.none)
             Text("Detailed").tag(Optional(BoardCardDetail.detailed))
@@ -1584,7 +1659,16 @@ struct CardDisplayProfilePicker: View {
     }
 }
 
+
+///
+/// Maps preview text palettes to adaptive colors
+///
+/// @section    Purpose
+///     Uses separate light and dark component values so stored palette choices remain legible
+///     across appearances.
+///
 extension ListPreviewTextColor {
+
     var color: Color {
         let light: (CGFloat, CGFloat, CGFloat)
         let dark: (CGFloat, CGFloat, CGFloat)
@@ -1604,16 +1688,25 @@ extension ListPreviewTextColor {
     }
 }
 
+
+///
+/// Edits appearance overrides in a checked draft
+///
+/// @section    Purpose
+///     Coordinates icon, banner, List background, capture colors, and optional display format; a
+///     rejected save keeps the editor open.
+///
 struct ItemAppearanceSheet: View {
-    let title: String
-    let onSave: (ItemAppearance?) -> Bool
-    let onOpenCover: (() -> Void)?
-    let onOpenLayout: (() -> Void)?
-    let showsListBackground: Bool
-    let inheritedAddItemTextColor: Color?
-    let onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
+
+    let title:                       String
+    let onSave:                      (ItemAppearance?) -> Bool
+    let onOpenCover:                 (() -> Void)?
+    let onOpenLayout:                (() -> Void)?
+    let showsListBackground:         Bool
+    let inheritedAddItemTextColor:   Color?
+    let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
     @State private var draftDisplay: ItemDisplayFormat?
-    @State private var draft: ItemAppearance
+    @State private var draft:        ItemAppearance
     @Environment(\.dismiss) private var dismiss
 
 
@@ -1623,15 +1716,15 @@ struct ItemAppearanceSheet: View {
     /// @details    Seeds local draft state from the supplied appearance and display format and retains the checked
     ///             save and auxiliary-editor callbacks.
     ///
-    /// @param[in]  title                Display title or proposed title text
-    /// @param[in]  appearance           Optional or explicit appearance overrides supplied by the caller
-    /// @param[in]  onOpenCover          Optional action for opening the cover editor
-    /// @param[in]  onOpenLayout         Optional action for opening the section-layout editor
-    /// @param[in]  showsListBackground  Whether list-background controls are available in this appearance editor
-    /// @param[in]  displayFormat        Optional item display format to edit with its appearance
-    /// @param[in]  onSaveDisplay        Optional checked save callback for appearance and item display format
+    /// @param[in]  title                      Display title or proposed title text
+    /// @param[in]  appearance                 Optional or explicit appearance overrides supplied by the caller
+    /// @param[in]  onOpenCover                Optional action for opening the cover editor
+    /// @param[in]  onOpenLayout               Optional action for opening the section-layout editor
+    /// @param[in]  showsListBackground        Whether list-background controls are available in this appearance editor
+    /// @param[in]  displayFormat              Optional item display format to edit with its appearance
+    /// @param[in]  onSaveDisplay              Optional checked save callback for appearance and item display format
     /// @param[in]  inheritedAddItemTextColor  Resolved Board color used when this List has no override
-    /// @param[in]  onSave               Save callback returning true only when the owner accepts the edited value
+    /// @param[in]  onSave                     Save callback returning true only when the owner accepts the edited value
     ///
     /// @return     (ItemAppearanceSheet) initialized instance
     ///
@@ -1821,14 +1914,23 @@ struct ItemAppearanceSheet: View {
     }
 }
 
+
+///
+/// Presents photo attachments and their available actions
+///
+/// @section    Purpose
+///     Delegates caption, ordering, removal, and cover selection to the owner while retaining
+///     native attachment opening and photo selection.
+///
 struct CardPhotoGallery: View {
-    let photos: [KanbanAttachment]
+
+    let photos:                  [KanbanAttachment]
     @Binding var photoSelection: [PhotosPickerItem]
-    let onOpen: (KanbanAttachment) -> Void
-    let onCaption: (UUID, String) -> Bool
-    let onReorder: ([UUID]) -> Bool
-    let onRemove: (KanbanAttachment) -> Void
-    let onSetCover: (UUID) -> Void
+    let onOpen:                  (KanbanAttachment) -> Void
+    let onCaption:               (UUID, String) -> Bool
+    let onReorder:               ([UUID]) -> Bool
+    let onRemove:                (KanbanAttachment) -> Void
+    let onSetCover:              (UUID) -> Void
 
     @ScaledMetric(relativeTo: .body) private var photoWidth = 220
     @ScaledMetric(relativeTo: .body) private var photoHeight = 180
@@ -2002,9 +2104,18 @@ struct CardPhotoGallery: View {
     }
 }
 
+
+///
+/// Edits one photo caption before saving
+///
+/// @section    Purpose
+///     Seeds local writing from the attachment and dismisses only when the owner's checked callback
+///     accepts it.
+///
 struct CardPhotoCaptionSheet: View {
-    let photo: KanbanAttachment
-    let onSave: (String) -> Bool
+
+    let photo:                  KanbanAttachment
+    let onSave:                 (String) -> Bool
     @State private var caption: String
     @Environment(\.dismiss) private var dismiss
 
@@ -2055,8 +2166,17 @@ struct CardPhotoCaptionSheet: View {
     }
 }
 
+
+///
+/// Edits the order of retained photo attachments
+///
+/// @section    Purpose
+///     Publishes an ordered identity list through the checked callback rather than rewriting
+///     attachment records locally.
+///
 struct CardPhotoArrangementSheet: View {
-    let photos: [KanbanAttachment]
+
+    let photos:    [KanbanAttachment]
     let onReorder: ([UUID]) -> Bool
     @Environment(\.dismiss) private var dismiss
 
@@ -2091,6 +2211,7 @@ struct CardPhotoArrangementSheet: View {
         }
     }
 }
+
 
 ///
 /// Displays a square thumbnail for an attached card item
@@ -2177,13 +2298,15 @@ struct CardAttachmentThumbnail: View {
 
 
 ///
-/// Displays an attached photo or video at a larger size
+/// Coordinates native playback of captured audio
 ///
 /// @section    Purpose
-///     Allow users to inspect local media after opening its card-detail thumbnail
+///     Owns the audio player and publishes playback status and errors while allowing the
+///     presentation to stop playback on lifecycle changes.
 ///
 @MainActor
 final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate {
+
     @Published private(set) var isPlaying = false
     private var player: AVAudioPlayer?
 
@@ -2242,7 +2365,16 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     }
 }
 
+
+///
+/// Plays a retained audio attachment
+///
+/// @section    Purpose
+///     Owns playback state for the supplied file URL and responds to scene changes so audio does
+///     not outlive its intended presentation.
+///
 struct AudioAttachmentPlayer: View {
+
     let url: URL
     @StateObject private var playback = CaptureAudioPlayback()
     @Environment(\.scenePhase) private var scenePhase
@@ -2259,11 +2391,19 @@ struct AudioAttachmentPlayer: View {
     }
 }
 
+
+///
+/// Previews an attachment using its retained media type
+///
+/// @section    Purpose
+///     Selects the appropriate viewer and supports checked drawing updates when an editing callback
+///     is supplied.
+///
 struct CardAttachmentPreview: View {
 
     let attachment: KanbanAttachment        /* The media attachment to preview */
 
-    var onSaveDrawing: ((KanbanAttachment) -> Bool)? = nil
+    var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = nil
     @State private var editedAttachment: KanbanAttachment?
     @State private var showsDrawingEditor = false
     private var currentAttachment: KanbanAttachment { editedAttachment ?? attachment }
@@ -2358,8 +2498,17 @@ struct CardAttachmentPreview: View {
 
 
 // Board colors are a draft until Save; applying to all clears only List color overrides.
-/// Collection photos live separately from card attachments so attachment cleanup cannot remove them.
+
+
+///
+/// Stores custom collection background photos separately
+///
+/// @section    Purpose
+///     Keeps background files outside Card attachment storage so ordinary attachment pruning cannot
+///     remove a collection's image.
+///
 enum CollectionBackgroundPhotoStore {
+
     private static let cache = NSCache<NSString, UIImage>()
 
 
@@ -2461,10 +2610,18 @@ enum CollectionBackgroundPhotoStore {
     }
 }
 
-/// Stationary photo and procedural backgrounds keep content readable offline.
+
+///
+/// Renders offline collection background surfaces
+///
+/// @section    Purpose
+///     Combines stationary procedural or photo backgrounds with the configured appearance behind
+///     List content.
+///
 struct CollectionBackgroundSurface: View {
-    var background: CollectionBackground? = nil
-    var draftPhoto: Data? = nil
+
+    var background:     CollectionBackground? = nil
+    var draftPhoto:     Data? = nil
     private var colors: [Color] {
         switch background?.preset {
         case .linen: [Color(red: 0.47, green: 0.39, blue: 0.31), Color(red: 0.64, green: 0.54, blue: 0.43)]
@@ -2522,24 +2679,33 @@ struct CollectionBackgroundSurface: View {
     }
 }
 
+
+///
+/// Edits Board and List surface appearance as a draft
+///
+/// @section    Purpose
+///     Combines backgrounds, imported photos, preview colors, and optional List surface controls
+///     before handing the result to the owner.
+///
 struct BoardAppearanceSheet: View {
+
     @State private var photoSelection: PhotosPickerItem?
-    @State private var draftPhoto: Data?
+    @State private var draftPhoto:     Data?
     @State private var isImportingPhoto = false
-    @State private var backgroundError: String?
-    let allowsCollectionBackground: Bool
-    var defaultCollectionBackground: CollectionBackground? = nil
-    @State private var draft: BoardAppearance
-    let listSurface: KanbanList?
-    let onSaveListSurface: ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)?
-    @State private var draftSurfaceOpacity: Double
+    @State private var backgroundError:      String?
+    let allowsCollectionBackground:          Bool
+    var defaultCollectionBackground:         CollectionBackground? = nil
+    @State private var draft:                BoardAppearance
+    let listSurface:                         KanbanList?
+    let onSaveListSurface:                   ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)?
+    @State private var draftSurfaceOpacity:  Double
     @State private var draftShowsHeaderIcon: Bool
-    @State private var draftIconColor: ProfileColor?
-    @State private var draftHeaderIcon: PersonalCollectionIcon
+    @State private var draftIconColor:       ProfileColor?
+    @State private var draftHeaderIcon:      PersonalCollectionIcon
     @State private var applyToAll = false
     @State private var draftPresentation: BoardPresentation
-    let onSavePresentation: ((BoardPresentation) -> Void)?
-    let onSave: (BoardAppearance, Bool) -> Bool
+    let onSavePresentation:               ((BoardPresentation) -> Void)?
+    let onSave:                           (BoardAppearance, Bool) -> Bool
     @Environment(\.dismiss) private var dismiss
 
 
@@ -2772,11 +2938,18 @@ struct BoardAppearanceSheet: View {
 
 }
 
-/// Optional preview colors share one control at Board, List, Card, and Note scope.
-/// A view-scoped color override for the inline capture field, separate from Card styling.
+
+///
+/// Edits the inline Add-item text and button color
+///
+/// @section    Purpose
+///     Keeps a view-scoped override separate from Card preview styling and allows reset to the
+///     inherited color.
+///
 struct AddItemTextColorSection: View {
+
     @Binding var selection: ProfileColor?
-    var defaultColor: Color = .primary
+    var defaultColor:       Color = .primary
 
     var body: some View {
         Section("Add Card field") {
@@ -2799,10 +2972,18 @@ struct AddItemTextColorSection: View {
     }
 }
 
+
+///
+/// Edits optional title and body preview colors
+///
+/// @section    Purpose
+///     Binds explicit palette choices while allowing nil to retain inherited presentation.
+///
 struct PreviewTextColorsSection: View {
+
     @Binding var titleColor: ListPreviewTextColor?
-    @Binding var textColor: ListPreviewTextColor?
-    let explanation: String
+    @Binding var textColor:  ListPreviewTextColor?
+    let explanation:         String
 
 
     ///
@@ -2838,8 +3019,17 @@ struct PreviewTextColorsSection: View {
 
 // MARK: - Editable drawing capture
 
+
+///
+/// Retains editable drawing strokes and a cached preview
+///
+/// @section    Purpose
+///     Uses a stable draft identity and bounded raster preview so composer updates do not
+///     repeatedly render PencilKit content.
+///
 struct DrawingCaptureDraft: Identifiable {
-    let id: UUID
+
+    let id:      UUID
     let drawing: PKDrawing
     let preview: UIImage
 
@@ -2863,10 +3053,27 @@ struct DrawingCaptureDraft: Identifiable {
     }
 }
 
+
+///
+/// Defines supported raster drawing export formats
+///
+/// @section    Purpose
+///     Distinguishes PNG from JPEG so encoding and transparency behavior can follow the user's
+///     export choice.
+///
 enum DrawingImageFormat: String, CaseIterable {
+
     case png, jpeg
 }
 
+
+///
+/// Renders PencilKit content for preview and export
+///
+/// @section    Purpose
+///     Bounds output dimensions and controls transparency independently of the editable stroke
+///     data.
+///
 enum DrawingImageExport {
 
 
@@ -2923,6 +3130,14 @@ enum DrawingImageExport {
     }
 }
 
+
+///
+/// Persists drawing attachments and their editable source
+///
+/// @section    Purpose
+///     Writes strokes and preview files together while retaining an existing attachment identity
+///     when updating a drawing.
+///
 enum DrawingAttachmentStore {
 
 
@@ -2979,8 +3194,17 @@ enum DrawingAttachmentStore {
     }
 }
 
+
+///
+/// Owns a stable PencilKit canvas and observable editing state
+///
+/// @section    Purpose
+///     Publishes mark and Undo availability through canvas delegate events while preserving the
+///     native canvas across SwiftUI updates.
+///
 @MainActor
 final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate {
+
     let canvas = DrawingCanvasView()
     @Published var hasMarks: Bool
     @Published var canUndo = false
@@ -3091,8 +3315,17 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     }
 }
 
+
+///
+/// Keeps the PencilKit tool picker attached to its canvas
+///
+/// @section    Purpose
+///     Responds to window and size changes so drawing tools and canvas presentation follow the
+///     native view lifecycle.
+///
 @MainActor
 final class DrawingCanvasView: PKCanvasView {
+
     private let picker = PKToolPicker()
     private var lastSize = CGSize.zero
 
@@ -3148,7 +3381,16 @@ final class DrawingCanvasView: PKCanvasView {
     }
 }
 
+
+///
+/// Bridges the retained drawing canvas into SwiftUI
+///
+/// @section    Purpose
+///     Reuses DrawingCanvasState's native view so strokes and Undo history survive declarative view
+///     updates.
+///
 struct DrawingCanvas: UIViewRepresentable {
+
     let state: DrawingCanvasState
 
 
@@ -3179,11 +3421,29 @@ struct DrawingCanvas: UIViewRepresentable {
     func updateUIView(_ view: DrawingCanvasView, context: Context) {}
 }
 
+
+///
+/// Identifies a prepared drawing export file
+///
+/// @section    Purpose
+///     Keeps the temporary URL associated with a particular share presentation.
+///
 private struct DrawingExportFile: Identifiable {
+
     let id = UUID()
     let url: URL
 }
+
+
+///
+/// Presents the system share sheet for a drawing export
+///
+/// @section    Purpose
+///     Passes the prepared file URL to UIActivityViewController so the user chooses its
+///     destination.
+///
 private struct DrawingShareSheet: UIViewControllerRepresentable {
+
     let url: URL
 
 
@@ -3215,14 +3475,23 @@ private struct DrawingShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
+
+///
+/// Edits a drawing with explicit Save and discard handling
+///
+/// @section    Purpose
+///     Owns canvas state, export presentation, and errors; checked saves preserve an editable draft
+///     when the caller rejects the result.
+///
 struct DrawingCaptureEditor: View {
-    let initial: DrawingCaptureDraft
-    let onSave: (DrawingCaptureDraft) -> Bool
+
+    let initial:                    DrawingCaptureDraft
+    let onSave:                     (DrawingCaptureDraft) -> Bool
     @StateObject private var state: DrawingCanvasState
     @State private var showsClear = false
     @State private var showsDiscard = false
-    @State private var errorMessage: String?
-    @State private var exportFile: DrawingExportFile?
+    @State private var errorMessage:    String?
+    @State private var exportFile:      DrawingExportFile?
     @State private var exportDirectory: URL?
     @Environment(\.dismiss) private var dismiss
 
@@ -3337,12 +3606,19 @@ struct DrawingCaptureEditor: View {
 }
 
 
-/// Shared draft-only opacity preview for List Appearance and Library List settings.
+///
+/// Edits List surface opacity in a local draft
+///
+/// @section    Purpose
+///     Shares the same preview control across List appearance and Library settings without saving
+///     until the surrounding editor accepts it.
+///
 struct ListSurfaceOpacityPicker: View {
-    let title: String
-    var tint: KanbanListTint = .neutral
+
+    let title:            String
+    var tint:             KanbanListTint = .neutral
     @Binding var opacity: Double
-    var body: some View {
+    var body:             some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -3380,11 +3656,18 @@ struct ListSurfaceOpacityPicker: View {
 }
 
 
-/// Icon tint is independent of the banner and card text. Main shortcut Lists are read-only.
+///
+/// Edits List icon tint independently of its banner
+///
+/// @section    Purpose
+///     Preserves the special shortcut Lists' read-only controls while binding editable custom List
+///     color choices.
+///
 struct ListIconColorPicker: View {
+
     @Binding var selection: ProfileColor?
-    var fixedColor: ProfileColor? = nil
-    private let presets: [(String, ProfileColor)] = [
+    var fixedColor:         ProfileColor? = nil
+    private let presets:    [(String, ProfileColor)] = [
         ("Teal", .teal), ("Blue", .blue), ("Green", .green), ("Orange", .orange),
         ("Coral", .coral), ("Graphite", .graphite), ("White", .white),
         ("Charcoal", .charcoal), ("Yellow", .lemon), ("Sky", .sky)
@@ -3413,19 +3696,44 @@ struct ListIconColorPicker: View {
     }
 }
 
-/// New-item attachments remain in memory until explicit Add/Save. Failed commits
-/// remove only newly written files and preserve the editable draft for retry.
+
+///
+/// Owns unsaved creation attachments
+///
+/// @section    Purpose
+///     Keeps media in memory until explicit Add or Save and removes only newly written files on a
+///     failed commit, retaining the draft for retry.
+///
 @MainActor
 final class CreationAttachmentDraft: ObservableObject {
+
+
+    ///
+    /// Identifies an in-memory creation attachment
+    ///
+    /// @section    Purpose
+    ///     Wraps media, link, or drawing content with a stable draft ID and derived labels for the
+    ///     composer.
+    ///
     struct Entry: Identifiable {
+
+
+        ///
+        /// Carries the supported creation attachment payloads
+        ///
+        /// @section    Purpose
+        ///     Retains encoded media, a link URL, or an editable drawing until explicit item
+        ///     creation persists them.
+        ///
         enum Content {
+
             case media(Data, KanbanAttachmentKind, String)
             case link(URL)
             case drawing(DrawingCaptureDraft)
         }
         let id = UUID()
         let content: Content
-        var title: String {
+        var title:   String {
             switch content {
             case .media(_, let kind, _): kind == .video ? "Video" : "Photo"
             case .link(let url): url.absoluteString
@@ -3440,7 +3748,17 @@ final class CreationAttachmentDraft: ObservableObject {
             }
         }
     }
+
+
+    ///
+    /// Identifies creation attachment sheet destinations
+    ///
+    /// @section    Purpose
+    ///     Distinguishes source selection, link entry, and drawing editing while preserving the
+    ///     selected drawing draft.
+    ///
     enum Sheet: Identifiable {
+
         case sources, link, drawing(DrawingCaptureDraft)
         var id: String {
             switch self {
@@ -3450,8 +3768,8 @@ final class CreationAttachmentDraft: ObservableObject {
             }
         }
     }
-    @Published var entries: [Entry] = []
-    @Published var sheet: Sheet?
+    @Published var entries:   [Entry] = []
+    @Published var sheet:     Sheet?
     @Published var selection: [PhotosPickerItem] = []
     @Published var isImporting = false
     @Published var notice: String?
@@ -3556,9 +3874,17 @@ final class CreationAttachmentDraft: ObservableObject {
     }
 }
 
+
+///
+/// Displays pending attachments in a creation draft
+///
+/// @section    Purpose
+///     Shows media previews and removal controls that update only the in-memory draft entries.
+///
 struct CreationAttachmentList: View {
+
     @ObservedObject var draft: CreationAttachmentDraft
-    var body: some View {
+    var body:                  some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(draft.entries) { entry in
                 HStack {
@@ -3579,7 +3905,15 @@ struct CreationAttachmentList: View {
     }
 }
 
+
+///
+/// Connects attachment presentation to a creation draft
+///
+/// @section    Purpose
+///     Hosts source, link, and drawing sheets and imports selected media without creating a Card.
+///
 struct CreationAttachmentPresentation: ViewModifier {
+
     @ObservedObject var draft: CreationAttachmentDraft
 
 

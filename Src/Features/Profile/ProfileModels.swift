@@ -1,7 +1,10 @@
 // --------------------------------------------------------------------------------------------------
 // @file       ProfileModels.swift
-// @brief      Local profile identity and personalization models
-// @details    Defines user-controlled local identity and settings without online authentication
+// @brief      Local identity, compatible preferences, and Today Focus projections
+// @details    Defines Codable profile colors, avatar choices, identity, and planning or
+//             accessibility preferences. Resolves compatible defaults for older settings and
+//             derives filtered Focus entries without copying canonical Day content; identity
+//             remains separate from online authentication.
 //
 // @notes      Profile data remains separate from Board persistence and never stores passwords
 //
@@ -21,9 +24,9 @@ import Foundation
 ///
 struct ProfileColor: Hashable, Codable {
 
-    var red: Double           /* sRGB red component                                    */
-    var green: Double         /* sRGB green component                                  */
-    var blue: Double          /* sRGB blue component                                   */
+    var red:         Double   /* sRGB red component                                    */
+    var green:       Double   /* sRGB green component                                  */
+    var blue:        Double   /* sRGB blue component                                   */
     var legacyToken: String?  /* Legacy palette token retained for compatible encoding */
 
 
@@ -34,6 +37,7 @@ struct ProfileColor: Hashable, Codable {
     ///     Restrict component-based color encoding to the persisted RGB fields
     ///
     private enum CodingKeys: String, CodingKey {
+
         case red
         case green
         case blue
@@ -70,7 +74,7 @@ struct ProfileColor: Hashable, Codable {
     ///
     /// @param[in]  hue         Hue value, wrapped to one full turn
     /// @param[in]  saturation  Saturation value, clamped to 0 through 1
-    /// @param[in]  brightness Brightness value, clamped to 0 through 1
+    /// @param[in]  brightness  Brightness value, clamped to 0 through 1
     ///
     /// @return     (ProfileColor) converted RGB color
     ///
@@ -120,10 +124,10 @@ struct ProfileColor: Hashable, Codable {
     /// @details    Stores the RGB components and token so compatible encoding can preserve the
     ///             older string representation
     ///
-    /// @param[in]  red         sRGB red component
-    /// @param[in]  green       sRGB green component
-    /// @param[in]  blue        sRGB blue component
-    /// @param[in]  legacyToken Known palette token for this color
+    /// @param[in]  red          sRGB red component
+    /// @param[in]  green        sRGB green component
+    /// @param[in]  blue         sRGB blue component
+    /// @param[in]  legacyToken  Known palette token for this color
     ///
     /// @return     (ProfileColor) configured palette color
     ///
@@ -175,7 +179,7 @@ struct ProfileColor: Hashable, Codable {
     /// @brief      Decode a profile color from legacy or component-based data
     /// @details    Accepts known legacy palette strings or keyed sRGB component values
     ///
-    /// @param[in]  decoder Source of the encoded color
+    /// @param[in]  decoder  Source of the encoded color
     ///
     /// @return     (ProfileColor) decoded color
     ///
@@ -321,22 +325,31 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable {
 
 
 ///
-/// Stores user-controlled local presentation and planning preferences
+/// Defines ordering choices for Today Focus entries
 ///
 /// @section    Purpose
-///     Keep personalization separate from identity and Board domain data
+///     Selects the derived preview order without reordering canonical Day List content.
 ///
 enum TodayFocusOrder: String, Codable, CaseIterable {
+
     case dayList, chronological
     var title: String { self == .dayList ? "Day list order" : "Chronological" }
 }
 
-/// A derived preview entry; the heading belongs to the user's Day list, never a new record.
+
+///
+/// Carries a derived Today Focus preview entry
+///
+/// @section    Purpose
+///     Pairs a canonical Card with its owning Day section heading without creating another
+///     persisted record.
+///
 struct TodayFocusEntry: Identifiable {
-    let card: KanbanCard
+
+    let card:      KanbanCard
     let sectionID: Int?
-    let heading: String?
-    var id: Int { card.id }
+    let heading:   String?
+    var id:        Int { card.id }
     /// Date-only values do not claim a time; a timed start takes precedence over a timed due date.
     var previewTime: (date: Date, isStart: Bool)? {
         if let start = card.startDate, card.startDateKind != .date { return (start, true) }
@@ -438,31 +451,48 @@ struct TodayFocusEntry: Identifiable {
     }
 }
 
+
+///
+/// Selects the visual arrangement of importance stars
+///
+/// @section    Purpose
+///     Persists Tucked or Fanned presentation independently of the owner's zero-through-five
+///     importance level.
+///
 enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable {
+
     case tucked, fanned
-    var id: String { rawValue }
+    var id:    String { rawValue }
     var title: String { self == .tucked ? "Tucked" : "Fanned" }
 }
 
+
+///
+/// Retains local planning and display preferences
+///
+/// @section    Purpose
+///     Decodes compatible defaults for older profiles and keeps creation, focus, importance
+///     styling, and corner-navigation choices separate from Card content.
+///
 struct LocalProfilePreferences: Hashable, Codable {
 
-    var defaultListID:       Int?  /* Preferred Today list */
-    var usesReducedContent:  Bool  /* Hide supporting copy */
-    var scrollsOverflowingTitles: Bool
-    var importanceStarStyle: ImportanceStarStyle
-    var enablesLowerCornerBack: Bool
-    var usesLargeControls:   Bool   /* Use taller key actions */
-    var randomizesNewCardHeaders: Bool
+    var defaultListID:                Int? /* Preferred Today list */
+    var usesReducedContent:           Bool /* Hide supporting copy */
+    var scrollsOverflowingTitles:     Bool
+    var importanceStarStyle:          ImportanceStarStyle
+    var enablesLowerCornerBack:       Bool
+    var usesLargeControls:            Bool /* Use taller key actions */
+    var randomizesNewCardHeaders:     Bool
     var randomizesNewCardBackgrounds: Bool
-    var showsDueDatesOnNewCards: Bool
-    var todayFocusOrder: TodayFocusOrder
-    var todayFocusGroupsBySection: Bool
-    var todayFocusIncludesUpNext: Bool
-    var todayFocusIncludesImportant: Bool
+    var showsDueDatesOnNewCards:      Bool
+    var todayFocusOrder:              TodayFocusOrder
+    var todayFocusGroupsBySection:    Bool
+    var todayFocusIncludesUpNext:     Bool
+    var todayFocusIncludesImportant:  Bool
     var todayFocusIncludesBookmarked: Bool
-    var todayFocusHidesCompleted: Bool
-    var todayFocusItemCount: Int     /* Visible row capacity: zero expands all matches; otherwise 1...12 */
-    var showsNavigationLabels: Bool  /* Show labels beneath navigation icons                             */
+    var todayFocusHidesCompleted:     Bool
+    var todayFocusItemCount:          Int  /* Visible row capacity: zero expands all matches; otherwise 1...12 */
+    var showsNavigationLabels:        Bool /* Show labels beneath navigation icons                             */
 
 
     ///
@@ -472,6 +502,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     ///     Keep the Codable preference field names explicit
     ///
     private enum CodingKeys: String, CodingKey {
+
         case defaultListID
         case usesReducedContent
         case scrollsOverflowingTitles
@@ -492,11 +523,33 @@ struct LocalProfilePreferences: Hashable, Codable {
     /// @brief      Initialize local planning and presentation preferences
     /// @details    Defaults preserve the current Today experience until the user chooses otherwise
     ///
-    /// @param[in]  defaultListID       Optional preferred Board list for Today
-    /// @param[in]  usesReducedContent  Whether supporting Today copy is hidden
-    /// @param[in]  usesLargeControls   Whether primary Today controls use additional height
-    /// @param[in]  importanceStarStyle  Personal Tucked or Fanned importance presentation
-    /// @param[in]  showsNavigationLabels Whether primary navigation icons include text labels
+    /// @param[in]  defaultListID                 Optional preferred Board list for Today
+    /// @param[in]  usesReducedContent            Whether supporting Today copy is hidden
+    /// @param[in]  usesLargeControls             Whether primary Today controls use additional height
+    /// @param[in]  importanceStarStyle           Personal Tucked or Fanned importance presentation
+    /// @param[in]  showsNavigationLabels         Whether primary navigation icons include text labels
+    ///
+    /// @param[in]  showsDueDatesOnNewCards       Whether newly created Cards initially show due-date
+    ///             badges
+    /// @param[in]  todayFocusItemCount           Requested maximum number of entries in Today's Focus
+    ///             preview
+    /// @param[in]  randomizesNewCardHeaders      Whether new Cards receive a saved random header color
+    /// @param[in]  randomizesNewCardBackgrounds  Whether new Cards receive a saved random
+    ///             background color
+    /// @param[in]  todayFocusOrder               Selected ordering policy for derived Today Focus entries
+    /// @param[in]  todayFocusGroupsBySection     Whether Focus entries retain their Day section
+    ///             headings
+    /// @param[in]  todayFocusHidesCompleted      Whether completed Cards are omitted from Today Focus
+    /// @param[in]  todayFocusIncludesImportant   Whether important Cards participate in the Focus
+    ///             selection
+    /// @param[in]  todayFocusIncludesBookmarked  Whether bookmarked Cards participate in the Focus
+    ///             selection
+    /// @param[in]  todayFocusIncludesUpNext      Whether upcoming Cards participate in the Focus
+    ///             selection
+    /// @param[in]  scrollsOverflowingTitles      Whether overflowing title and preview reading behavior
+    ///             is enabled
+    /// @param[in]  enablesLowerCornerBack        Whether the invisible lower-left Back shortcut is
+    ///             enabled
     ///
     /// @return     (LocalProfilePreferences) configured personalization values
     ///
@@ -621,7 +674,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     /// @details    Preserves compatibility with saved preference snapshots that omit optional
     ///             values introduced by later app versions
     ///
-    /// @param[in]  decoder Source of the encoded preference values
+    /// @param[in]  decoder  Source of the encoded preference values
     ///
     /// @return     (LocalProfilePreferences) decoded settings
     ///
@@ -668,16 +721,16 @@ struct LocalProfilePreferences: Hashable, Codable {
 ///
 struct LocalProfile: Identifiable, Hashable, Codable {
 
-    let id:          UUID                     /* Stable local profile ID                         */
-    let createdAt:   Date                     /* Profile creation date                           */
-    var displayName: String                   /* User-facing name                                */
-    var email:       String                   /* Optional local email                            */
-    var context:     String                   /* Optional planning role                          */
-    var avatarColor: ProfileColor             /* Avatar background color                         */
-    var avatarIcon:  ProfileAvatarIcon        /* Avatar icon token                               */
-    var avatarForegroundColor: ProfileColor   /* Icon and initials color                         */
-    var avatarPhotoFileName: String?          /* Filename for the separately stored avatar photo */
-    var preferences: LocalProfilePreferences  /* Local personalization                           */
+    let id:                    UUID                    /* Stable local profile ID                         */
+    let createdAt:             Date                    /* Profile creation date                           */
+    var displayName:           String                  /* User-facing name                                */
+    var email:                 String                  /* Optional local email                            */
+    var context:               String                  /* Optional planning role                          */
+    var avatarColor:           ProfileColor            /* Avatar background color                         */
+    var avatarIcon:            ProfileAvatarIcon       /* Avatar icon token                               */
+    var avatarForegroundColor: ProfileColor            /* Icon and initials color                         */
+    var avatarPhotoFileName:   String?                 /* Filename for the separately stored avatar photo */
+    var preferences:           LocalProfilePreferences /* Local personalization                           */
 
 
     ///
@@ -687,6 +740,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     ///     Keep the Codable profile field names explicit
     ///
     private enum CodingKeys: String, CodingKey {
+
         case id
         case createdAt
         case displayName
@@ -706,7 +760,7 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     /// @details    Restores stable identity and local fields while applying defaults for avatar
     ///             properties absent from older profile data
     ///
-    /// @param[in]  decoder Source of the encoded profile
+    /// @param[in]  decoder  Source of the encoded profile
     ///
     /// @return     (LocalProfile) decoded local profile
     ///
@@ -757,16 +811,16 @@ struct LocalProfile: Identifiable, Hashable, Codable {
     /// @brief      Initialize a local Plenact profile
     /// @details    Stores user-entered identity and settings without authentication secrets
     ///
-    /// @param[in]  id           Stable local profile identifier
-    /// @param[in]  createdAt    Profile creation timestamp
-    /// @param[in]  displayName  User-facing display name
-    /// @param[in]  email        Optional locally stored email text
-    /// @param[in]  context      Optional role or planning context
-    /// @param[in]  avatarColor  Selected avatar background color
-    /// @param[in]  avatarIcon   Selected avatar icon token
-    /// @param[in]  avatarForegroundColor Selected initials and icon foreground token
-    /// @param[in]  avatarPhotoFileName Filename of the separately stored avatar photo
-    /// @param[in]  preferences  Local planning and presentation settings
+    /// @param[in]  id                     Stable local profile identifier
+    /// @param[in]  createdAt              Profile creation timestamp
+    /// @param[in]  displayName            User-facing display name
+    /// @param[in]  email                  Optional locally stored email text
+    /// @param[in]  context                Optional role or planning context
+    /// @param[in]  avatarColor            Selected avatar background color
+    /// @param[in]  avatarIcon             Selected avatar icon token
+    /// @param[in]  avatarForegroundColor  Selected initials and icon foreground token
+    /// @param[in]  avatarPhotoFileName    Filename of the separately stored avatar photo
+    /// @param[in]  preferences            Local planning and presentation settings
     ///
     /// @return     (LocalProfile) configured local identity
     ///

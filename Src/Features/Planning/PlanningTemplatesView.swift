@@ -1,7 +1,25 @@
+// --------------------------------------------------------------------------------------------------
+// @file       PlanningTemplatesView.swift
+// @brief      Reusable routine browsing, draft editing, and checked application
+// @details    Shares template discovery between the standalone library and Plans filters. Provides
+//             nested List, Card, and checklist draft editors, previews additive or replacement
+//             application to dated owners, and captures quick-start content as templates while
+//             preserving the live Week.
+//
+// --------------------------------------------------------------------------------------------------
+
 import SwiftUI
 
-/// The standalone shortcut and Library filter share the same stateful rows and editing sheets.
+
+///
+/// Presents the standalone reusable-template library
+///
+/// @section    Purpose
+///     Reuses the same stateful rows and editing sheets as the Library filter to keep behavior and
+///     storage consistent.
+///
 struct PlanningTemplatesView: View {
+
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
@@ -13,15 +31,24 @@ struct PlanningTemplatesView: View {
     }
 }
 
+
+///
+/// Presents reusable routines within the Library
+///
+/// @section    Purpose
+///     Coordinates searching, editing, applying, and deleting templates while keeping routine
+///     storage separate from live calendar content.
+///
 struct PlanningTemplateLibraryRows: View {
+
     var query = ""
     @Environment(\.planningCalendarAccess) private var access
     @State private var library: PlanningRoutineLibrary?
     @State private var sourceDate = Date.now
-    @State private var editing: PlanningRoutineTemplate?
+    @State private var editing:  PlanningRoutineTemplate?
     @State private var applying: PlanningRoutineTemplate?
     @State private var deleting: PlanningRoutineTemplate?
-    @State private var message: String?
+    @State private var message:  String?
 
 
     ///
@@ -160,9 +187,18 @@ struct PlanningTemplateLibraryRows: View {
     }
 }
 
+
+///
+/// Edits a reusable routine template as a local draft
+///
+/// @section    Purpose
+///     Retains the original snapshot for comparison and publishes accepted changes only through the
+///     checked save callback.
+///
 struct PlanningTemplateEditor: View {
-    @State var template: PlanningRoutineTemplate
-    let onSave: (PlanningRoutineTemplate) -> Bool
+
+    @State var template:  PlanningRoutineTemplate
+    let onSave:           (PlanningRoutineTemplate) -> Bool
     private let original: PlanningRoutineTemplate
 
 
@@ -219,11 +255,20 @@ struct PlanningTemplateEditor: View {
     }
 }
 
+
+///
+/// Edits the items within a template List
+///
+/// @section    Purpose
+///     Binds to the template snapshot and passes its anchor date to nested Card and checklist
+///     editors.
+///
 private struct PlanningTemplateListEditor: View {
+
     @Binding var list: KanbanList
-    let allLists: [KanbanList]
-    let anchor: Date
-    var body: some View {
+    let allLists:      [KanbanList]
+    let anchor:        Date
+    var body:          some View {
         Section(list.title) {
             ForEach($list.cards) { $card in
                 NavigationLink {
@@ -258,10 +303,19 @@ private struct PlanningTemplateListEditor: View {
     }
 }
 
+
+///
+/// Edits one template Card or Note
+///
+/// @section    Purpose
+///     Updates writing, presentation, relative dates, and checklists in the reusable draft rather
+///     than a scheduled live item.
+///
 private struct PlanningTemplateCardEditor: View {
+
     @Binding var card: KanbanCard
-    let anchor: Date
-    var body: some View {
+    let anchor:        Date
+    var body:          some View {
         Form {
             Section("Item") {
                 TextField("Title", text: $card.word, axis: .vertical).textInputAutocapitalization(.sentences)
@@ -295,9 +349,18 @@ private struct PlanningTemplateCardEditor: View {
     }
 }
 
+
+///
+/// Edits a template checklist while preserving its identity
+///
+/// @section    Purpose
+///     Reconstructs the checklist from bound title and item edits so the surrounding template
+///     remains the sole draft owner.
+///
 private struct PlanningTemplateChecklistEditor: View {
+
     @Binding var checklist: KanbanChecklist
-    private var items: Binding<[KanbanChecklistItem]> {
+    private var items:      Binding<[KanbanChecklistItem]> {
         Binding(get: { checklist.items }, set: { values in
             checklist = KanbanChecklist(id: checklist.id, title: checklist.title, items: values, completedItemIndices: [])
         })
@@ -318,16 +381,25 @@ private struct PlanningTemplateChecklistEditor: View {
     }
 }
 
+
+///
+/// Previews and applies a routine to a selected date
+///
+/// @section    Purpose
+///     Keeps the destination baseline and generated preview separate, supports additive or
+///     replacement modes, and requires checked persistence.
+///
 struct PlanningTemplateApplyView: View {
+
     let template: PlanningRoutineTemplate
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var date = Date.now
-    @State private var mode: PlanningTemplateApplication.Mode = .add
-    @State private var baseline: DatedPlanningWeek?
-    @State private var preview: DatedPlanningWeek?
+    @State private var mode:                PlanningTemplateApplication.Mode = .add
+    @State private var baseline:            DatedPlanningWeek?
+    @State private var preview:             DatedPlanningWeek?
     @State private var exampleImportantIDs: Set<Int> = []
-    @State private var message: String?
+    @State private var message:             String?
     @State private var confirmsReplace = false
 
 
@@ -425,7 +497,13 @@ struct PlanningTemplateApplyView: View {
     }
 }
 
-/// Token matching is shared by saved routines and all built-in starting points.
+
+///
+/// Matches authored and saved Library starters
+///
+/// @section    Purpose
+///     Shares token-based search across routine templates and bundled starting points.
+///
 enum LibraryStarterSearch {
 
 
@@ -447,7 +525,14 @@ enum LibraryStarterSearch {
     }
 }
 
-/// Use the same item factory as Quick capture, reserving archived identities and retaining the live week.
+
+///
+/// Builds a reusable template from capture content
+///
+/// @section    Purpose
+///     Reuses item creation policy, reserves archived identities, and retains the live Week while
+///     constructing the saved routine snapshot.
+///
 enum LibraryTemplateCapture {
 
 
@@ -484,7 +569,16 @@ enum LibraryTemplateCapture {
     }
 }
 
+
+///
+/// Captures a quick-start item as a reusable template
+///
+/// @section    Purpose
+///     Reuses full creation and attachment handling but saves into the routine library rather than
+///     directly into the active Week.
+///
 struct LibraryQuickTemplateComposer: View {
+
     let template: QuickCaptureTemplate
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
@@ -537,12 +631,20 @@ struct LibraryQuickTemplateComposer: View {
     }
 }
 
-/// Keep the original Example Week -> editable template path available in the Examples catalog.
+
+///
+/// Provides the Example Week to template entry point
+///
+/// @section    Purpose
+///     Keeps the bundled example available as an editable reusable routine within the Examples
+///     catalog.
+///
 struct LibraryExampleWeekTemplateButton: View {
-    @State private var editing: PlanningRoutineTemplate?
+
+    @State private var editing:  PlanningRoutineTemplate?
     @State private var baseline: PlanningRoutineLibrary?
-    @State private var message: String?
-    var body: some View {
+    @State private var message:  String?
+    var body:                    some View {
         Button("Save as a Week template", systemImage: "square.stack.3d.up") {
             do {
                 baseline = try PlanningRoutineStore.load()

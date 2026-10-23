@@ -10022,6 +10022,75 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet
+    /// @brief      Verify the in-column naming field's keyboard, selection, and checked commit
+    /// @details    Replaces the selected generated title, rejects an initial save, then commits
+    ///             through the canonical editor while preserving Cards added after naming began.
+    ///
+    /// @return     (Void) records native input and owner-update assertions
+    /// @throws     Propagates missing window, field, or text-selection fixtures.
+    ///
+    @MainActor
+    func testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet() async throws {
+        var lists = [KanbanList(id: 7, title: "New List 2", cards: [])]
+        lists[0].subtitleOverride = "Keep this context"
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.endEditing(true); window.isHidden = true; window.rootViewController = nil; previous?.makeKeyAndVisible() }
+
+
+        ///
+        /// @fcn        testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet.descendants
+        /// @brief      Collect native descendants of the inline editor
+        /// @details    Finds the public UITextField without depending on private SwiftUI classes.
+        ///
+        /// @param[in]  view  Native subtree to inspect
+        ///
+        /// @return     ([UIView]) root and descendants
+        ///
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        var allowsSave = false
+        var finishCalls = 0
+        let host = UIHostingController(rootView: InlineBoardListTitle(list: lists[0], onSave: { title in
+            guard allowsSave else { return false }
+            return editBoardList(7, title: title, subtitle: lists[0].subtitle, in: &lists)
+        }, onFinish: { finishCalls += 1 })
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading))
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(350))
+        let field = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UITextField }.first { $0.accessibilityIdentifier == "board.newListTitle" })
+        XCTAssertLessThanOrEqual(field.bounds.height, 37, "The title must stay one line instead of expanding the List header")
+        XCTAssertLessThan(field.convert(field.bounds, to: host.view).minY, 100, "The title stays at the top of a tall column")
+        XCTAssertTrue(field.isFirstResponder)
+        XCTAssertEqual(field.returnKeyType, .done)
+        XCTAssertEqual(field.text(in: try XCTUnwrap(field.selectedTextRange)), "New List 2")
+        XCTAssertNil(host.presentedViewController)
+        field.insertText("  Roadmap  ")
+        try await Task.sleep(for: .milliseconds(60))
+        _ = field.delegate?.textFieldShouldReturn?(field)
+        try await Task.sleep(for: .milliseconds(80))
+        XCTAssertEqual(finishCalls, 0)
+        XCTAssertEqual(field.text, "  Roadmap  ")
+        XCTAssertTrue(field.isFirstResponder)
+        XCTAssertEqual(lists[0].title, "New List 2")
+        lists[0].cards.append(KanbanCard(id: 40, word: "Keep this task", listTitle: lists[0].title))
+        allowsSave = true
+        _ = field.delegate?.textFieldShouldReturn?(field)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(lists[0].title, "Roadmap")
+        XCTAssertEqual(lists[0].subtitle, "Keep this context")
+        XCTAssertEqual(lists[0].cards.first?.word, "Keep this task")
+        XCTAssertEqual(lists[0].cards.first?.listTitle, "Roadmap")
+        XCTAssertEqual(finishCalls, 1)
+        XCTAssertFalse(field.isFirstResponder)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle
     /// @brief      Start naming a new Board list immediately and advance to its subtitle
     /// @details    Mounts the new-list editor, checks native first-responder and full-title selection, types a

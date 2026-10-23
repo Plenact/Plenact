@@ -2302,7 +2302,7 @@ struct ContentView: View {
     /// Navigation stack path for card-detail destinations.
     @State private var listToCopy: KanbanList?
     @State private var listToMove: KanbanList?
-    @State private var listToRename: KanbanList?
+    @State private var namingNewListID: Int?
     @Environment(\.planningDirectItemReturn) private var directItemReturn
     @State private var openedDirectItem = false
     @State private var navigationPath = NavigationPath()                                /* Card-detail destinations in the Board navigation stack       */
@@ -2822,8 +2822,8 @@ struct ContentView: View {
     /// @fcn        ContentView.addList
     /// @brief      Append a uniquely named empty list to the board
     /// @details    Allocates an ID beyond active and archived lists, avoids case-insensitive title collisions, and
-    ///             makes the new list the visible target. Presents its metadata editor with the title focused and
-    ///             selected so typing immediately replaces the generated name.
+    ///             makes the new list the visible target. Focuses its inline column title and selects the generated
+    ///             name so typing replaces it without presenting a separate editor.
     ///
     /// @return     (Void) no return value
     ///
@@ -2844,7 +2844,7 @@ struct ContentView: View {
         lists.append(newList)
         visibleListID = nextListID
         boardTargetListID = nextListID
-        listToRename = newList
+        namingNewListID = nextListID
     }
 
 
@@ -3843,6 +3843,8 @@ struct ContentView: View {
                                             onEditList: { title, subtitle, defaultPresentation in
                                                 editBoardList(list.id, title: title, subtitle: subtitle, newItemPresentation: defaultPresentation, in: &lists)
                                             },
+                                            isNamingNewList: namingNewListID == list.id,
+                                            onFinishNaming: { if namingNewListID == list.id { namingNewListID = nil } },
                                             onOpenDayView: { focusedDayListID = list.id },
                                             boardAppearance: currentBoardAppearance,
                                             onAppearance: { appearance in
@@ -4216,13 +4218,6 @@ struct ContentView: View {
                     .environment(\.workspaceBottomBarHeight, 0)
                     .environment(\.cardMovementSource, personalCollectionID)
                 }
-            }
-            .sheet(item: $listToRename) { list in
-                ListInfoEditorSheet(list: list, focusesTitleOnAppear: true) { title, subtitle, presentation in
-                    editBoardList(list.id, title: title, subtitle: subtitle,
-                                  newItemPresentation: presentation, in: &lists)
-                }
-                .databaseActivityOverlay()
             }
             .sheet(item: $listToMove) { source in
                 MoveListDestinationSheet(source: source, access: planningCalendarAccess, currentID: personalCollectionID)
@@ -5307,6 +5302,8 @@ struct KanbanListView: View {
     @State private var guidanceVisible = false
     @State private var guidanceFooterVisible: Bool?
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
+    var isNamingNewList = false
+    var onFinishNaming: () -> Void = {}
     var onOpenDayView: (() -> Void)? = nil
     @State private var opensDayAfterDismissal = false
     var boardAppearance: BoardAppearance = BoardAppearance()
@@ -5511,11 +5508,19 @@ struct KanbanListView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     ItemAppearanceMark(appearance: list.headerAppearance())
-                    Text(styledListTitle)
-                        .font(.title3.weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .layoutPriority(1)
+                    if isNamingNewList {
+                        InlineBoardListTitle(list: list, onSave: { title in
+                            onEditList?(title, list.subtitle, list.newItemPresentation) == true
+                        }, onFinish: onFinishNaming)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .layoutPriority(1)
+                    } else {
+                        Text(styledListTitle)
+                            .font(.title3.weight(.bold))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .layoutPriority(1)
+                    }
                     if isCurrentDay {
                         Text("Today")
                             .font(.caption2.weight(.bold))
@@ -5531,11 +5536,11 @@ struct KanbanListView: View {
                         .foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
-                .gesture(listReorderGesture)
+                .gesture(listReorderGesture, including: isNamingNewList ? .none : .all)
                 .simultaneousGesture(TapGesture().onEnded {
-                    if canOpenDatedDay && !isHoldingList { onOpenDayView?() }
+                    if !isNamingNewList && canOpenDatedDay && !isHoldingList { onOpenDayView?() }
                 })
-                .accessibilityElement(children: .combine)
+                .accessibilityElement(children: isNamingNewList ? .contain : .combine)
                 .modifier(DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenDatedDay ? onOpenDayView : nil))
                 .accessibilityHint(canOpenDatedDay ? "Opens this day. Touch and hold to drag this list instead." : "Touch and hold to drag this list. Keep holding near either screen edge to move across the board.")
                 .accessibilityAction(named: "Move earlier") {
@@ -6688,11 +6693,74 @@ func editBoardList(_ listID: Int, title: String, subtitle: String, newItemPresen
 
 
 
+/// New List naming stays in its Board column rather than opening a metadata sheet.
+struct InlineBoardListTitle: View {
+    let list: KanbanList
+    let onSave: (String) -> Bool
+    let onFinish: () -> Void
+    @State private var title: String
+    @State private var focused = false
+    @State private var finished = false
+    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36
+
+
+    ///
+    /// @fcn        InlineBoardListTitle.init(list:onSave:onFinish:)
+    /// @brief      Seed the generated List name for immediate replacement
+    /// @details    Owns only a title draft; the parent retains canonical Cards and other metadata.
+    ///
+    /// @param[in]  list      Newly created List
+    /// @param[in]  onSave    Checked canonical rename callback
+    /// @param[in]  onFinish  Ends the Board's inline naming session
+    ///
+    /// @return     (InlineBoardListTitle) selected, focusable header editor
+    ///
+    init(list: KanbanList, onSave: @escaping (String) -> Bool, onFinish: @escaping () -> Void) {
+        self.list = list
+        self.onSave = onSave
+        self.onFinish = onFinish
+        _title = State(initialValue: list.title)
+    }
+
+    var body: some View {
+        ListTitleField(text: $title, focused: $focused, selectsInitialTitle: true,
+            returnKeyType: .done, textStyle: .headline, identifier: "board.newListTitle", onNext: finish)
+            .frame(height: titleHeight)
+            .task { focused = true }
+            .onChange(of: focused) { wasFocused, isFocused in
+                if wasFocused && !isFocused { finish() }
+            }
+            .onDisappear { finish() }
+    }
+
+
+    ///
+    /// @fcn        InlineBoardListTitle.finish()
+    /// @brief      Commit a new List name and return its header to normal display
+    /// @details    Trims typed text, retains the generated name for blank input, and keeps editing
+    ///             on a rejected rename. Successful completion is idempotent across focus changes.
+    ///
+    /// @return     (Void) saves through the owner without opening another view
+    ///
+    private func finish() {
+        guard !finished else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard onSave(trimmed.isEmpty ? list.title : trimmed) else { focused = true; return }
+        finished = true
+        focused = false
+        onFinish()
+    }
+}
+
+
 /// Native title input keeps initial selection and keyboard submission under the editor's control.
 private struct ListTitleField: UIViewRepresentable {
     @Binding var text: String
     @Binding var focused: Bool
     let selectsInitialTitle: Bool
+    var returnKeyType: UIReturnKeyType = .next
+    var textStyle: UIFont.TextStyle = .body
+    var identifier = "list-editor-title"
     let onNext: () -> Void
 
 
@@ -6708,9 +6776,9 @@ private struct ListTitleField: UIViewRepresentable {
 
     ///
     /// @fcn        ListTitleField.makeUIView
-    /// @brief      Create the title input with a visible Next return key
-    /// @details    Uses native text selection, Dynamic Type, and sentence capitalization. Text changes update the
-    ///             draft through the coordinator; creating the field never saves the list.
+    /// @brief      Create the title input with its configured keyboard submission key
+    /// @details    Uses native selection, Dynamic Type, and sentence capitalization. The caller
+    ///             chooses header styling and Done or Next; creating the field never saves the List.
     ///
     /// @param[in]  context  SwiftUI lifecycle context containing the title delegate
     ///
@@ -6719,12 +6787,14 @@ private struct ListTitleField: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextField {
         let field = UITextField()
         field.placeholder = "List title"
-        field.font = .preferredFont(forTextStyle: .body)
+        field.font = .preferredFont(forTextStyle: textStyle)
         field.adjustsFontForContentSizeCategory = true
         field.autocapitalizationType = .sentences
-        field.returnKeyType = .next
+        field.returnKeyType = returnKeyType
         field.accessibilityLabel = "List title"
-        field.accessibilityIdentifier = "list-editor-title"
+        field.accessibilityIdentifier = identifier
+        field.setContentHuggingPriority(.required, for: .vertical)
+        field.setContentCompressionResistancePriority(.required, for: .vertical)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         field.delegate = context.coordinator
@@ -6821,9 +6891,9 @@ private struct ListTitleField: UIViewRepresentable {
 
         ///
         /// @fcn        ListTitleField.Coordinator.textFieldShouldReturn
-        /// @brief      Advance from the title to the subtitle without saving
-        /// @details    Invokes the editor's Next action and suppresses default return behavior so the title remains
-        ///             single-line and focus transfer belongs to the parent editor.
+        /// @brief      Dispatch the parent editor's configured Return action
+        /// @details    Metadata editing advances to the subtitle; inline Board naming commits.
+        ///             Suppresses default Return behavior so the field remains single-line.
         ///
         /// @param[in]  field  Native title field whose Next key was pressed
         ///

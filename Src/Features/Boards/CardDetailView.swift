@@ -3014,7 +3014,13 @@ struct CardDetailView: View {
                         if displayFormat != .divider {
                             Button("Add reaction", systemImage: "face.smiling") { dismissEditing(); activeSheet = .reactions }
                             if let libraryImportance {
-                                Toggle("Mark important", isOn: Binding(get: { libraryImportance.contains(card.id) }, set: { libraryImportance.set(card.id, $0) }))
+                                Button(libraryImportance.contains(card.id) ? "Increase importance" : "Mark important", systemImage: "star.fill") {
+                                    libraryImportance.adjust(card.id, 1)
+                                }
+                                .disabled(libraryImportance.level(card.id) >= 5)
+                                if libraryImportance.contains(card.id) {
+                                    Button("Decrease importance", systemImage: "star") { libraryImportance.adjust(card.id, -1) }
+                                }
                             }
                             Toggle("Show reactions in previews", isOn: Binding(get: { showsReactionsInPreviews != false }, set: { visible in
                                 let previous = showsReactionsInPreviews

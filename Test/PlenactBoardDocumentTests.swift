@@ -1182,6 +1182,112 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testImportanceLevelsRequireSeparateGesturesAndRetainLegacyMarks
+    /// @brief      Verify one-step importance, legacy migration, and owner isolation
+    /// @details    Exercises every increase and decrease, clamping, unrelated edits, and legacy
+    ///             presence-only decoding without losing higher-level selections.
+    ///
+    /// @return     (Void) records bounded-step and persistence assertions
+    /// @throws     Propagates fixture encoding failures.
+    ///
+    func testImportanceLevelsRequireSeparateGesturesAndRetainLegacyMarks() throws {
+        let owner = UUID(), other = UUID()
+        var data = try JSONEncoder().encode([LibraryRecentItem(collectionID: other, cardID: 7)])
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: other, data: data), 1)
+        for expected in 1...5 {
+            data = LibraryImportanceSelection.adjusting(cardID: 7, collectionID: owner, direction: 99, data: data)
+            XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: owner, data: data), expected)
+        }
+        data = LibraryImportanceSelection.adjusting(cardID: 7, collectionID: owner, direction: 1, data: data)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: owner, data: data), 5)
+        data = LibraryImportanceSelection.setting(cardID: 7, collectionID: owner, marked: true, data: data)
+        data = LibraryImportanceSelection.setting(cardID: 8, collectionID: other, marked: true, data: data)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: owner, data: data), 5)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: other, data: data), 1)
+        XCTAssertEqual(try JSONDecoder().decode([LibraryImportanceItem].self, from: data).first { $0.collectionID == owner }?.resolvedLevel, 5)
+        for expected in (0...4).reversed() {
+            data = LibraryImportanceSelection.adjusting(cardID: 7, collectionID: owner, direction: -99, data: data)
+            XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: owner, data: data), expected)
+            XCTAssertEqual(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: data), expected > 0)
+        }
+        XCTAssertTrue(LibraryImportanceSelection.cardIDs(collectionID: owner, data: data).isEmpty)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 7, collectionID: owner, data: Data("invalid".utf8)), 0)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testImportanceStarStyleDefaultsTuckedAndPersistsWithoutChangingLevels
+    /// @brief      Verify the display preference is independent of importance
+    /// @details    Legacy preferences default to Tucked; both choices round-trip with all other fields.
+    ///
+    /// @return     (Void) records default and Codable assertions
+    /// @throws     Propagates fixture serialization failures.
+    ///
+    func testImportanceStarStyleDefaultsTuckedAndPersistsWithoutChangingLevels() throws {
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(LocalProfilePreferences())) as? [String: Any])
+        object.removeValue(forKey: "importanceStarStyle")
+        XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONSerialization.data(withJSONObject: object)).importanceStarStyle, .tucked)
+        let suite = "ImportanceStyle." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for style in ImportanceStarStyle.allCases {
+            let preferences = LocalProfilePreferences(importanceStarStyle: style)
+            PlanPreferencesStore.save(preferences, to: defaults)
+            XCTAssertEqual(PlanPreferencesStore.load(from: defaults).importanceStarStyle, style)
+            XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(preferences)), preferences)
+        }
+        let fanned = try JSONEncoder().encode(LocalProfilePreferences(importanceStarStyle: .fanned))
+        let domain = try FullMonthExample.make().defaultsDomain(preserving: [PlanPreferencesStore.key: fanned])
+        let retained = try XCTUnwrap(domain[PlanPreferencesStore.key] as? Data)
+        XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self, from: retained).importanceStarStyle, .fanned)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleUndoRetainsExactImportanceLevelsAndLegacySnapshots
+    /// @brief      Verify example undo snapshots retain layered importance
+    /// @details    Saves mixed levels and verifies old snapshots without levels remain readable.
+    ///
+    /// @return     (Void) records undo persistence assertions
+    /// @throws     Propagates temporary defaults or JSON failures.
+    ///
+    func testExampleUndoRetainsExactImportanceLevelsAndLegacySnapshots() throws {
+        let suite = "ImportanceUndo." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let levels = [1: 3, 2: 4, 3: 5]
+        XCTAssertTrue(ExampleLoadUndoStore.save(lists: [], todayListID: nil, importantCardIDs: Set(levels.keys), importanceLevels: levels, to: defaults))
+        XCTAssertEqual(ExampleLoadUndoStore.load(from: defaults)?.importanceLevels, levels)
+        let legacy = ExampleLoadUndoSnapshot(lists: [], todayListID: nil, importantCardIDs: [1])
+        XCTAssertNil(try JSONDecoder().decode(ExampleLoadUndoSnapshot.self, from: JSONEncoder().encode(legacy)).importanceLevels)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testImportanceExamplesDemonstrateBusyDaysWithoutChangingExistingOwners
+    /// @brief      Verify example levels and preservation of unrelated personal importance
+    /// @details    Work, Gym, and Dinner demonstrate distinct layered states; arbitrary example
+    ///             titles also receive levels only through explicit example seeding.
+    ///
+    /// @return     (Void) records fresh-example and preservation assertions
+    ///
+    func testImportanceExamplesDemonstrateBusyDaysWithoutChangingExistingOwners() {
+        let other = UUID()
+        let original = LibraryImportanceSelection.settingLevel(cardID: 4, collectionID: other, level: 5, data: Data())
+        var owner = PersonalCollection(title: "Example", kind: .list)
+        owner.lists[0].cards = ["Work", "Gym", "Dinner", "Sketch an idea"].enumerated().map {
+            KanbanCard(id: $0.offset, word: $0.element, listTitle: "Example")
+        }
+        let data = LibraryImportanceSelection.demoData(in: [owner], preserving: original, includesAllExamples: true)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 0, collectionID: owner.id, data: data), 4)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 1, collectionID: owner.id, data: data), 3)
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 2, collectionID: owner.id, data: data), 5)
+        XCTAssertTrue((1...5).contains(LibraryImportanceSelection.level(cardID: 3, collectionID: owner.id, data: data)))
+        XCTAssertEqual(LibraryImportanceSelection.level(cardID: 4, collectionID: other, data: data), 5)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testFocusImportanceUsesOwnerQualifiedStateAndSeedsOnlyNamedDemoRecords
     /// @brief      Verify that focus Importance Uses Owner Qualified State And Seeds Only Named Demo Records
     /// @details    Exercises `LibraryImportanceSelection.setting`, `LibraryImportanceSelection.demoData`,

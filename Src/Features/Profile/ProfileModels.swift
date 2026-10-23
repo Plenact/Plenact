@@ -438,11 +438,18 @@ struct TodayFocusEntry: Identifiable {
     }
 }
 
+enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable {
+    case tucked, fanned
+    var id: String { rawValue }
+    var title: String { self == .tucked ? "Tucked" : "Fanned" }
+}
+
 struct LocalProfilePreferences: Hashable, Codable {
 
     var defaultListID:       Int?  /* Preferred Today list */
     var usesReducedContent:  Bool  /* Hide supporting copy */
     var scrollsOverflowingTitles: Bool
+    var importanceStarStyle: ImportanceStarStyle
     var enablesLowerCornerBack: Bool
     var usesLargeControls:   Bool   /* Use taller key actions */
     var randomizesNewCardHeaders: Bool
@@ -468,6 +475,7 @@ struct LocalProfilePreferences: Hashable, Codable {
         case defaultListID
         case usesReducedContent
         case scrollsOverflowingTitles
+        case importanceStarStyle
         case enablesLowerCornerBack
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
@@ -487,6 +495,7 @@ struct LocalProfilePreferences: Hashable, Codable {
     /// @param[in]  defaultListID       Optional preferred Board list for Today
     /// @param[in]  usesReducedContent  Whether supporting Today copy is hidden
     /// @param[in]  usesLargeControls   Whether primary Today controls use additional height
+    /// @param[in]  importanceStarStyle  Personal Tucked or Fanned importance presentation
     /// @param[in]  showsNavigationLabels Whether primary navigation icons include text labels
     ///
     /// @return     (LocalProfilePreferences) configured personalization values
@@ -509,11 +518,13 @@ struct LocalProfilePreferences: Hashable, Codable {
         todayFocusIncludesBookmarked: Bool = false,
         todayFocusIncludesUpNext: Bool = false,
         scrollsOverflowingTitles: Bool = true,
-        enablesLowerCornerBack: Bool = true
+        enablesLowerCornerBack: Bool = true,
+        importanceStarStyle: ImportanceStarStyle = .tucked
     ) {
 
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
         self.enablesLowerCornerBack = enablesLowerCornerBack
+        self.importanceStarStyle = importanceStarStyle
         self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
         self.todayFocusIncludesImportant = todayFocusIncludesImportant
         self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
@@ -638,7 +649,8 @@ struct LocalProfilePreferences: Hashable, Codable {
             todayFocusIncludesBookmarked: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesBookmarked) ?? false,
             todayFocusIncludesUpNext: try container.decodeIfPresent(Bool.self, forKey: .todayFocusIncludesUpNext) ?? false,
             scrollsOverflowingTitles: try container.decodeIfPresent(Bool.self, forKey: .scrollsOverflowingTitles) ?? true,
-            enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? true
+            enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? true,
+            importanceStarStyle: try container.decodeIfPresent(ImportanceStarStyle.self, forKey: .importanceStarStyle) ?? .tucked
         )
     }
 }

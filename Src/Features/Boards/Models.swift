@@ -3782,6 +3782,7 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable {
     var week: DatedPlanningWeek? = nil
     var savedCardIDs: Set<Int>? = nil
     var importantCardIDs: Set<Int>? = nil
+    var importanceLevels: [Int: Int]? = nil
 }
 
 
@@ -3817,11 +3818,12 @@ enum ExampleLoadUndoStore {
         week: DatedPlanningWeek? = nil,
         savedCardIDs: Set<Int>? = nil,
         importantCardIDs: Set<Int>? = nil,
+        importanceLevels: [Int: Int]? = nil,
         to defaults: UserDefaults = .standard
     ) -> Bool {
 
         let snapshot = ExampleLoadUndoSnapshot(lists: lists, todayListID: todayListID,
-            week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs) /* Week state and Today selection retained for undo */
+            week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs, importanceLevels: importanceLevels) /* Week state and Today selection retained for undo */
 
         guard let data = try? JSONEncoder().encode(snapshot) else { /* Encoded recovery snapshot ready for storage */
 

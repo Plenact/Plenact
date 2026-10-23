@@ -2049,6 +2049,7 @@ struct FullMonthExample: Sendable {
         if let existing = savedPreferences {
             var preferences = LocalProfilePreferences()
             preferences.enablesLowerCornerBack = existing.enablesLowerCornerBack
+            preferences.importanceStarStyle = existing.importanceStarStyle
             preferences.todayFocusIncludesImportant = existing.todayFocusIncludesImportant
             preferences.todayFocusIncludesBookmarked = existing.todayFocusIncludesBookmarked
             preferences.todayFocusIncludesUpNext = existing.todayFocusIncludesUpNext

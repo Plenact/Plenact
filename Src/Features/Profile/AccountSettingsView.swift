@@ -236,6 +236,7 @@ struct AccountSettingsView: View {
     @State private var defaultListID:       Int?                            /* Draft default list     */
     @State private var usesReducedContent:  Bool                            /* Draft content density  */
     @State private var scrollsOverflowingTitles: Bool
+    @State private var importanceStarStyle: ImportanceStarStyle
     @State private var enablesLowerCornerBack: Bool
     @State private var usesLargeControls:   Bool                     /* Draft control sizing   */
     @State private var randomizesNewCardHeaders: Bool
@@ -316,6 +317,7 @@ struct AccountSettingsView: View {
         _usesLargeControls  = State(initialValue: preferences.usesLargeControls)
         _scrollsOverflowingTitles = State(initialValue: preferences.scrollsOverflowingTitles)
         _enablesLowerCornerBack = State(initialValue: preferences.enablesLowerCornerBack)
+        _importanceStarStyle = State(initialValue: preferences.importanceStarStyle)
         _showsNavigationLabels = State(initialValue: preferences.showsNavigationLabels)
         _showsDueDatesOnNewCards = State(initialValue: preferences.showsDueDatesOnNewCards)
         _randomizesNewCardHeaders = State(initialValue: preferences.randomizesNewCardHeaders)
@@ -392,7 +394,8 @@ struct AccountSettingsView: View {
                 todayFocusIncludesBookmarked: todayFocusIncludesBookmarked,
                 todayFocusIncludesUpNext: todayFocusIncludesUpNext,
                 scrollsOverflowingTitles: scrollsOverflowingTitles,
-                enablesLowerCornerBack: enablesLowerCornerBack
+                enablesLowerCornerBack: enablesLowerCornerBack,
+                importanceStarStyle: importanceStarStyle
             )
         )
 
@@ -547,6 +550,7 @@ struct AccountSettingsView: View {
                             Toggle("Reduce supporting content", isOn: $usesReducedContent)
                             Toggle("Use larger primary controls", isOn: $usesLargeControls)
                             Toggle("Show navigation labels", isOn: $showsNavigationLabels)
+                            ImportanceStarStylePicker(selection: $importanceStarStyle)
                             Toggle("Lower-left corner Back shortcut", isOn: $enablesLowerCornerBack)
                                 .accessibilityHint("Enable an invisible Back target above the bottom toolbar in supported views")
                             Toggle("Scroll overflowing titles and subtitles", isOn: $scrollsOverflowingTitles)
@@ -1992,6 +1996,7 @@ struct PlanSettingsView: View {
                     Toggle("Reduce supporting content", isOn: $preferences.usesReducedContent)
                     Toggle("Use larger primary controls", isOn: $preferences.usesLargeControls)
                     Toggle("Show navigation labels", isOn: $preferences.showsNavigationLabels)
+                    ImportanceStarStylePicker(selection: $preferences.importanceStarStyle)
                     Toggle("Lower-left corner Back shortcut", isOn: $preferences.enablesLowerCornerBack)
                         .accessibilityHint("Enable an invisible Back target above the bottom toolbar in supported views")
                     Toggle("Scroll overflowing titles and subtitles", isOn: $preferences.scrollsOverflowingTitles)
@@ -2078,5 +2083,22 @@ private struct TodayFocusSettingsSection: View {
         } footer: {
             Text("Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Focus follows your Day list by default. Grouping uses your section headings; chronological order uses start dates, then due dates when no start is set, within each group. Undated items keep their relative order after dated items. These choices never rearrange your Day list. The row count controls how many items fit in the preview at once, not how many match. Scroll inside Focus to reach every additional match. Section headings do not count as items; progress always counts the whole day.")
         }
+    }
+}
+
+
+/// Personal presentation changes never change an item's stored importance.
+struct ImportanceStarStylePicker: View {
+    @Binding var selection: ImportanceStarStyle
+    var body: some View {
+        Picker("Importance stars", selection: $selection) {
+            ForEach(ImportanceStarStyle.allCases) { style in
+                HStack {
+                    Text(style.title)
+                    ImportanceStarCluster(level: 4, style: style)
+                }.tag(style)
+            }
+        }
+        .accessibilityIdentifier("settings.importanceStarStyle")
     }
 }

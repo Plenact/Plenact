@@ -1415,7 +1415,8 @@ private struct AppRootView: View {
             var importance = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
             if !importantIDs.isEmpty && !importance.isEmpty { _ = try JSONDecoder().decode([LibraryRecentItem].self, from: importance) }
             for id in importantIDs {
-                importance = LibraryImportanceSelection.setting(cardID: id, collectionID: next.id, marked: true, data: importance)
+                importance = LibraryImportanceSelection.settingLevel(cardID: id, collectionID: next.id,
+                    level: LibraryImportanceSelection.demonstrationLevel(for: next.collection.lists.flatMap(\.cards).first { $0.id == id }?.word ?? ""), data: importance)
             }
             try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key]) {
                 try PlanningCalendarStore.save(document)
@@ -1484,7 +1485,7 @@ private struct AppRootView: View {
     ///
     /// @return     (Bool) true after the week and related marker changes save successfully; false on rejection
     ///
-    private func savePlanningWeek(_ week: DatedPlanningWeek, exampleImportantIDs: Set<Int>, replaceImportant: Bool = false) -> Bool {
+    private func savePlanningWeek(_ week: DatedPlanningWeek, exampleImportantIDs: Set<Int>, replaceImportant: Bool = false, restoredImportanceLevels: [Int: Int]? = nil) -> Bool {
         guard var document = calendarDocument else { return false }
         if let existing = document.weeks.first(where: { $0.startKey == week.startKey }), existing.id != week.id { return false }
         document.upsert(week)
@@ -1501,7 +1502,8 @@ private struct AppRootView: View {
                 }
             }
             for id in exampleImportantIDs {
-                importance = LibraryImportanceSelection.setting(cardID: id, collectionID: week.id, marked: true, data: importance)
+                importance = LibraryImportanceSelection.settingLevel(cardID: id, collectionID: week.id,
+                    level: restoredImportanceLevels?[id] ?? LibraryImportanceSelection.demonstrationLevel(for: week.collection.lists.flatMap(\.cards).first { $0.id == id }?.word ?? ""), data: importance)
             }
             try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key]) {
                 try PlanningCalendarStore.save(document)
@@ -1679,9 +1681,9 @@ private struct AppRootView: View {
             if sourceID != destinationID {
                 var data = beforeImportance ?? Data()
                 for (id, mapped) in receipt.mapping {
-                    let important = LibraryImportanceSelection.contains(cardID: id, collectionID: sourceID, data: beforeImportance ?? Data())
+                    let importanceLevel = LibraryImportanceSelection.level(cardID: id, collectionID: sourceID, data: beforeImportance ?? Data())
                     data = LibraryImportanceSelection.setting(cardID: id, collectionID: sourceID, marked: false, data: data)
-                    data = LibraryImportanceSelection.setting(cardID: mapped, collectionID: destinationID, marked: important, data: data)
+                    data = LibraryImportanceSelection.settingLevel(cardID: mapped, collectionID: destinationID, level: importanceLevel, data: data)
                 }
                 afterImportance = data
             }
@@ -2221,8 +2223,12 @@ private struct AppRootView: View {
         let importance = LibraryImportanceSelection.cardIDs(collectionID: current.id,
             data: UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data())
         let todayListID = TodayListSelection.currentDayList(in: lists.filter { !$0.isArchived }, date: .now)?.id
+        let importanceData = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
+        let levels = Dictionary(uniqueKeysWithValues: importance.map { id in
+            (id, LibraryImportanceSelection.level(cardID: id, collectionID: current.id, data: importanceData))
+        })
         guard ExampleLoadUndoStore.save(lists: lists, todayListID: todayListID, week: current,
-            savedCardIDs: savedCardIDs, importantCardIDs: importance) else {
+            savedCardIDs: savedCardIDs, importantCardIDs: importance, importanceLevels: levels) else {
             DatabaseActivity.shared.report("Could not save the previous Week Board, so the example was not loaded.")
             return false
         }
@@ -2259,7 +2265,9 @@ private struct AppRootView: View {
         }
         restored.collection.lists = snapshot.lists
         restored.collection.savedCardIDs = snapshot.savedCardIDs ?? savedCardIDs
-        if savePlanningWeek(restored, exampleImportantIDs: snapshot.importantCardIDs ?? [], replaceImportant: snapshot.importantCardIDs != nil) {
+        let levels = snapshot.importanceLevels ?? Dictionary(uniqueKeysWithValues: (snapshot.importantCardIDs ?? []).map { ($0, 1) })
+        if savePlanningWeek(restored, exampleImportantIDs: snapshot.importantCardIDs ?? [],
+            replaceImportant: snapshot.importantCardIDs != nil, restoredImportanceLevels: levels) {
             ExampleLoadUndoStore.clear()
             return true
         }
@@ -5834,6 +5842,14 @@ enum LibrarySearchIndex {
     }
 }
 
+/// A legacy presence-only selection decodes as the first deliberate importance gesture.
+struct LibraryImportanceItem: Codable {
+    let collectionID: UUID
+    let cardID: Int
+    var level: Int? = nil
+    var resolvedLevel: Int { min(5, max(0, level ?? 1)) }
+}
+
 enum LibraryImportanceSelection {
     static let key = "Plenact.LibraryImportant.v1"
 
@@ -5849,16 +5865,16 @@ enum LibraryImportanceSelection {
     /// @return     (Set<Int>) important numeric card IDs belonging to the requested collection
     ///
     static func cardIDs(collectionID: UUID, data: Data) -> Set<Int> {
-        let items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
-        return Set(items.filter { $0.collectionID == collectionID }.map(\.cardID))
+        let items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+        return Set(items.filter { $0.collectionID == collectionID && $0.resolvedLevel > 0 }.map(\.cardID))
     }
 
 
     ///
     /// @fcn        LibraryImportanceSelection.setting
     /// @brief      Encode a card's requested importance state
-    /// @details    Removes the owner's existing selection, appends it when marked, and returns the original bytes if
-    ///             encoding fails.
+    /// @details    Marking retains an existing higher level or begins at one; unmarking removes the
+    ///             selection. Returns the original bytes if encoding fails.
     ///
     /// @param[in]  cardID        Numeric card identity within its owner
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
@@ -5868,11 +5884,9 @@ enum LibraryImportanceSelection {
     /// @return     (Data) updated encoded selections, or the original data if encoding fails
     ///
     static func setting(cardID: Int, collectionID: UUID, marked: Bool, data: Data) -> Data {
-        var items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
-        let item = LibraryRecentItem(collectionID: collectionID, cardID: cardID)
-        items.removeAll { $0 == item }
-        if marked { items.append(item) }
-        return (try? JSONEncoder().encode(items)) ?? data
+        let previous = level(cardID: cardID, collectionID: collectionID, data: data)
+        return settingLevel(cardID: cardID, collectionID: collectionID,
+            level: marked ? max(1, previous) : 0, data: data)
     }
 
 
@@ -5884,22 +5898,44 @@ enum LibraryImportanceSelection {
     ///
     /// @param[in]  owners  Canonical collection owners participating in the operation
     /// @param[in]  data    Encoded input or media bytes
+    /// @param[in]  includesAllExamples  Include every non-divider in an explicitly chosen example
     ///
     /// @return     (Data) encoded selections including the recognized supplied demonstration cards
     ///
     /// @note       Only call for freshly created demonstration owners, never on a user's existing weeks.
     ///
-    static func demoData(in owners: [PersonalCollection], preserving data: Data = Data()) -> Data {
+    static func demoData(in owners: [PersonalCollection], preserving data: Data = Data(), includesAllExamples: Bool = false) -> Data {
         let names: Set<String> = ["work", "gym", "dinner", "prepare dinner", "dinner with friends",
             "call accountant", "call the accountant"]
         var result = data
         for owner in owners {
-            for card in owner.lists.flatMap(\.cards) where !card.isSectionDivider
-                && names.contains(card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) {
-                result = setting(cardID: card.id, collectionID: owner.id, marked: true, data: result)
+            for card in owner.lists.flatMap(\.cards).filter({ !$0.isSectionDivider })
+                where includesAllExamples || names.contains(card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) {
+                let title = card.word.lowercased()
+                let demonstrationLevel = demonstrationLevel(for: title)
+                result = settingLevel(cardID: card.id, collectionID: owner.id, level: demonstrationLevel, data: result)
             }
         }
         return result
+    }
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.demonstrationLevel(for:)
+    /// @brief      Give fresh examples a recognizable range of symbolic attention
+    /// @details    Work and Gym demonstrate four and three layers; key calls and dinner show five.
+    ///             Other example titles receive a deterministic one-through-five variation.
+    ///
+    /// @param[in]  title  Newly generated example title
+    ///
+    /// @return     (Int) demonstration level; never used to rank existing user content
+    ///
+    static func demonstrationLevel(for title: String) -> Int {
+        let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized == "work" { return 4 }
+        if normalized == "gym" { return 3 }
+        if normalized.contains("accountant") || normalized.contains("dinner") { return 5 }
+        return normalized.utf8.reduce(0) { ($0 + Int($1)) % 5 } + 1
     }
 
 
@@ -5915,31 +5951,145 @@ enum LibraryImportanceSelection {
     /// @return     (Bool) true if both owner UUID and card ID match an important selection
     ///
     static func contains(cardID: Int, collectionID: UUID, data: Data) -> Bool {
-        let items = (try? JSONDecoder().decode([LibraryRecentItem].self, from: data)) ?? []
-        return items.contains(LibraryRecentItem(collectionID: collectionID, cardID: cardID))
+        level(cardID: cardID, collectionID: collectionID, data: data) > 0
+    }
+
+    ///
+    /// @fcn        LibraryImportanceSelection.level(cardID:collectionID:data:)
+    /// @brief      Resolve bounded importance for one owner-qualified Card
+    /// @details    Legacy marks mean one star. Missing and malformed selections mean no stars.
+    ///
+    /// @param[in]  cardID        Owner-local Card identity
+    /// @param[in]  collectionID  Owning collection identity
+    /// @param[in]  data          Persisted selections
+    ///
+    /// @return     (Int) importance from zero through five
+    ///
+    static func level(cardID: Int, collectionID: UUID, data: Data) -> Int {
+        let items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+        return items.last { $0.collectionID == collectionID && $0.cardID == cardID }?.resolvedLevel ?? 0
+    }
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.settingLevel(cardID:collectionID:level:data:)
+    /// @brief      Persist a bounded importance snapshot for migration, examples, or transfer
+    /// @details    Retains every other owner's marks. User-facing controls use adjusting instead.
+    ///
+    /// @param[in]  cardID        Owner-local Card identity
+    /// @param[in]  collectionID  Owning collection identity
+    /// @param[in]  level         Snapshot value clamped to zero through five
+    /// @param[in]  data          Persisted selections
+    ///
+    /// @return     (Data) updated selections; zero removes the mark
+    ///
+    static func settingLevel(cardID: Int, collectionID: UUID, level: Int, data: Data) -> Data {
+        var items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+        items.removeAll { $0.collectionID == collectionID && $0.cardID == cardID }
+        let bounded = min(5, max(0, level))
+        if bounded > 0 { items.append(LibraryImportanceItem(collectionID: collectionID, cardID: cardID, level: bounded == 1 ? nil : bounded)) }
+        return (try? JSONEncoder().encode(items)) ?? data
+    }
+
+
+    ///
+    /// @fcn        LibraryImportanceSelection.adjusting(cardID:collectionID:direction:data:)
+    /// @brief      Give or remove exactly one gesture of attention
+    /// @details    Only the direction matters; large input values cannot jump multiple levels.
+    ///             Five is a ceiling and never wraps to zero.
+    ///
+    /// @param[in]  cardID        Owner-local Card identity
+    /// @param[in]  collectionID  Owning collection identity
+    /// @param[in]  direction     Positive increases, negative decreases, zero leaves unchanged
+    /// @param[in]  data          Persisted selections
+    ///
+    /// @return     (Data) selections after at most one step
+    ///
+    static func adjusting(cardID: Int, collectionID: UUID, direction: Int, data: Data) -> Data {
+        guard direction != 0 else { return data }
+        return settingLevel(cardID: cardID, collectionID: collectionID,
+            level: level(cardID: cardID, collectionID: collectionID, data: data) + (direction > 0 ? 1 : -1), data: data)
+    }
+
+}
+
+/// Compact symbolic attention, with a fixed footprint for Tucked and a wider fan alternative.
+struct ImportanceStarCluster: View {
+    let level: Int
+    var style: ImportanceStarStyle = .tucked
+    private var count: Int { min(5, max(0, level)) }
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(Array((0..<count).reversed()), id: \.self) { depth in
+                Image(systemName: "star.fill")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(depth == 0 ? Color(red: 0.90, green: 0.69, blue: 0.27) : Color(red: 0.72, green: 0.55, blue: 0.25))
+                    .shadow(color: Color.black.opacity(0.12), radius: 0.4, x: 0, y: 0.4)
+                    .rotationEffect(.degrees(style == .fanned ? Double(depth) * -9 : 0))
+                    .offset(x: position(depth: depth).width, y: position(depth: depth).height)
+            }
+        }
+        .frame(width: style == .tucked ? 24 : 28, height: 22, alignment: .topLeading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Importance: \(count) of five")
+    }
+
+
+    ///
+    /// @fcn        ImportanceStarCluster.position(depth:)
+    /// @brief      Tuck layers into a bounded cluster or arrange a small fan
+    /// @details    Front stars stay bright while rear points convey accumulated attention.
+    ///
+    /// @param[in]  depth  Rear layer depth; zero is the front star
+    ///
+    /// @return     (CGSize) symbol offset within the preview footprint
+    ///
+    private func position(depth: Int) -> CGSize {
+        if count == 1 { return CGSize(width: 5, height: 4) }
+        if style == .fanned { return CGSize(width: 3 + Double(depth) * 3.1, height: 7 - Double(depth) * 1.5) }
+        let positions: [CGSize] = [CGSize(width: 6, height: 8), CGSize(width: 0, height: 3),
+            CGSize(width: 11, height: 2), CGSize(width: 3, height: 0), CGSize(width: 8, height: 0)]
+        return positions[depth]
     }
 }
 
-/// A non-interactive status mark that follows the item's owner-qualified importance setting.
+/// Importance is a personal mark; tapping gives exactly one more gesture of attention.
 struct ImportantItemIndicator: View {
     let cardID: Int
     var ownerID: UUID? = nil
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
     @Environment(\.cardMovementSource) private var source
     @Environment(\.libraryImportance) private var importance
-    private var isImportant: Bool {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var level: Int {
         if let owner = ownerID ?? source {
-            return LibraryImportanceSelection.contains(cardID: cardID, collectionID: owner, data: importantData)
+            return LibraryImportanceSelection.level(cardID: cardID, collectionID: owner, data: importantData)
         }
-        return importance?.contains(cardID) == true
+        return importance?.level(cardID) ?? 0
     }
     var body: some View {
-        if isImportant {
-            Image(systemName: "star.fill")
-                .font(.caption.weight(.regular))
-                .foregroundStyle(Color.orange.opacity(0.65))
-                .accessibilityLabel("Important")
-                .accessibilityIdentifier("item.important")
+        if level > 0 {
+            Button {
+                if let owner = ownerID ?? source {
+                    importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner, direction: 1, data: importantData)
+                } else { importance?.adjust(cardID, 1) }
+            } label: {
+                ImportanceStarCluster(level: level, style: PlanPreferencesStore.resolved(
+                    preferencesData: preferencesData, profileData: profileData).importanceStarStyle)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: level)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(level == 5 ? "Maximum importance" : "Increase importance")
+            .accessibilityValue("\(level) of five")
+            .accessibilityIdentifier("item.important")
+            .accessibilityAction(named: "Decrease importance") {
+                if let owner = ownerID ?? source {
+                    importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner, direction: -1, data: importantData)
+                } else { importance?.adjust(cardID, -1) }
+            }
         }
     }
 }
@@ -5947,6 +6097,8 @@ struct ImportantItemIndicator: View {
 struct LibraryImportanceAccess {
     let contains: (Int) -> Bool
     let set: (Int, Bool) -> Void
+    var level: (Int) -> Int = { _ in 0 }
+    var adjust: (Int, Int) -> Void = { _, _ in }
 }
 /// Reuse Library's owner-qualified importance state in dated Day and Week editors.
 struct OwnerImportanceControls: ViewModifier {
@@ -5970,6 +6122,9 @@ struct OwnerImportanceControls: ViewModifier {
                 LibraryImportanceSelection.contains(cardID: cardID, collectionID: owner, data: data)
             }, set: { cardID, marked in
                 data = LibraryImportanceSelection.setting(cardID: cardID, collectionID: owner, marked: marked, data: data)
+            }, level: { LibraryImportanceSelection.level(cardID: $0, collectionID: owner, data: data) },
+            adjust: { cardID, direction in
+                data = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: owner, direction: direction, data: data)
             })
         })
     }
@@ -6654,6 +6809,7 @@ struct BoardListsView: View {
     @State var browseFilter: LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
     @State var searchText = ""                                  /* Directory search query                     */
+    @State private var importanceExampleDrafts: Set<UUID> = []
     @State private var editingCollection: PersonalCollection?   /* Collection draft being edited              */
     @State private var openedCollection: PersonalCollection?    /* Collection board presented full-screen     */
     @State private var boardTargetListID: Int?                  /* Exact collection list requested from Saved */
@@ -6902,6 +7058,22 @@ struct BoardListsView: View {
 
 
     ///
+    /// @fcn        BoardListsView.prepareImportanceExample(_:)
+    /// @brief      Stage a chosen example without changing live importance
+    /// @details    Remembers only the draft owner. Demonstration levels are installed after Save,
+    ///             so previewing or cancelling an example cannot change existing personal marks.
+    ///
+    /// @param[in]  collection  Newly generated Library example or template
+    ///
+    /// @return     (Void) presents the collection draft
+    ///
+    private func prepareImportanceExample(_ collection: PersonalCollection) {
+        importanceExampleDrafts.insert(collection.id)
+        editingCollection = collection
+    }
+
+
+    ///
     /// @fcn        BoardListsView.saveCollection(_:)
     /// @brief      Insert or replace a personal collection by identity
     /// @details    Updates the shared binding; app-root observation owns persistence and error
@@ -6923,6 +7095,9 @@ struct BoardListsView: View {
         } else {
 
             collections.append(collection)
+            if importanceExampleDrafts.remove(collection.id) != nil {
+                importantData = LibraryImportanceSelection.demoData(in: [collection], preserving: importantData, includesAllExamples: true)
+            }
         }
     }
 
@@ -7262,10 +7437,10 @@ struct BoardListsView: View {
         .environment(\.libraryImportance, LibraryImportanceAccess(contains: { cardID in
             importantItems.contains(LibraryRecentItem(collectionID: collection.id, cardID: cardID))
         }, set: { cardID, marked in
-            let item = LibraryRecentItem(collectionID: collection.id, cardID: cardID)
-            var updated = importantItems.filter { $0 != item }
-            if marked { updated.append(item) }
-            if let data = try? JSONEncoder().encode(updated) { importantData = data }
+            importantData = LibraryImportanceSelection.setting(cardID: cardID, collectionID: collection.id, marked: marked, data: importantData)
+        }, level: { LibraryImportanceSelection.level(cardID: $0, collectionID: collection.id, data: importantData) },
+        adjust: { cardID, direction in
+            importantData = LibraryImportanceSelection.adjusting(cardID: cardID, collectionID: collection.id, direction: direction, data: importantData)
         }))
         .environment(\.libraryItemOpened, { cardID in
             recentItems = LibraryRecentStore.remember(LibraryRecentItem(collectionID: collection.id, cardID: cardID))
@@ -7600,7 +7775,7 @@ struct BoardListsView: View {
             Menu("Board examples", systemImage: "rectangle.3.group") {
                 ForEach(PersonalBoardExample.allCases) { example in
                     Button(example.rawValue, systemImage: "plus") {
-                        editingCollection = example.makeCollection(existingTitles: collections.map(\.title))
+                        prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
                     }
                 }
             }
@@ -7661,7 +7836,7 @@ struct BoardListsView: View {
                 examplePreview = LibraryExamplePreview(title: "Work Week Board", summary: "A separate seven-list Week View example.", lists: SampleData.lists)
             }
             Button("Use Week View", systemImage: "plus") {
-                editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title))
+                prepareImportanceExample(PersonalCollection.exampleWeek(existingTitles: collections.map(\.title)))
             }
             Menu("Example cards") {
                 ForEach(SampleData.lists) { list in
@@ -7711,7 +7886,7 @@ struct BoardListsView: View {
                 }
             }
             Button("Use \(example.rawValue)", systemImage: "plus") {
-                editingCollection = example.makeCollection(existingTitles: collections.map(\.title))
+                prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
             }
         }
     }
@@ -7731,7 +7906,7 @@ struct BoardListsView: View {
                             Label(template.items[index].0, systemImage: template.items[index].2.symbol)
                         }
                         Button("Use " + template.rawValue, systemImage: "plus") {
-                            editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
+                            prepareImportanceExample(template.makeCollection(existingTitles: collections.map(\.title)))
                         }
                     } label: { Label(template.rawValue, systemImage: "list.bullet.rectangle") }
                 }
@@ -7789,7 +7964,7 @@ struct BoardListsView: View {
                             let draft = example.makeCollection(existingTitles: collections.map(\.title))
                             examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
                         }
-                        Button("Use " + example.rawValue, systemImage: "plus") { editingCollection = example.makeCollection(existingTitles: collections.map(\.title)) }
+                        Button("Use " + example.rawValue, systemImage: "plus") { prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title))) }
                     } label: { Label(example.rawValue, systemImage: "list.bullet") }
                 }
             }
@@ -7806,7 +7981,7 @@ struct BoardListsView: View {
                             let draft = example.makeCollection(existingTitles: collections.map(\.title))
                             examplePreview = LibraryExamplePreview(title: example.rawValue, summary: example.summary, lists: draft.lists)
                         }
-                        Button("Use " + example.rawValue, systemImage: "plus") { editingCollection = example.makeCollection(existingTitles: collections.map(\.title)) }
+                        Button("Use " + example.rawValue, systemImage: "plus") { prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title))) }
                     } label: { Label(example.rawValue, systemImage: "rectangle.3.group") }
                 }
             }
@@ -7816,7 +7991,7 @@ struct BoardListsView: View {
                 Button("Preview Example Week", systemImage: "eye") {
                     examplePreview = LibraryExamplePreview(title: "Example Week", summary: "Seven dated-day lists from Plenact's original Work Week example. Previewing changes nothing.", lists: SampleData.lists)
                 }
-                Button("Use as a new Board", systemImage: "plus") { editingCollection = PersonalCollection.exampleWeek(existingTitles: collections.map(\.title)) }
+                Button("Use as a new Board", systemImage: "plus") { prepareImportanceExample(PersonalCollection.exampleWeek(existingTitles: collections.map(\.title))) }
                 LibraryExampleWeekTemplateButton()
                 if onLoadExampleWeek != nil {
                     Button("Load into current Week", systemImage: "calendar") { weekExampleAction = "load" }
@@ -7848,7 +8023,7 @@ struct BoardListsView: View {
             Divider()
             ForEach([MixedListTemplate.planDay, .startProject, .exploreIdea]) { template in
                 Button(template.rawValue) {
-                    editingCollection = template.makeCollection(existingTitles: collections.map(\.title))
+                    prepareImportanceExample(template.makeCollection(existingTitles: collections.map(\.title)))
                 }
             }
         }
@@ -10250,18 +10425,16 @@ struct TodayFocusSection: View {
                                         .fixedSize(horizontal: true, vertical: false)
                                 } else {
                                     let hasBookmark = bookmarkedCardIDs.contains(card.id)
-                                    let hasBoth = hasBookmark && importantCardIDs.contains(card.id)
-                                    ZStack {
+                                    HStack(spacing: 3) {
                                         if hasBookmark {
                                             Image(systemName: "bookmark.fill")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
-                                                .offset(x: hasBoth ? 2 : 0, y: hasBoth ? -3 : 0)
                                                 .accessibilityLabel("Bookmarked")
                                         }
                                         ImportantItemIndicator(cardID: card.id)
                                     }
-                                    .frame(width: 16, height: 18)
+                                    .fixedSize(horizontal: true, vertical: false)
                                 }
                                 Image(systemName: "arrow.up.right")
                                     .font(.caption.weight(.semibold))
@@ -10573,6 +10746,11 @@ private struct LibraryExamplePreviewView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
+        .environment(\.cardMovementSource, nil)
+        .environment(\.libraryImportance, LibraryImportanceAccess(contains: { _ in true }, set: { _, _ in },
+            level: { id in
+                LibraryImportanceSelection.demonstrationLevel(for: preview.lists.flatMap(\.cards).first { $0.id == id }?.word ?? "")
+            }))
     }
 }
 

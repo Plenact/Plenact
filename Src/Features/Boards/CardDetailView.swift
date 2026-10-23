@@ -6125,6 +6125,7 @@ struct ReadOnlyCardContent: View {
     let card: KanbanCard
     let labels: LabelLibrary
     let onOpenAttachment: (KanbanAttachment) -> Void
+    var showsUnlockHint = true
 
     var body: some View {
         ScrollView {
@@ -6132,8 +6133,10 @@ struct ReadOnlyCardContent: View {
                 Label("Read-only", systemImage: "lock.fill")
                     .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
                     .accessibilityIdentifier("card.editingLocked")
-                Text("Use Unlock editing in the actions menu to make changes.")
-                    .font(.caption).foregroundStyle(.secondary)
+                if showsUnlockHint {
+                    Text("Use Unlock editing in the actions menu to make changes.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 SlideableHeaderText(text: card.word).font(.title2.bold())
                 if !card.subtitle.isEmpty { Text(card.subtitle).foregroundStyle(.secondary) }
                 if let created = card.createdAt { NoteCreationDateLabel(createdAt: created) }

@@ -4929,6 +4929,104 @@ final class PlenactBoardDocumentTests: XCTestCase {
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits
+    /// @brief      Verify delayed guidance is tied to the visit rather than live emptiness
+    /// @details    Hosts the real guidance view, changes its List after reveal, and opens a new
+    ///             nonempty visit to check that later deletion cannot trigger guidance there.
+    ///
+    /// @return     (Void) records visit lifecycle assertions
+    /// @throws     Propagates missing scene and asynchronous wait failures.
+    ///
+    @MainActor
+    func testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        var list = KanbanList(id: 4, title: "In the Queue", cards: [])
+        let labels = LabelLibraryStore.load()
+        var reveals = 0
+        var footerStates: [Bool] = []
+        let host = UIHostingController(rootView: SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, onPresentationChange: { footerStates.append($0) }))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        XCTAssertEqual(reveals, 0)
+        try await Task.sleep(for: .milliseconds(1250))
+        XCTAssertEqual(reveals, 1)
+        XCTAssertEqual(footerStates, [false, true])
+        list.cards = [KanbanCard(id: 10, word: "My task", listTitle: list.title)]
+        host.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, onPresentationChange: { footerStates.append($0) })
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        list.cards = []
+        host.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, onPresentationChange: { footerStates.append($0) })
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(reveals, 1)
+        list.cards = [KanbanCard(id: 11, word: "Already here", listTitle: list.title)]
+        let nextVisit = UIHostingController(rootView: SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, onPresentationChange: { footerStates.append($0) }))
+        window.rootViewController = nextVisit
+        nextVisit.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        list.cards = []
+        nextVisit.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, onPresentationChange: { footerStates.append($0) })
+        nextVisit.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(1250))
+        XCTAssertEqual(reveals, 1)
+        nextVisit.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, toggleRequest: 1, onPresentationChange: { footerStates.append($0) })
+        nextVisit.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(reveals, 2, "The header can show guidance even for a visit that opened nonempty")
+        nextVisit.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, toggleRequest: 2, onPresentationChange: { footerStates.append($0) })
+        nextVisit.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(reveals, 2, "Retraction must not trigger another reveal")
+        XCTAssertEqual(footerStates.last, true, "Capture remains available while the guide retracts")
+        nextVisit.rootView = SessionListGuidance(list: list, labels: labels, onReveal: { reveals += 1 }, toggleRequest: 3, onPresentationChange: { footerStates.append($0) })
+        nextVisit.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(reveals, 3, "Another header tap can reverse an in-progress retraction")
+        XCTAssertEqual(Array(footerStates.suffix(3)), [true, true, true])
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSessionGuidanceMigrationPreservesCustomizedWelcomeCards
+    /// @brief      Verify legacy welcome conversion never removes user-edited content
+    /// @details    Loads pristine, edited, completed, and bookmarked fixtures through the real store.
+    ///             New starters and transient guides remain outside stored item counts.
+    ///
+    /// @return     (Void) records migration and content-preservation assertions
+    /// @throws     Propagates temporary defaults and persistence failures.
+    ///
+    func testSessionGuidanceMigrationPreservesCustomizedWelcomeCards() throws {
+        let suite = "SessionGuidance." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for title in ["On the Table", "In the Queue", "Scheduled"] {
+            let original = DefaultListTutorial.makeStarter(title: title, includesWelcomeCard: true)
+            var edited = original
+            edited.lists[0].cards[0].word += " personalized"
+            var completed = original
+            completed.lists[0].cards[0].isTitleChecked = true
+            var bookmarked = original
+            bookmarked.savedCardIDs.insert(0)
+            for retained in [edited, completed, bookmarked] {
+                XCTAssertEqual(DefaultListTutorial.removingUntouchedWelcomeCards(from: retained), retained)
+            }
+            try PersonalCollectionStore.saveChecked([original], to: defaults)
+            let loaded = try XCTUnwrap(PersonalCollectionStore.load(from: defaults).first)
+            XCTAssertTrue(loaded.lists[0].cards.isEmpty)
+            XCTAssertEqual(loaded.id, original.id)
+            XCTAssertEqual(loaded.boardAppearance, original.boardAppearance)
+            XCTAssertTrue(DefaultListTutorial.makeStarter(title: title).lists[0].cards.isEmpty)
+        }
+        XCTAssertNil(DefaultListTutorial.guidance(for: "A custom List"))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testStarterListTutorialsAreActionableAndOnlySeedTheThreeDefaultLists
     /// @brief      Verify that starter List Tutorials Are Actionable And Only Seed The Three Default Lists
     /// @details    Exercises `DefaultListTutorial.makeStarter`, `LabelLibraryStore.load`,
@@ -4944,12 +5042,13 @@ final class PlenactBoardDocumentTests: XCTestCase {
         for title in titles {
             let starter = DefaultListTutorial.makeStarter(title: title)
             let list = try XCTUnwrap(starter.lists.first)
-            let card = try XCTUnwrap(list.cards.first)
+            let card = try XCTUnwrap(DefaultListTutorial.guidance(for: title))
             let expected: ItemAccent = title == "On the Table" ? .coral : (title == "In the Queue" ? .teal : .graphite)
             XCTAssertEqual(starter.boardAppearance?.bannerBackground, expected)
             XCTAssertNil(list.appearance?.background)
-            XCTAssertEqual(list.cards.count, 1)
-            XCTAssertEqual(card.presentation, .card)
+            XCTAssertTrue(list.cards.isEmpty)
+            XCTAssertEqual(card.presentation, .note)
+            XCTAssertTrue(card.isEditingLocked)
             XCTAssertFalse(card.isTitleChecked)
             XCTAssertNil(card.startDate)
             XCTAssertNil(card.dueDate)
@@ -4958,7 +5057,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
             XCTAssertEqual(card.subtitleOverride, "'\(title)', A quick guide to this List")
             XCTAssertEqual(card.checklists.first?.title, "Try it")
             XCTAssertEqual(card.checklists.first?.items.count, 3)
-            XCTAssertTrue(card.descriptionOverride?.contains("will not return") == true)
+            XCTAssertFalse(card.descriptionOverride?.contains("yours to edit") == true)
             let restored = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(starter))
             XCTAssertEqual(restored, starter)
         }

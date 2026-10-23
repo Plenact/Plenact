@@ -5115,6 +5115,8 @@ struct KanbanListView: View {
     var cardMoveDestinations: [KanbanList] = []                          /* Lists offered by the explicit card movement menu             */
     var onMoveCardToList: (Int, Int) -> Void = { _, _ in }               /* Moves a selected card to the requested list identity         */
     @State private var inlineCaptureDraft = InlineListCaptureDraft()
+    @State private var guidanceVisible = false
+    @State private var guidanceFooterVisible: Bool?
     var onEditList: ((String, String, ItemPresentation) -> Bool)? = nil
     var onOpenDayView: (() -> Void)? = nil
     @State private var opensDayAfterDismissal = false
@@ -5247,7 +5249,7 @@ struct KanbanListView: View {
             height + (card.isSectionDivider ? 44 : (usesNoteList ? (measuredCardHeights[card.id] ?? 72) : max(measuredCardHeights[card.id] ?? 0, cardHeight(for: card))) + (usesNoteList ? 0 : 8))
         }
 
-        return max(88, rowHeight + 64)
+        return max(88, rowHeight + 64 + (guidanceVisible ? 220 : 0))
     }
 
 
@@ -5418,6 +5420,13 @@ struct KanbanListView: View {
             }
 
             List {
+                SessionListGuidance(list: list, labels: labelLibrary,
+                    onReveal: { guidanceVisible = true },
+                    onPresentationChange: { guidanceFooterVisible = $0 })
+                    .environment(\.defaultMinListRowHeight, 0)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
 
                 ForEach(DaySections.visible(list.cards)) { card in
 
@@ -5539,7 +5548,8 @@ struct KanbanListView: View {
 
 
                 InlineListCapture(list: list, draft: $inlineCaptureDraft,
-                    textColor: boardAppearance.resolvedAddItemTextColor(list: list.appearance, title: list.title)?.color ?? .primary, onCreate: onAddCard,
+                    textColor: boardAppearance.resolvedAddItemTextColor(list: list.appearance, title: list.title)?.color ?? .primary,
+                    isPresented: guidanceFooterVisible ?? (!list.cards.isEmpty || DefaultListTutorial.guidance(for: list.title) == nil), onCreate: onAddCard,
                     onOpenComposer: { activeSheet = .newCard })
                 .background { cardDropSurface }
                 .overlay(alignment: .top) { cardInsertionMarker(before: nil) }
@@ -5883,11 +5893,136 @@ final class ListCreationDraftModel: ObservableObject {
     }
 }
 
+/// Session-only guidance lives outside the List's persisted Cards and mutation controls.
+struct SessionListGuidance: View {
+    let list: KanbanList
+    let labels: LabelLibrary
+    var onReveal: () -> Void = {}
+    var toggleRequest: Int = 0
+    var onPresentationChange: (Bool) -> Void = { _ in }
+    @State private var reportedInitialPresentation = false
+    @State private var automaticRevealAttempted = false
+    @State private var handledToggleRequest = 0
+    @State private var entryWasEmpty: Bool
+    @State private var isVisible = false
+    @State private var hasPreparedLayout = false
+    @State private var guideHeight: CGFloat = 220
+    @State private var showsReadingView = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+
+    ///
+    /// @fcn        SessionListGuidance.init(list:labels:onReveal:)
+    /// @brief      Capture eligibility at the start of this List visit
+    /// @details    State retains the entry snapshot across content edits and child presentations.
+    ///
+    /// @param[in]  list      List opened by the user
+    /// @param[in]  labels    Shared labels used by the reading view
+    /// @param[in]  onReveal  Layout notification when guidance becomes visible
+    /// @param[in]  toggleRequest  Header tap sequence; changes toggle guidance independently of entry emptiness
+    ///
+    /// @param[in]  onPresentationChange  Reveals capture with the initial guide; capture stays available on retraction
+    ///
+    /// @return     (SessionListGuidance) transient visit-scoped guidance
+    ///
+    init(list: KanbanList, labels: LabelLibrary, onReveal: @escaping () -> Void = {}, toggleRequest: Int = 0, onPresentationChange: @escaping (Bool) -> Void = { _ in }) {
+        self.list = list
+        self.labels = labels
+        self.onReveal = onReveal
+        self.toggleRequest = toggleRequest
+        self.onPresentationChange = onPresentationChange
+        _entryWasEmpty = State(initialValue: list.cards.isEmpty && DefaultListTutorial.guidance(for: list.title) != nil)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let guide = DefaultListTutorial.guidance(for: list.title) {
+                Button { showsReadingView = true } label: {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("About this List", systemImage: "info.circle").font(.caption).foregroundStyle(.secondary)
+                        Text(guide.word).font(.headline).foregroundStyle(.primary)
+                        Text(guide.descriptionOverride ?? "").font(.subheadline).foregroundStyle(.secondary).lineLimit(3)
+                        Label("Read guide", systemImage: "arrow.up.right").font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("list.sessionGuidance")
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { geometry in geometry.size.height } action: { height in
+                    if height > 0 { guideHeight = height }
+                }
+                .offset(y: reduceMotion ? 0 : (isVisible ? 0 : -guideHeight))
+                .opacity(isVisible ? 1 : 0)
+                .animation(.easeInOut(duration: reduceMotion ? 0.2 : 3.2), value: isVisible)
+                .allowsHitTesting(isVisible)
+                .accessibilityHidden(!isVisible)
+            }
+        }
+        .frame(height: hasPreparedLayout ? guideHeight : 0, alignment: .top)
+        .clipped()
+        .onAppear {
+            guard !reportedInitialPresentation else { return }
+            reportedInitialPresentation = true
+            onPresentationChange(!entryWasEmpty)
+        }
+        .task(id: toggleRequest) {
+            guard DefaultListTutorial.guidance(for: list.title) != nil else { return }
+            if toggleRequest > 0 {
+                guard handledToggleRequest != toggleRequest else { return }
+                handledToggleRequest = toggleRequest
+            }
+            if toggleRequest == 0 {
+                guard entryWasEmpty, !automaticRevealAttempted else { return }
+                automaticRevealAttempted = true
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+            } else if isVisible {
+                isVisible = false
+                // Keep capture available; collapsing the guide returns it to its normal List position.
+                do { try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 3.2)) } catch { return }
+                guard !Task.isCancelled else { return }
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { hasPreparedLayout = false }
+                return
+            }
+            guard !Task.isCancelled else { return }
+            // Let List finish allocating its row before animating the already-mounted visual.
+            var layoutTransaction = Transaction(animation: nil)
+            layoutTransaction.disablesAnimations = true
+            withTransaction(layoutTransaction) {
+                hasPreparedLayout = true
+                onReveal()
+            }
+            do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+            guard !Task.isCancelled else { return }
+            isVisible = true
+            onPresentationChange(true)
+        }
+        .sheet(isPresented: $showsReadingView) {
+            if let guide = DefaultListTutorial.guidance(for: list.title) {
+                NavigationStack {
+                    ReadOnlyCardContent(card: guide, labels: labels, onOpenAttachment: { _ in }, showsUnlockHint: false)
+                        .navigationTitle("About this List")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showsReadingView = false } } }
+                }
+            }
+        }
+    }
+}
+
+
 /// A title-only capture row shared by Board columns and focused Lists, including Days.
 struct InlineListCapture: View {
     let list: KanbanList
     @Binding var draft: InlineListCaptureDraft
     var textColor: Color = .primary
+    var isPresented = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onCreate: (QuickCaptureSubmission) -> Bool
     let onOpenComposer: () -> Void
     @FocusState private var isFocused: Bool
@@ -5918,6 +6053,14 @@ struct InlineListCapture: View {
             .accessibilityIdentifier("list.inlineCapture.add")
         }
         .frame(minHeight: 44)
+        .offset(y: reduceMotion || isPresented ? 0 : -120)
+        .opacity(isPresented ? 1 : 0)
+        .animation(.easeInOut(duration: reduceMotion ? 0.2 : 3.2), value: isPresented)
+        .allowsHitTesting(isPresented)
+        .accessibilityHidden(!isPresented)
+        .onChange(of: isPresented) { _, visible in
+            if !visible { isFocused = false }
+        }
         .onChange(of: list.id) { _, _ in
             draft = InlineListCaptureDraft()
             isFocused = false
@@ -7367,6 +7510,8 @@ struct TodayListDetailView: View {
     @Environment(\.planningHomeExit) private var planningHomeExit
     @State private var focusedViewportMemory: BoardViewportMemory?
     @State private var showsDaySearch = false
+    @State private var guidanceToggleRequest = 0
+    @State private var guidanceFooterVisible: Bool?
     @State private var showsDaySelector = false
     @State private var selectedDay: PlanningDaySelection?
     var onSelectDay: ((Date) -> Void)? = nil
@@ -7735,6 +7880,13 @@ struct TodayListDetailView: View {
                                 .id("day.scheduleOverview")
                         }
 
+                        SessionListGuidance(list: focusedList, labels: labelLibrary, toggleRequest: guidanceToggleRequest,
+                            onPresentationChange: { guidanceFooterVisible = $0 })
+                            .environment(\.defaultMinListRowHeight, 0)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+
                         ForEach(DaySections.visible(focusedList.cards)) { card in
 
                             if card.isSectionDivider {
@@ -7804,7 +7956,8 @@ struct TodayListDetailView: View {
 
 
                         InlineListCapture(list: focusedList, draft: $inlineCaptureDraft,
-                            textColor: effectiveBoardAppearance.resolvedAddItemTextColor(list: focusedList.appearance, title: focusedList.title)?.color ?? .primary, onCreate: addCard,
+                            textColor: effectiveBoardAppearance.resolvedAddItemTextColor(list: focusedList.appearance, title: focusedList.title)?.color ?? .primary,
+                            isPresented: guidanceFooterVisible ?? (!focusedList.cards.isEmpty || DefaultListTutorial.guidance(for: focusedList.title) == nil), onCreate: addCard,
                             onOpenComposer: { showsNewCard = true })
 
                         .padding(12)
@@ -7952,6 +8105,17 @@ struct TodayListDetailView: View {
 
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .contain)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard representedDate == nil,
+                              DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil else { return }
+                        guidanceToggleRequest += 1
+                    }
+                    .accessibilityAction(named: "Show or hide List guide") {
+                        guard representedDate == nil,
+                              DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil else { return }
+                        guidanceToggleRequest += 1
+                    }
                     .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
                     Button { showsDaySearch = true } label: {
                         WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)

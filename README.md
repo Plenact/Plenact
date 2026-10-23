@@ -24,7 +24,9 @@ Hey Alex, for professional Swift applications, how many lines of Swift code are 
 
 How hard would it be to re-organize, modularize, segment and re-order the architecture and subdirectory organization of Plenact now to follow this model? How close can we get to XYZ lines of source in each file?
 
+!
 
+- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
 
 !
 
@@ -32,15 +34,9 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
-- Remove or update the prefix header text of 'Recent' above '' in the Activity view, where I think it feels redundant now
-
-- Three setup cards for OTB, ITQ & SR now load in read-only mode, from tapping that view's header title and don't show on list. with all sections hidden too, except for that description which is great - and maybe some checklists with guidance or examples!
-
 - Bug! Where after applying the Jmr template, I think it was, half of the lower toolbar's background disappears!
 
 - Adding a new list to a board enters with the title highlighted, and keyboard raised to enter name for it
-
-- Maybe we make a left swipe on the right ~15% of a card in the list view actually swipe left instead of raise 'Delete Card' ?
 
 - Dragging on the Today view slogan rolls off gradually, and not immediate like present
 

@@ -9370,10 +9370,11 @@ private struct SavedCardsView: View {
     }
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Recent").font(.caption).foregroundStyle(.secondary)
-            Text("Pick up where you left off").font(.title3.weight(.semibold))
+            if revisit == nil {
+                Text("Recent").font(.headline)
+            }
             if recents.isEmpty {
-                Text(query.isEmpty ? "Open a card or note in Today, Week, or Plans to find it here." : "No recent items match your search.")
+                Text(query.isEmpty ? "Recently opened Cards and Notes will appear here." : "No recent items match your search.")
                     .font(.subheadline).foregroundStyle(.secondary)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -9480,9 +9481,11 @@ private struct SavedCardsView: View {
                             } label: { Image(systemName: "ellipsis.circle") }
                                 .accessibilityLabel("Activity options")
                         }
-                        Text(revisit?.detail ?? "Recent work and saved favorites")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        if let revisit {
+                            Text(revisit.detail)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -9516,10 +9519,13 @@ private struct SavedCardsView: View {
                         } else {
                             if !savedCards.isEmpty {
                                 Text("Week")
-                                    .font(.headline)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
                                 ForEach(savedCards) { result in
                                     Button {
-                                        if let item = availableFocusItems.first(where: { $0.isCurrent && $0.list.id == result.listID && $0.card.id == result.card.id }) {
+                                        if let item = availableFocusItems.first(where: {
+                                            $0.isCurrent && $0.list.id == result.listID && $0.card.id == result.card.id
+                                        }) {
                                             openRecent(item)
                                         }
                                     } label: {
@@ -9543,13 +9549,11 @@ private struct SavedCardsView: View {
                                         .padding(12)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                        .contentShape(Rectangle())
                                     }
 
                                     .buttonStyle(.plain)
-                                    .contextMenu {
-                                        Button("Archive Card", systemImage: "archivebox") { onArchiveCard(result.card.id) }
-                                        Button("Delete Card", systemImage: "trash", role: .destructive) { deletingCard = result.card }
-                                    }
+                                    .accessibilityHint("Opens this saved item.")
                                     .accessibilityActions {
                                         Button("Archive Card") { onArchiveCard(result.card.id) }
                                         Button("Delete Card") { deletingCard = result.card }
@@ -9559,10 +9563,13 @@ private struct SavedCardsView: View {
 
                             if !personalSavedCards.isEmpty {
                                 Text("Plans")
-                                    .font(.headline)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
                                 ForEach(personalSavedCards) { result in
                                     Button {
-                                        if let item = availableFocusItems.first(where: { $0.item.collectionID == result.collectionID && $0.list.id == result.listID && $0.card.id == result.card.id }) {
+                                        if let item = availableFocusItems.first(where: {
+                                            $0.item.collectionID == result.collectionID && $0.list.id == result.listID && $0.card.id == result.card.id
+                                        }) {
                                             openRecent(item)
                                         }
                                     } label: {
@@ -9587,6 +9594,7 @@ private struct SavedCardsView: View {
                                         .padding(12)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                        .contentShape(Rectangle())
                                     }
 
                                     .buttonStyle(.plain)
@@ -9597,7 +9605,8 @@ private struct SavedCardsView: View {
                     }
 
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                     .modifier(TodayPanelSurface())
                     }
 

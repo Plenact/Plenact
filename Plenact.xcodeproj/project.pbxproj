@@ -16,13 +16,13 @@
 		C10000000000000000000001 /* ChecklistMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* ChecklistMigrationTests.swift */; };
 		CADA20261010000000000001 /* CalendarPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADA20261010000000000002 /* CalendarPlanning.swift */; };
 		D45892BF9775403B92A500E8 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEDCC72BE49419DA31600DF /* CardDetailView.swift */; };
-		DA1620260000000000000001 /* Planning/TodayPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000002 /* Planning/TodayPlan.swift */; };
-		DA1620260000000000000003 /* Planning/TodayReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000004 /* Planning/TodayReview.swift */; };
-		DA1620260000000000000005 /* Planning/PeriodicReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000006 /* Planning/PeriodicReview.swift */; };
-		DA1620260000000000000007 /* Planning/LibraryHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000008 /* Planning/LibraryHelp.swift */; };
-		DA1920260000000000000001 /* Planning/ReviewRhythm.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1920260000000000000002 /* Planning/ReviewRhythm.swift */; };
-		DA7E20261017000000000001 /* Planning/PlanningTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000002 /* Planning/PlanningTemplates.swift */; };
-		DA7E20261017000000000003 /* Planning/PlanningTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000004 /* Planning/PlanningTemplatesView.swift */; };
+		DA1620260000000000000001 /* TodayPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000002 /* TodayPlan.swift */; };
+		DA1620260000000000000003 /* TodayReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000004 /* TodayReview.swift */; };
+		DA1620260000000000000005 /* PeriodicReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000006 /* PeriodicReview.swift */; };
+		DA1620260000000000000007 /* LibraryHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1620260000000000000008 /* LibraryHelp.swift */; };
+		DA1920260000000000000001 /* ReviewRhythm.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA1920260000000000000002 /* ReviewRhythm.swift */; };
+		DA7E20261017000000000001 /* PlanningTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000002 /* PlanningTemplates.swift */; };
+		DA7E20261017000000000003 /* PlanningTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7E20261017000000000004 /* PlanningTemplatesView.swift */; };
 		E10000000000000000000001 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000011 /* ProfileModels.swift */; };
 		E10000000000000000000002 /* LocalProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000012 /* LocalProfileStore.swift */; };
 		E10000000000000000000003 /* LocalProfileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000013 /* LocalProfileStoreTests.swift */; };
@@ -59,13 +59,13 @@
 		C10000000000000000000002 /* ChecklistMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistMigrationTests.swift; sourceTree = "<group>"; };
 		C10000000000000000000003 /* PlenactTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlenactTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CADA20261010000000000002 /* CalendarPlanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPlanning.swift; sourceTree = "<group>"; };
-		DA1620260000000000000002 /* Planning/TodayPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/TodayPlan.swift; sourceTree = "<group>"; };
-		DA1620260000000000000004 /* Planning/TodayReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/TodayReview.swift; sourceTree = "<group>"; };
-		DA1620260000000000000006 /* Planning/PeriodicReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/PeriodicReview.swift; sourceTree = "<group>"; };
-		DA1620260000000000000008 /* Planning/LibraryHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/LibraryHelp.swift; sourceTree = "<group>"; };
-		DA1920260000000000000002 /* Planning/ReviewRhythm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/ReviewRhythm.swift; sourceTree = "<group>"; };
-		DA7E20261017000000000002 /* Planning/PlanningTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/PlanningTemplates.swift; sourceTree = "<group>"; };
-		DA7E20261017000000000004 /* Planning/PlanningTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning/PlanningTemplatesView.swift; sourceTree = "<group>"; };
+		DA1620260000000000000002 /* TodayPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayPlan.swift; sourceTree = "<group>"; };
+		DA1620260000000000000004 /* TodayReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayReview.swift; sourceTree = "<group>"; };
+		DA1620260000000000000006 /* PeriodicReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeriodicReview.swift; sourceTree = "<group>"; };
+		DA1620260000000000000008 /* LibraryHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHelp.swift; sourceTree = "<group>"; };
+		DA1920260000000000000002 /* ReviewRhythm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewRhythm.swift; sourceTree = "<group>"; };
+		DA7E20261017000000000002 /* PlanningTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningTemplates.swift; sourceTree = "<group>"; };
+		DA7E20261017000000000004 /* PlanningTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningTemplatesView.swift; sourceTree = "<group>"; };
 		E10000000000000000000011 /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		E10000000000000000000012 /* LocalProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProfileStore.swift; sourceTree = "<group>"; };
 		E10000000000000000000013 /* LocalProfileStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProfileStoreTests.swift; sourceTree = "<group>"; };
@@ -98,6 +98,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		546982E7308B7E17002695BF /* Planning */ = {
+			isa = PBXGroup;
+			children = (
+				DA1620260000000000000002 /* TodayPlan.swift */,
+				DA7E20261017000000000002 /* PlanningTemplates.swift */,
+				DA7E20261017000000000004 /* PlanningTemplatesView.swift */,
+				DA1620260000000000000008 /* LibraryHelp.swift */,
+				DA1620260000000000000006 /* PeriodicReview.swift */,
+				DA1620260000000000000004 /* TodayReview.swift */,
+				DA1920260000000000000002 /* ReviewRhythm.swift */,
+			);
+			path = Planning;
+			sourceTree = "<group>";
+		};
 		A00E5FAE2EE84AA5AD362AB7 /* Src */ = {
 			isa = PBXGroup;
 			children = (
@@ -121,13 +135,7 @@
 		B1A8C54E2D7F4A31A9600005 /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				DA1620260000000000000002 /* Planning/TodayPlan.swift */,
-				DA7E20261017000000000002 /* Planning/PlanningTemplates.swift */,
-				DA7E20261017000000000004 /* Planning/PlanningTemplatesView.swift */,
-				DA1620260000000000000008 /* Planning/LibraryHelp.swift */,
-				DA1620260000000000000006 /* Planning/PeriodicReview.swift */,
-				DA1620260000000000000004 /* Planning/TodayReview.swift */,
-				DA1920260000000000000002 /* Planning/ReviewRhythm.swift */,
+				546982E7308B7E17002695BF /* Planning */,
 				D10000000000000000000001 /* Boards */,
 				E10000000000000000000010 /* Profile */,
 				E10000000000000000000017 /* Sync */,
@@ -312,13 +320,13 @@
 				D45892BF9775403B92A500E8 /* CardDetailView.swift in Sources */,
 				290B0BC3566E4CC6AE0360F1 /* Models.swift in Sources */,
 				CADA20261010000000000001 /* CalendarPlanning.swift in Sources */,
-				DA1620260000000000000001 /* Planning/TodayPlan.swift in Sources */,
-				DA7E20261017000000000001 /* Planning/PlanningTemplates.swift in Sources */,
-				DA7E20261017000000000003 /* Planning/PlanningTemplatesView.swift in Sources */,
-				DA1620260000000000000007 /* Planning/LibraryHelp.swift in Sources */,
-				DA1620260000000000000005 /* Planning/PeriodicReview.swift in Sources */,
-				DA1620260000000000000003 /* Planning/TodayReview.swift in Sources */,
-				DA1920260000000000000001 /* Planning/ReviewRhythm.swift in Sources */,
+				DA1620260000000000000001 /* TodayPlan.swift in Sources */,
+				DA7E20261017000000000001 /* PlanningTemplates.swift in Sources */,
+				DA7E20261017000000000003 /* PlanningTemplatesView.swift in Sources */,
+				DA1620260000000000000007 /* LibraryHelp.swift in Sources */,
+				DA1620260000000000000005 /* PeriodicReview.swift in Sources */,
+				DA1620260000000000000003 /* TodayReview.swift in Sources */,
+				DA1920260000000000000001 /* ReviewRhythm.swift in Sources */,
 				B1A8C54E2D7F4A31A9600001 /* LabelModels.swift in Sources */,
 				B1A8C54E2D7F4A31A9600002 /* CardLabelsSheet.swift in Sources */,
 				A21C9B4E7F714DC68A4E0001 /* PhotoAttachments.swift in Sources */,

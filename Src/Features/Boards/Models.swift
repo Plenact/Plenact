@@ -3649,7 +3649,9 @@ enum PersonalCollectionStore {
             return []
         }
 
-        return (try? JSONDecoder().decode([PersonalCollection].self, from: data)) ?? []
+        return ((try? JSONDecoder().decode([PersonalCollection].self, from: data)) ?? []).map {
+            DefaultListTutorial.removingUntouchedWelcomeCards(from: $0)
+        }
     }
 
 
@@ -5040,6 +5042,61 @@ struct CardScheduleBadge: Equatable {
 /// Creation-only guidance: never called when opening or emptying an existing List.
 enum DefaultListTutorial {
 
+    ///
+    /// @fcn        DefaultListTutorial.guidance(for:)
+    /// @brief      Build transient read-only guidance for a built-in List
+    /// @details    Returns no record for ordinary Lists. The caller presents this value outside
+    ///             stored content, counts, search, and progress.
+    ///
+    /// @param[in]  title  Built-in List title
+    ///
+    /// @return     (KanbanCard?) read-only guidance snapshot
+    ///
+    static func guidance(for title: String) -> KanbanCard? {
+        guard var card = makeStarter(title: title, includesWelcomeCard: true).lists.first?.cards.first else { return nil }
+        card.descriptionOverride = card.descriptionOverride?.replacingOccurrences(of:
+            "This welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty.",
+            with: "This guide stays here for this visit. Your Cards and Notes are separate from this guidance.")
+        card.presentation = .note
+        card.isEditingLocked = true
+        return card
+    }
+
+
+    ///
+    /// @fcn        DefaultListTutorial.removingUntouchedWelcomeCards(from:)
+    /// @brief      Replace pristine legacy welcome records with session guidance
+    /// @details    Requires an exact original snapshot apart from generated checklist identities.
+    ///             Edited, completed, archived, copied, or otherwise customized records are retained.
+    ///
+    /// @param[in]  collection  Saved owner being loaded
+    ///
+    /// @return     (PersonalCollection) owner preserving all user-created or changed content
+    ///
+    static func removingUntouchedWelcomeCards(from collection: PersonalCollection) -> PersonalCollection {
+        guard collection.kind == .list else { return collection }
+        var result = collection
+        for index in result.lists.indices {
+            let list = result.lists[index]
+            guard !list.isArchived,
+                  let template = makeStarter(title: list.title, includesWelcomeCard: true).lists.first?.cards.first else { continue }
+            result.lists[index].cards.removeAll { card in
+                guard card.id == template.id, card.checklists.count == 1,
+                      let checklist = card.checklists.first, let expected = template.checklists.first,
+                      checklist.title == expected.title, checklist.completed == expected.completed,
+                      checklist.items.count == expected.items.count,
+                      zip(checklist.items, expected.items).allSatisfy({ actual, expected in
+                          actual.title == expected.title && actual.isCompleted == expected.isCompleted && actual.content == expected.content
+                      }) else { return false }
+                var comparable = template
+                comparable.checklists = card.checklists
+                return card == comparable && !collection.savedCardIDs.contains(card.id)
+            }
+        }
+        return result
+    }
+
+
 
     ///
     /// @fcn        DefaultListTutorial.defaultBanner
@@ -5067,10 +5124,11 @@ enum DefaultListTutorial {
     ///             starter is installed.
     ///
     /// @param[in]  title  Display title or proposed title text
+    /// @param[in]  includesWelcomeCard  Internal legacy fixture generation; new Lists start empty
     ///
-    /// @return     (PersonalCollection) fresh special-list collection containing its welcome content and appearance
+    /// @return     (PersonalCollection) fresh special-list collection with default appearance
     ///
-    static func makeStarter(title: String) -> PersonalCollection {
+    static func makeStarter(title: String, includesWelcomeCard: Bool = false) -> PersonalCollection {
         let icon: PersonalCollectionIcon
         let color: ProfileColor
         switch title {
@@ -5114,7 +5172,7 @@ enum DefaultListTutorial {
             checklists: [KanbanChecklist(title: "Try it", items: steps.map { KanbanChecklistItem(title: $0) })],
             comments: [], members: [], labelIDs: [LabelLibraryStore.load().referenceLabelID], attachments: [], descriptionOverride: body,
             subtitleOverride: "'\(title)', A quick guide to this List", presentation: .card)
-        collection.lists[0].cards = [card]
+        if includesWelcomeCard { collection.lists[0].cards = [card] }
         return collection
     }
 }

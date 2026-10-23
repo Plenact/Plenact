@@ -1357,6 +1357,60 @@ private struct BoardListFramePreferenceKey: PreferenceKey {
 }
 
 
+/// Marks the importance control so native whole-Card lifting can yield to its tap and hold.
+struct ImportanceInteractionRegion: UIViewRepresentable {
+    final class Marker: UIView {}
+
+
+    ///
+    /// @fcn        ImportanceInteractionRegion.makeUIView(context:)
+    /// @brief      Create a noninteractive native marker behind the star control
+    /// @details    SwiftUI owns the importance gesture; this marker supplies only its bounds.
+    ///
+    /// @param[in]  context  SwiftUI bridge context
+    ///
+    /// @return     (Marker) transparent geometry marker
+    ///
+    func makeUIView(context: Context) -> Marker {
+        let marker = Marker()
+        marker.isUserInteractionEnabled = false
+        return marker
+    }
+
+
+    ///
+    /// @fcn        ImportanceInteractionRegion.updateUIView(_:context:)
+    /// @brief      Keep the geometry marker free of touch handling
+    /// @details    Layout follows the control automatically; no gesture is installed here.
+    ///
+    /// @param[in]  marker   Existing native marker
+    /// @param[in]  context  SwiftUI bridge context
+    ///
+    /// @return     (Void) no persistent state changes
+    ///
+    func updateUIView(_ marker: Marker, context: Context) {}
+
+
+    ///
+    /// @fcn        ImportanceInteractionRegion.contains(_:from:in:)
+    /// @brief      Determine whether a native drag starts over an importance control
+    /// @details    Converts coordinates for visible marker descendants, including nested hosting
+    ///             containers. Unmarked parts of the Card retain their ordinary drag behavior.
+    ///
+    /// @param[in]  point            Touch position supplied by the drag session
+    /// @param[in]  coordinateSpace  View whose coordinates define the point
+    /// @param[in]  root             Card content subtree hosting the drag interaction
+    ///
+    /// @return     (Bool) true only inside a visible importance marker
+    ///
+    static func contains(_ point: CGPoint, from coordinateSpace: UIView, in root: UIView) -> Bool {
+        guard !root.isHidden, root.alpha > 0.01 else { return false }
+        if root is Marker, root.bounds.contains(root.convert(point, from: coordinateSpace)) { return true }
+        return root.subviews.contains { contains(point, from: coordinateSpace, in: $0) }
+    }
+}
+
+
 /// Install a native drag interaction on the row's content container, separate from List reordering.
 struct BoardCardDragSource: UIViewRepresentable {
     static let contentType = UTType(exportedAs: "com.plenact.local-board-card", conformingTo: .data)  /* Private transfer type for local Board card drags      */
@@ -1530,15 +1584,32 @@ struct BoardCardDragSource: UIViewRepresentable {
 
 
         ///
+        /// @fcn        BoardCardDragSource.Coordinator.canBegin(at:in:)
+        /// @brief      Reserve importance controls for their own tap-and-hold action
+        /// @details    Declines a native lift before creating drag state or a payload when the
+        ///             session starts on a star. The rest of the Card remains draggable.
+        ///
+        /// @param[in]  point            Initial native drag-session point
+        /// @param[in]  coordinateSpace  View supplying that point's coordinates
+        ///
+        /// @return     (Bool) true for a mounted Card area outside importance controls
+        ///
+        func canBegin(at point: CGPoint, in coordinateSpace: UIView) -> Bool {
+            guard let container else { return false }
+            return !ImportanceInteractionRegion.contains(point, from: coordinateSpace, in: container)
+        }
+
+
+        ///
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:itemsForBeginning:)
         /// @brief      Create a native drag item for an attached card source
-        /// @details    Requires the interaction window, begins the token-only source session, and
-        ///             retains this coordinator through the item localObject.
+        /// @details    Requires the interaction window and a start outside importance controls,
+        ///             then begins the token-only session and retains the coordinator in localObject.
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
         ///
-        /// @return     ([UIDragItem]) single local drag item, or an empty array without a window
+        /// @return     ([UIDragItem]) local drag item, or empty without a window or over an importance control
         ///
         func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
 
@@ -1547,7 +1618,9 @@ struct BoardCardDragSource: UIViewRepresentable {
                 return []
             }
 
-            let item = UIDragItem(itemProvider: begin(at: session.location(in: window))) /* Native drag item carrying local source identity */
+            let point = session.location(in: window)
+            guard canBegin(at: point, in: window) else { return [] }
+            let item = UIDragItem(itemProvider: begin(at: point)) /* Native drag item carrying local source identity */
 
             item.localObject = self
 

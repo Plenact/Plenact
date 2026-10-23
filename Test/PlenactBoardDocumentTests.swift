@@ -14575,6 +14575,21 @@ final class PlenactBoardDocumentTests: XCTestCase {
             return view.subviews.compactMap { collectionView(in: $0) }.first
         }
 
+
+
+        ///
+        /// @fcn        testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout.importanceMarker(in:)
+        /// @brief      Locate a rendered star control's native geometry marker
+        /// @details    Searches public view descendants inside the real hosted List cell.
+        ///
+        /// @param[in]  view  Card content subtree to inspect
+        ///
+        /// @return     (ImportanceInteractionRegion.Marker?) first star marker
+        ///
+        func importanceMarker(in view: UIView) -> ImportanceInteractionRegion.Marker? {
+            (view as? ImportanceInteractionRegion.Marker) ?? view.subviews.compactMap { importanceMarker(in: $0) }.first
+        }
+
         for (preset, textSize, width) in [
             (BoardPresentation.standard, DynamicTypeSize.large, 360.0),
             (.overview, .large, 240.0),
@@ -14595,6 +14610,8 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 onCardDragChanged:    { _, _ in XCTFail("Layout must not begin a drag") },
                 onCardDragEnded:      { _, _, _ in }
             ).environment(\.dynamicTypeSize, textSize)
+                .environment(\.libraryImportance, LibraryImportanceAccess(contains: { $0 == 10 }, set: { _, _ in },
+                    level: { $0 == 10 ? 3 : 0 }))
             let controller = UIHostingController(rootView: view) /* Hosted controller for layout assertions */
 
             window.frame = CGRect(x: 0, y: 0, width: width, height: 800)
@@ -14608,7 +14625,7 @@ final class PlenactBoardDocumentTests: XCTestCase {
                 $0 + collection.numberOfItems(inSection: $1)
             }
 
-            XCTAssertEqual(itemCount, 4, "Three content rows plus Add card; no separate section creation row")
+            XCTAssertEqual(itemCount, 5, "Three content rows, the collapsed guidance placeholder, and Add card")
 
             let dragSources = collection.visibleCells.flatMap { cell in /* Registered drag-source views */
                 cell.contentView.interactions.compactMap { $0 as? UIDragInteraction }.filter {
@@ -14617,7 +14634,18 @@ final class PlenactBoardDocumentTests: XCTestCase {
             }
 
             XCTAssertFalse(dragSources.isEmpty, "Visible card bodies must have a native drag source")
-            let dividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 1, section: 0)))
+            let starSource = try XCTUnwrap(dragSources.first { source in
+                source.view.flatMap { importanceMarker(in: $0) } != nil
+            })
+            let starContainer = try XCTUnwrap(starSource.view)
+            let starMarker = try XCTUnwrap(importanceMarker(in: starContainer))
+            XCTAssertGreaterThan(starMarker.bounds.width, 0)
+            let starPoint = starMarker.convert(CGPoint(x: starMarker.bounds.midX, y: starMarker.bounds.midY), to: starContainer)
+            let dragOwner = try XCTUnwrap(starSource.delegate as? BoardCardDragSource.Coordinator)
+            XCTAssertFalse(dragOwner.canBegin(at: starPoint, in: starContainer), "Holding the stars must not lift the Card")
+            XCTAssertTrue(dragOwner.canBegin(at: CGPoint(x: 12, y: starContainer.bounds.midY), in: starContainer), "The Card body must remain draggable")
+            XCTAssertFalse(dragOwner.isDragging)
+            let dividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 2, section: 0)))
             XCTAssertTrue(dividerCell.contentView.interactions.contains {
                 ($0 as? UIDragInteraction)?.delegate is BoardCardDragSource.Coordinator
             }, "Divider rows must support the same native drag as Cards and Notes")

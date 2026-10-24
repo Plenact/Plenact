@@ -172,6 +172,7 @@ struct AccountSettingsView: View
     @State private var todayFocusIncludesUpNext:     Bool
     @State private var todayFocusIncludesImportant:  Bool
     @State private var todayFocusIncludesBookmarked: Bool
+    @State private var keepsDayListsInTimeOrder:     Bool
     @State private var todayFocusOrder:              TodayFocusOrder
     @State private var todayFocusGroupsBySection:    Bool
     @State private var todayFocusHidesCompleted:     Bool
@@ -263,6 +264,7 @@ struct AccountSettingsView: View
         _todayFocusIncludesUpNext = State(initialValue: preferences.todayFocusIncludesUpNext)
         _todayFocusIncludesImportant = State(initialValue: preferences.todayFocusIncludesImportant)
         _todayFocusIncludesBookmarked = State(initialValue: preferences.todayFocusIncludesBookmarked)
+        _keepsDayListsInTimeOrder = State(initialValue: preferences.keepsDayListsInTimeOrder)
         _todayFocusOrder = State(initialValue: preferences.todayFocusOrder)
         _todayFocusGroupsBySection = State(initialValue: preferences.todayFocusGroupsBySection)
         _todayFocusHidesCompleted = State(initialValue: preferences.todayFocusHidesCompleted)
@@ -352,7 +354,8 @@ struct AccountSettingsView: View
                 todayFocusIncludesUpNext: todayFocusIncludesUpNext,
                 scrollsOverflowingTitles: scrollsOverflowingTitles,
                 enablesLowerCornerBack: enablesLowerCornerBack,
-                importanceStarStyle: importanceStarStyle
+                importanceStarStyle: importanceStarStyle,
+                keepsDayListsInTimeOrder: keepsDayListsInTimeOrder
             )
         )
 
@@ -594,6 +597,11 @@ struct AccountSettingsView: View
 
                         }
 
+                        Section("Personalization")
+                        {
+                            NavigationLink { StudioSettingsView() } label: { Label("Plenact Studio", systemImage: "paintpalette") }
+                        }
+
                         NewCardColorDefaultsSection(
                             headers: $randomizesNewCardHeaders, backgrounds: $randomizesNewCardBackgrounds)
 
@@ -601,7 +609,7 @@ struct AccountSettingsView: View
                             count: $todayFocusItemCount, order: $todayFocusOrder,
                             groups: $todayFocusGroupsBySection, hidesCompleted: $todayFocusHidesCompleted,
                             important: $todayFocusIncludesImportant, bookmarked: $todayFocusIncludesBookmarked,
-                            upNext: $todayFocusIncludesUpNext)
+                            upNext: $todayFocusIncludesUpNext, keepsTimeOrder: $keepsDayListsInTimeOrder)
 
                         Section
                         {
@@ -653,6 +661,7 @@ struct AccountSettingsView: View
             {
                 ReviewRhythmSettingsView()
             }
+            .modifier(StudioFormWallpaper(destination: .settings))
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
             .sheet(isPresented: $showsShortcutEditor)
             {
@@ -800,12 +809,18 @@ struct PlanSettingsView: View
             Form
             {
 
+                Section("Personalization")
+                {
+                    NavigationLink { StudioSettingsView() } label: { Label("Plenact Studio", systemImage: "paintpalette") }
+                }
+
                 TodayFocusSettingsSection(
                     count: $preferences.todayFocusItemCount, order: $preferences.todayFocusOrder,
                     groups: $preferences.todayFocusGroupsBySection,
                     hidesCompleted: $preferences.todayFocusHidesCompleted,
                     important: $preferences.todayFocusIncludesImportant,
-                    bookmarked: $preferences.todayFocusIncludesBookmarked, upNext: $preferences.todayFocusIncludesUpNext
+                    bookmarked: $preferences.todayFocusIncludesBookmarked, upNext: $preferences.todayFocusIncludesUpNext,
+                    keepsTimeOrder: $preferences.keepsDayListsInTimeOrder
                 )
                 Section
                 {
@@ -908,6 +923,7 @@ struct PlanSettingsView: View
                 }
 
             }
+            .modifier(StudioFormWallpaper(destination: .settings))
             .navigationTitle("Plan Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
@@ -1047,6 +1063,7 @@ struct TodayFocusSettingsSection: View
     @Binding var important:      Bool
     @Binding var bookmarked:     Bool
     @Binding var upNext:         Bool
+    @Binding var keepsTimeOrder: Bool
 
     var body: some View
     {
@@ -1065,7 +1082,17 @@ struct TodayFocusSettingsSection: View
                 Text("Expand all rows").tag(0)
             }
 
-            Picker("Order", selection: $order)
+            Toggle("Keep Day Lists in time order", isOn: $keepsTimeOrder)
+
+            Picker("Focus order", selection: Binding(
+                get:
+                {
+                    keepsTimeOrder ? .chronological : order
+                },
+                set:
+                {
+                    order = $0
+                }))
             {
 
                 ForEach(TodayFocusOrder.allCases, id: \.self)
@@ -1074,6 +1101,7 @@ struct TodayFocusSettingsSection: View
                 }
 
             }
+            .disabled(keepsTimeOrder)
 
             Toggle("Group by Day list sections", isOn: $groups)
             Toggle("Up Next", isOn: $upNext)
@@ -1090,7 +1118,7 @@ struct TodayFocusSettingsSection: View
         {
 
             Text(
-                                    "Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Focus follows your Day list by default. Grouping uses your section headings; chronological order uses start dates, then due dates when no start is set, within each group. Undated items keep their relative order after dated items. These choices never rearrange your Day list. The row count controls how many items fit in the preview at once, not how many match. Scroll inside Focus to reach every additional match. Section headings do not count as items; progress always counts the whole day."
+                                    "Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Keep Day Lists in time order is on by default and sorts both Day Lists and Focus by a timed start, or a timed due date when no timed start is set. Untimed and date-only items follow in their existing order. Day List section boundaries stay intact. Turn it off to arrange Day Lists manually and choose a separate Focus order. Grouping uses your section headings; separate chronological Focus order uses start dates, then due dates when no start is set. The row count controls how many items fit in the preview at once, not how many match. Scroll inside Focus to reach every additional match. Section headings do not count as items; progress always counts the whole day."
             )
         }
 

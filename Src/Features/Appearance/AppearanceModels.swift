@@ -221,6 +221,8 @@ struct BoardAppearance: Hashable, Codable, Sendable
     var cardTitleColor:       ListPreviewTextColor? = nil
     var cardTextColor:        ListPreviewTextColor? = nil
     var addItemTextColor:     ProfileColor? = nil
+    var studioSurface:       StudioSurface? = nil
+    var studioCardSurface:   StudioSurface? = nil
     var subtitleItalic:      Bool? = nil  /* Board default; missing preserves regular subtitles */
 
 
@@ -364,6 +366,8 @@ struct BoardAppearance: Hashable, Codable, Sendable
                 appearance.cardTextColor = nil
                 appearance.addItemTextColor = nil
                 appearance.subtitleItalic = nil
+                appearance.studioSurface = nil
+                appearance.studioCardSurface = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
             }
 
@@ -464,6 +468,8 @@ struct ItemAppearance: Hashable, Codable, Sendable
     var addItemTextColor:              ProfileColor? = nil
     var sectionCollapsed:              Bool? = nil
     var hideEmptySubtitle:             Bool? = nil
+    var studioSurface:                StudioSurface? = nil
+    var studioCardSurface:            StudioSurface? = nil
     var subtitleItalic:               Bool? = nil  /* nil inherits; false explicitly requests regular type */
     var cardDetail:                    BoardCardDetail? = nil
     var listViewMode:                  SingleListViewMode? = nil
@@ -505,7 +511,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
         sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
-        && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil
+        && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil && studioSurface == nil && studioCardSurface == nil
     }
 
 }
@@ -539,6 +545,8 @@ enum NewCardAppearanceDefaults
     ///
     static func apply(to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load())
     {
+
+        StudioSettings.apply(to: &card)
 
         guard card.presentation == .card, !card.isSectionDivider,
         preferences.randomizesNewCardHeaders || preferences.randomizesNewCardBackgrounds

@@ -2553,7 +2553,7 @@ struct BoardListsView: View
                         plateSection
                         .background
                         {
-                            TodayPaperBackground().clipped()
+                            TodayPaperBackground().overlay { StudioWorkspaceBackground(destination: .plans) }.clipped()
                         }
 
                     }
@@ -2568,7 +2568,7 @@ struct BoardListsView: View
             }
             .background
             {
-                TodayPaperBackground()
+                TodayPaperBackground().overlay { StudioWorkspaceBackground(destination: .plans) }
             }
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))

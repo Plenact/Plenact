@@ -192,7 +192,11 @@ struct PlanningCalendarView: View
                 .frame(maxWidth: 620)
                 .frame(maxWidth: .infinity)
             }
-            .background(Color(.systemGroupedBackground))
+            .background
+            {
+                Color(.systemGroupedBackground)
+                StudioWorkspaceBackground(destination: .calendar)
+            }
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0)
             {

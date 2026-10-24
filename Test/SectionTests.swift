@@ -730,7 +730,7 @@ extension PlenactBoardDocumentTests
         let original = cards
         var preferences = LocalProfilePreferences(
             todayFocusItemCount: 0,
-            todayFocusOrder: .chronological, todayFocusGroupsBySection: true)
+            todayFocusOrder: .chronological, todayFocusGroupsBySection: true, keepsDayListsInTimeOrder: false)
         var entries = preferences.todayFocusEntries(in: cards)
         XCTAssertEqual(entries.map(\.id), [1, 3, 4, 2, 7, 6, 8])
         XCTAssertEqual(entries[1].heading, "Looking forward to")

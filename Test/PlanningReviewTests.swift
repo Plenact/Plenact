@@ -211,7 +211,8 @@ extension PlenactBoardDocumentTests
             cards[index].dueDateKind = .dateAndTime
         }
 
-        var preferences = LocalProfilePreferences(todayFocusItemCount: 0, todayFocusIncludesUpNext: true)
+        var preferences = LocalProfilePreferences(
+            todayFocusItemCount: 0, todayFocusIncludesUpNext: true, keepsDayListsInTimeOrder: false)
         let now = time(12)
         XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: now, calendar: calendar).map(\.id), [1, 2, 4, 5])
         preferences.todayFocusIncludesImportant = true
@@ -1577,16 +1578,16 @@ extension PlenactBoardDocumentTests
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testFocusFilterSummaryDisappearsAfterThreeSecondsWithoutEditingItems
-    /// @brief      Verify that focus Filter Summary Disappears After Three Seconds Without Editing Items
-    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertLessThan(try XCTUnwrap(heights.last), expanded)`.
+    /// @fcn        PlenactBoardDocumentTests.testFocusSelectionContextFadesWithoutEditingItems
+    /// @brief      Let selection context fade after its reading interval without editing items
+    /// @details    Hosts Focus through its three-second pause and soft fade, then checks the
+    ///             subtitle space is reclaimed while mutation callbacks remain uninvoked.
     ///
     /// @return     (Void) no return value
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
     @MainActor
-    func testFocusFilterSummaryDisappearsAfterThreeSecondsWithoutEditingItems() async throws
+    func testFocusSelectionContextFadesWithoutEditingItems() async throws
     {
 
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
@@ -1656,7 +1657,7 @@ extension PlenactBoardDocumentTests
 
         try XCTUnwrap(image.pngData()).write(
             to: FileManager.default.temporaryDirectory.appendingPathComponent("plenact-focus-filter-summary.png"))
-        try await Task.sleep(for: .seconds(3.3))
+        try await Task.sleep(for: .seconds(3.8))
         XCTAssertLessThan(try XCTUnwrap(heights.last), expanded)
     }
 

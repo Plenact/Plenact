@@ -10,6 +10,14 @@ Changes after v1.4; no new version number has been assigned.
 
 ### Added
 
+- Keep Day Lists and Today’s Focus in time order by default, placing untimed Cards last. Turn off “Keep Day Lists in time order” in settings for manual Day ordering; section boundaries and equal-time order are preserved.
+
+- Edit a Card’s start or due date directly from its Today’s Focus date or time label; saved changes immediately refresh the listing.
+
+- Tap a bookmark in Today’s Focus to remove it without opening the Card, with a brief Undo notice above the bottom toolbar.
+
+- Personalize Cards, Notes, Lists, Boards, and primary workspace views with colors, gradients, paper, linen, dot grids, graph paper, illustrated canvases, or imported images. Control strength, readability, photo framing, and Card preview visibility.
+- Reuse named artwork and complete looks in My art, choose separate new-Card and new-Note defaults, and optionally vary newly created item colors and headers. Unsplash search is optional and requires a developer access key; imported artwork remains device-local.
 - Edit start and due dates directly from Card and Note previews without leaving the List.
 - Open a Card or Note's Edit history from its menu to see saved content updates and timestamps. Previous and new field values are retained for future reversal; restoration controls and personal Saved/importance marks are not included yet.
 - Choose italic subtitles with a Board default and inherited or explicit Regular/Italic overrides for Lists, Cards, and Notes.
@@ -17,6 +25,11 @@ Changes after v1.4; no new version number has been assigned.
 
 ### Changed
 
+- Use each Today’s Focus item’s icon as its completion control, with a check badge when completed. Custom icons and picture previews replace the default Card or Note symbol, leaving more room for titles.
+
+- Keep Today’s Focus in sync with saved Card edits, completion, bookmarks, and importance without waiting for its clock refresh or recreating the panel.
+
+- Clarify Today's Focus with a softly fading selection explanation, stronger title styling and contrast, and an inviting “See today’s list” action. Show times and quiet whole-list completion counts only for All items or selections including Up Next; remove the prominent progress bar.
 - Tap Recent in Activity to switch between full-size and square previews. The Activity browser now stays within the available space, with its contents scrolling independently above the lower toolbar.
 - Refine built-in List information-card entrance and header-toggle motion, including synchronized Add controls and compact spacing when retracted.
 

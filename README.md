@@ -18,9 +18,25 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-- Activity sections for init reference cards on On the Table, In the Queue and Scheduled have the Activity section removed or hidden by default
+## Next Things in the Morning
+
+- Database
+
+- Website
+
+- Windows App
+
+## Next 
 
 - All cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
+
+- Spacing now at top of lists?
+
+- Allow the User customization setting of how to display Week naming, with WW work week opotion!
+	
+- Drag and access to content feels more hands-on like Trello does
+
+- Settings menu re-org!
 
 ## Upcoming Development Work
 
@@ -49,11 +65,7 @@ Opens
 - style.swift updates
 	Import leading statements in style.swift
 	struct headers
-
-
-
-
-
+	
 # Product Direction
 
 Plenact is intended to grow across several related planning jobs:

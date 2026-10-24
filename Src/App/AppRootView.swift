@@ -422,6 +422,7 @@ struct AppRootView: View
             }
 
             hasLoadedBoard = true
+            applyDayListOrderingPreference()
         }
 
     }
@@ -662,6 +663,11 @@ struct AppRootView: View
                 }?.id)
         )
 
+        .onChange(of: planPreferencesData)
+        {
+            _, _ in
+            applyDayListOrderingPreference()
+        }
         .onChange(of: savedCardIDs)
         {
             _, updatedIDs in
@@ -684,7 +690,7 @@ struct AppRootView: View
                 CardAttachmentStore.fileNames(in: updated)) /* Media removed by the collection update */
 
             persistCurrentPlanningWeek()
-            KanbanBoardPersistence.enqueueSave(updated, onSuccess:
+            KanbanBoardPersistence.enqueueSave(lists, onSuccess:
                 {
                     cleanDeletedMedia(candidates)
                 })

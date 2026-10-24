@@ -366,7 +366,11 @@ struct TodaySearchView: View
 
             }
 
-            .background(Color(.systemBackground))
+            .background
+            {
+                Color(.systemBackground)
+                StudioWorkspaceBackground(destination: .search)
+            }
             .navigationTitle(resultProvider == nil ? "Search your Week" : "Search Plenact")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar

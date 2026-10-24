@@ -585,6 +585,11 @@ struct ContentView: View
 
                     CollectionBackgroundSurface(background: displayedCollectionBackground)
                     .ignoresSafeArea()
+                    StudioWorkspaceBackground(destination: personalCollectionID == nil ? .week : .plans).ignoresSafeArea()
+                    if let surface = storedBoardAppearance.studioSurface
+                    {
+                        StudioSurfaceView(surface: surface).ignoresSafeArea()
+                    }
 
                     VStack(spacing: 0)
                     {
@@ -1544,6 +1549,7 @@ struct ContentView: View
                 }
 
             }
+            .environment(\.studioCardSurface, currentBoardAppearance.studioCardSurface)
             .environment(\.inheritedSubtitleItalic, currentBoardAppearance.resolvedSubtitleItalic(
                 list: isStandaloneListView ? lists.first?.appearance : nil))
             .onDisappear
@@ -1633,6 +1639,9 @@ struct ContentView: View
                 )
                 .id(card.id)
                 .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
+                .environment(\.studioCardSurface,
+                    lists.first { $0.cards.contains { $0.id == card.id } }?.appearance?.studioCardSurface
+                    ?? currentBoardAppearance.studioCardSurface)
                 .environment(\.cardMovementSource, personalCollectionID)
                 .environment(\.inheritedSubtitleItalic, currentBoardAppearance.resolvedSubtitleItalic(
                     list: lists.first

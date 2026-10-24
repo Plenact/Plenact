@@ -629,6 +629,10 @@ struct TodayListDetailView: View
 
                     Color(.systemGray6).ignoresSafeArea()
                 }
+                if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
+                {
+                    StudioSurfaceView(surface: surface).ignoresSafeArea()
+                }
 
 
                 VStack(spacing: 0)
@@ -874,6 +878,7 @@ struct TodayListDetailView: View
                         .contentMargins(.top, 14, for: .scrollContent)
                         .background(
                             focusedList.singleListViewMode == .noteList
+                            && focusedList.appearance?.studioSurface == nil && effectiveBoardAppearance.studioSurface == nil
                             ? Color(.systemBackground).opacity(
                                 focusedList.appearance?.resolvedListBackgroundOpacity ?? 1) : .clear
                         )
@@ -1386,6 +1391,8 @@ struct TodayListDetailView: View
                 .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
             }
 
+            .environment(\.studioCardSurface,
+                         focusedList?.appearance?.studioCardSurface ?? effectiveBoardAppearance.studioCardSurface)
             .environment(\.inheritedSubtitleItalic,
                          effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance))
             .onChange(of: labelLibrary)

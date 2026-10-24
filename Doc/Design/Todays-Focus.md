@@ -20,7 +20,7 @@ The initial experience remains one calm list that dwindles as you finish:
 
 | Choice | Initial value | Optional behavior |
 | --- | --- | --- |
-| Order | Day list order | Chronological |
+| Keep Day Lists in time order | On: timed first, untimed last | Off: manually arrange Day Lists and choose Day list or chronological Focus order |
 | Grouping | Continuous list | Day list sections |
 | Inclusion filters | All eligible items | Up Next, Important, Bookmarked, or any combination |
 | Completed items | Hidden | Keep visible and allow unchecking |
@@ -40,9 +40,16 @@ match your Focus choices,” distinct from the entire Day list being complete.
 
 ### A user's existing structure is meaningful
 
-Day list order is the default and remains authoritative unless the user chooses
-another preview arrangement. Focus derives a presentation; it never sorts, moves,
-or rewrites the underlying Cards, Notes, dates, headings, or Day list.
+“Keep Day Lists in time order” is enabled by default, including for older saved
+preferences without this field. It maintains canonical date-associated Day Lists
+in time order and applies the same policy to Focus. Equal times retain their
+relative order; untimed and date-only Cards follow timed Cards. Existing section
+boundaries stay intact in the actual Lists. Personal Lists and archived Lists are
+excluded, and sorting does not change Card content or create edit-history records.
+
+Turning the switch off stops automatic sorting and allows manual Day arrangement.
+The separately saved Focus order then controls the preview. Sorting a preview
+alone does not rewrite its Day List. Both settings screens retain Save/Cancel.
 
 Optional grouping reads the existing Day list section dividers **before** filtering
 completed items. Named sections retain their titles and source sequence. Sections
@@ -56,19 +63,24 @@ importance level, emotional meaning, or ranking to a heading's text.
 
 ### Ordering and grouping are independent
 
-Chronological ordering uses a start date when present, otherwise a due date.
-Time-only values are interpreted on the displayed Today date in the local calendar;
-date-only values use the beginning of their date. Full dates retain their dates.
-Equal schedule values keep Day list order; undated items follow scheduled items
-and keep their relative Day list order.
+Automatic time order uses an explicit timed start, or a timed due value when no
+timed start exists. Clock times are compared in the planning calendar; date-only
+values count as untimed. Canonical Lists are normalized on load, preference changes,
+and saved edits, including retained weeks and newly recreated Day Lists.
+
+With automatic ordering disabled, the separate chronological Focus option uses a
+start date when present, otherwise a due date. Time-only values are interpreted on
+the displayed Today date; date-only values use the beginning of their date. Full
+dates retain their dates. Equal values and undated items retain their relative order.
 
 With grouping enabled, chronology applies **within** each section. Section order
 still follows the Day list. Without grouping, chronology applies across the preview.
 This choice does not add an extra overdue boost, create overdue sections,
 or change the order as the clock advances within the day.
 
-Chronological rows show a quiet Start/Due label honoring the saved date kind.
-The default presentation remains compact and does not add schedule metadata.
+Focus rows keep a single title line without a Start/Due subtitle. The compact time
+on the right is shown only for All items or selections including Up Next and opens
+the in-place editor for that schedule value.
 
 ### Filtering, limits, and completion
 

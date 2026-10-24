@@ -2,7 +2,8 @@
 // @file       TodayHomeView.swift
 // @brief      Today's main composition and capture entry points
 // @details    Presents the selected Day, shortcuts, planning context, and full capture
-//             destinations without duplicating canonical tasks.
+//             destinations without duplicating canonical tasks. Focus observes live workspace edits
+//             directly; a separate clock advances time-sensitive selections and weekday changes.
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -83,6 +84,10 @@ struct TodayHomeView: View
     @State private var listPickerMode:      TodayListPickerMode?  /* Active list picker presentation mode  */
     @State private var showsAccountSettings = false               /* Account & Settings sheet presentation */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
+    @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight
+    @State private var removedFocusBookmark: Int?
+    @State private var bookmarkNoticeRevision = UUID()
+    @State private var focusDate = Date.now
     @State private var focusFiltersChangedAt:  Date?
     @State private var perspectiveSectionTop:  CGFloat = 0
     @State private var shortcutsSectionBottom: CGFloat = 0
@@ -311,6 +316,56 @@ struct TodayHomeView: View
         }
 
         .animation(.easeOut(duration: 0.15), value: isContentScrolled)
+    }
+
+
+    ///
+    /// @fcn        TodayHomeView.focusBookmarkUndoNotice
+    /// @brief      Offer a short-lived way to restore the last Focus bookmark
+    /// @details    Anchored to the screen above the workspace toolbar, independently of scrolling content.
+    ///             Lives outside the filtered rows so removing their membership cannot dismiss Undo.
+    ///             Slides into and out of its fixed position; Reduce Motion uses a short fade.
+    ///             Restores only the removed identifier, preserving any other bookmark edits.
+    ///
+    /// @return     (some View) accessible bottom notice while a removal is pending
+    ///
+    @ViewBuilder
+    private var focusBookmarkUndoNotice: some View
+    {
+        if let cardID = removedFocusBookmark
+        {
+            HStack
+            {
+                Text("Bookmark removed")
+                Spacer()
+                Button("Undo")
+                {
+                    savedCardIDs.insert(cardID)
+                    removedFocusBookmark = nil
+                    bookmarkNoticeRevision = UUID()
+                }
+                .fontWeight(.semibold)
+                .accessibilityIdentifier("today.focus.bookmark.undo")
+            }
+            .font(.subheadline)
+            .padding(16)
+            .background(
+                .regularMaterial,
+                in: UnevenRoundedRectangle(
+                    topLeadingRadius: 14,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: 0,
+                    topTrailingRadius: 14
+                )
+            )
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .accessibilityElement(children: .contain)
+            .transition(
+                reduceWelcomeMotion
+                ? .opacity
+                : .offset(y: 90).combined(with: .opacity)
+            )
+        }
     }
 
 
@@ -750,8 +805,7 @@ struct TodayHomeView: View
                     }
 
 
-                    // Capture the current binding value outside TimelineView so list edits
-                    // invalidate its content as well as its minute-based date updates.
+                    // Read live workspace inputs directly; the clock only advances time-based selection.
                     let focusLists = lists
                     let focusBookmarks = savedCardIDs
                     let importantFocusIDs =
@@ -765,16 +819,14 @@ struct TodayHomeView: View
                     }
 
                     ?? []
-                    // Capture persisted filters outside the timeline so changing them refreshes
-                    // its content without replacing the view that owns the open popover.
+                    // Keep the Focus identity stable while its contents and preferences change.
                     let focusPreferences =
                     (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData))
                     ?? PlanPreferencesStore.load()
-                    TimelineView(.everyMinute)
+                    Group
                     {
-                        context in
                         let focus = calendarDayList(
-                            context.date, in: focusLists) /* Active list matching the current weekday */
+                            focusDate, in: focusLists) /* Active list matching the current weekday */
                         let cards =
                         focus?.cards.filter
                         {
@@ -787,13 +839,13 @@ struct TodayHomeView: View
                             list: focus,
                             cards: cards,
                             entries: focusPreferences.todayFocusEntries(
-                                in: focus?.cards ?? [], on: context.date,
+                                in: focus?.cards ?? [], on: focusDate,
                                 calendar: planningCalendarAccess?.document.calendar ?? .current,
                                 importantCardIDs: importantFocusIDs,
                                 bookmarkedCardIDs: focusBookmarks),
                             groupsBySection: focusPreferences.todayFocusGroupsBySection,
                             visibleItemCount: focusPreferences.todayFocusItemCount,
-                            chronological: focusPreferences.todayFocusOrder == .chronological,
+                            chronological: focusPreferences.keepsDayListsInTimeOrder || focusPreferences.todayFocusOrder == .chronological,
                             includesImportant: focusPreferences.todayFocusIncludesImportant,
                             includesBookmarked: focusPreferences.todayFocusIncludesBookmarked,
                             includesUpNext: focusPreferences.todayFocusIncludesUpNext,
@@ -815,6 +867,21 @@ struct TodayHomeView: View
                                 }
 
                                 focusFiltersChangedAt = .now
+                            },
+                            onRemoveBookmark:
+                            {
+                                cardID in
+                                guard savedCardIDs.remove(cardID) != nil else
+                                {
+                                    return
+                                }
+                                removedFocusBookmark = cardID
+                                bookmarkNoticeRevision = UUID()
+                            },
+                            onUpdateDate:
+                            {
+                                edited, isStart in
+                                TodayFocusDateUpdate.apply(edited, isStart: isStart, to: &lists)
                             },
                             onToggleCard:
                             {
@@ -840,16 +907,13 @@ struct TodayHomeView: View
                                 showsTodayList = focus != nil
                             }
                         )
-                        .onChange(of: Calendar.current.startOfDay(for: context.date))
+                        .onChange(of: Calendar.current.startOfDay(for: focusDate))
                         {
                             _, _ in
                             ensureCurrentWeekdayList()
                         }
 
                     }
-                    // A covered TimelineView can retain its last rendered completion state.
-                    // Recreate the preview on return without resetting the outer Today scroll.
-                    .id(showsTodayList || openedFocusCard != nil)
 
                     yourShortcutsSection
                     .onGeometryChange(for: CGFloat.self)
@@ -941,6 +1005,27 @@ struct TodayHomeView: View
                 .frame(maxWidth: .infinity)
                 .zIndex(1)
             }
+            .task
+            {
+                // Advance Up Next and the weekday at least once a minute without caching Card data.
+                while !Task.isCancelled
+                {
+                    focusDate = .now
+                    do
+                    {
+                        try await Task.sleep(for: .seconds(60))
+                    }
+                    catch
+                    {
+                        return
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification))
+            {
+                _ in
+                focusDate = .now
+            }
             .task(id: welcomeCue.requestID)
             {
 
@@ -973,6 +1058,33 @@ struct TodayHomeView: View
             }
             .scrollBounceBehavior(.always, axes: .vertical)
             .scrollIndicators(.hidden)
+            .onChange(of: planningCalendarAccess?.document.currentWeekKey)
+            {
+                _, _ in
+                removedFocusBookmark = nil
+                bookmarkNoticeRevision = UUID()
+            }
+            .task(id: bookmarkNoticeRevision)
+            {
+                guard removedFocusBookmark != nil else
+                {
+                    return
+                }
+                do
+                {
+                    try await Task.sleep(for: .seconds(1.5))
+                }
+                catch
+                {
+                    return
+                }
+                removedFocusBookmark = nil
+            }
+            .onDisappear
+            {
+                removedFocusBookmark = nil
+                bookmarkNoticeRevision = UUID()
+            }
             .background
             {
 
@@ -984,6 +1096,7 @@ struct TodayHomeView: View
                     .scaledToFill()
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
+                    .overlay { StudioWorkspaceBackground(destination: .today) }
                     .accessibilityHidden(true)
                 }
 
@@ -1222,6 +1335,7 @@ struct TodayHomeView: View
             {
 
             _ in
+                focusDate = .now
                 ensureCurrentWeekdayList()
                 if showsTodayList
                 {
@@ -1345,6 +1459,26 @@ struct TodayHomeView: View
                 .presentationDetents([.medium, .large])
             }
 
+        }
+        .overlay
+        {
+            GeometryReader
+            {
+                geometry in
+                VStack
+                {
+                    Spacer(minLength: 0)
+                    focusBookmarkUndoNotice
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, max(0, focusToolbarHeight - geometry.safeAreaInsets.bottom) + 12)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .animation(
+                    .easeInOut(duration:
+                        reduceWelcomeMotion ? 0.15 : (removedFocusBookmark != nil ? 0.5 : 1.75)),
+                    value: removedFocusBookmark != nil
+                )
+            }
         }
 
     }

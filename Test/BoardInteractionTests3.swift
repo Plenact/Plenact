@@ -25,6 +25,97 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testActivityBrowserScrollsWithinVisibleBounds()
+    /// @brief      Keep long Saved results inside the Activity browser viewport
+    /// @details    Hosts eighty synthetic bookmarks with isolated preferences, scrolls to the last
+    ///             row, and verifies the viewport and independent header retain their positions.
+    ///
+    /// @return     (Void) records failures for unbounded content or coupled scrolling
+    /// @throws     Propagates missing window, preferences, or browser fixture failures to XCTest
+    ///
+    @MainActor
+    func testActivityBrowserScrollsWithinVisibleBounds() async throws
+    {
+
+        let suite = "Plenact.ActivityLayoutTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defaults.set(Data("[]".utf8), forKey: ActivityRecentStore.key)
+        defer
+        {
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        let cards = (0 ..< 80).map
+        {
+            KanbanCard(id: $0, word: "Saved fixture \($0)", listTitle: "Fixture", checklists: [])
+        }
+        let list = KanbanList(id: 987, title: "Fixture", cards: cards)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        {
+            $0 as? UIWindowScene
+        }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: SavedCardsView(
+            planningDocument: nil,
+            lists: [list],
+            savedCardIDs: Set(cards.map(\.id)),
+            collections: .constant([]),
+            onOpenBoardCard: { _, _ in },
+            onOpenPersonalCard: { _ in },
+            onRestoreBoard: { _ in },
+            onDeleteBoard: { _ in false },
+            onArchiveCard: { _ in },
+            onDeleteCard: { _ in false }
+        ).defaultAppStorage(defaults))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+
+
+        ///
+        /// @fcn        scrollViews(in:)
+        /// @brief      Collect UIKit scrolling viewports beneath the hosted Activity view
+        /// @details    Descends all child views without depending on private SwiftUI class names.
+        ///
+        /// @param      view (UIView) subtree to inspect
+        /// @return     ([UIScrollView]) scrolling views in traversal order
+        ///
+        func scrollViews(in view: UIView) -> [UIScrollView]
+        {
+
+            let own = (view as? UIScrollView).map { [$0] } ?? []
+            return own + view.subviews.flatMap { scrollViews(in: $0) }
+        }
+
+        let scrolls = scrollViews(in: host.view)
+        let browser = try XCTUnwrap(scrolls.max
+        {
+            $0.contentSize.height - $0.bounds.height < $1.contentSize.height - $1.bounds.height
+        })
+        let frame = browser.convert(browser.bounds, to: host.view)
+        XCTAssertGreaterThan(browser.bounds.height, 100)
+        XCTAssertGreaterThan(browser.contentSize.height, browser.bounds.height + 500)
+        XCTAssertGreaterThanOrEqual(frame.minY, 0)
+        XCTAssertLessThanOrEqual(frame.maxY, host.view.bounds.maxY + 1)
+        let otherOffsets = scrolls.filter { $0 !== browser }.map(\.contentOffset)
+        browser.setContentOffset(CGPoint(x: 0, y: browser.contentSize.height - browser.bounds.height), animated: false)
+        host.view.layoutIfNeeded()
+        XCTAssertEqual(browser.convert(browser.bounds, to: host.view), frame)
+        XCTAssertEqual(scrolls.filter { $0 !== browser }.map(\.contentOffset), otherOffsets)
+        XCTAssertGreaterThan(browser.contentOffset.y, 500)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testNativeCardDragSourceUsesLocalTokenAndEndsCancellationOnce()
     /// @brief      Verify built-app type registration, local token payload, and one-time cleanup
     /// @details    Reads the bundled exported type declaration, loads the synthetic token

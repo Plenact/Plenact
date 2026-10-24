@@ -20,9 +20,7 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
-- Tapping a card's dates, from the card preview in the List view raises a popup to modify the dates of that card in-place
-
-- History of edits to each card!!! ?
+This is going so great I really appreciate it, thank you Alex
 
 - Option for subtitles in italics?
 

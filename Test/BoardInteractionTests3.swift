@@ -25,6 +25,117 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCardHistoryCoalescesTypingWithoutCombiningSeparateActions()
+    /// @brief      Keep autosaved writing readable while preserving initial and final values
+    /// @details    Uses deterministic timestamps to distinguish a typing burst, a later title
+    ///             edit, and a separate completion action.
+    /// @return     (Void) records grouping or retained-value failures
+    /// @throws     Propagates fixture unwrap and JSON decoding failures to XCTest
+    ///
+    func testCardHistoryCoalescesTypingWithoutCombiningSeparateActions() throws
+    {
+
+        let original = KanbanCard(id: 1, word: "A", listTitle: "Work", checklists: [])
+        var next = original
+        next.word = "AB"
+        let first = next.recordingEdits(from: original, at: Date(timeIntervalSince1970: 100))
+        next.word = "ABC"
+        let burst = next.recordingEdits(from: first, at: Date(timeIntervalSince1970: 101))
+        XCTAssertEqual(burst.editHistory?.count, 1)
+        XCTAssertEqual(burst.editHistory?.first?.id, first.editHistory?.first?.id)
+        let change = try XCTUnwrap(burst.editHistory?.first?.changes.first)
+        XCTAssertEqual(try JSONDecoder().decode(String.self, from: XCTUnwrap(change.previousValue)), "A")
+        XCTAssertEqual(try JSONDecoder().decode(String.self, from: XCTUnwrap(change.newValue)), "ABC")
+        next.word = "Later"
+        let later = next.recordingEdits(from: burst, at: Date(timeIntervalSince1970: 110))
+        XCTAssertEqual(later.editHistory?.count, 2)
+        next.isTitleChecked = true
+        let completed = next.recordingEdits(from: later, at: Date(timeIntervalSince1970: 111))
+        XCTAssertEqual(completed.editHistory?.count, 3)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardHistoryRecordsGroupedEditsAndRetainsReversibleValues()
+    /// @brief      Persist a grouped save and accumulate subsequent preview and completion edits
+    /// @details    Exercises the List owner boundary, no-op saves, stale reconstructed snapshots,
+    ///             precise before/after values, and JSON round trips with synthetic content.
+    /// @return     (Void) records history grouping, retention, or persistence failures
+    /// @throws     Propagates fixture encoding and unwrapping failures to XCTest
+    ///
+    func testCardHistoryRecordsGroupedEditsAndRetainsReversibleValues() throws
+    {
+
+        let original = KanbanCard(id: 12, word: "Before", listTitle: "Work", checklists: [])
+        var list = KanbanList(id: 7, title: "Work", cards: [original])
+        XCTAssertNil(list.cards[0].editHistory, "Insertion must not invent earlier history")
+        var edited = original
+        edited.word = "After"
+        edited.dueDate = Date(timeIntervalSince1970: 123456)
+        edited.dueDateKind = .dateAndTime
+        list.cards[0] = edited
+        let first = try XCTUnwrap(list.cards[0].editHistory?.first)
+        XCTAssertEqual(list.cards[0].editHistory?.count, 1)
+        XCTAssertEqual(Set(first.changes.map(\.field)), ["word", "dueDate", "dueDateKind"])
+        let title = try XCTUnwrap(first.changes.first { $0.field == "word" })
+        XCTAssertEqual(try JSONDecoder().decode(String.self, from: XCTUnwrap(title.previousValue)), "Before")
+        XCTAssertEqual(try JSONDecoder().decode(String.self, from: XCTUnwrap(title.newValue)), "After")
+        XCTAssertNil(first.changes.first { $0.field == "dueDate" }?.previousValue)
+        XCTAssertFalse(first.changes.contains { $0.field == "editHistory" })
+
+        list.cards[0] = edited
+        XCTAssertEqual(list.cards[0].editHistory, [first], "No-op and reconstructed saves retain history")
+        list.cards[0].isTitleChecked = true
+        XCTAssertEqual(list.cards[0].editHistory?.count, 2)
+        XCTAssertEqual(list.cards[0].editHistory?.last?.changes.map(\.field), ["isTitleChecked"])
+        let roundTrip = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(roundTrip, list)
+        XCTAssertEqual(roundTrip.cards[0].editHistory?.count, 2, "Loading must not append edits")
+        XCTAssertEqual(list.cards[0].replacingLocation(id: 99, listTitle: "Elsewhere").editHistory,
+                       list.cards[0].editHistory)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardHistoryPreservesPreparedEventsAndLegacyLocks()
+    /// @brief      Avoid duplicate detail-save entries and maintain locked Card update protection
+    /// @details    Reconciles a pre-recorded detail edit with the canonical owner, excludes reorder
+    ///             and list-context changes, and decodes legacy Cards without a history key.
+    /// @return     (Void) records duplicate, compatibility, or protection failures
+    /// @throws     Propagates synthetic fixture encoding and unwrap failures to XCTest
+    ///
+    func testCardHistoryPreservesPreparedEventsAndLegacyLocks() throws
+    {
+
+        let original = KanbanCard(id: 3, word: "Legacy", listTitle: "Work", checklists: [])
+        let data = try JSONEncoder().encode(original)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil(object["editHistory"])
+        XCTAssertNil(try JSONDecoder().decode(KanbanCard.self, from: data).editHistory)
+        var edited = original
+        edited.word = "Renamed"
+        let prepared = edited.recordingEdits(from: original, at: Date(timeIntervalSince1970: 100))
+        var list = KanbanList(id: 8, title: "Work", cards: [original])
+        list.cards[0] = prepared
+        XCTAssertEqual(list.cards[0].editHistory, prepared.editHistory)
+        list.cards.reverse()
+        XCTAssertEqual(list.cards[0].editHistory?.count, 1)
+        let relocated = prepared.replacingLocation(id: 3, listTitle: "Other")
+        list.cards[0] = relocated
+        XCTAssertEqual(list.cards[0].editHistory, prepared.editHistory)
+
+        list.cards[0].isEditingLocked = true
+        let locked = list.cards[0]
+        var unlock = locked
+        unlock.editHistory = nil
+        unlock.isEditingLocked = false
+        XCTAssertTrue(locked.acceptsContentUpdate(unlock), "History metadata must not block an unchanged unlock")
+        unlock.word = "Unexpected stale edit"
+        XCTAssertFalse(locked.acceptsContentUpdate(unlock))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testActivityBrowserScrollsWithinVisibleBounds()
     /// @brief      Keep long Saved results inside the Activity browser viewport
     /// @details    Hosts eighty synthetic bookmarks with isolated preferences, scrolls to the last

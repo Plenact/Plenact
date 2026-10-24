@@ -2,7 +2,7 @@
 // @file       KanbanList.swift
 // @brief      Canonical List records and item construction
 // @details    Keeps active and archived content together and applies destination defaults only
-//             when constructing new items.
+//             when constructing new items. Retains per-Card field history at the content-update boundary.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -24,7 +24,31 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     let id:                 Int            /* Unique identifier for the kanban list               */
     private(set) var title: String         /* Title updated with retained card context            */
     var subtitleOverride:   String? = nil  /* nil preserves legacy generated copy; empty hides it */
-    var cards:              [KanbanCard]   /* Cards contained within the list                     */
+    /// Records accepted content edits at the shared owner boundary, including nested value edits.
+    var cards: [KanbanCard]
+    {
+        didSet
+        {
+            let previous = Dictionary(
+                oldValue.map
+                {
+                    ($0.id, $0)
+                },
+                uniquingKeysWith:
+                {
+                    first, _ in
+                    first
+                }
+            )
+            for index in cards.indices
+            {
+                if let old = previous[cards[index].id]
+                {
+                    cards[index] = cards[index].recordingEdits(from: old)
+                }
+            }
+        }
+    }
     var archivedCards:      [KanbanCard]   /* Cards retained in this list's archive               */
     var isArchived:         Bool = false   /* Whether this list is in the board archive           */
     var singleListViewMode: SingleListViewMode
@@ -623,4 +647,182 @@ extension KanbanList
 
     }
 
+}
+
+
+///
+/// One persisted field change with reversible JSON values
+///
+/// @section    Purpose
+///     Retains only changed fields; nil denotes an absent optional key rather than an encoded value.
+///
+struct CardEditChange: Codable, Hashable, Sendable
+{
+
+    let field:         String
+    let previousValue: Data?
+    let newValue:      Data?
+}
+
+
+///
+/// One saved Card update containing related field edits
+///
+/// @section    Purpose
+///     Groups a single accepted update under a stable identity and timestamp without recursively
+///     copying prior history. Values are retained for future reversal; no restore action is exposed.
+///
+struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
+{
+
+    let id:        UUID
+    let timestamp: Date
+    let changes:   [CardEditChange]
+
+
+    ///
+    /// @fcn        CardEditRecord.summary
+    /// @brief      Describe saved changes using user-facing field names
+    /// @details    Groups related technical fields, such as a date and its precision, into one label.
+    /// @return     (String) concise list of changed areas for the history timeline
+    ///
+    var summary: String
+    {
+
+        let names = [
+            "word": "Title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
+            "isTitleChecked": "Completion", "startDate": "Start date", "startDateKind": "Start date",
+            "dueDate": "Due date", "dueDateKind": "Due date", "checklists": "Checklists",
+            "members": "Members", "labelIDs": "Labels", "attachments": "Attachments",
+            "coverAttachmentID": "Cover image", "editingLocked": "Editing lock",
+            "appearance": "Appearance", "reactions": "Reactions",
+            "showsDueDateInList": "Date visibility", "showsReactionsInPreviews": "Reaction visibility",
+            "sectionLayout": "Section layout", "itemPresentation": "Card type",
+            "listDisplayFormat": "Display format", "isDivider": "Divider",
+            "dismissedActivityIDs": "Activity visibility"
+        ]
+        var labels: [String] = []
+        for change in changes
+        {
+            let label = names[change.field] ?? "Card details"
+            if !labels.contains(label)
+            {
+                labels.append(label)
+            }
+        }
+        return labels.joined(separator: ", ") + " updated"
+    }
+}
+
+
+///
+/// Builds nonrecursive edit records from complete canonical Card values
+///
+/// @section    Purpose
+///     Preserves prior history across reconstructed editor snapshots and excludes list context,
+///     identity, and creation metadata from content comparisons.
+///
+extension KanbanCard
+{
+
+
+    ///
+    /// @fcn        KanbanCard.recordingEdits(from:at:)
+    /// @brief      Append one history entry only when editable content changed
+    /// @details    Compares encoded fields without history, keeps the owner's existing entries,
+    ///             and recognizes an already prepared detail-editor entry to prevent duplication.
+    ///             Consecutive autosaves to the same writing fields within two seconds share one
+    ///             entry retaining the original value and latest text; other edits stay distinct.
+    ///             New insertions and decoding do not call this comparison. Failure to encode
+    ///             preserves prior history without preventing the content update.
+    /// @param[in]  previous  Canonical value before this accepted update
+    /// @param[in]  date      Timestamp assigned to this update
+    /// @return     (KanbanCard) proposed content carrying its accumulated edit history
+    ///
+    func recordingEdits(from previous: KanbanCard, at date: Date = .now) -> KanbanCard
+    {
+
+        var result = self
+        result.editHistory = previous.editHistory
+        var old = previous
+        var new = self
+        old.editHistory = nil
+        new.editHistory = nil
+        old.listTitle = new.listTitle
+        if old == new
+        {
+            return result
+        }
+        guard let oldData = try? JSONEncoder().encode(old),
+              let newData = try? JSONEncoder().encode(new),
+              let before = try? JSONSerialization.jsonObject(with: oldData) as? [String: Any],
+              let after = try? JSONSerialization.jsonObject(with: newData) as? [String: Any]
+        else
+        {
+            return result
+        }
+
+        let excluded: Set<String> = ["id", "listTitle", "createdAt", "editHistory"]
+        let keys = Set(before.keys).union(after.keys).subtracting(excluded).sorted()
+        var changes: [CardEditChange] = []
+        for key in keys
+        {
+            let left = before[key] as? NSObject
+            let right = after[key] as? NSObject
+            if left == right
+            {
+                continue
+            }
+            let previousValue = try? before[key].map
+            {
+                try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
+            }
+            let newValue = try? after[key].map
+            {
+                try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
+            }
+            changes.append(CardEditChange(field: key, previousValue: previousValue, newValue: newValue))
+        }
+        guard !changes.isEmpty else
+        {
+            return result
+        }
+
+        let retained = previous.editHistory ?? []
+        if let prepared = editHistory,
+           prepared.count == retained.count + 1,
+           Array(prepared.dropLast()) == retained,
+           prepared.last?.changes == changes
+        {
+            result.editHistory = prepared
+        }
+        else if let last = retained.last,
+                date.timeIntervalSince(last.timestamp) >= 0,
+                date.timeIntervalSince(last.timestamp) <= 2,
+                Set(changes.map(\.field)) == Set(last.changes.map(\.field)),
+                Set(changes.map(\.field)).isSubset(of: ["word", "subtitleOverride", "descriptionOverride"])
+        {
+            // Autosaved typing is one readable update rather than an entry per keystroke.
+            let merged = changes.map
+            {
+                change in
+                CardEditChange(
+                    field: change.field,
+                    previousValue: last.changes.first
+                    {
+                        $0.field == change.field
+                    }?.previousValue,
+                    newValue: change.newValue
+                )
+            }
+            result.editHistory = Array(retained.dropLast()) + [
+                CardEditRecord(id: last.id, timestamp: date, changes: merged)
+            ]
+        }
+        else
+        {
+            result.editHistory = retained + [CardEditRecord(id: UUID(), timestamp: date, changes: changes)]
+        }
+        return result
+    }
 }

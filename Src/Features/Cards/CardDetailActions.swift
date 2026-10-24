@@ -951,6 +951,8 @@ extension CardDetailView
         updatedCard.startDate = clearStartDate ? nil : (startDate ?? self.startDate)
         updatedCard.dueDate = clearDueDate ? nil : (dueDate ?? self.dueDate)
 
+        updatedCard = updatedCard.recordingEdits(from: lastSavedHistoryCard)
+
         if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
         currentPersonalCollectionID != personalCollectionID
         {
@@ -967,8 +969,14 @@ extension CardDetailView
         {
 
 
-            onTitleToggle?(updatedCard)
+            guard let onTitleToggle else
+            {
+                return false
+            }
+            onTitleToggle(updatedCard)
         }
+
+        lastSavedHistoryCard = updatedCard
 
         return true
     }

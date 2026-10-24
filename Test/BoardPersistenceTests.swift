@@ -130,7 +130,14 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(ListCheckmarkReset.values(in: list).values.contains(true))
         XCTAssertEqual(list.archivedCards, original.archivedCards)
         XCTAssertTrue(snapshot.canRestore(list))
-        XCTAssertEqual(snapshot.restoring(list), original.cards)
+        var expectedRestored = original.cards
+        for index in expectedRestored.indices
+        {
+            expectedRestored[index].editHistory = list.cards[index].editHistory
+        }
+        XCTAssertEqual(snapshot.restoring(list), expectedRestored)
+        XCTAssertEqual(list.cards[0].editHistory?.count, 1)
+        XCTAssertNil(list.cards[1].editHistory)
         list.cards[0].word = "Edited title survives restore"
         let restored = try XCTUnwrap(snapshot.restoring(list))
         XCTAssertEqual(restored[0].word, "Edited title survives restore")

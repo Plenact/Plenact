@@ -2,7 +2,7 @@
 // @file       KanbanCard.swift
 // @brief      Canonical Card, Note, and divider records
 // @details    Retains content, scheduling, checklists, media, reactions, locks, and compatibility
-//             fields independently of any one presentation.
+//             fields and optional edit history independently of any one presentation.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -21,6 +21,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
     let id:                    Int          /* Stable numeric identifier for the card             */
+    var editHistory: [CardEditRecord]? = nil  /* Saved content changes; absent on legacy records */
     var word:                  String       /* Display word shown as the card's title             */
     var listTitle:             String       /* Name of the list where the card resides            */
     var isDivider:             Bool         /* Whether this item is a movable section divider     */
@@ -95,7 +96,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
         var unlocked = self
         unlocked.isEditingLocked = false
-        return updated == self || updated == unlocked
+        var candidate = updated
+        candidate.editHistory = editHistory
+        return candidate == self || candidate == unlocked
     }
 
 
@@ -188,7 +191,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             dueDateKind: dueDateKind,
             reactions: reactions,
             showsReactionsInPreviews: showsReactionsInPreviews,
-            isEditingLocked: isEditingLocked
+            isEditingLocked: isEditingLocked,
+            editHistory: editHistory
         )
     }
 
@@ -612,11 +616,12 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil,
         sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date,
         dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil,
-        isEditingLocked: Bool = false
+        isEditingLocked: Bool = false, editHistory: [CardEditRecord]? = nil
     )
     {
 
 
+        self.editHistory = editHistory
         self.editingLocked = isEditingLocked ? true : nil
         self.showsReactionsInPreviews = showsReactionsInPreviews
         self.reactions = reactions?.isEmpty == true ? nil : reactions
@@ -726,6 +731,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             showsReactionsInPreviews: try container.decodeIfPresent(Bool.self, forKey: .showsReactionsInPreviews),
             isEditingLocked: try container.decodeIfPresent(Bool.self, forKey: .editingLocked) ?? false
         )
+        editHistory = try container.decodeIfPresent([CardEditRecord].self, forKey: .editHistory)
     }
 
 
@@ -740,6 +746,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
         case id
+        case editHistory
         case word
         case listTitle
         case isDivider

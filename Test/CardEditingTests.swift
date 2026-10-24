@@ -1215,7 +1215,11 @@ extension PlenactBoardDocumentTests
         var clearedList = list
         clearedList.cards = cleared
         XCTAssertTrue(reset.canRestore(clearedList))
-        XCTAssertEqual(reset.restoring(clearedList), list.cards)
+        var expectedRestored = list.cards
+        expectedRestored[1].editHistory = clearedList.cards[1].editHistory
+        XCTAssertNil(clearedList.cards[0].editHistory, "Locked content must not gain a completion edit")
+        XCTAssertEqual(clearedList.cards[1].editHistory?.count, 1)
+        XCTAssertEqual(reset.restoring(clearedList), expectedRestored)
         locked.isEditingLocked = false
         XCTAssertTrue(locked.acceptsContentUpdate(edited))
     }

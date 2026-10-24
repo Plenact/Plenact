@@ -2,7 +2,7 @@
 // @file       CardEditors.swift
 // @brief      Explicit Card metadata editing drafts
 // @details    Edits titles, members, dates, layout, and action destinations through the owner's
-//             accepted save callbacks.
+//             accepted save callbacks. Presents retained edit history as a read-only timeline.
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -986,6 +986,74 @@ struct CardPreviewDateEditor: ViewModifier
             }
             .presentationDetents([.large])
             .databaseActivityOverlay()
+        }
+    }
+}
+
+
+///
+/// Displays a Card's saved updates without exposing reversal controls
+///
+/// @section    Purpose
+///     Presents newest-first summaries and absolute timestamps, including an honest empty state
+///     for legacy Cards whose history begins with this feature.
+///
+struct CardEditHistorySheet: View
+{
+
+    let records: [CardEditRecord]
+    @Environment(\.dismiss) private var dismiss
+
+
+    ///
+    /// @fcn        CardEditHistorySheet.body
+    /// @brief      Show retained saved updates and their dates
+    /// @details    Uses stable entry identities and reverses append order, retaining save order
+    ///             when multiple events have the same timestamp. Viewing history never edits it.
+    /// @return     (some View) read-only history sheet with a Done action
+    ///
+    var body: some View
+    {
+
+        NavigationStack
+        {
+            List
+            {
+                if records.isEmpty
+                {
+                    ContentUnavailableView(
+                        "No edits recorded yet", systemImage: "clock.arrow.circlepath",
+                        description: Text("Saved changes will appear here. Earlier edits are not available.")
+                    )
+                }
+                else
+                {
+                    ForEach(Array(records.reversed()))
+                    {
+                        record in
+                        VStack(alignment: .leading, spacing: 6)
+                        {
+                            Text(record.summary)
+                            Text(record.timestamp, format: .dateTime.year().month(.abbreviated).day().hour().minute())
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .navigationTitle("Edit history")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar
+            {
+                ToolbarItem(placement: .confirmationAction)
+                {
+                    Button("Done")
+                    {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

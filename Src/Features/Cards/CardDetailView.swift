@@ -174,6 +174,7 @@ struct CardDetailView: View
 
 
         case date(DateField) /* Date picker sheet for editing a specific date field */
+        case editHistory
         case reactions
         case members            /* Card member management sheet             */
         case labels             /* Card label library and assignment picker */
@@ -205,6 +206,8 @@ struct CardDetailView: View
 
             case .date(let field):
                             "date-\(field.id)" /* Selected date field */
+            case .editHistory:
+                            "editHistory"
             case .reactions:
                             "reactions"
             case .members:
@@ -370,6 +373,7 @@ struct CardDetailView: View
     }
 
 
+    @State var lastSavedHistoryCard: KanbanCard  /* Accepted local snapshot for history and save grouping */
     let card:                  KanbanCard /* The kanban card being displayed in detail                    */
     let listedOnDate:          Date?
     @Binding var labelLibrary: LabelLibrary             /* Shared label catalog available to every card             */
@@ -548,6 +552,7 @@ struct CardDetailView: View
 
         _titleChecked = State(
             initialValue: card.isTitleChecked) /* Initialize the title checked state based on the card's current value */
+        _lastSavedHistoryCard = State(initialValue: card)
         _showsReactionsInPreviews = State(initialValue: card.showsReactionsInPreviews)
         _reactions = State(initialValue: card.reactions)
         _titleText = State(
@@ -1432,6 +1437,12 @@ struct CardDetailView: View
                         Menu
                         {
 
+                            Button("Edit history", systemImage: "clock.arrow.circlepath")
+                            {
+                                activeSheet = .editHistory
+                            }
+                            .accessibilityIdentifier("card.editHistory")
+
                             if displayFormat != .divider
                             {
 
@@ -1891,6 +1902,9 @@ struct CardDetailView: View
                 switch sheet
                 {
 
+
+                case .editHistory:
+                    CardEditHistorySheet(records: lastSavedHistoryCard.editHistory ?? [])
 
                 case .date(let field): /* Date field selected for editing */
                     CardDateEditorSheet(

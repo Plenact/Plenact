@@ -144,6 +144,11 @@
 		773DB037175F9C712735E9D8 /* SectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCFD6A6A2C8219CD70AB3FFE /* SectionTests.swift */; };
 		4781246B1034CE0F92022FC8 /* PresentationFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCFFEB3FE1A2E9DBFDDAFA87 /* PresentationFixtures.swift */; };
 		1D526530BF6AD805D3C7A9F9 /* TemplateExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D7519D31D4DFEF37FAA997 /* TemplateExampleTests.swift */; };
+		50A3461D3D894725A114D647 /* StudioModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC4CE6BE7A5452795BB0156 /* StudioModels.swift */; };
+		2C7CCCCEAD1D442B8F6FE3CA /* StudioSurfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3F353C49AD43A6995E0E56 /* StudioSurfaces.swift */; };
+		81ED0A4D318A4FA68C2A46E0 /* StudioEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD504BD2841C4C3EB5D74785 /* StudioEditors.swift */; };
+		30B9B8EBD5C34FAB9EFB0974 /* StudioUnsplash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B69D42810AA49B1B449465A /* StudioUnsplash.swift */; };
+		66372018F0894169A0E63287 /* StudioSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682349998D654718886273EB /* StudioSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -298,6 +303,11 @@
 		DCFD6A6A2C8219CD70AB3FFE /* SectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTests.swift; sourceTree = "<group>"; };
 		FCFFEB3FE1A2E9DBFDDAFA87 /* PresentationFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationFixtures.swift; sourceTree = "<group>"; };
 		C7D7519D31D4DFEF37FAA997 /* TemplateExampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateExampleTests.swift; sourceTree = "<group>"; };
+		ECC4CE6BE7A5452795BB0156 /* StudioModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioModels.swift; sourceTree = "<group>"; };
+		5A3F353C49AD43A6995E0E56 /* StudioSurfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioSurfaces.swift; sourceTree = "<group>"; };
+		CD504BD2841C4C3EB5D74785 /* StudioEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioEditors.swift; sourceTree = "<group>"; };
+		1B69D42810AA49B1B449465A /* StudioUnsplash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioUnsplash.swift; sourceTree = "<group>"; };
+		682349998D654718886273EB /* StudioSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -420,6 +430,11 @@
 				5CB247DBE4453BED37A0B538 /* AppearanceEditors.swift */,
 				CCAF514BA29C5BBCCDCC8F78 /* AppearanceModels.swift */,
 				913591C840C1F021B6E9A65D /* BackgroundSurfaces.swift */,
+				ECC4CE6BE7A5452795BB0156 /* StudioModels.swift */,
+				5A3F353C49AD43A6995E0E56 /* StudioSurfaces.swift */,
+				CD504BD2841C4C3EB5D74785 /* StudioEditors.swift */,
+				1B69D42810AA49B1B449465A /* StudioUnsplash.swift */,
+				682349998D654718886273EB /* StudioSettings.swift */,
 			);
 			path = Appearance;
 			sourceTree = "<group>";
@@ -832,6 +847,11 @@
 				E7D08A3C2E941B7155680E81 /* ActivityView.swift in Sources */,
 				850A6C48865FBE6DEC6F9EBF /* ArchiveViews.swift in Sources */,
 				3F1352CC2CACFB2868AA2AF9 /* AppearanceEditors.swift in Sources */,
+				50A3461D3D894725A114D647 /* StudioModels.swift in Sources */,
+				2C7CCCCEAD1D442B8F6FE3CA /* StudioSurfaces.swift in Sources */,
+				81ED0A4D318A4FA68C2A46E0 /* StudioEditors.swift in Sources */,
+				30B9B8EBD5C34FAB9EFB0974 /* StudioUnsplash.swift in Sources */,
+				66372018F0894169A0E63287 /* StudioSettings.swift in Sources */,
 				E64A83A90BA484C1EC5FFB37 /* AppearanceModels.swift in Sources */,
 				707BB6BF5DF6934FECC72FAF /* BackgroundSurfaces.swift in Sources */,
 				D92F62A1167B5F8BB99CEA03 /* AttachmentStore.swift in Sources */,

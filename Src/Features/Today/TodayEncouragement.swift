@@ -422,3 +422,67 @@ struct InteractiveSloganPreview: View
     }
 
 }
+
+
+///
+/// Defines the quiet context and schedule policy for Today's Focus
+///
+/// @section    Purpose
+///     Explains the active selection without presenting a filtered collection as the whole day.
+///
+enum TodayFocusPresentation
+{
+
+
+
+    ///
+    /// @fcn        TodayFocusPresentation.showsSchedule(important:bookmarked:upNext:)
+    /// @brief      Show schedules for All items or a selection including Up Next
+    /// @details    Important-only and Bookmarked-only combinations keep time and progress hidden.
+    /// @param[in]  important   Whether Important participates in the selection
+    /// @param[in]  bookmarked  Whether Bookmarked participates in the selection
+    /// @param[in]  upNext      Whether Up Next participates in the selection
+    /// @return     (Bool) whether time-aware metadata should be visible
+    ///
+    static func showsSchedule(important: Bool, bookmarked: Bool, upNext: Bool) -> Bool
+    {
+
+
+        upNext || (!important && !bookmarked)
+    }
+
+
+
+    ///
+    /// @fcn        TodayFocusPresentation.context(important:bookmarked:upNext:chronological:)
+    /// @brief      Explain why the visible Focus items were selected
+    /// @details    Names the actual union of active filters and always locates the selection within today's list.
+    /// @param[in]  important    Whether Important participates in the selection
+    /// @param[in]  bookmarked   Whether Bookmarked participates in the selection
+    /// @param[in]  upNext       Whether Up Next participates in the selection
+    /// @param[in]  chronological Whether an unfiltered list uses time order
+    /// @return     (String) persistent user-facing selection explanation
+    ///
+    static func context(important: Bool, bookmarked: Bool, upNext: Bool, chronological: Bool) -> String
+    {
+
+
+        let selected = [(upNext, "Up Next"), (important, "Important"), (bookmarked, "Bookmarked")]
+        .filter
+        {
+            $0.0
+        } .map
+        {
+            $0.1
+        }
+
+        if selected.isEmpty
+        {
+
+            return chronological ? "From today’s list · in time order" : "From today’s list · in your list order"
+        }
+
+        return selected.joined(separator: " or ") + " · from today’s list"
+    }
+
+}

@@ -1048,6 +1048,7 @@ struct CardDetailView: View
 
                 Color(.systemGroupedBackground)
                 .ignoresSafeArea()
+                StudioItemBackground(appearance: appearance, isNote: presentation == .note).ignoresSafeArea()
 
                 if isEditingLocked
                 {
@@ -1687,7 +1688,11 @@ struct CardDetailView: View
                 .padding(.horizontal, 16)
                 .padding(.vertical, 4)
                 .itemBannerBackground(appearance)
-                .background(Color(.systemGroupedBackground))
+                .background
+                {
+                    Color(.systemGroupedBackground)
+                    StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+                }
             }
 
             .modifier(

@@ -1307,6 +1307,7 @@ struct SavedCardsView: View
         {
 
             TodayPaperBackground()
+            StudioWorkspaceBackground(destination: .activity).ignoresSafeArea()
 
             GeometryReader
             {

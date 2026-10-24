@@ -48,7 +48,12 @@ Plenact/
 │   │   ├── Appearance/
 │   │   │   ├── AppearanceEditors.swift           — Draft appearance and List surface controls
 │   │   │   ├── AppearanceModels.swift            — Persisted appearance choices and inheritance policy
-│   │   │   └── BackgroundSurfaces.swift          — Appearance rendering and independent background storage
+│   │   │   ├── BackgroundSurfaces.swift          — Appearance rendering and independent background storage
+│   │   │   ├── StudioEditors.swift               — Reusable artwork, photo imports, and checked live material editing
+│   │   │   ├── StudioModels.swift                — Material metadata, saved looks, and creation-only personalization defaults
+│   │   │   ├── StudioSettings.swift              — Personalization settings and per-view wallpaper choices
+│   │   │   ├── StudioSurfaces.swift              — Gradient, texture, canvas, and artwork rendering with independent image ownership
+│   │   │   └── StudioUnsplash.swift              — Optional credited online photography and secure provider configuration
 │   │   ├── Attachments/
 │   │   │   ├── AttachmentStore.swift             — Retained attachment metadata and local media files
 │   │   │   ├── AttachmentViews.swift             — Media sources, galleries, captions, ordering, and playback
@@ -199,7 +204,7 @@ Plenact/
 ## Validation of this reorganization
 
 - Application and test targets compile successfully with the reorganized Xcode groups.
-- All 136 Swift file references resolve; every Swift file is at or below 1,200 counted code lines.
+- All 141 Swift file references resolve; every Swift file is at or below 1,200 counted code lines.
 - File, type, function, initializer, and parameter-header checks pass.
 - SwiftSyntax comparison preserves all 1,336 original active application/test function and
   initializer token sequences, excluding the intentional private-to-internal visibility adjustments.

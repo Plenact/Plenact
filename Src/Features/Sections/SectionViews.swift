@@ -34,11 +34,6 @@ struct NamedSectionDivider: View
                 Text(heading).font(.subheadline.weight(.semibold))
                 .foregroundStyle(card.appearance?.accent?.color ?? .secondary).fixedSize(
                     horizontal: false, vertical: true)
-                if card.appearance?.sectionCollapsed == true
-                {
-
-                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                }
 
             }
 
@@ -125,7 +120,7 @@ struct DaySectionRow: View
                 label:
                 {
 
-                    Image(systemName: card.appearance?.sectionCollapsed == true ? "chevron.down" : "chevron.up")
+                    Image(systemName: card.appearance?.sectionCollapsed == true ? "chevron.up" : "chevron.down")
                     .frame(width: 44, height: 44)
                 } .buttonStyle(.borderless)
                 .accessibilityLabel(

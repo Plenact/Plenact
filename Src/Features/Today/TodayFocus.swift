@@ -2,7 +2,8 @@
 // @file       TodayFocus.swift
 // @brief      Derived Focus entries, filtering, and direct detail access
 // @details    Combines configured selection sources and section context while preserving personal
-//             importance and caller-specific return routes. Gives item taps a soft selection glow.
+//             importance and caller-specific return routes. Gives item taps a soft selection glow,
+//             icon-based completion, and guarded in-place editing of visible schedule values.
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -123,10 +124,59 @@ struct TodayFocusSection: View
         _, _, _ in
     }
 
+    var onRemoveBookmark: (Int) -> Void =
+    {
+        _ in
+    }
+
+    var onUpdateDate: (KanbanCard, Bool) -> Bool =
+    {
+        _, _ in false
+    }
+
     let onToggleCard:    (Int) -> Void /* Toggle local completion state */
     let onOpenCard:      (KanbanCard) -> Void
     let onDeleteCard:    (Int) -> Bool
     let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
+
+    ///
+    /// @fcn        TodayFocusSection.focusDateControl
+    /// @brief      Open a Focus date independently of Card navigation
+    /// @details    Preserves the surrounding label styling, consumes the date tap, and leaves
+    ///             locked items display-only. The section owns the editor across row reordering.
+    /// @param[in]  label   Visible date or time text
+    /// @param[in]  card    Item whose selected date will be edited
+    /// @param[in]  isStart Whether to edit its start rather than due date
+    /// @return     (some View) an accessible in-place schedule control
+    ///
+    private func focusDateControl(_ label: String, card: KanbanCard, isStart: Bool) -> some View
+    {
+        Button
+        {
+            editsStartDate = isStart
+            editingDateCard = card
+        }
+        label:
+        {
+            Text(label)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .highPriorityGesture(TapGesture().onEnded
+        {
+            guard !card.isEditingLocked else
+            {
+                return
+            }
+            editsStartDate = isStart
+            editingDateCard = card
+        })
+        .disabled(card.isEditingLocked)
+        .accessibilityLabel("Edit \(isStart ? "start date" : "due date") for \(card.word)")
+        .accessibilityValue(label)
+        .accessibilityIdentifier("today.focus.\(isStart ? "startDate" : "dueDate").\(card.id)")
+    }
+
 
     private var isPad: Bool
     {
@@ -145,24 +195,10 @@ struct TodayFocusSection: View
     @Environment(\.displayScale) private var displayScale
     @State private var measuredListingHeight: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsFilterChooser = false
-    @State private var showsFilterSummary = false
-    @State private var filterChooserDismissedAt: Date?
-    private var filterSummaryRequestedAt:        Date?
-    {
-
-        guard includesUpNext || includesImportant || includesBookmarked else
-        {
-            return nil
-        }
-
-        return [filtersChangedAt, filterChooserDismissedAt].compactMap
-        {
-            $0
-        } .max()
-    }
-
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsSelectionContext = true
+    @State private var contextRevision = UUID()
     private var filterColor: Color
     {
 
@@ -172,6 +208,8 @@ struct TodayFocusSection: View
     }
 
     @State private var selectedFocusCard: KanbanCard?  /* Pending item retained during visible tap feedback */
+    @State private var editingDateCard: KanbanCard?
+    @State private var editsStartDate = true
     @State private var deletingCard: KanbanCard?
 
     @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28
@@ -269,13 +307,6 @@ struct TodayFocusSection: View
 
                 Text("Today's Focus")
                 .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
-                if showsFilterSummary
-                {
-
-                    Text(filterLabel ?? "All items").font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    .transition(.opacity)
-                    .accessibilityHidden(true)
-                }
 
             }
             .padding(.vertical, 10)
@@ -389,61 +420,22 @@ struct TodayFocusSection: View
             .frame(idealWidth: 290)
             .presentationCompactAdaptation(.popover)
         }
-        .onChange(of: showsFilterChooser)
-        {
-            wasOpen, isOpen in
-            if wasOpen && !isOpen
-            {
 
-                if filterLabel != nil
-                {
+    }
 
-                    filterChooserDismissedAt = .now
-                }
-                else
-                {
 
-                    // An unused filter needs no confirmation after merely inspecting the chooser.
-                    filterChooserDismissedAt = nil
-                    showsFilterSummary = false
-                }
+    ///
+    /// @fcn        TodayFocusSection.showsSchedule
+    /// @brief      Keep time and whole-day progress tied to time-aware Focus selections
+    /// @details    All items is represented by no active filter flags; Up Next also enables
+    ///             schedule information when combined with other selection sources.
+    /// @return     (Bool) whether time and whole-list progress belong in this Focus presentation
+    ///
+    private var showsSchedule: Bool
+    {
 
-            }
-
-        }
-        .task(id: filterSummaryRequestedAt)
-        {
-
-            guard let changedAt = filterSummaryRequestedAt else
-            {
-                showsFilterSummary = false;
-                return
-            }
-
-            let remaining = 3 - Date.now.timeIntervalSince(changedAt)
-            guard remaining > 0 else
-            {
-                showsFilterSummary = false;
-                return
-            }
-
-            showsFilterSummary = true
-            do
-            {
-                try await Task.sleep(for: .seconds(remaining))
-            }
-            catch
-            {
-                return
-            }
-
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25))
-            {
-                showsFilterSummary = false
-            }
-
-        }
-
+        TodayFocusPresentation.showsSchedule(important: includesImportant, bookmarked: includesBookmarked,
+                                            upNext: includesUpNext)
     }
 
 
@@ -457,11 +449,11 @@ struct TodayFocusSection: View
             Text("\(completedCount) of \(cards.count) complete")
             .font(isPad ? .subheadline : .caption)
             .italic()
-            .foregroundStyle(filterColor)
+            .foregroundStyle(.primary.opacity(0.72))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(completedCount) of \(cards.count) complete")
+        .accessibilityLabel("Today’s list: \(completedCount) of \(cards.count) complete")
         .accessibilityHint(
             completedCount < cards.count
             ? "Opens today's list at the first unfinished item"
@@ -506,15 +498,15 @@ struct TodayFocusSection: View
                         label:
                         {
 
-                            Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+                            TodayFocusItemMark(card: card)
                             .frame(width: isPad ? 48 : 44, height: rowHeight)
                             .contentShape(Rectangle())
                         }
 
                         .buttonStyle(.plain)
                         .accessibilityLabel("Mark \(card.word) \(card.isTitleChecked ? "incomplete" : "complete")")
+                        .accessibilityValue(card.isTitleChecked ? "Completed" : "Not completed")
+                        .accessibilityIdentifier("today.focus.completion.\(card.id)")
                         .disabled(card.isEditingLocked)
 
                         Button
@@ -528,33 +520,25 @@ struct TodayFocusSection: View
                             HStack
                             {
 
-                                ItemAppearanceMark(appearance: card.appearance)
                                 VStack(alignment: .leading, spacing: 1)
                                 {
 
                                     Text(card.word)
-                                    .font(.system(size: isPad ? padTaskSize : phoneTaskSize))
-                                    .foregroundStyle(.primary)
+                                    .font(.system(size: isPad ? padTaskSize : phoneTaskSize, weight: .medium))
+                                    .foregroundStyle(card.isTitleChecked ? Color.secondary : Color.primary)
+                                    .italic(card.isTitleChecked)
                                     .strikethrough(card.isTitleChecked)
                                     .lineLimit(1)
-                                    if chronological, let label = entry.scheduleLabel
-                                    {
-
-                                        Text(label)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                    }
 
                                 }
 
                                 Spacer(minLength: 8)
-                                if let time = entry.previewTimeLabel
+                                if showsSchedule, let time = entry.previewTimeLabel
                                 {
 
-                                    Text(time)
+                                    focusDateControl(time, card: card, isStart: entry.previewTime?.isStart == true)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.primary.opacity(0.72))
                                     .monospacedDigit()
                                     .fixedSize(horizontal: true, vertical: false)
                                 }
@@ -568,10 +552,25 @@ struct TodayFocusSection: View
                                         if hasBookmark
                                         {
 
-                                            Image(systemName: "bookmark.fill")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .accessibilityLabel("Bookmarked")
+                                            Button
+                                            {
+                                                onRemoveBookmark(card.id)
+                                            }
+                                            label:
+                                            {
+                                                Image(systemName: "bookmark.fill")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .frame(minWidth: 28, minHeight: 40)
+                                                .contentShape(Rectangle())
+                                            }
+                                            .buttonStyle(.plain)
+                                            .highPriorityGesture(TapGesture().onEnded
+                                            {
+                                                onRemoveBookmark(card.id)
+                                            })
+                                            .accessibilityLabel("Remove bookmark from \(card.word)")
+                                            .accessibilityIdentifier("today.focus.bookmark.\(card.id)")
                                         }
 
                                         ImportantItemIndicator(cardID: card.id)
@@ -592,7 +591,7 @@ struct TodayFocusSection: View
                         .accessibilityLabel("Open \(card.word)")
                         .accessibilityValue(
                             [
-                                entry.previewTime.map
+                                (showsSchedule ? entry.previewTime : nil).map
                                 {
 
                                     ($0.isStart ? "Start time " : "Due time ")
@@ -693,7 +692,7 @@ struct TodayFocusSection: View
 
                     focusTitle.fixedSize()
                     Spacer(minLength: 0)
-                    if list != nil
+                    if list != nil && showsSchedule
                     {
                         completionButton.fixedSize()
                     }
@@ -704,7 +703,7 @@ struct TodayFocusSection: View
                 {
 
                     focusTitle
-                    if list != nil
+                    if list != nil && showsSchedule
                     {
                         completionButton
                     }
@@ -717,12 +716,18 @@ struct TodayFocusSection: View
             if list != nil
             {
 
-                let completedCount = cards.filter(\.isTitleChecked).count
+                if showsSelectionContext
+                {
+                    Text(TodayFocusPresentation.context(important: includesImportant, bookmarked: includesBookmarked,
+                                                        upNext: includesUpNext, chronological: chronological))
+                        .font(.caption)
+                        .foregroundStyle(.primary.opacity(0.72))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("today.focus.context")
+                        .transition(.opacity)
+                }
 
-                ProgressView(value: Double(completedCount), total: Double(max(cards.count, 1)))
-                .tint(.accentColor)
-                .opacity(cards.isEmpty ? 0 : 1)
-                .accessibilityHidden(cards.isEmpty)
+                Divider().accessibilityHidden(true)
 
                 Group
                 {
@@ -782,8 +787,8 @@ struct TodayFocusSection: View
                 Button(action: onOpenTodayList)
                 {
 
-                    Label("Open today", systemImage: "arrow.right")
-                    .font(.subheadline)
+                    Label("See today’s list", systemImage: "arrow.right")
+                    .font(.system(.subheadline, design: .serif).italic().weight(.medium))
                     .frame(minHeight: 32)
                 }
 
@@ -801,6 +806,32 @@ struct TodayFocusSection: View
         }
 
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(item: $editingDateCard)
+        {
+            card in
+            CardDateEditorSheet(
+                title: editsStartDate ? "Start date" : "Due date",
+                date: editsStartDate ? card.startDate : card.dueDate,
+                kind: editsStartDate ? card.startDateKind : card.dueDateKind
+            )
+            {
+                value, kind in
+                var edited = card
+                if editsStartDate
+                {
+                    edited.startDate = value
+                    edited.startDateKind = value == nil ? .date : kind
+                }
+                else
+                {
+                    edited.dueDate = value
+                    edited.dueDateKind = value == nil ? .date : kind
+                }
+                return onUpdateDate(edited, editsStartDate)
+            }
+            .presentationDetents([.large])
+            .databaseActivityOverlay()
+        }
         .confirmationDialog(
             deletingCard?.presentation == .note ? "Delete Note?" : "Delete Card?",
             isPresented: Binding(
@@ -850,7 +881,45 @@ struct TodayFocusSection: View
             card in
             Text("Permanently delete “\(card.word)”? This cannot be undone.")
         }
-        .modifier(TodayPanelSurface(backgroundOpacity: 0.5))
+        .onChange(of: filterLabel)
+        {
+            _, _ in
+            contextRevision = UUID()
+        }
+        .onChange(of: chronological)
+        {
+            _, _ in
+            contextRevision = UUID()
+        }
+        .onChange(of: showsFilterChooser)
+        {
+            wasOpen, isOpen in
+            if wasOpen && !isOpen
+            {
+                contextRevision = UUID()
+            }
+        }
+        .task(id: contextRevision)
+        {
+            showsSelectionContext = true
+            do
+            {
+                try await Task.sleep(for: .seconds(3))
+            }
+            catch
+            {
+                return
+            }
+            guard !Task.isCancelled else
+            {
+                return
+            }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6))
+            {
+                showsSelectionContext = false
+            }
+        }
+        .modifier(TodayPanelSurface(backgroundOpacity: 0.82))
         .padding(.bottom, list == nil ? 0 : max(0, listingCapacity - listingHeight))
     }
 
@@ -969,6 +1038,9 @@ struct TodayFocusCardDetailView: View
             )
             .id(card.id)
             .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
+            .environment(\.studioCardSurface,
+                lists.first { $0.cards.contains { $0.id == card.id } }?.appearance?.studioCardSurface
+                ?? ((try? BoardAppearance.decodeWeek(subtitleBoardAppearanceData)) ?? BoardAppearance()).studioCardSurface)
             .environment(\.inheritedSubtitleItalic,
                 ((try? BoardAppearance.decodeWeek(subtitleBoardAppearanceData)) ?? BoardAppearance())
                     .resolvedSubtitleItalic(list: lists.first
@@ -982,6 +1054,136 @@ struct TodayFocusCardDetailView: View
 
     }
 
+}
+
+
+///
+/// Applies an in-place Focus schedule edit to its current workspace record
+///
+/// @section    Purpose
+///     Resolves identity and the current editing lock at save time, then merges only the chosen
+///     date into live content. Ordinary List assignment retains the existing edit-history behavior.
+///
+enum TodayFocusDateUpdate
+{
+
+
+    ///
+    /// @fcn        TodayFocusDateUpdate.apply
+    /// @brief      Merge a selected start or due value into the current Card
+    /// @details    Rejects deleted, replaced, archived-list, and locked records. Unrelated content
+    ///             and the other date remain current even when the editor began with an old snapshot.
+    /// @param[in]  edited   Snapshot carrying the edited date and precision
+    /// @param[in]  isStart  Whether the edited value is the start date rather than the due date
+    /// @param[in,out] lists Live active workspace lists receiving the accepted edit
+    /// @return     (Bool) true when the current record accepts the schedule update
+    ///
+    static func apply(_ edited: KanbanCard, isStart: Bool, to lists: inout [KanbanList]) -> Bool
+    {
+
+        guard let owner = lists.firstIndex(where:
+            {
+
+                !$0.isArchived && $0.cards.contains
+                {
+
+                    $0.id == edited.id && $0.createdAt == edited.createdAt
+                }
+
+            }), let index = lists[owner].cards.firstIndex(where:
+            {
+                $0.id == edited.id
+            })
+        else
+        {
+
+            return false
+        }
+
+        var current = lists[owner].cards[index]
+        guard !current.isEditingLocked else
+        {
+
+            return false
+        }
+
+        if isStart
+        {
+
+            current.startDate = edited.startDate
+            current.startDateKind = edited.startDate == nil ? .date : edited.startDateKind
+        }
+
+        else
+        {
+
+            current.dueDate = edited.dueDate
+            current.dueDateKind = edited.dueDate == nil ? .date : edited.dueDateKind
+        }
+
+        lists[owner].cards[index] = current
+        return true
+    }
+
+}
+
+
+///
+/// Gives Focus items a compact visual identity and completion state
+///
+/// @section    Purpose
+///     Uses picture previews or custom icons when configured, otherwise the item's standard
+///     type symbol. A small completion badge preserves that identity when checked; the row
+///     supplies the completion button separately from title navigation and trailing actions.
+///
+private struct TodayFocusItemMark: View
+{
+
+    let card: KanbanCard
+    @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 18
+
+
+    ///
+    /// @fcn        TodayFocusItemMark.body
+    /// @brief      Render a compact picture, custom symbol, or default item-type symbol
+    /// @details    Matches picture-mode List previews and honors custom icon colors. Completed
+    ///             items retain their artwork with a check badge. The enclosing button owns the
+    ///             accessible completion label and action.
+    /// @return     (some View) a consistently sized mark subordinate to the item title
+    ///
+    var body: some View
+    {
+        Group
+        {
+            if card.displayFormat == .picture, let attachment = card.coverAttachment
+            {
+                CardCoverPreview(attachment: attachment, height: markSize)
+                .frame(width: markSize, height: markSize)
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+            else
+            {
+                Image(systemName: card.appearance?.icon?.rawValue
+                    ?? (card.presentation == .note ? ItemDisplayFormat.note : .card).symbol)
+                .font(.system(size: markSize - 3, weight: .regular))
+                .foregroundStyle(card.appearance?.iconColor?.color ?? Color.secondary)
+            }
+        }
+        .frame(width: markSize, height: markSize)
+        .overlay(alignment: .bottomTrailing)
+        {
+            if card.isTitleChecked
+            {
+                Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: markSize * 0.65, weight: .semibold))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, .green)
+                .background(Circle().fill(Color(.systemBackground)))
+                .offset(x: 4, y: 4)
+            }
+        }
+        .accessibilityHidden(true)
+    }
 }
 
 

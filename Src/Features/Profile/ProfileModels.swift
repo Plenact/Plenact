@@ -641,6 +641,155 @@ enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 
 
 ///
+/// Keeps timed Day cards ahead of untimed content without crossing section boundaries
+///
+/// @section    Purpose
+///     Shares a stable time-of-day policy between canonical Day Lists and the Focus projection.
+///     Equal times and untimed cards retain their relative order; only active dated Lists change.
+///
+enum DayListTimeOrder
+{
+
+
+    ///
+    /// @fcn        DayListTimeOrder.time
+    /// @brief      Resolve a Card's timed start, or timed due value when no timed start exists
+    /// @details    Date-only values are untimed. Anchoring clock components to one represented
+    ///             day makes time-only and full date/time values comparable within a Day List.
+    /// @param[in]  card     Card whose explicit schedule precision determines eligibility
+    /// @param[in]  day      Common day used to compare clock times
+    /// @param[in]  calendar Calendar supplying time-zone and daylight-saving rules
+    /// @return     (Date?) anchored time, or nil for an untimed Card
+    ///
+    static func time(for card: KanbanCard, on day: Date, calendar: Calendar) -> Date?
+    {
+
+        guard let time = TodayFocusEntry(card: card, sectionID: nil, heading: nil).previewTime?.date else
+        {
+
+            return nil
+        }
+
+        let components = calendar.dateComponents([.hour, .minute, .second], from: time)
+        return calendar.date(bySettingHour: components.hour ?? 0, minute: components.minute ?? 0,
+            second: components.second ?? 0, of: day)
+    }
+
+
+
+    ///
+    /// @fcn        DayListTimeOrder.cards
+    /// @brief      Sort each existing section by time while keeping its divider in place
+    /// @details    Stable ties preserve manual order. Untimed and date-only Cards follow timed
+    ///             Cards in their own section; no Card is removed or moved into another section.
+    /// @param[in]  cards    Complete canonical List contents, including section dividers
+    /// @param[in]  calendar Calendar used to interpret schedule clock components
+    /// @return     ([KanbanCard]) stably ordered contents retaining all original Card values
+    ///
+    static func cards(_ cards: [KanbanCard], calendar: Calendar = .current) -> [KanbanCard]
+    {
+
+        let day = calendar.startOfDay(for: .now)
+        var result: [KanbanCard] = []
+        var section: [KanbanCard] = []
+
+        ///
+        /// @fcn        DayListTimeOrder.cards.flush
+        /// @brief      Append the current section in stable schedule order
+        /// @details    Uses original offsets to order ties and untimed Cards consistently.
+        /// @return     (Void) drains the current section into the ordered result
+        ///
+        func flush()
+        {
+
+            result += section.enumerated().sorted
+            {
+
+            lhs, rhs in
+                let left = time(for: lhs.element, on: day, calendar: calendar)
+                let right = time(for: rhs.element, on: day, calendar: calendar)
+                switch (left, right)
+                {
+
+                case let (left?, right?) where left != right:
+                    return left < right
+                case (_?, nil):
+                    return true
+                case (nil, _?):
+                    return false
+                default:
+                    return lhs.offset < rhs.offset
+                }
+
+            } .map(\.element)
+            section.removeAll(keepingCapacity: true)
+        }
+
+
+        for card in cards
+        {
+
+            if card.isSectionDivider
+            {
+
+                flush()
+                result.append(card)
+            }
+
+            else
+            {
+
+                section.append(card)
+            }
+
+        }
+
+        flush()
+        return result
+    }
+
+
+
+    ///
+    /// @fcn        DayListTimeOrder.lists
+    /// @brief      Apply time ordering exclusively to active date-associated Day Lists
+    /// @details    Other Lists and archived contents retain their exact order and content.
+    /// @param[in]  lists      Complete workspace List snapshot
+    /// @param[in]  dayListIDs Identities mapped to real dates by the planning calendar
+    /// @param[in]  calendar   Calendar used to interpret schedule clock components
+    /// @return     ([KanbanList]) snapshot with eligible Day Lists normalized
+    ///
+    static func lists(_ lists: [KanbanList], dayListIDs: Set<Int>, calendar: Calendar) -> [KanbanList]
+    {
+
+        lists.map
+        {
+
+        list in
+            guard dayListIDs.contains(list.id), !list.isArchived else
+            {
+
+                return list
+            }
+
+            let ordered = cards(list.cards, calendar: calendar)
+            guard ordered != list.cards else
+            {
+
+                return list
+            }
+
+            var updated = list
+            updated.cards = ordered
+            return updated
+        }
+
+    }
+
+}
+
+
+///
 /// Retains local planning and display preferences
 ///
 /// @section    Purpose
@@ -660,6 +809,7 @@ struct LocalProfilePreferences: Hashable, Codable
     var randomizesNewCardHeaders:     Bool
     var randomizesNewCardBackgrounds: Bool
     var showsDueDatesOnNewCards:      Bool
+    var keepsDayListsInTimeOrder:     Bool
     var todayFocusOrder:              TodayFocusOrder
     var todayFocusGroupsBySection:    Bool
     var todayFocusIncludesUpNext:     Bool
@@ -688,6 +838,7 @@ struct LocalProfilePreferences: Hashable, Codable
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
+        case keepsDayListsInTimeOrder
         case todayFocusOrder, todayFocusGroupsBySection, todayFocusHidesCompleted
         case todayFocusIncludesImportant, todayFocusIncludesBookmarked, todayFocusIncludesUpNext
         case todayFocusItemCount
@@ -713,7 +864,8 @@ struct LocalProfilePreferences: Hashable, Codable
     /// @param[in]  randomizesNewCardHeaders      Whether new Cards receive a saved random header color
     /// @param[in]  randomizesNewCardBackgrounds  Whether new Cards receive a saved random
     ///             background color
-    /// @param[in]  todayFocusOrder               Selected ordering policy for derived Today Focus entries
+    /// @param[in]  keepsDayListsInTimeOrder      Keep Day Lists and Focus timed-first; enabled by default
+    /// @param[in]  todayFocusOrder               Selected ordering policy when automatic Day ordering is disabled
     /// @param[in]  todayFocusGroupsBySection     Whether Focus entries retain their Day section
     ///             headings
     /// @param[in]  todayFocusHidesCompleted      Whether completed Cards are omitted from Today Focus
@@ -749,7 +901,8 @@ struct LocalProfilePreferences: Hashable, Codable
         todayFocusIncludesUpNext: Bool = false,
         scrollsOverflowingTitles: Bool = true,
         enablesLowerCornerBack: Bool = true,
-        importanceStarStyle: ImportanceStarStyle = .tucked
+        importanceStarStyle: ImportanceStarStyle = .tucked,
+        keepsDayListsInTimeOrder: Bool = true
     )
     {
 
@@ -760,6 +913,7 @@ struct LocalProfilePreferences: Hashable, Codable
         self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
         self.todayFocusIncludesImportant = todayFocusIncludesImportant
         self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
+        self.keepsDayListsInTimeOrder = keepsDayListsInTimeOrder
         self.todayFocusOrder = todayFocusOrder
         self.todayFocusGroupsBySection = todayFocusGroupsBySection
         self.todayFocusHidesCompleted = todayFocusHidesCompleted
@@ -828,7 +982,7 @@ struct LocalProfilePreferences: Hashable, Codable
 
         }
 
-        if todayFocusOrder == .chronological
+        if keepsDayListsInTimeOrder || todayFocusOrder == .chronological
         {
 
             // Stable ties and undated items retain the user's original sequence.
@@ -865,8 +1019,12 @@ struct LocalProfilePreferences: Hashable, Codable
 
                 }
 
-                let l = lhs.element.scheduleDate(on: day, calendar: calendar)
-                let r = rhs.element.scheduleDate(on: day, calendar: calendar)
+                let l = keepsDayListsInTimeOrder
+                    ? DayListTimeOrder.time(for: lhs.element.card, on: day, calendar: calendar)
+                    : lhs.element.scheduleDate(on: day, calendar: calendar)
+                let r = keepsDayListsInTimeOrder
+                    ? DayListTimeOrder.time(for: rhs.element.card, on: day, calendar: calendar)
+                    : rhs.element.scheduleDate(on: day, calendar: calendar)
                 switch (l, r)
                 {
 
@@ -949,7 +1107,9 @@ struct LocalProfilePreferences: Hashable, Codable
             ?? true,
             enablesLowerCornerBack: try container.decodeIfPresent(Bool.self, forKey: .enablesLowerCornerBack) ?? true,
             importanceStarStyle: try container.decodeIfPresent(ImportanceStarStyle.self, forKey: .importanceStarStyle)
-            ?? .tucked
+            ?? .tucked,
+            keepsDayListsInTimeOrder: try container.decodeIfPresent(Bool.self, forKey: .keepsDayListsInTimeOrder)
+            ?? true
         )
     }
 

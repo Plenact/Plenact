@@ -84,6 +84,13 @@ struct ItemAppearanceSheet: View
             Form
             {
 
+                StudioSurfaceSettings(surface: $draft.studioSurface, header: $draft.background, italic: $draft.subtitleItalic,
+                                      titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor)
+                if showsListBackground
+                {
+                    StudioSurfaceSettings(surface: $draft.studioCardSurface, title: "Default Card and Note artwork")
+                }
+
                 if draftDisplay != nil
                 {
 
@@ -549,6 +556,10 @@ struct BoardAppearanceSheet: View
 
             Form
             {
+
+                StudioSurfaceSettings(surface: $draft.studioSurface, title: "Board artwork", header: $draft.bannerBackground,
+                                      italic: $draft.subtitleItalic, titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor)
+                StudioSurfaceSettings(surface: $draft.studioCardSurface, title: "Default Card and Note artwork")
 
                 if allowsCollectionBackground
                 {

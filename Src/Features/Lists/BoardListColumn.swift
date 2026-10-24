@@ -983,10 +983,15 @@ struct KanbanListView: View
             .padding(.bottom, 24)
         }
 
-        .background(
+        .background
+        {
             (usesNoteList ? Color(.systemBackground) : listTint.color).opacity(
                 effectiveAppearance.resolvedListBackgroundOpacity)
-        )
+            if let surface = list.appearance?.studioSurface
+            {
+                StudioSurfaceView(surface: surface)
+            }
+        }
         .overlay
         {
 
@@ -1078,6 +1083,7 @@ struct KanbanListView: View
             }
 
         }
+        .environment(\.studioCardSurface, list.appearance?.studioCardSurface ?? boardAppearance.studioCardSurface)
         .environment(\.inheritedSubtitleItalic, boardAppearance.resolvedSubtitleItalic(list: list.appearance))
         .onDisappear
         {

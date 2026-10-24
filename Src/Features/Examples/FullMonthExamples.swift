@@ -741,6 +741,7 @@ struct FullMonthExample: Sendable
             preferences.todayFocusHidesCompleted = existing.todayFocusHidesCompleted
             preferences.todayFocusGroupsBySection = existing.todayFocusGroupsBySection
             preferences.todayFocusOrder = existing.todayFocusOrder
+            preferences.keepsDayListsInTimeOrder = existing.keepsDayListsInTimeOrder
             preferences.todayFocusItemCount = existing.todayFocusItemCount
             result[PlanPreferencesStore.key] = try encoder.encode(preferences)
         }

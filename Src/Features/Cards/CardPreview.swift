@@ -597,6 +597,7 @@ struct KanbanCardView: View
 
                     tint.color
                 }
+                StudioItemBackground(appearance: card.appearance, isNote: card.presentation == .note, preview: true)
 
             }
 
@@ -983,6 +984,7 @@ struct SingleListNoteRow: View
             .padding(.horizontal, 12).padding(.vertical, 10)
             Divider().padding(.leading, 58)
         }
+        .background { StudioItemBackground(appearance: card.appearance, isNote: true, preview: true) }
         .contentShape(Rectangle())
         .contextMenu
         {

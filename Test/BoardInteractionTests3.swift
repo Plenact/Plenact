@@ -25,6 +25,634 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingDefaultsOnAndPersistsOptOut
+    /// @brief      Enable automatic Day ordering for fresh and legacy preferences
+    /// @details    Keeps an explicit opt-out through standalone preferences and Codable round trips.
+    /// @return     (Void) records default and persistence regressions
+    /// @throws     Propagates preference encoding and decoding errors
+    ///
+    func testDayTimeOrderingDefaultsOnAndPersistsOptOut() throws
+    {
+
+        XCTAssertTrue(LocalProfilePreferences().keepsDayListsInTimeOrder)
+        XCTAssertTrue(try JSONDecoder().decode(LocalProfilePreferences.self,
+                from: Data("{}".utf8)).keepsDayListsInTimeOrder)
+        let manual = LocalProfilePreferences(keepsDayListsInTimeOrder: false)
+        let decoded = try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(manual))
+        XCTAssertFalse(decoded.keepsDayListsInTimeOrder)
+        let suite = "DayTimeOrder." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        PlanPreferencesStore.save(manual, to: defaults)
+        XCTAssertFalse(PlanPreferencesStore.load(from: defaults).keepsDayListsInTimeOrder)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingKeepsUntimedLastAndFocusInSync
+    /// @brief      Sort timed Day Cards and Focus consistently after an edited time
+    /// @details    Covers stable equal times, untimed and date-only contents, due-time fallback,
+    ///             time-only normalization, start-time precedence, and manual opt-out.
+    /// @return     (Void) records ordering and live rescheduling regressions
+    ///
+    func testDayTimeOrderingKeepsUntimedLastAndFocusInSync()
+    {
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let day = Date(timeIntervalSince1970: 1792800000)
+
+        ///
+        /// @fcn        testDayTimeOrderingKeepsUntimedLastAndFocusInSync.card
+        /// @brief      Build a Card with an optional timed start on one controlled day
+        /// @details    Fixture offsets produce independent identities without relying on wall-clock time.
+        /// @param[in]  id   Stable fixture identity
+        /// @param[in]  hour Optional start hour; nil creates an untimed Card
+        /// @return     (KanbanCard) an explicit precision-aware schedule fixture
+        ///
+        func card(_ id: Int, hour: Int? = nil) -> KanbanCard
+        {
+
+            var card = KanbanCard(id: id, word: "Item \(id)", listTitle: "Today", checklists: [])
+            card.startDate = hour.map
+            {
+                calendar.date(bySettingHour: $0, minute: 0, second: 0, of: day)!
+            }
+
+            card.startDateKind = .time
+            return card
+        }
+
+        var dateOnly = card(4)
+        dateOnly.startDate = day
+        dateOnly.startDateKind = .date
+        var dueOnly = card(5)
+        dueOnly.dueDate = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: day)
+        dueOnly.dueDateKind = .dateAndTime
+        var startWins = card(7, hour: 9)
+        startWins.dueDate = calendar.date(bySettingHour: 4, minute: 0, second: 0, of: day)
+        startWins.dueDateKind = .time
+        let input = [card(1, hour: 5), card(2), card(3, hour: 6), dateOnly, dueOnly,
+            card(6, hour: 6), startWins, card(8)]
+        let ordered = DayListTimeOrder.cards(input, calendar: calendar)
+        XCTAssertEqual(ordered.map(\.id), [1, 3, 6, 5, 7, 2, 4, 8])
+        XCTAssertEqual(DayListTimeOrder.cards(ordered, calendar: calendar), ordered)
+        XCTAssertEqual(Set(ordered), Set(input), "Sorting must preserve every Card value")
+        let preferences = LocalProfilePreferences(todayFocusItemCount: 0)
+        XCTAssertEqual(preferences.todayFocusEntries(in: input, on: day, calendar: calendar).map(\.id), ordered.map(\.id))
+
+        var edited = input
+        edited[0].startDate = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: day)
+        XCTAssertEqual(DayListTimeOrder.cards(edited, calendar: calendar).map(\.id), [3, 6, 1, 5, 7, 2, 4, 8])
+        XCTAssertEqual(preferences.todayFocusEntries(in: edited, on: day, calendar: calendar).map(\.id),
+            [3, 6, 1, 5, 7, 2, 4, 8])
+        let manual = LocalProfilePreferences(keepsDayListsInTimeOrder: false)
+        XCTAssertEqual(manual.todayFocusEntries(in: edited, on: day, calendar: calendar).map(\.id), edited.map(\.id))
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingPreservesSectionsAndNonDayLists
+    /// @brief      Limit canonical sorting to active date-mapped Lists and existing sections
+    /// @details    Reorders no Card across a divider, creates no history entries, and leaves personal
+    ///             and archived Lists untouched. Repeated normalization is idempotent.
+    /// @return     (Void) records scope, section, history, and stability regressions
+    ///
+    func testDayTimeOrderingPreservesSectionsAndNonDayLists()
+    {
+
+        var early = KanbanCard(id: 1, word: "Early", listTitle: "Today", checklists: [])
+        early.startDate = Calendar.current.date(bySettingHour: 5, minute: 0, second: 0, of: .now)
+        early.startDateKind = .time
+        var late = KanbanCard(id: 2, word: "Late", listTitle: "Today", checklists: [])
+        late.startDate = Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: .now)
+        late.startDateKind = .time
+        let untimed = KanbanCard(id: 3, word: "Untimed", listTitle: "Today", checklists: [])
+        let divider = KanbanCard(id: 4, word: "--- Another section", listTitle: "Today", isDivider: true)
+        let input = [untimed, late, early, divider, untimed.replacingLocation(id: 5, listTitle: "Today"),
+            early.replacingLocation(id: 6, listTitle: "Today")]
+        let day = KanbanList(id: 10, title: "Today", cards: input)
+        let personal = KanbanList(id: 11, title: "Personal", cards: input)
+        var archived = KanbanList(id: 12, title: "Archived", cards: input)
+        archived.isArchived = true
+        let normalized = DayListTimeOrder.lists([day, personal, archived], dayListIDs: [10, 12], calendar: .current)
+        XCTAssertEqual(normalized[0].cards.map(\.id), [1, 2, 3, 4, 6, 5])
+        XCTAssertEqual(normalized[1], personal)
+        XCTAssertEqual(normalized[2], archived)
+        XCTAssertTrue(normalized[0].cards.allSatisfy
+            {
+                $0.editHistory == nil
+            })
+        XCTAssertEqual(DayListTimeOrder.lists(normalized, dayListIDs: [10, 12], calendar: .current), normalized)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusDateUpdatesMergeOnlyTheSelectedLiveValue
+    /// @brief      Save Focus dates without reverting unrelated edits or bypassing locks
+    /// @details    Covers start and due values, date removal, retained history, stale snapshots,
+    ///             deleted items, replacement identities, and a lock applied while editing.
+    /// @return     (Void) records schedule-merge and identity protection regressions
+    ///
+    func testFocusDateUpdatesMergeOnlyTheSelectedLiveValue()
+    {
+        let original = KanbanCard(
+            id: 765, word: "Before editing", listTitle: "Today", createdAt: Date(timeIntervalSince1970: 100))
+        var lists = [KanbanList(id: 1, title: "Today", cards: [original])]
+        var edited = original
+        edited.startDate = Date(timeIntervalSince1970: 10000)
+        edited.startDateKind = .time
+        lists[0].cards[0].word = "Changed while the date editor was open"
+        lists[0].cards[0].dueDate = Date(timeIntervalSince1970: 20000)
+        lists[0].cards[0].dueDateKind = .dateAndTime
+        let liveDue = lists[0].cards[0].dueDate
+        XCTAssertTrue(TodayFocusDateUpdate.apply(edited, isStart: true, to: &lists))
+        XCTAssertEqual(lists[0].cards[0].word, "Changed while the date editor was open")
+        XCTAssertEqual(lists[0].cards[0].startDate, edited.startDate)
+        XCTAssertEqual(lists[0].cards[0].startDateKind, .time)
+        XCTAssertEqual(lists[0].cards[0].dueDate, liveDue)
+        XCTAssertEqual(lists[0].cards[0].dueDateKind, .dateAndTime)
+        XCTAssertFalse(lists[0].cards[0].editHistory?.isEmpty ?? true)
+
+        edited.dueDate = Date(timeIntervalSince1970: 30000)
+        edited.dueDateKind = .dateAndTime
+        XCTAssertTrue(TodayFocusDateUpdate.apply(edited, isStart: false, to: &lists))
+        XCTAssertEqual(lists[0].cards[0].dueDate, edited.dueDate)
+        XCTAssertEqual(lists[0].cards[0].startDate, edited.startDate)
+
+        edited.startDate = nil
+        XCTAssertTrue(TodayFocusDateUpdate.apply(edited, isStart: true, to: &lists))
+        XCTAssertNil(lists[0].cards[0].startDate)
+        XCTAssertEqual(lists[0].cards[0].startDateKind, .date)
+        XCTAssertEqual(lists[0].cards[0].dueDate, edited.dueDate)
+
+        lists[0].cards[0].isEditingLocked = true
+        let locked = lists
+        XCTAssertFalse(TodayFocusDateUpdate.apply(edited, isStart: false, to: &lists))
+        XCTAssertEqual(lists, locked)
+
+        lists[0].cards = [KanbanCard(
+            id: original.id, word: "Replacement", listTitle: "Today", createdAt: Date(timeIntervalSince1970: 200))]
+        let replacement = lists
+        XCTAssertFalse(TodayFocusDateUpdate.apply(edited, isStart: false, to: &lists))
+        XCTAssertEqual(lists, replacement)
+
+        lists[0].cards.removeAll()
+        XCTAssertFalse(TodayFocusDateUpdate.apply(edited, isStart: true, to: &lists))
+        lists[0].cards = [original]
+        lists[0].isArchived = true
+        XCTAssertFalse(TodayFocusDateUpdate.apply(edited, isStart: true, to: &lists))
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testTodayFocusRefreshesLiveWorkspaceEdits
+    /// @brief      Refresh native Focus rows without navigation or a minute ticking over
+    /// @details    Keeps the same Today screen identity while changing titles, completion, dates,
+    ///             bookmarks, and membership through its shared bindings. Inspects the native Focus collection,
+    ///             isolating its rendered rows from unrelated slogan and subtitle animations.
+    /// @return     (Void) records stale row or membership regressions
+    /// @throws     Propagates missing simulator scene, collection, and image errors
+    ///
+    @MainActor
+    func testTodayFocusRefreshesLiveWorkspaceEdits() async throws
+    {
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+            {
+
+                $0 as? UIWindowScene
+            } .first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let originalPreferences = UserDefaults.standard.data(forKey: PlanPreferencesStore.key)
+        defer
+        {
+
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+            UserDefaults.standard.set(originalPreferences, forKey: PlanPreferencesStore.key)
+        }
+
+        PlanPreferencesStore.save(LocalProfilePreferences(
+                todayFocusItemCount: 0, todayFocusHidesCompleted: false))
+        let title = Calendar.current.weekdaySymbols[Calendar.current.component(.weekday, from: .now) - 1]
+        var lists = [KanbanList(id: 7654, title: title, cards: [
+                    KanbanCard(id: 765401, word: "Original focus title", listTitle: title, checklists: [])
+                ])]
+        var bookmarks: Set<Int> = []
+
+        ///
+        /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.makeToday
+        /// @brief      Recreate the parent value while retaining the Today screen identity
+        /// @details    Uses the same live workspace bindings on every parent update.
+        /// @return     (TodayHomeView) the configured Today screen
+        ///
+        func makeToday() -> TodayHomeView
+        {
+
+            TodayHomeView(
+                lists: Binding(get:
+                    {
+                        lists
+                    }, set:
+                    {
+                        lists = $0
+                    }),
+                archivedLists: .constant([]),
+                savedCardIDs: Binding(get:
+                    {
+                        bookmarks
+                    }, set:
+                    {
+                        bookmarks = $0
+                    }),
+                profile: nil, onSaveProfile:
+                {
+                _ in
+                }, onRemoveProfile:
+                {
+
+                },
+                onAddCard:
+                {
+                _, _, _, _, _, _ in
+                }, onAddCapture:
+                {
+                _ in
+                    false
+                },
+                onToggleCardCompletion:
+                {
+                _, _ in
+                }, onOpenBoardList:
+                {
+                _ in
+                },
+                onOpenBoardCard:
+                {
+                _, _ in
+                }, onArchiveCard:
+                {
+                _ in
+                },
+                onDeleteCard:
+                {
+                _ in
+                    false
+                }, onArchiveList:
+                {
+                _ in
+                },
+                onDeleteList:
+                {
+                _ in
+                    false
+                }, quickCreateRequest: 0
+            )
+        }
+
+
+        ///
+        /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.collection
+        /// @brief      Locate the native collection backing Focus rows
+        /// @details    Searches only the current hosted Today view hierarchy.
+        /// @param[in]  view  Root or descendant UIKit view
+        /// @return     (UICollectionView?) first native collection, if rendered
+        ///
+        func collection(in view: UIView) -> UICollectionView?
+        {
+
+            if let collection = view as? UICollectionView
+            {
+
+                return collection
+            }
+
+            return view.subviews.lazy.compactMap
+            {
+                collection(in: $0)
+            } .first
+        }
+
+
+        let welcomeCue = TodayWelcomeCue()
+        let host = UIHostingController(rootView: makeToday().environmentObject(welcomeCue))
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        for _ in 0 ..< 20
+        {
+            if collection(in: host.view) != nil
+            {
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+            host.view.layoutIfNeeded()
+        }
+
+        ///
+        /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.rowsImage
+        /// @brief      Capture only the current native Focus rows
+        /// @details    Excludes the surrounding Today content and its timed visual effects.
+        /// @return     (Data) PNG data suitable for comparing before and after an edit
+        /// @throws     Propagates absent collection and image encoding errors
+        ///
+        func rowsImage() throws -> Data
+        {
+
+            let rows = try XCTUnwrap(collection(in: host.view))
+            let image = UIGraphicsImageRenderer(bounds: rows.bounds).image
+            {
+
+            _ in
+                rows.drawHierarchy(in: rows.bounds, afterScreenUpdates: true)
+            }
+
+            return try XCTUnwrap(image.pngData())
+        }
+
+
+        let original = try rowsImage()
+        lists[0].cards[0].word = "A visibly updated title"
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        let renamed = try rowsImage()
+        XCTAssertNotEqual(renamed, original, "Saved title edits must redraw Focus immediately")
+
+        lists[0].cards[0].isTitleChecked = true
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertNotEqual(try rowsImage(), renamed, "Completion edits must redraw the existing row")
+
+        let completed = try rowsImage()
+        lists[0].cards[0].startDate = .now.addingTimeInterval(3600)
+        lists[0].cards[0].startDateKind = .dateAndTime
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertNotEqual(try rowsImage(), completed, "Saved schedule edits must update Focus metadata")
+
+        lists[0].cards.append(KanbanCard(
+                id: 765402, word: "Newly added focus card", listTitle: title, checklists: []))
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(try XCTUnwrap(collection(in: host.view)).numberOfItems(inSection: 0), 2)
+
+        lists[0].cards.removeFirst()
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(try XCTUnwrap(collection(in: host.view)).numberOfItems(inSection: 0), 1)
+
+        bookmarks = [765402]
+        PlanPreferencesStore.save(LocalProfilePreferences(
+                todayFocusItemCount: 0, todayFocusHidesCompleted: false, todayFocusIncludesBookmarked: true))
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(try XCTUnwrap(collection(in: host.view)).numberOfItems(inSection: 0), 1)
+
+        bookmarks.remove(765402)
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertNil(collection(in: host.view), "Removing the last matching bookmark must clear Focus rows")
+
+        bookmarks.insert(765402)
+        host.rootView = makeToday().environmentObject(welcomeCue)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(try XCTUnwrap(collection(in: host.view)).numberOfItems(inSection: 0), 1,
+                               "Restoring a bookmark must immediately restore its matching Focus row")
+    }
+
+
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusMetadataMatchesSelectionAndExplainsItsSources()
+    /// @brief      Keep schedules and whole-day progress out of purely personal Focus selections
+    /// @details    Covers all filter combinations and verifies that the context names selected
+    ///             sources without describing a filtered collection as the entire day.
+    /// @return     (Void) records metadata-policy or context regressions
+    ///
+    func testFocusMetadataMatchesSelectionAndExplainsItsSources()
+    {
+
+        for important in [false, true]
+        {
+            for bookmarked in [false, true]
+            {
+                for upNext in [false, true]
+                {
+                    XCTAssertEqual(TodayFocusPresentation.showsSchedule(important: important,
+                        bookmarked: bookmarked, upNext: upNext), upNext || (!important && !bookmarked))
+                    let context = TodayFocusPresentation.context(important: important, bookmarked: bookmarked,
+                                                                 upNext: upNext, chronological: false)
+                    XCTAssertTrue(context.contains("today’s list"))
+                    XCTAssertEqual(context.contains("Important"), important)
+                    XCTAssertEqual(context.contains("Bookmarked"), bookmarked)
+                    XCTAssertEqual(context.contains("Up Next"), upNext)
+                }
+            }
+        }
+        XCTAssertTrue(TodayFocusPresentation.context(important: false, bookmarked: false,
+                                                     upNext: false, chronological: true).contains("time order"))
+    }
+
+
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioNativeEditorRendersReadableMaterialControls()
+    /// @brief Host the native editor to verify live artwork and native controls mount together
+    /// @details Uses a synthetic canvas and captures a review image without importing, saving,
+    ///          or changing the user's appearance preferences.
+    /// @return (Void) records presentation failures
+    /// @throws Fixture setup and image export failures propagate to XCTest.
+    ///
+    @MainActor
+    func testStudioNativeEditorRendersReadableMaterialControls() async throws
+    {
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: NavigationStack
+        {
+            StudioSurfaceEditor(surface: .constant(StudioSurface(material: .canvas, readability: 0.4)))
+        })
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+        try await Task.sleep(for: .milliseconds(250))
+        host.view.layoutIfNeeded()
+        XCTAssertGreaterThan(host.view.bounds.width, 0)
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        {
+            _ in
+            host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+        }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-studio-native-preview.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("Studio review image: " + url.path)
+    }
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioMaterialsRoundTripWithoutChangingLegacyAppearance()
+    /// @brief Preserve existing appearance defaults and explicit new material metadata
+    /// @details Exercises every material kind, explicit plain overrides, Card relocation, and saved-look reuse.
+    /// @return (Void) records persistence or compatibility failures
+    /// @throws Fixture encoding and decoding failures propagate to XCTest.
+    ///
+    func testStudioMaterialsRoundTripWithoutChangingLegacyAppearance() throws
+    {
+
+        let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        XCTAssertNil(legacy.studioSurface)
+        XCTAssertTrue(legacy.isEmpty)
+        for material in StudioMaterial.allCases
+        {
+            let surface = StudioSurface(material: material, color: "ABCDEF", strength: 0.42,
+                                        readability: 0.7, verticalPosition: 0.2, zoom: 1.4, showsInPreviews: false)
+            var appearance = ItemAppearance()
+            appearance.studioSurface = surface
+            XCTAssertFalse(appearance.isEmpty)
+            var card = KanbanCard(id: 7, word: "My note", listTitle: "Ideas", checklists: [])
+            card.appearance = appearance
+            let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+            XCTAssertEqual(restored.appearance?.studioSurface, surface)
+            XCTAssertEqual(restored.replacingLocation(id: 22, listTitle: "Other").appearance?.studioSurface, surface)
+            let look = StudioArtwork(name: "Favorite", surface: surface, header: .teal, italicSubtitle: true)
+            XCTAssertEqual(try JSONDecoder().decode(StudioArtwork.self, from: JSONEncoder().encode(look)), look)
+        }
+    }
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioCreationDefaultsRespectExplicitArtAndNotes()
+    /// @brief Store new-item variety once while honoring existing per-item artwork and headers
+    /// @details Uses an injected single-color palette for deterministic results and checks divider exclusion.
+    /// @return (Void) records creation-default or explicit-choice regressions
+    ///
+    func testStudioCreationDefaultsRespectExplicitArtAndNotes()
+    {
+
+        var settings = StudioSettings()
+        settings.defaultCardSurface = StudioSurface(material: .gradient)
+        settings.defaultNoteSurface = StudioSurface(material: .linen)
+        settings.variesNewSurfaces = true
+        settings.variesNewHeaders = true
+        settings.palette = ["AABBCC"]
+        for presentation in [ItemPresentation.card, .note]
+        {
+            var card = KanbanCard(id: 1, word: "New", listTitle: "Inbox", checklists: [], presentation: presentation)
+            StudioSettings.apply(to: &card, settings: settings)
+            XCTAssertEqual(card.appearance?.studioSurface?.color, "AABBCC")
+            XCTAssertEqual(card.appearance?.studioSurface?.material, presentation == .note ? .linen : .gradient)
+            XCTAssertNotNil(card.appearance?.background)
+            var explicit = ItemAppearance()
+            explicit.studioSurface = StudioSurface(material: .paper, color: "123456")
+            explicit.background = .rose
+            card.appearance = explicit
+            StudioSettings.apply(to: &card, settings: settings)
+            XCTAssertEqual(card.appearance, explicit)
+        }
+        var divider = KanbanCard(id: 9, word: "---", listTitle: "Inbox", isDivider: true)
+        StudioSettings.apply(to: &divider, settings: settings)
+        XCTAssertNil(divider.appearance)
+        var unchanged = KanbanCard(id: 3, word: "Existing", listTitle: "Inbox", checklists: [])
+        StudioSettings.apply(to: &unchanged, settings: StudioSettings())
+        XCTAssertNil(unchanged.appearance)
+    }
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain()
+    /// @brief Persist independent view wallpapers without changing unconfigured destinations
+    /// @details Confirms defaults do not write preferences and settings retain explicit preview visibility.
+    /// @return (Void) records workspace setting persistence failures
+    /// @throws Fixture encoding and preferences setup failures propagate to XCTest.
+    ///
+    func testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain() throws
+    {
+
+        let suite = "Plenact.Studio.Tests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(StudioSettings.load(from: defaults), StudioSettings())
+        XCTAssertNil(defaults.data(forKey: StudioSettings.key))
+        var settings = StudioSettings()
+        settings.views[StudioDestination.today.rawValue] = StudioSurface(material: .canvas)
+        settings.defaultNoteSurface = StudioSurface(material: .dots, showsInPreviews: false)
+        defaults.set(try JSONEncoder().encode(settings), forKey: StudioSettings.key)
+        XCTAssertEqual(StudioSettings.load(from: defaults), settings)
+        XCTAssertNil(StudioSettings.load(from: defaults).views[StudioDestination.activity.rawValue])
+    }
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioImportOwnsImagesOutsideAttachmentStorage()
+    /// @brief Keep reusable personal artwork independent of attachment cleanup
+    /// @details Imports a synthetic image, validates safe lookup, and removes only the test's generated file.
+    /// @return (Void) records image import, ownership, or lookup failures
+    /// @throws Image preparation and filesystem errors propagate to XCTest.
+    ///
+    @MainActor
+    func testStudioImportOwnsImagesOutsideAttachmentStorage() throws
+    {
+
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 60)).image
+        {
+            context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 80, height: 60))
+        }
+        let name = try StudioArtworkStore.importImage(XCTUnwrap(image.pngData()))
+        let url = try StudioArtworkStore.directory().appendingPathComponent(name)
+        defer { try? FileManager.default.removeItem(at: url) }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertNotNil(StudioArtworkStore.image(name))
+        XCTAssertNil(StudioArtworkStore.image("../" + name))
+        XCTAssertNil(StudioArtworkStore.image("/tmp/" + name))
+        XCTAssertEqual(url.deletingLastPathComponent().lastPathComponent, "PlenactStudioArtwork")
+    }
+
+
+    ///
+    /// @fcn PlenactBoardDocumentTests.testStudioUnsplashRejectsCredentialRequestsToOtherHosts()
+    /// @brief Prevent saved metadata from sending provider credentials to arbitrary hosts
+    /// @details Uses invalid hosts and insecure URLs, all rejected before any network request.
+    /// @return (Void) records missing credential-boundary enforcement
+    ///
+    func testStudioUnsplashRejectsCredentialRequestsToOtherHosts() async
+    {
+
+        for text in ["https://example.com/download", "http://api.unsplash.com/photos/test/download"]
+        {
+            do
+            {
+                _ = try await StudioUnsplash.request(URL(string: text)!)
+                XCTFail("Unapproved credential destination was accepted")
+            }
+            catch { XCTAssertNotNil(error) }
+        }
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testSubtitleItalicsInheritAndPreserveExplicitRegularOverrides()
     /// @brief      Resolve Board, List, and Card subtitle styles without losing explicit false
     /// @details    Covers legacy defaults, the complete override chain, optional-field encoding,

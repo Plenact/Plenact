@@ -97,6 +97,58 @@ extension AppRootView
 
 
     ///
+    /// @fcn        AppRootView.applyDayListOrderingPreference
+    /// @brief      Apply the enabled Day time-order policy to existing calendar weeks
+    /// @details    Called after loading and when preferences change. Sorts only active date-mapped
+    ///             Lists, saves before publishing the new snapshots, and leaves personal Lists intact.
+    /// @return     (Void) publishes persisted chronological Day contents or reports a save failure
+    ///
+    func applyDayListOrderingPreference()
+    {
+        guard hasLoadedBoard, PlanPreferencesStore.load().keepsDayListsInTimeOrder,
+              var document = calendarDocument else
+        {
+            return
+        }
+        var currentLists = lists
+        for index in document.weeks.indices
+        {
+            let week = document.weeks[index]
+            let source = week.startKey == document.currentWeekKey ? lists : week.collection.lists
+            let ordered = DayListTimeOrder.lists(
+                source, dayListIDs: Set(week.dayListIDs.values), calendar: document.calendar)
+            document.weeks[index].collection.lists = ordered
+            if week.startKey == document.currentWeekKey
+            {
+                currentLists = ordered
+            }
+        }
+        guard document != calendarDocument || currentLists != lists else
+        {
+            return
+        }
+        do
+        {
+            try PlanningCalendarStore.save(document)
+            try KanbanBoardPersistence.saveListsChecked(currentLists)
+            calendarDocument = document
+            lists = currentLists
+            if let displayed = displayedPlanningWeek
+            {
+                displayedPlanningWeek = document.weeks.first
+                {
+                    $0.id == displayed.id
+                }
+            }
+        }
+        catch
+        {
+            DatabaseActivity.shared.report(error.localizedDescription)
+        }
+    }
+
+
+    ///
     /// @fcn        AppRootView.persistCurrentPlanningWeek
     /// @brief      Persist the current week's live lists and bookmarks
     /// @details    Updates the retained calendar from the current workspace and reports save failures through
@@ -130,6 +182,17 @@ extension AppRootView
             }
 
         }
+
+        if PlanPreferencesStore.load().keepsDayListsInTimeOrder
+        {
+            let ordered = DayListTimeOrder.lists(
+                lists, dayListIDs: Set(current.dayListIDs.values), calendar: document.calendar)
+            if ordered != lists
+            {
+                lists = ordered
+            }
+        }
+        current.collection.lists = lists
 
         document.upsert(current)
         guard document != calendarDocument else
@@ -319,6 +382,13 @@ extension AppRootView
         guard var document = calendarDocument else
         {
             return false
+        }
+
+        var week = week
+        if PlanPreferencesStore.load().keepsDayListsInTimeOrder
+        {
+            week.collection.lists = DayListTimeOrder.lists(
+                week.collection.lists, dayListIDs: Set(week.dayListIDs.values), calendar: document.calendar)
         }
 
         if let existing = document.weeks.first(where:

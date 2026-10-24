@@ -835,6 +835,8 @@ struct TodayFocusSection: View
 struct TodayFocusCardDetailView: View
 {
 
+    @AppStorage(BoardAppearance.weekStorageKey) private var subtitleBoardAppearanceData = Data()
+
 
     @State private var keyboardCard: KanbanCard?
     let card:                        KanbanCard
@@ -935,6 +937,15 @@ struct TodayFocusCardDetailView: View
             )
             .id(card.id)
             .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
+            .environment(\.inheritedSubtitleItalic,
+                ((try? BoardAppearance.decodeWeek(subtitleBoardAppearanceData)) ?? BoardAppearance())
+                    .resolvedSubtitleItalic(list: lists.first
+                    {
+                        $0.cards.contains
+                        {
+                            $0.id == card.id
+                        }
+                    }?.appearance))
         }
 
     }

@@ -131,6 +131,19 @@ struct ItemAppearanceSheet: View
 
                 }
 
+                Section("Subtitle style")
+                {
+                    Picker("Italic subtitle", selection: $draft.subtitleItalic)
+                    {
+                        Text("Inherit").tag(Optional<Bool>.none)
+                        Text("Regular").tag(Optional(false))
+                        Text("Italic").tag(Optional(true))
+                    }
+                    .accessibilityIdentifier("appearance.subtitleItalic")
+                    Text("Inherit uses the parent List or Board setting. This also becomes the default for items inside a List.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
                 if draftDisplay == .card
                 {
 
@@ -609,6 +622,23 @@ struct BoardAppearanceSheet: View
                         .pickerStyle(.menu)
                     }
 
+                }
+
+                Section("Subtitle style")
+                {
+                    Toggle("Italic subtitle", isOn: Binding(
+                        get:
+                        {
+                            draft.subtitleItalic == true
+                        },
+                        set:
+                        {
+                            draft.subtitleItalic = $0 ? true : nil
+                        }
+                    ))
+                    .accessibilityIdentifier("boardAppearance.subtitleItalic")
+                    Text("Sets the default for this Board, its Lists, and their Cards and Notes. Individual items can override it.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
 
                 Section("Card display")

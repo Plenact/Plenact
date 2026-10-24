@@ -1544,6 +1544,8 @@ struct ContentView: View
                 }
 
             }
+            .environment(\.inheritedSubtitleItalic, currentBoardAppearance.resolvedSubtitleItalic(
+                list: isStandaloneListView ? lists.first?.appearance : nil))
             .onDisappear
             {
                 persistViewport()
@@ -1632,6 +1634,14 @@ struct ContentView: View
                 .id(card.id)
                 .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
                 .environment(\.cardMovementSource, personalCollectionID)
+                .environment(\.inheritedSubtitleItalic, currentBoardAppearance.resolvedSubtitleItalic(
+                    list: lists.first
+                    {
+                        $0.cards.contains
+                        {
+                            $0.id == card.id
+                        }
+                    }?.appearance))
             }
 
             .fullScreenCover(

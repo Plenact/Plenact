@@ -2,7 +2,7 @@
 // @file       BackgroundSurfaces.swift
 // @brief      Appearance rendering and independent background storage
 // @details    Resolves palette values, item visuals, and collection backgrounds while keeping
-//             custom background photos separate from attachment pruning.
+//             custom background photos separate from attachment pruning. Supplies inherited subtitle styling.
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -774,4 +774,41 @@ struct CollectionBackgroundSurface: View
         .accessibilityHidden(true)
     }
 
+}
+
+
+///
+/// Supplies the resolved parent subtitle style to nested presentations
+///
+/// @section    Purpose
+///     Keeps inheritance available in previews, navigation destinations, and appearance sheets
+///     while allowing each item to apply its own optional override.
+///
+private struct SubtitleItalicKey: EnvironmentKey
+{
+
+    static let defaultValue = false
+}
+
+
+///
+/// Exposes the parent subtitle style within the workspace
+///
+/// @section    Purpose
+///     Carries a display-only inherited value without rewriting descendants' stored appearance.
+///
+extension EnvironmentValues
+{
+
+    var inheritedSubtitleItalic: Bool
+    {
+        get
+        {
+            self[SubtitleItalicKey.self]
+        }
+        set
+        {
+            self[SubtitleItalicKey.self] = newValue
+        }
+    }
 }

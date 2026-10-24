@@ -1,0 +1,41 @@
+name: Publish tagged revision history
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source and all tags
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate and extract curated notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 Tools/release_notes.py --check --tag "$RELEASE_TAG" --output "$RUNNER_TEMP/plenact-release.md"
+
+      - name: Publish this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "A release already exists for $RELEASE_TAG; preserving its published notes."
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" --verify-tag \
+            --title "Plenact $RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/plenact-release.md"

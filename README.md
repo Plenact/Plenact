@@ -20,23 +20,15 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
-- Bug! Where after applying the Jmr template, I think it was, half of the lower toolbar's background disappears!
+	- Dragging on the Today view slogan rolls off gradually, and not immediate like present
 
-- Dragging on the Today view slogan rolls off gradually, and not immediate like present
-
-- Careful keyboard upper buttons selection and actions for all keyboard locations in app
-
-- Lower toolbar background cut in half after applying Jmr template?
+	- Careful keyboard upper buttons selection and actions for all keyboard locations in app
 
 - If all cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
 
-- Random header color selector option for cards
+	- Random header color selector option for cards and color thems
 
 - Tapping a card's dates, from the card preview in the List view raises a popup to modify the dates of that card in-place
-
-- Tapping the 'Important' star of a card marked 'Important' in the list view raises a prompt, "Do you want to mark not important?"
-
-- Tapping an important card's star, in the List view marks it not-important (with a star outline placeholder, to undo that if they want, as long as they stay in that view)
 
 - History of edits to each card!!! ?
 

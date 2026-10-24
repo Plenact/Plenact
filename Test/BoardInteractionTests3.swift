@@ -199,4 +199,65 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(BoardListReordering.edgeDirection(at: 83, viewportWidth: 100), 1)
     }
 
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testToolbarBackgroundRetainsHomeIndicatorCoverageWithoutInheritedInsets
+    /// @brief      Verify that a transient missing safe-area environment does not uncover the footer
+    /// @details    Renders the actual toolbar surface over a conspicuous green workspace, with an explicit
+    ///             home-indicator allowance and no inherited container inset. Checks pixels in the controls'
+    ///             background and the lower reserved strip independently of the toolbar buttons.
+    ///
+    /// @return     (Void) records rendered background coverage assertions
+    /// @throws     Image rendering or bitmap fixture errors propagate to XCTest
+    ///
+    @MainActor
+    func testToolbarBackgroundRetainsHomeIndicatorCoverageWithoutInheritedInsets() throws
+    {
+
+        for layout in [BottomToolbarLayout.phoneRegular, .phoneCompact, .padRegular, .padCompact]
+        {
+            for reportedInset: CGFloat in [0, 21, 34]
+            {
+
+                let height = layout.height
+                let inset = max(reportedInset, layout.safeAreaAllowance)
+                let content = ZStack(alignment: .top)
+                {
+
+                    Color(red: 0, green: 1, blue: 0)
+                    Color.clear
+                    .frame(height: height)
+                    .background
+                    {
+
+                        BottomToolbarBackground(topInset: layout.backgroundTopInset, bottomInset: inset)
+                    }
+                }
+                .frame(width: 200, height: height + inset)
+
+                let renderer = ImageRenderer(content: content)
+                renderer.scale = 1
+                let image = try XCTUnwrap(renderer.uiImage?.cgImage)
+                let data = try XCTUnwrap(image.dataProvider?.data)
+                let bytes = try XCTUnwrap(CFDataGetBytePtr(data))
+                XCTAssertEqual(image.bitsPerPixel, 32)
+                for y in [Int((layout.backgroundTopInset + height) / 2), Int(height + inset) - 2]
+                {
+
+                    let offset = y * image.bytesPerRow + 100 * 4
+                    let uncovered = bytes[offset] < 25 && bytes[offset + 1] > 230 && bytes[offset + 2] < 25
+                    XCTAssertFalse(uncovered, "Toolbar background is missing at y=\(y), bottom inset=\(inset)")
+                }
+                if layout.backgroundTopInset > 0
+                {
+
+                    let offset = Int(layout.backgroundTopInset / 2) * image.bytesPerRow + 100 * 4
+                    let clearTopGap = bytes[offset] < 25 && bytes[offset + 1] > 230 && bytes[offset + 2] < 25
+                    XCTAssertTrue(clearTopGap, "The preset overlap gap must remain transparent")
+                }
+            }
+        }
+    }
+
 }

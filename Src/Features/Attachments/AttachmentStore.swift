@@ -322,8 +322,7 @@ enum CardAttachmentStore
         }
 
 
-        return
-        documentsURL
+        return documentsURL
         .appendingPathComponent(directoryName, isDirectory: true)
         .appendingPathComponent(fileName, isDirectory: false)
     }

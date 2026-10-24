@@ -506,8 +506,7 @@ struct ContentView: View
 
         var seenMembers: Set<String> = [] /* Track unique members to avoid duplicates */
 
-        return
-        lists
+        return lists
         .flatMap(\.cards)
         .filter
         {

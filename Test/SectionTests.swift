@@ -477,7 +477,7 @@ extension PlenactBoardDocumentTests
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)
         XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 5)
         XCTAssertEqual(
             defaults.data(forKey: PlanningRoutineStore.key), bytes, "Loading examples does not write user data")
         try PlanningRoutineStore.validate(upgraded)

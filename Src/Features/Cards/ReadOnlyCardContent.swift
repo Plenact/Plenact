@@ -84,6 +84,8 @@ struct ReadOnlyCardContent: View
                     Text(PlanRichText.display(body)).textSelection(.enabled)
                 }
 
+                CardLocationRow(location: card.location)
+
                 if let start = card.startDate
                 {
 

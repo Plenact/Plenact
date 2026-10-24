@@ -692,7 +692,7 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
         let names = [
             "word": "Title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
             "isTitleChecked": "Completion", "startDate": "Start date", "startDateKind": "Start date",
-            "dueDate": "Due date", "dueDateKind": "Due date", "checklists": "Checklists",
+            "location": "Location", "dueDate": "Due date", "dueDateKind": "Due date", "checklists": "Checklists",
             "members": "Members", "labelIDs": "Labels", "attachments": "Attachments",
             "coverAttachmentID": "Cover image", "editingLocked": "Editing lock",
             "appearance": "Appearance", "reactions": "Reactions",

@@ -253,6 +253,15 @@ extension CardDetailView
             {
 
 
+                CardLocationRow(location: location, canEdit: !isEditingLocked)
+                {
+                    activeSheet = .location
+                }
+                if location != nil || !isEditingLocked
+                {
+                    Divider()
+                }
+
                 if startDate != nil
                 {
 

@@ -25,6 +25,511 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMapSearchTracksQueriesSelectionAndFailureStates
+    /// @brief      Keep map-search results distinct from an accepted Card location
+    /// @details    Uses a deterministic provider to verify normalization, no implicit selection,
+    ///             query edits, empty results, failures, and clearing without any Card persistence.
+    /// @return     (Void) records query, selection, and feedback regressions
+    ///
+    @MainActor
+    func testCardMapSearchTracksQueriesSelectionAndFailureStates() async
+    {
+
+        let place = CardLocationSearchResult(name: "Coffee Shop", address: "123 Main St", latitude: 41.88, longitude: -87.63)
+        var queries: [String] = []
+        let model = CardLocationSearchModel(query: "  Coffee \n")
+        {
+
+        query, _ in
+            queries.append(query)
+            if query == "Failure"
+            {
+
+                throw NSError(domain: "MapSearchFixture", code: 1)
+            }
+
+            return query == "Coffee" ? [place] : []
+        }
+
+        await model.search()
+        XCTAssertEqual(queries, ["Coffee"])
+        XCTAssertEqual(model.phase, .results)
+        XCTAssertEqual(model.results, [place])
+        XCTAssertNil(model.selectedResult, "Search must not choose a result without user selection")
+        model.selectedID = place.id
+        XCTAssertEqual(model.selectedResult?.savedLocation, "Coffee Shop, 123 Main St")
+        model.query = "No matches"
+        XCTAssertNil(model.selectedResult)
+        XCTAssertTrue(model.results.isEmpty)
+        await model.search()
+        XCTAssertEqual(model.phase, .empty)
+        model.query = "Failure"
+        await model.search()
+        XCTAssertEqual(model.phase, .failed)
+        model.query = " \n "
+        await model.search()
+        XCTAssertEqual(model.phase, .idle)
+        XCTAssertEqual(queries.count, 3, "Blank text must not make a service request")
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMapSearchIgnoresResponsesFromAnOlderQuery
+    /// @brief      Prevent a slow earlier search from replacing current matches
+    /// @details    Completes injected requests in reverse order and verifies selected current
+    ///             results remain intact; leaving the search invalidates the selection.
+    /// @return     (Void) records stale-response and cancellation regressions
+    ///
+    @MainActor
+    func testCardMapSearchIgnoresResponsesFromAnOlderQuery() async
+    {
+
+        let oldStarted = expectation(description: "Older request started")
+        let newStarted = expectation(description: "Newer request started")
+        var pending: [String: CheckedContinuation<[CardLocationSearchResult], Error>] = [:]
+        let model = CardLocationSearchModel(query: "Old")
+        {
+
+        query, _ in
+            try await withCheckedThrowingContinuation
+            {
+
+                pending[query] = $0
+                if query == "Old"
+                {
+
+                    oldStarted.fulfill()
+                }
+
+                else
+                {
+
+                    newStarted.fulfill()
+                }
+
+            }
+
+        }
+
+        let oldTask = Task
+        {
+
+            await model.search()
+        }
+
+        await fulfillment(of: [oldStarted], timeout: 1)
+        model.query = "New"
+        let newTask = Task
+        {
+
+            await model.search()
+        }
+
+        await fulfillment(of: [newStarted], timeout: 1)
+        let current = CardLocationSearchResult(name: "New place", address: "New address", latitude: 40, longitude: -80)
+        pending["New"]?.resume(returning: [current])
+        await newTask.value
+        model.selectedID = current.id
+        pending["Old"]?.resume(returning: [CardLocationSearchResult(
+                    name: "Old place", address: "Old address", latitude: 41, longitude: -81)])
+        await oldTask.value
+        XCTAssertEqual(model.results, [current])
+        XCTAssertEqual(model.selectedResult, current)
+        model.cancel()
+        XCTAssertEqual(model.phase, .idle)
+        XCTAssertTrue(model.results.isEmpty)
+        XCTAssertNil(model.selectedResult)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMapSearchTaskCancellationDiscardsPendingResults
+    /// @brief      Return to idle when the active search task is cancelled
+    /// @details    An injected provider intentionally finishes after cancellation, proving that
+    ///             its late response cannot become selectable or leave a permanent loading state.
+    /// @return     (Void) records cancelled-request state regressions
+    ///
+    @MainActor
+    func testCardMapSearchTaskCancellationDiscardsPendingResults() async
+    {
+
+        let started = expectation(description: "Search started")
+        var pending: CheckedContinuation<[CardLocationSearchResult], Error>?
+        let model = CardLocationSearchModel(query: "Place")
+        {
+
+        _, _ in
+            try await withCheckedThrowingContinuation
+            {
+
+                pending = $0
+                started.fulfill()
+            }
+
+        }
+
+        let task = Task
+        {
+
+            await model.search()
+        }
+
+        await fulfillment(of: [started], timeout: 1)
+        task.cancel()
+        pending?.resume(returning: [CardLocationSearchResult(
+                    name: "Cancelled place", address: "Address", latitude: 40, longitude: -80)])
+        await task.value
+        XCTAssertEqual(model.phase, .idle)
+        XCTAssertTrue(model.results.isEmpty)
+        XCTAssertNil(model.selectedResult)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMapSearchSelectionBuildsUsefulPlaceText
+    /// @brief      Retain a place and distinguishing address without duplicated display text
+    /// @details    Covers named places, address-only results, duplicate names, and coordinate
+    ///             fallback so the existing preferred-provider links can reopen the chosen place.
+    /// @return     (Void) records location-text formatting regressions
+    ///
+    func testCardMapSearchSelectionBuildsUsefulPlaceText()
+    {
+
+        XCTAssertEqual(CardLocationSearchResult(name: "Library", address: "12 Main St", latitude: 1, longitude: 2)
+            .savedLocation, "Library, 12 Main St")
+        XCTAssertEqual(CardLocationSearchResult(name: "12 MAIN ST", address: "12 Main St", latitude: 1, longitude: 2)
+            .savedLocation, "12 MAIN ST")
+        XCTAssertEqual(CardLocationSearchResult(name: " ", address: "12 Main St", latitude: 1, longitude: 2)
+            .savedLocation, "12 Main St")
+        XCTAssertEqual(CardLocationSearchResult(name: "", address: "", latitude: 1, longitude: 2)
+            .savedLocation, "1.000000, 2.000000")
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardMapSearchRendersResultsWithoutAcceptingOrSaving
+    /// @brief      Render the searchable map with a deterministic place and explicit selection
+    /// @details    Does not contact the live search service, launch another app, or accept a
+    ///             result during rendering. Captures a native map picker preview for visual review.
+    /// @return     (Void) records unintended selection callbacks or map-picker rendering failures
+    /// @throws     Propagates missing simulator scene and preview image errors
+    ///
+    @MainActor
+    func testCardMapSearchRendersResultsWithoutAcceptingOrSaving() async throws
+    {
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+            {
+                $0 as? UIWindowScene
+            } .first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer
+        {
+
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+
+        let place = CardLocationSearchResult(name: "Coffee on Main", address: "123 Main St, Chicago, IL",
+            latitude: 41.8827, longitude: -87.6233)
+        let model = CardLocationSearchModel(query: "Coffee")
+        {
+
+        _, _ in
+            [place]
+        }
+
+        var selections: [String] = []
+        let host = UIHostingController(rootView: NavigationStack
+            {
+
+                CardLocationSearchView(query: "Coffee", model: model)
+                {
+
+                    selections.append($0)
+                }
+
+            })
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        for _ in 0 ..< 60
+        {
+
+            if model.results == [place]
+            {
+
+                break
+            }
+
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        XCTAssertEqual(model.results, [place])
+        model.selectedID = place.id
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertEqual(model.selectedResult, place)
+        XCTAssertTrue(selections.isEmpty, "Selecting a result must not accept it until Use this location")
+        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        {
+
+        _ in
+            host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+        }
+
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-card-location-map-search.png")
+        try XCTUnwrap(image.pngData()).write(to: url)
+        print("CARD_MAP_SEARCH_RENDER=" + url.path)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardLocationsPersistCopyAndDecodeLegacyRecords
+    /// @brief      Retain optional place text across storage and destination-local copies
+    /// @details    Legacy records have no location; outer whitespace is trimmed and blank values
+    ///             remain absent. Relocation retains the place without inventing new content.
+    /// @return     (Void) records location compatibility and retention regressions
+    /// @throws     Propagates fixture encoding and decoding errors
+    ///
+    func testCardLocationsPersistCopyAndDecodeLegacyRecords() throws
+    {
+
+        let card = KanbanCard(id: 1201, word: "Meet for coffee", listTitle: "Today",
+            location: " \n Café & Bakery, 12 Main St \n")
+        XCTAssertEqual(card.location, "Café & Bakery, 12 Main St")
+        let encoded = try JSONEncoder().encode(card)
+        XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: encoded), card)
+        XCTAssertEqual(card.replacingLocation(id: 1202, listTitle: "Tomorrow").location, card.location)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        legacy.removeValue(forKey: "location")
+        XCTAssertNil(try JSONDecoder().decode(KanbanCard.self,
+                from: JSONSerialization.data(withJSONObject: legacy)).location)
+        XCTAssertNil(KanbanCard(id: 1, word: "Empty", listTitle: "Today", location: " \n ").location)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testCardLocationHistoryAndLocksUseNormalContentRules
+    /// @brief      Record saved place changes and enforce the existing Card lock
+    /// @details    Adding and removing a location use ordinary List history. A locked Card cannot
+    ///             accept a place edit, and an in-place date change preserves live location text.
+    /// @return     (Void) records content-history, lock, and schedule-merge regressions
+    ///
+    func testCardLocationHistoryAndLocksUseNormalContentRules()
+    {
+
+        let original = KanbanCard(id: 1301, word: "Gym", listTitle: "Today")
+        var list = KanbanList(id: 13, title: "Today", cards: [original])
+        var located = original
+        located.location = "123 Fitness Lane"
+        list.cards[0] = located
+        XCTAssertTrue(list.cards[0].editHistory?.last?.changes.contains
+            {
+                $0.field == "location"
+            }
+            == true)
+        XCTAssertTrue(list.cards[0].editHistory?.last?.summary.contains("Location") == true)
+        let copied = list.cards[0].replacingLocation(id: 1302, listTitle: "Tomorrow")
+        XCTAssertEqual(copied.location, located.location)
+        XCTAssertEqual(copied.editHistory, list.cards[0].editHistory)
+        var lists = [list]
+        var dateEdit = original
+        dateEdit.startDate = .now
+        dateEdit.startDateKind = .time
+        XCTAssertTrue(TodayFocusDateUpdate.apply(dateEdit, isStart: true, to: &lists))
+        XCTAssertEqual(lists[0].cards[0].location, located.location)
+        var locked = lists[0].cards[0]
+        locked.isEditingLocked = true
+        var edited = locked
+        edited.location = "Different place"
+        XCTAssertFalse(locked.acceptsContentUpdate(edited))
+        var removed = list.cards[0]
+        removed.location = nil
+        list.cards[0] = removed
+        XCTAssertNil(list.cards[0].location)
+        XCTAssertEqual(list.cards[0].editHistory?.count, 2)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testPreferredMapsAppDefaultsAndPersistsWithoutAProfile
+    /// @brief      Default fresh and older settings to Apple Maps and retain Google selection
+    /// @details    Uses an isolated preference domain and checks Codable persistence without
+    ///             creating a profile or modifying the running app's preferences.
+    /// @return     (Void) records provider default and storage regressions
+    /// @throws     Propagates decoding and isolated-domain creation errors
+    ///
+    func testPreferredMapsAppDefaultsAndPersistsWithoutAProfile() throws
+    {
+
+        XCTAssertEqual(LocalProfilePreferences().preferredMapsApp, .apple)
+        XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self,
+                from: Data("{}".utf8)).preferredMapsApp, .apple)
+        let suite = "MapsPreference." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        let preferences = LocalProfilePreferences(preferredMapsApp: .google)
+        PlanPreferencesStore.save(preferences, to: defaults)
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults).preferredMapsApp, .google)
+        XCTAssertNil(LocalProfileStore.load(from: defaults))
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLocationLinksEncodePlaceTextWithoutRequestingDirections
+    /// @brief      Keep every place query inside the selected provider's official search URL
+    /// @details    Covers Unicode, literal plus signs, reserved punctuation, multiline addresses,
+    ///             empty values, and text resembling a URL without changing the destination host.
+    /// @return     (Void) records query-encoding and place-only routing regressions
+    /// @throws     Propagates missing URL and component errors
+    ///
+    func testLocationLinksEncodePlaceTextWithoutRequestingDirections() throws
+    {
+
+        for provider in PreferredMapsApp.allCases
+        {
+
+            XCTAssertNil(provider.placeURL(for: nil))
+            XCTAssertNil(provider.placeURL(for: " \n "))
+            for place in ["Café + Tea & Books #2", "123 Main St\nChicago, IL", "https://example.com/?x=1&y=2"]
+            {
+
+                let url = try XCTUnwrap(provider.placeURL(for: place))
+                let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+                XCTAssertEqual(components.scheme, "https")
+                XCTAssertEqual(components.host, provider == .apple ? "maps.apple.com" : "www.google.com")
+                let parameters = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map
+                    {
+                        ($0.name, $0.value ?? "")
+                    })
+                XCTAssertEqual(parameters[provider == .apple ? "q" : "query"], place)
+                XCTAssertNil(parameters["daddr"])
+                XCTAssertNil(parameters["saddr"])
+                XCTAssertNil(parameters["destination"])
+                XCTAssertNil(parameters["travelmode"])
+                if provider == .google
+                {
+
+                    XCTAssertEqual(components.path, "/maps/search/")
+                    XCTAssertEqual(parameters["api"], "1")
+                }
+
+                XCTAssertTrue(url.absoluteString.contains("%2B") || !place.contains("+"))
+            }
+
+        }
+
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testLocationEditorAndRowsRenderWithoutSavingOrLaunchingMaps
+    /// @brief      Render the native editor and saved-place controls without side effects
+    /// @details    Exercises empty, saved, and read-only rows plus the provider settings picker.
+    ///             Captures a preview for visual review and asserts rendering never invokes actions.
+    /// @return     (Void) records unintended mutations or external map launches
+    /// @throws     Propagates simulator scene and preview image errors
+    ///
+    @MainActor
+    func testLocationEditorAndRowsRenderWithoutSavingOrLaunchingMaps() async throws
+    {
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+            {
+                $0 as? UIWindowScene
+            } .first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        defer
+        {
+
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+
+        var saves = 0
+        var edits = 0
+        var opens = 0
+        let rows = NavigationStack
+        {
+
+            Form
+            {
+
+                Section("Details")
+                {
+
+                    CardLocationRow(location: "Café & Bakery, 12 Main St", canEdit: true)
+                    {
+                        edits += 1
+                    }
+
+                    CardLocationRow(location: nil, canEdit: true)
+                    {
+                        edits += 1
+                    }
+
+                    CardLocationRow(location: "A saved read-only location")
+                }
+
+                MapsAppSettingsSection(selection: .constant(.apple))
+            }
+            .navigationTitle("Card locations")
+        }
+        .environment(\.openURL, OpenURLAction
+            {
+
+            _ in
+                opens += 1
+                return .handled
+            })
+        let rowHost = UIHostingController(rootView: rows)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = rowHost
+        window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(300))
+        let image = UIGraphicsImageRenderer(bounds: rowHost.view.bounds).image
+        {
+
+        _ in
+            rowHost.view.drawHierarchy(in: rowHost.view.bounds, afterScreenUpdates: true)
+        }
+
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-card-location-rows.png")
+        try XCTUnwrap(image.pngData()).write(to: file)
+        print("CARD_LOCATION_RENDER=" + file.path)
+        let editor = UIHostingController(rootView: CardLocationEditorSheet(location: "Existing place")
+            {
+
+            _ in
+                saves += 1
+                return true
+            })
+        window.rootViewController = editor
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(saves, 0)
+        XCTAssertEqual(edits, 0)
+        XCTAssertEqual(opens, 0)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingDefaultsOnAndPersistsOptOut
     /// @brief      Enable automatic Day ordering for fresh and legacy preferences
     /// @details    Keeps an explicit opt-out through standalone preferences and Codable round trips.

@@ -10,6 +10,12 @@ Changes after v1.4; no new version number has been assigned.
 
 ### Added
 
+- Give bundled Gym Cards the Oshkosh Planet Fitness location and Work Cards Mercury Marine Plant 33. Fill matching empty locations once across existing editable Cards and routines, preserving custom locations and keeping a pre-update backup.
+
+- Find Card locations with an embedded Apple Maps search, selectable place results, and a map preview. “Use this location” fills the editor draft; Save remains the only action that changes the Card.
+
+- Add optional Card locations with a tappable place link, separate edit/remove controls, and an app-wide Apple Maps or Google Maps preference. Apple Maps is the default; location changes use normal Card history and locking rules.
+
 - Keep Day Lists and Today’s Focus in time order by default, placing untimed Cards last. Turn off “Keep Day Lists in time order” in settings for manual Day ordering; section boundaries and equal-time order are preserved.
 
 - Edit a Card’s start or due date directly from its Today’s Focus date or time label; saved changes immediately refresh the listing.

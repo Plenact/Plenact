@@ -742,6 +742,7 @@ struct FullMonthExample: Sendable
             preferences.todayFocusGroupsBySection = existing.todayFocusGroupsBySection
             preferences.todayFocusOrder = existing.todayFocusOrder
             preferences.keepsDayListsInTimeOrder = existing.keepsDayListsInTimeOrder
+            preferences.preferredMapsApp = existing.preferredMapsApp
             preferences.todayFocusItemCount = existing.todayFocusItemCount
             result[PlanPreferencesStore.key] = try encoder.encode(preferences)
         }

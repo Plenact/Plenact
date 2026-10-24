@@ -360,7 +360,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
                     descriptionOverride: slot.title == "Gym"
                     ? "Choose what fits today: gym, meditation, walking, or massage." : "",
                     subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime,
-                    dueDateKind: .dateAndTime)
+                    dueDateKind: .dateAndTime, location: ExampleCardLocations.location(for: slot.title))
             }
 
         }
@@ -464,7 +464,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
         vacation.weekdays = [2: 0]
         return Self(
             templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples,
-            defaultWeekID: jmrID, bundledRoutineRevision: 4)
+            defaultWeekID: jmrID, bundledRoutineRevision: 5)
     }()
 }
 
@@ -498,7 +498,7 @@ enum PlanningRoutineStore
     static func validate(_ value: PlanningRoutineLibrary) throws
     {
 
-        guard value.version == 1, (0 ... 4).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0 ... 5).contains(value.bundledRoutineRevision ?? 0),
         Set(value.templates.map(\.id)).count == value.templates.count,
         value.defaultWeekID == nil
         || value.templates.contains(where:
@@ -673,6 +673,17 @@ enum PlanningRoutineStore
             }
 
             result.bundledRoutineRevision = 4
+        }
+
+        if (result.bundledRoutineRevision ?? 0) < 5
+        {
+            for index in result.templates.indices
+            where result.templates[index].id == PlanningRoutineLibrary.jmrID && result.templates[index].collection.isActive
+            {
+                result.templates[index].collection.lists = ExampleCardLocations.updating(
+                    result.templates[index].collection.lists)
+            }
+            result.bundledRoutineRevision = 5
         }
 
         return result
@@ -1049,7 +1060,7 @@ enum PlanningTemplateApplication
                 listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout,
                 showsDueDateInList: card.showsDueDateInList,
                 startDateKind: card.startDateKind, dueDateKind: card.dueDateKind,
-                showsReactionsInPreviews: card.showsReactionsInPreviews)
+                showsReactionsInPreviews: card.showsReactionsInPreviews, location: card.location)
             NewCardAppearanceDefaults.apply(to: &created)
             return created
         }

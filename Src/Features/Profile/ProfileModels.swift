@@ -809,6 +809,7 @@ struct LocalProfilePreferences: Hashable, Codable
     var randomizesNewCardHeaders:     Bool
     var randomizesNewCardBackgrounds: Bool
     var showsDueDatesOnNewCards:      Bool
+    var preferredMapsApp:             PreferredMapsApp
     var keepsDayListsInTimeOrder:     Bool
     var todayFocusOrder:              TodayFocusOrder
     var todayFocusGroupsBySection:    Bool
@@ -838,6 +839,7 @@ struct LocalProfilePreferences: Hashable, Codable
         case usesLargeControls
         case randomizesNewCardHeaders, randomizesNewCardBackgrounds
         case showsDueDatesOnNewCards
+        case preferredMapsApp
         case keepsDayListsInTimeOrder
         case todayFocusOrder, todayFocusGroupsBySection, todayFocusHidesCompleted
         case todayFocusIncludesImportant, todayFocusIncludesBookmarked, todayFocusIncludesUpNext
@@ -864,6 +866,7 @@ struct LocalProfilePreferences: Hashable, Codable
     /// @param[in]  randomizesNewCardHeaders      Whether new Cards receive a saved random header color
     /// @param[in]  randomizesNewCardBackgrounds  Whether new Cards receive a saved random
     ///             background color
+    /// @param[in]  preferredMapsApp              Provider used when opening Card locations
     /// @param[in]  keepsDayListsInTimeOrder      Keep Day Lists and Focus timed-first; enabled by default
     /// @param[in]  todayFocusOrder               Selected ordering policy when automatic Day ordering is disabled
     /// @param[in]  todayFocusGroupsBySection     Whether Focus entries retain their Day section
@@ -902,7 +905,8 @@ struct LocalProfilePreferences: Hashable, Codable
         scrollsOverflowingTitles: Bool = true,
         enablesLowerCornerBack: Bool = true,
         importanceStarStyle: ImportanceStarStyle = .tucked,
-        keepsDayListsInTimeOrder: Bool = true
+        keepsDayListsInTimeOrder: Bool = true,
+        preferredMapsApp: PreferredMapsApp = .apple
     )
     {
 
@@ -913,6 +917,7 @@ struct LocalProfilePreferences: Hashable, Codable
         self.todayFocusIncludesUpNext = todayFocusIncludesUpNext
         self.todayFocusIncludesImportant = todayFocusIncludesImportant
         self.todayFocusIncludesBookmarked = todayFocusIncludesBookmarked
+        self.preferredMapsApp = preferredMapsApp
         self.keepsDayListsInTimeOrder = keepsDayListsInTimeOrder
         self.todayFocusOrder = todayFocusOrder
         self.todayFocusGroupsBySection = todayFocusGroupsBySection
@@ -1109,7 +1114,8 @@ struct LocalProfilePreferences: Hashable, Codable
             importanceStarStyle: try container.decodeIfPresent(ImportanceStarStyle.self, forKey: .importanceStarStyle)
             ?? .tucked,
             keepsDayListsInTimeOrder: try container.decodeIfPresent(Bool.self, forKey: .keepsDayListsInTimeOrder)
-            ?? true
+            ?? true,
+            preferredMapsApp: try container.decodeIfPresent(PreferredMapsApp.self, forKey: .preferredMapsApp) ?? .apple
         )
     }
 

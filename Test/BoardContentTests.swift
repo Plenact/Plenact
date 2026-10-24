@@ -189,7 +189,7 @@ extension PlenactBoardDocumentTests
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(upgraded.templates[index].collection.lists[0].cards[0].labelIDs, ["custom-tag"])
         XCTAssertFalse(upgraded.templates[index].collection.lists[0].cards[1].labelIDs.isEmpty)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 5)
     }
 
 

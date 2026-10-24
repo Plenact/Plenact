@@ -423,6 +423,7 @@ struct AppRootView: View
 
             hasLoadedBoard = true
             applyDayListOrderingPreference()
+            applyExampleCardLocations()
         }
 
     }

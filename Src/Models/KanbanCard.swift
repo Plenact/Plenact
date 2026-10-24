@@ -47,6 +47,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     var labelIDs: [String]        /* Stable IDs of labels assigned to the card */
 
     var startDate:           Date?    /* Optional start date for the card                     */
+    var location:            String?  /* Optional place name or address opened in the preferred maps app */
     var dueDate:             Date?    /* Optional due date for the card                       */
     let createdAt:           Date?    /* Unknown for records created before timestamp support */
     var descriptionOverride: String?  /* Optional user-edited description                     */
@@ -192,7 +193,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             reactions: reactions,
             showsReactionsInPreviews: showsReactionsInPreviews,
             isEditingLocked: isEditingLocked,
-            editHistory: editHistory
+            editHistory: editHistory,
+            location: location
         )
     }
 
@@ -587,6 +589,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @param[in]  descriptionOverride       Optional user-edited description
     /// @param[in]  subtitleOverride          Optional user-edited Board subtitle
     /// @param[in]  presentation              Card or writing-first Note interface
+    /// @param[in]  location                  Optional place name or address; blank values mean no location
     /// @param[in]  createdAt                 Known creation time; nil preserves unknown legacy dates
     /// @param[in]  isEditingLocked           Whether content editing is protected until explicitly unlocked
     ///
@@ -616,12 +619,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil,
         sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date,
         dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil,
-        isEditingLocked: Bool = false, editHistory: [CardEditRecord]? = nil
+        isEditingLocked: Bool = false, editHistory: [CardEditRecord]? = nil, location: String? = nil
     )
     {
 
 
         self.editHistory = editHistory
+        self.location = CardLocation.normalized(location)
         self.editingLocked = isEditingLocked ? true : nil
         self.showsReactionsInPreviews = showsReactionsInPreviews
         self.reactions = reactions?.isEmpty == true ? nil : reactions
@@ -729,7 +733,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             dueDateKind: try container.decodeIfPresent(CardDateKind.self, forKey: .dueDateKind) ?? .date,
             reactions: try container.decodeIfPresent([ItemEmojiReaction].self, forKey: .reactions),
             showsReactionsInPreviews: try container.decodeIfPresent(Bool.self, forKey: .showsReactionsInPreviews),
-            isEditingLocked: try container.decodeIfPresent(Bool.self, forKey: .editingLocked) ?? false
+            isEditingLocked: try container.decodeIfPresent(Bool.self, forKey: .editingLocked) ?? false,
+            location: try container.decodeIfPresent(String.self, forKey: .location)
         )
         editHistory = try container.decodeIfPresent([CardEditRecord].self, forKey: .editHistory)
     }
@@ -753,6 +758,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         case isTitleChecked
         case startDate
         case dueDate
+        case location
         case showsDueDateInList
         case startDateKind
         case dueDateKind

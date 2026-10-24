@@ -1014,8 +1014,9 @@ struct AppRootView: View
     /// @brief      Build the custom destination bar and central New control
     /// @details    Honors navigation-label preferences and remains anchored at the screen bottom
     ///             while the keyboard overlays it. The decorative background extends through the
-    ///             bottom safe area independently of the measured controls. In portrait,
-    ///             its top edge is inset 20 points so New overlaps it without moving any controls.
+    ///             bottom safe area using an explicit device allowance, even if a sheet transition
+    ///             temporarily reports zero inherited inset. The preset top gap lets New overlap
+    ///             the surface without moving the controls.
     ///             New creates Cards from Today, Week and Activity, or a List from Plans;
     ///             a long press offers explicit Note, Card, List, and Board creation
     ///
@@ -1143,28 +1144,10 @@ struct AppRootView: View
         .background(alignment: .bottom)
         {
 
-            GeometryReader
-            {
-                geometry in
-                ZStack(alignment: .top)
-                {
-
-                    Image("TodayPaper")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-                    Color(red: 0.24, green: 0.17, blue: 0.12).opacity(0.54)
-                    Rectangle()
-                    .fill(Color.white.opacity(0.24))
-                    .frame(height: 1)
-                }
-
-            }
-
-            .padding(.top, layout.backgroundTopInset)
-            .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
-            .allowsHitTesting(false)
+            BottomToolbarBackground(
+                topInset: layout.backgroundTopInset,
+                bottomInset: max(bottomNavigationSafeInset, layout.safeAreaAllowance)
+            )
         }
 
         .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: -4)

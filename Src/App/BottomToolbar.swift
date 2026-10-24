@@ -1,8 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       BottomToolbar.swift
-// @brief      Device-specific bottom-toolbar layout
+// @brief      Device-specific bottom-toolbar geometry and stable background coverage
 // @details    Keeps explicit phone and tablet geometry independent of the workspace's stored
-//             planning content.
+//             planning content. Draws the footer surface through an explicit bottom allowance
+//             so sheet transitions cannot remove coverage by changing inherited safe-area rules.
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -98,4 +99,57 @@ struct BottomToolbarLayout
         height + max(0, safeAreaAllowance - bottomInset)
     }
 
+}
+
+
+///
+/// Draws the custom toolbar surface independently of its interactive controls
+///
+/// @section    Purpose
+///     Keep the paper, tint, and upper border together while covering the home-indicator region.
+///
+struct BottomToolbarBackground: View
+{
+
+    let topInset:    CGFloat  /* Transparent overlap above the paper surface */
+    let bottomInset: CGFloat  /* Explicit coverage below the control frame   */
+
+
+    ///
+    /// @fcn        BottomToolbarBackground.body
+    /// @brief      Render the paper-backed toolbar surface
+    /// @details    Extends the measured surface by the explicit bottom allowance instead of relying
+    ///             on inherited safe-area expansion. Retains the preset top gap, covers missing
+    ///             paper with an opaque base, and leaves control layout and hit testing unchanged.
+    ///
+    /// @return     (some View) decorative navigation background
+    ///
+    var body: some View
+    {
+
+        GeometryReader
+        {
+            geometry in
+            let surfaceHeight = max(0, geometry.size.height - topInset) + max(0, bottomInset)  /* Paper and tint coverage including the reserved bottom strip */
+            ZStack(alignment: .top)
+            {
+
+                Color(red: 0.83, green: 0.77, blue: 0.66)
+                Image("TodayPaper")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: surfaceHeight)
+                    .clipped()
+                Color(red: 0.24, green: 0.17, blue: 0.12).opacity(0.54)
+                Rectangle()
+                    .fill(Color.white.opacity(0.24))
+                    .frame(height: 1)
+            }
+            .frame(width: geometry.size.width, height: surfaceHeight, alignment: .top)
+            .offset(y: topInset)
+        }
+        .ignoresSafeArea(.container, edges: .horizontal)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }

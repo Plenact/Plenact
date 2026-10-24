@@ -173,8 +173,7 @@ enum TodayReviewSelection
                 return false
             }
 
-            return
-            !(review?.decisions.contains
+            return !(review?.decisions.contains
                 {
 
                     $0.source.resolve(in: [item]) != nil || $0.result.resolve(in: [item]) != nil

@@ -281,8 +281,6 @@ struct PlenactLoadingView: View
             {
 
                 PlenactLaunchSequence(progress: progress, animates: animatesLogo)
-                // Compensate for the wider row so the first icon stays anchored.
-                .offset(x: -8)
                 .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
             }
 

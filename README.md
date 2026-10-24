@@ -18,10 +18,6 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-- Hi and I noticed that the launch screen lower icons are not evenly balanced across the horizontal width of the screen, see attached for my sketch pad notes to observe that. Can you help us even out the horizontal alignment of the launch screens lower loading icons balanced evenly across the center of the view? :)
-
-## Next Things
-
 - Database
 
 - Website

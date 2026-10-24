@@ -2,6 +2,8 @@
 
 Version: 1.4   (10/23/26)
 
+Revision history: [Changelog](CHANGELOG.md) · [Published releases](https://github.com/Plenact/Plenact/releases)
+
 Plenact is an iPhone planning and organization app being built around a calm, list-based daily workflow. The current revision provides a Today front door and a horizontally navigable kanban Board for tasks, routines, ideas, and open work
 
 The product draws on lessons from successful traumatic brain injury recovery, with an emphasis on predictable navigation, readable information, and reduced cognitive load. Plenact may be useful to individuals, teams, and people in recovery settings, but it does not provide medical treatment and makes no clinical claims
@@ -16,21 +18,9 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
-
-!!
-
-This is going so great I really appreciate it, thank you Alex
-
-- Option for subtitles in italics?
-
-- tapped today's focus list items glow on tap selection
-
-- Begin a published revision history document
-
 - Activity sections for init reference cards on On the Table, In the Queue and Scheduled have the Activity section removed or hidden by default
 
-- If all cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
+- All cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
 
 ## Upcoming Development Work
 
@@ -50,11 +40,8 @@ This is going so great I really appreciate it, thank you Alex
 
 - Widget Extensions!
 
-### Carryover
+## Carryover
 
-- aNote note / Trello card view sharing, overlap and use considerations for data organization and presentation in Plenact
-
-	
 Opens
 
 - Ability to clear and reset and restart your database files
@@ -67,12 +54,7 @@ Opens
 
 
 
-
-
-
-- "This is beautiful! Hey, how many lines of .swift source code is this now? Please only count source code though, and make sure to not include in the count the white lines of no characters, function declarations, function header bars, comments or lines with only a bracket character on them
-
-## Product Direction
+# Product Direction
 
 Plenact is intended to grow across several related planning jobs:
 

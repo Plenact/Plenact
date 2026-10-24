@@ -427,6 +427,66 @@ struct TodayListDetailView: View
     }
 
 
+
+
+    ///
+    /// @fcn        TodayListDetailView.sessionGuidance(for:)
+    /// @brief      Build the visit-scoped information card
+    /// @details    Shares guidance state and header toggles across empty and populated list layouts.
+    ///
+    /// @param[in]  focusedList  Current list supplying content and appearance
+    /// @return     (some View) session-scoped list content
+    ///
+    private func sessionGuidance(for focusedList: KanbanList) -> some View
+    {
+
+        SessionListGuidance(
+            list: focusedList, labels: labelLibrary, toggleRequest: guidanceToggleRequest,
+            onPresentationChange:
+            {
+                guidanceFooterVisible = $0
+            }
+        )
+    }
+
+
+    ///
+    /// @fcn        TodayListDetailView.inlineCapture(for:)
+    /// @brief      Build the list capture controls
+    /// @details    Keeps empty-list capture in the guide row so its position follows the same animated height.
+    ///
+    /// @param[in]  focusedList  Current list supplying content and appearance
+    /// @return     (some View) session-scoped list content
+    ///
+    private func inlineCapture(for focusedList: KanbanList) -> some View
+    {
+
+        InlineListCapture(
+            list: focusedList, draft: $inlineCaptureDraft,
+            textColor: effectiveBoardAppearance.resolvedAddItemTextColor(
+                list: focusedList.appearance, title: focusedList.title)?.color ?? .primary,
+            isPresented: guidanceFooterVisible
+            ?? (!focusedList.cards.isEmpty
+                || DefaultListTutorial.guidance(for: focusedList.title) == nil),
+            onCreate: addCard,
+            onOpenComposer:
+            {
+                showsNewCard = true
+            }
+        )
+
+        .padding(12)
+        .background
+        {
+            cardDropSurface
+        }
+        .overlay(alignment: .top)
+        {
+            insertionMarker(before: nil)
+        }
+    }
+
+
     ///
     /// @fcn        TodayListDetailView.body
     /// @brief      Present today's selected list vertically with shared Week card actions
@@ -623,17 +683,13 @@ struct TodayListDetailView: View
                             }
 
 
-                            SessionListGuidance(
-                                list: focusedList, labels: labelLibrary, toggleRequest: guidanceToggleRequest,
-                                onPresentationChange:
-                                {
-                                    guidanceFooterVisible = $0
-                                }
-                            )
-                            .environment(\.defaultMinListRowHeight, 0)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                            if !focusedList.cards.isEmpty
+                            {
+                                sessionGuidance(for: focusedList)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                            }
 
                             ForEach(DaySections.visible(focusedList.cards))
                             {
@@ -796,28 +852,14 @@ struct TodayListDetailView: View
                             .moveDisabled(editMode != .active)
 
 
-                            InlineListCapture(
-                                list: focusedList, draft: $inlineCaptureDraft,
-                                textColor: effectiveBoardAppearance.resolvedAddItemTextColor(
-                                    list: focusedList.appearance, title: focusedList.title)?.color ?? .primary,
-                                isPresented: guidanceFooterVisible
-                                ?? (!focusedList.cards.isEmpty
-                                    || DefaultListTutorial.guidance(for: focusedList.title) == nil),
-                                onCreate: addCard,
-                                onOpenComposer:
+                            VStack(spacing: 0)
+                            {
+                                if focusedList.cards.isEmpty
                                 {
-                                    showsNewCard = true
+                                    sessionGuidance(for: focusedList)
                                 }
-                            )
 
-                            .padding(12)
-                            .background
-                            {
-                                cardDropSurface
-                            }
-                            .overlay(alignment: .top)
-                            {
-                                insertionMarker(before: nil)
+                                inlineCapture(for: focusedList)
                             }
                             .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
                             .listRowSeparator(.hidden)
@@ -825,6 +867,8 @@ struct TodayListDetailView: View
                         }
 
                         .listStyle(.plain)
+                        // List reads this value when sizing rows; the hidden guide must occupy zero height.
+                        .environment(\.defaultMinListRowHeight, 0)
                         .environment(\.editMode, $editMode)
                         .scrollContentBackground(.hidden)
                         .contentMargins(.top, 14, for: .scrollContent)

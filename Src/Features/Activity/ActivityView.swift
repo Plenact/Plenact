@@ -319,12 +319,15 @@ struct SavedCardsView: View
 
     @AppStorage(ActivityRecentStore.key) private var recentData = Data()
     @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
+    @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = false
+    @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion
     @State private var query = ""
     @State private var showsSearch = false
     @State private var confirmsClear = false
     @State private var historicalTarget: ActivityRecentResult?
     @State private var focus:            ActivityFocus = .saved
     @State private var selectedLabelID:  String?
+    @State private var activityHeaderHeight: CGFloat = 0
     @State private var focusLabelLibrary = LabelLibraryStore.load()
     private var focusCalendar: Calendar
     {
@@ -594,7 +597,7 @@ struct SavedCardsView: View
                 } .buttonStyle(.plain).accessibilityHint("Opens this item in " + result.location)
             }
 
-        } .padding(16).modifier(TodayPanelSurface())
+        } .padding(16)
     }
 
 
@@ -736,7 +739,26 @@ struct SavedCardsView: View
             if revisit == nil
             {
 
-                Text("Recent").font(.headline)
+                Button
+                {
+
+                    withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
+                    {
+
+                        usesSquareRecentCards.toggle()
+                    }
+                }
+                label:
+                {
+
+                    Text("Recent").font(.headline)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel("Recent card size")
+                .accessibilityValue(usesSquareRecentCards ? "Square" : "Full size")
+                .accessibilityHint(usesSquareRecentCards ? "Show full-size recent cards" : "Show square recent cards")
+                .accessibilityIdentifier("activity.recent.toggleSize")
             }
 
             if recents.isEmpty
@@ -768,21 +790,28 @@ struct SavedCardsView: View
                             label:
                             {
 
-                                VStack(alignment: .leading, spacing: 8)
+                                VStack(alignment: .leading, spacing: usesSquareRecentCards ? 6 : 8)
                                 {
 
                                     if showsCovers, let cover = result.card.coverAttachment
                                     {
 
-                                        CardCoverPreview(attachment: cover, height: 64).frame(height: 64).clipShape(
+                                        CardCoverPreview(attachment: cover, height: usesSquareRecentCards ? 40 : 64)
+                                            .frame(height: usesSquareRecentCards ? 40 : 64).clipShape(
                                             RoundedRectangle(cornerRadius: 8))
                                     }
 
-                                    Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(3)
+                                    Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(usesSquareRecentCards ? 2 : 3)
                                     Spacer(minLength: 0)
                                     Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                                 }
-                                .padding(12).frame(width: 156, height: showsCovers ? 210 : 144, alignment: .topLeading)
+                                .padding(12)
+                                .frame(
+                                    width: usesSquareRecentCards && !showsCovers ? 144 : 156,
+                                    height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144),
+                                    alignment: .topLeading
+                                )
+                                .clipped()
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             } .buttonStyle(.plain).accessibilityHint("Reopen this item in " + result.location)
                         }
@@ -790,6 +819,7 @@ struct SavedCardsView: View
                     }
 
                 }
+                .frame(height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144))
 
             }
 
@@ -877,11 +907,393 @@ struct SavedCardsView: View
     }
 
 
+
+
+    ///
+    /// @fcn        SavedCardsView.activityHeader
+    /// @brief      Present Activity controls and the independent horizontal Recent carousel
+    /// @details    Measures its natural height so short windows and accessibility text can retain
+    ///             a bounded header viewport while the browser keeps usable scrolling space.
+    ///
+    /// @return     (some View) Activity heading, optional search, revisit controls, and Recent cards
+    ///
+    private var activityHeader: some View
+    {
+
+        VStack(alignment: .leading, spacing: 16)
+        {
+
+            VStack(alignment: .leading, spacing: 4)
+            {
+
+                HStack
+                {
+
+                    Text("Activity").font(.largeTitle.weight(.bold))
+                    Spacer()
+                    Button
+                    {
+
+                        showsSearch.toggle();
+                        if !showsSearch
+                        {
+                            query = ""
+                        }
+
+                    }
+                    label:
+                    {
+
+                        Image(systemName: "magnifyingglass")
+                    }
+                    .accessibilityLabel("Search Activity")
+                    Menu
+                    {
+
+                        Toggle("Show cover previews", isOn: $showsCovers)
+                        Button("Clear recent history", systemImage: "trash", role: .destructive)
+                        {
+
+                            confirmsClear = true
+                        }
+
+                    }
+                    label:
+                    {
+
+                        Image(systemName: "ellipsis.circle")
+                    }
+                    .accessibilityLabel("Activity options")
+                }
+
+                if let revisit
+                {
+
+                    Text(revisit.detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+
+            }
+
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if showsSearch
+            {
+
+                TextField("Find in Activity", text: $query)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.search)
+            }
+
+            if revisit != nil
+            {
+
+                HStack
+                {
+
+                    Text(revisit?.title ?? "").font(.title2.weight(.semibold))
+                    Spacer()
+                    Button("All Activity")
+                    {
+                        revisitDestination.wrappedValue = nil
+                    }
+                    .font(.subheadline).frame(minHeight: 44)
+                }
+
+            }
+
+            if revisit == nil || revisit == .recent
+            {
+                recentSection
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+
+    ///
+    /// @fcn        SavedCardsView.activityBrowserContents
+    /// @brief      Present the selected Activity browser rows and archived collection actions
+    /// @details    Keeps existing owner-qualified opening and lifecycle callbacks inside a common
+    ///             bounded scroll viewport for Saved, Due soon, By label, and archive destinations.
+    ///
+    /// @return     (some View) selected browser content without its own outer scrolling surface
+    ///
+    private var activityBrowserContents: some View
+    {
+
+        VStack(alignment: .leading, spacing: 16)
+        {
+
+            if revisit == nil && focus != .saved
+            {
+
+                focusContent
+            }
+            else if revisit == nil || revisit == .bookmarked
+            {
+
+                VStack(alignment: .leading, spacing: 10)
+                {
+
+                    if savedCards.isEmpty && personalSavedCards.isEmpty
+                    {
+
+
+                        Label(
+                            query.isEmpty ? "No saved items yet" : "No saved items match",
+                            systemImage: "bookmark"
+                        )
+                        .font(.headline)
+                        Text("Open a card and tap the bookmark to keep it here.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                    else
+                    {
+
+                        if !savedCards.isEmpty
+                        {
+
+                            Text("Week")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            ForEach(savedCards)
+                            {
+                                result in
+                                Button
+                                {
+
+                                    if let item = availableFocusItems.first(where:
+                                        {
+
+                                            $0.isCurrent && $0.list.id == result.listID
+                                            && $0.card.id == result.card.id
+                                        })
+                                    {
+
+                                        openRecent(item)
+                                    }
+
+                                }
+                                label:
+                                {
+
+                                    HStack(spacing: 12)
+                                    {
+
+                                        Image(systemName: "bookmark.fill")
+                                        .foregroundStyle(.orange)
+                                        VStack(alignment: .leading, spacing: 3)
+                                        {
+
+                                            Text(result.card.word)
+                                            .foregroundStyle(.primary)
+                                            Text(result.listTitle)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        }
+
+
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tertiary)
+                                    }
+
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                    .contentShape(Rectangle())
+                                }
+
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Opens this saved item.")
+                                .accessibilityActions
+                                {
+
+                                    Button("Archive Card")
+                                    {
+                                        onArchiveCard(result.card.id)
+                                    }
+
+                                    Button("Delete Card")
+                                    {
+                                        deletingCard = result.card
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+
+                        if !personalSavedCards.isEmpty
+                        {
+
+                            Text("Plans")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            ForEach(personalSavedCards)
+                            {
+                                result in
+                                Button
+                                {
+
+                                    if let item = availableFocusItems.first(where:
+                                        {
+
+                                            $0.item.collectionID == result.collectionID
+                                            && $0.list.id == result.listID && $0.card.id == result.card.id
+                                        })
+                                    {
+
+                                        openRecent(item)
+                                    }
+
+                                }
+                                label:
+                                {
+
+                                    HStack(spacing: 12)
+                                    {
+
+                                        Image(systemName: "bookmark.fill")
+                                        .foregroundStyle(.orange)
+                                        VStack(alignment: .leading, spacing: 3)
+                                        {
+
+                                            Text(result.card.word)
+                                            .foregroundStyle(.primary)
+                                            Text(
+                                                result.collectionTitle == result.listTitle
+                                                ? result.collectionTitle
+                                                : result.collectionTitle + " · " + result.listTitle
+                                            )
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                        }
+
+
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.tertiary)
+                                    }
+
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                                    .contentShape(Rectangle())
+                                }
+
+                                .buttonStyle(.plain)
+                                .accessibilityHint(
+                                    "Opens this item in \(result.collectionTitle), \(result.listTitle).")
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+            }
+
+
+            if (revisit == .archived || (revisit == nil && focus == .saved))
+            && collections.contains(where:
+                {
+
+
+                    $0.isArchived == true
+                })
+            {
+
+                VStack(alignment: .leading, spacing: 12)
+                {
+
+                    Text("Archived Collections").font(.title2.weight(.semibold))
+                    ForEach(archivedCollections)
+                    {
+                        board in
+                        HStack
+                        {
+
+                            Image(systemName: "archivebox").foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 4)
+                            {
+
+                                Button(board.title)
+                                {
+                                    inspectingBoard = board
+                                }
+                                .font(.headline)
+                                Text(
+                                    "\(board.lists.count) lists · \(board.lists.flatMap(\.allCards).filter { !$0.isSectionDivider } .count) cards"
+                                )
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            }
+
+
+                            Spacer()
+                            Button("Restore")
+                            {
+                                onRestoreBoard(board.id)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel("Restore \(board.title)")
+                            Button("Delete", systemImage: "trash", role: .destructive)
+                            {
+                                deletingBoard = board
+                            }
+                            .labelStyle(.iconOnly)
+                            .accessibilityLabel("Delete \(board.title)")
+                        }
+
+                    }
+
+
+                    Text(
+                        "Restored boards appear in Plans. Restoring a Week Board creates a separate board and leaves your current Week unchanged."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                .padding(16)
+
+            }
+
+            if revisit == .archived && archivedCollections.isEmpty
+            {
+
+                ContentUnavailableView(
+                    "No archived collections", systemImage: "archivebox",
+                    description: Text(
+                        query.isEmpty
+                        ? "Collections you archive will be available here."
+                        : "No archived collections match this search."))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+
     ///
     /// @fcn        SavedCardsView.body
-    /// @brief      Present device-local bookmarks and archived full boards
-    /// @details    Shows available bookmarked cards with list navigation and, when present,
-    ///             archived board snapshots with Restore actions and nested-content counts
+    /// @brief      Present Recent items above a bounded, independently scrollable Activity browser
+    /// @details    Keeps the browser selector outside its scroll viewport and allocates the remaining
+    ///             view height to its rows. The header scrolls only when a short window or large
+    ///             text cannot fit naturally above the browser. Existing item routes remain intact.
     ///
     /// @return     (some View) paper-backed Saved surface
     /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
@@ -896,367 +1308,67 @@ struct SavedCardsView: View
 
             TodayPaperBackground()
 
-            ScrollView
+            GeometryReader
             {
-
+                geometry in
+                let hasBrowser = revisit != .recent
+                let browserAllowance: CGFloat = hasBrowser ? 128 : 0
+                let selectorAllowance: CGFloat = revisit == nil ? 60 : 0
+                // Keep the browser above the toolbar when the tab extends beneath its safe-area inset.
+                let bottomClearance = geometry.safeAreaInsets.bottom + 5
+                let headerLimit = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
                 VStack(alignment: .leading, spacing: 16)
                 {
 
-                    VStack(alignment: .leading, spacing: 4)
+                    ScrollView(.vertical)
                     {
 
-                        HStack
-                        {
-
-                            Text("Activity").font(.largeTitle.weight(.bold))
-                            Spacer()
-                            Button
+                        activityHeader
+                            .fixedSize(horizontal: false, vertical: true)
+                            .onGeometryChange(for: CGFloat.self)
                             {
-
-                                showsSearch.toggle();
-                                if !showsSearch
-                                {
-                                    query = ""
-                                }
-
+                                $0.size.height
                             }
-                            label:
+                            action:
                             {
-
-                                Image(systemName: "magnifyingglass")
+                                activityHeaderHeight = $0
                             }
-                            .accessibilityLabel("Search Activity")
-                            Menu
-                            {
-
-                                Toggle("Show cover previews", isOn: $showsCovers)
-                                Button("Clear recent history", systemImage: "trash", role: .destructive)
-                                {
-
-                                    confirmsClear = true
-                                }
-
-                            }
-                            label:
-                            {
-
-                                Image(systemName: "ellipsis.circle")
-                            }
-                            .accessibilityLabel("Activity options")
-                        }
-
-                        if let revisit
-                        {
-
-                            Text(revisit.detail)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
-
                     }
-
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if showsSearch
-                    {
-
-                        TextField("Find in Activity", text: $query)
-                        .textFieldStyle(.roundedBorder)
-                        .submitLabel(.search)
-                    }
-
-                    if revisit != nil
-                    {
-
-                        HStack
-                        {
-
-                            Text(revisit?.title ?? "").font(.title2.weight(.semibold))
-                            Spacer()
-                            Button("All Activity")
-                            {
-                                revisitDestination.wrappedValue = nil
-                            }
-                            .font(.subheadline).frame(minHeight: 44)
-                        }
-
-                    }
-
-                    if revisit == nil || revisit == .recent
-                    {
-                        recentSection
-                    }
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: min(activityHeaderHeight > 0 ? activityHeaderHeight : headerLimit, headerLimit))
 
                     if revisit == nil
                     {
+
                         focusHeading
                     }
 
-                    if revisit == nil && focus != .saved
+                    if hasBrowser
                     {
 
-                        focusContent
-                    }
-                    else if revisit == nil || revisit == .bookmarked
-                    {
-
-                        VStack(alignment: .leading, spacing: 10)
+                        ScrollView(.vertical)
                         {
 
-                            if savedCards.isEmpty && personalSavedCards.isEmpty
-                            {
-
-
-                                Label(
-                                    query.isEmpty ? "No saved items yet" : "No saved items match",
-                                    systemImage: "bookmark"
-                                )
-                                .font(.headline)
-                                Text("Open a card and tap the bookmark to keep it here.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            }
-                            else
-                            {
-
-                                if !savedCards.isEmpty
-                                {
-
-                                    Text("Week")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                    ForEach(savedCards)
-                                    {
-                                        result in
-                                        Button
-                                        {
-
-                                            if let item = availableFocusItems.first(where:
-                                                {
-
-                                                    $0.isCurrent && $0.list.id == result.listID
-                                                    && $0.card.id == result.card.id
-                                                })
-                                            {
-
-                                                openRecent(item)
-                                            }
-
-                                        }
-                                        label:
-                                        {
-
-                                            HStack(spacing: 12)
-                                            {
-
-                                                Image(systemName: "bookmark.fill")
-                                                .foregroundStyle(.orange)
-                                                VStack(alignment: .leading, spacing: 3)
-                                                {
-
-                                                    Text(result.card.word)
-                                                    .foregroundStyle(.primary)
-                                                    Text(result.listTitle)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                }
-
-
-                                                Spacer()
-                                                Image(systemName: "chevron.right")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(.tertiary)
-                                            }
-
-                                            .padding(12)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                                            .contentShape(Rectangle())
-                                        }
-
-                                        .buttonStyle(.plain)
-                                        .accessibilityHint("Opens this saved item.")
-                                        .accessibilityActions
-                                        {
-
-                                            Button("Archive Card")
-                                            {
-                                                onArchiveCard(result.card.id)
-                                            }
-
-                                            Button("Delete Card")
-                                            {
-                                                deletingCard = result.card
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
-
-                                if !personalSavedCards.isEmpty
-                                {
-
-                                    Text("Plans")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                    ForEach(personalSavedCards)
-                                    {
-                                        result in
-                                        Button
-                                        {
-
-                                            if let item = availableFocusItems.first(where:
-                                                {
-
-                                                    $0.item.collectionID == result.collectionID
-                                                    && $0.list.id == result.listID && $0.card.id == result.card.id
-                                                })
-                                            {
-
-                                                openRecent(item)
-                                            }
-
-                                        }
-                                        label:
-                                        {
-
-                                            HStack(spacing: 12)
-                                            {
-
-                                                Image(systemName: "bookmark.fill")
-                                                .foregroundStyle(.orange)
-                                                VStack(alignment: .leading, spacing: 3)
-                                                {
-
-                                                    Text(result.card.word)
-                                                    .foregroundStyle(.primary)
-                                                    Text(
-                                                        result.collectionTitle == result.listTitle
-                                                        ? result.collectionTitle
-                                                        : result.collectionTitle + " · " + result.listTitle
-                                                    )
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(2)
-                                                }
-
-
-                                                Spacer()
-                                                Image(systemName: "chevron.right")
-                                                .font(.caption.weight(.semibold))
-                                                .foregroundStyle(.tertiary)
-                                            }
-
-                                            .padding(12)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                                            .contentShape(Rectangle())
-                                        }
-
-                                        .buttonStyle(.plain)
-                                        .accessibilityHint(
-                                                                                                                        "Opens this item in \(result.collectionTitle), \(result.listTitle).")
-                                    }
-
-                                }
-
-                            }
-
+                            activityBrowserContents
                         }
-
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .scrollBounceBehavior(.basedOnSize)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .modifier(TodayPanelSurface())
+                        .accessibilityIdentifier("activity.browser.contents")
+                        .id(focus)
                     }
-
-
-                    if (revisit == .archived || (revisit == nil && focus == .saved))
-                    && collections.contains(where:
-                        {
-
-
-                            $0.isArchived == true
-                        })
+                    else
                     {
 
-                        VStack(alignment: .leading, spacing: 12)
-                        {
-
-                            Text("Archived Collections").font(.title2.weight(.semibold))
-                            ForEach(archivedCollections)
-                            {
-                                board in
-                                HStack
-                                {
-
-                                    Image(systemName: "archivebox").foregroundStyle(.secondary)
-                                    VStack(alignment: .leading, spacing: 4)
-                                    {
-
-                                        Button(board.title)
-                                        {
-                                            inspectingBoard = board
-                                        }
-                                        .font(.headline)
-                                        Text(
-                                                                                                                        "\(board.lists.count) lists · \(board.lists.flatMap(\.allCards).filter { !$0.isSectionDivider } .count) cards"
-                                        )
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    }
-
-
-                                    Spacer()
-                                    Button("Restore")
-                                    {
-                                        onRestoreBoard(board.id)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .accessibilityLabel("Restore \(board.title)")
-                                    Button("Delete", systemImage: "trash", role: .destructive)
-                                    {
-                                        deletingBoard = board
-                                    }
-                                    .labelStyle(.iconOnly)
-                                    .accessibilityLabel("Delete \(board.title)")
-                                }
-
-                            }
-
-
-                            Text(
-                                                                                    "Restored boards appear in Plans. Restoring a Week Board creates a separate board and leaves your current Week unchanged."
-                            )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-
-                        .padding(16)
-                        .modifier(TodayPanelSurface())
+                        Spacer(minLength: 0)
                     }
-
-                    if revisit == .archived && archivedCollections.isEmpty
-                    {
-
-                        ContentUnavailableView(
-                                                                        "No archived collections", systemImage: "archivebox",
-                                                                        description: Text(
-                                                                            query.isEmpty
-                                                                            ? "Collections you archive will be available here."
-                                                                            : "No archived collections match this search."))
-                    }
-
                 }
-
                 .padding(20)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.bottom, bottomClearance)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-
-            .background(.clear)
             .id(revisit)
         }
 

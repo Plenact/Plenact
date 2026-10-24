@@ -427,6 +427,564 @@ struct KanbanListView: View
     }
 
 
+
+
+    ///
+    /// @fcn        KanbanListView.panelHeader
+    /// @brief      Compose the List title, subtitle, and header actions
+    /// @details    Keeps header gestures and measurement in a separate compiler expression.
+    /// @return     (some View) the composed List panel content
+    ///
+    @ViewBuilder private var panelHeader: some View
+    {
+
+        if !hidesPanelHeader
+        {
+
+            VStack(alignment: .leading, spacing: 0)
+            {
+
+                HStack(alignment: .firstTextBaseline, spacing: 8)
+                {
+
+                    ItemAppearanceMark(appearance: list.headerAppearance())
+                    if isNamingNewList
+                    {
+
+                        InlineBoardListTitle(
+                            list: list,
+                            onSave:
+                            {
+                                title in
+                                onEditList?(title, list.subtitle, list.newItemPresentation) == true
+                            }, onFinish: onFinishNaming
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
+                    }
+                    else
+                    {
+
+                        Text(styledListTitle)
+                        .font(.title3.weight(.bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(1)
+                    }
+
+                    if isCurrentDay
+                    {
+
+                        Text("Today")
+                        .font(.caption2.weight(.bold))
+                        .lineLimit(1).fixedSize()
+                        .foregroundStyle(Color(red: 0.39, green: 0.25, blue: 0.05))
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(WeekDayHighlight.gold.opacity(0.25), in: Capsule())
+                        .accessibilityHidden(true)
+                    }
+
+                    Text("\(list.cards.filter { !$0.isSectionDivider } .count)")
+                    .fixedSize()
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+                .gesture(listReorderGesture, including: isNamingNewList ? .none : .all)
+                .simultaneousGesture(
+                    TapGesture().onEnded
+                    {
+
+                        if !isNamingNewList && canOpenDatedDay && !isHoldingList
+                        {
+                            onOpenDayView?()
+                        }
+
+                    }
+                )
+                .accessibilityElement(children: isNamingNewList ? .contain : .combine)
+                .modifier(
+                    DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenDatedDay ? onOpenDayView : nil)
+                )
+                .accessibilityHint(
+                    canOpenDatedDay
+                    ? "Opens this day. Touch and hold to drag this list instead."
+                    : "Touch and hold to drag this list. Keep holding near either screen edge to move across the board."
+                )
+                .accessibilityAction(named: "Move earlier")
+                {
+
+                    if canMoveEarlier
+                    {
+
+
+                        onMoveList(-1)
+                    }
+
+                }
+
+                .accessibilityAction(named: "Move later")
+                {
+
+                    if canMoveLater
+                    {
+
+
+                        onMoveList(1)
+                    }
+
+                }
+
+                .onChange(of: isHoldingList)
+                {
+                    _, holding in
+                    if !holding
+                    {
+
+
+                        onListDragEnded()
+                    }
+
+                }
+
+                .sensoryFeedback(.selection, trigger: isHoldingList)
+                HStack(spacing: 0)
+                {
+
+                    VStack(alignment: .leading, spacing: 3)
+                    {
+
+
+                        if presentation == .standard
+                        {
+
+
+                            listSubtitle
+                        }
+
+                    }
+
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if isWatching
+                    {
+
+
+                        Image(systemName: "eye.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+
+
+                    Button
+                    {
+
+                        activeSheet = .listActions
+                    }
+                    label:
+                    {
+
+
+                        Image(systemName: "ellipsis")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                    }
+
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(list.title) list actions")
+                }
+
+            }
+
+            .padding(.horizontal, 14)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+            .background(isCurrentDay ? WeekDayHighlight.gold.opacity(0.16) : Color.clear)
+            .itemBannerBackground(effectiveAppearance)
+            .background
+            {
+
+                GeometryReader
+                {
+                    header in
+                    Color.clear
+                    .onAppear
+                    {
+                        headerHeight = header.size.height
+                    }
+                    .onChange(of: header.size.height)
+                    {
+                        _, height in
+                        headerHeight = height
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
+
+    ///
+    /// @fcn        KanbanListView.cardCollection
+    /// @brief      Compose the List guidance, Card rows, and capture footer
+    /// @details    Preserves row identity, ordering, drag targets, and collection sizing.
+    /// @return     (some View) the composed List panel content
+    ///
+    @ViewBuilder private var cardCollection: some View
+    {
+
+        List
+        {
+
+            SessionListGuidance(
+                list: list, labels: labelLibrary,
+                onReveal:
+                {
+                    guidanceVisible = true
+                },
+                onPresentationChange:
+                {
+                    guidanceFooterVisible = $0
+                }
+            )
+            .environment(\.defaultMinListRowHeight, 0)
+            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            ForEach(DaySections.visible(list.cards))
+            {
+                card in
+
+                if card.isSectionDivider
+                {
+
+
+                    DaySectionRow(
+                        card: card, cards: list.cards, onUpdate: onUpdateCard,
+                        onMove:
+                        {
+                            onMoveSection(card.id, $0)
+                        }
+                    )
+
+                    .buttonStyle(.plain)
+                    .modifier(HideNavigationLinkIndicator())
+                    .id(card.id)
+                    .accessibilityLabel(
+                        card.sectionHeading.map
+                        {
+                                                        "Edit section heading: " + $0
+                        }
+                        ?? "Edit section divider"
+                    )
+                    .background
+                    {
+
+                        if editMode != .active && card.sectionHeading == nil
+                        {
+
+                            BoardCardDragSource(
+                                token: cardDragToken,
+                                onBegan:
+                                {
+                                    onCardDragBegan(card.id, $0)
+                                },
+                                onChanged:
+                                {
+                                    onCardDragChanged(card.id, $0)
+                                },
+                                onEnded:
+                                {
+                                    onCardDragEnded(card.id, false, nil)
+                                })
+                        }
+
+                    }
+                    .opacity(draggedCardID == card.id ? 0.45 : 1)
+                    .overlay(alignment: .top)
+                    {
+                        cardInsertionMarker(before: card.id)
+                    }
+                    .background
+                    {
+
+                        GeometryReader
+                        {
+                            geometry in
+                            Color.clear.preference(
+                                key: BoardCardFramePreferenceKey.self,
+                                value: [card.id: geometry.frame(in: .global)])
+                        }
+
+                    }
+                    .background
+                    {
+                        cardDropSurface
+                    }
+                    .contextMenu
+                    {
+
+                        ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
+                        CardDestinationMenu(card: card)
+                        Button("Delete Divider", systemImage: "trash", role: .destructive)
+                        {
+                            deletingCard = card
+                        }
+
+                    }
+
+                    .accessibilityAction(named: "Delete Divider")
+                    {
+                        deletingCard = card
+                    }
+                    .listRowInsets(
+                        usesNoteList
+                        ? EdgeInsets()
+                        : EdgeInsets(
+                            top: boardAppearance.cardDetail == .compact ? 2 : 4, leading: 4,
+                            bottom: boardAppearance.cardDetail == .compact ? 2 : 4, trailing: 4)
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+                else
+                {
+
+
+                    NavigationLink(value: card)
+                    {
+
+
+                        Group
+                        {
+
+                            if usesNoteList
+                            {
+
+                                SingleListNoteRow(
+                                    card: card, onToggle:
+                                    {
+                                        toggleCardTitle(card.id)
+                                    },
+                                    onArchive:
+                                    {
+                                        onArchiveCard(card.id)
+                                    }, onDelete:
+                                    {
+                                        onDeleteCard(card.id)
+                                    }, onUpdateCard: onUpdateCard)
+                            }
+                            else
+                            {
+
+                                KanbanCardView(
+                                    card: card,
+                                    height: cardHeight(for: card),
+                                    displaySettings: displaySettings,
+                                    cardBackground: boardAppearance.cardBackground,
+                                    compactCards: usesCompactCards(card),
+                                    titleColor: boardAppearance.resolvedTitleColor(
+                                        card: card.appearance, list: list.appearance),
+                                    supportingTextColor: boardAppearance.resolvedTextColor(
+                                        card: card.appearance, list: list.appearance),
+                                    listedOnDate: assignedDate,
+                                    presentation: presentation,
+                                    labelLibrary: labelLibrary,
+                                    onUpdateCard: onUpdateCard,
+                                    onDeleteCard:
+                                    {
+                                        onDeleteCard(card.id)
+                                    },
+                                    onArchiveCard:
+                                    {
+                                        onArchiveCard(card.id)
+                                    }
+                                )
+                                {
+
+                                    toggleCardTitle(card.id)
+                                }
+
+                            }
+
+                        }
+                        .background
+                        {
+
+                            GeometryReader
+                            {
+                                geometry in
+                                Color.clear.preference(
+                                    key: BoardCardHeightPreferenceKey.self,
+                                    value: [card.id: geometry.size.height]
+                                )
+                            }
+
+                        }
+
+                    }
+
+                    .buttonStyle(.plain)
+                    .modifier(HideNavigationLinkIndicator())
+                    .id(card.id)
+                    .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
+                    .background
+                    {
+
+                        if editMode != .active
+                        {
+
+
+                            BoardCardDragSource(
+                                token: cardDragToken,
+                                onBegan:
+                                {
+                                    onCardDragBegan(card.id, $0)
+                                },
+                                onChanged:
+                                {
+                                    onCardDragChanged(card.id, $0)
+                                },
+                                onEnded:
+                                {
+                                    onCardDragEnded(card.id, false, nil)
+                                })
+                        }
+
+                    }
+                    .accessibilityActions
+                    {
+
+                        ForEach(cardMoveDestinations)
+                        {
+                            list in
+                            Button("Move to \(list.title)")
+                            {
+                                onMoveCardToList(card.id, list.id)
+                            }
+
+                        }
+
+                    }
+
+                    .opacity(draggedCardID == card.id ? 0.45 : 1)
+                    .overlay(alignment: .top)
+                    {
+                        cardInsertionMarker(before: card.id)
+                    }
+                    .background
+                    {
+
+                        GeometryReader
+                        {
+                            geometry in
+                            Color.clear.preference(
+                                key: BoardCardFramePreferenceKey.self,
+                                value: [card.id: geometry.frame(in: .global)])
+                        }
+
+                    }
+                    .background
+                    {
+                        cardDropSurface
+                    }
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .background
+                    {
+
+                        if !hidesPanelHeader
+                        {
+                            BoardCardSwipeZone(enabled: editMode != .active)
+                        }
+
+                    }
+                    .modifier(
+                        ListItemSwipeDelete(
+                            enabled: editMode != .active,
+                            onRequest:
+                            {
+                                deletingCard = card
+                            }))
+                }
+
+            }
+            .onMove
+            {
+                sourceOffsets, destinationOffset in
+                guard editMode == .active,
+                let move = DaySections.visibleMove(
+                    list.cards, sourceOffsets: sourceOffsets, destinationOffset: destinationOffset)
+                else
+                {
+                    return
+                }
+
+                onMoveCard(move.id, move.index)
+            }
+            .moveDisabled(editMode != .active)
+
+
+            InlineListCapture(
+                list: list, draft: $inlineCaptureDraft,
+                textColor: boardAppearance.resolvedAddItemTextColor(list: list.appearance, title: list.title)?.color
+                ?? .primary,
+                isPresented: guidanceFooterVisible
+                ?? (!list.cards.isEmpty || DefaultListTutorial.guidance(for: list.title) == nil),
+                onCreate: onAddCard,
+                onOpenComposer:
+                {
+                    activeSheet = .newCard
+                }
+            )
+            .background
+            {
+                cardDropSurface
+            }
+            .overlay(alignment: .top)
+            {
+                cardInsertionMarker(before: nil)
+            }
+            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        }
+
+        .listStyle(.plain)
+        .environment(\.editMode, $editMode)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.vertical, 0, for: .scrollContent)
+        .contentMargins(.bottom, cardCollectionContentHeight > cardCollectionHeight ? 80 : 0, for: .scrollContent)
+        .background(.clear)
+        .frame(height: cardCollectionHeight)
+        .background(BoardViewportScrollProbe(memory: viewportMemory, key: "list:\(list.id)"))
+        .modifier(RevealCreatedContent(lists: [list]))
+        .onPreferenceChange(BoardCardHeightPreferenceKey.self)
+        {
+            heights in
+            var updated = measuredCardHeights
+            updated.merge(heights, uniquingKeysWith:
+                {
+                    _, latest in
+                    latest
+                })
+            if updated != measuredCardHeights
+            {
+                measuredCardHeights = updated
+            }
+
+        }
+
+        .padding(.horizontal, 4)
+        .padding(.bottom, 24)
+    }
+
+
     ///
     /// @fcn        KanbanListView.body
     /// @brief      Compose a list panel with card rows, ordering, and action sheets
@@ -447,540 +1005,9 @@ struct KanbanListView: View
         {
 
 
-            if !hidesPanelHeader
-            {
+            panelHeader
+            cardCollection
 
-                VStack(alignment: .leading, spacing: 0)
-                {
-
-                    HStack(alignment: .firstTextBaseline, spacing: 8)
-                    {
-
-                        ItemAppearanceMark(appearance: list.headerAppearance())
-                        if isNamingNewList
-                        {
-
-                            InlineBoardListTitle(
-                                list: list,
-                                onSave:
-                                {
-                                    title in
-                                    onEditList?(title, list.subtitle, list.newItemPresentation) == true
-                                }, onFinish: onFinishNaming
-                            )
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .layoutPriority(1)
-                        }
-                        else
-                        {
-
-                            Text(styledListTitle)
-                            .font(.title3.weight(.bold))
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .layoutPriority(1)
-                        }
-
-                        if isCurrentDay
-                        {
-
-                            Text("Today")
-                            .font(.caption2.weight(.bold))
-                            .lineLimit(1).fixedSize()
-                            .foregroundStyle(Color(red: 0.39, green: 0.25, blue: 0.05))
-                            .padding(.horizontal, 6).padding(.vertical, 3)
-                            .background(WeekDayHighlight.gold.opacity(0.25), in: Capsule())
-                            .accessibilityHidden(true)
-                        }
-
-                        Text("\(list.cards.filter { !$0.isSectionDivider } .count)")
-                        .fixedSize()
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    }
-                    .contentShape(Rectangle())
-                    .gesture(listReorderGesture, including: isNamingNewList ? .none : .all)
-                    .simultaneousGesture(
-                        TapGesture().onEnded
-                        {
-
-                            if !isNamingNewList && canOpenDatedDay && !isHoldingList
-                            {
-                                onOpenDayView?()
-                            }
-
-                        }
-                    )
-                    .accessibilityElement(children: isNamingNewList ? .contain : .combine)
-                    .modifier(
-                        DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenDatedDay ? onOpenDayView : nil)
-                    )
-                    .accessibilityHint(
-                        canOpenDatedDay
-                        ? "Opens this day. Touch and hold to drag this list instead."
-                        : "Touch and hold to drag this list. Keep holding near either screen edge to move across the board."
-                    )
-                    .accessibilityAction(named: "Move earlier")
-                    {
-
-                        if canMoveEarlier
-                        {
-
-
-                            onMoveList(-1)
-                        }
-
-                    }
-
-                    .accessibilityAction(named: "Move later")
-                    {
-
-                        if canMoveLater
-                        {
-
-
-                            onMoveList(1)
-                        }
-
-                    }
-
-                    .onChange(of: isHoldingList)
-                    {
-                        _, holding in
-                        if !holding
-                        {
-
-
-                            onListDragEnded()
-                        }
-
-                    }
-
-                    .sensoryFeedback(.selection, trigger: isHoldingList)
-                    HStack(spacing: 0)
-                    {
-
-                        VStack(alignment: .leading, spacing: 3)
-                        {
-
-
-                            if presentation == .standard
-                            {
-
-
-                                listSubtitle
-                            }
-
-                        }
-
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if isWatching
-                        {
-
-
-                            Image(systemName: "eye.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-
-
-                        Button
-                        {
-
-                            activeSheet = .listActions
-                        }
-                        label:
-                        {
-
-
-                            Image(systemName: "ellipsis")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                        }
-
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(list.title) list actions")
-                    }
-
-                }
-
-                .padding(.horizontal, 14)
-                .padding(.top, 10)
-                .padding(.bottom, 4)
-                .background(isCurrentDay ? WeekDayHighlight.gold.opacity(0.16) : Color.clear)
-                .itemBannerBackground(effectiveAppearance)
-                .background
-                {
-
-                    GeometryReader
-                    {
-                        header in
-                        Color.clear
-                        .onAppear
-                        {
-                            headerHeight = header.size.height
-                        }
-                        .onChange(of: header.size.height)
-                        {
-                            _, height in
-                            headerHeight = height
-                        }
-
-                    }
-
-                }
-
-            }
-
-
-            List
-            {
-
-                SessionListGuidance(
-                    list: list, labels: labelLibrary,
-                    onReveal:
-                    {
-                        guidanceVisible = true
-                    },
-                    onPresentationChange:
-                    {
-                        guidanceFooterVisible = $0
-                    }
-                )
-                .environment(\.defaultMinListRowHeight, 0)
-                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-                ForEach(DaySections.visible(list.cards))
-                {
-                    card in
-
-                    if card.isSectionDivider
-                    {
-
-
-                        DaySectionRow(
-                            card: card, cards: list.cards, onUpdate: onUpdateCard,
-                            onMove:
-                            {
-                                onMoveSection(card.id, $0)
-                            }
-                        )
-
-                        .buttonStyle(.plain)
-                        .modifier(HideNavigationLinkIndicator())
-                        .id(card.id)
-                        .accessibilityLabel(
-                            card.sectionHeading.map
-                            {
-                                                            "Edit section heading: " + $0
-                            }
-                            ?? "Edit section divider"
-                        )
-                        .background
-                        {
-
-                            if editMode != .active && card.sectionHeading == nil
-                            {
-
-                                BoardCardDragSource(
-                                    token: cardDragToken,
-                                    onBegan:
-                                    {
-                                        onCardDragBegan(card.id, $0)
-                                    },
-                                    onChanged:
-                                    {
-                                        onCardDragChanged(card.id, $0)
-                                    },
-                                    onEnded:
-                                    {
-                                        onCardDragEnded(card.id, false, nil)
-                                    })
-                            }
-
-                        }
-                        .opacity(draggedCardID == card.id ? 0.45 : 1)
-                        .overlay(alignment: .top)
-                        {
-                            cardInsertionMarker(before: card.id)
-                        }
-                        .background
-                        {
-
-                            GeometryReader
-                            {
-                                geometry in
-                                Color.clear.preference(
-                                    key: BoardCardFramePreferenceKey.self,
-                                    value: [card.id: geometry.frame(in: .global)])
-                            }
-
-                        }
-                        .background
-                        {
-                            cardDropSurface
-                        }
-                        .contextMenu
-                        {
-
-                            ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
-                            CardDestinationMenu(card: card)
-                            Button("Delete Divider", systemImage: "trash", role: .destructive)
-                            {
-                                deletingCard = card
-                            }
-
-                        }
-
-                        .accessibilityAction(named: "Delete Divider")
-                        {
-                            deletingCard = card
-                        }
-                        .listRowInsets(
-                            usesNoteList
-                            ? EdgeInsets()
-                            : EdgeInsets(
-                                top: boardAppearance.cardDetail == .compact ? 2 : 4, leading: 4,
-                                bottom: boardAppearance.cardDetail == .compact ? 2 : 4, trailing: 4)
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    }
-                    else
-                    {
-
-
-                        NavigationLink(value: card)
-                        {
-
-
-                            Group
-                            {
-
-                                if usesNoteList
-                                {
-
-                                    SingleListNoteRow(
-                                        card: card, onToggle:
-                                        {
-                                            toggleCardTitle(card.id)
-                                        },
-                                        onArchive:
-                                        {
-                                            onArchiveCard(card.id)
-                                        }, onDelete:
-                                        {
-                                            onDeleteCard(card.id)
-                                        }, onUpdateCard: onUpdateCard)
-                                }
-                                else
-                                {
-
-                                    KanbanCardView(
-                                        card: card,
-                                        height: cardHeight(for: card),
-                                        displaySettings: displaySettings,
-                                        cardBackground: boardAppearance.cardBackground,
-                                        compactCards: usesCompactCards(card),
-                                        titleColor: boardAppearance.resolvedTitleColor(
-                                            card: card.appearance, list: list.appearance),
-                                        supportingTextColor: boardAppearance.resolvedTextColor(
-                                            card: card.appearance, list: list.appearance),
-                                        listedOnDate: assignedDate,
-                                        presentation: presentation,
-                                        labelLibrary: labelLibrary,
-                                        onUpdateCard: onUpdateCard,
-                                        onDeleteCard:
-                                        {
-                                            onDeleteCard(card.id)
-                                        },
-                                        onArchiveCard:
-                                        {
-                                            onArchiveCard(card.id)
-                                        }
-                                    )
-                                    {
-
-                                        toggleCardTitle(card.id)
-                                    }
-
-                                }
-
-                            }
-                            .background
-                            {
-
-                                GeometryReader
-                                {
-                                    geometry in
-                                    Color.clear.preference(
-                                        key: BoardCardHeightPreferenceKey.self,
-                                        value: [card.id: geometry.size.height]
-                                    )
-                                }
-
-                            }
-
-                        }
-
-                        .buttonStyle(.plain)
-                        .modifier(HideNavigationLinkIndicator())
-                        .id(card.id)
-                        .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
-                        .background
-                        {
-
-                            if editMode != .active
-                            {
-
-
-                                BoardCardDragSource(
-                                    token: cardDragToken,
-                                    onBegan:
-                                    {
-                                        onCardDragBegan(card.id, $0)
-                                    },
-                                    onChanged:
-                                    {
-                                        onCardDragChanged(card.id, $0)
-                                    },
-                                    onEnded:
-                                    {
-                                        onCardDragEnded(card.id, false, nil)
-                                    })
-                            }
-
-                        }
-                        .accessibilityActions
-                        {
-
-                            ForEach(cardMoveDestinations)
-                            {
-                                list in
-                                Button("Move to \(list.title)")
-                                {
-                                    onMoveCardToList(card.id, list.id)
-                                }
-
-                            }
-
-                        }
-
-                        .opacity(draggedCardID == card.id ? 0.45 : 1)
-                        .overlay(alignment: .top)
-                        {
-                            cardInsertionMarker(before: card.id)
-                        }
-                        .background
-                        {
-
-                            GeometryReader
-                            {
-                                geometry in
-                                Color.clear.preference(
-                                    key: BoardCardFramePreferenceKey.self,
-                                    value: [card.id: geometry.frame(in: .global)])
-                            }
-
-                        }
-                        .background
-                        {
-                            cardDropSurface
-                        }
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .background
-                        {
-
-                            if !hidesPanelHeader
-                            {
-                                BoardCardSwipeZone(enabled: editMode != .active)
-                            }
-
-                        }
-                        .modifier(
-                            ListItemSwipeDelete(
-                                enabled: editMode != .active,
-                                onRequest:
-                                {
-                                    deletingCard = card
-                                }))
-                    }
-
-                }
-                .onMove
-                {
-                    sourceOffsets, destinationOffset in
-                    guard editMode == .active,
-                    let move = DaySections.visibleMove(
-                        list.cards, sourceOffsets: sourceOffsets, destinationOffset: destinationOffset)
-                    else
-                    {
-                        return
-                    }
-
-                    onMoveCard(move.id, move.index)
-                }
-                .moveDisabled(editMode != .active)
-
-
-                InlineListCapture(
-                    list: list, draft: $inlineCaptureDraft,
-                    textColor: boardAppearance.resolvedAddItemTextColor(list: list.appearance, title: list.title)?.color
-                    ?? .primary,
-                    isPresented: guidanceFooterVisible
-                    ?? (!list.cards.isEmpty || DefaultListTutorial.guidance(for: list.title) == nil),
-                    onCreate: onAddCard,
-                    onOpenComposer:
-                    {
-                        activeSheet = .newCard
-                    }
-                )
-                .background
-                {
-                    cardDropSurface
-                }
-                .overlay(alignment: .top)
-                {
-                    cardInsertionMarker(before: nil)
-                }
-                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-            }
-
-            .listStyle(.plain)
-            .environment(\.editMode, $editMode)
-            .scrollContentBackground(.hidden)
-            .contentMargins(.vertical, 0, for: .scrollContent)
-            .contentMargins(.bottom, cardCollectionContentHeight > cardCollectionHeight ? 80 : 0, for: .scrollContent)
-            .background(.clear)
-            .frame(height: cardCollectionHeight)
-            .background(BoardViewportScrollProbe(memory: viewportMemory, key: "list:\(list.id)"))
-            .modifier(RevealCreatedContent(lists: [list]))
-            .onPreferenceChange(BoardCardHeightPreferenceKey.self)
-            {
-                heights in
-                var updated = measuredCardHeights
-                updated.merge(heights, uniquingKeysWith:
-                    {
-                        _, latest in
-                        latest
-                    })
-                if updated != measuredCardHeights
-                {
-                    measuredCardHeights = updated
-                }
-
-            }
-
-            .padding(.horizontal, 4)
-            .padding(.bottom, 24)
         }
 
         .background

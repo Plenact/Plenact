@@ -906,3 +906,86 @@ struct CardInfoEditorSheet: View
     }
 
 }
+
+
+///
+/// Opens an existing preview schedule value without navigating into the Card
+///
+/// @section    Purpose
+///     Reuses the Card date editor for start and due values and forwards an otherwise unchanged
+///     record through the owning List's update callback. Locked records remain display-only.
+///
+struct CardPreviewDateEditor: ViewModifier
+{
+
+    let card:     KanbanCard
+    let isStart:  Bool
+    let onUpdate: (KanbanCard) -> Void
+    @State private var isPresented = false
+
+
+    ///
+    /// @fcn        CardPreviewDateEditor.body(content:)
+    /// @brief      Present a date editor from the preview's existing date label
+    /// @details    Uses a plain button to consume date taps independently of row navigation.
+    ///             Save and Remove change only the selected schedule value and its precision;
+    ///             Cancel leaves the record unchanged. Rechecks the read-only lock on save.
+    ///
+    /// @param[in]  content  Existing date label retaining its preview styling
+    /// @return     (some View) date control with a locally presented editor
+    ///
+    func body(content: Content) -> some View
+    {
+
+        Button
+        {
+            isPresented = true
+        }
+        label:
+        {
+            content.contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(card.isEditingLocked)
+        .accessibilityLabel(isStart ? "Edit start date" : "Edit due date")
+        .accessibilityValue(
+            (isStart ? card.startDate : card.dueDate).map
+            {
+                (isStart ? card.startDateKind : card.dueDateKind).label(for: $0)
+            } ?? "Not set"
+        )
+        .accessibilityIdentifier(isStart ? "card.preview.editStartDate" : "card.preview.editDueDate")
+        .sheet(isPresented: $isPresented)
+        {
+            CardDateEditorSheet(
+                title: isStart ? "Start date" : "Due date",
+                date: isStart ? card.startDate : card.dueDate,
+                kind: isStart ? card.startDateKind : card.dueDateKind
+            )
+            {
+                value, kind in
+                guard !card.isEditingLocked else
+                {
+                    return false
+                }
+
+                var updated = card
+                if isStart
+                {
+                    updated.startDate = value
+                    updated.startDateKind = value == nil ? .date : kind
+                }
+                else
+                {
+                    updated.dueDate = value
+                    updated.dueDateKind = value == nil ? .date : kind
+                }
+
+                onUpdate(updated)
+                return true
+            }
+            .presentationDetents([.large])
+            .databaseActivityOverlay()
+        }
+    }
+}

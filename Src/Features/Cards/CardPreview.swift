@@ -294,6 +294,7 @@ struct KanbanCardView: View
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .accessibilityLabel(badge.title + ", " + badge.value)
+                .modifier(CardPreviewDateEditor(card: card, isStart: badge.title.hasPrefix("Start"), onUpdate: onUpdateCard))
             }
 
         }
@@ -825,6 +826,7 @@ struct KanbanCardView: View
                 .background(
                     badge.systemImage == "calendar" ? Color.clear : Color(red: 0.90, green: 0.96, blue: 1.0),
                     in: RoundedRectangle(cornerRadius: 5))
+                .modifier(CardPreviewDateEditor(card: card, isStart: badge.title.hasPrefix("Start"), onUpdate: onUpdateCard))
             }
 
         }
@@ -848,6 +850,7 @@ struct SingleListNoteRow: View
     let onToggle:  () -> Void
     var onArchive: (() -> Void)? = nil
     var onDelete:  (() -> Void)? = nil
+    let onUpdateCard: (KanbanCard) -> Void
     @State private var confirmsDelete = false
     private var preview: String
     {
@@ -944,6 +947,7 @@ struct SingleListNoteRow: View
 
                             Text("Start · " + dateText(start, kind: card.startDateKind)).font(.caption).foregroundStyle(
                                 .secondary)
+                            .modifier(CardPreviewDateEditor(card: card, isStart: true, onUpdate: onUpdateCard))
                         }
 
                         if let due = card.dueDate
@@ -951,6 +955,7 @@ struct SingleListNoteRow: View
 
                             Text("Due · " + dateText(due, kind: card.dueDateKind)).font(.caption).foregroundStyle(
                                 .secondary)
+                            .modifier(CardPreviewDateEditor(card: card, isStart: false, onUpdate: onUpdateCard))
                         }
 
                     }

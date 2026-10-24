@@ -101,6 +101,8 @@ struct CardVisualCompletion: ViewModifier
 struct KanbanCardView: View
 {
 
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+
 
     @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =
     true                                            /* Shared display-only preference                                */
@@ -475,7 +477,7 @@ struct KanbanCardView: View
 
 
                     Text(card.subtitle)
-                    .font(.subheadline)
+                    .font((card.appearance?.subtitleItalic ?? inheritedSubtitleItalic) ? .subheadline.italic() : .subheadline)
                     .foregroundStyle((card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -845,6 +847,8 @@ struct KanbanCardView: View
 struct SingleListNoteRow: View
 {
 
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+
 
     let card:      KanbanCard
     let onToggle:  () -> Void
@@ -935,7 +939,11 @@ struct SingleListNoteRow: View
                     .lineLimit(2).strikethrough(card.isTitleChecked)
                     if !preview.isEmpty
                     {
-                        Text(preview).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+                        Text(preview)
+                            .font(!(card.subtitleOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  && (card.appearance?.subtitleItalic ?? inheritedSubtitleItalic)
+                                  ? .subheadline.italic() : .subheadline)
+                            .foregroundStyle(.secondary).lineLimit(2)
                     }
 
                     ItemReactionPreview(card: card)

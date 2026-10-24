@@ -240,7 +240,9 @@ struct KanbanListView: View
             label:
             {
 
-                Text(list.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(list.subtitle)
+                .font(boardAppearance.resolvedSubtitleItalic(list: list.appearance) ? .caption.italic() : .caption)
+                .foregroundStyle(.secondary).lineLimit(1)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .contentShape(Rectangle())
             }
@@ -251,7 +253,9 @@ struct KanbanListView: View
         else
         {
 
-            Text(list.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            Text(list.subtitle)
+                .font(boardAppearance.resolvedSubtitleItalic(list: list.appearance) ? .caption.italic() : .caption)
+                .foregroundStyle(.secondary).lineLimit(1)
         }
 
     }
@@ -1074,6 +1078,7 @@ struct KanbanListView: View
             }
 
         }
+        .environment(\.inheritedSubtitleItalic, boardAppearance.resolvedSubtitleItalic(list: list.appearance))
         .onDisappear
         {
             checkmarkReset = nil

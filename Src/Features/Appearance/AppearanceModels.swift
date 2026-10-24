@@ -221,6 +221,23 @@ struct BoardAppearance: Hashable, Codable, Sendable
     var cardTitleColor:       ListPreviewTextColor? = nil
     var cardTextColor:        ListPreviewTextColor? = nil
     var addItemTextColor:     ProfileColor? = nil
+    var subtitleItalic:      Bool? = nil  /* Board default; missing preserves regular subtitles */
+
+
+    ///
+    /// @fcn        BoardAppearance.resolvedSubtitleItalic(card:list:)
+    /// @brief      Resolve subtitle styling from the most specific owner override
+    /// @details    Explicit false restores regular type even when an ancestor uses italics.
+    ///             Missing values inherit Card, List, then Board defaults, ending at regular.
+    /// @param[in]  card  Optional Card or Note appearance
+    /// @param[in]  list  Optional List appearance
+    /// @return     (Bool) whether the subtitle should use italic type
+    ///
+    func resolvedSubtitleItalic(card: ItemAppearance? = nil, list: ItemAppearance? = nil) -> Bool
+    {
+
+        card?.subtitleItalic ?? list?.subtitleItalic ?? subtitleItalic ?? false
+    }
 
 
     ///
@@ -324,7 +341,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.inheritingLists
     /// @brief      Return lists whose surface and text styling inherits from the board
     /// @details    Clears list banner, list background, and preview text-color overrides while preserving card-level
-    ///             overrides, list content, and other appearance fields.
+    ///             overrides, list content, and other appearance fields. Clears subtitle style overrides as well.
     ///
     /// @param[in]  lists  Lists participating in the operation
     ///
@@ -346,6 +363,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
                 appearance.cardTitleColor = nil
                 appearance.cardTextColor = nil
                 appearance.addItemTextColor = nil
+                appearance.subtitleItalic = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
             }
 
@@ -446,6 +464,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
     var addItemTextColor:              ProfileColor? = nil
     var sectionCollapsed:              Bool? = nil
     var hideEmptySubtitle:             Bool? = nil
+    var subtitleItalic:               Bool? = nil  /* nil inherits; false explicitly requests regular type */
     var cardDetail:                    BoardCardDetail? = nil
     var listViewMode:                  SingleListViewMode? = nil
     var iconColor:                     ProfileColor? = nil
@@ -486,7 +505,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
         sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
-        && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil
+        && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil
     }
 
 }

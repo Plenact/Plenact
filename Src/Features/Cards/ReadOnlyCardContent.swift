@@ -21,6 +21,8 @@ import UniformTypeIdentifiers
 struct ReadOnlyCardContent: View
 {
 
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+
 
     let card:             KanbanCard
     let labels:           LabelLibrary
@@ -49,7 +51,9 @@ struct ReadOnlyCardContent: View
                 SlideableHeaderText(text: card.word).font(.title2.bold())
                 if !card.subtitle.isEmpty
                 {
-                    Text(card.subtitle).foregroundStyle(.secondary)
+                    Text(card.subtitle)
+                        .font((card.appearance?.subtitleItalic ?? inheritedSubtitleItalic) ? .body.italic() : .body)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let created = card.createdAt

@@ -1152,7 +1152,9 @@ struct TodayListDetailView: View
                                 {
 
                                     Text(representedDate.formatted(.dateTime.month(.abbreviated).day().year()))
-                                    .font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                                    .font(effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance)
+                                          ? .subheadline.italic() : .subheadline)
+                                    .foregroundStyle(.white.opacity(0.75))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .contentShape(Rectangle())
                                 }
@@ -1166,7 +1168,8 @@ struct TodayListDetailView: View
 
 
                                 SlideableHeaderText(text: subtitle)
-                                .font(.subheadline)
+                                .font(effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance)
+                                      ? .subheadline.italic() : .subheadline)
                                 .foregroundStyle(.white.opacity(0.75))
                             }
 
@@ -1383,6 +1386,8 @@ struct TodayListDetailView: View
                 .environment(\.cardKeyboardNavigation, keyboardNavigation(for: card))
             }
 
+            .environment(\.inheritedSubtitleItalic,
+                         effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance))
             .onChange(of: labelLibrary)
             {
                 _, updatedLibrary in

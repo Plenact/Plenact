@@ -191,6 +191,8 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
 struct BoardHeader: View
 {
 
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+
 
     @Environment(\.layoutDirection) private var headerLayoutDirection
     @Binding var settings: BoardDisplaySettings /* Board display settings                              */
@@ -326,7 +328,7 @@ struct BoardHeader: View
                         subtitleOverflows = $0
                     }
                 )
-                .font(.subheadline)
+                .font(inheritedSubtitleItalic ? .subheadline.italic() : .subheadline)
                 .foregroundStyle(.white.opacity(0.75))
                 .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
                 .onDisappear

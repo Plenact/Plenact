@@ -85,6 +85,8 @@ extension EnvironmentValues
 struct CardDetailView: View
 {
 
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+
 
     @Environment(\.cardKeyboardNavigation) var keyboardNavigation
     @State var keyboardContextID = UUID()
@@ -1310,7 +1312,8 @@ struct CardDetailView: View
                                                     }
 
                                                 }
-                                                .font(.subheadline)
+                                                .font((appearance?.subtitleItalic ?? inheritedSubtitleItalic)
+                                                      ? .subheadline.italic() : .subheadline)
                                                 .foregroundStyle(.secondary)
                                             }
 

@@ -25,6 +25,74 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testSubtitleItalicsInheritAndPreserveExplicitRegularOverrides()
+    /// @brief      Resolve Board, List, and Card subtitle styles without losing explicit false
+    /// @details    Covers legacy defaults, the complete override chain, optional-field encoding,
+    ///             and clearing List overrides when applying Board defaults.
+    /// @return     (Void) records inheritance, compatibility, or persistence failures
+    /// @throws     Propagates JSON fixture decoding and encoding failures to XCTest
+    ///
+    func testSubtitleItalicsInheritAndPreserveExplicitRegularOverrides() throws
+    {
+
+        var board = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+        var list = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        var card = ItemAppearance()
+        XCTAssertNil(board.subtitleItalic)
+        XCTAssertNil(list.subtitleItalic)
+        XCTAssertFalse(board.resolvedSubtitleItalic(card: card, list: list))
+        board.subtitleItalic = true
+        XCTAssertTrue(board.resolvedSubtitleItalic(card: card, list: list))
+        list.subtitleItalic = false
+        XCTAssertFalse(board.resolvedSubtitleItalic(card: card, list: list))
+        XCTAssertFalse(list.isEmpty, "Explicit regular type must survive appearance normalization")
+        card.subtitleItalic = true
+        XCTAssertTrue(board.resolvedSubtitleItalic(card: card, list: list))
+        list.subtitleItalic = true
+        card.subtitleItalic = false
+        XCTAssertFalse(board.resolvedSubtitleItalic(card: card, list: list))
+        let savedCard = try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(card))
+        XCTAssertEqual(savedCard.subtitleItalic, false)
+        let savedBoard = try JSONDecoder().decode(BoardAppearance.self, from: JSONEncoder().encode(board))
+        XCTAssertEqual(savedBoard.subtitleItalic, true)
+        card.subtitleItalic = nil
+        XCTAssertTrue(board.resolvedSubtitleItalic(card: card, list: list))
+        var owner = KanbanList(id: 12, title: "Work", cards: [])
+        owner.appearance = list
+        XCTAssertNil(BoardAppearance.inheritingLists([owner]).first?.appearance?.subtitleItalic)
+    }
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testSubtitleOverridesSurviveCardAndListPersistence()
+    /// @brief      Retain italic and regular choices through canonical Card and List saves
+    /// @details    Exercises explicit regular Card overrides, italic List defaults, relocation,
+    ///             and archive restoration without changing subtitle content.
+    /// @return     (Void) records content or appearance retention failures
+    /// @throws     Propagates JSON fixture encoding and decoding failures to XCTest
+    ///
+    func testSubtitleOverridesSurviveCardAndListPersistence() throws
+    {
+
+        var card = KanbanCard(id: 1, word: "Task", listTitle: "Work", subtitleOverride: "A softer subtitle")
+        var appearance = ItemAppearance()
+        appearance.subtitleItalic = false
+        card.appearance = appearance
+        appearance.subtitleItalic = true
+        var list = KanbanList(id: 1, title: "Work", cards: [card])
+        list.appearance = appearance
+        let saved = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        XCTAssertEqual(saved.cards.first?.appearance?.subtitleItalic, false)
+        XCTAssertEqual(saved.appearance?.subtitleItalic, true)
+        XCTAssertEqual(saved.cards.first?.subtitleOverride, "A softer subtitle")
+        XCTAssertEqual(card.replacingLocation(id: 9, listTitle: "Other").appearance?.subtitleItalic, false)
+        list.archiveCard(id: 1)
+        list.restoreArchivedCard(id: 1)
+        XCTAssertEqual(list.cards.first?.appearance?.subtitleItalic, false)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testCardHistoryCoalescesTypingWithoutCombiningSeparateActions()
     /// @brief      Keep autosaved writing readable while preserving initial and final values
     /// @details    Uses deterministic timestamps to distinguish a typing burst, a later title

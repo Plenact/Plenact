@@ -12,7 +12,7 @@ Populate the new shared-demo database with the deterministic weekday starter Boa
 
 ## Source Boundary
 
-The initial seed source is `SampleData` in `Src/Features/Boards/Models.swift`:
+The initial seed source is `SampleData` in `Src/Features/Examples/StarterContent.swift`:
 
 - Monday-through-Sunday lists, planning cards, and divider rows
 - Standard, linked-card, and Action Detail checklist demonstrations

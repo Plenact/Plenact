@@ -16,16 +16,6 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-Yes!!!!! You are amazing, Alex, this work is beautiful. Thank you so much
-
-And an idea, I have been brewing over for the longest time now: Re-organize Project now
-
-Hey Alex, for professional Swift applications, how many lines of Swift code are typically in each .swift file, excluding comments, whitepace, empty lines or lines with just brackets on them? How is this for personal Swift applications? Published Swift applications?
-
-How hard would it be to re-organize, modularize, segment and re-order the architecture and subdirectory organization of Plenact now to follow this model? How close can we get to XYZ lines of source in each file?
-
-!
-
 Now I think I'm going to switch from developer to user, for awhile now, diligently taking notes and sharing with you throughout the day and applying updates or tests as you request
 
 !!

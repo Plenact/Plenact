@@ -7,7 +7,6 @@
 //             before checked publication.
 //
 // --------------------------------------------------------------------------------------------------
-
 import Foundation
 
 
@@ -18,7 +17,9 @@ import Foundation
 ///     Keeps important, bookmarked, and all-day source IDs available for remapping when examples
 ///     are applied to a live destination.
 ///
-struct PlanningExampleFocus: Codable, Hashable {
+struct PlanningExampleFocus: Codable, Hashable
+{
+
 
     var important:  Set<Int> = []
     var bookmarked: Set<Int> = []
@@ -33,7 +34,8 @@ struct PlanningExampleFocus: Codable, Hashable {
 ///     Stores source calendar conventions and List mappings separately from live scheduled content,
 ///     including optional example focus markers.
 ///
-struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
+struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
+{
 
 
     ///
@@ -43,7 +45,12 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     ///     Selects template scope while the enclosing snapshot retains its source calendar and List
     ///     mapping.
     ///
-    enum Kind: String, Codable, CaseIterable { case day = "Day", week = "Week" }
+    enum Kind: String, Codable, CaseIterable
+    {
+
+        case day = "Day", week = "Week"
+    }
+
     var id = UUID()
     var name:         String
     var kind:         Kind
@@ -54,13 +61,22 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     /// Calendar weekday -> source list identity; Day templates contain one source list.
     var weekdays:     [Int: Int]
     var exampleFocus: PlanningExampleFocus? = nil
-    var calendar:     Calendar {
+    var calendar:     Calendar
+    {
+
         var value = Calendar(identifier: .gregorian)
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
         value.firstWeekday = firstWeekday
         return value
     }
-    var itemCount: Int { collection.lists.flatMap(\.cards).filter { !$0.isSectionDivider }.count }
+
+    var itemCount: Int
+    {
+        collection.lists.flatMap(\.cards).filter
+        {
+            !$0.isSectionDivider
+        } .count
+    }
 
 
     ///
@@ -73,20 +89,57 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     ///
     /// @note       Explicit bundled demonstrations only; ordinary captured templates have no demo markers.
     ///
-    func demonstratingFocus() -> Self {
+    func demonstratingFocus() -> Self
+    {
+
         var copy = self
         var focus = PlanningExampleFocus()
-        for list in collection.lists {
-            let tasks = list.cards.filter { !$0.isSectionDivider && $0.displayFormat == .card }
-            if id == PlanningRoutineLibrary.jmrID {
-                focus.important.formUnion(tasks.filter { ["Work", "Gym"].contains($0.word) }.map(\.id))
-                focus.bookmarked.formUnion(tasks.filter { $0.word == "Gym" }.map(\.id))
-            } else {
-                if let first = tasks.first { focus.important.insert(first.id) }
-                if let bookmark = tasks.dropFirst().first ?? tasks.first { focus.bookmarked.insert(bookmark.id) }
-                if let untimed = tasks.first(where: { $0.startDate == nil && $0.dueDate == nil }) { focus.allDay.insert(untimed.id) }
+        for list in collection.lists
+        {
+
+            let tasks = list.cards.filter
+            {
+                !$0.isSectionDivider && $0.displayFormat == .card
             }
+
+            if id == PlanningRoutineLibrary.jmrID
+            {
+
+                focus.important.formUnion(tasks.filter
+                    {
+                        ["Work", "Gym"].contains($0.word)
+                    } .map(\.id))
+                focus.bookmarked.formUnion(tasks.filter
+                    {
+                        $0.word == "Gym"
+                    } .map(\.id))
+            }
+            else
+            {
+
+                if let first = tasks.first
+                {
+                    focus.important.insert(first.id)
+                }
+
+                if let bookmark = tasks.dropFirst().first ?? tasks.first
+                {
+                    focus.bookmarked.insert(bookmark.id)
+                }
+
+                if let untimed = tasks.first(where:
+                    {
+                        $0.startDate == nil && $0.dueDate == nil
+                    })
+                {
+
+                    focus.allDay.insert(untimed.id)
+                }
+
+            }
+
         }
+
         copy.exampleFocus = focus
         return copy
     }
@@ -107,23 +160,51 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
     ///             dependencies propagate unless handled within this operation.
     ///
-    static func capture(name: String, week: DatedPlanningWeek, day: Date? = nil, calendar: Calendar) throws -> Self {
+    static func capture(name: String, week: DatedPlanningWeek, day: Date? = nil, calendar: Calendar) throws -> Self
+    {
+
         var collection = week.collection
         collection.savedCardIDs = []
-        let sourceLists = week.collection.lists.filter { !$0.isArchived }
+        let sourceLists = week.collection.lists.filter
+        {
+            !$0.isArchived
+        }
+
         var weekdays: [Int: Int] = [:]
-        if let day {
+        if let day
+        {
+
             guard let id = week.dayListIDs[PlanningDate.key(day, calendar: calendar)],
-                  let list = sourceLists.first(where: { $0.id == id }) else { throw CocoaError(.validationMissingMandatoryProperty) }
+            let list = sourceLists.first(where:
+                {
+                    $0.id == id
+                })
+            else
+            {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+
             collection.lists = [list]
             weekdays[calendar.component(.weekday, from: day)] = id
-        } else {
+        }
+        else
+        {
+
             collection.lists = sourceLists
-            for (key, id) in week.dayListIDs {
-                if let date = PlanningDate.date(key, calendar: calendar), sourceLists.contains(where: { $0.id == id }) {
+            for (key, id) in week.dayListIDs
+            {
+
+                if let date = PlanningDate.date(key, calendar: calendar), sourceLists.contains(where:
+                    {
+                        $0.id == id
+                    })
+                {
+
                     weekdays[calendar.component(.weekday, from: date)] = id
                 }
+
             }
+
         }
 
 
@@ -137,34 +218,64 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
         ///
         /// @return     (KanbanChecklist) checklist content stripped of instance-specific state for reuse
         ///
-        func reusableChecklist(_ source: KanbanChecklist) -> KanbanChecklist {
-            let items = source.items.map { item -> KanbanChecklistItem in
+        func reusableChecklist(_ source: KanbanChecklist) -> KanbanChecklist
+        {
+
+            let items = source.items.map
+            {
+                item -> KanbanChecklistItem in
                 var content = item.content
-                if case .actionDetail(let detail) = content {
-                    content = .actionDetail(KanbanChecklistActionDetail(id: detail.id, description: detail.description,
-                        checklists: detail.checklists.map(reusableChecklist)))
+                if case .actionDetail(let detail) = content
+                {
+
+                    content = .actionDetail(
+                        KanbanChecklistActionDetail(
+                            id: detail.id, description: detail.description,
+                            checklists: detail.checklists.map(reusableChecklist)))
                 }
+
                 var result = KanbanChecklistItem(id: item.id, title: item.title, content: content)
                 result.linkedCollectionID = item.linkedCollectionID
                 return result
             }
+
             return KanbanChecklist(id: source.id, title: source.title, items: items, completedItemIndices: [])
         }
-        for index in collection.lists.indices {
+
+        for index in collection.lists.indices
+        {
+
             collection.lists[index].archivedCards = []
             collection.lists[index].subtitleOverride = collection.lists[index].subtitle
-            collection.lists[index].cards = collection.lists[index].cards.map { card in
-                var copy = card; copy.reactions = nil; copy.comments = []; copy.dismissedActivityIDs = []; copy.isTitleChecked = false
+            collection.lists[index].cards = collection.lists[index].cards.map
+            {
+                card in
+                var copy = card;
+                copy.reactions = nil;
+                copy.comments = [];
+                copy.dismissedActivityIDs = [];
+
+                copy.isTitleChecked = false
                 copy.checklists = card.checklists.map(reusableChecklist)
-                copy.descriptionOverride = card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph
+                copy.descriptionOverride =
+                card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph
                 copy.subtitleOverride = card.subtitle
                 return copy
             }
+
         }
-        return Self(name: name.trimmingCharacters(in: .whitespacesAndNewlines), kind: day == nil ? .week : .day,
-            anchorKey: day.map { PlanningDate.key($0, calendar: calendar) } ?? week.startKey,
-            timeZoneID: calendar.timeZone.identifier, firstWeekday: calendar.firstWeekday, collection: collection, weekdays: weekdays)
+
+        return Self(
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines), kind: day == nil ? .week : .day,
+            anchorKey: day.map
+            {
+                PlanningDate.key($0, calendar: calendar)
+            }
+            ?? week.startKey,
+            timeZoneID: calendar.timeZone.identifier, firstWeekday: calendar.firstWeekday, collection: collection,
+            weekdays: weekdays)
     }
+
 }
 
 
@@ -175,7 +286,9 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable {
 ///     Keeps editable templates, the preferred Week routine, and one-time bundled revision state
 ///     separate from scheduled Weeks.
 ///
-struct PlanningRoutineLibrary: Codable, Equatable {
+struct PlanningRoutineLibrary: Codable, Equatable
+{
+
 
     var version = 1
     var templates:     [PlanningRoutineTemplate]
@@ -183,7 +296,9 @@ struct PlanningRoutineLibrary: Codable, Equatable {
     /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr.
     var bundledRoutineRevision: Int? = nil
     static let jmrID = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
-    static let jmr: PlanningRoutineTemplate = {
+    static let jmr: PlanningRoutineTemplate =
+    {
+
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
@@ -194,80 +309,139 @@ struct PlanningRoutineLibrary: Codable, Equatable {
             ("Wake", 4, 0, 4, 30),
             ("Morning Starbucks Pow-wow", 5, 0, 6, 30),
             ("Work", 7, 0, 17, 0),
-            ("Gym", 17, 0, 18, 0)]
+            ("Gym", 17, 0, 18, 0)
+        ]
         let saturday: [Slot] = [
             ("Wake", 5, 0, 5, 30),
             ("Morning Starbucks Pow-wow", 6, 0, 7, 30),
             ("Gym", 9, 0, 11, 0),
-            ("Car Wash", 12, 0, 12, 30)]
+            ("Car Wash", 12, 0, 12, 30)
+        ]
         let sunday: [Slot] = [
             ("Wake", 4, 0, 4, 30),
             ("Morning Starbucks Pow-wow", 5, 0, 6, 30),
             ("Gym", 7, 0, 8, 30),
-            ("Church", 9, 0, 12, 30)]
+            ("Church", 9, 0, 12, 30)
+        ]
         var nextID = 0
-        for day in PlanningDate.days(in: week.startKey, calendar: calendar) {
+        for day in PlanningDate.days(in: week.startKey, calendar: calendar)
+        {
+
             let weekday = calendar.component(.weekday, from: day)
             let slots = weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
             let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
-            let index = week.collection.lists.firstIndex { $0.id == listID }!
+            let index = week.collection.lists.firstIndex
+            {
+                $0.id == listID
+            }!
             week.collection.lists[index].subtitleOverride = ""
-            week.collection.lists[index].cards = slots.map { slot in
-                defer { nextID += 1 }
-                return KanbanCard(id: nextID, word: slot.title, listTitle: week.collection.lists[index].title,
-                    startDate: calendar.date(bySettingHour: slot.startHour, minute: slot.startMinute, second: 0, of: day),
+            week.collection.lists[index].cards = slots.map
+            {
+                slot in
+                defer
+                {
+                    nextID += 1
+                }
+
+                return KanbanCard(
+                    id: nextID, word: slot.title, listTitle: week.collection.lists[index].title,
+                    startDate: calendar.date(
+                        bySettingHour: slot.startHour, minute: slot.startMinute, second: 0, of: day),
                     dueDate: calendar.date(bySettingHour: slot.stopHour, minute: slot.stopMinute, second: 0, of: day),
-                    checklists: [], labelIDs: [slot.title == "Work" ? "day-work" :
-                        (slot.title == "Gym" || slot.title == "Wake" ? "day-health" :
-                        (slot.title == "Church" ? "day-spirit" : (slot.title == "Car Wash" ? "day-home" : "day-personal")))],
-                    descriptionOverride: slot.title == "Gym" ? "Choose what fits today: gym, meditation, walking, or massage." : "",
-                    subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
+                    checklists: [],
+                    labelIDs: [
+                        slot.title == "Work"
+                        ? "day-work"
+                        : (slot.title == "Gym" || slot.title == "Wake"
+                            ? "day-health"
+                            : (slot.title == "Church"
+                                ? "day-spirit" : (slot.title == "Car Wash" ? "day-home" : "day-personal")))
+                    ],
+                    descriptionOverride: slot.title == "Gym"
+                    ? "Choose what fits today: gym, meditation, walking, or massage." : "",
+                    subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime,
+                    dueDateKind: .dateAndTime)
             }
+
         }
+
         var template = try! PlanningRoutineTemplate.capture(name: "Jmr", week: week, calendar: calendar)
         template.id = jmrID
         return template.demonstratingFocus()
     }()
     /// Optional examples are added to the library without replacing an existing routine.
-    static let sectionExamples: [PlanningRoutineTemplate] = {
+    static let sectionExamples: [PlanningRoutineTemplate] =
+    {
+
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
         let day = PlanningDate.date("2026-10-12", calendar: calendar)!
         let examples: [(String, UUID, [(String, ItemAccent, [String])])] = [
-            ("A day in chapters", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840011")!, [
-                ("Morning", .orange, ["Ease into the day", "Choose what matters today"]),
-                ("Midday", .blue, ["Make room for focused work", "Take a lunch break"]),
-                ("Evening", .purple, ["Dinner and connection", "Close the loop"])]),
-            ("A build session", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840012")!, [
-                ("Setup", .teal, ["Gather tools and materials", "Choose the outcome"]),
-                ("Build", .blue, ["Make the first version", "Try it and adjust"]),
-                ("Teardown", .orange, ["Put tools away", "Capture the next step"])]),
-            ("A workout journey", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840013")!, [
-                ("Prepare", .orange, ["Pack water and headphones", "Travel to the gym"]),
-                ("Workout", .green, ["Warm up", "Move in a way that fits today"]),
-                ("Return home", .purple, ["Cool down and head home", "Refuel and rest"])])]
-        return examples.map { name, id, sections in
+            (
+                                "A day in chapters", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840011")!,
+                                [
+                                    ("Morning", .orange, ["Ease into the day", "Choose what matters today"]),
+                                    ("Midday", .blue, ["Make room for focused work", "Take a lunch break"]),
+                                    ("Evening", .purple, ["Dinner and connection", "Close the loop"])
+                                ]
+            ),
+            (
+                                "A build session", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840012")!,
+                                [
+                                    ("Setup", .teal, ["Gather tools and materials", "Choose the outcome"]),
+                                    ("Build", .blue, ["Make the first version", "Try it and adjust"]),
+                                    ("Teardown", .orange, ["Put tools away", "Capture the next step"])
+                                ]
+            ),
+            (
+                                "A workout journey", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840013")!,
+                                [
+                                    ("Prepare", .orange, ["Pack water and headphones", "Travel to the gym"]),
+                                    ("Workout", .green, ["Warm up", "Move in a way that fits today"]),
+                                    ("Return home", .purple, ["Cool down and head home", "Refuel and rest"])
+                                ]
+            )
+        ]
+        return examples.map
+        {
+            name, id, sections in
             var week = DatedPlanningWeek.make(for: day, calendar: calendar)
             let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
-            let index = week.collection.lists.firstIndex { $0.id == listID }!
+            let index = week.collection.lists.firstIndex
+            {
+                $0.id == listID
+            }!
             var cards: [KanbanCard] = []
-            for (heading, color, titles) in sections {
-                cards.append(KanbanCard(id: cards.count, word: "--- " + heading,
-                    listTitle: week.collection.lists[index].title, checklists: [],
-                    appearance: ItemAppearance(accent: color)))
-                for title in titles {
-                    cards.append(KanbanCard(id: cards.count, word: title,
-                        listTitle: week.collection.lists[index].title, checklists: []))
+            for (heading, color, titles) in sections
+            {
+
+                cards.append(
+                    KanbanCard(
+                        id: cards.count, word: "--- " + heading,
+                        listTitle: week.collection.lists[index].title, checklists: [],
+                        appearance: ItemAppearance(accent: color)))
+                for title in titles
+                {
+
+                    cards.append(
+                        KanbanCard(
+                            id: cards.count, word: title,
+                            listTitle: week.collection.lists[index].title, checklists: []))
                 }
+
             }
+
             week.collection.lists[index].cards = cards
             var template = try! PlanningRoutineTemplate.capture(name: name, week: week, day: day, calendar: calendar)
             template.id = id
             return template.demonstratingFocus()
         }
+
     }()
-    static let seeded: Self = {
+    static let seeded: Self =
+    {
+
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
@@ -275,15 +449,22 @@ struct PlanningRoutineLibrary: Codable, Equatable {
         let example = DatedPlanningWeek.make(for: anchor, lists: SampleData.lists, calendar: calendar)
         var work = try! PlanningRoutineTemplate.capture(name: "Work Week", week: example, calendar: calendar)
         work.id = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840001")!
-        var vacation = try! PlanningRoutineTemplate.capture(name: "Vacation Day", week: example, day: anchor, calendar: calendar)
+        var vacation = try! PlanningRoutineTemplate.capture(
+            name: "Vacation Day", week: example, day: anchor, calendar: calendar)
         vacation.id = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840002")!
-        var list = KanbanList(id: 0, title: "Vacation", cards: [
-            KanbanCard(id: 0, word: "Enjoy a slower start", listTitle: "Vacation", checklists: []),
-            KanbanCard(id: 1, word: "Explore something new", listTitle: "Vacation", checklists: []),
-            KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])])
+        var list = KanbanList(
+            id: 0, title: "Vacation",
+            cards: [
+                KanbanCard(id: 0, word: "Enjoy a slower start", listTitle: "Vacation", checklists: []),
+                KanbanCard(id: 1, word: "Explore something new", listTitle: "Vacation", checklists: []),
+                KanbanCard(id: 2, word: "Make room to rest", listTitle: "Vacation", checklists: [])
+            ])
         list.subtitleOverride = "Leave room for the unexpected"
-        vacation.collection.lists = [list]; vacation.weekdays = [2: 0]
-        return Self(templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples, defaultWeekID: jmrID, bundledRoutineRevision: 4)
+        vacation.collection.lists = [list];
+        vacation.weekdays = [2: 0]
+        return Self(
+            templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples,
+            defaultWeekID: jmrID, bundledRoutineRevision: 4)
     }()
 }
 
@@ -295,7 +476,9 @@ struct PlanningRoutineLibrary: Codable, Equatable {
 ///     Checks template identities and structure before loading or saving and retains checked
 ///     updates to the stored library.
 ///
-enum PlanningRoutineStore {
+enum PlanningRoutineStore
+{
+
 
     static let key = "Plenact.PlanningTemplates.v1"
 
@@ -312,23 +495,62 @@ enum PlanningRoutineStore {
     /// @throws     Explicit failures include `CocoaError(.coderReadCorrupt)`. Errors from throwing dependencies
     ///             propagate unless handled within this operation.
     ///
-    static func validate(_ value: PlanningRoutineLibrary) throws {
-        guard value.version == 1, (0...4).contains(value.bundledRoutineRevision ?? 0),
-              Set(value.templates.map(\.id)).count == value.templates.count,
-              value.defaultWeekID == nil || value.templates.contains(where: { $0.id == value.defaultWeekID && $0.kind == .week }) else { throw CocoaError(.coderReadCorrupt) }
-        for template in value.templates {
+    static func validate(_ value: PlanningRoutineLibrary) throws
+    {
+
+        guard value.version == 1, (0 ... 4).contains(value.bundledRoutineRevision ?? 0),
+        Set(value.templates.map(\.id)).count == value.templates.count,
+        value.defaultWeekID == nil
+        || value.templates.contains(where:
+            {
+                $0.id == value.defaultWeekID && $0.kind == .week
+            })
+        else
+        {
+            throw CocoaError(.coderReadCorrupt)
+        }
+
+        for template in value.templates
+        {
+
             let lists = template.collection.lists
             guard !template.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  TimeZone(identifier: template.timeZoneID) != nil, (1...7).contains(template.firstWeekday),
-                  PlanningDate.date(template.anchorKey, calendar: template.calendar) != nil,
-                  Set(lists.map(\.id)).count == lists.count,
-                  Set(lists.flatMap(\.allCards).map(\.id)).count == lists.flatMap(\.allCards).count,
-                  !lists.isEmpty, !template.weekdays.isEmpty,
-                  template.kind != .day || (lists.count == 1 && template.weekdays.count == 1),
-                  lists.flatMap(\.cards).allSatisfy({ $0.id >= 0 && !$0.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
-                  template.weekdays.keys.allSatisfy({ (1...7).contains($0) }) else { throw CocoaError(.coderReadCorrupt) }
-            guard template.weekdays.values.allSatisfy({ id in lists.contains { $0.id == id } }) else { throw CocoaError(.coderReadCorrupt) }
+            TimeZone(identifier: template.timeZoneID) != nil, (1 ... 7).contains(template.firstWeekday),
+            PlanningDate.date(template.anchorKey, calendar: template.calendar) != nil,
+            Set(lists.map(\.id)).count == lists.count,
+            Set(lists.flatMap(\.allCards).map(\.id)).count == lists.flatMap(\.allCards).count,
+            !lists.isEmpty, !template.weekdays.isEmpty,
+            template.kind != .day || (lists.count == 1 && template.weekdays.count == 1),
+            lists.flatMap(\.cards).allSatisfy(
+                {
+
+                    $0.id >= 0 && !$0.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                }),
+            template.weekdays.keys.allSatisfy(
+                {
+                    (1 ... 7).contains($0)
+                })
+            else
+            {
+                throw CocoaError(.coderReadCorrupt)
+            }
+
+            guard template.weekdays.values.allSatisfy(
+                {
+                    id in
+                    lists.contains
+                    {
+                        $0.id == id
+                    }
+
+                }) else
+            {
+
+                throw CocoaError(.coderReadCorrupt)
+            }
+
         }
+
     }
 
 
@@ -344,52 +566,115 @@ enum PlanningRoutineStore {
     ///             applied in memory
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    static func load(from defaults: UserDefaults = .standard) throws -> PlanningRoutineLibrary {
-        guard let data = defaults.data(forKey: key) else { return .seeded }
+    static func load(from defaults: UserDefaults = .standard) throws -> PlanningRoutineLibrary
+    {
+
+        guard let data = defaults.data(forKey: key) else
+        {
+            return .seeded
+        }
+
         var result = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
         try validate(result)
-        if (result.bundledRoutineRevision ?? 0) == 0 {
+        if (result.bundledRoutineRevision ?? 0) == 0
+        {
+
             // Upgrade in memory only. Explicit template saves persist the marker; scheduled weeks are untouched.
-            if !result.templates.contains(where: { $0.id == PlanningRoutineLibrary.jmrID }) {
+            if !result.templates.contains(where:
+                {
+                    $0.id == PlanningRoutineLibrary.jmrID
+                })
+            {
+
                 result.templates.append(PlanningRoutineLibrary.jmr)
             }
+
             result.defaultWeekID = PlanningRoutineLibrary.jmrID
             result.bundledRoutineRevision = 1
             try validate(result)
         }
-        if (result.bundledRoutineRevision ?? 0) < 2 {
+
+        if (result.bundledRoutineRevision ?? 0) < 2
+        {
+
             // Add tags only to untagged known bundled examples, never to scheduled weeks or user routines.
-            if let index = result.templates.firstIndex(where: { $0.id == PlanningRoutineLibrary.jmrID }) {
-                let seeds = Dictionary(grouping: PlanningRoutineLibrary.jmr.collection.lists.flatMap(\.cards), by: \.word)
-                for listIndex in result.templates[index].collection.lists.indices {
-                    for cardIndex in result.templates[index].collection.lists[listIndex].cards.indices {
+            if let index = result.templates.firstIndex(where:
+                {
+                    $0.id == PlanningRoutineLibrary.jmrID
+                })
+            {
+
+                let seeds = Dictionary(
+                    grouping: PlanningRoutineLibrary.jmr.collection.lists.flatMap(\.cards), by: \.word)
+                for listIndex in result.templates[index].collection.lists.indices
+                {
+
+                    for cardIndex in result.templates[index].collection.lists[listIndex].cards.indices
+                    {
+
                         let card = result.templates[index].collection.lists[listIndex].cards[cardIndex]
-                        if card.labelIDs.isEmpty, let tags = seeds[card.word]?.first?.labelIDs {
+                        if card.labelIDs.isEmpty, let tags = seeds[card.word]?.first?.labelIDs
+                        {
+
                             result.templates[index].collection.lists[listIndex].cards[cardIndex].labelIDs = tags
                         }
+
                     }
+
                 }
+
             }
+
             result.bundledRoutineRevision = 2
         }
-        if (result.bundledRoutineRevision ?? 0) < 3 {
-            for example in PlanningRoutineLibrary.sectionExamples where !result.templates.contains(where: { $0.id == example.id }) {
+
+        if (result.bundledRoutineRevision ?? 0) < 3
+        {
+
+            for example in PlanningRoutineLibrary.sectionExamples
+            where !result.templates.contains(where:
+                {
+                    $0.id == example.id
+                })
+            {
+
                 result.templates.append(example)
             }
+
             result.bundledRoutineRevision = 3
         }
-        if (result.bundledRoutineRevision ?? 0) < 4 {
+
+        if (result.bundledRoutineRevision ?? 0) < 4
+        {
+
             // Add presentation markers only to recognizable bundled layouts; never rewrite scheduled days.
             let seeds = PlanningRoutineLibrary.seeded.templates
-            for index in result.templates.indices where result.templates[index].exampleFocus == nil {
+            for index in result.templates.indices where result.templates[index].exampleFocus == nil
+            {
+
                 let template = result.templates[index]
-                if let seed = seeds.first(where: { $0.id == template.id && $0.name == template.name }),
-                   seed.collection.lists.map({ $0.cards.map(\.word) }) == template.collection.lists.map({ $0.cards.map(\.word) }) {
+                if let seed = seeds.first(where:
+                    {
+                        $0.id == template.id && $0.name == template.name
+                    }),
+                seed.collection.lists.map(
+                    {
+                        $0.cards.map(\.word)
+                    })
+                == template.collection.lists.map(
+                    {
+                        $0.cards.map(\.word)
+                    })
+                {
+
                     result.templates[index] = template.demonstratingFocus()
                 }
+
             }
+
             result.bundledRoutineRevision = 4
         }
+
         return result
     }
 
@@ -407,16 +692,35 @@ enum PlanningRoutineStore {
     /// @throws     Explicit failures include `CocoaError(.fileWriteFileExists)`, `CocoaError(.fileWriteUnknown)`.
     ///             Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    static func save(_ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard) throws {
-        guard try load(from: defaults) == baseline else { throw CocoaError(.fileWriteFileExists) }
+    static func save(
+        _ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard
+    ) throws
+    {
+
+        guard try load(from: defaults) == baseline else
+        {
+            throw CocoaError(.fileWriteFileExists)
+        }
+
         try validate(value)
         let data = try JSONEncoder().encode(value)
         let previous = defaults.data(forKey: key)
         defaults.set(data, forKey: key)
-        guard defaults.synchronize(), defaults.data(forKey: key) == data else {
-            if let previous { defaults.set(previous, forKey: key) } else { defaults.removeObject(forKey: key) }
+        guard defaults.synchronize(), defaults.data(forKey: key) == data else
+        {
+
+            if let previous
+            {
+                defaults.set(previous, forKey: key)
+            }
+            else
+            {
+                defaults.removeObject(forKey: key)
+            }
+
             throw CocoaError(.fileWriteUnknown)
         }
+
     }
 
 
@@ -431,9 +735,18 @@ enum PlanningRoutineStore {
     /// @return     (Set<String>) file names referenced by stored reusable templates
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    static func retainedFiles(from defaults: UserDefaults = .standard) throws -> Set<String> {
-        Set(try load(from: defaults).templates.flatMap { $0.collection.lists }.flatMap(\.allCards)
-            .flatMap { $0.attachments ?? [] }.flatMap(\.storedFileNames))
+    static func retainedFiles(from defaults: UserDefaults = .standard) throws -> Set<String>
+    {
+
+        Set(
+            try load(from: defaults).templates.flatMap
+            {
+                $0.collection.lists
+            } .flatMap(\.allCards)
+            .flatMap
+            {
+                $0.attachments ?? []
+            } .flatMap(\.storedFileNames))
     }
 
 
@@ -450,10 +763,21 @@ enum PlanningRoutineStore {
     /// @return     (Set<Int>) important-card IDs corresponding to the configured newly generated week
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    static func newWeekImportantIDs(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws -> Set<Int> {
+    static func newWeekImportantIDs(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
+    -> Set<Int>
+    {
+
         let library = try load(from: defaults)
-        guard let template = library.templates.first(where: { $0.id == library.defaultWeekID }) else { return [] }
-        return PlanningTemplateApplication.exampleImportantIDs(template, in: DatedPlanningWeek.make(for: date, calendar: calendar))
+        guard let template = library.templates.first(where:
+            {
+                $0.id == library.defaultWeekID
+            }) else
+        {
+            return []
+        }
+
+        return PlanningTemplateApplication.exampleImportantIDs(
+            template, in: DatedPlanningWeek.make(for: date, calendar: calendar))
     }
 
 
@@ -471,12 +795,23 @@ enum PlanningRoutineStore {
     ///             fallback
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
     ///
-    static func newWeek(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws -> DatedPlanningWeek {
+    static func newWeek(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
+    -> DatedPlanningWeek
+    {
+
         let library = try load(from: defaults)
         let blank = DatedPlanningWeek.make(for: date, calendar: calendar)
-        guard let template = library.templates.first(where: { $0.id == library.defaultWeekID }) else { return blank }
+        guard let template = library.templates.first(where:
+            {
+                $0.id == library.defaultWeekID
+            }) else
+        {
+            return blank
+        }
+
         return try PlanningTemplateApplication.apply(template, to: blank, date: date, calendar: calendar, mode: .add)
     }
+
 }
 
 
@@ -487,7 +822,8 @@ enum PlanningRoutineStore {
 ///     Remaps identities and links, shifts relative dates, and maps example focus markers before
 ///     callers publish a checked result.
 ///
-enum PlanningTemplateApplication {
+enum PlanningTemplateApplication
+{
 
 
     ///
@@ -497,7 +833,11 @@ enum PlanningTemplateApplication {
     ///     Controls how generated content joins the destination while leaving confirmation and
     ///     persistence with the caller.
     ///
-    enum Mode: String, CaseIterable { case add = "Add to existing", replace = "Replace" }
+    enum Mode: String, CaseIterable
+    {
+
+        case add = "Add to existing", replace = "Replace"
+    }
 
 
     ///
@@ -511,11 +851,16 @@ enum PlanningTemplateApplication {
     ///
     /// @return     (Set<Int>) example importance IDs mapped to the allocation used by apply
     ///
-    static func exampleImportantIDs(_ template: PlanningRoutineTemplate, in original: DatedPlanningWeek) -> Set<Int> {
+    static func exampleImportantIDs(_ template: PlanningRoutineTemplate, in original: DatedPlanningWeek) -> Set<Int>
+    {
+
         let start = (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
-        return Set(template.collection.lists.flatMap(\.cards).enumerated().compactMap { index, card in
-            template.exampleFocus?.important.contains(card.id) == true ? start + index : nil
-        })
+        return Set(
+            template.collection.lists.flatMap(\.cards).enumerated().compactMap
+            {
+                index, card in
+                template.exampleFocus?.important.contains(card.id) == true ? start + index : nil
+            })
     }
 
 
@@ -536,10 +881,19 @@ enum PlanningTemplateApplication {
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
     ///             dependencies propagate unless handled within this operation.
     ///
-    static func apply(_ template: PlanningRoutineTemplate, to original: DatedPlanningWeek, date: Date,
-                      calendar: Calendar, mode: Mode, now: Date = .now) throws -> DatedPlanningWeek {
+    static func apply(
+        _ template: PlanningRoutineTemplate, to original: DatedPlanningWeek, date: Date,
+        calendar: Calendar, mode: Mode, now: Date = .now
+    ) throws -> DatedPlanningWeek
+    {
+
         try PlanningRoutineStore.validate(PlanningRoutineLibrary(templates: [template], defaultWeekID: nil))
-        guard PlanningDate.weekKey(date, calendar: calendar) == original.startKey else { throw CocoaError(.validationMissingMandatoryProperty) }
+        guard PlanningDate.weekKey(date, calendar: calendar) == original.startKey else
+        {
+
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
         var result = original
         let targetDays = PlanningDate.days(in: original.startKey, calendar: calendar)
         let anchor = PlanningDate.date(template.anchorKey, calendar: template.calendar)!
@@ -547,7 +901,11 @@ enum PlanningTemplateApplication {
         var nextCard = (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
         let cards = template.collection.lists.flatMap(\.cards)
         var mapping: [Int: Int] = [:]
-        for card in cards { mapping[card.id] = nextCard; nextCard += 1 }
+        for card in cards
+        {
+            mapping[card.id] = nextCard;
+            nextCard += 1
+        }
 
 
         ///
@@ -561,21 +919,49 @@ enum PlanningTemplateApplication {
         ///
         /// @return     (Date?) shifted date-bearing endpoint or unchanged time-only value, preserving nil
         ///
-        func shifted(_ value: Date?, kind: CardDateKind) -> Date? {
-            guard let value else { return nil }
-            if kind == .time { return value }
-            let offset = template.calendar.dateComponents([.day], from: sourceStart, to: template.calendar.startOfDay(for: value)).day ?? 0
+        func shifted(_ value: Date?, kind: CardDateKind) -> Date?
+        {
+
+            guard let value else
+            {
+                return nil
+            }
+
+            if kind == .time
+            {
+                return value
+            }
+
+            let offset =
+            template.calendar.dateComponents(
+                [.day], from: sourceStart, to: template.calendar.startOfDay(for: value)
+            ).day ?? 0
             let target: Date
-            if template.kind == .day {
+            if template.kind == .day
+            {
+
                 target = calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: date))!
-            } else {
+            }
+            else
+            {
+
                 let weekday = template.calendar.component(.weekday, from: value)
-                let sameWeekday = targetDays.first { calendar.component(.weekday, from: $0) == weekday }!
+                let sameWeekday = targetDays.first
+                {
+                    calendar.component(.weekday, from: $0) == weekday
+                }!
                 target = calendar.date(byAdding: .day, value: Int(floor(Double(offset) / 7)) * 7, to: sameWeekday)!
             }
-            if kind == .date { return calendar.startOfDay(for: target) }
+
+            if kind == .date
+            {
+                return calendar.startOfDay(for: target)
+            }
+
             let components = template.calendar.dateComponents([.hour, .minute, .second], from: value)
-            return calendar.date(bySettingHour: components.hour ?? 0, minute: components.minute ?? 0, second: components.second ?? 0, of: target)
+            return calendar.date(
+                bySettingHour: components.hour ?? 0, minute: components.minute ?? 0, second: components.second ?? 0,
+                of: target)
         }
 
 
@@ -589,19 +975,34 @@ enum PlanningTemplateApplication {
         ///
         /// @return     (KanbanChecklist) fresh checklist instance with reset completion and remapped content
         ///
-        func freshChecklist(_ source: KanbanChecklist) -> KanbanChecklist {
-            let items = source.items.map { item -> KanbanChecklistItem in
+        func freshChecklist(_ source: KanbanChecklist) -> KanbanChecklist
+        {
+
+            let items = source.items.map
+            {
+                item -> KanbanChecklistItem in
                 var content = item.content
-                switch content {
+                switch content
+                {
+
                 case .linkedCard(let id):
                     let local = item.linkedCollectionID == nil || item.linkedCollectionID == template.collection.id
-                    content = local ? (mapping[id].map { .linkedCard(cardID: $0) } ?? .standard) : .standard
+                    content = local ? (mapping[id].map
+                        {
+                            .linkedCard(cardID: $0)
+                        }
+                        ?? .standard) : .standard
                 case .actionDetail(let detail):
-                    content = .actionDetail(KanbanChecklistActionDetail(description: detail.description, checklists: detail.checklists.map(freshChecklist)))
-                default: break
+                    content = .actionDetail(
+                        KanbanChecklistActionDetail(
+                            description: detail.description, checklists: detail.checklists.map(freshChecklist)))
+                default:
+                    break
                 }
+
                 return KanbanChecklistItem(title: item.title, content: content)
             }
+
             return KanbanChecklist(title: source.title, items: items, completedItemIndices: [])
         }
 
@@ -617,71 +1018,143 @@ enum PlanningTemplateApplication {
         ///
         /// @return     (KanbanCard) new card instance with destination identity, list title, and template content
         ///
-        func fresh(_ card: KanbanCard, title: String) -> KanbanCard {
+        func fresh(_ card: KanbanCard, title: String) -> KanbanCard
+        {
+
             var cover: UUID?
-            let attachments = card.attachments?.map { source -> KanbanAttachment in
-                var copy = KanbanAttachment(fileName: source.fileName, url: source.url, mediaKind: source.mediaKind,
+            let attachments = card.attachments?.map
+            {
+                source -> KanbanAttachment in
+                var copy = KanbanAttachment(
+                    fileName: source.fileName, url: source.url, mediaKind: source.mediaKind,
                     addedAt: now, exampleImage: source.exampleImage, caption: source.caption)
                 copy.drawingFileName = source.drawingFileName
-                if source.id == card.coverAttachmentID { cover = copy.id }
+                if source.id == card.coverAttachmentID
+                {
+                    cover = copy.id
+                }
+
                 return copy
             }
-            var created = KanbanCard(id: mapping[card.id]!, word: card.word, listTitle: title, isDivider: card.isDivider,
-                startDate: shifted(card.startDate, kind: card.startDateKind), dueDate: shifted(card.dueDate, kind: card.dueDateKind),
+
+            var created = KanbanCard(
+                id: mapping[card.id]!, word: card.word, listTitle: title, isDivider: card.isDivider,
+                startDate: shifted(card.startDate, kind: card.startDateKind),
+                dueDate: shifted(card.dueDate, kind: card.dueDateKind),
                 checklists: card.checklists.map(freshChecklist), members: card.members, labelIDs: card.labelIDs,
-                attachments: attachments, coverAttachmentID: cover, descriptionOverride: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph,
-                subtitleOverride: card.subtitle, presentation: card.presentation, createdAt: now, appearance: card.appearance,
-                listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout, showsDueDateInList: card.showsDueDateInList,
+                attachments: attachments, coverAttachmentID: cover,
+                descriptionOverride: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph,
+                subtitleOverride: card.subtitle, presentation: card.presentation, createdAt: now,
+                appearance: card.appearance,
+                listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout,
+                showsDueDateInList: card.showsDueDateInList,
                 startDateKind: card.startDateKind, dueDateKind: card.dueDateKind,
                 showsReactionsInPreviews: card.showsReactionsInPreviews)
             NewCardAppearanceDefaults.apply(to: &created)
             return created
         }
-        if template.kind == .week && mode == .replace {
-            for index in result.collection.lists.indices where result.dayListIDs.values.contains(result.collection.lists[index].id) && !result.collection.lists[index].isArchived {
+
+        if template.kind == .week && mode == .replace
+        {
+
+            for index in result.collection.lists.indices
+            where result.dayListIDs.values.contains(result.collection.lists[index].id)
+            && !result.collection.lists[index].isArchived
+            {
+
                 result.collection.savedCardIDs.subtract(result.collection.lists[index].cards.map(\.id))
                 result.collection.lists[index].cards = []
             }
+
         }
-        for source in template.collection.lists {
-            let weekday = template.weekdays.first { $0.value == source.id }?.key
-            let destinationDate = template.kind == .day ? date : targetDays.first { calendar.component(.weekday, from: $0) == weekday }
+
+        for source in template.collection.lists
+        {
+
+            let weekday = template.weekdays.first
+            {
+                $0.value == source.id
+            }?.key
+            let destinationDate =
+            template.kind == .day ? date : targetDays.first
+            {
+                calendar.component(.weekday, from: $0) == weekday
+            }
+
             let index: Int
-            if let destinationDate {
+            if let destinationDate
+            {
+
                 let key = PlanningDate.key(destinationDate, calendar: calendar)
-                guard let id = result.dayListIDs[key], let found = result.collection.lists.firstIndex(where: { $0.id == id && !$0.isArchived }) else { throw CocoaError(.validationMissingMandatoryProperty) }
+                guard let id = result.dayListIDs[key],
+                let found = result.collection.lists.firstIndex(where:
+                    {
+                        $0.id == id && !$0.isArchived
+                    })
+                else
+                {
+                    throw CocoaError(.validationMissingMandatoryProperty)
+                }
+
                 index = found
-            } else {
+            }
+            else
+            {
+
                 let id = (result.collection.lists.map(\.id).max() ?? -1) + 1
-                result.collection.lists.append(KanbanList(id: id, title: source.title, cards: [], newItemPresentation: source.newItemPresentation))
+                result.collection.lists.append(
+                    KanbanList(id: id, title: source.title, cards: [], newItemPresentation: source.newItemPresentation))
                 index = result.collection.lists.count - 1
             }
-            if mode == .replace && template.kind == .day {
+
+            if mode == .replace && template.kind == .day
+            {
+
                 result.collection.savedCardIDs.subtract(result.collection.lists[index].cards.map(\.id))
                 result.collection.lists[index].cards = []
             }
-            if result.collection.lists[index].cards.isEmpty {
+
+            if result.collection.lists[index].cards.isEmpty
+            {
+
                 result.collection.lists[index].appearance = source.appearance
                 result.collection.lists[index].subtitleOverride = source.subtitleOverride
                 result.collection.lists[index].newItemPresentation = source.newItemPresentation
             }
-            let created = source.cards.map { card -> KanbanCard in
+
+            let created = source.cards.map
+            {
+                card -> KanbanCard in
                 var item = fresh(card, title: result.collection.lists[index].title)
                 if template.exampleFocus?.allDay.contains(card.id) == true,
-                   item.startDate == nil, item.dueDate == nil, let destinationDate {
+                item.startDate == nil, item.dueDate == nil, let destinationDate
+                {
+
                     item.dueDate = calendar.startOfDay(for: destinationDate)
                     item.dueDateKind = .date
                     item.showsDueDateInList = true
                 }
-                if template.collection.savedCardIDs.contains(card.id) || template.exampleFocus?.bookmarked.contains(card.id) == true {
+
+                if template.collection.savedCardIDs.contains(card.id)
+                || template.exampleFocus?.bookmarked.contains(card.id) == true
+                {
+
                     result.collection.savedCardIDs.insert(item.id)
                 }
+
                 return item
             }
+
             result.collection.lists[index].cards += created
         }
-        if !original.hasContent { result.collection.boardAppearance = template.collection.boardAppearance }
+
+        if !original.hasContent
+        {
+            result.collection.boardAppearance = template.collection.boardAppearance
+        }
+
         result.explicitlySaved = true
         return result
     }
+
 }

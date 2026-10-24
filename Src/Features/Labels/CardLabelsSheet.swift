@@ -5,8 +5,6 @@
 //             entries in a local draft. Returns catalog and assignment changes together on Save;
 //             cancellation leaves the owner's retained values unchanged.
 //
-// @notes      Catalog and assignment edits remain local to this sheet until the user saves
-//
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
@@ -23,16 +21,18 @@ import SwiftUI
 ///
 /// @note       Cancel dismisses the sheet without applying draft catalog or assignment changes
 ///
-struct CardLabelsSheet: View {
+struct CardLabelsSheet: View
+{
+
 
     let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
 
     @Environment(\.dismiss) private var dismiss                   /* Dismiss action for sheet */
     @State private var library:          LabelLibrary             /* Draft label library      */
     @State private var selectedLabelIDs: [String]                 /* Currently selected IDs   */
-    @State private var labelNameDraft                  = ""       /* Draft name for new label */
-    @State private var categorySelection               = ""       /* Currently selected cat.  */
-    @State private var newCategoryDraft                = ""       /* Draft name for new cat.  */
+    @State private var labelNameDraft = ""                        /* Draft name for new label */
+    @State private var categorySelection = ""                     /* Currently selected cat.  */
+    @State private var newCategoryDraft = ""                      /* Draft name for new cat.  */
     @State private var selectedColor: KanbanLabelColor = .yellow  /* Currently selected color */
 
     private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */
@@ -44,9 +44,12 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (String) normalized label-name draft
     ///
-    private var trimmedLabelName: String { /* Normalized new-label name */
+    private var trimmedLabelName: String
+    {  /* Normalized new-label name */
+
         labelNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
 
     ///
     /// @fcn        CardLabelsSheet.trimmedCategoryName
@@ -55,9 +58,12 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (String) normalized category-name draft
     ///
-    private var trimmedCategoryName: String { /* Normalized new-category name */
+    private var trimmedCategoryName: String
+    {  /* Normalized new-category name */
+
         newCategoryDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
 
     ///
     /// @fcn        CardLabelsSheet.canCreateLabel
@@ -67,18 +73,29 @@ struct CardLabelsSheet: View {
     ///
     /// @return     (Bool) true when the current form can create a label
     ///
-    private var canCreateLabel: Bool { /* Form validity for label creation */
-        guard !trimmedLabelName.isEmpty else {
+    private var canCreateLabel: Bool
+    {  /* Form validity for label creation */
+
+        guard !trimmedLabelName.isEmpty else
+        {
+
 
             return false
         }
 
-        if categorySelection == newCategoryID {
+
+        if categorySelection == newCategoryID
+        {
+
 
             return !trimmedCategoryName.isEmpty
         }
 
-        return library.categories.contains(where: { $0.id == categorySelection })
+
+        return library.categories.contains(where:
+            {
+                $0.id == categorySelection
+            })
     }
 
 
@@ -97,7 +114,9 @@ struct CardLabelsSheet: View {
     /// @pre        library contains the definitions available to this card
     /// @post       The sheet's draft state starts with the provided catalog and assignments
     ///
-    init(library: LabelLibrary, selectedLabelIDs: [String], onSave: @escaping (LabelLibrary, [String]) -> Void) {
+    init(library: LabelLibrary, selectedLabelIDs: [String], onSave: @escaping (LabelLibrary, [String]) -> Void)
+    {
+
 
         self.onSave = onSave
         _library = State(initialValue: library)
@@ -118,15 +137,27 @@ struct CardLabelsSheet: View {
     /// @pre        labelID identifies a label displayed by the current catalog
     /// @post       The label's selected state is inverted in the local draft
     ///
-    private func toggleLabel(_ labelID: String) {
+    private func toggleLabel(_ labelID: String)
+    {
 
-        if selectedLabelIDs.contains(labelID) {
 
-            selectedLabelIDs.removeAll { $0 == labelID }
-        } else {
+        if selectedLabelIDs.contains(labelID)
+        {
+
+
+            selectedLabelIDs.removeAll
+            {
+                $0 == labelID
+            }
+
+        }
+        else
+        {
+
 
             selectedLabelIDs.append(labelID)
         }
+
     }
 
 
@@ -142,45 +173,65 @@ struct CardLabelsSheet: View {
     /// @post       The new label appears in the catalog and is selected for this card
     /// @note       The shared catalog is committed only when Save invokes onSave
     ///
-    private func createLabel() {
+    private func createLabel()
+    {
 
-        guard canCreateLabel else {
+
+        guard canCreateLabel else
+        {
+
 
             return
         }
 
+
         let categoryID: String /* Category assigned to the new label */
 
-        if categorySelection == newCategoryID {
+        if categorySelection == newCategoryID
+        {
+
 
             let normalizedName = trimmedCategoryName.lowercased() /* Case-insensitive category lookup key */
 
-            if let existingCategory = library.categories.first(where: {
+            if let existingCategory = library.categories.first(where:
+                {
 
-                $0.name.lowercased() == normalizedName
-            }) { /* Reuse the category matching the normalized name */
+
+                    $0.name.lowercased() == normalizedName
+                })
+            {  /* Reuse the category matching the normalized name */
+
                 categoryID = existingCategory.id
-            } else {
+            }
+            else
+            {
+
 
                 categoryID = UUID().uuidString
                 library.categories.append(KanbanLabelCategory(id: categoryID, name: trimmedCategoryName))
             }
-        } else {
+
+        }
+        else
+        {
+
 
             categoryID = categorySelection
         }
 
-        let label = KanbanLabel(                                               /* New reusable label definition */
-            id:         UUID().uuidString,
-            name:       trimmedLabelName,
+
+        let label = KanbanLabel( /* New reusable label definition */
+            id: UUID().uuidString,
+            name: trimmedLabelName,
             categoryID: categoryID,
-            color:      selectedColor
+            color: selectedColor
         )
         library.labels.append(label)
         selectedLabelIDs.append(label.id)
         labelNameDraft = ""
         newCategoryDraft = ""
     }
+
 
     ///
     /// @fcn        CardLabelsSheet.body
@@ -193,48 +244,78 @@ struct CardLabelsSheet: View {
     /// @pre        The catalog and selected label IDs have been initialized
     /// @post       Save returns the edited catalog and assignments; Cancel discards them
     ///
-    var body: some View { /* Categorized label browser and editor */
-        
-        NavigationStack {
-            
-            List {
-                
-                ForEach(library.categories) { category in
-                    
-                    Section(category.name) {
-                        
-                        let categoryLabels = library.labels.filter { $0.categoryID == category.id } /* Labels in this category */
+    var body: some View
+    {  /* Categorized label browser and editor */
 
-                        if categoryLabels.isEmpty {
-                            
+
+        NavigationStack
+        {
+
+
+            List
+            {
+
+
+                ForEach(library.categories)
+                {
+                    category in
+
+                    Section(category.name)
+                    {
+
+
+                        let categoryLabels = library.labels.filter
+                        {
+
+                            $0.categoryID == category.id
+                        }  /* Labels in this category */
+
+
+                        if categoryLabels.isEmpty
+                        {
+
+
                             Text("No labels yet")
-                                .foregroundStyle(.secondary)
-                            
-                        } else {
-                            
-                            ForEach(categoryLabels) { label in
-                                
-                                Button {
+                            .foregroundStyle(.secondary)
+                        }
+                        else
+                        {
+
+
+                            ForEach(categoryLabels)
+                            {
+                                label in
+
+                                Button
+                                {
+
                                     toggleLabel(label.id)
-                                    
-                                } label: {
-                                    
-                                    HStack(spacing: 10) {
-                                        
+                                }
+                                label:
+                                {
+
+
+                                    HStack(spacing: 10)
+                                    {
+
+
                                         Circle()
-                                            .fill(label.color.color)
-                                            .frame(width: 10, height: 10)
-                                        
+                                        .fill(label.color.color)
+                                        .frame(width: 10, height: 10)
+
                                         Text(label.name)
-                                            .foregroundStyle(.primary)
-                                        
+                                        .foregroundStyle(.primary)
+
                                         Spacer()
-                                        
-                                        if selectedLabelIDs.contains(label.id) {
-                                            
+
+                                        if selectedLabelIDs.contains(label.id)
+                                        {
+
+
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(.tint)
+                                            .foregroundStyle(.tint)
                                         }
+
                                     }
 
                                     .contentShape(Rectangle())
@@ -242,70 +323,114 @@ struct CardLabelsSheet: View {
 
                                 .buttonStyle(.plain)
                             }
+
                         }
+
                     }
+
                 }
 
-                Section("Create label") {
-                    TextField("Label name", text: $labelNameDraft)
-                        .textInputAutocapitalization(.words)
 
-                    Picker("Category", selection: $categorySelection) {
-                        ForEach(library.categories) { category in
+                Section("Create label")
+                {
+
+                    TextField("Label name", text: $labelNameDraft)
+                    .textInputAutocapitalization(.words)
+
+                    Picker("Category", selection: $categorySelection)
+                    {
+
+                        ForEach(library.categories)
+                        {
+                            category in
                             Text(category.name).tag(category.id)
                         }
+
 
                         Text("New category...").tag(newCategoryID)
                     }
 
-                    if categorySelection == newCategoryID {
+
+                    if categorySelection == newCategoryID
+                    {
+
 
                         TextField("New category name", text: $newCategoryDraft)
-                            .textInputAutocapitalization(.words)
+                        .textInputAutocapitalization(.words)
                     }
 
-                    Picker("Color", selection: $selectedColor) {
-                        ForEach(KanbanLabelColor.allCases) { color in
-                            Label {
+
+                    Picker("Color", selection: $selectedColor)
+                    {
+
+                        ForEach(KanbanLabelColor.allCases)
+                        {
+                            color in
+                            Label
+                            {
+
                                 Text(color.title)
-                            } icon: {
+                            }
+                            icon:
+                            {
+
                                 Circle()
-                                    .fill(color.color)
+                                .fill(color.color)
                             }
 
                             .tag(color)
                         }
+
                     }
 
                     .pickerStyle(.menu)
 
-                    Button(action: createLabel) {
+                    Button(action: createLabel)
+                    {
+
                         Label("Create and add label", systemImage: "plus")
                     }
 
                     .disabled(!canCreateLabel)
                 }
+
             }
 
             .navigationTitle("Card labels")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+            .toolbar
+            {
+
+                ToolbarItem(placement: .cancellationAction)
+                {
+
+                    Button("Cancel")
+                    {
+
                         dismiss()
                     }
+
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+
+                ToolbarItem(placement: .confirmationAction)
+                {
+
+                    Button("Save")
+                    {
+
                         onSave(library, selectedLabelIDs)
                         dismiss()
                     }
+
                 }
+
             }
+
         }
 
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
+
 }

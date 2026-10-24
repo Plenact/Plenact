@@ -2,11 +2,17 @@ This directory owns Plenact's implemented kanban Board feature: ordered lists or
 
 ## Current Files
 
-- [`ContentView.swift`](ContentView.swift): Board screen, board settings, list/card presentation, member management, and list-target navigation from Today
-- [`CardDetailView.swift`](CardDetailView.swift): card details, dates, descriptions, checklists, comments, members, labels, and attachment interactions
-- [`Models.swift`](Models.swift): Codable Board models, local persistence, deterministic sample data, and checklist-item migration
+- [`BoardView.swift`](BoardView.swift): Board composition; the Swift type remains `ContentView` to preserve callers.
+- [`BoardActions.swift`](BoardActions.swift): owner-scoped Board editing and navigation behavior.
+- [`BoardHeader.swift`](BoardHeader.swift): header controls, options, and Board settings.
+- [`BoardGallery.swift`](BoardGallery.swift): section-aware visual browsing.
+- [`BoardInteractions.swift`](BoardInteractions.swift): native drag/drop and row-versus-Board swipe routing.
+- [`BoardViewport.swift`](BoardViewport.swift): sizing, zoom, retained scrolling, and restoration.
+- [`BoardBindings.swift`](BoardBindings.swift): active/archive binding projections.
 
-The filenames reflect the current implementation. `ContentView` is the Board view in code; renaming and splitting it should be a separate, behavior-preserving change
+Focused Lists and previews live in the adjacent `Lists` and `Cards` features. Canonical models,
+local stores, movement policy, and example generation have dedicated directories. See the
+[complete source map](../../../Doc/ProjectLayout.md) for ownership and code-line counts.
 
 ## Starter Board
 
@@ -198,16 +204,12 @@ Compatibility fields, stable IDs, attachment filenames, and storage keys are unc
 
 The Board is local to this app installation. Members are currently free-text assignments rather than accounts. A future registered-user directory and typed card-assignment model are described in [`../../../Doc/Users/README.md`](../../../Doc/Users/README.md); they are not implemented. The feature does not provide cloud synchronization, shared permissions, calendar synchronization, or a remote database
 
-## Future Modularization
+## Source Organization
 
-Keep this directory flat while the files remain easy to scan. Likely future extractions from `ContentView.swift` include:
-
-- `BoardView.swift`
-- `BoardSettingsView.swift`
-- `KanbanListView.swift`
-- `KanbanCardView.swift`
-
-Extract these incrementally with focused tests and builds. Avoid adding `Views/`, `Models/`, or `Components/` subdirectories until the number of files makes those divisions useful
+Keep each Swift file at or below 1,200 counted source lines, excluding comments and blank or
+bracket-only lines. Group related behavior by responsibility; retain existing state ownership
+and checked save callbacks when extracting view behavior. The style reference is
+[`style.swift`](../../../Doc/Style/style.swift).
 
 ## Mixed item display formats
 

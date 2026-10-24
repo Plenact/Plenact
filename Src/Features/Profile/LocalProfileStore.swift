@@ -21,9 +21,11 @@ import Foundation
 ///
 /// @note   Removing the profile never removes Board, label, or attachment data
 ///
-enum LocalProfileStore {
+enum LocalProfileStore
+{
 
-    static let storageKey = "Plenact.LocalProfile.v1"   /* Versioned profile key */
+
+    static let storageKey = "Plenact.LocalProfile.v1" /* Versioned profile key */
 
 
     ///
@@ -38,12 +40,17 @@ enum LocalProfileStore {
     /// @pre        defaults is available to the current process
     /// @post       Stored data remains unchanged
     ///
-    static func load(from defaults: UserDefaults = .standard) -> LocalProfile? {
+    static func load(from defaults: UserDefaults = .standard) -> LocalProfile?
+    {
 
-        guard let data = defaults.data(forKey: storageKey) else { /* Saved profile bytes */
+
+        guard let data = defaults.data(forKey: storageKey) else
+        {  /* Saved profile bytes */
+
 
             return nil
         }
+
 
         return try? JSONDecoder().decode(LocalProfile.self, from: data)
     }
@@ -62,12 +69,17 @@ enum LocalProfileStore {
     /// @pre        profile contains valid local-only values
     /// @post       Existing Board and feature persistence remains unchanged
     ///
-    static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard) {
+    static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard)
+    {
 
-        guard let data = try? JSONEncoder().encode(profile) else { /* Encoded profile snapshot */
+
+        guard let data = try? JSONEncoder().encode(profile) else
+        {  /* Encoded profile snapshot */
+
 
             return
         }
+
 
         defaults.set(data, forKey: storageKey)
         PlanPreferencesStore.save(profile.preferences, to: defaults)
@@ -85,10 +97,13 @@ enum LocalProfileStore {
     ///
     /// @post       Board, labels, attachments, and Today selections remain available
     ///
-    static func remove(from defaults: UserDefaults = .standard) {
+    static func remove(from defaults: UserDefaults = .standard)
+    {
+
 
         defaults.removeObject(forKey: storageKey)
     }
+
 }
 
 
@@ -98,7 +113,8 @@ enum LocalProfileStore {
 /// @section    Purpose
 ///     Keep image data in the app container while the profile stores only its filename
 ///
-enum ProfileAvatarPhotoStore {
+enum ProfileAvatarPhotoStore
+{
 
 
     ///
@@ -110,12 +126,15 @@ enum ProfileAvatarPhotoStore {
     ///
     /// @throws     File-system error when the Documents directory cannot be resolved or created
     ///
-    private static func directory() throws -> URL {
+    private static func directory() throws -> URL
+    {
 
-        let documents = try FileManager.default.url(                           /* App Documents directory lookup */
+
+        let documents = try FileManager.default.url( /* App Documents directory lookup */
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
-        let directory = documents.appendingPathComponent("ProfileAvatars", isDirectory: true) /* Local avatar-photo subdirectory */
+        let directory = documents.appendingPathComponent(
+                        "ProfileAvatars", isDirectory: true) /* Local avatar-photo subdirectory */
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -134,7 +153,9 @@ enum ProfileAvatarPhotoStore {
     ///
     /// @throws     File-system error when directory creation or file writing fails
     ///
-    static func save(_ data: Data) throws -> String {
+    static func save(_ data: Data) throws -> String
+    {
+
 
         let fileName = "\(UUID().uuidString).jpg" /* Unique JPEG filename for the saved avatar */
 
@@ -157,12 +178,20 @@ enum ProfileAvatarPhotoStore {
     /// @pre        fileName is a filename previously returned by save(_:)
     /// @post       The stored photo is unchanged
     ///
-    static func load(_ fileName: String?) -> Data? {
+    static func load(_ fileName: String?) -> Data?
+    {
+
 
         guard let fileName, /* Stored avatar filename */
-              fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-              let directory = try? directory() /* Avatar-photo directory, when available */ else { return nil }
-        return try? Data(contentsOf: directory.appendingPathComponent(fileName)) /* Stored avatar bytes, when readable */
+        fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+        let directory = try? directory() /* Avatar-photo directory, when available */
+        else
+        {
+            return nil
+        }
+
+        return try? Data(
+            contentsOf: directory.appendingPathComponent(fileName)) /* Stored avatar bytes, when readable */
     }
 
 
@@ -178,13 +207,21 @@ enum ProfileAvatarPhotoStore {
     /// @pre        fileName identifies a photo stored by this store
     /// @post       Other local profile, Board, label, and attachment data is unchanged
     ///
-    static func remove(_ fileName: String?) {
+    static func remove(_ fileName: String?)
+    {
+
 
         guard let fileName, /* Stored avatar filename */
-              fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-              let directory = try? directory() /* Avatar-photo directory, when available */ else { return }
+        fileName == URL(fileURLWithPath: fileName).lastPathComponent,
+        let directory = try? directory() /* Avatar-photo directory, when available */
+        else
+        {
+            return
+        }
+
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
     }
+
 }
 
 
@@ -195,7 +232,9 @@ enum ProfileAvatarPhotoStore {
 ///     Keeps plan controls available before local profile creation and resolves compatible stored
 ///     defaults.
 ///
-enum PlanPreferencesStore {
+enum PlanPreferencesStore
+{
+
 
     static let key = "Plenact.PlanPreferences.v1"
 
@@ -211,9 +250,12 @@ enum PlanPreferencesStore {
     /// @return     (LocalProfilePreferences) decoded display preferences, or the established defaults when
     ///             unavailable
     ///
-    static func load(from defaults: UserDefaults = .standard) -> LocalProfilePreferences {
-        resolved(preferencesData: defaults.data(forKey: key),
-                 profileData: defaults.data(forKey: LocalProfileStore.storageKey))
+    static func load(from defaults: UserDefaults = .standard) -> LocalProfilePreferences
+    {
+
+        resolved(
+            preferencesData: defaults.data(forKey: key),
+            profileData: defaults.data(forKey: LocalProfileStore.storageKey))
     }
 
 
@@ -229,14 +271,22 @@ enum PlanPreferencesStore {
     ///
     /// @return     (LocalProfilePreferences) standalone, profile, or default preferences in that order
     ///
-    static func resolved(preferencesData: Data?, profileData: Data?) -> LocalProfilePreferences {
+    static func resolved(preferencesData: Data?, profileData: Data?) -> LocalProfilePreferences
+    {
+
         if let preferencesData,
-           let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData) {
+        let value = try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData)
+        {
+
             return value
         }
-        if let profileData, let profile = try? JSONDecoder().decode(LocalProfile.self, from: profileData) {
+
+        if let profileData, let profile = try? JSONDecoder().decode(LocalProfile.self, from: profileData)
+        {
+
             return profile.preferences
         }
+
         return LocalProfilePreferences()
     }
 
@@ -251,8 +301,15 @@ enum PlanPreferencesStore {
     ///
     /// @return     (Void) no return value
     ///
-    static func save(_ value: LocalProfilePreferences, to defaults: UserDefaults = .standard) {
-        guard let data = try? JSONEncoder().encode(value) else { return }
+    static func save(_ value: LocalProfilePreferences, to defaults: UserDefaults = .standard)
+    {
+
+        guard let data = try? JSONEncoder().encode(value) else
+        {
+            return
+        }
+
         defaults.set(data, forKey: key)
     }
+
 }

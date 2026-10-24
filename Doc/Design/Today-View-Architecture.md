@@ -10,10 +10,12 @@ The approved [Planning Rhythm](Planning-Rhythm.md) adds morning intention, midda
 
 ## Current source and state boundaries
 
-- `App.swift`: root Today/Week/Plans/Activity navigation, New capture, personal collections, current dated planning document, shortcuts, bookmarks, and cross-owner coordination
-- `Src/Features/Boards/ContentView.swift`: Board and focused List presentation, Card previews, source navigation, and editing interactions
-- `Src/Features/Boards/Models.swift`: canonical Cards, Lists, personal collections, Appearance, creation-only tutorials, and Board persistence
-- `Src/Features/Boards/CalendarPlanning.swift`: local date keys, dated weeks and date-to-List mappings, Calendar browsing, and full-month example workspace backup/restore
+- `Src/App.swift` and `Src/App/`: scene setup, root composition, navigation, and checked owner operations
+- `Src/Features/Boards/`, `Lists/`, and `Cards/`: Board and focused List presentation, previews, editing, and native interactions
+- `Src/Models/`, `Persistence/`, and `Features/Appearance/`: canonical records, compatible local storage, and appearance inheritance
+- `Src/Features/Calendar/`: local date keys, dated Weeks, mappings, browsing, and owner access
+- `Src/Features/Examples/FullMonthExamples.swift`: example workspace generation and reversible user-data backup/restore
+- [Current project layout](../ProjectLayout.md): the complete source map and 1,200-code-line file policy
 - `Src/Features/Labels/`: local shared label catalog, including Reference guidance labeling
 - `Src/Features/Attachments/`: attachment handling, covers, and personal background assets/imports
 - `Src/Features/Profile/`: device-local identity and settings, independent from remote authentication

@@ -1,16 +1,13 @@
 // --------------------------------------------------------------------------------------------------
 // @file       ChecklistMigrationTests.swift
-// @brief      Checklist and assignee persistence compatibility tests
-// @details    Verifies revision-zero string migration, stable action IDs, completion-index
-//             compatibility, rich action round trips, weekday starters, and manual or registered
-//             assignee decoding. Uses synthetic in-memory fixtures without migrating saved
-//             application data.
-//
-// @notes      Tests protect Codable compatibility without migrating saved application data
+// @brief      Checklist Migration regression tests
+// @details    Verifies related workspace behavior with synthetic fixtures and the shared
+//             PlenactBoardDocumentTests helpers. Retains original test identities and checked
+//             assertions while separating this coverage from unrelated feature tests.
 //
 // --------------------------------------------------------------------------------------------------
-import XCTest
 @testable import Plenact
+import XCTest
 
 
 ///
@@ -19,7 +16,8 @@ import XCTest
 /// @section    Purpose
 ///     Protect saved board text, completion state, and identity while the checklist schema evolves
 ///
-final class ChecklistMigrationTests: XCTestCase {
+final class ChecklistMigrationTests: XCTestCase
+{
 
 
     ///
@@ -32,42 +30,44 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     /// @throws     Decoding or unwrap failures when the legacy snapshot is incompatible
     ///
-    func testLegacyBoardSnapshotDecodesChecklistItems() throws {
+    func testLegacyBoardSnapshotDecodesChecklistItems() throws
+    {
+
 
         let legacyJSON = """
-        [
-          {
-            "id": 7,
-            "title": "Sunday (9/27)",
-            "cards": [
-              {
-                "id": 42,
-                "word": "Laundry Session",
-                "listTitle": "Sunday (9/27)",
-                "isDivider": false,
-                "isTitleChecked": false,
-                "checklists": [
-                  {
-                    "id": "11111111-1111-1111-1111-111111111111",
-                    "title": "Laundry actions",
-                    "items": ["Sort clothes", "Start washer", "Fold clothes"],
-                    "completedItemIndices": [1]
-                  }
-                ],
-                "comments": [],
-                "members": [],
-                "labelIDs": [],
-                "dismissedActivityIDs": []
-              }
-            ]
-          }
-        ]
-        """   /* Revision 0 board fixture */
+                        [
+                          {
+                            "id": 7,
+                            "title": "Sunday (9/27)",
+                            "cards": [
+                              {
+                                "id": 42,
+                                "word": "Laundry Session",
+                                "listTitle": "Sunday (9/27)",
+                                "isDivider": false,
+                                "isTitleChecked": false,
+                                "checklists": [
+                                  {
+                                    "id": "11111111-1111-1111-1111-111111111111",
+                                    "title": "Laundry actions",
+                                    "items": ["Sort clothes", "Start washer", "Fold clothes"],
+                                    "completedItemIndices": [1]
+                                  }
+                                ],
+                                "comments": [],
+                                "members": [],
+                                "labelIDs": [],
+                                "dismissedActivityIDs": []
+                              }
+                            ]
+                          }
+                        ]
+                        """ /* Revision 0 board fixture */
 
-        let lists     = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8))  /* Migrated board   */
-        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)                 /* Nested checklist */
+        let lists = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8))  /* Migrated board   */
+        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)             /* Nested checklist */
 
-        XCTAssertEqual(checklist.items.map(\.title),   ["Sort clothes", "Start washer", "Fold clothes"])
+        XCTAssertEqual(checklist.items.map(\.title), ["Sort clothes", "Start washer", "Fold clothes"])
         XCTAssertEqual(checklist.completedItemIndices, [1])
         XCTAssertFalse(checklist.items[0].isCompleted)
         XCTAssertTrue(checklist.items[1].isCompleted)
@@ -84,19 +84,23 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     /// @throws     Decoding failures when the legacy checklist cannot be migrated
     ///
-    func testLegacyMigrationProducesDeterministicItemIDs() throws {
+    func testLegacyMigrationProducesDeterministicItemIDs() throws
+    {
+
 
         let legacyJSON = """
-        {
-          "id": "22222222-2222-2222-2222-222222222222",
-          "title": "Actions",
-          "items": ["First", "Second"],
-          "completedItemIndices": []
-        }
-        """   /* Revision 0 checklist fixture */
+                        {
+                          "id": "22222222-2222-2222-2222-222222222222",
+                          "title": "Actions",
+                          "items": ["First", "Second"],
+                          "completedItemIndices": []
+                        }
+                        """ /* Revision 0 checklist fixture */
 
-        let firstDecode  = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8))  /* First migration  */
-        let secondDecode = try JSONDecoder().decode(KanbanChecklist.self, from: Data(legacyJSON.utf8))  /* Repeat migration */
+        let firstDecode = try JSONDecoder().decode(
+            KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* First migration  */
+        let secondDecode = try JSONDecoder().decode(
+            KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* Repeat migration */
 
         XCTAssertEqual(firstDecode.items.map(\.id), secondDecode.items.map(\.id))
         XCTAssertNotEqual(firstDecode.items[0].id, firstDecode.items[1].id)
@@ -112,23 +116,25 @@ final class ChecklistMigrationTests: XCTestCase {
     /// @return     (Void) succeeds when identity is unchanged and completion matches supplied
     ///             positions
     ///
-    func testExplicitCompletionIndicesPreserveItemIDs() {
+    func testExplicitCompletionIndicesPreserveItemIDs()
+    {
 
-        let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!  /* First action ID  */
+
+        let firstID = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!   /* First action ID  */
         let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!  /* Second action ID */
 
-        let items = [                                                               /* Source actions   */
-            KanbanChecklistItem(id: firstID,  title: "First",  isCompleted: true),
+        let items = [ /* Source actions   */
+            KanbanChecklistItem(id: firstID, title: "First", isCompleted: true),
             KanbanChecklistItem(id: secondID, title: "Second", isCompleted: false)
         ]
 
-        let checklist = KanbanChecklist(   /* Compatibility result */
-            title:                "Actions",
-            items:                items,
+        let checklist = KanbanChecklist( /* Compatibility result */
+            title: "Actions",
+            items: items,
             completedItemIndices: [1]
         )
 
-        XCTAssertEqual(checklist.items.map(\.id),      [firstID, secondID])
+        XCTAssertEqual(checklist.items.map(\.id), [firstID, secondID])
         XCTAssertEqual(checklist.completedItemIndices, [1])
         XCTAssertFalse(checklist.items[0].isCompleted)
         XCTAssertTrue(checklist.items[1].isCompleted)
@@ -146,205 +152,263 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     /// @throws     Encoding, JSON inspection, decoding, or unwrap failures
     ///
-    func testCurrentChecklistRoundTripUsesItemRecords() throws {
+    func testCurrentChecklistRoundTripUsesItemRecords() throws
+    {
 
-        let checklist = KanbanChecklist(   /* Current checklist */
-            id:    UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+
+        let checklist = KanbanChecklist( /* Current checklist */
+            id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
             title: "Actions",
             items: [
                 KanbanChecklistItem(
-                    id:          UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!,
-                    title:       "Go do laundry",
+                    id: UUID(uuidString: "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC")!,
+                    title: "Go do laundry",
                     isCompleted: true
                 )
             ]
         )
 
-        let encoded = try JSONEncoder().encode(checklist)                                           /* Current JSON     */
-        let object  = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])  /* JSON object      */
-        let items   = try XCTUnwrap(object["items"] as? [[String: Any]])                            /* Encoded actions  */
-        let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)                 /* Round-trip value */
+        let encoded = try JSONEncoder().encode(checklist) /* Current JSON     */
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any])           /* JSON object      */
+        let items = try XCTUnwrap(object["items"] as? [[String: Any]])               /* Encoded actions  */
+        let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)  /* Round-trip value */
 
-        XCTAssertEqual(items.first?["title"] as? String, "Go do laundry")
+        XCTAssertEqual(items.first? ["title"] as? String, "Go do laundry")
         XCTAssertNil(object["completedItemIndices"])
         XCTAssertEqual(decoded, checklist)
     }
 
 
-      ///
-      /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction()
-      /// @brief      Decode a stable checklist item written before action content existed
-      /// @details    Verifies the absent content field receives standard text behavior
-      ///
-      /// @return     (Void) succeeds when the earlier item remains readable and standard
-      ///
-      /// @throws     Decoding failures when the earlier item representation is incompatible
-      ///
-      func testEarlierStableItemDefaultsToStandardAction() throws {
+    ///
+    /// @fcn        ChecklistMigrationTests.testEarlierStableItemDefaultsToStandardAction()
+    /// @brief      Decode a stable checklist item written before action content existed
+    /// @details    Verifies the absent content field receives standard text behavior
+    ///
+    /// @return     (Void) succeeds when the earlier item remains readable and standard
+    ///
+    /// @throws     Decoding failures when the earlier item representation is incompatible
+    ///
+    func testEarlierStableItemDefaultsToStandardAction() throws
+    {
+
 
         let earlierItemJSON = """
-        {
-          "id": "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
-          "title": "Existing action",
-          "isCompleted": false
-        }
-        """   /* Pre-content item fixture */
+                        {
+                          "id": "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
+                          "title": "Existing action",
+                          "isCompleted": false
+                        }
+                        """ /* Pre-content item fixture */
 
-        let item = try JSONDecoder().decode(KanbanChecklistItem.self, from: Data(earlierItemJSON.utf8)) /* Decoded action */
+        let item = try JSONDecoder().decode(
+            KanbanChecklistItem.self, from: Data(earlierItemJSON.utf8)) /* Decoded action */
 
-        XCTAssertEqual(item.title,   "Existing action")
+        XCTAssertEqual(item.title, "Existing action")
         XCTAssertEqual(item.content, .standard)
-      }
+    }
 
 
-      ///
-      /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips()
-      /// @brief      Round-trip linked-card and Action Detail payloads
-      /// @details    Protects stable card references and reduced owned content across board saves
-      ///
-      /// @return     (Void) succeeds when both rich action types round-trip without loss
-      ///
-      /// @throws     Encoding or decoding failures for rich checklist actions
-      ///
-      func testRichActionContentRoundTrips() throws {
+    ///
+    /// @fcn        ChecklistMigrationTests.testRichActionContentRoundTrips()
+    /// @brief      Round-trip linked-card and Action Detail payloads
+    /// @details    Protects stable card references and reduced owned content across board saves
+    ///
+    /// @return     (Void) succeeds when both rich action types round-trip without loss
+    ///
+    /// @throws     Encoding or decoding failures for rich checklist actions
+    ///
+    func testRichActionContentRoundTrips() throws
+    {
 
-        let detail = KanbanChecklistActionDetail(   /* Reduced detail */
-          description: "Prepare the laundry session.",
-          checklists:  [KanbanChecklist(title: "Steps", items: ["Sort clothes"])],
-          comments:    [KanbanComment(author: "Plenact Demo", body: "Ready to begin.")]
+
+        let detail = KanbanChecklistActionDetail( /* Reduced detail */
+            description: "Prepare the laundry session.",
+            checklists: [KanbanChecklist(title: "Steps", items: ["Sort clothes"])],
+            comments: [KanbanComment(author: "Plenact Demo", body: "Ready to begin.")]
         )
 
-        let checklist = KanbanChecklist(             /* Rich action checklist */
-          title: "Actions",
-          items: [
-            KanbanChecklistItem(title: "Open laundry card", content: .linkedCard(cardID: 42)),
-            KanbanChecklistItem(title: "Prepare details", content: .actionDetail(detail))
-          ]
+        let checklist = KanbanChecklist( /* Rich action checklist */
+            title: "Actions",
+            items: [
+                KanbanChecklistItem(title: "Open laundry card", content: .linkedCard(cardID: 42)),
+                KanbanChecklistItem(title: "Prepare details", content: .actionDetail(detail))
+            ]
         )
 
         let encoded = try JSONEncoder().encode(checklist)                            /* Rich JSON       */
         let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)  /* Round-trip data */
 
         XCTAssertEqual(decoded, checklist)
-      }
+    }
 
 
-      ///
-      /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions()
-      /// @brief      Verify every seeded activity card demonstrates linked and detailed actions
-      /// @details    Requires one resolvable cross-list card link and two Action Details while
-      ///             leaving section-divider cards free of demonstration content
-      ///
-      /// @return     (Void) succeeds when the complete starter Board meets the demonstration
-      ///             contract
-      ///
-      func testEveryStarterCardDemonstratesRichActions() {
+    ///
+    /// @fcn        ChecklistMigrationTests.testEveryStarterCardDemonstratesRichActions()
+    /// @brief      Verify every seeded activity card demonstrates linked and detailed actions
+    /// @details    Requires one resolvable cross-list card link and two Action Details while
+    ///             leaving section-divider cards free of demonstration content
+    ///
+    /// @return     (Void) succeeds when the complete starter Board meets the demonstration
+    ///             contract
+    ///
+    func testEveryStarterCardDemonstratesRichActions()
+    {
 
-        let cardsByID = Dictionary(   /* Starter cards by ID */
-          uniqueKeysWithValues: SampleData.lists.flatMap(\.cards).map { ($0.id, $0) }
+
+        let cardsByID = Dictionary( /* Starter cards by ID */
+            uniqueKeysWithValues: SampleData.lists.flatMap(\.cards).map
+            {
+                ($0.id, $0)
+            }
         )
 
-        for card in SampleData.lists.flatMap(\.cards) {
+        for card in SampleData.lists.flatMap(\.cards)
+        {
 
-          if card.isSectionDivider {
 
-            XCTAssertTrue(card.checklists.flatMap(\.items).allSatisfy { $0.content == .standard })
-            continue
-          }
+            if card.isSectionDivider
+            {
 
-          let actions = card.checklists.flatMap(\.items)            /* Card checklist actions          */
-          let linkedCardIDs = actions.compactMap { item -> Int? in  /* Resolved linked-card target IDs */
 
-            guard case .linkedCard(let cardID /* Linked card ID */) = item.content else {
-
-                return nil
+                XCTAssertTrue(card.checklists.flatMap(\.items).allSatisfy
+                    {
+                        $0.content == .standard
+                    })
+                continue
             }
 
-            return cardID
-          }
 
-          let detailCount = actions.filter { item in                  /* Count reduced Action Details     */
-            guard case .actionDetail = item.content else {
+            let actions = card.checklists.flatMap(\.items) /* Card checklist actions          */
+            let linkedCardIDs = actions.compactMap
+            {
+            item -> Int? in /* Resolved linked-card target IDs */
 
-                return false
+                guard case .linkedCard(let cardID /* Linked card ID */) = item.content else
+                {
+
+
+                    return nil
+                }
+
+
+                return cardID
             }
 
-            return true
 
-          }.count
+            let detailCount = actions.filter
+            {
+            item in /* Count reduced Action Details     */
+                guard case .actionDetail = item.content else
+                {
 
-          XCTAssertEqual(linkedCardIDs.count, 1, "\(card.word) should demonstrate one card link")
-          XCTAssertEqual(detailCount,         2, "\(card.word) should demonstrate two Action Details")
 
-          if let linkedCardID = linkedCardIDs.first {               /* First seeded linked-card target */
+                    return false
+                }
 
-            let linkedCard = cardsByID[linkedCardID]                /* Resolved sample target          */
 
-            XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
-            XCTAssertNotEqual(linkedCard?.listTitle, card.listTitle, "\(card.word) should link across lists")
-          }
+                return true
+            } .count
+
+            XCTAssertEqual(linkedCardIDs.count, 1, "\(card.word) should demonstrate one card link")
+            XCTAssertEqual(detailCount, 2, "\(card.word) should demonstrate two Action Details")
+
+            if let linkedCardID = linkedCardIDs.first
+            {  /* First seeded linked-card target */
+
+
+                let linkedCard = cardsByID[linkedCardID] /* Resolved sample target          */
+
+                XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
+                XCTAssertNotEqual(linkedCard?.listTitle, card.listTitle, "\(card.word) should link across lists")
+            }
+
         }
-      }
+
+    }
 
 
-      ///
-      /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists()
-      /// @brief      Verify the starter Board represents a complete planning week
-      /// @details    Protects weekday ordering, daily card counts, divider placement, and
-      ///             representative planning content from accidental regression
-      ///
-      /// @return     (Void) succeeds when all seven weekday lists meet the starter contract
-      ///
-      func testStarterBoardUsesWeekdayPlanningLists() {
+    ///
+    /// @fcn        ChecklistMigrationTests.testStarterBoardUsesWeekdayPlanningLists()
+    /// @brief      Verify the starter Board represents a complete planning week
+    /// @details    Protects weekday ordering, daily card counts, divider placement, and
+    ///             representative planning content from accidental regression
+    ///
+    /// @return     (Void) succeeds when all seven weekday lists meet the starter contract
+    ///
+    func testStarterBoardUsesWeekdayPlanningLists()
+    {
 
-        let expectedTitles = [                                                              /* Ordered weekday titles */
-          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+
+        let expectedTitles = [ /* Ordered weekday titles */
+                        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
         ]
 
         XCTAssertEqual(SampleData.lists.map(\.title), expectedTitles)
 
-        for list in SampleData.lists {
+        for list in SampleData.lists
+        {
 
-          let activityCards = list.cards.filter { !$0.isSectionDivider }  /* Daily activity cards */
-          let dividerCards  = list.cards.filter(\.isSectionDivider)       /* Daily dividers       */
 
-          XCTAssertEqual(activityCards.count, 6, "\(list.title) should begin with six activities")
-          XCTAssertEqual(dividerCards.count,  1, "\(list.title) should contain one divider")
+            let activityCards = list.cards.filter
+            {
+                !$0.isSectionDivider
+            }  /* Daily activity cards */
 
-          XCTAssertTrue(activityCards.allSatisfy { $0.listTitle == list.title })
+            let dividerCards = list.cards.filter(\.isSectionDivider) /* Daily dividers       */
+
+            XCTAssertEqual(activityCards.count, 6, "\(list.title) should begin with six activities")
+            XCTAssertEqual(dividerCards.count, 1, "\(list.title) should contain one divider")
+
+            XCTAssertTrue(activityCards.allSatisfy
+                {
+                    $0.listTitle == list.title
+                })
         }
 
-        XCTAssertTrue(SampleData.lists[0].cards.contains { $0.word == "Laundry session" })
-        XCTAssertTrue(SampleData.lists[6].cards.contains { $0.word == "Review the upcoming calendar" })
-      }
+
+        XCTAssertTrue(SampleData.lists[0].cards.contains
+            {
+                $0.word == "Laundry session"
+            })
+        XCTAssertTrue(SampleData.lists[6].cards.contains
+            {
+                $0.word == "Review the upcoming calendar"
+            })
+    }
 
 
-      ///
-      /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees()
-      /// @brief      Preserve revision 0 card member strings as manual assignments
-      /// @details    Confirms old Board snapshots do not accidentally claim registered identities
-      ///
-      /// @return     (Void) succeeds when legacy names remain visible and are explicitly manual
-      ///
-      /// @throws     Decoding failures when the previous card member representation is incompatible
-      ///
-      func testLegacyCardMemberNamesBecomeManualAssignees() throws {
+    ///
+    /// @fcn        ChecklistMigrationTests.testLegacyCardMemberNamesBecomeManualAssignees()
+    /// @brief      Preserve revision 0 card member strings as manual assignments
+    /// @details    Confirms old Board snapshots do not accidentally claim registered identities
+    ///
+    /// @return     (Void) succeeds when legacy names remain visible and are explicitly manual
+    ///
+    /// @throws     Decoding failures when the previous card member representation is incompatible
+    ///
+    func testLegacyCardMemberNamesBecomeManualAssignees() throws
+    {
+
 
         let legacyJSON = """
-        {
-          "id": 9,
-          "word": "Plan the week",
-          "listTitle": "Monday",
-          "isDivider": false,
-          "isTitleChecked": false,
-          "members": ["Jim", "Sally"]
-        }
-        """   /* Legacy member fixture */
+                        {
+                          "id": 9,
+                          "word": "Plan the week",
+                          "listTitle": "Monday",
+                          "isDivider": false,
+                          "isTitleChecked": false,
+                          "members": ["Jim", "Sally"]
+                        }
+                        """ /* Legacy member fixture */
 
-        let card = try JSONDecoder().decode(KanbanCard.self, from: Data(legacyJSON.utf8))   /* Decoded card */
+        let card = try JSONDecoder().decode(KanbanCard.self, from: Data(legacyJSON.utf8)) /* Decoded card */
 
         XCTAssertEqual(card.members.map(\.displayName), ["Jim", "Sally"])
-        XCTAssertTrue(card.members.allSatisfy { $0.kind == .manual && $0.userID == nil })
+        XCTAssertTrue(card.members.allSatisfy
+            {
+                $0.kind == .manual && $0.userID == nil
+            })
     }
 
 
@@ -357,23 +421,25 @@ final class ChecklistMigrationTests: XCTestCase {
     ///
     /// @throws     Encoding or decoding failures for the card assignment
     ///
-    func testRegisteredCardAssigneeRoundTripsStableUserID() throws {
+    func testRegisteredCardAssigneeRoundTripsStableUserID() throws
+    {
+
 
         let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"  /* Stable demo user ID            */
-        let card   = KanbanCard(                             /* Card with directory assignment */
-            id:        10,
-            word:      "Prepare the week",
+        let card = KanbanCard(                               /* Card with directory assignment */
+            id: 10,
+            word: "Prepare the week",
             listTitle: "Monday",
-            members:   [.registered(userID: userID, displayName: "Jim")]
+            members: [.registered(userID: userID, displayName: "Jim")]
         )
 
         let encoded = try JSONEncoder().encode(card)                            /* Encoded card    */
         let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)  /* Round-trip card */
 
-        XCTAssertEqual(decoded.members.count,          1)
-        XCTAssertEqual(decoded.members[0].kind,        .registeredUser)
-        XCTAssertEqual(decoded.members[0].userID,      userID)
+        XCTAssertEqual(decoded.members.count, 1)
+        XCTAssertEqual(decoded.members[0].kind, .registeredUser)
+        XCTAssertEqual(decoded.members[0].userID, userID)
         XCTAssertEqual(decoded.members[0].displayName, "Jim")
     }
-}
 
+}

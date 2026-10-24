@@ -2,6 +2,10 @@
 
 This directory contains the active unit-test target for Plenact
 
+The suite is organized into feature-specific files while retaining its XCTest class and method
+identities. `BoardDocumentTests.swift` contains shared helpers; `Support/PresentationFixtures.swift`
+contains reusable hosted-view probes. See [the current project layout](../Doc/ProjectLayout.md).
+
 ## Current Coverage
 
 Editor banner spacing regression hosts otherwise identical Cards and Notes with None and Orange backgrounds, requires the redundant native navigation bar to stay hidden in all four cases, and verifies layout emits no record updates. Compare colored/uncolored upper action positions on a device; background selection must not add an empty bar above the controls.
@@ -33,7 +37,7 @@ Today Focus regressions cover all seven weekdays, reordered lists, local midnigh
 
 `LocalProfileStoreTests.swift` verifies isolated local profile persistence, removal, personalization, and avatar initials without reading production preferences
 
-`PlenactBoardDocumentTests.swift` also verifies overlapping database activity, persistent error feedback, ordered background Board saves, preservation of unreadable saved data, and API activity cleanup after success, timeout, and cancellation. Persistence tests use isolated UserDefaults suites; API tests intercept synthetic requests without contacting a server.
+The feature-specific `PlenactBoardDocumentTests` extensions also verify overlapping database activity, persistent error feedback, ordered background Board saves, preservation of unreadable saved data, and API activity cleanup after success, timeout, and cancellation. Persistence tests use isolated UserDefaults suites; API tests intercept synthetic requests without contacting a server.
 
 Archive coverage verifies legacy list decoding, unchanged JSON shape for empty archives, full-card archive/restore round trips, divider retention, reserved archived IDs, exclusion from active search, local-only shared-Board validation, and archive preservation when renaming personal lists.
 

@@ -1,11 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LabelModels.swift
 // @brief      Reusable label identities, catalog storage, and chip presentation
-// @details    Defines categorized labels, stable Card assignment IDs, a serializable color palette,
-//             and device-local catalog persistence. Provides compact SwiftUI chips while keeping
-//             label names and category ownership in the catalog rather than each Card.
-//
-// @notes      Card assignments store label IDs; the shared catalog owns label names, categories, and colors
+// @details    Defines categorized labels, stable Card assignment IDs, a serializable color
+//             palette, and device-local catalog persistence. Provides compact SwiftUI chips while
+//             keeping label names and category ownership in the catalog rather than each Card.
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -24,7 +22,9 @@ import SwiftUI
 /// @note       Raw values are persisted; color values are resolved into SwiftUI colors for
 ///             presentation
 ///
-enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
+enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable
+{
+
 
     case mint
     case yellow
@@ -44,7 +44,11 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (String) serialized raw-value identifier
     ///
-    var id: String { rawValue } /* Stable persisted color token */
+    var id: String
+    {
+        rawValue
+    }  /* Stable persisted color token */
+
 
     ///
     /// @fcn        KanbanLabelColor.title
@@ -53,9 +57,12 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (String) user-facing color name
     ///
-    var title: String { /* Display name for the color picker */
+    var title: String
+    {  /* Display name for the color picker */
+
         rawValue.capitalized
     }
+
 
     ///
     /// @fcn        KanbanLabelColor.color
@@ -64,21 +71,37 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
     ///
     /// @return     (Color) presentation color associated with this palette case
     ///
-    var color: Color { /* SwiftUI color resolved from the persisted token */
-        switch self {
+    var color: Color
+    {  /* SwiftUI color resolved from the persisted token */
 
-            case .mint:   Color(red: 0.17, green: 0.72, blue: 0.55)
-            case .yellow: Color(red: 0.91, green: 0.79, blue: 0.13)
-            case .orange: Color(red: 0.96, green: 0.55, blue: 0.10)
-            case .coral:  Color(red: 0.91, green: 0.37, blue: 0.32)
-            case .pink:   Color(red: 0.88, green: 0.38, blue: 0.66)
-            case .purple: Color(red: 0.57, green: 0.32, blue: 0.76)
-            case .blue:   Color(red: 0.20, green: 0.48, blue: 0.88)
-            case .green:  Color(red: 0.20, green: 0.60, blue: 0.37)
-            case .red:    Color(red: 0.78, green: 0.22, blue: 0.21)
-            case .gray:   Color(red: 0.43, green: 0.46, blue: 0.50)
+        switch self
+        {
+
+
+        case .mint:
+            Color(red: 0.17, green: 0.72, blue: 0.55)
+        case .yellow:
+            Color(red: 0.91, green: 0.79, blue: 0.13)
+        case .orange:
+            Color(red: 0.96, green: 0.55, blue: 0.10)
+        case .coral:
+            Color(red: 0.91, green: 0.37, blue: 0.32)
+        case .pink:
+            Color(red: 0.88, green: 0.38, blue: 0.66)
+        case .purple:
+            Color(red: 0.57, green: 0.32, blue: 0.76)
+        case .blue:
+            Color(red: 0.20, green: 0.48, blue: 0.88)
+        case .green:
+            Color(red: 0.20, green: 0.60, blue: 0.37)
+        case .red:
+            Color(red: 0.78, green: 0.22, blue: 0.21)
+        case .gray:
+            Color(red: 0.43, green: 0.46, blue: 0.50)
         }
+
     }
+
 }
 
 
@@ -93,7 +116,9 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable {
 ///
 /// @note       Labels refer to categories using the stable category ID
 ///
-struct KanbanLabelCategory: Identifiable, Hashable, Codable {
+struct KanbanLabelCategory: Identifiable, Hashable, Codable
+{
+
 
     let id:   String  /* Stable category identity  */
     var name: String  /* User-facing category name */
@@ -111,12 +136,14 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable {
 ///
 /// @note       Cards store the label ID rather than copying these presentation values
 ///
-struct KanbanLabel: Identifiable, Hashable, Codable {
+struct KanbanLabel: Identifiable, Hashable, Codable
+{
 
-    let id:         String           /* Stable label identity           */
-    var name:       String           /* User-facing label name          */
-    var categoryID: String           /* Stable owning-category identity */
-    var color:      KanbanLabelColor /* Persisted palette selection     */
+
+    let id:         String            /* Stable label identity           */
+    var name:       String            /* User-facing label name          */
+    var categoryID: String            /* Stable owning-category identity */
+    var color:      KanbanLabelColor  /* Persisted palette selection     */
 }
 
 
@@ -132,7 +159,9 @@ struct KanbanLabel: Identifiable, Hashable, Codable {
 /// @details    The starter catalog seeds common categories and labels when no saved catalog is
 ///             available
 ///
-struct LabelLibrary: Hashable, Codable {
+struct LabelLibrary: Hashable, Codable
+{
+
 
     static let dayAreaLabels: [KanbanLabel] = [
         KanbanLabel(id: "day-work", name: "Work", categoryID: "work", color: .blue),
@@ -141,31 +170,80 @@ struct LabelLibrary: Hashable, Codable {
         KanbanLabel(id: "day-home", name: "Home", categoryID: "home", color: .coral),
         KanbanLabel(id: "day-spirit", name: "Spirit", categoryID: "home", color: .orange)
     ]
-    var includingDayAreas: LabelLibrary {
+    var includingDayAreas: LabelLibrary
+    {
+
         var copy = self
-        for label in Self.dayAreaLabels where !copy.labels.contains(where: { $0.id == label.id }) {
-            if !copy.categories.contains(where: { $0.id == label.categoryID }),
-               let category = Self.starterCategories.first(where: { $0.id == label.categoryID }) { copy.categories.append(category) }
+        for label in Self.dayAreaLabels where !copy.labels.contains(where:
+            {
+                $0.id == label.id
+            })
+        {
+
+            if !copy.categories.contains(where:
+                {
+                    $0.id == label.categoryID
+                }),
+            let category = Self.starterCategories.first(where:
+                {
+                    $0.id == label.categoryID
+                })
+            {
+
+                copy.categories.append(category)
+            }
+
             copy.labels.append(label)
         }
+
         return copy
     }
-    private static let starterCategories = [KanbanLabelCategory(id: "work", name: "Work"),
+
+    private static let starterCategories = [
+        KanbanLabelCategory(id: "work", name: "Work"),
         KanbanLabelCategory(id: "health", name: "Health & Fitness"), KanbanLabelCategory(id: "casual", name: "Casual"),
-        KanbanLabelCategory(id: "home", name: "Home")]
+        KanbanLabelCategory(id: "home", name: "Home")
+    ]
     static let referenceCategory = KanbanLabelCategory(id: "plenact-reference", name: "Reference")
-    static let referenceLabel = KanbanLabel(id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
+    static let referenceLabel = KanbanLabel(
+        id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
 
     /// Keep the built-in tutorial label available without changing existing user labels.
-    var includingReference: LabelLibrary {
-        guard !labels.contains(where: { $0.id == Self.referenceLabel.id || $0.name.caseInsensitiveCompare("Reference") == .orderedSame }) else { return self }
+    var includingReference: LabelLibrary
+    {
+
+        guard
+        !labels.contains(where:
+            {
+
+                $0.id == Self.referenceLabel.id || $0.name.caseInsensitiveCompare("Reference") == .orderedSame
+            })
+        else
+        {
+            return self
+        }
+
         var updated = self
-        if !updated.categories.contains(where: { $0.id == Self.referenceCategory.id }) { updated.categories.append(Self.referenceCategory) }
+        if !updated.categories.contains(where:
+            {
+                $0.id == Self.referenceCategory.id
+            })
+        {
+
+            updated.categories.append(Self.referenceCategory)
+        }
+
         updated.labels.append(Self.referenceLabel)
         return updated
     }
-    var referenceLabelID: String {
-        labels.first { $0.name.caseInsensitiveCompare("Reference") == .orderedSame }?.id ?? Self.referenceLabel.id
+
+    var referenceLabelID: String
+    {
+
+        labels.first
+        {
+            $0.name.caseInsensitiveCompare("Reference") == .orderedSame
+        }?.id ?? Self.referenceLabel.id
     }
 
 
@@ -174,16 +252,16 @@ struct LabelLibrary: Hashable, Codable {
 
     /// Stable IDs used to assign representative starter labels to sample cards
     static let starterLabelIDs = [ /* Label IDs used by deterministic SampleData */
-        "work-scheduled", "work-deliverable", "work-onsite",
-        "home-dinner", "home-relatives", "home-church",
-        "finance-budget", "finance-bills",
-        "health-fitness", "health-wellness",
-        "leisure-hobby", "leisure-travel",
-        "casual-social"
+            "work-scheduled", "work-deliverable", "work-onsite",
+            "home-dinner", "home-relatives", "home-church",
+            "finance-budget", "finance-bills",
+            "health-fitness", "health-wellness",
+            "leisure-hobby", "leisure-travel",
+            "casual-social"
     ]
 
     /// Initial categories and reusable labels available on a fresh installation
-    static let starter = LabelLibrary(                                         /* Initial categorized label catalog */
+    static let starter = LabelLibrary( /* Initial categorized label catalog */
         categories: [
             KanbanLabelCategory(id: "work", name: "Work"),
             KanbanLabelCategory(id: "home", name: "Home"),
@@ -193,7 +271,7 @@ struct LabelLibrary: Hashable, Codable {
             KanbanLabelCategory(id: "casual", name: "Casual"),
             referenceCategory
         ],
-        labels:     [
+        labels: [
             KanbanLabel(id: "work-scheduled", name: "Scheduled", categoryID: "work", color: .blue),
             KanbanLabel(id: "work-deliverable", name: "Deliverable", categoryID: "work", color: .orange),
             KanbanLabel(id: "work-onsite", name: "Onsite", categoryID: "work", color: .purple),
@@ -224,7 +302,9 @@ struct LabelLibrary: Hashable, Codable {
 ///
 /// @note       This local store does not synchronize the catalog across devices or users
 ///
-enum LabelLibraryStore {
+enum LabelLibraryStore
+{
+
 
     private static let storageKey = "Plenact.LabelLibrary.v1" /* Versioned local catalog key */
 
@@ -240,12 +320,18 @@ enum LabelLibraryStore {
     /// @pre        UserDefaults may contain data encoded by this library format
     /// @post       Stored data is unchanged; callers receive a usable label library
     ///
-    static func load() -> LabelLibrary {
+    static func load() -> LabelLibrary
+    {
 
-          guard let data = UserDefaults.standard.data(forKey: storageKey),                   /* Saved JSON catalog */
-              let library = try? JSONDecoder().decode(LabelLibrary.self, from: data) else {  /* Decoded catalog    */
+
+        guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
+        let library = try? JSONDecoder().decode(LabelLibrary.self, from: data)
+        else
+        {  /* Decoded catalog    */
+
             return LabelLibrary.starter.includingDayAreas
         }
+
 
         return library.includingReference.includingDayAreas
     }
@@ -264,15 +350,21 @@ enum LabelLibraryStore {
     /// @post       A valid encoded snapshot is stored locally; encoding failure leaves prior data
     ///             unchanged
     ///
-    static func save(_ library: LabelLibrary) {
+    static func save(_ library: LabelLibrary)
+    {
 
-        guard let data = try? JSONEncoder().encode(library) else { /* Encoded label catalog snapshot */
+
+        guard let data = try? JSONEncoder().encode(library) else
+        {  /* Encoded label catalog snapshot */
+
 
             return
         }
 
+
         UserDefaults.standard.set(data, forKey: storageKey)
     }
+
 }
 
 
@@ -285,7 +377,9 @@ enum LabelLibraryStore {
 /// @section    Purpose
 ///     Present a label name with its palette color in card summaries and details
 ///
-struct KanbanLabelChip: View {
+struct KanbanLabelChip: View
+{
+
 
     let label: KanbanLabel /* Label displayed by the chip */
 
@@ -296,13 +390,16 @@ struct KanbanLabelChip: View {
     ///
     /// @return     (some View) compact visual representation of the supplied label
     ///
-    var body: some View { /* Colored reusable-label chip */
+    var body: some View
+    {  /* Colored reusable-label chip */
+
         Text(label.name)
-            .font(.caption2.weight(.semibold))
-            .lineLimit(1)
-            .foregroundStyle(label.color.color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .background(label.color.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .font(.caption2.weight(.semibold))
+        .lineLimit(1)
+        .foregroundStyle(label.color.color)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(label.color.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
+
 }

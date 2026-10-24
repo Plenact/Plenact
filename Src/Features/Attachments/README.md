@@ -47,7 +47,10 @@ Existing demo selections, attachment formats, storage keys, and user covers rema
 
 ## Implementation
 
-[`PhotoAttachments.swift`](PhotoAttachments.swift) contains:
+Attachment code is grouped in [`AttachmentStore.swift`](AttachmentStore.swift),
+[`AttachmentViews.swift`](AttachmentViews.swift), [`CreationAttachments.swift`](CreationAttachments.swift),
+[`DrawingEditor.swift`](DrawingEditor.swift), and [`CoverLibrary.swift`](CoverLibrary.swift).
+Appearance controls and backgrounds live in the adjacent `Appearance` feature. Together these provide:
 
 - `KanbanAttachment` and `KanbanAttachmentKind` metadata models.
 - `CardAttachmentStore` for local media files and link validation.

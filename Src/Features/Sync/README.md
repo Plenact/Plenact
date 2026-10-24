@@ -1,3 +1,5 @@
+**Supported User Data Model versions:** Version 0 only (existing demo wire schema 1); Version 1.0 runtime support is not implemented.
+
 # Board Synchronization
 
 This feature defines Plenact's versioned Board document and client boundary for the shared demo API

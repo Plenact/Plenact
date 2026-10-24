@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:snapshot-page",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "snapshot_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "fence_sequence": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "expires_at_utc": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:server-record"
+      },
+      "maxItems": 100
+    },
+    "next_page_cursor": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,512}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "next_change_cursor": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,512}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "protocol_version",
+    "workspace_id",
+    "epoch",
+    "snapshot_id",
+    "fence_sequence",
+    "expires_at_utc",
+    "records",
+    "next_page_cursor",
+    "next_change_cursor"
+  ],
+  "additionalProperties": false
+}

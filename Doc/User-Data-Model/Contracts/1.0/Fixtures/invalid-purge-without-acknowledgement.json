@@ -1,0 +1,10 @@
+{
+  "protocol_version": "1.0",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "asset_id": "20000000-0000-4000-8000-000000000020",
+  "operation_id": "70000000-0000-4000-8000-000000000010",
+  "asset_revision": "2",
+  "epoch": "70000000-0000-4000-8000-000000000001",
+  "confirmation": "PURGE_UNREFERENCED_ASSET",
+  "accept_history_media_unavailable": false
+}

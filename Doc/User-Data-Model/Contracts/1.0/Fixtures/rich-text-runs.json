@@ -1,0 +1,15 @@
+[
+  {
+    "text": "A calm start 🌿",
+    "bold": true,
+    "italic": false,
+    "color": "Blue",
+    "fontName": "Georgia",
+    "fontSize": 17
+  },
+  {
+    "text": " and a pause",
+    "bold": false,
+    "italic": true
+  }
+]

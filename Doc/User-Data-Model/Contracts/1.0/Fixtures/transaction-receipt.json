@@ -1,0 +1,19 @@
+{
+  "protocol_version": "1.0",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "epoch": "70000000-0000-4000-8000-000000000001",
+  "transaction_id": "70000000-0000-4000-8000-000000000004",
+  "request_sha256": "fb71e4a864fefd41eaa1361939cb62046f7184a1d1b84e92d0176a354210e7ec",
+  "receipt_sequence": "1",
+  "stored_at_utc": "2026-10-24T12:00:00.000Z",
+  "results": [
+    {
+      "operation_id": "70000000-0000-4000-8000-000000000005",
+      "record_type": "card",
+      "record_id": "20000000-0000-4000-8000-000000000004",
+      "revision": "1",
+      "change_sequence": "1",
+      "deleted": false
+    }
+  ]
+}

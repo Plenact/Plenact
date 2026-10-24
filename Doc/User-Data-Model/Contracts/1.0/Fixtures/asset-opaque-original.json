@@ -1,0 +1,20 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "asset",
+  "id": "20000000-0000-4000-8000-000000000022",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "account_id": "30000000-0000-4000-8000-000000000001",
+    "kind": "drawing_original",
+    "mime_type": "application/octet-stream",
+    "original_name": "opaque-original.bin",
+    "content_state": "described",
+    "byte_length": "62",
+    "sha256": "eb564fa34a5b9093e97285acc78fc3a08c1d40f693867ad170d2c3688e4cb787",
+    "source_format": "test.opaque",
+    "derived_from_asset_id": null,
+    "source_created_at_utc": null,
+    "attribution": null
+  }
+}

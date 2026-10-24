@@ -1,0 +1,31 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "user_preferences",
+  "id": "51a45d50-19d3-5cd7-9509-110fb9ebaff6",
+  "workspace_id": "10000000-0000-4000-8000-000000000002",
+  "payload": {
+    "account_id": "10000000-0000-4000-8000-000000000001",
+    "preferences": {
+      "default_list_id": null,
+      "uses_reduced_content": false,
+      "scrolls_overflowing_titles": false,
+      "importance_star_style": "tucked",
+      "enables_lower_corner_back": false,
+      "uses_large_controls": false,
+      "randomizes_new_card_headers": false,
+      "randomizes_new_card_backgrounds": false,
+      "shows_due_dates_on_new_cards": true,
+      "preferred_maps_app": "apple",
+      "keeps_day_lists_in_time_order": true,
+      "today_focus_order": "chronological",
+      "today_focus_groups_by_section": false,
+      "today_focus_includes_up_next": true,
+      "today_focus_includes_important": true,
+      "today_focus_includes_bookmarked": true,
+      "today_focus_hides_completed": false,
+      "today_focus_item_count": 4,
+      "shows_navigation_labels": true
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:template-library",
+  "title": "Template ordering, selected default and separate bundled revision provenance",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "template_library"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "source_store_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "template_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "uniqueItems": true
+        },
+        "default_week_id": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bundled_routine_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_store_version",
+        "template_ids",
+        "default_week_id",
+        "bundled_routine_revision"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

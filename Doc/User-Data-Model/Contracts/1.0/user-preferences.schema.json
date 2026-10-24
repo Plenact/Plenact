@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:user-preferences",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "user_preferences"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "default_list_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "uses_reduced_content": {
+              "type": "boolean"
+            },
+            "scrolls_overflowing_titles": {
+              "type": "boolean"
+            },
+            "importance_star_style": {
+              "enum": [
+                "tucked",
+                "fanned"
+              ]
+            },
+            "enables_lower_corner_back": {
+              "type": "boolean"
+            },
+            "uses_large_controls": {
+              "type": "boolean"
+            },
+            "randomizes_new_card_headers": {
+              "type": "boolean"
+            },
+            "randomizes_new_card_backgrounds": {
+              "type": "boolean"
+            },
+            "shows_due_dates_on_new_cards": {
+              "type": "boolean"
+            },
+            "preferred_maps_app": {
+              "enum": [
+                "apple",
+                "google"
+              ]
+            },
+            "keeps_day_lists_in_time_order": {
+              "type": "boolean"
+            },
+            "today_focus_order": {
+              "enum": [
+                "day_list",
+                "chronological"
+              ]
+            },
+            "today_focus_groups_by_section": {
+              "type": "boolean"
+            },
+            "today_focus_includes_up_next": {
+              "type": "boolean"
+            },
+            "today_focus_includes_important": {
+              "type": "boolean"
+            },
+            "today_focus_includes_bookmarked": {
+              "type": "boolean"
+            },
+            "today_focus_hides_completed": {
+              "type": "boolean"
+            },
+            "today_focus_item_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 12
+            },
+            "shows_navigation_labels": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "default_list_id",
+            "uses_reduced_content",
+            "scrolls_overflowing_titles",
+            "importance_star_style",
+            "enables_lower_corner_back",
+            "uses_large_controls",
+            "randomizes_new_card_headers",
+            "randomizes_new_card_backgrounds",
+            "shows_due_dates_on_new_cards",
+            "preferred_maps_app",
+            "keeps_day_lists_in_time_order",
+            "today_focus_order",
+            "today_focus_groups_by_section",
+            "today_focus_includes_up_next",
+            "today_focus_includes_important",
+            "today_focus_includes_bookmarked",
+            "today_focus_hides_completed",
+            "today_focus_item_count",
+            "shows_navigation_labels"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "account_id",
+        "preferences"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,10 @@
+<!-- Supported Plenact User Data Model: 1.0, final specification.
+     Standalone prototype codec probe; not the Windows app or sync integration. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

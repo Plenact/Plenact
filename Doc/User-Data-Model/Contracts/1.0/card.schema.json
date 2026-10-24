@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:card",
+  "title": "Complete Card/Note content document, not a server revision envelope",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "card"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "list_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string"
+        },
+        "is_divider": {
+          "type": "boolean"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "editing_locked": {
+          "type": "boolean"
+        },
+        "presentation": {
+          "enum": [
+            "card",
+            "note"
+          ]
+        },
+        "display_format": {
+          "anyOf": [
+            {
+              "enum": [
+                "card",
+                "note",
+                "divider",
+                "picture",
+                "title",
+                "text"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description_override": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "subtitle_override": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:date-value"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_kind": {
+          "enum": [
+            "date",
+            "time",
+            "date_and_time"
+          ]
+        },
+        "due": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:date-value"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "due_kind": {
+          "enum": [
+            "date",
+            "time",
+            "date_and_time"
+          ]
+        },
+        "shows_due_date_in_list": {
+          "type": "boolean"
+        },
+        "source_created_at_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "checklists": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/checklist"
+          }
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/assignee"
+          }
+        },
+        "label_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "uniqueItems": true
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/comment"
+          }
+        },
+        "reactions": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/reaction"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shows_reactions_in_previews": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attachments": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/attachment"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cover_attachment_id": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dismissed_activity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "appearance": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/item_appearance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "section_layout": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/section_layout"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "edit_history": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/history"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "list_id",
+        "archived",
+        "title",
+        "is_divider",
+        "completed",
+        "editing_locked",
+        "presentation",
+        "display_format",
+        "description_override",
+        "subtitle_override",
+        "location",
+        "start",
+        "start_kind",
+        "due",
+        "due_kind",
+        "shows_due_date_in_list",
+        "source_created_at_utc",
+        "checklists",
+        "members",
+        "label_ids",
+        "comments",
+        "reactions",
+        "shows_reactions_in_previews",
+        "attachments",
+        "cover_attachment_id",
+        "dismissed_activity_ids",
+        "appearance",
+        "section_layout",
+        "edit_history"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

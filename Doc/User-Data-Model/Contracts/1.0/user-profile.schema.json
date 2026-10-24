@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:user-profile",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "user_profile"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "source_profile_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "source_created_at_utc": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "avatar_color": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/color"
+        },
+        "avatar_icon": {
+          "type": "string",
+          "minLength": 1
+        },
+        "avatar_foreground_color": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/color"
+        },
+        "avatar_asset_id": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "account_id",
+        "source_profile_id",
+        "source_created_at_utc",
+        "display_name",
+        "email",
+        "context",
+        "avatar_color",
+        "avatar_icon",
+        "avatar_foreground_color",
+        "avatar_asset_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

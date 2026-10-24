@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:content-graph",
+  "title": "Offline content graph fixture/export slice; not a synchronization API envelope",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:collection"
+      }
+    },
+    "lists": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:list"
+      }
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:card"
+      }
+    },
+    "external_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "record_type": {
+            "enum": [
+              "card",
+              "collection",
+              "label",
+              "asset",
+              "list",
+              "label_category"
+            ]
+          },
+          "id": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "status": {
+            "enum": [
+              "external",
+              "unavailable"
+            ]
+          }
+        },
+        "required": [
+          "record_type",
+          "id",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "workspace_id",
+    "collections",
+    "lists",
+    "cards",
+    "external_references"
+  ],
+  "additionalProperties": false
+}

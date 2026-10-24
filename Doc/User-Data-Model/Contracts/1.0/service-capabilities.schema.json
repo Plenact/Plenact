@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:service-capabilities",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "user_data_model_versions": {
+      "const": [
+        "1.0"
+      ]
+    },
+    "record_types": {
+      "const": [
+        "account",
+        "asset",
+        "calendar_index",
+        "calendar_week",
+        "card",
+        "collection",
+        "content_selection",
+        "daily_plan",
+        "label",
+        "label_category",
+        "list",
+        "periodic_review",
+        "planning_template",
+        "review_rhythm",
+        "studio_artwork",
+        "studio_settings",
+        "template_library",
+        "today_shortcuts",
+        "unavailable_reference",
+        "user_preferences",
+        "user_profile",
+        "weekly_review",
+        "workspace",
+        "workspace_display_preferences"
+      ]
+    },
+    "max_json_bytes": {
+      "const": 8388608
+    },
+    "max_document_bytes": {
+      "const": 4194304
+    },
+    "max_operations": {
+      "const": 100
+    },
+    "max_page_records": {
+      "const": 100
+    },
+    "max_json_depth": {
+      "const": 64
+    },
+    "asset_chunk_bytes": {
+      "const": 262144
+    },
+    "max_upload_bytes": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "change_retention_days": {
+      "const": 90
+    },
+    "snapshot_lease_seconds": {
+      "const": 1800
+    },
+    "upload_lease_seconds": {
+      "const": 86400
+    },
+    "tombstone_retention": {
+      "const": "account_lifetime"
+    },
+    "receipt_retention": {
+      "const": "account_lifetime"
+    },
+    "accepted_time_zone_rules_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]{4}[a-z]$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "protocol_version",
+    "user_data_model_versions",
+    "record_types",
+    "max_json_bytes",
+    "max_document_bytes",
+    "max_operations",
+    "max_page_records",
+    "max_json_depth",
+    "asset_chunk_bytes",
+    "max_upload_bytes",
+    "change_retention_days",
+    "snapshot_lease_seconds",
+    "upload_lease_seconds",
+    "tombstone_retention",
+    "receipt_retention",
+    "accepted_time_zone_rules_versions"
+  ],
+  "additionalProperties": false
+}

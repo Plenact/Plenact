@@ -1,0 +1,47 @@
+{
+  "protocol_version": "1.0",
+  "user_data_model_versions": [
+    "1.0"
+  ],
+  "record_types": [
+    "account",
+    "asset",
+    "calendar_index",
+    "calendar_week",
+    "card",
+    "collection",
+    "content_selection",
+    "daily_plan",
+    "label",
+    "label_category",
+    "list",
+    "periodic_review",
+    "planning_template",
+    "review_rhythm",
+    "studio_artwork",
+    "studio_settings",
+    "template_library",
+    "today_shortcuts",
+    "unavailable_reference",
+    "user_preferences",
+    "user_profile",
+    "weekly_review",
+    "workspace",
+    "workspace_display_preferences"
+  ],
+  "max_json_bytes": 8388608,
+  "max_document_bytes": 4194304,
+  "max_operations": 100,
+  "max_page_records": 100,
+  "max_json_depth": 64,
+  "asset_chunk_bytes": 262144,
+  "max_upload_bytes": "1073741824",
+  "change_retention_days": 90,
+  "snapshot_lease_seconds": 1800,
+  "upload_lease_seconds": 86400,
+  "tombstone_retention": "account_lifetime",
+  "receipt_retention": "account_lifetime",
+  "accepted_time_zone_rules_versions": [
+    "2025b"
+  ]
+}

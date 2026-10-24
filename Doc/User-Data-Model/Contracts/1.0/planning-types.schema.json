@@ -1,0 +1,439 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:planning-types",
+  "title": "Planning/review nested values; not a sync record",
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "format": "date"
+    },
+    "time_zone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "priority": {
+      "type": "object",
+      "properties": {
+        "source_collection_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "card_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "source_location": {
+          "type": "string"
+        },
+        "source_created_at_utc": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_collection_id",
+        "card_id",
+        "title",
+        "source_location",
+        "source_created_at_utc"
+      ],
+      "additionalProperties": false
+    },
+    "check_in": {
+      "type": "object",
+      "properties": {
+        "focus": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "changed": {
+          "type": "string"
+        },
+        "saved_at_utc": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "focus",
+        "changed",
+        "saved_at_utc"
+      ],
+      "additionalProperties": false
+    },
+    "mood": {
+      "type": "object",
+      "properties": {
+        "emoji": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "emoji",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "check_in_entry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "saved_at_utc": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+        },
+        "changed": {
+          "type": "string"
+        },
+        "focus": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "intention": {
+          "type": "string"
+        },
+        "constraints": {
+          "type": "string"
+        },
+        "concerns": {
+          "type": "string"
+        },
+        "priorities": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+          }
+        },
+        "completed_tasks": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "total_tasks": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unavailable": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legacy": {
+          "type": "boolean"
+        },
+        "mood": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/mood"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "saved_at_utc",
+        "changed",
+        "focus",
+        "intention",
+        "constraints",
+        "concerns",
+        "priorities",
+        "completed_tasks",
+        "total_tasks",
+        "notes",
+        "unavailable",
+        "legacy",
+        "mood"
+      ],
+      "additionalProperties": false
+    },
+    "review_action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "keep",
+                "keep_tomorrow",
+                "table",
+                "complete",
+                "archive",
+                "queue",
+                "tomorrow"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "date"
+            },
+            "date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "format": "date"
+            }
+          },
+          "required": [
+            "kind",
+            "date"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "review_decision": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "source": {
+          "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+        },
+        "result": {
+          "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+        },
+        "action": {
+          "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/review_action"
+        },
+        "recorded_at_utc": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "result",
+        "action",
+        "recorded_at_utc"
+      ],
+      "additionalProperties": false
+    },
+    "evening_review": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "completed_at_utc": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "helped": {
+          "type": "string"
+        },
+        "difficult": {
+          "type": "string"
+        },
+        "tomorrow": {
+          "type": "string"
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/review_decision"
+          }
+        },
+        "achievements": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+          }
+        }
+      },
+      "required": [
+        "step",
+        "completed_at_utc",
+        "helped",
+        "difficult",
+        "tomorrow",
+        "decisions",
+        "achievements"
+      ],
+      "additionalProperties": false
+    },
+    "objective": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "title": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "achieved",
+            "paused",
+            "released"
+          ]
+        },
+        "progress": {
+          "type": "string"
+        },
+        "next_step": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "status",
+        "progress",
+        "next_step"
+      ],
+      "additionalProperties": false
+    },
+    "example_focus": {
+      "type": "object",
+      "properties": {
+        "important": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "uniqueItems": true
+        },
+        "bookmarked": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "uniqueItems": true
+        },
+        "all_day": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "important",
+        "bookmarked",
+        "all_day"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/check_in"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/mood"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/check_in_entry"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/review_action"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/review_decision"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/evening_review"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/objective"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/example_focus"
+    }
+  ]
+}

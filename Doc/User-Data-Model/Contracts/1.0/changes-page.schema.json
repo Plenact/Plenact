@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:changes-page",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "after_sequence": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "through_sequence": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:server-record"
+      },
+      "maxItems": 100
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "next_cursor": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,512}$"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "workspace_id",
+    "epoch",
+    "after_sequence",
+    "through_sequence",
+    "records",
+    "has_more",
+    "next_cursor"
+  ],
+  "additionalProperties": false
+}

@@ -1,10 +1,12 @@
+**Supported User Data Model versions:** Version 0 reference; see [Version 1.0 documentation](../User-Data-Model/README.md) for the final successor specification.
+
 ## Planning Rhythm storage boundary — October 16, 2026
 
 The [five review experiences](../Design/Planning-Rhythm.md) are approved direction. Today's Plan, morning progress, and evening review decisions/reflections use versioned local daily-plan storage; evening mutations have a recovery journal. Midday, weekly, and periodic workflows remain planned; the existing shared-demo schema is not their storage contract
 
 No database deployment, remote review endpoint, schema migration, or user-data upload is authorized by the [delivery plan](../Design/Planning-Rhythm-Delivery.md). Extend local example-workspace restoration coverage before new review stores ship
 
-**Status:** Planning and local schema draft. No Plenact application database migration has been applied and no user-registration API has been deployed. This folder is not connected to, imported from, or dependent on the separate Database Demo project
+**Status:** Version 0 shared-demo reference. Newer [deployment records](../../Server/SQL/README.md) report migration 001 and the synthetic seed applied October 3, 2026. Live deployment was not reverified for this update. The separate Database Demo project is not a dependency.
 
 ## Goal
 
@@ -14,15 +16,15 @@ For the initial demo, all registered users can browse shared content; Jim is the
 
 ## Documents
 
-- [`Plenact-Data-Contract.md`](Plenact-Data-Contract.md) - proposed entities, relationships, date semantics, metadata, and decisions still needed before schema creation
-- [`Initial-Demo-Import-Plan.md`](Initial-Demo-Import-Plan.md) - proposed synthetic starter-data seed and Jim demo-account sequence
-- [`../../Server/SQL/README.md`](../../Server/SQL/README.md) - draft migration status and application rules
+- [`Plenact-Data-Contract.md`](Plenact-Data-Contract.md) - historical shared-demo entities, relationships and limitations
+- [`Initial-Demo-Import-Plan.md`](Initial-Demo-Import-Plan.md) - synthetic starter-data seed and recorded demo deployment
+- [`../../Server/SQL/README.md`](../../Server/SQL/README.md) - recorded migration/deployment status and application rules
 
 ## Bluehost Setup Boundary
 
 Database provisioning must be completed in the Bluehost control panel by an authorized operator. Do not put cPanel passwords, database passwords, API tokens, or populated configuration in this repository or chat
 
-After the contract and draft migration are reviewed and tested, provision a **new database distinct from any reference/demo database**, using a Bluehost-assigned database name and a dedicated database user. Store runtime configuration outside `public_html`. Give the API account only the DML permissions it requires; apply schema migrations using a separate administrative workflow
+For a new isolated environment, after reviewing and testing its migration, provision a **new database distinct from any reference/demo database**, using a Bluehost-assigned database name and a dedicated database user. Store runtime configuration outside `public_html`. Give the API account only the DML permissions it requires; apply schema migrations using a separate administrative workflow
 
 The local app must call an HTTPS API. It must never connect directly to MySQL or contain database credentials. Keep development/demo and any future production resources separate
 
@@ -41,7 +43,7 @@ This checklist does not create the Bluehost database or apply migrations. Exact 
 
 ## Storage Metadata
 
-The draft contract distinguishes:
+The historical contract distinguishes:
 
 - **Schema version:** structure/meaning of an encoded payload or migration level
 - **Record revision:** changes to a particular stored record or snapshot
@@ -51,4 +53,4 @@ These must not be conflated. Server-generated timestamps and verified actor IDs 
 
 ## Current App Boundary
 
-Plenact currently persists Board and Profile data locally. The separate reference project informed the transport/database discussion but is not a source dependency or deployment target. The Board must not connect to Bluehost until the data contract, migration, and compatibility tests are approved
+Plenact currently persists Board and Profile data locally. The separate reference project informed the transport/database discussion but is not a source dependency or deployment target. The normal workspace is not automatically synchronized; the separate demo transport must not be treated as private-user synchronization

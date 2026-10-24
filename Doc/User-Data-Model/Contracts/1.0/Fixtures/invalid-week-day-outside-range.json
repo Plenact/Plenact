@@ -1,0 +1,21 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "calendar_week",
+  "id": "30000000-0000-4000-8000-000000000002",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "start_date": "2026-10-19",
+    "collection_id": "20000000-0000-4000-8000-000000000002",
+    "first_weekday": 2,
+    "time_zone": "America/Chicago",
+    "time_zone_source": "user_confirmed",
+    "day_lists": [
+      {
+        "date": "2026-10-26",
+        "list_id": "20000000-0000-4000-8000-000000000003"
+      }
+    ],
+    "explicitly_saved": true
+  }
+}

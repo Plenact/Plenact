@@ -1,0 +1,34 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "planning_template",
+  "id": "30000000-0000-4000-8000-000000000009",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "name": "Synthetic week routine",
+    "kind": "day",
+    "anchor_date": "2026-10-19",
+    "time_zone": "America/Chicago",
+    "first_weekday": 2,
+    "collection_id": "30000000-0000-4000-8000-000000000010",
+    "weekdays": [
+      {
+        "weekday": 1,
+        "list_id": "30000000-0000-4000-8000-000000000080"
+      },
+      {
+        "weekday": 2,
+        "list_id": "30000000-0000-4000-8000-000000000081"
+      }
+    ],
+    "example_focus": {
+      "important": [
+        "30000000-0000-4000-8000-000000000012"
+      ],
+      "bookmarked": [
+        "30000000-0000-4000-8000-000000000012"
+      ],
+      "all_day": []
+    }
+  }
+}

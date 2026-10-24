@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:api-error",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "request_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_document",
+            "unauthenticated",
+            "forbidden",
+            "not_found",
+            "conflict",
+            "epoch_mismatch",
+            "cursor_expired",
+            "unsupported_version",
+            "payload_too_large",
+            "rate_limited",
+            "asset_unavailable",
+            "quota_exceeded",
+            "integrity_mismatch",
+            "idempotency_mismatch",
+            "account_deleted",
+            "snapshot_expired",
+            "upload_expired",
+            "validation_failed",
+            "unsupported_timezone_rules"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "recovery": {
+          "enum": [
+            "none",
+            "reauthenticate",
+            "update_client",
+            "resnapshot",
+            "resnapshot_and_reconcile",
+            "resolve_conflict",
+            "retry_later"
+          ]
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "record_type": {
+                "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/record_type"
+              },
+              "record_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              },
+              "current_revision": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "deleted": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "record_type",
+              "record_id",
+              "current_revision",
+              "deleted"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "recovery",
+        "conflicts"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "protocol_version",
+    "request_id",
+    "error"
+  ],
+  "additionalProperties": false
+}

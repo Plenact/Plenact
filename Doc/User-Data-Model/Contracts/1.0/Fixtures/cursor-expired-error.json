@@ -1,0 +1,10 @@
+{
+  "protocol_version": "1.0",
+  "request_id": "70000000-0000-4000-8000-000000000011",
+  "error": {
+    "code": "cursor_expired",
+    "message": "A fresh snapshot is required.",
+    "recovery": "resnapshot",
+    "conflicts": []
+  }
+}

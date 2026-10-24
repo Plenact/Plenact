@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:account",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "account"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "display_name": {
+          "type": "string"
+        },
+        "account_kind": {
+          "const": "personal"
+        },
+        "created_at_utc": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+        }
+      },
+      "required": [
+        "display_name",
+        "account_kind",
+        "created_at_utc"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

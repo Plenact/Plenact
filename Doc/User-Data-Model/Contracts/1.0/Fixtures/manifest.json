@@ -1,0 +1,1473 @@
+{
+  "supported_user_data_model_versions": [
+    "1.0"
+  ],
+  "contract_revision": "1.0",
+  "implementation_status": "final specification examples; app/server integration not implemented",
+  "tzdb_version": "2025b",
+  "cases": [
+    {
+      "name": "date-only",
+      "file": "date-only.json",
+      "schema": "date-value.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "time-only",
+      "file": "time-only.json",
+      "schema": "date-value.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-calendar-date",
+      "file": "invalid-calendar-date.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "invalid_gregorian_date",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-date-with-zone",
+      "file": "invalid-date-with-zone.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "unknown_field",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-time-with-date",
+      "file": "invalid-time-with-date.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "unknown_field",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-time-leap-second",
+      "file": "invalid-time-leap-second.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "invalid_time",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "timed-chicago",
+      "file": "timed-chicago.json",
+      "schema": "date-value.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "fall-back-first",
+      "file": "fall-back-first.json",
+      "schema": "date-value.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "fall-back-second",
+      "file": "fall-back-second.json",
+      "schema": "date-value.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-fall-back-unique",
+      "file": "invalid-fall-back-unique.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "ambiguous_occurrence",
+      "expected_error": "ambiguous_occurrence",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-spring-gap",
+      "file": "invalid-spring-gap.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "nonexistent_local_time",
+      "expected_error": "nonexistent_local_time",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-offset",
+      "file": "invalid-offset.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "offset_mismatch",
+      "expected_error": "offset_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-instant",
+      "file": "invalid-instant.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "instant_mismatch",
+      "expected_error": "instant_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-zone",
+      "file": "invalid-zone.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "unknown_time_zone",
+      "expected_error": "unknown_time_zone",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unknown-date-field",
+      "file": "invalid-unknown-date-field.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "reason": "unknown_field",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "ios-capabilities",
+      "file": "ios-capabilities.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "compatibility": {
+        "can_read": true,
+        "can_write": true
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "windows-capabilities",
+      "file": "windows-capabilities.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "compatibility": {
+        "can_read": true,
+        "can_write": true
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "newer-client-with-v1-fallback",
+      "file": "newer-client-with-v1-fallback.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "compatibility": {
+        "can_read": true,
+        "can_write": true
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "newer-client-no-fallback",
+      "file": "newer-client-no-fallback.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "compatibility": {
+        "can_read": false,
+        "can_write": false
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "read-only-client",
+      "file": "read-only-client.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "compatibility": {
+        "can_read": true,
+        "can_write": false
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-writer-without-reader",
+      "file": "invalid-writer-without-reader.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": false,
+      "reason": "write_without_read",
+      "expected_error": "write_without_read",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unknown-protocol",
+      "file": "invalid-unknown-protocol.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": false,
+      "reason": "unsupported_protocol",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "shared-preferences",
+      "file": "shared-preferences.json",
+      "schema": "user-preferences.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-focus-capacity",
+      "file": "invalid-focus-capacity.json",
+      "schema": "user-preferences.schema.json",
+      "valid": false,
+      "reason": "out_of_range",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-unknown-preference",
+      "file": "invalid-unknown-preference.json",
+      "schema": "user-preferences.schema.json",
+      "valid": false,
+      "reason": "unknown_field",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-null-boolean",
+      "file": "invalid-null-boolean.json",
+      "schema": "user-preferences.schema.json",
+      "valid": false,
+      "reason": "wrong_type",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-missing-preference",
+      "file": "invalid-missing-preference.json",
+      "schema": "user-preferences.schema.json",
+      "valid": false,
+      "reason": "missing_field",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "bookmarked-five-star",
+      "file": "bookmarked-five-star.json",
+      "schema": "content-selection.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "unmarked-no-stars",
+      "file": "unmarked-no-stars.json",
+      "schema": "content-selection.schema.json",
+      "valid": true,
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-six-stars",
+      "file": "invalid-six-stars.json",
+      "schema": "content-selection.schema.json",
+      "valid": false,
+      "reason": "out_of_range",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-numeric-identity",
+      "file": "invalid-numeric-identity.json",
+      "schema": "content-selection.schema.json",
+      "valid": false,
+      "reason": "wrong_identity_type",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-legacy-model",
+      "file": "invalid-legacy-model.json",
+      "schema": "content-selection.schema.json",
+      "valid": false,
+      "reason": "unsupported_model",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-boolean-importance",
+      "file": "invalid-boolean-importance.json",
+      "schema": "content-selection.schema.json",
+      "valid": false,
+      "reason": "wrong_type",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "full-card",
+      "file": "full-card.json",
+      "schema": "card.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "archived-note",
+      "file": "archived-note.json",
+      "schema": "card.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "ordered-list",
+      "file": "ordered-list.json",
+      "schema": "list.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "personal-collection",
+      "file": "personal-collection.json",
+      "schema": "collection.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "complete-content-graph",
+      "file": "complete-content-graph.json",
+      "schema": "content-graph.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-card-date-kind",
+      "file": "invalid-card-date-kind.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "date_kind_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-card-nested-gap",
+      "file": "invalid-card-nested-gap.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "nonexistent_local_time",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-cover-reference",
+      "file": "invalid-cover-reference.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "missing_cover_attachment",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-null-completion",
+      "file": "invalid-null-completion.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-unknown-card-field",
+      "file": "invalid-unknown-card-field.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-history-base64",
+      "file": "invalid-history-base64.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-duplicate-nested-item",
+      "file": "invalid-duplicate-nested-item.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "duplicate_nested_identity",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unicode-time",
+      "file": "invalid-unicode-time.json",
+      "schema": "date-value.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-list-double-membership",
+      "file": "invalid-list-double-membership.json",
+      "schema": "list.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "duplicate_card_membership",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-mismatched-workspace",
+      "file": "invalid-mismatched-workspace.json",
+      "schema": "content-graph.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "workspace_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-graph-orphan-card",
+      "file": "invalid-graph-orphan-card.json",
+      "schema": "content-graph.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "card_membership_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-graph-archive-membership",
+      "file": "invalid-graph-archive-membership.json",
+      "schema": "content-graph.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "archive_membership_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unresolved-link",
+      "file": "invalid-unresolved-link.json",
+      "schema": "content-graph.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "unresolved_card_reference",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-duplicate-card",
+      "file": "invalid-duplicate-card.json",
+      "schema": "content-graph.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "duplicate_record_identity",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-focused-list",
+      "file": "invalid-focused-list.json",
+      "schema": "collection.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "focused_list_not_member",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-local-file-path",
+      "file": "invalid-local-file-path.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-appearance-range",
+      "file": "invalid-appearance-range.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-manual-assignee-account",
+      "file": "invalid-manual-assignee-account.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-payload-version",
+      "file": "invalid-payload-version.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "active-detail-retained-mirror",
+      "file": "active-detail-retained-mirror.json",
+      "schema": "card.schema.json",
+      "valid": true,
+      "slice": "content",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-divergent-active-detail",
+      "file": "invalid-divergent-active-detail.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "content",
+      "expected_error": "retained_detail_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "calendar-week",
+      "file": "calendar-week.json",
+      "schema": "calendar-week.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "calendar-index",
+      "file": "calendar-index.json",
+      "schema": "calendar-index.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "daily-plan-history",
+      "file": "daily-plan-history.json",
+      "schema": "daily-plan.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "weekly-review",
+      "file": "weekly-review.json",
+      "schema": "weekly-review.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "periodic-review-snapshots",
+      "file": "periodic-review-snapshots.json",
+      "schema": "periodic-review.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "planning-template",
+      "file": "planning-template.json",
+      "schema": "planning-template.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "template-library",
+      "file": "template-library.json",
+      "schema": "template-library.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "review-rhythm",
+      "file": "review-rhythm.json",
+      "schema": "review-rhythm.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-image",
+      "file": "asset-image.json",
+      "schema": "asset.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-opaque-original",
+      "file": "asset-opaque-original.json",
+      "schema": "asset.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-unavailable",
+      "file": "asset-unavailable.json",
+      "schema": "asset.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "complete-planning-graph",
+      "file": "complete-planning-graph.json",
+      "schema": "planning-graph.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "daily-plan-null-history",
+      "file": "daily-plan-null-history.json",
+      "schema": "daily-plan.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "daily-plan-empty-history",
+      "file": "daily-plan-empty-history.json",
+      "schema": "daily-plan.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-large-byte-count",
+      "file": "asset-large-byte-count.json",
+      "schema": "asset.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-attribution",
+      "file": "asset-attribution.json",
+      "schema": "asset.schema.json",
+      "valid": true,
+      "slice": "planning",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-week-day-outside-range",
+      "file": "invalid-week-day-outside-range.json",
+      "schema": "calendar-week.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "week_day_outside_range",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-week-first-weekday",
+      "file": "invalid-week-first-weekday.json",
+      "schema": "calendar-week.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "week_start_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-week-duplicate-day",
+      "file": "invalid-week-duplicate-day.json",
+      "schema": "calendar-week.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_day_mapping",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-week-zone",
+      "file": "invalid-week-zone.json",
+      "schema": "calendar-week.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "unknown_time_zone",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-calendar-duplicate-link",
+      "file": "invalid-calendar-duplicate-link.json",
+      "schema": "calendar-index.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_checklist_week_link",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-plan-counts",
+      "file": "invalid-plan-counts.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_progress_counts",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-duplicate-check-in",
+      "file": "invalid-duplicate-check-in.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_check_in",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-review-date-action",
+      "file": "invalid-review-date-action.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-duplicate-review-decision",
+      "file": "invalid-duplicate-review-decision.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_review_decision",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-plan-negative-count",
+      "file": "invalid-plan-negative-count.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-duplicate-priority",
+      "file": "invalid-duplicate-priority.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_priority",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-periodic-range",
+      "file": "invalid-periodic-range.json",
+      "schema": "periodic-review.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_review_range",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-duplicate-current-objective",
+      "file": "invalid-duplicate-current-objective.json",
+      "schema": "periodic-review.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_objective",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-review-step",
+      "file": "invalid-review-step.json",
+      "schema": "weekly-review.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-template-duplicate-weekday",
+      "file": "invalid-template-duplicate-weekday.json",
+      "schema": "planning-template.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "duplicate_template_weekday",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-day-template-two-lists",
+      "file": "invalid-day-template-two-lists.json",
+      "schema": "planning-template.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_day_template",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-notification-minutes",
+      "file": "invalid-notification-minutes.json",
+      "schema": "review-rhythm.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-asset-partial-metadata",
+      "file": "invalid-asset-partial-metadata.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_asset_metadata",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unavailable-invented-length",
+      "file": "invalid-unavailable-invented-length.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_asset_metadata",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-asset-hash",
+      "file": "invalid-asset-hash.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-asset-numeric-size",
+      "file": "invalid-asset-numeric-size.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-asset-local-path",
+      "file": "invalid-asset-local-path.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-asset-self-derived",
+      "file": "invalid-asset-self-derived.json",
+      "schema": "asset.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "asset_derivation_cycle",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-planning-owner",
+      "file": "invalid-planning-owner.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "asset_account_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-planning-workspace",
+      "file": "invalid-planning-workspace.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "workspace_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-week-list-owner",
+      "file": "invalid-week-list-owner.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "week_list_membership_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-template-live-collection",
+      "file": "invalid-template-live-collection.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "template_live_owner_overlap",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-template-marker-reference",
+      "file": "invalid-template-marker-reference.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "template_focus_not_member",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-default-template",
+      "file": "invalid-default-template.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "invalid_default_template",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-cross-week-link",
+      "file": "invalid-cross-week-link.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "unresolved_week_reference",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-asset-cycle",
+      "file": "invalid-asset-cycle.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "asset_derivation_cycle",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-historical-card-reference",
+      "file": "invalid-historical-card-reference.json",
+      "schema": "planning-graph.schema.json",
+      "valid": false,
+      "slice": "planning",
+      "expected_error": "unresolved_priority_reference",
+      "structurally_valid": true
+    },
+    {
+      "name": "account-definition",
+      "file": "account-definition.json",
+      "schema": "account.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "profile-definition",
+      "file": "profile-definition.json",
+      "schema": "user-profile.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "label-category-definition",
+      "file": "label-category-definition.json",
+      "schema": "label-category.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "label-definition",
+      "file": "label-definition.json",
+      "schema": "label.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "studio-settings-definition",
+      "file": "studio-settings-definition.json",
+      "schema": "studio-settings.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "studio-artwork-definition",
+      "file": "studio-artwork-definition.json",
+      "schema": "studio-artwork.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "today-shortcuts-definition",
+      "file": "today-shortcuts-definition.json",
+      "schema": "today-shortcuts.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "display-preferences-definition",
+      "file": "display-preferences-definition.json",
+      "schema": "workspace-display-preferences.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "complete-workspace-candidate",
+      "file": "complete-workspace-candidate.json",
+      "schema": "workspace-export.schema.json",
+      "valid": true,
+      "slice": "export-definition",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-profile-claims-other-account",
+      "file": "invalid-profile-claims-other-account.json",
+      "schema": "workspace-export.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "account_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-label-category-reference",
+      "file": "invalid-label-category-reference.json",
+      "schema": "workspace-export.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "unresolved_label_category",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-studio-duplicate-destination",
+      "file": "invalid-studio-duplicate-destination.json",
+      "schema": "studio-settings.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "duplicate_studio_destination",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-shortcut-owner",
+      "file": "invalid-shortcut-owner.json",
+      "schema": "workspace-export.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "unresolved_shortcut_reference",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-profile-file-path",
+      "file": "invalid-profile-file-path.json",
+      "schema": "user-profile.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-selection-other-account",
+      "file": "invalid-selection-other-account.json",
+      "schema": "workspace-export.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "account_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-studio-secret-field",
+      "file": "invalid-studio-secret-field.json",
+      "schema": "studio-settings.schema.json",
+      "valid": false,
+      "slice": "export-definition",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "server-record",
+      "file": "server-record.json",
+      "schema": "server-record.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "server-tombstone",
+      "file": "server-tombstone.json",
+      "schema": "server-record.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "transaction-create",
+      "file": "transaction-create.json",
+      "schema": "transaction-request.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "transaction-receipt",
+      "file": "transaction-receipt.json",
+      "schema": "transaction-receipt.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "snapshot-final-page",
+      "file": "snapshot-final-page.json",
+      "schema": "snapshot-page.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "changes-ordered-page",
+      "file": "changes-ordered-page.json",
+      "schema": "changes-page.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "service-capabilities",
+      "file": "service-capabilities.json",
+      "schema": "service-capabilities.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-upload-request",
+      "file": "asset-upload-request.json",
+      "schema": "asset-upload-request.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-upload-session",
+      "file": "asset-upload-session.json",
+      "schema": "asset-upload-session.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-upload-commit",
+      "file": "asset-upload-commit.json",
+      "schema": "asset-upload-commit.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "account-deletion-request",
+      "file": "account-deletion-request.json",
+      "schema": "account-deletion-request.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "account-deletion-receipt",
+      "file": "account-deletion-receipt.json",
+      "schema": "account-deletion-receipt.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "browser-capabilities",
+      "file": "browser-capabilities.json",
+      "schema": "client-capabilities.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "compatibility": {
+        "can_read": true,
+        "can_write": true
+      },
+      "structurally_valid": true
+    },
+    {
+      "name": "rich-text-runs",
+      "file": "rich-text-runs.json",
+      "schema": "rich-text-runs.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-record-document-id",
+      "file": "invalid-record-document-id.json",
+      "schema": "server-record.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "record_identity_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-tombstone-has-document",
+      "file": "invalid-tombstone-has-document.json",
+      "schema": "server-record.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_tombstone",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-record-missing-document",
+      "file": "invalid-record-missing-document.json",
+      "schema": "server-record.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_tombstone",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-counter-overflow",
+      "file": "invalid-counter-overflow.json",
+      "schema": "server-record.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "counter_out_of_range",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-transaction-duplicate-op",
+      "file": "invalid-transaction-duplicate-op.json",
+      "schema": "transaction-request.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "duplicate_operation",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-transaction-wrong-workspace",
+      "file": "invalid-transaction-wrong-workspace.json",
+      "schema": "transaction-request.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "workspace_mismatch",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-create-server-owned-account",
+      "file": "invalid-create-server-owned-account.json",
+      "schema": "transaction-request.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "server_owned_record",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-snapshot-two-cursors",
+      "file": "invalid-snapshot-two-cursors.json",
+      "schema": "snapshot-page.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_snapshot_cursor",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-snapshot-after-fence",
+      "file": "invalid-snapshot-after-fence.json",
+      "schema": "snapshot-page.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_snapshot_fence",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-change-order",
+      "file": "invalid-change-order.json",
+      "schema": "changes-page.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_change_order",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-change-watermark",
+      "file": "invalid-change-watermark.json",
+      "schema": "changes-page.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_change_watermark",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-upload-chunk-count",
+      "file": "invalid-upload-chunk-count.json",
+      "schema": "asset-upload-session.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_chunk_count",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-upload-received-index",
+      "file": "invalid-upload-received-index.json",
+      "schema": "asset-upload-session.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_chunk_index",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-account-delete-deadline",
+      "file": "invalid-account-delete-deadline.json",
+      "schema": "account-deletion-receipt.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "invalid_deletion_deadline",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-rich-text-style",
+      "file": "invalid-rich-text-style.json",
+      "schema": "rich-text-runs.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-unsafe-web-integer",
+      "file": "invalid-unsafe-web-integer.json",
+      "schema": "daily-plan.schema.json",
+      "valid": false,
+      "slice": "final-protocol",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "cursor-expired-error",
+      "file": "cursor-expired-error.json",
+      "schema": "api-error.schema.json",
+      "valid": true,
+      "slice": "final-protocol",
+      "structurally_valid": true
+    },
+    {
+      "name": "verified-server-asset",
+      "file": "verified-server-asset.json",
+      "schema": "server-record.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "workspace-deleted-priority",
+      "file": "workspace-deleted-priority.json",
+      "schema": "workspace-export.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "card-rich-text",
+      "file": "card-rich-text.json",
+      "schema": "card.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "literal-invalid-rich-prefix",
+      "file": "literal-invalid-rich-prefix.json",
+      "schema": "card.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-new-rich-style",
+      "file": "invalid-new-rich-style.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "slice": "final-conformance",
+      "expected_error": "unsupported_rich_text",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-unpaired-unicode",
+      "file": "invalid-unpaired-unicode.json",
+      "schema": "card.schema.json",
+      "valid": false,
+      "expected_error": "invalid_unicode_scalar",
+      "slice": "final-conformance",
+      "structurally_valid": false
+    },
+    {
+      "name": "workspace-definition",
+      "file": "workspace-definition.json",
+      "schema": "workspace.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "unavailable-reference-definition",
+      "file": "unavailable-reference-definition.json",
+      "schema": "unavailable-reference.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-purge-request",
+      "file": "asset-purge-request.json",
+      "schema": "asset-purge-request.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "asset-purge-receipt",
+      "file": "asset-purge-receipt.json",
+      "schema": "asset-purge-receipt.schema.json",
+      "valid": true,
+      "slice": "final-conformance",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-purge-without-acknowledgement",
+      "file": "invalid-purge-without-acknowledgement.json",
+      "schema": "asset-purge-request.schema.json",
+      "valid": false,
+      "slice": "final-conformance",
+      "expected_error": "schema_error",
+      "structurally_valid": false
+    },
+    {
+      "name": "invalid-change-gap",
+      "file": "invalid-change-gap.json",
+      "schema": "changes-page.schema.json",
+      "valid": false,
+      "slice": "final-conformance",
+      "expected_error": "invalid_change_gap",
+      "structurally_valid": true
+    },
+    {
+      "name": "invalid-comment-account-claim",
+      "file": "invalid-comment-account-claim.json",
+      "schema": "workspace-export.schema.json",
+      "valid": false,
+      "slice": "final-conformance",
+      "expected_error": "account_mismatch",
+      "structurally_valid": true
+    }
+  ],
+  "asset_byte_cases": [
+    {
+      "asset_fixture": "asset-image.json",
+      "file": "AssetBytes/sample.png"
+    },
+    {
+      "asset_fixture": "asset-opaque-original.json",
+      "file": "AssetBytes/opaque-original.bin"
+    }
+  ],
+  "transaction_pair_cases": [
+    {
+      "request": "transaction-create.json",
+      "receipt": "transaction-receipt.json"
+    }
+  ]
+}

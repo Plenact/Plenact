@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:transaction-receipt",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "transaction_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "receipt_sequence": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "stored_at_utc": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "record_type": {
+            "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/record_type"
+          },
+          "record_id": {
+            "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "change_sequence": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operation_id",
+          "record_type",
+          "record_id",
+          "revision",
+          "change_sequence",
+          "deleted"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "protocol_version",
+    "workspace_id",
+    "epoch",
+    "transaction_id",
+    "request_sha256",
+    "receipt_sequence",
+    "stored_at_utc",
+    "results"
+  ],
+  "additionalProperties": false
+}

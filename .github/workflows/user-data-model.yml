@@ -1,0 +1,36 @@
+name: User Data Model conformance
+
+on:
+  pull_request:
+    paths:
+      - 'Doc/User-Data-Model/**'
+      - 'Tools/UserDataModel/**'
+      - '.github/workflows/user-data-model.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Doc/User-Data-Model/**'
+      - 'Tools/UserDataModel/**'
+      - '.github/workflows/user-data-model.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  specification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated validation dependencies
+        run: |
+          python3 -m venv "$RUNNER_TEMP/model-venv"
+          "$RUNNER_TEMP/model-venv/bin/python" -m pip install -r Tools/UserDataModel/requirements.txt
+      - name: Validate definition, examples and regression tests
+        run: |
+          "$RUNNER_TEMP/model-venv/bin/python" Tools/UserDataModel/publication_gate.py
+          "$RUNNER_TEMP/model-venv/bin/python" -m unittest discover -s Tools/UserDataModel -p 'test_*.py'
+      - name: Build and verify specification package
+        run: |
+          "$RUNNER_TEMP/model-venv/bin/python" Tools/UserDataModel/publication_gate.py --package "$RUNNER_TEMP/plenact-user-data-model-1.0.zip"
+          "$RUNNER_TEMP/model-venv/bin/python" Tools/UserDataModel/publication_gate.py --verify-package "$RUNNER_TEMP/plenact-user-data-model-1.0.zip"

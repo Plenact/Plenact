@@ -1,0 +1,5 @@
+# Supported Plenact User Data Model versions: 1.0; specification/conformance tooling only.
+jsonschema==4.25.1
+tzdata==2025.2
+openapi-spec-validator==0.7.2
+jcs==0.2.1

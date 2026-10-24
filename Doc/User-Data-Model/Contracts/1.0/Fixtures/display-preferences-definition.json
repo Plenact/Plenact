@@ -1,0 +1,15 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "workspace_display_preferences",
+  "id": "40000000-0000-4000-8000-000000000008",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "board_presentation": null,
+    "card_covers_enabled": true,
+    "activity_shows_covers": null,
+    "activity_recent_square_cards": false,
+    "library_shows_collection_previews": null,
+    "library_scrolls_collection_previews": false
+  }
+}

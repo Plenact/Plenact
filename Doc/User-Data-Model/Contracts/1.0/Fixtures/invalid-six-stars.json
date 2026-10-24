@@ -1,0 +1,13 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "content_selection",
+  "id": "313e309c-a2a3-508c-ac2c-74ba2c97f058",
+  "workspace_id": "10000000-0000-4000-8000-000000000002",
+  "payload": {
+    "account_id": "10000000-0000-4000-8000-000000000001",
+    "card_id": "10000000-0000-4000-8000-000000000003",
+    "bookmarked": true,
+    "importance": 6
+  }
+}

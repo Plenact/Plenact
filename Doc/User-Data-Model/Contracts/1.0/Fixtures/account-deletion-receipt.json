@@ -1,0 +1,8 @@
+{
+  "protocol_version": "1.0",
+  "account_id": "70000000-0000-4000-8000-000000000002",
+  "operation_id": "70000000-0000-4000-8000-000000000010",
+  "accepted_at_utc": "2026-10-24T12:00:00.000Z",
+  "primary_delete_deadline_utc": "2026-10-25T12:00:00.000Z",
+  "backup_delete_deadline_utc": "2026-11-23T12:00:00.000Z"
+}

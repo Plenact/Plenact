@@ -1,0 +1,289 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "daily_plan",
+  "id": "30000000-0000-4000-8000-000000000005",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "date": "2026-10-24",
+    "time_zone": "America/Chicago",
+    "intention": "A quiet start",
+    "constraints": "",
+    "concerns": "",
+    "priorities": [
+      {
+        "source_collection_id": "20000000-0000-4000-8000-000000000002",
+        "card_id": "20000000-0000-4000-8000-000000000004",
+        "title": "Historical title — preserved",
+        "source_location": "Week · Saturday",
+        "source_created_at_utc": null
+      }
+    ],
+    "updated_at_utc": "2026-10-24T12:00:00.000Z",
+    "check_in": {
+      "focus": {
+        "source_collection_id": "20000000-0000-4000-8000-000000000002",
+        "card_id": "20000000-0000-4000-8000-000000000004",
+        "title": "Historical title — preserved",
+        "source_location": "Week · Saturday",
+        "source_created_at_utc": null
+      },
+      "changed": "Latest submitted text",
+      "saved_at_utc": "2026-10-24T12:00:00.000Z"
+    },
+    "check_ins": [
+      {
+        "id": "legacy:2026-10-24",
+        "saved_at_utc": "2026-10-24T12:00:00.000Z",
+        "changed": "Retained check-in",
+        "focus": {
+          "source_collection_id": "20000000-0000-4000-8000-000000000002",
+          "card_id": "20000000-0000-4000-8000-000000000090",
+          "title": "Historical unavailable item",
+          "source_location": "Week · Saturday",
+          "source_created_at_utc": null
+        },
+        "intention": "Earlier intention",
+        "constraints": "",
+        "concerns": "",
+        "priorities": [
+          {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          }
+        ],
+        "completed_tasks": null,
+        "total_tasks": null,
+        "notes": null,
+        "unavailable": null,
+        "legacy": true,
+        "mood": null
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000004",
+        "saved_at_utc": "2026-10-24T12:00:00.000Z",
+        "changed": "Retained check-in",
+        "focus": {
+          "source_collection_id": "20000000-0000-4000-8000-000000000002",
+          "card_id": "20000000-0000-4000-8000-000000000090",
+          "title": "Historical unavailable item",
+          "source_location": "Week · Saturday",
+          "source_created_at_utc": null
+        },
+        "intention": "Earlier intention",
+        "constraints": "",
+        "concerns": "",
+        "priorities": [
+          {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          }
+        ],
+        "completed_tasks": 1,
+        "total_tasks": 3,
+        "notes": -1,
+        "unavailable": 1,
+        "legacy": false,
+        "mood": {
+          "emoji": "🙂",
+          "label": "Good"
+        }
+      }
+    ],
+    "evening_review": {
+      "step": 2,
+      "completed_at_utc": "2026-10-24T12:00:00.000Z",
+      "helped": "A walk",
+      "difficult": "",
+      "tomorrow": "Rest",
+      "decisions": [
+        {
+          "id": "30000000-0000-4000-8000-000000000020",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "keep"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000021",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "keep_tomorrow"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000022",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "table"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000023",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "complete"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000024",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "archive"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000025",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "queue"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000026",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "tomorrow"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000027",
+          "source": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000004",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "result": {
+            "source_collection_id": "20000000-0000-4000-8000-000000000002",
+            "card_id": "20000000-0000-4000-8000-000000000090",
+            "title": "Historical unavailable item",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "action": {
+            "kind": "date",
+            "date": "2026-10-26"
+          },
+          "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+        }
+      ],
+      "achievements": [
+        {
+          "source_collection_id": "20000000-0000-4000-8000-000000000002",
+          "card_id": "20000000-0000-4000-8000-000000000004",
+          "title": "Historical title — preserved",
+          "source_location": "Week · Saturday",
+          "source_created_at_utc": null
+        }
+      ]
+    },
+    "vision_step": 2,
+    "vision_completed_at_utc": "2026-10-24T12:00:00.000Z"
+  }
+}

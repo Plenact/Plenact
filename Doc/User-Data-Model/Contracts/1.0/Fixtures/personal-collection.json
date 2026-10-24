@@ -1,0 +1,37 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "collection",
+  "id": "20000000-0000-4000-8000-000000000002",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "title": "Synthetic board",
+    "kind": "board",
+    "icon": "square.stack.3d.up",
+    "color": {
+      "red": 0.1,
+      "green": 0.3,
+      "blue": 0.4,
+      "legacy_token": null
+    },
+    "description": null,
+    "archived": false,
+    "board_appearance": {
+      "banner_background": null,
+      "collection_background": null,
+      "list_background": null,
+      "card_background": null,
+      "card_detail": null,
+      "card_title_color": null,
+      "card_text_color": null,
+      "add_item_text_color": null,
+      "studio_surface": null,
+      "studio_card_surface": null,
+      "subtitle_italic": true
+    },
+    "preferred_focused_list_id": "20000000-0000-4000-8000-000000000003",
+    "list_ids": [
+      "20000000-0000-4000-8000-000000000003"
+    ]
+  }
+}

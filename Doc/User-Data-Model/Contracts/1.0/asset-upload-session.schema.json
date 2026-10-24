@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:asset-upload-session",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "asset_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "asset_revision": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "upload_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "chunk_bytes": {
+      "const": 262144
+    },
+    "chunk_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "byte_length": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "received_chunks": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "uniqueItems": true
+    },
+    "expires_at_utc": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "workspace_id",
+    "epoch",
+    "asset_id",
+    "asset_revision",
+    "upload_id",
+    "chunk_bytes",
+    "chunk_count",
+    "byte_length",
+    "received_chunks",
+    "expires_at_utc"
+  ],
+  "additionalProperties": false
+}

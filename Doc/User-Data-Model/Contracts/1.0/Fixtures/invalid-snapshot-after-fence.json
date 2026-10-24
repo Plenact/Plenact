@@ -1,0 +1,26 @@
+{
+  "protocol_version": "1.0",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "epoch": "70000000-0000-4000-8000-000000000001",
+  "snapshot_id": "70000000-0000-4000-8000-000000000006",
+  "fence_sequence": "1",
+  "expires_at_utc": "2026-10-24T12:30:00.000Z",
+  "records": [
+    {
+      "user_data_model_version": "1.0",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "record_type": "card",
+      "record_id": "20000000-0000-4000-8000-000000000004",
+      "epoch": "70000000-0000-4000-8000-000000000001",
+      "revision": "2",
+      "change_sequence": "2",
+      "stored_at_utc": "2026-10-24T12:00:00.000Z",
+      "stored_by_account_id": "70000000-0000-4000-8000-000000000002",
+      "deleted": true,
+      "document": null,
+      "asset_content": null
+    }
+  ],
+  "next_page_cursor": null,
+  "next_change_cursor": "synthetic-final-cursor"
+}

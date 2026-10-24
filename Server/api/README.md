@@ -1,3 +1,5 @@
+**Supported User Data Model versions:** Version 0 only (existing demo wire schema 1); Version 1.0 runtime support is not implemented.
+
 All endpoints require HTTPS. UTF-8 JSON request and response bodies, including API envelopes, are limited to 1 MiB (1,048,576 bytes). Serialized Board snapshots use the same ceiling; oversized requests/documents are rejected, and oversized responses are replaced with a generic server error. Protected routes use `Authorization: Bearer <access_token>`; tokens are random per-session values stored on the server only as SHA-256 hashes. Responses are no-store JSON with generic errors
 
 ## Routes

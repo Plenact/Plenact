@@ -1,3 +1,5 @@
+**Supported User Data Model versions:** Version 0 only (existing demo wire schema 1); Version 1.0 runtime support is not implemented.
+
 ## Planning Rhythm and examples — October 16, 2026
 
 This remote demo import plan is separate from local Full-month examples and from the [proposed review system](../Design/Planning-Rhythm.md). No review history, objectives, or private reflection is included in this import contract

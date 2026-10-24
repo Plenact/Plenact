@@ -86,11 +86,14 @@ Plenact/
 │   │   │   ├── CardDetailSections.swift          — Reusable Card detail sections and controls
 │   │   │   ├── CardDetailView.swift              — Card and Note detail composition and retained editor state
 │   │   │   ├── CardEditors.swift                 — Explicit Card metadata editing drafts
+│   │   │   ├── CardLocation.swift                — Optional place editing, map links, and preferred maps app settings
+│   │   │   ├── CardLocationSearch.swift          — Apple Maps place search, map previews, and explicit draft selection
 │   │   │   ├── CardPreview.swift                 — Shared Card, Note, and picture List previews
 │   │   │   ├── CardSectionRendering.swift        — Card detail toolbar and section rendering
 │   │   │   ├── ChecklistViews.swift              — Typed checklist action presentation and editing
 │   │   │   └── ReadOnlyCardContent.swift         — Locked Card and Note reading surfaces
 │   │   ├── Examples/
+│   │   │   ├── ExampleCardLocations.swift        — Verified example destinations and backed-up one-time location filling
 │   │   │   ├── CollectionExamples.swift          — Offline personal List and Board example drafts
 │   │   │   ├── ExampleViews.swift                — Searchable example discovery and read-only previews
 │   │   │   ├── FullMonthExamples.swift           — Reversible demonstration-workspace generation
@@ -204,7 +207,7 @@ Plenact/
 ## Validation of this reorganization
 
 - Application and test targets compile successfully with the reorganized Xcode groups.
-- All 141 Swift file references resolve; every Swift file is at or below 1,200 counted code lines.
+- All 144 Swift file references resolve; every Swift file is at or below 1,200 counted code lines.
 - File, type, function, initializer, and parameter-header checks pass.
 - SwiftSyntax comparison preserves all 1,336 original active application/test function and
   initializer token sequences, excluding the intentional private-to-internal visibility adjustments.

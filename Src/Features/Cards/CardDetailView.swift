@@ -176,6 +176,7 @@ struct CardDetailView: View
 
 
         case date(DateField) /* Date picker sheet for editing a specific date field */
+        case location
         case editHistory
         case reactions
         case members            /* Card member management sheet             */
@@ -208,6 +209,8 @@ struct CardDetailView: View
 
             case .date(let field):
                             "date-\(field.id)" /* Selected date field */
+            case .location:
+                            "location"
             case .editHistory:
                             "editHistory"
             case .reactions:
@@ -417,6 +420,7 @@ struct CardDetailView: View
     @State var showsAppearanceCover = false
     @State var subtitleText:       String              /* Editable card subtitle displayed in the detail header */
     @State var startDate:          Date?               /* Optional start date for the selected card             */
+    @State var location:           String?             /* Editable optional place name or address */
     @State var dueDate:            Date?               /* Optional due date for the selected card               */
     @State var descriptionText:    String              /* Editable description shown on this card               */
     @State var activeSheet:        ActiveSheet?        /* The date picker or member editor currently presented  */
@@ -562,6 +566,7 @@ struct CardDetailView: View
         _appearance = State(initialValue: card.appearance)
         _subtitleText = State(initialValue: card.subtitle)  /* Initialize the editable subtitle from the card */
         _startDate = State(initialValue: card.startDate)    /* Initialize the start date from the card state  */
+        _location = State(initialValue: card.location)
         _dueDate = State(initialValue: card.dueDate)        /* Initialize the due date from the card state    */
         _sectionLayout = State(initialValue: card.sectionLayout ?? CardSectionLayout())
         _showsDueDateInList = State(initialValue: card.showsDueDateInList)
@@ -773,6 +778,7 @@ struct CardDetailView: View
         updated.isTitleChecked = titleChecked
         updated.startDate = startDate
         updated.dueDate = dueDate
+        updated.location = CardLocation.normalized(location)
         updated.showsDueDateInList = showsDueDateInList
         updated.startDateKind = startDateKind
         updated.dueDateKind = dueDateKind
@@ -1910,6 +1916,22 @@ struct CardDetailView: View
                 switch sheet
                 {
 
+
+                case .location:
+                    CardLocationEditorSheet(location: location)
+                    {
+                        value in
+                        let previous = location
+                        location = CardLocation.normalized(value)
+                        guard syncCardState() else
+                        {
+                            location = previous
+                            return false
+                        }
+                        return true
+                    }
+                    .presentationDetents([.medium, .large])
+                    .databaseActivityOverlay()
 
                 case .editHistory:
                     CardEditHistorySheet(records: lastSavedHistoryCard.editHistory ?? [])

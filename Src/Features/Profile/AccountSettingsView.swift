@@ -172,6 +172,7 @@ struct AccountSettingsView: View
     @State private var todayFocusIncludesUpNext:     Bool
     @State private var todayFocusIncludesImportant:  Bool
     @State private var todayFocusIncludesBookmarked: Bool
+    @State private var preferredMapsApp:             PreferredMapsApp
     @State private var keepsDayListsInTimeOrder:     Bool
     @State private var todayFocusOrder:              TodayFocusOrder
     @State private var todayFocusGroupsBySection:    Bool
@@ -264,6 +265,7 @@ struct AccountSettingsView: View
         _todayFocusIncludesUpNext = State(initialValue: preferences.todayFocusIncludesUpNext)
         _todayFocusIncludesImportant = State(initialValue: preferences.todayFocusIncludesImportant)
         _todayFocusIncludesBookmarked = State(initialValue: preferences.todayFocusIncludesBookmarked)
+        _preferredMapsApp = State(initialValue: preferences.preferredMapsApp)
         _keepsDayListsInTimeOrder = State(initialValue: preferences.keepsDayListsInTimeOrder)
         _todayFocusOrder = State(initialValue: preferences.todayFocusOrder)
         _todayFocusGroupsBySection = State(initialValue: preferences.todayFocusGroupsBySection)
@@ -355,7 +357,8 @@ struct AccountSettingsView: View
                 scrollsOverflowingTitles: scrollsOverflowingTitles,
                 enablesLowerCornerBack: enablesLowerCornerBack,
                 importanceStarStyle: importanceStarStyle,
-                keepsDayListsInTimeOrder: keepsDayListsInTimeOrder
+                keepsDayListsInTimeOrder: keepsDayListsInTimeOrder,
+                preferredMapsApp: preferredMapsApp
             )
         )
 
@@ -605,6 +608,8 @@ struct AccountSettingsView: View
                         NewCardColorDefaultsSection(
                             headers: $randomizesNewCardHeaders, backgrounds: $randomizesNewCardBackgrounds)
 
+                        MapsAppSettingsSection(selection: $preferredMapsApp)
+
                         TodayFocusSettingsSection(
                             count: $todayFocusItemCount, order: $todayFocusOrder,
                             groups: $todayFocusGroupsBySection, hidesCompleted: $todayFocusHidesCompleted,
@@ -813,6 +818,8 @@ struct PlanSettingsView: View
                 {
                     NavigationLink { StudioSettingsView() } label: { Label("Plenact Studio", systemImage: "paintpalette") }
                 }
+
+                MapsAppSettingsSection(selection: $preferences.preferredMapsApp)
 
                 TodayFocusSettingsSection(
                     count: $preferences.todayFocusItemCount, order: $preferences.todayFocusOrder,

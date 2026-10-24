@@ -25,6 +25,229 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleLocationsFillOnlyEligibleEmptyCards
+    /// @brief      Add the requested destinations without replacing protected or unrelated content
+    /// @details    Covers exact-title matching, custom locations, locks, Notes, dividers, archived
+    ///             Lists and Cards, ordinary history, and repeat-update stability.
+    /// @return     (Void) records location-fill scope and preservation regressions
+    ///
+    func testExampleLocationsFillOnlyEligibleEmptyCards()
+    {
+
+        let gym = KanbanCard(id: 1, word: "Gym", listTitle: "Today")
+        let work = KanbanCard(id: 2, word: " work ", listTitle: "Today")
+        let custom = KanbanCard(id: 3, word: "Gym", listTitle: "Today", location: "My own gym")
+        let locked = KanbanCard(id: 4, word: "Work", listTitle: "Today", isEditingLocked: true)
+        let note = KanbanCard(id: 5, word: "Gym", listTitle: "Today", presentation: .note)
+        let divider = KanbanCard(id: 6, word: "Gym", listTitle: "Today", isDivider: true)
+        let unrelated = KanbanCard(id: 7, word: "Work on a home project", listTitle: "Today")
+        var list = KanbanList(id: 1, title: "Today", cards: [gym, work, custom, locked, note, divider, unrelated])
+        list.archivedCards = [gym.replacingLocation(id: 8, listTitle: "Today")]
+        var archived = KanbanList(id: 2, title: "Archived", cards: [gym])
+        archived.isArchived = true
+        let updated = ExampleCardLocations.updating([list, archived])
+        XCTAssertEqual(updated[0].cards[0].location, ExampleCardLocations.gym)
+        XCTAssertEqual(updated[0].cards[1].location, ExampleCardLocations.work)
+        XCTAssertEqual(Array(updated[0].cards.dropFirst(2)), Array(list.cards.dropFirst(2)))
+        XCTAssertEqual(updated[0].archivedCards, list.archivedCards)
+        XCTAssertEqual(updated[1], archived)
+        XCTAssertTrue(updated[0].cards[0].editHistory?.last?.changes.contains
+            {
+                $0.field == "location"
+            }
+            == true)
+        XCTAssertEqual(ExampleCardLocations.updating(updated), updated)
+        XCTAssertNil(ExampleCardLocations.location(for: "Gym research"))
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testBundledGymAndWorkLocationsCarryIntoAppliedRoutines
+    /// @brief      Include the verified destinations in new Jmr examples and routine copies
+    /// @details    Checks both source templates and applied Cards so future week generation
+    ///             retains locations through identity remapping without changing other titles.
+    /// @return     (Void) records bundled and copied example-location regressions
+    /// @throws     Propagates routine application errors
+    ///
+    func testBundledGymAndWorkLocationsCarryIntoAppliedRoutines() throws
+    {
+
+        let template = PlanningRoutineLibrary.jmr
+        let target = DatedPlanningWeek.make(for: .now)
+        let applied = try PlanningTemplateApplication.apply(
+            template, to: target, date: .now, calendar: .current, mode: .add)
+        for cards in [template.collection.lists.flatMap(\.cards), applied.collection.lists.flatMap(\.cards)]
+        {
+
+            XCTAssertEqual(cards.filter
+                {
+                    $0.word == "Gym"
+                } .count, 7)
+            XCTAssertEqual(cards.filter
+                {
+                    $0.word == "Work"
+                } .count, 5)
+            for card in cards
+            {
+
+                XCTAssertEqual(card.location, ExampleCardLocations.location(for: card.word))
+            }
+
+        }
+
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleLocationMigrationBacksUpAndRunsOnlyOnce
+    /// @brief      Persist existing locations across the current week, personal Cards, and routines
+    /// @details    Uses an isolated workspace domain, checks the exact pre-update backup, and
+    ///             verifies a later manual removal and unrelated maps preferences remain intact.
+    /// @return     (Void) records backed-up persistence and one-time behavior regressions
+    /// @throws     Propagates fixture encoding, migration, and decoding errors
+    ///
+    func testExampleLocationMigrationBacksUpAndRunsOnlyOnce() throws
+    {
+
+        let suite = "ExampleLocations." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        var week = DatedPlanningWeek.make(for: .now)
+        for index in week.collection.lists.indices
+        {
+
+            week.collection.lists[index].cards = []
+        }
+
+        week.collection.lists[0].cards = [KanbanCard(id: 950001, word: "Gym", listTitle: week.collection.lists[0].title)]
+        let calendar = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
+        var personal = PersonalCollection(title: "Personal", kind: .board)
+        personal.lists = [KanbanList(id: 99, title: "Work day", cards: [
+                    KanbanCard(id: 950101, word: "Work", listTitle: "Work day")
+                ])]
+        let encoder = JSONEncoder()
+        let previous = [
+                    "Plenact.Board.v1": try encoder.encode(week.collection.lists),
+                    PlanningCalendarStore.key: try encoder.encode(calendar),
+                    "Plenact.PersonalCollections.v1": try encoder.encode([personal]),
+                    PlanningRoutineStore.key: try encoder.encode(PlanningRoutineLibrary.seeded)
+        ]
+        for (key, value) in previous
+        {
+
+            defaults.set(value, forKey: key)
+        }
+
+        PlanPreferencesStore.save(LocalProfilePreferences(preferredMapsApp: .google), to: defaults)
+        let result = try XCTUnwrap(ExampleCardLocations.applyOnce(
+                lists: week.collection.lists, calendar: calendar, collections: [personal], to: defaults))
+        XCTAssertEqual(result.lists[0].cards[0].location, ExampleCardLocations.gym)
+        XCTAssertEqual(result.calendar.weeks[0].collection.lists[0].cards[0].location, ExampleCardLocations.gym)
+        XCTAssertEqual(result.collections[0].lists[0].cards[0].location, ExampleCardLocations.work)
+        XCTAssertEqual(try PlanningCalendarStore.load(from: defaults), result.calendar)
+        XCTAssertEqual(PersonalCollectionStore.load(from: defaults), result.collections)
+        XCTAssertTrue(defaults.bool(forKey: ExampleCardLocations.migrationKey))
+        XCTAssertEqual(PlanPreferencesStore.load(from: defaults).preferredMapsApp, .google)
+        let backup = try JSONDecoder().decode([String: Data].self,
+            from: XCTUnwrap(defaults.data(forKey: ExampleCardLocations.backupKey)))
+        XCTAssertEqual(backup, previous)
+        var removed = result.lists
+        removed[0].cards[0].location = nil
+        XCTAssertNil(try ExampleCardLocations.applyOnce(
+                lists: removed, calendar: result.calendar, collections: result.collections, to: defaults))
+        XCTAssertNil(removed[0].cards[0].location)
+    }
+
+
+
+    ///
+    /// @fcn        PlenactBoardDocumentTests.testExampleLocationMigrationRestoresDocumentsAfterRejectedWrite
+    /// @brief      Roll back all saved documents when one location-update write fails
+    /// @details    A test-only store rejects calendar replacement while accepting other writes,
+    ///             proving the migration does not leave partial data or a success marker behind.
+    /// @return     (Void) records transaction rollback regressions
+    /// @throws     Propagates isolated-domain and fixture encoding errors
+    ///
+    func testExampleLocationMigrationRestoresDocumentsAfterRejectedWrite() throws
+    {
+
+        ///
+        /// Rejects only the calendar replacement to simulate a partial storage failure
+        ///
+        /// @section    Purpose
+        ///     Exercises rollback without changing the real app preference domain.
+        ///
+        final class RejectingDefaults: UserDefaults
+        {
+
+            var rejectsCalendar = false
+
+            ///
+            /// @fcn        RejectingDefaults.set
+            /// @brief      Drop calendar writes only after the original fixture has been stored
+            /// @details    Other keys use normal isolated UserDefaults storage.
+            /// @param[in]  value       Proposed persisted value
+            /// @param[in]  defaultName Destination key
+            /// @return     (Void) writes an accepted fixture value
+            ///
+            override func set(_ value: Any?, forKey defaultName: String)
+            {
+
+                if rejectsCalendar && defaultName == PlanningCalendarStore.key
+                {
+
+                    return
+                }
+
+                super.set(value, forKey: defaultName)
+            }
+
+        }
+
+        let suite = "ExampleLocationsRollback." + UUID().uuidString
+        let defaults = try XCTUnwrap(RejectingDefaults(suiteName: suite))
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        var week = DatedPlanningWeek.make(for: .now)
+        week.collection.lists[0].cards = [KanbanCard(id: 960001, word: "Gym", listTitle: week.collection.lists[0].title)]
+        let calendar = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
+        let previous = [
+                    "Plenact.Board.v1": try JSONEncoder().encode(week.collection.lists),
+                    PlanningCalendarStore.key: try JSONEncoder().encode(calendar),
+                    "Plenact.PersonalCollections.v1": try JSONEncoder().encode([PersonalCollection]()),
+                    PlanningRoutineStore.key: try JSONEncoder().encode(PlanningRoutineLibrary.seeded)
+        ]
+        for (key, value) in previous
+        {
+
+            defaults.set(value, forKey: key)
+        }
+
+        defaults.rejectsCalendar = true
+        XCTAssertThrowsError(try ExampleCardLocations.applyOnce(
+                lists: week.collection.lists, calendar: calendar, collections: [], to: defaults))
+        for (key, value) in previous
+        {
+
+            XCTAssertEqual(defaults.data(forKey: key), value)
+        }
+
+        XCTAssertFalse(defaults.bool(forKey: ExampleCardLocations.migrationKey))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testUntimedBundledExamplesPopulateEveryFocusFilterCombinationLateInTheDay
     /// @brief      Verify that untimed Bundled Examples Populate Every Focus Filter Combination Late In The Day
     /// @details    Exercises `PlanningDate.date`, `PlanningRoutineLibrary.seeded.templates.filter`,
@@ -96,7 +319,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that legacy Bundled Focus Metadata Upgrade Does Not Rewrite Stored Plans Or Custom
     ///             Templates
     /// @details    Exercises `PlanningRoutineStore.load`, `upgraded.templates.dropFirst().allSatisfy`,
-    ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 4)`;
+    ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 5)`;
     ///             `XCTAssertEqual(upgraded.templates[0], custom)`.
     ///
     /// @return     (Void) no return value
@@ -126,7 +349,7 @@ extension PlenactBoardDocumentTests
         let weekBytes = Data("unchanged calendar".utf8)
         defaults.set(weekBytes, forKey: PlanningCalendarStore.key)
         let upgraded = try PlanningRoutineStore.load(from: defaults)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 5)
         XCTAssertEqual(upgraded.templates[0], custom)
         XCTAssertNil(upgraded.templates[0].exampleFocus)
         XCTAssertTrue(upgraded.templates.dropFirst().allSatisfy

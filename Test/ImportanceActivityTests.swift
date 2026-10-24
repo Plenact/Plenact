@@ -284,7 +284,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(upgraded.templates[0], legacy.templates[0])
         XCTAssertEqual(upgraded.templates[1], legacy.templates[1])
         XCTAssertEqual(upgraded.defaultWeekID, PlanningRoutineLibrary.jmrID)
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 4)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 5)
         XCTAssertEqual(defaults.data(forKey: PlanningRoutineStore.key), oldBytes)
         XCTAssertEqual(defaults.data(forKey: PlanningCalendarStore.key), weekBytes)
         var customChoice = upgraded;

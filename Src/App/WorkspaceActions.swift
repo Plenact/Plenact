@@ -97,6 +97,46 @@ extension AppRootView
 
 
     ///
+    /// @fcn        AppRootView.applyExampleCardLocations
+    /// @brief      Publish the one-time requested Gym and Work destination additions
+    /// @details    Runs only after the calendar loads. Existing custom and protected locations
+    ///             remain intact; failed preparation or storage leaves live state unchanged.
+    /// @return     (Void) publishes the saved update or reports its persistence error
+    ///
+    func applyExampleCardLocations()
+    {
+
+        guard hasLoadedBoard, let document = calendarDocument else
+        {
+
+            return
+        }
+
+        do
+        {
+
+            guard let updated = try ExampleCardLocations.applyOnce(
+                lists: lists, calendar: document, collections: collections) else
+            {
+
+                return
+            }
+
+            calendarDocument = updated.calendar
+            lists = updated.lists
+            collections = updated.collections
+        }
+
+        catch
+        {
+
+            DatabaseActivity.shared.report("Could not add example Card locations: \(error.localizedDescription)")
+        }
+
+    }
+
+
+    ///
     /// @fcn        AppRootView.applyDayListOrderingPreference
     /// @brief      Apply the enabled Day time-order policy to existing calendar weeks
     /// @details    Called after loading and when preferences change. Sorts only active date-mapped

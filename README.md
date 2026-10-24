@@ -18,7 +18,9 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 # Opens
 
-## Next Things in the Morning
+- Hi and I noticed that the launch screen lower icons are not evenly balanced across the horizontal width of the screen, see attached for my sketch pad notes to observe that. Can you help us even out the horizontal alignment of the launch screens lower loading icons balanced evenly across the center of the view? :)
+
+## Next Things
 
 - Database
 
@@ -26,7 +28,13 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 
 - Windows App
 
-## Next 
+## Next
+
+- Reminders
+
+- Space morning unroll feature
+
+- Have init demo calendar flood the calendar, like you are living life, dates and times and people and tags included!
 
 - All cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
 
@@ -36,7 +44,13 @@ This is beautiful, thank you Alex!! Can you help me with a good git commit messa
 	
 - Drag and access to content feels more hands-on like Trello does
 
+- Make sure photos, covers and galleries work well
+
+- Custom icons
+
 - Settings menu re-org!
+
+- Clear 'Recent'
 
 ## Upcoming Development Work
 

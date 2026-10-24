@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F85A18C083674224BDE017C1 /* ExampleCardLocations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017C2 /* ExampleCardLocations.swift */; };
+		F85A18C083674224BDE017B1 /* CardLocationSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017B2 /* CardLocationSearch.swift */; };
+		F85A18C083674224BDE017A1 /* CardLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017A2 /* CardLocation.swift */; };
 		354B6C37BBEC4A4F98B58F97 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC15405D865C4534ACD974D9 /* Assets.xcassets */; };
 		A202610120000000000000001 /* PlenactLaunch.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A202610120000000000000002 /* PlenactLaunch.storyboard */; };
 		F30000000000000000000001 /* CardCoverImages in Resources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* CardCoverImages */; };
@@ -162,6 +165,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		F85A18C083674224BDE017C2 /* ExampleCardLocations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCardLocations.swift; sourceTree = "<group>"; };
+		F85A18C083674224BDE017B2 /* CardLocationSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLocationSearch.swift; sourceTree = "<group>"; };
+		F85A18C083674224BDE017A2 /* CardLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLocation.swift; sourceTree = "<group>"; };
 		30C25D35D8C349EDB8B7AFEF /* Plenact.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plenact.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A202610120000000000000002 /* PlenactLaunch.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = PlenactLaunch.storyboard; sourceTree = "<group>"; };
 		C10000000000000000000003 /* PlenactTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlenactTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -497,6 +503,8 @@
 				49AA8C808AD6A14ECF42B492 /* CardDetailSections.swift */,
 				58B731C4C12A927B9E885C24 /* CardDetailView.swift */,
 				CBF47E341E891A8AF2DA80F0 /* CardEditors.swift */,
+				F85A18C083674224BDE017A2 /* CardLocation.swift */,
+				F85A18C083674224BDE017B2 /* CardLocationSearch.swift */,
 				CF8830AB67F2B610F6884479 /* CardPreview.swift */,
 				A59FEBD1C7DF17939F8DD05B /* CardSectionRendering.swift */,
 				C72CCE66F855F3F563A337E8 /* ChecklistViews.swift */,
@@ -511,6 +519,7 @@
 				B8E508A619BE5738CDCF7422 /* CollectionExamples.swift */,
 				011EC3594180133FA98FCADE /* ExampleViews.swift */,
 				E7753D84ADB67748C5E4116F /* FullMonthExamples.swift */,
+				F85A18C083674224BDE017C2 /* ExampleCardLocations.swift */,
 				923BCADBF0D86F6C1540C363 /* StarterContent.swift */,
 			);
 			path = Examples;
@@ -881,6 +890,8 @@
 				9A1BAABADF8C90AE110CFCB6 /* CardDetailSections.swift in Sources */,
 				FA6DCF8EC4212FF0559F5999 /* CardDetailView.swift in Sources */,
 				416838D10BC1AA17C8247A58 /* CardEditors.swift in Sources */,
+				F85A18C083674224BDE017A1 /* CardLocation.swift in Sources */,
+				F85A18C083674224BDE017B1 /* CardLocationSearch.swift in Sources */,
 				8AF8EB38AA85A4059D108006 /* CardPreview.swift in Sources */,
 				2A7192F3730A675D15EC7DF9 /* CardSectionRendering.swift in Sources */,
 				0CB756AE16DC39D8775C2593 /* ChecklistViews.swift in Sources */,
@@ -888,6 +899,7 @@
 				D05B0CF00B39CB1DA4866C15 /* CollectionExamples.swift in Sources */,
 				70248EFDECFECADFBD674F03 /* ExampleViews.swift in Sources */,
 				D25BBB5504CDD2CD3DF3AB1B /* FullMonthExamples.swift in Sources */,
+				F85A18C083674224BDE017C1 /* ExampleCardLocations.swift in Sources */,
 				520E3342C5D304ADB9899601 /* StarterContent.swift in Sources */,
 				7785441CE69E874D1B47F0F4 /* ImportanceControls.swift in Sources */,
 				79BF6D8489574AB0294C3A02 /* ImportanceStore.swift in Sources */,

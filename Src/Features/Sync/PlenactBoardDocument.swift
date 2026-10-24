@@ -20,9 +20,11 @@ import Foundation
 ///
 /// @note   Server revision, actor, storage time, and origin are response/envelope metadata
 ///
-struct PlenactBoardDocument: Codable, Equatable {
+struct PlenactBoardDocument: Codable, Equatable
+{
 
-    static let currentSchemaVersion = 1   /* Current supported Board document shape */
+
+    static let currentSchemaVersion = 1 /* Current supported Board document shape */
 
     var schemaVersion: Int           /* Board JSON schema version */
     var boardKey:      String        /* Stable shared Board key   */
@@ -36,12 +38,14 @@ struct PlenactBoardDocument: Codable, Equatable {
     /// @section    Purpose
     ///     Keep schema, board key, and label library field names explicit
     ///
-    enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey
+    {
+
 
         case schemaVersion = "schema_version"
-        case boardKey      = "board_key"
+        case boardKey = "board_key"
         case lists
-        case labelLibrary  = "label_library"
+        case labelLibrary = "label_library"
     }
 
 
@@ -58,13 +62,16 @@ struct PlenactBoardDocument: Codable, Equatable {
     ///
     /// @post       The document stores the current schema version and supplied snapshot values
     ///
-    init(boardKey: String = "shared-demo", lists: [KanbanList], labelLibrary: LabelLibrary) {
+    init(boardKey: String = "shared-demo", lists: [KanbanList], labelLibrary: LabelLibrary)
+    {
+
 
         self.schemaVersion = Self.currentSchemaVersion
-        self.boardKey      = boardKey
-        self.lists         = lists
-        self.labelLibrary  = labelLibrary
+        self.boardKey = boardKey
+        self.lists = lists
+        self.labelLibrary = labelLibrary
     }
+
 
     ///
     /// @fcn        PlenactBoardDocument.validationMessage
@@ -77,77 +84,121 @@ struct PlenactBoardDocument: Codable, Equatable {
     /// @pre        lists, cards, and assignments contain the document's current snapshot data
     /// @post       The document remains unchanged
     ///
-    var validationMessage: String? {   /* Snapshot validation result */
+    var validationMessage: String?
+    {  /* Snapshot validation result */
 
-          guard schemaVersion == Self.currentSchemaVersion,
-              boardKey == "shared-demo" else {
+
+        guard schemaVersion == Self.currentSchemaVersion,
+        boardKey == "shared-demo"
+        else
+        {
+
             return "Unsupported Board document version or missing board key."
         }
+
 
         var listIDs: Set<Int> = []  /* Unique list identifiers */
         var cardIDs: Set<Int> = []  /* Unique Board card IDs   */
 
-        for list in lists {
+        for list in lists
+        {
 
-            guard !list.isArchived else {
+
+            guard !list.isArchived else
+            {
+
 
                 return "Archived lists are stored locally and cannot be published to the shared Board."
             }
 
-            guard list.archivedCards.isEmpty else {
+
+            guard list.archivedCards.isEmpty else
+            {
+
 
                 return "Archived cards are stored locally and cannot be published to the shared Board."
             }
 
+
             guard list.id >= 0,
-                  listIDs.insert(list.id).inserted,
-                  !list.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            listIDs.insert(list.id).inserted,
+            !list.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else
+            {
+
 
                 return "Each Board list needs a unique nonnegative ID and a title."
             }
 
-            for card in list.cards {
+
+            for card in list.cards
+            {
+
 
                 guard card.id >= 0,
-                      cardIDs.insert(card.id).inserted,
-                      !card.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                      card.listTitle == list.title else {
+                cardIDs.insert(card.id).inserted,
+                !card.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                card.listTitle == list.title
+                else
+                {
+
 
                     return "Each Board card needs a unique nonnegative ID, title, and matching list title."
                 }
 
-                for assignee in card.members {
 
-                    let displayName = assignee.displayName.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized assignee label */
+                for assignee in card.members
+                {
 
-                    guard !displayName.isEmpty else {
+
+                    let displayName = assignee.displayName.trimmingCharacters(
+                        in: .whitespacesAndNewlines) /* Normalized assignee label */
+
+                    guard !displayName.isEmpty else
+                    {
+
 
                         return "Each card assignee needs a display name."
                     }
 
-                    switch assignee.kind {
 
-                        case .registeredUser:
+                    switch assignee.kind
+                    {
 
-                            guard let userID = assignee.userID, /* Registered account reference */
-                                  UUID(uuidString: userID) != nil else {
 
-                                return "Registered card assignees need a valid stable user ID."
-                            }
+                    case .registeredUser:
 
-                        case .manual:
+                        guard let userID = assignee.userID, /* Registered account reference */
+                        UUID(uuidString: userID) != nil
+                        else
+                        {
 
-                            guard assignee.userID == nil else {
 
-                                return "Manual card assignees cannot contain a registered user ID."
-                            }
+                            return "Registered card assignees need a valid stable user ID."
+                        }
+
+
+                    case .manual:
+
+                        guard assignee.userID == nil else
+                        {
+
+
+                            return "Manual card assignees cannot contain a registered user ID."
+                        }
+
                     }
+
                 }
+
             }
+
         }
+
 
         return nil
     }
+
 }
 
 
@@ -160,13 +211,15 @@ struct PlenactBoardDocument: Codable, Equatable {
 /// @section    Purpose
 ///     Keep concurrency and storage context outside the editable Board payload
 ///
-struct PlenactBoardSnapshotResponse: Decodable {
+struct PlenactBoardSnapshotResponse: Decodable
+{
 
-    let revision:       Int64                /* Current immutable revision */
-    let document:       PlenactBoardDocument /* Complete Board content     */
-    let storedAtUTC:    String               /* Server storage timestamp   */
-    let storedByUserID: String               /* Verified storage actor     */
-    let storageOrigin:  String               /* Controlled write origin    */
+
+    let revision:       Int64                 /* Current immutable revision */
+    let document:       PlenactBoardDocument  /* Complete Board content     */
+    let storedAtUTC:    String                /* Server storage timestamp   */
+    let storedByUserID: String                /* Verified storage actor     */
+    let storageOrigin:  String                /* Controlled write origin    */
 
 
     ///
@@ -175,12 +228,15 @@ struct PlenactBoardSnapshotResponse: Decodable {
     /// @section    Purpose
     ///     Decode revision and storage metadata independently of the Board document
     ///
-    enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey
+    {
+
 
         case revision
         case document
-        case storedAtUTC    = "stored_at_utc"
+        case storedAtUTC = "stored_at_utc"
         case storedByUserID = "stored_by_user_id"
-        case storageOrigin  = "storage_origin"
+        case storageOrigin = "storage_origin"
     }
+
 }

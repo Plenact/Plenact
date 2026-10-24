@@ -1,5 +1,8 @@
 # Plenact: Production Preparation and Release Handoff
 
+> Source paths and size measurements below describe the historical handoff snapshot.
+> For the reorganized source tree, see the [current project layout](../ProjectLayout.md).
+
 > **Historical audit:** This handoff records the October 4, 2026 repository snapshot. Its feature inventory, paths, and verification results are historical. The October 16 [Planning Rhythm vision](../Design/Planning-Rhythm.md), [delivery plan](../Design/Planning-Rhythm-Delivery.md), and [current documentation index](../README.md) supersede its future product-direction assumptions. The first guided Today's Vision flow is implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 
 

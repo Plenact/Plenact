@@ -1,5 +1,3 @@
-import Foundation
-
 // -------------------------------------------------------------------------------------------------
 // @file       style.swift
 // @brief      Swift style template with disciplined, human-readable engineering headers
@@ -22,6 +20,8 @@ import Foundation
 //             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
 //             Place those blank lines before doc-comment blocks so comments remain attached
 //             Use blank lines after function/control-flow openings and between logical steps
+//             Put block opening braces on their own lines; expand inline executable blocks
+//             Limit each Swift file to 1,200 source lines, excluding comments and blank or bracket-only lines
 //             Separate fixture setup, operation, and assertion groups with blank lines
 //             Keep related declarations and assertions together; expand dense one-line bodies
 //             Align named argument values to a common column in multiline calls, preserving indentation
@@ -33,6 +33,9 @@ import Foundation
 //      Company confidential and for template/reference use only
 //
 // -------------------------------------------------------------------------------------------------
+
+
+import Foundation
 
 
 // -------------------------------------- MARK: - Metadata -------------------------------------- //
@@ -49,7 +52,9 @@ import Foundation
 ///
 /// @note   Keep this short and consistent across files for easy scanning and support
 ///
-enum AppMetadata {
+enum AppMetadata
+{
+
 
     static let projectName  = "ProjectName"   /* Example project name        */
     static let organization = "Company Name"  /* Example owning organization */
@@ -70,12 +75,14 @@ enum AppMetadata {
 ///
 /// @note   Keep the error set small and explicit to preserve clarity and supportability
 ///
-enum AppError: LocalizedError, Sendable {
+enum AppError: LocalizedError, Sendable
+{
 
-    case missingConfiguration       /* Missing required configuration          */
-    case invalidInput(String)       /* Invalid input with associated message   */
-    case networkFailure(String)     /* Network failure with associated message */
-    case unknown                    /* Unknown error                           */
+
+    case missingConfiguration    /* Missing required configuration          */
+    case invalidInput(String)    /* Invalid input with associated message   */
+    case networkFailure(String)  /* Network failure with associated message */
+    case unknown                 /* Unknown error                           */
 
     ///
     /// @fcn        AppError.errorDescription
@@ -89,23 +96,29 @@ enum AppError: LocalizedError, Sendable {
     ///
     /// @note   Keep output concise and actionable for support/debug workflows
     ///
-    var errorDescription: String? { /* Example localized error description */
+    var errorDescription: String?
+    {  /* Example localized error description */
 
-        switch self {
 
-            case .missingConfiguration:
-                return "Missing required configuration."
+        switch self
+        {
 
-            case .invalidInput(let message):                /* Example input-validation message   */
-                return "Invalid input: \(message)"
 
-            case .networkFailure(let message):              /* Example network-failure message    */
-                return "Network request failed: \(message)"
+        case .missingConfiguration:
+            return "Missing required configuration."
 
-            case .unknown:
-                return "An unknown error has occurred."
+        case .invalidInput(let message):                /* Example input-validation message   */
+            return "Invalid input: \(message)"
+
+        case .networkFailure(let message):              /* Example network-failure message    */
+            return "Network request failed: \(message)"
+
+        case .unknown:
+            return "An unknown error has occurred."
         }
+
     }
+
 }
 
 
@@ -120,7 +133,9 @@ enum AppError: LocalizedError, Sendable {
 ///
 /// @note   This is intentionally clear and support-oriented rather than over-simplified
 ///
-struct Item: Identifiable, Codable, Sendable {
+struct Item: Identifiable, Codable, Sendable
+{
+
 
     let id:        UUID     /* Example item identity                   */
     let title:     String   /* Example display title                   */
@@ -140,14 +155,16 @@ struct Item: Identifiable, Codable, Sendable {
     ///
     /// @return     (Item) configured instance
     ///
-    init(id: UUID = UUID(), title: String, detail: String? = nil, createdAt: Date = Date()) {
+    init(id: UUID = UUID(), title: String, detail: String? = nil, createdAt: Date = Date())
+    {
+
 
         self.id        = id         /* Assign the unique identifier for the item      */
         self.title     = title      /* Assign the display title                       */
         self.detail    = detail     /* Assign the optional secondary content          */
         self.createdAt = createdAt  /* Assign the timestamp for creation or retrieval */
-
     }
+
 }
 
 
@@ -160,7 +177,8 @@ struct Item: Identifiable, Codable, Sendable {
 /// @section    Purpose
 ///     Permit dependency injection and keep data access abstract from the UI layer
 ///
-protocol ItemServiceProtocol: Sendable {
+protocol ItemServiceProtocol: Sendable
+{
 
 
     ///
@@ -185,7 +203,8 @@ protocol ItemServiceProtocol: Sendable {
 /// @section    Purpose
 ///     Provide the concrete dependency behind the abstract repository/service contract
 ///
-final class ItemService: ItemServiceProtocol {
+final class ItemService: ItemServiceProtocol
+{
 
 
     ///
@@ -197,7 +216,9 @@ final class ItemService: ItemServiceProtocol {
     ///
     /// @throws     None in the sample implementation, but future versions may throw errors
     ///
-    func fetchItems() async throws -> [Item] {
+    func fetchItems() async throws -> [Item]
+    {
+
 
         let now = Date()              /* Example shared item-creation timestamp */
 
@@ -206,6 +227,7 @@ final class ItemService: ItemServiceProtocol {
             Item(title: "Second Item",  detail: "Another sample", createdAt: now.addingTimeInterval(60))
         ]
     }
+
 }
 
 
@@ -219,7 +241,9 @@ final class ItemService: ItemServiceProtocol {
 ///     Separate view state and business interaction from the UI rendering layer
 ///
 @MainActor
-final class ItemListViewModel: ObservableObject {
+final class ItemListViewModel: ObservableObject
+{
+
 
     @Published private(set) var items: [Item] = []     /* Example current item collection */
     @Published private(set) var isLoading     = false  /* Example loading-state indicator */
@@ -238,7 +262,9 @@ final class ItemListViewModel: ObservableObject {
     ///
     /// @return     (ItemListViewModel) configured instance
     ///
-    init(service: any ItemServiceProtocol = ItemService()) {
+    init(service: any ItemServiceProtocol = ItemService())
+    {
+
 
         self.service = service      /* Assign the injected service to the local property */
     }
@@ -254,31 +280,41 @@ final class ItemListViewModel: ObservableObject {
     /// @pre        service must be valid and initialized
     /// @post       items and errorMessage reflect current load result
     ///
-    func loadItems() async {
+    func loadItems() async
+    {
+
 
         isLoading    = true  /* Indicate that a loading operation is in progress */
         errorMessage = nil   /* Clear any existing error message                 */
 
 
-        do {
+        do
+        {
+
 
             //Fetch attempt
             items = try await service.fetchItems()
+        }
+        catch let error as AppError
+        {  /* Example recognized application error */
 
-        } catch let error as AppError { /* Example recognized application error */
 
             //Handle known application errors
             errorMessage = error.localizedDescription
+        }
+        catch
+        {
 
-        } catch {
 
             //Handle unexpected errors
             errorMessage = error.localizedDescription
         }
 
+
         //Update state
         isLoading = false
     }
+
 }
 
 
@@ -296,7 +332,9 @@ final class ItemListViewModel: ObservableObject {
 ///
 /// @return     (String) formatted date and short time
 ///
-func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
+func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String
+{
+
 
     let formatter = DateFormatter()     /* Example date-and-time formatter */
 
@@ -319,7 +357,8 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String {
 /// @section    Purpose
 ///     Demonstrate a lightweight app entry pattern for the template
 ///
-enum AppEntry {
+enum AppEntry
+{
 
 
     ///
@@ -329,7 +368,9 @@ enum AppEntry {
     ///
     /// @return     (Void) writes example output to the console
     ///
-    static func run() async {
+    static func run() async
+    {
+
 
         let viewModel = await ItemListViewModel(service: ItemService()) /* Example item-list presentation state */
 
@@ -340,15 +381,22 @@ enum AppEntry {
         let items = await viewModel.items /* Example loaded item collection */
 
         // Iterate over the retrieved items and print their details
-        for item in items {
+        for item in items
+        {
+
 
             print("\(item.title) - \(formatDate(item.createdAt))")
         }
 
+
         // Check for any error messages and print them if present
-        if let errorMessage = await viewModel.errorMessage { /* Example reported loading error */
+        if let errorMessage = await viewModel.errorMessage
+        {  /* Example reported loading error */
+
 
             print("Error: \(errorMessage)")
         }
+
     }
+
 }

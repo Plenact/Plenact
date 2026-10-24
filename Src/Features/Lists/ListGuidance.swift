@@ -2,7 +2,8 @@
 // @file       ListGuidance.swift
 // @brief      Temporary read-only built-in List guidance
 // @details    Presents measured session-only guide content, header toggling, and coordinated
-//             capture-row placement outside retained Card records.
+//             capture-row placement outside retained Card records. Header retraction slides and
+//             collapses the guide together using the same timing as its entrance.
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -130,7 +131,7 @@ struct SessionListGuidance: View
                 }
                 .offset(y: reduceMotion ? 0 : (isVisible ? 0 : -guideHeight))
                 .opacity(isVisible ? 1 : 0)
-                .animation(.easeInOut(duration: reduceMotion ? 0.2 : 3.2), value: isVisible)
+                .animation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9), value: isVisible)
                 .allowsHitTesting(isVisible)
                 .accessibilityHidden(!isVisible)
             }
@@ -179,7 +180,7 @@ struct SessionListGuidance: View
                 automaticRevealAttempted = true
                 do
                 {
-                    try await Task.sleep(for: .seconds(1))
+                    try await Task.sleep(for: .milliseconds(300))
                 }
                 catch
                 {
@@ -190,26 +191,11 @@ struct SessionListGuidance: View
             else if isVisible
             {
 
-                isVisible = false
-                // Keep capture available; collapsing the guide returns it to its normal List position.
-                do
+                // Retract the card and its reserved row together, using the entrance curve.
+                // Capture remains available and follows the shrinking row back toward the header.
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
-                    try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 3.2))
-                }
-                catch
-                {
-                    return
-                }
-
-                guard !Task.isCancelled else
-                {
-                    return
-                }
-
-                var transaction = Transaction(animation: nil)
-                transaction.disablesAnimations = true
-                withTransaction(transaction)
-                {
+                    isVisible = false
                     hasPreparedLayout = false
                 }
 
@@ -221,7 +207,22 @@ struct SessionListGuidance: View
                 return
             }
 
-            // Let List finish allocating its row before animating the already-mounted visual.
+            if toggleRequest > 0
+            {
+
+                // Expand the reserved space with the card so capture follows the same curve.
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
+                {
+                    hasPreparedLayout = true
+                    isVisible = true
+                    onReveal()
+                    onPresentationChange(true)
+                }
+
+                return
+            }
+
+            // Initial entry prepares the row while capture is hidden before revealing both.
             var layoutTransaction = Transaction(animation: nil)
             layoutTransaction.disablesAnimations = true
             withTransaction(layoutTransaction)

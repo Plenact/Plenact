@@ -321,7 +321,7 @@ struct InlineListCapture: View
         .frame(minHeight: 44)
         .offset(y: reduceMotion || isPresented ? 0 : -120)
         .opacity(isPresented ? 1 : 0)
-        .animation(.easeInOut(duration: reduceMotion ? 0.2 : 3.2), value: isPresented)
+        .animation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9), value: isPresented)
         .allowsHitTesting(isPresented)
         .accessibilityHidden(!isPresented)
         .onChange(of: isPresented)

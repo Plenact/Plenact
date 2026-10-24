@@ -20,14 +20,6 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 !!
 
-	- Dragging on the Today view slogan rolls off gradually, and not immediate like present
-
-	- Careful keyboard upper buttons selection and actions for all keyboard locations in app
-
-- If all cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
-
-	- Random header color selector option for cards and color thems
-
 - Tapping a card's dates, from the card preview in the List view raises a popup to modify the dates of that card in-place
 
 - History of edits to each card!!! ?
@@ -40,7 +32,15 @@ Now I think I'm going to switch from developer to user, for awhile now, diligent
 
 - Activity sections for init reference cards on On the Table, In the Queue and Scheduled have the Activity section removed or hidden by default
 
+- If all cards in a section have time values, when a section is minimized its time range in shown in the collapsed header bar text (e.g. "School (7-2)")
+
 ## Upcoming Development Work
+
+- Dragging on the Today view slogan rolls off gradually, and not immediate like present
+
+- Careful keyboard upper buttons selection and actions for all keyboard locations in app
+
+- Random header color selector option for cards and color thems
 
 - Giving other user the ability to view/share selected content &/or accounts
 

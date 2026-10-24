@@ -2,7 +2,7 @@
 // @file       TodayFocus.swift
 // @brief      Derived Focus entries, filtering, and direct detail access
 // @details    Combines configured selection sources and section context while preserving personal
-//             importance and caller-specific return routes.
+//             importance and caller-specific return routes. Gives item taps a soft selection glow.
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -171,6 +171,7 @@ struct TodayFocusSection: View
             bookmarked: includesBookmarked, dark: colorScheme == .dark)
     }
 
+    @State private var selectedFocusCard: KanbanCard?  /* Pending item retained during visible tap feedback */
     @State private var deletingCard: KanbanCard?
 
     @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28
@@ -519,7 +520,7 @@ struct TodayFocusSection: View
                         Button
                         {
 
-                            onOpenCard(card)
+                            selectedFocusCard = card
                         }
                         label:
                         {
@@ -587,7 +588,7 @@ struct TodayFocusSection: View
                             .contentShape(Rectangle())
                         }
 
-                        .buttonStyle(.plain)
+                        .buttonStyle(TodayFocusSelectionStyle(isSelected: selectedFocusCard?.id == card.id))
                         .accessibilityLabel("Open \(card.word)")
                         .accessibilityValue(
                             [
@@ -634,6 +635,37 @@ struct TodayFocusSection: View
         .contentMargins(.vertical, 0, for: .scrollContent)
         .scrollBounceBehavior(.basedOnSize)
         .frame(height: rowsHeight)
+        .task(id: selectedFocusCard?.id)
+        {
+            guard let selected = selectedFocusCard else
+            {
+                return
+            }
+
+            do
+            {
+                try await Task.sleep(for: .milliseconds(400))
+            }
+            catch
+            {
+                return
+            }
+
+            guard !Task.isCancelled,
+                  let current = entries.first(where: { $0.card.id == selected.id })?.card
+            else
+            {
+                selectedFocusCard = nil
+                return
+            }
+
+            onOpenCard(current)
+            selectedFocusCard = nil
+        }
+        .onDisappear
+        {
+            selectedFocusCard = nil
+        }
     }
 
 
@@ -950,4 +982,55 @@ struct TodayFocusCardDetailView: View
 
     }
 
+}
+
+
+///
+/// Gives Today Focus item selection a brief warm visual response
+///
+/// @section    Purpose
+///     Combines native press state with a short accepted-selection highlight so feedback is
+///     visible before navigation. The owner cancels pending navigation when its rows disappear.
+///
+private struct TodayFocusSelectionStyle: ButtonStyle
+{
+
+    let isSelected: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+
+    ///
+    /// @fcn        TodayFocusSelectionStyle.makeBody(configuration:)
+    /// @brief      Glow behind the selected item’s text and symbol silhouettes
+    /// @details    Retains the glow briefly after release until the owner opens the selected Card.
+    ///             Alpha-based shadows follow the rendered glyphs, leaving row space transparent.
+    ///             Reduce Motion uses an immediate gold glyph tint without an animated glow.
+    ///             Decorative layers do not intercept touches or add accessibility elements.
+    /// @param[in]  configuration  Native button label and current pressed state
+    /// @return     (some View) original item label with transient selection feedback
+    ///
+    func makeBody(configuration: Configuration) -> some View
+    {
+
+        let highlighted = configuration.isPressed || isSelected
+        let gold = Color(red: 0.90, green: 0.69, blue: 0.27)
+        configuration.label
+            .compositingGroup()
+            .shadow(color: gold.opacity(highlighted && !reduceMotion ? 0.4 : 0), radius: 2)
+            .shadow(color: gold.opacity(highlighted && !reduceMotion ? 0.825 : 0), radius: 6)
+            .overlay
+            {
+                if reduceMotion
+                {
+                    gold.opacity(highlighted ? 0.55 : 0)
+                        .mask(configuration.label)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .animation(
+                reduceMotion ? nil : .easeOut(duration: highlighted ? 0.08 : 0.4),
+                value: highlighted
+            )
+    }
 }

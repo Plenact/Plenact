@@ -363,7 +363,7 @@ struct TodayListDetailView: View
                 }, onDelete:
                 {
                     _ = deleteCard(card.id)
-                })
+                }, onUpdateCard: updateCard)
         }
         else
         {

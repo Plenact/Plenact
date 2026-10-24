@@ -771,7 +771,7 @@ struct KanbanListView: View
                                         }, onDelete:
                                         {
                                             onDeleteCard(card.id)
-                                        })
+                                        }, onUpdateCard: onUpdateCard)
                                 }
                                 else
                                 {

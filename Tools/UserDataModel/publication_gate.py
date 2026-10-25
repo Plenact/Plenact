@@ -18,7 +18,7 @@ from validate_contract import CONTRACTS, ROOT, ContractError, load_json, run_fix
 TAG = "user-data-model-v1.0"
 DOCUMENTS = ROOT / "Doc/User-Data-Model"
 TOOLS = ROOT / "Tools/UserDataModel"
-ALLOWED = {".md", ".json", ".py", ".swift", ".cs", ".csproj", ".cjs", ".yaml", ".txt"}
+ALLOWED = {".md", ".json", ".py", ".swift", ".cs", ".csproj", ".cjs", ".yaml", ".txt", ".sql"}
 
 
 def included_files():
@@ -36,12 +36,13 @@ def included_files():
     return files
 
 
-def verify_source_snapshot():
+def verify_source_snapshot(check_hashes=True):
     """Check the frozen source baseline before first publication, without reading stored user data."""
     audit = load_json(DOCUMENTS / "Source-Coverage.json")
-    for relative, expected in audit["source_files"].items():
-        if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != expected:
-            raise ContractError("source_snapshot_changed")
+    if check_hashes:
+        for relative, expected in audit["source_files"].items():
+            if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != expected:
+                raise ContractError("source_snapshot_changed")
     allowed = {"synchronized", "device_local", "recovery_local", "legacy_storage_wrapper", "version_0_transport", "credentials_or_version_0_auth"}
     for model in audit["models"]:
         if model["scope"] not in allowed or not model["target"]:

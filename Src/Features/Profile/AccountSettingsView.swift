@@ -646,6 +646,11 @@ struct AccountSettingsView: View
                         Section("Privacy & Data")
                         {
 
+                            NavigationLink("Local backup")
+                            {
+                                LocalDataExportView()
+                            }
+
                             LabeledContent("Profile storage", value: "This device")
                             LabeledContent("Online account", value: "None")
                             LabeledContent("Network access", value: "Not used")
@@ -913,6 +918,14 @@ struct PlanSettingsView: View
                     Text(
                                                             "Shortcuts and templates have their own save controls. Choose the default for new weeks in Templates."
                     )
+                }
+
+                Section("Your data")
+                {
+                    NavigationLink("Local backup")
+                    {
+                        LocalDataExportView()
+                    }
                 }
 
                 Section("Display")

@@ -48,6 +48,19 @@ class ReadOnlyCaptureTests(unittest.TestCase):
         return {p.relative_to(self.source).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in self.source.rglob("*") if p.is_file()}
 
+    def test_native_migration_state_is_not_silently_dropped(self):
+        """Keep newer native journal/preview evidence in its original folder until capture format advances."""
+        folder = self.source / "Migration"
+        folder.mkdir()
+        evidence = folder / "IdentityJournal.json"
+        evidence.write_bytes(b"synthetic retained identity evidence")
+        output = self.root / "capture"
+        with self.assertRaises(ContractError) as error:
+            capture(self.source, output)
+        self.assertEqual(str(error.exception), "capture_v1_cannot_preserve_native_migration_state")
+        self.assertFalse(output.exists())
+        self.assertEqual(evidence.read_bytes(), b"synthetic retained identity evidence")
+
     def test_capture_preserves_bytes_and_never_claims_conversion(self):
         """A verified legacy capture must not masquerade as portable Model 1.0 data."""
         before = self.fingerprint()

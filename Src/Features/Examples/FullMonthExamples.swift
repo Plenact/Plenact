@@ -403,6 +403,14 @@ struct FullMonthExampleStore: Sendable
             try fm.removeItem(at: userData)
         }
 
+        if committedOperation() == "native_restore_undo"
+        {
+            let previous = root.appendingPathComponent("BeforeNativeRestore")
+            if fm.fileExists(atPath: previous.path)
+            {
+                try fm.removeItem(at: previous)
+            }
+        }
         try fm.removeItem(at: transition)
     }
 
@@ -476,6 +484,71 @@ struct FullMonthExampleStore: Sendable
         }
 
         try? finishCommitted()
+    }
+
+
+    /// @fcn FullMonthExampleStore.hasNativeRestoreBackup
+    /// @brief Identify retained pre-import recovery evidence
+    /// @return True when a prior Simulator restore has an undo snapshot
+    var hasNativeRestoreBackup: Bool
+    {
+
+        fm.fileExists(atPath: root.appendingPathComponent("BeforeNativeRestore").path)
+    }
+
+
+    /// @fcn FullMonthExampleStore.installNativeSource
+    /// @brief Retain the destination and journal a user-confirmed source recovery test
+    /// @param[in] install Reviewed source installation, executed inside the recoverable boundary
+    /// @return Void after commit; the pre-import workspace remains available for undo
+    /// @throws Capture, installation or recovery errors
+    func installNativeSource(_ install: () throws -> Void) throws
+    {
+
+        try recoverInterruptedSwitch()
+        guard !hasNativeRestoreBackup else
+        {
+            throw CocoaError(.fileWriteFileExists)
+        }
+        try capture(to: root.appendingPathComponent("BeforeNativeRestore"))
+        try capture(to: transition)
+        do
+        {
+            try install()
+            try Data("native_restore".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        }
+        catch
+        {
+            try recoverInterruptedSwitch()
+            throw error
+        }
+        try? finishCommitted()
+    }
+
+
+    /// @fcn FullMonthExampleStore.undoNativeSource
+    /// @brief Restore the verified pre-import destination rather than guessing inverse mutations
+    /// @return Void after recovery and retained-backup cleanup
+    /// @throws Verification, persistence or rollback errors
+    func undoNativeSource() throws
+    {
+
+        try recoverInterruptedSwitch()
+        let previous = root.appendingPathComponent("BeforeNativeRestore")
+        try verify(previous)
+        try capture(to: transition)
+        do
+        {
+            try installFiles(from: previous)
+            try setDomain(savedDomain(in: previous))
+            try Data("native_restore_undo".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        }
+        catch
+        {
+            try recoverInterruptedSwitch()
+            throw error
+        }
+        try finishCommitted()
     }
 
 

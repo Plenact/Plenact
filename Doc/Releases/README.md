@@ -1,5 +1,7 @@
 # Publishing Plenact revisions
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 [CHANGELOG.md](../../CHANGELOG.md) is the source of curated release notes. Each repository version tag has one dated section. [GitHub Releases](https://github.com/Plenact/Plenact/releases) publishes the same entry for readers outside the source tree.
 
 Revision tags describe repository versions. They do not by themselves indicate an App Store release. Historical dates use the tagged commit date because the existing tags do not retain an independent release-publication date.

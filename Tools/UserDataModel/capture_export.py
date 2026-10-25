@@ -295,6 +295,11 @@ def capture(snapshot, output):
     if snapshot_input.is_symlink():
         raise ContractError("symlink_not_allowed")
     snapshot = snapshot_input.resolve(strict=True)
+    # Capture format 1 cannot represent the newer native identity/preview evidence.
+    # Refuse rather than silently dropping it; the original native folder is the recovery artifact.
+    for relative in ("Migration", "MigrationPreview", "Library/Application Support/PlenactMigration"):
+        if (snapshot / relative).exists() or (snapshot / relative).is_symlink():
+            raise ContractError("capture_v1_cannot_preserve_native_migration_state")
     output = Path(output).absolute()
     if output.exists() or output.is_symlink():
         raise ContractError("output_already_exists")

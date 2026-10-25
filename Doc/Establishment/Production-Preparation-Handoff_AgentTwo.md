@@ -1,5 +1,7 @@
 # Plenact: Production Preparation and Release Handoff
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 > Source paths and size measurements below describe the historical handoff snapshot.
 > For the reorganized source tree, see the [current project layout](../ProjectLayout.md).
 
@@ -393,8 +395,8 @@ The three heavily documented active files currently have approximately:
 | File | Physical lines observed during this handoff |
 |---|---:|
 | [App.swift](../../Src/App.swift) | 3,412 |
-| [Board ContentView.swift](../../Src/Features/Boards/ContentView.swift) | 3,054 |
-| [Board CardDetailView.swift](../../Src/Features/Boards/CardDetailView.swift) | 3,060 |
+| [Board ContentView.swift](../../Src/Features/Boards/BoardView.swift) | 3,054 |
+| [Board CardDetailView.swift](../../Src/Features/Cards/CardDetailView.swift) | 3,060 |
 
 Their size includes substantial documentation. Do not use line count alone to justify a risky rewrite.
 
@@ -407,10 +409,10 @@ Their size includes substantial documentation. Do not use line count alone to ju
 | File | Primary responsibility |
 |---|---|
 | [Src/App.swift](../../Src/App.swift) | Entry point; Today/Week/Lists/Saved shell; root state; Today capture/search/labels/calendar; personal collection directory and archive restore |
-| [Boards/ContentView.swift](../../Src/Features/Boards/ContentView.swift) | Shared Board; list/card rows; Board/member settings; archives; drag ordering; focused Today list |
-| [Boards/CardDetailView.swift](../../Src/Features/Boards/CardDetailView.swift) | Full card editor; checklists; reduced action editor; members; dates; attachments; activity and reusable rows |
-| [Boards/Models.swift](../../Src/Features/Boards/Models.swift) | Codable model tree; migration; local Board/collection/undo stores; sample data; reorder helpers |
-| [Attachments/PhotoAttachments.swift](../../Src/Features/Attachments/PhotoAttachments.swift) | Attachment metadata, local file storage, source chooser, links, thumbnails, previews |
+| [Boards/ContentView.swift](../../Src/Features/Boards/BoardView.swift) | Shared Board; list/card rows; Board/member settings; archives; drag ordering; focused Today list |
+| [Boards/CardDetailView.swift](../../Src/Features/Cards/CardDetailView.swift) | Full card editor; checklists; reduced action editor; members; dates; attachments; activity and reusable rows |
+| [Boards/Models.swift](../../Src/Models) | Codable model tree; migration; local Board/collection/undo stores; sample data; reorder helpers |
+| [Attachments/PhotoAttachments.swift](../../Src/Features/Attachments/AttachmentStore.swift) | Attachment metadata, local file storage, source chooser, links, thumbnails, previews |
 | [Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift) | Reusable labels/categories/colors, local library store, label chip |
 | [Labels/CardLabelsSheet.swift](../../Src/Features/Labels/CardLabelsSheet.swift) | Card label/catalog editing sheet |
 | [Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift) | Local profile, preferences, avatar tokens/colors, compatibility decoding |
@@ -425,8 +427,8 @@ Their size includes substantial documentation. Do not use line count alone to ju
 
 The repository also contains:
 
-- [Src/CardDetailView.swift](../../Src/CardDetailView.swift).
-- [Src/Models.swift](../../Src/Models.swift).
+- [Src/CardDetailView.swift](../../Src/Features/Cards/CardDetailView.swift).
+- [Src/Models.swift](../../Src/Models).
 - [Doc/Style/style.swift](../Style/style.swift).
 
 The first two are legacy/root duplicates. The active application uses the **Features/Boards** versions.
@@ -439,7 +441,7 @@ Do not delete legacy sources casually. Removing them is a separate cleanup decis
 
 - [ChecklistMigrationTests.swift](../../Test/ChecklistMigrationTests.swift).
 - [LocalProfileStoreTests.swift](../../Test/LocalProfileStoreTests.swift).
-- [PlenactBoardDocumentTests.swift](../../Test/PlenactBoardDocumentTests.swift).
+- [PlenactBoardDocumentTests.swift](../../Test/BoardDocumentTests.swift).
 
 ### 6.4 Server source
 
@@ -649,7 +651,7 @@ That ordering deliberately favors retaining a recovery copy, but it is not a tra
 
 ### 9.1 Model tree
 
-The active [Models.swift](../../Src/Features/Boards/Models.swift) owns the principal Board model tree:
+The active [Models.swift](../../Src/Models) owns the principal Board model tree:
 
 - `KanbanList`.
 - `KanbanCard`.
@@ -2710,9 +2712,9 @@ The newer deployment records report applied/deployed demo state; several older s
 ### Implementation and conventions
 
 - [Application shell](../../Src/App.swift).
-- [Active Board view](../../Src/Features/Boards/ContentView.swift).
-- [Active card detail](../../Src/Features/Boards/CardDetailView.swift).
-- [Active Board models](../../Src/Features/Boards/Models.swift).
+- [Active Board view](../../Src/Features/Boards/BoardView.swift).
+- [Active card detail](../../Src/Features/Cards/CardDetailView.swift).
+- [Active Board models](../../Src/Models).
 - [Database activity](../../Src/Features/Sync/DatabaseActivity.swift).
 - [Swift style template](../Style/style.swift).
 - [Style guide](../Style/README.md).

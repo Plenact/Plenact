@@ -1,5 +1,7 @@
 # Day schedule overview
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 The dated Day list begins with a scroll-away banner: the saved day intention (if
 present), a compact planned-time doughnut, task completion, and a link to that date’s
 plan. Existing first-unfinished, restored-position, and newly-created-item navigation

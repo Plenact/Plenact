@@ -32,3 +32,13 @@ This is a specification release. Normal application storage remains local; the i
 | [Integration plan](Integration-Plan.md) | Runtime work after definition publication. |
 
 The historical demo deployment is reported in repository records for October 3, 2026, with synthetic data. This definition release does not establish the live host's present state or make the current personal workspace cloud-backed.
+
+## Current implementation follow-up
+
+See [native iOS backup/export](iOS-Migration-Export.md), [versioned SQL/JSON examples](Doc/Examples/README.md) and the [current application/data plan](../Application-Data-Plan.md). The frozen GitHub Model 1.0 release remains unchanged; this working-branch documentation records subsequent implementation progress.
+
+Native implementation update: [durable identities and first canonical preview converters](iOS-Migration-Identity.md) are now available on the working branch. They do not complete workspace conversion or enable synchronization.
+
+## Local recovery acceptance follow-up
+
+A [Simulator-only reviewed source-restore test](iOS-Local-Restore-Test.md) is now available on the working branch. The owner chooses the backup and confirms installation into the separate test Simulator; previous destination data is retained for undo. This exercises local recovery, not full Model 1.0 conversion or cloud account import.

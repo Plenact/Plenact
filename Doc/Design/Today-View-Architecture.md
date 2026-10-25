@@ -1,5 +1,7 @@
 # Plenact Application Architecture and Planning Rhythm
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 **Status:** Current ownership reference and proposed review architecture, updated October 16, 2026. Today's Plan and the first Today's Vision flow are implemented; Today's Review is also implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 
 ## Product intent

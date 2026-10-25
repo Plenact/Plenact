@@ -1,5 +1,7 @@
 # Your Planning Rhythm
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 See [Review invitations and reminders](Review-Rhythm-Invitations.md) for the implemented daily/weekly invitation and optional local-notification contract, including its current scheduling boundaries. This supersedes earlier statements that review reminders are entirely future work.
 
 

@@ -1,8 +1,10 @@
 # Local Profile Architecture
 
-## Planning Rhythm preferences — proposed
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
 
-The [Planning Rhythm vision](Planning-Rhythm.md) introduces optional morning/evening, weekly and periodic review experiences. Cadence and working-List preferences are proposed settings; no such settings are implemented by this documentation update
+## Planning Rhythm preferences
+
+The [Planning Rhythm vision](Planning-Rhythm.md) introduces optional morning/evening, weekly and periodic review experiences. Cadence and planning preferences now exist locally; Model 1.0 defines their shared representation while native conversion and synchronization remain implementation work
 
 Daily plans, drafts, decisions, and saved summaries belong to planning data, not identity credentials. Keep them usable without creating a Local Profile. Removing the profile must not implicitly remove review history. Notification permissions and delivery are separate future decisions. See the [delivery plan](Planning-Rhythm-Delivery.md)
 

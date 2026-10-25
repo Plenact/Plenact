@@ -1,5 +1,7 @@
 # Board Presentation: Orientation and Density
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 ## Current context — October 16, 2026
 
 The detailed October 4 geometry, test counts, and limitations below are historical implementation notes. Subsequent work added continuous zoom, per-owner viewport memory, Gallery, optional Board/List/item display profiles and preview text colors, standalone List heading cleanup, and personal backgrounds. The earlier statements that zoom/per-Board memory are deferred are superseded by this note. Toolbar naming is now Today, Week, New, Plans, and Activity; Plans opens Library

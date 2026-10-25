@@ -138,3 +138,15 @@ Keep persistence fixtures focused on compatibility contracts. Do not use real cu
 `testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent` checks missing/invalid metadata, explicit dash-divider overrides, complete-content round trips, and relocation. `testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults` checks mixed Lists, default changes, movement, archive/restore, rename, both isolated local stores, and retained photo references. `testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords` hosts all four formats at standard/accessibility text sizes and captures Picture/placeholder rows. Hosted layout tests do not establish actual taps, gestures, VoiceOver, nested picker behavior, or device acceptance.
 
 Picture row regressions verify natural-aspect height across standard/Overview densities, blank/retained titles, accessibility text, and two widths: there is no footer or internal padding, while existing outer row margins remain. Starter/Example Week checks verify three explicit bundled Picture covers, retained actions/titles, unique IDs, no personal media filenames, and Codable round trips. Existing Gallery and demo-seed checks retain the separate Gallery content and strip all local Picture/media metadata from the dormant demo payload. Device VoiceOver and tapping still need hands-on acceptance.
+
+## Native source backup — Model 1.0 preparation
+
+`LegacyWorkspaceExportTests` passed seven focused iOS simulator tests on October 24, 2026. They use isolated preference suites and temporary synthetic media: absent/registered stores, corrupt/recovery bytes, unknown-key review, all four media roots, symlink refusal, native version/type checks and missing/unsafe references. This proves saved-source preservation boundaries, not complete portable conversion or recovery. See [iOS export milestone](../Doc/User-Data-Model/iOS-Migration-Export.md) for Files-provider and interruption acceptance.
+
+## Native migration preview
+
+`MigrationPreviewTests` adds 15 isolated cases alongside the seven source-backup tests: stable qualified IDs, stale/invalid journal protection, exact writing and category references, native preference types, integrity/recovery blocking, local lifecycle classification and resumed backups. Actual Swift output is attached as `native-migration-records.json` for independent schema checking with `Tools/UserDataModel/validate_native_preview.py`. All 22 focused tests passed. Full workspace/account conversion and real-device Files acceptance remain pending.
+
+## Simulator source recovery
+
+`LocalBackupRestoreTests` adds six isolated review/restore/undo cases. They run with 22 source-backup/migration regressions and two existing dataset recovery tests (30 total). No personal source ZIP is imported by these tests. See [owner-driven recovery acceptance](../Doc/User-Data-Model/iOS-Local-Restore-Test.md); Files and live navigation acceptance remain manual.

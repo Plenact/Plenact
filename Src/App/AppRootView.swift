@@ -28,6 +28,8 @@ struct AppRootView: View
 
     @State var isSwitchingWorkspace = false
     @State var isRestoringWorkspace = false
+    @State var pendingNativeRestore: ReviewedLocalBackup?
+    @State var undoingNativeRestore = false
     @State var workspaceRecoveryError: String?
     @State var workspaceGeneration = UUID()
     @State var confirmsExampleMonth = false
@@ -125,7 +127,14 @@ struct AppRootView: View
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task
                 {
-                    await performMonthExampleSwitch(restoring: isRestoringWorkspace)
+                    if pendingNativeRestore != nil || undoingNativeRestore
+                    {
+                        performNativeSourceRestore()
+                    }
+                    else
+                    {
+                        await performMonthExampleSwitch(restoring: isRestoringWorkspace)
+                    }
                 }
 
             }
@@ -148,6 +157,15 @@ struct AppRootView: View
 
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .environmentObject(welcomeCue)
+        .environment(\.localBackupRestore, LocalBackupRestoreAccess(restore: { backup in
+            pendingNativeRestore = backup
+            undoingNativeRestore = false
+            isSwitchingWorkspace = true
+        }, undo: {
+            pendingNativeRestore = nil
+            undoingNativeRestore = true
+            isSwitchingWorkspace = true
+        }))
         .databaseActivityOverlay()
         .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible)
         {

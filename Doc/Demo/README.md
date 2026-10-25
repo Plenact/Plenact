@@ -1,8 +1,10 @@
 # Product Demos
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 ## Review vision and recording status
 
-The [Planning Rhythm vision](../Design/Planning-Rhythm.md) describes approved future work, not behavior established by these recordings. Today's Plan now saves linked priorities and optional daily context; morning, midday, and evening flows are available, while weekly and periodic workflows and saved session histories remain planned
+The [Planning Rhythm vision](../Design/Planning-Rhythm.md) describes approved future work, not behavior established by these recordings. Today's Plan now saves linked priorities and optional daily context; morning, midday, and evening flows are available, with weekly/periodic workflows and saved histories now present locally; these recordings do not verify their current implementation
 
 Future walkthroughs should show confirmed changes, pause/resume, and a gentle return after skipped reviews. Do not use existing recordings as evidence that those flows already work
 

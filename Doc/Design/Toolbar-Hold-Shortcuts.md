@@ -1,5 +1,7 @@
 # Bottom toolbar hold shortcuts
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 Single taps keep their existing contextual behavior: New captures a Card on Today,
 opens a personal List draft from Plans, and opens the Card composer elsewhere.
 Today selects Today; Week returns to the current Week/day as before.

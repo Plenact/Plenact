@@ -1,5 +1,7 @@
 # Swift Style References
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 This directory holds reference material for Plenact's Swift source style and documentation headers.
 
 ## Contents

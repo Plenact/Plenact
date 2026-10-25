@@ -73,3 +73,11 @@ python Tools/UserDataModel/publication_gate.py --verify-package /tmp/plenact-use
 ```
 
 Use a new output archive path. Only reviewed definition/tool/fixture files are included; dependency/build caches and private capture outputs are excluded. The source-baseline check applies to the original release checkout. The ZIP manifest verifies internal integrity; compare the archive with the release's separately downloaded checksum too.
+
+## Documentation follow-up checks
+
+The regression suite now checks every local Markdown link under `Doc`, the versioned JSON examples and exact SQL-embedded record/frame values. These are synthetic SQL representations validated against the final JSON/semantic contract, not database execution tests. The source audit remains frozen to the original release: routine mapping tests check target consistency; explicit `--check-source` verifies hashes only when run from that release checkout.
+
+## Native partial-converter verification
+
+`validate_native_preview.py` checks an actual Swift-generated array of label/category/shared-display documents against the final schemas and slice relationships. The native migration tests retain that JSON as an XCTest attachment. This is independent verification of the first three converted types, not full workspace conversion or cloud authorization. Capture format 1 now refuses newer native migration evidence rather than silently dropping it; preserve the original native backup folder.

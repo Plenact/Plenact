@@ -4,6 +4,10 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 
 ## Start here
 
+- [Current application and data plan](Application-Data-Plan.md) — secured decisions, native backup milestone, cloud/client implementation boundaries and next steps
+- [Versioned server-data examples](User-Data-Model/Doc/Examples/README.md) — synthetic SQL/database layouts and portable JSON
+- [JSON, SQL and MySQL](Database/JSON-SQL-and-MySQL.md) — representation versus storage
+
 - [Versioned User Data Model](User-Data-Model/README.md) — Version 0 cloud-connection baseline and final Version 1.0 iOS/web/Windows specification, schemas, conformance evidence and GitHub release
 
 - [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
@@ -23,7 +27,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 - [Checklist actions](Design/Checklist-Actions-Architecture.md) — action identity and detail boundaries
 - [Local profile](Design/Local-Profile-Architecture.md) — device-local identity, settings, and session boundary
 - [Users](Users/README.md) — separate shared-demo user/account direction
-- [Database](Database/README.md) — historical Version 0 shared-demo data and import contracts
+- [Database](Database/README.md) — current Model 1.0 storage plan with preserved Version 0 references
 - [Server](../Server/README.md) — separate API and SQL work
 - [Organization profile source](GitHub-Organization-Profile/README.md) — repository-maintained public-facing copy; editing it does not publish remotely
 - [Demo recordings](Demo/README.md), [coding style](Style/README.md), and [legacy source pointers](Src/README.md)
@@ -35,11 +39,11 @@ These are October 4, 2026 audit snapshots, not current implementation inventorie
 - [Agent One handoff](Establishment/Production-Preparation-Handoff_AgentOne.md)
 - [Agent Two handoff](Establishment/Production-Preparation-Handoff_AgentTwo.md)
 
-## Status at October 16, 2026
+## Current data-model status — October 24, 2026
 
 The app has local Today/Week/Day/Calendar planning, personal Lists and Boards, Cards and Notes, labels, Activity, Appearance, starter tutorials, and offline example workspace restoration. Today's date opens a saved Today's Plan with linked priorities and optional intention, constraints, and concerns
 
-Today's Check-in, Today's Review, Weekly Review, Periodic Review, saved review summaries, optional objectives/milestones, and review cadence preferences are approved direction. They are not implemented by this documentation change
+Planning/review records and shared settings are included in the final Model 1.0 definition. Native iOS source-backup preparation is implemented on the current branch; complete portable conversion and iOS/web/Windows synchronization remain pending. The published definition and synthetic SQL examples do not deploy a production API. See the current application/data plan for verified boundaries.
 
 ## Documentation rules
 

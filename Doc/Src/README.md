@@ -1,5 +1,7 @@
 # Documentation Source References
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 This directory currently contains `Style`, a macOS Finder alias to an external or local coding-style resource. It is documentation support material, not Swift source compiled into Plenact.
 
 ## For Developers

@@ -1,5 +1,7 @@
 # Plenact Studio
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 Studio adds optional, reusable artwork to the existing appearance system. Existing Cards, Notes, Lists, Boards, and view backgrounds retain their appearance until a user chooses an override.
 
 ## Finding Studio

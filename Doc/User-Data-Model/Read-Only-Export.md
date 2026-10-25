@@ -1,7 +1,7 @@
 # Read-only export milestone
 
 **Supported User Data Model versions:** 1.0 target definitions; legacy source capture only. Capture format `plenact.read-only-capture`, version 1.
-**Status:** Remaining workspace definitions and frozen-backup capture/preflight implemented and tested with synthetic workspaces. Native mobile snapshot coordination, legacy-to-portable conversion, restore and cloud upload are not implemented.
+**Status:** Remaining workspace definitions and frozen-backup capture/preflight implemented and tested with synthetic workspaces. A native saved-source snapshot/export boundary is now implemented on the working branch; legacy-to-portable conversion, restore and cloud upload remain unimplemented.
 
 ## What is ready
 
@@ -94,7 +94,15 @@ All capture tests use synthetic temporary backups. No personal snapshot, live Us
 
 ## What comes next
 
-1. Add an app-owned snapshot boundary that coordinates pending persistence and recovery without using fallback content as saved data.
+1. Exercise the new native saved-source snapshot/export on a device, including Files cancellation, background imports and retained recovery diagnostics.
 2. Implement native legacy decoding and durable owner-qualified identity maps, exposing ambiguous dates, projection conflicts and missing references for explicit resolution.
 3. Convert a captured workspace into the workspace-export contract, checking field/reference counts and byte hashes against capture evidence. A real complete export requires this step; it is not achieved by changing the manifest's completion flag.
 4. Verify an explicitly opted-in personal backup locally, then build staging transport/restore procedures before any upload.
+
+## Current implementation follow-up
+
+See [native iOS backup/export](iOS-Migration-Export.md), [versioned SQL/JSON examples](Doc/Examples/README.md) and the [current application/data plan](../Application-Data-Plan.md). The frozen GitHub Model 1.0 release remains unchanged; this working-branch documentation records subsequent implementation progress.
+
+## New native migration evidence
+
+The native iOS preview now retains private identity journals and partial conversion records. The older Python capture format 1 cannot represent these extra artifacts. The tool refuses source folders containing `Migration`, `MigrationPreview` or the native migration-support directory before creating output, instead of claiming a capture while omitting identity evidence. Preserve the original native folder; see [native migration status](iOS-Migration-Identity.md).

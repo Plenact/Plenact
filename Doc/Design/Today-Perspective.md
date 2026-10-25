@@ -1,5 +1,7 @@
 # A little perspective
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 The lower Today section offers optional perspective after capture, Focus, and the
 user’s pinned shortcuts. It is not another ranked task feed or a required step.
 

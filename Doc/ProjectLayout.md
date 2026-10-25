@@ -1,5 +1,7 @@
 # Plenact project layout
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 Swift files are organized by feature and responsibility within the existing application target.
 Each file is limited to **1,200 source lines**, excluding comments, blank lines, and lines
 containing only braces, brackets, parentheses, commas, or semicolons. Imports and declarations count.
@@ -225,3 +227,39 @@ Plenact/
 - Xcode emitted an SDK metadata error and stalled while finalizing the broad-run and baseline
   result bundles after their test processes exited. Those reporting processes were stopped;
   this run is not represented as a clean full-suite pass.
+
+## Native migration-preparation additions — October 24, 2026
+
+```text
+Src/Persistence/
+├── LegacyStoreValidation.swift       Native source decoders and file-reference preflight
+├── LegacyWorkspaceExport.swift       Read-only saved stores and original-media snapshot
+└── LocalDataExportView.swift         Local backup preparation and explicit Files export
+Test/
+└── LegacyWorkspaceExportTests.swift  Isolated native backup regression coverage
+```
+
+These support Model 1.0 preparation; they do not convert a complete portable workspace or enable sync. See [current implementation](User-Data-Model/iOS-Migration-Export.md).
+
+## Migration-preview additions — October 24, 2026
+
+```text
+Src/Persistence/
+├── MigrationIdentityJournal.swift  Durable qualified source IDs and protected journal storage
+├── MigrationBackupReader.swift     Frozen-source integrity verification
+└── MigrationPreview.swift          Explicit partial label/display conversion and coverage report
+Test/
+└── MigrationPreviewTests.swift     Identity, source integrity and canonical conversion regressions
+```
+
+See [migration identity status](User-Data-Model/iOS-Migration-Identity.md). These files support Model 1.0 without changing the published wire definition.
+
+## Reviewed source recovery additions
+
+```text
+Src/Persistence/LocalBackupRestore.swift   Bounded source review and Simulator-only installation
+Src/App/WorkspaceBackupRestore.swift       Root-owned navigation teardown/recovery/reload routing
+Test/LocalBackupRestoreTests.swift         Isolated review, restore, undo and rollback regressions
+```
+
+See [manual acceptance](User-Data-Model/iOS-Local-Restore-Test.md).

@@ -29,6 +29,25 @@ enum KanbanBoardPersistence
 
 
     ///
+    /// @fcn        KanbanBoardPersistence.waitForPendingSaves
+    /// @brief      Establish a read-only source-export boundary behind earlier Board writes
+    /// @details    Supports User Data Model 1.0 migration preparation. Must run on the main actor,
+    ///             outside the persistence queue; it neither enqueues a save nor supplies examples.
+    /// @return     Void after all previously queued persistence work finishes
+    ///
+    @MainActor
+    static func waitForPendingSaves()
+    {
+
+        queue.sync
+        {
+
+            // Waiting behind earlier saves does not enqueue a write.
+        }
+    }
+
+
+    ///
     /// @fcn        KanbanBoardPersistence.saveListsChecked(_:suiteName:)
     /// @brief      Save a destructive snapshot before changing visible state
     /// @details    Encodes first, then waits behind earlier queued writes to preserve save ordering

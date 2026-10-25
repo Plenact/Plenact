@@ -1,5 +1,7 @@
 # One full Card/Note creation experience
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 All Add card / New Card routes now use QuickNoteComposer, the shared full-size
 Card/Note editor. The old NewKanbanCardSheet form is removed. Board columns,
 focused Day/List footers, and their list-action Add commands use ListItemComposer,

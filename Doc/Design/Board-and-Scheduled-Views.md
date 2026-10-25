@@ -1,5 +1,7 @@
 # Board, Day, Calendar, and Scheduled Planning
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 **Status:** Current local planning reference and approved future review direction, updated October 16, 2026. The first guided Today's Vision flow is implemented. A separate Scheduled agenda destination and weekly and periodic Planning Rhythm reviews remain planned; Today's Review is now implemented
 
 ## Canonical planning content

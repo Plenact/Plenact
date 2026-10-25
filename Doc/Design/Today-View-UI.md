@@ -1,5 +1,7 @@
 # Today: Current Experience and Planning Rhythm Direction
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 **Status:** Current UI reference with approved proposed additions, updated October 16, 2026. Today's Plan and the first guided Today's Vision flow are implemented. Today's Review is also implemented. Today's Check-in is now implemented; Weekly Review is now available with saved week browsing; the first Periodic Review flow is implemented
 
 ## Current experience

@@ -1,5 +1,7 @@
 # Examples and Today's Focus
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 Today's Focus reads today's canonical Day list with the user's existing filters.
 A standalone Library List or Board is not automatically part of that Day. Applying
 a template to another date affects that date, not today. Loading examples does not

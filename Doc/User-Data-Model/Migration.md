@@ -36,3 +36,11 @@ Preferences follow the user, while source recent-history, viewport, unfinished d
 A complete migration requires: all synchronized source fields accounted for; references resolved or explicitly unavailable; no unexplained count/content/hash loss; compatible timezone decisions; valid complete workspace-export; durable ID mapping; and recovery evidence. Unresolved conversion must not be advertised as cloud-synchronized.
 
 Before upload, restoring the private captured bytes can recover source state; a restore tool must itself be implemented and tested. After network writes, restoring local bytes alone is not a server rollback. Reconcile against server epochs/revisions and preserve receipts/outbox evidence. The current capture tool intentionally reports portable_conversion_complete=false; changing that flag is not an adapter.
+
+## Current implementation follow-up
+
+See [native iOS backup/export](iOS-Migration-Export.md), [versioned SQL/JSON examples](Doc/Examples/README.md) and the [current application/data plan](../Application-Data-Plan.md). The frozen GitHub Model 1.0 release remains unchanged; this working-branch documentation records subsequent implementation progress.
+
+## Native identity and first converters
+
+The working branch implements a durable private identity journal plus label/category and shared-display preview conversion. See [native identity/preview status](iOS-Migration-Identity.md). The source audit above remains the frozen definition-release baseline; new native journal types are device migration machinery, not additional synchronized record types. Full workspace conversion and verified account binding remain pending.

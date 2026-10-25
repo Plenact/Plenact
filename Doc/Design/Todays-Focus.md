@@ -1,5 +1,7 @@
 # Today's Focus: give shape to your attention
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 > Plenact helps you give shape to your attention. Today's Focus honors that shape.
 
 ## Product intent

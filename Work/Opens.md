@@ -38,6 +38,26 @@ Main view layout for screen and main layout
 
 - Store a demo video to demo\
 
+### Drafting
+
+- Notes
+- Time Management
+- Journaling
+
+### Plenact
+
+- Planning & Task Organization
+
+### Components
+
+- Notes
+- Visibility & Collaboration
+- Time Management 
+- Journaling
+- Notifications
+- Wiki
+- App Integration (Chatbot, Drive, Amazon)
+- Workflow Automation
 
 ### ?
 

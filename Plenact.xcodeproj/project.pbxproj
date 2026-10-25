@@ -152,6 +152,17 @@
 		81ED0A4D318A4FA68C2A46E0 /* StudioEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD504BD2841C4C3EB5D74785 /* StudioEditors.swift */; };
 		30B9B8EBD5C34FAB9EFB0974 /* StudioUnsplash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B69D42810AA49B1B449465A /* StudioUnsplash.swift */; };
 		66372018F0894169A0E63287 /* StudioSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 682349998D654718886273EB /* StudioSettings.swift */; };
+		095FA34834C665E5E74EE78D /* LegacyStoreValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CB6DD8F320B4385D28CE49 /* LegacyStoreValidation.swift */; };
+		D1C2A9ACCCF1917ED62CAAAE /* LegacyWorkspaceExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C5EE7F0A74BEF414D2C02EF /* LegacyWorkspaceExport.swift */; };
+		FBE2DF1C87E02977B40E83FF /* LocalDataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB7917C449CCDA30ACA00EC /* LocalDataExportView.swift */; };
+		4BBCF012CBA6687B8435C985 /* LegacyWorkspaceExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C49E448AACBB36912BE87FE /* LegacyWorkspaceExportTests.swift */; };
+		F2C9760527D017495DB876C7 /* MigrationIdentityJournal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 194B5AE4F813556008D8BF44 /* MigrationIdentityJournal.swift */; };
+		CD1C3072D09937D704C45AF1 /* MigrationBackupReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F93A51D551C936A66FCEDC /* MigrationBackupReader.swift */; };
+		92EA22E035E59A0BAEB27A4D /* MigrationPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802BC79EBDB0082F536CF3D0 /* MigrationPreview.swift */; };
+		748AA6244811074241EFAE77 /* MigrationPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB9BAC30CD82DD4441937FD /* MigrationPreviewTests.swift */; };
+		C0655385313AE5230AE42470 /* LocalBackupRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */; };
+		DFA81399DF9774EE6D7B2776 /* WorkspaceBackupRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */; };
+		A6E044024DE193CE78783DF6 /* LocalBackupRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -314,6 +325,17 @@
 		CD504BD2841C4C3EB5D74785 /* StudioEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioEditors.swift; sourceTree = "<group>"; };
 		1B69D42810AA49B1B449465A /* StudioUnsplash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioUnsplash.swift; sourceTree = "<group>"; };
 		682349998D654718886273EB /* StudioSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioSettings.swift; sourceTree = "<group>"; };
+		81CB6DD8F320B4385D28CE49 /* LegacyStoreValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyStoreValidation.swift; sourceTree = "<group>"; };
+		6C5EE7F0A74BEF414D2C02EF /* LegacyWorkspaceExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyWorkspaceExport.swift; sourceTree = "<group>"; };
+		ACB7917C449CCDA30ACA00EC /* LocalDataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDataExportView.swift; sourceTree = "<group>"; };
+		0C49E448AACBB36912BE87FE /* LegacyWorkspaceExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyWorkspaceExportTests.swift; sourceTree = "<group>"; };
+		194B5AE4F813556008D8BF44 /* MigrationIdentityJournal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationIdentityJournal.swift; sourceTree = "<group>"; };
+		31F93A51D551C936A66FCEDC /* MigrationBackupReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationBackupReader.swift; sourceTree = "<group>"; };
+		802BC79EBDB0082F536CF3D0 /* MigrationPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPreview.swift; sourceTree = "<group>"; };
+		BEB9BAC30CD82DD4441937FD /* MigrationPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPreviewTests.swift; sourceTree = "<group>"; };
+		9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBackupRestore.swift; sourceTree = "<group>"; };
+		0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceBackupRestore.swift; sourceTree = "<group>"; };
+		C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBackupRestoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -386,6 +408,7 @@
 			isa = PBXGroup;
 			children = (
 				AA93E6C495E981EDD7ED252A /* AppRootView.swift */,
+				0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */,
 				12E7BF6CAA8CDCB83E62735D /* BottomToolbar.swift */,
 				3CCEEE35286732C38F29265D /* LaunchPresentation.swift */,
 				63EBFF4474BD1C3C5430DC3C /* WorkspaceActions.swift */,
@@ -664,6 +687,13 @@
 			isa = PBXGroup;
 			children = (
 				99E9CD5B277CBA6FC23355AC /* BoardPersistence.swift */,
+				9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */,
+				802BC79EBDB0082F536CF3D0 /* MigrationPreview.swift */,
+				31F93A51D551C936A66FCEDC /* MigrationBackupReader.swift */,
+				194B5AE4F813556008D8BF44 /* MigrationIdentityJournal.swift */,
+				ACB7917C449CCDA30ACA00EC /* LocalDataExportView.swift */,
+				6C5EE7F0A74BEF414D2C02EF /* LegacyWorkspaceExport.swift */,
+				81CB6DD8F320B4385D28CE49 /* LegacyStoreValidation.swift */,
 				C564A9DA4BF72EE53B095A8F /* BookmarkStore.swift */,
 				EE532D7C380966DF889AB68A /* CollectionPersistence.swift */,
 				168A3D67053DBCE9314AB04A /* ExampleUndoStore.swift */,
@@ -700,6 +730,9 @@
 				086FD4C6ED3F11DBAA364C69 /* BoardInteractionTests2.swift */,
 				76D5237B793FC4831CB778EB /* BoardInteractionTests3.swift */,
 				DD8ACFEB7B1351AC01C7DE3E /* BoardPersistenceTests.swift */,
+				C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */,
+				BEB9BAC30CD82DD4441937FD /* MigrationPreviewTests.swift */,
+				0C49E448AACBB36912BE87FE /* LegacyWorkspaceExportTests.swift */,
 				C7D825FD807C94E8A06F03D6 /* CalendarTests.swift */,
 				A363E27C7935B32961CF0D28 /* CaptureTests.swift */,
 				5885EDF66432C458873F876C /* CardEditingTests.swift */,
@@ -847,6 +880,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA6FC8192880750F4A36AD40 /* App.swift in Sources */,
+				DFA81399DF9774EE6D7B2776 /* WorkspaceBackupRestore.swift in Sources */,
+				C0655385313AE5230AE42470 /* LocalBackupRestore.swift in Sources */,
+				92EA22E035E59A0BAEB27A4D /* MigrationPreview.swift in Sources */,
+				CD1C3072D09937D704C45AF1 /* MigrationBackupReader.swift in Sources */,
+				F2C9760527D017495DB876C7 /* MigrationIdentityJournal.swift in Sources */,
+				FBE2DF1C87E02977B40E83FF /* LocalDataExportView.swift in Sources */,
+				D1C2A9ACCCF1917ED62CAAAE /* LegacyWorkspaceExport.swift in Sources */,
+				095FA34834C665E5E74EE78D /* LegacyStoreValidation.swift in Sources */,
 				FA22C8B07D8FBA279799A11C /* AppRootView.swift in Sources */,
 				32ED0B2696E7CABD78C172AE /* BottomToolbar.swift in Sources */,
 				C7AAEDDF6BD2D7A282747F80 /* LaunchPresentation.swift in Sources */,
@@ -973,6 +1014,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				C4D5CF5F1DA90AD9DF346C6F /* AttachmentTests.swift in Sources */,
+				A6E044024DE193CE78783DF6 /* LocalBackupRestoreTests.swift in Sources */,
+				748AA6244811074241EFAE77 /* MigrationPreviewTests.swift in Sources */,
+				4BBCF012CBA6687B8435C985 /* LegacyWorkspaceExportTests.swift in Sources */,
 				B84CC2D4C5310E85C72A0FCB /* AttachmentTests2.swift in Sources */,
 				F0D31F6BD7B9EA6A2E6A4E48 /* BoardContentTests.swift in Sources */,
 				E64B37BAA96E22E64AE31BE4 /* BoardContentTests2.swift in Sources */,

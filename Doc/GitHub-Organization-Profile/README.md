@@ -1,5 +1,7 @@
 # Plenact
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 **Taking your plan into action.**
 
 Plenact is building an approachable planning and organization experience for daily tasks, routines, ideas, personal projects, and open work. The product begins with a calm **Today** front door and a flexible **Board** inspired by practical kanban planning.

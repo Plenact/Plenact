@@ -1,5 +1,7 @@
 # Personal emoji reactions
 
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
 Reactions let people express how something feels alongside what needs doing.
 Anticipation, appreciation, difficulty, and celebration belong to the person; Plenact
 does not assign those meanings or turn emoji into a priority score.

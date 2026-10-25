@@ -27,3 +27,7 @@
 For every Codable field, record wire name, type, required/optional/default behavior, legacy decoding, owner, privacy scope, validation, merge/delete behavior, and fixture coverage. Inventory all persisted preferences and files, including keys not listed above. This table groups stores; it is not a claim that all fields or assets have already been audited.
 
 Legacy integer Card/List IDs are not globally unique across collections, weeks, templates, or devices. Resolve owner-qualified identity and linked references before assigning transport UUIDs. Saved projections must not create duplicate canonical records.
+
+## Post-definition native migration state
+
+`Library/Application Support/PlenactMigration/source-identities-v1.json` is private migration/recovery machinery, not a canonical user-data record. Native backups preserve it and previews include the updated journal. The frozen 96-type definition audit remains historical; see [new source identities and lifecycle](iOS-Migration-Identity.md).

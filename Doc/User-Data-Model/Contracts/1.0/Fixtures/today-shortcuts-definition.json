@@ -1,0 +1,15 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "today_shortcuts",
+  "id": "40000000-0000-4000-8000-000000000007",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "items": [
+      {
+        "collection_id": "20000000-0000-4000-8000-000000000002",
+        "list_id": "20000000-0000-4000-8000-000000000003"
+      }
+    ]
+  }
+}

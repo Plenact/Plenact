@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:protocol-types",
+  "title": "Protocol value definitions",
+  "$defs": {
+    "positive_counter": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "counter": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "cursor": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,512}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "record_type": {
+      "enum": [
+        "account",
+        "asset",
+        "calendar_index",
+        "calendar_week",
+        "card",
+        "collection",
+        "content_selection",
+        "daily_plan",
+        "label",
+        "label_category",
+        "list",
+        "periodic_review",
+        "planning_template",
+        "review_rhythm",
+        "studio_artwork",
+        "studio_settings",
+        "template_library",
+        "today_shortcuts",
+        "unavailable_reference",
+        "user_preferences",
+        "user_profile",
+        "weekly_review",
+        "workspace",
+        "workspace_display_preferences"
+      ]
+    },
+    "document": {
+      "oneOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:account"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:asset"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:calendar-index"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:calendar-week"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:card"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:collection"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:content-selection"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:daily-plan"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:label"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:label-category"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:list"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:periodic-review"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:planning-template"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:review-rhythm"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:studio-artwork"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:studio-settings"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:template-library"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:today-shortcuts"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:unavailable-reference"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:user-preferences"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:user-profile"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:weekly-review"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:workspace"
+        },
+        {
+          "$ref": "urn:plenact:user-data:1.0:workspace-display-preferences"
+        }
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/document"
+    },
+    {
+      "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/counter"
+    }
+  ]
+}

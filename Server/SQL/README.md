@@ -1,3 +1,5 @@
+**Supported User Data Model versions:** Version 0 only (existing demo wire schema 1); Version 1.0 runtime support is not implemented.
+
 This directory contains ordered schema migrations for the new Plenact shared-demo database
 
 ## Current Migration

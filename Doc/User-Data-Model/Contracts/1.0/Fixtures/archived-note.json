@@ -1,0 +1,52 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "card",
+  "id": "20000000-0000-4000-8000-000000000005",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "list_id": "20000000-0000-4000-8000-000000000003",
+    "archived": true,
+    "title": "Archived note",
+    "is_divider": false,
+    "completed": false,
+    "editing_locked": false,
+    "presentation": "note",
+    "display_format": null,
+    "description_override": "Archived writing",
+    "subtitle_override": null,
+    "location": "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902",
+    "start": null,
+    "start_kind": "time",
+    "due": null,
+    "due_kind": "date",
+    "shows_due_date_in_list": true,
+    "source_created_at_utc": null,
+    "checklists": [],
+    "members": [],
+    "label_ids": [],
+    "comments": [],
+    "reactions": null,
+    "shows_reactions_in_previews": false,
+    "attachments": null,
+    "cover_attachment_id": null,
+    "dismissed_activity_ids": [
+      "legacy-generated-item"
+    ],
+    "appearance": null,
+    "section_layout": {
+      "order": [
+        "details",
+        "description",
+        "checklists",
+        "activity",
+        "media",
+        "quick_actions"
+      ],
+      "hidden": [
+        "activity"
+      ]
+    },
+    "edit_history": null
+  }
+}

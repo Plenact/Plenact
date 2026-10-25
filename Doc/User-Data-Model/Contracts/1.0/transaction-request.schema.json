@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:transaction-request",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "device_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "transaction_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              },
+              "kind": {
+                "const": "put"
+              },
+              "record_type": {
+                "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/record_type"
+              },
+              "record_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              },
+              "base_revision": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,18}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "document": {
+                "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/document"
+              }
+            },
+            "required": [
+              "operation_id",
+              "kind",
+              "record_type",
+              "record_id",
+              "base_revision",
+              "document"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              },
+              "kind": {
+                "const": "delete"
+              },
+              "record_type": {
+                "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/record_type"
+              },
+              "record_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              },
+              "base_revision": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,18}$"
+              },
+              "document": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "operation_id",
+              "kind",
+              "record_type",
+              "record_id",
+              "base_revision",
+              "document"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "protocol_version",
+    "user_data_model_version",
+    "workspace_id",
+    "epoch",
+    "device_id",
+    "transaction_id",
+    "operations"
+  ],
+  "additionalProperties": false
+}

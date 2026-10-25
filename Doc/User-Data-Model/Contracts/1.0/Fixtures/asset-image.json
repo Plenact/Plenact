@@ -1,0 +1,20 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "asset",
+  "id": "20000000-0000-4000-8000-000000000020",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "account_id": "30000000-0000-4000-8000-000000000001",
+    "kind": "image",
+    "mime_type": "image/png",
+    "original_name": "sample.png",
+    "content_state": "described",
+    "byte_length": "68",
+    "sha256": "5f5f068537ed746c846ffed710c11c976b97182bb817a6ef1949d6954cc7c907",
+    "source_format": "png",
+    "derived_from_asset_id": "20000000-0000-4000-8000-000000000022",
+    "source_created_at_utc": null,
+    "attribution": null
+  }
+}

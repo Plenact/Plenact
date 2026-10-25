@@ -1,0 +1,30 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "user_profile",
+  "id": "40000000-0000-4000-8000-000000000002",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "account_id": "30000000-0000-4000-8000-000000000001",
+    "source_profile_id": "40000000-0000-4000-8000-000000000020",
+    "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+    "display_name": "Synthetic owner",
+    "email": "",
+    "context": "",
+    "avatar_color": {
+      "red": 0.1,
+      "green": 0.2,
+      "blue": 0.3,
+      "legacy_token": null
+    },
+    "avatar_foreground_color": {
+      "red": 1,
+      "green": 1,
+      "blue": 1,
+      "legacy_token": null
+    },
+    "avatar_icon": "person.crop.circle",
+    "avatar_asset_id": "20000000-0000-4000-8000-000000000020",
+    "avatar_photo_file_name": "private.jpg"
+  }
+}

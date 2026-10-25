@@ -4,6 +4,8 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 
 ## Start here
 
+- [Versioned User Data Model](User-Data-Model/README.md) — Version 0 cloud-connection baseline and final Version 1.0 iOS/web/Windows specification, schemas, conformance evidence and GitHub release
+
 - [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 - [Review invitations and reminders](Design/Review-Rhythm-Invitations.md) — daily/weekly invitations, Table carry decisions, Queue activation, and optional local notifications
 - [Planning Rhythm delivery plan](Design/Planning-Rhythm-Delivery.md) — staged delivery, source identity, local persistence, interruption safety, and acceptance gates
@@ -21,7 +23,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 - [Checklist actions](Design/Checklist-Actions-Architecture.md) — action identity and detail boundaries
 - [Local profile](Design/Local-Profile-Architecture.md) — device-local identity, settings, and session boundary
 - [Users](Users/README.md) — separate shared-demo user/account direction
-- [Database](Database/README.md) — shared-demo data and import contracts, not review storage
+- [Database](Database/README.md) — historical Version 0 shared-demo data and import contracts
 - [Server](../Server/README.md) — separate API and SQL work
 - [Organization profile source](GitHub-Organization-Profile/README.md) — repository-maintained public-facing copy; editing it does not publish remotely
 - [Demo recordings](Demo/README.md), [coding style](Style/README.md), and [legacy source pointers](Src/README.md)

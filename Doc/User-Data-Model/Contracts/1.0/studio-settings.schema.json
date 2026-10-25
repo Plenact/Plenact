@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:studio-settings",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "studio_settings"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "destination": {
+                "enum": [
+                  "today",
+                  "week",
+                  "plans",
+                  "activity",
+                  "calendar",
+                  "search",
+                  "settings"
+                ]
+              },
+              "surface": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/surface"
+              }
+            },
+            "required": [
+              "destination",
+              "surface"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "default_card_surface": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/surface"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "default_note_surface": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/surface"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "varies_new_surfaces": {
+          "type": "boolean"
+        },
+        "varies_new_headers": {
+          "type": "boolean"
+        },
+        "palette": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-F]{6}$"
+          }
+        }
+      },
+      "required": [
+        "account_id",
+        "views",
+        "default_card_surface",
+        "default_note_surface",
+        "varies_new_surfaces",
+        "varies_new_headers",
+        "palette"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

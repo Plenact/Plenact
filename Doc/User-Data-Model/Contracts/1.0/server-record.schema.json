@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:server-record",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "record_type": {
+      "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/record_type"
+    },
+    "record_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "epoch": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "change_sequence": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "stored_at_utc": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+    },
+    "stored_by_account_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "deleted": {
+      "type": "boolean"
+    },
+    "document": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:protocol-types#/$defs/document"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "asset_content": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "enum": [
+                "unavailable",
+                "verified"
+              ]
+            },
+            "byte_length": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "verified_at_utc": {
+              "anyOf": [
+                {
+                  "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "state",
+            "byte_length",
+            "sha256",
+            "verified_at_utc"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "workspace_id",
+    "record_type",
+    "record_id",
+    "epoch",
+    "revision",
+    "change_sequence",
+    "stored_at_utc",
+    "stored_by_account_id",
+    "deleted",
+    "document",
+    "asset_content"
+  ],
+  "additionalProperties": false
+}

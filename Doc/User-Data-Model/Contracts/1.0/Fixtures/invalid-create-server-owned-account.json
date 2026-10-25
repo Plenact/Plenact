@@ -1,0 +1,29 @@
+{
+  "protocol_version": "1.0",
+  "user_data_model_version": "1.0",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "epoch": "70000000-0000-4000-8000-000000000001",
+  "device_id": "70000000-0000-4000-8000-000000000003",
+  "transaction_id": "70000000-0000-4000-8000-000000000004",
+  "operations": [
+    {
+      "operation_id": "70000000-0000-4000-8000-000000000005",
+      "kind": "put",
+      "record_type": "account",
+      "record_id": "20000000-0000-4000-8000-000000000004",
+      "base_revision": null,
+      "document": {
+        "user_data_model_version": "1.0",
+        "payload_schema_version": 1,
+        "record_type": "account",
+        "id": "30000000-0000-4000-8000-000000000001",
+        "workspace_id": "20000000-0000-4000-8000-000000000001",
+        "payload": {
+          "display_name": "Synthetic owner",
+          "account_kind": "personal",
+          "created_at_utc": "2026-10-24T12:00:00.000Z"
+        }
+      }
+    }
+  ]
+}

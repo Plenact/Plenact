@@ -1,10 +1,12 @@
+**Supported User Data Model versions:** Version 0 only. Historical wire “v1” is not User Data Model 1.0.
+
 ## Planning Rhythm compatibility note — October 16, 2026
 
 The [approved review direction](../Design/Planning-Rhythm.md) does not extend this shared-demo payload. Proposed session/plan records must reference canonical content with owner-qualified identity, preserve existing Card and checklist contracts, and keep reflection separate from live source data
 
 Any future remote representation needs its own approved versioned contract and authorization model. Do not attach local review history or objectives to demo transport implicitly. See [local persistence and recovery requirements](../Design/Planning-Rhythm-Delivery.md)
 
-**Status:** Confirmed v1 contract. The local SQL draft is not deployed; no Bluehost database has received this schema or Board content
+**Status:** Historical Version 0 demo contract (wire schema 1). Newer deployment records report the demo deployed; the date semantics and domain inventory below do not describe the complete current app. See [Version 1.0](../User-Data-Model/README.md) for the successor definition.
 
 ## Scope
 

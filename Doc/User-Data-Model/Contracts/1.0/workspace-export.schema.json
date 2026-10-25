@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:workspace-export",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "account": {
+      "$ref": "urn:plenact:user-data:1.0:account"
+    },
+    "planning": {
+      "$ref": "urn:plenact:user-data:1.0:planning-graph"
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:user-profile"
+      },
+      "maxItems": 1
+    },
+    "label_categories": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:label-category"
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:label"
+      }
+    },
+    "user_preferences": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:user-preferences"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "studio_settings": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:studio-settings"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "artwork": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:studio-artwork"
+      }
+    },
+    "content_selections": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:content-selection"
+      }
+    },
+    "today_shortcuts": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:today-shortcuts"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "display_preferences": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.0:workspace-display-preferences"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workspace": {
+      "$ref": "urn:plenact:user-data:1.0:workspace"
+    },
+    "unavailable_references": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:unavailable-reference"
+      }
+    },
+    "tombstones": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:server-record"
+      }
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "account",
+    "planning",
+    "profiles",
+    "label_categories",
+    "labels",
+    "user_preferences",
+    "studio_settings",
+    "artwork",
+    "content_selections",
+    "today_shortcuts",
+    "display_preferences",
+    "workspace",
+    "unavailable_references",
+    "tombstones"
+  ],
+  "additionalProperties": false
+}

@@ -1,6 +1,6 @@
 # Native migration identities and partial canonical preview
 
-**Supported User Data Model versions:** 1.0. Local journal and preview format: 1.
+**Supported User Data Model versions:** 1.0 base and working 1.1 appearance metadata. Private journal formats 1/2/3; base local preview format 1.
 **Status:** Working-branch implementation after the immutable Model 1.0 definition release; not a new server record or synchronization protocol.
 
 ## Durable identity
@@ -53,3 +53,17 @@ python Tools/UserDataModel/validate_native_preview.py /path/to/native-migration-
 The Python suite has 67 regression tests including the independent preview checker and legacy-capture evidence guard. The original contract remains 48 schemas / 167 fixture expectations. No released tag or schema was changed.
 
 Hands-on acceptance: prepare source backup, prepare preview, inspect/save the combined folder, cancel/retry saving, reopen the screen and repeat preparation with stable IDs. Also check missing/corrupt labels, large data, Files providers, background imports and device locking. Simulator unit tests do not prove these system UI/provider interactions. See [migration/export milestone](iOS-Migration-Export.md) and [next implementation plan](Integration-Plan.md).
+
+## Expanded content conversion
+
+The working branch now includes [Board/List/Card content conversion](iOS-Content-Migration.md), with explicit timezone selection, owner-qualified template copies, archive/history/media-reference preservation and independent graph checks. Full workspace conversion and cloud integration remain pending. The earlier first-slice status above is historical; the new guide is the current content-adapter evidence.
+
+
+## Format-3 additive appearance identities
+
+The two 1.1 appearance kinds upgrade the private journal to format 3 while preserving all existing source/target mappings and base-model semantics. Formats 1/2 still read intact; unknown formats and new kinds in older-format documents fail closed. Nested allocations never downgrade format 3. See [versioned appearance compatibility](Version-1.1.md).
+
+
+## Editable Board creation reservations
+
+Supported versions: 1.0 canonical identities and working 1.1 portable composition; private runtime alias map format 1. Board-created List/Card aliases are reserved atomically in `IdentityAliases.json` before native content publication. Reserved UUIDs remain stable across canceled creation, repeated export and restart. Unused reservation gaps are valid and are not new canonical records until actual content exists. The canonical import snapshot and its baseline stores remain unchanged; native backups preserve the expanded map. Ordinary nonportable workspaces keep their existing allocation behavior. Cross-owner transfers and unreserved creation paths remain guarded separately. See [Editable-Import.md](Editable-Import.md#structural-editing-checkpoint--october-25-2026).

@@ -1,8 +1,9 @@
 // --------------------------------------------------------------------------------------------------
 // @file       MigrationIdentityJournal.swift
 // @brief      Durable source-qualified identities for repeatable local migration
-// @details    Supported User Data Model versions: 1.0. Local migration preparation only.
-//             Journal/preview format 1 is not a server record, account credential or sync operation.
+// @details    Supported User Data Model versions: 1.0 base and 1.1 appearance metadata. Private
+//             journal formats 1/2/3; targetModelVersion retains its legacy meaning of base Model 1.0.
+//             The journal is neither a server record, an account credential nor a sync operation.
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
@@ -37,7 +38,7 @@ struct MigrationIdentityEntry: Codable, Equatable
 struct MigrationIdentityJournal: Codable
 {
 
-    let formatVersion:        Int                      /* Local journal format, independent of Model 1.0 */
+    private(set) var formatVersion:        Int                      /* Local journal format, independent of Model 1.0 */
     let targetModelVersion:   String                   /* Explicit portable definition target             */
     let sourceInstallationID: UUID                     /* Durable source-installation namespace            */
     let previewWorkspaceID:   UUID                     /* Local preview only; not server-owned workspace  */
@@ -71,7 +72,7 @@ struct MigrationIdentityJournal: Codable
     init()
     {
 
-        formatVersion = 1
+        formatVersion = 2
         targetModelVersion = "1.0"
         sourceInstallationID = UUID()
         previewWorkspaceID = UUID()
@@ -89,6 +90,14 @@ struct MigrationIdentityJournal: Codable
     {
 
         try Self.validate(source)
+        if source.recordType.hasPrefix("nested_")
+        {
+            formatVersion = max(formatVersion, 2)
+        }
+        if ["workspace_appearance", "artwork_library"].contains(source.recordType)
+        {
+            formatVersion = max(formatVersion, 3)
+        }
         if targets.count != entries.count
         {
             guard Set(entries.map(\.source)).count == entries.count else
@@ -120,7 +129,9 @@ struct MigrationIdentityJournal: Codable
             "label_category", "calendar_week", "calendar_index", "daily_plan", "weekly_review",
             "periodic_review", "planning_template", "template_library", "review_rhythm", "asset",
             "content_selection", "user_profile", "user_preferences", "studio_settings", "studio_artwork",
-            "today_shortcuts", "workspace_display_preferences", "unavailable_reference"]
+            "today_shortcuts", "workspace_display_preferences", "unavailable_reference", "workspace_appearance", "artwork_library",
+            "nested_checklist", "nested_checklist_item", "nested_action_detail", "nested_comment",
+            "nested_reaction", "nested_attachment", "nested_history", "nested_assignee"]
         guard types.contains(source.recordType), !source.owner.isEmpty,
               source.owner.utf8.count <= 4096, source.legacyID.utf8.count <= 4096,
               (source.discriminator?.utf8.count ?? 0) <= 4096 else
@@ -158,7 +169,7 @@ struct MigrationIdentityJournal: Codable
         {
             throw Failure.corrupt
         }
-        guard object["formatVersion"] as? Int == 1, object["targetModelVersion"] as? String == "1.0" else
+        guard [1, 2, 3].contains(object["formatVersion"] as? Int ?? 0), object["targetModelVersion"] as? String == "1.0" else
         {
             throw Failure.unsupported
         }
@@ -193,6 +204,14 @@ struct MigrationIdentityJournal: Codable
         }
         for entry in journal.entries
         {
+            guard journal.formatVersion >= 2 || !entry.source.recordType.hasPrefix("nested_") else
+            {
+                throw Failure.unsupported
+            }
+            guard journal.formatVersion >= 3 || !["workspace_appearance", "artwork_library"].contains(entry.source.recordType) else
+            {
+                throw Failure.unsupported
+            }
             try validate(entry.source)
         }
         return journal
@@ -268,7 +287,8 @@ enum MigrationIdentityStore
         {
             let original = try MigrationIdentityJournal.decode(expected)
             let retained = Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
-            guard original.sourceInstallationID == journal.sourceInstallationID,
+            guard original.formatVersion <= journal.formatVersion,
+                  original.sourceInstallationID == journal.sourceInstallationID,
                   original.previewWorkspaceID == journal.previewWorkspaceID,
                   original.entries.allSatisfy({ retained[$0.source] == $0.target }) else
             {

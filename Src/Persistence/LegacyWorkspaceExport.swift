@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LegacyWorkspaceExport.swift
 // @brief      Read-only iOS snapshot with exact preference and original-media preservation
-// @details    Supports User Data Model 1.0 migration preparation; source backup format 1.
+// @details    Supports User Data Model 1.0 base and working 1.1; native backup formats 1/2.
 //             Preserves legacy storage without conversion, restoration, network access or fallback data.
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
@@ -213,6 +213,7 @@ enum LegacyWorkspaceExport
         let migrationURL = root.resolvingSymlinksInPath()
             .appendingPathComponent("Library/Application Support/PlenactMigration/source-identities-v1.json")
         let migrationJournal = try MigrationIdentityStore.read(at: migrationURL)
+        let portableRuntime = try PortableRuntimeEvidence.capture(root: root)
         let original = defaults.persistentDomain(forName: domain) ?? [:]
         let values = original.filter { LegacyStoreValidation.includes($0.key) }
         let preferences = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
@@ -247,13 +248,14 @@ enum LegacyWorkspaceExport
             issues.append(contentsOf: LegacyStoreValidation.mediaIssues(json, store: key, files: Set(media.keys)))
         }
         issues = Array(Set(issues)).sorted()
-        guard media.values.reduce(preferences.count + (migrationJournal?.count ?? 0), { $0 + $1.count }) <= maximumBytes else
+        guard media.values.reduce(preferences.count + (migrationJournal?.count ?? 0) + portableRuntime.values.reduce(0, { $0 + $1.count }), { $0 + $1.count }) <= maximumBytes else
         {
             throw Failure.tooLarge
         }
         guard NSDictionary(dictionary: original).isEqual(to: defaults.persistentDomain(forName: domain) ?? [:]),
               media == (try inventory(root: root)),
-              migrationJournal == (try MigrationIdentityStore.read(at: migrationURL)) else
+              migrationJournal == (try MigrationIdentityStore.read(at: migrationURL)),
+              portableRuntime == (try PortableRuntimeEvidence.capture(root: root)) else
         {
             throw Failure.changedSource
         }
@@ -267,8 +269,12 @@ enum LegacyWorkspaceExport
         {
             insert(bytes, path: path, directory: wrapper)
         }
-        let manifest: [String: Any] = [
-            "format": "plenact.ios-frozen-backup", "format_version": 1,
+        for (name, bytes) in portableRuntime
+        {
+            insert(bytes, path: "PortableRuntime/" + name, directory: wrapper)
+        }
+        var manifest: [String: Any] = [
+            "format": "plenact.ios-frozen-backup", "format_version": portableRuntime.isEmpty ? 1 : 2,
             "target_user_data_model_version": "1.0", "portable_conversion_complete": false,
             "created_at_utc": ISO8601DateFormatter().string(from: Date()),
             "status": issues.isEmpty ? "source_preserved" : "needs_review",
@@ -278,6 +284,12 @@ enum LegacyWorkspaceExport
             "media": media.keys.sorted().map { ["path": $0, "byte_length": media[$0]!.count,
                 "sha256": digest(media[$0]!)] as [String: Any] }
         ]
+        if !portableRuntime.isEmpty
+        {
+            manifest["portable_runtime_files"] = portableRuntime.keys.sorted().map { name in
+                ["name": name, "sha256": digest(portableRuntime[name]!), "byte_length": portableRuntime[name]!.count] as [String: Any]
+            }
+        }
         insert(try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys]),
             path: "NativePreflight.json", directory: wrapper)
         return LegacyWorkspaceBackup(files: wrapper, storeCount: values.count,

@@ -263,3 +263,100 @@ Test/LocalBackupRestoreTests.swift         Isolated review, restore, undo and ro
 ```
 
 See [manual acceptance](User-Data-Model/iOS-Local-Restore-Test.md).
+
+## Native content migration additions
+
+```text
+Src/Persistence/
+├── MigrationContentConverter.swift   Owner reconciliation and complete Collection/List/Card envelopes
+├── MigrationContentValues.swift      Stable references, identity context and precision evidence
+├── MigrationContentNested.swift      Checklists, discussion, history and attachment metadata
+├── MigrationContentAppearance.swift  Explicit appearance and legacy-color mapping
+├── MigrationContentGuard.swift       Stored-field and legacy normalization guards
+├── MigrationContentDates.swift       Explicit pinned timezone/occurrence conversion
+└── MigrationTimeZoneRules.json       Reproducible IANA 2025b projection for Central/UTC
+Test/
+└── MigrationContentTests.swift       Synthetic content, dates, identity and source-preservation checks
+```
+
+See [content migration](User-Data-Model/iOS-Content-Migration.md).
+
+
+Calendar/template migration addition (User Data Model 1.0):
+
+```text
+Src/Persistence/
+└── MigrationCalendarTemplates.swift   # Saved Week/index and template/library metadata; explicit owner mappings
+```
+
+
+Original-file preparation additions (User Data Model 1.0):
+
+```text
+Src/Persistence/
+└── MigrationAssetPreview.swift   # Verified originals, content links and account-unbound Asset evidence
+Test/
+└── MigrationAssetTests.swift     # Synthetic media linkage, integrity and review regression coverage
+```
+
+
+Settings preparation additions (User Data Model 1.0):
+
+```text
+Src/Persistence/
+└── MigrationSettingsPreview.swift   # Profile/preferences provenance and exact owner-qualified Today shortcuts
+Test/
+└── MigrationSettingsTests.swift     # Saved/default precedence, avatar links, shortcut membership and source review
+```
+
+
+Studio preparation additions (User Data Model 1.0):
+
+```text
+Src/Persistence/
+└── MigrationStudioPreview.swift   # Saved surfaces/artwork and explicit global Week/order mapping evidence
+Test/
+└── MigrationStudioTests.swift     # Exact appearance, shared originals, source review and mapping-gap tests
+```
+
+
+Planning-history migration additions (User Data Model 1.0):
+
+```text
+Src/Persistence/
+├── MigrationPlanningPreview.swift   # Saved daily/review/rhythm records and explicit source coverage
+└── MigrationPlanningValues.swift    # Historical nested values and exact owner/creation-qualified links
+Test/
+└── MigrationPlanningTests.swift     # Immutable snapshots, null/empty history, deleted/reused links and safe failure
+```
+
+
+Versioned appearance representation additions:
+
+```text
+Src/Persistence/
+└── MigrationAppearanceModel.swift   # Working Model 1.1 global Week defaults and authored library order
+└── MigrationTestPackage.swift     # Simulator-only portable package assembly
+└── PortablePackageReview.swift    # Read-only portable records and original-file review
+└── PortableEditedExport.swift     # Guarded Card edit export with retained identities and native backup
+Doc/User-Data-Model/Contracts/1.1/    # Additive working schemas and synthetic composition examples
+Tools/UserDataModel/
+├── appearance_contract.py           # Versioned composition, relationship and compatibility checks
+└── test_appearance_contract.py      # Working 1.1 definition and downgrade-safety regressions
+```
+
+
+Editable structural export additions (Model 1.0 records and working 1.1):
+
+```text
+Src/Persistence/
+└── PortableStructuralEdits.swift    # Durable creation aliases, new records and same-Board ownership/order reconciliation
+```
+
+
+Rich Card export additions (Model 1.0 records and working 1.1):
+
+```text
+Src/Persistence/
+└── PortableRichCardExport.swift      # Verified new original blobs, stable Asset identities and comparison filenames
+```

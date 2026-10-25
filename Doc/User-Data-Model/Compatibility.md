@@ -37,3 +37,8 @@ Web clients render rich text as safe text/runs, never executable HTML. Keep sess
 ## Definition readiness versus application readiness
 
 This specification is ready to be used by all three implementers. Production support is claimed only after that application implements its decoder/encoder, persistence, graph validation, conflict/recovery behavior, asset handling and transport acceptance checks. The [conformance report](Conformance.md) states exactly which checks currently exist; no release note may turn codec evidence into a claim of deployed synchronization.
+
+
+## Working Model 1.1 appearance composition
+
+Supported User Data Model versions: 1.0 base and working 1.1. Global Week defaults and artwork order now have separately versioned records over an unchanged 1.0 base. Require explicit 1.1 support, preserve both record namespaces and reject lossy downgrade. New schemas/preview support do not upgrade protocol 1.0, deploy a service or publish a release. See [definition, journal compatibility and acceptance](Version-1.1.md). Current focused checks pass 68 native tests and 93 model/tooling tests.

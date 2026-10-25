@@ -1,0 +1,12 @@
+{
+  "user_data_model_version": "1.1",
+  "payload_schema_version": 1,
+  "record_type": "artwork_library",
+  "id": "91000000-0000-4000-8000-000000000002",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "artwork_ids": [
+      "40000000-0000-4000-8000-000000000006"
+    ]
+  }
+}

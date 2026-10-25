@@ -26,3 +26,8 @@ Review reads a bounded private snapshot, rejects symlinks/nonregular entries and
 The transaction reuses FullMonthExampleStore's verified snapshot/Transition format. Failed installation restores the pre-change state; an interrupted operation recovers at launch through the existing recovery gate. A committed workspace that cannot reload blocks stale UI. Pre-import data is kept separately from the example-month user backup and is removed only after successful undo cleanup.
 
 Synthetic tests cover review without mutation, exact preference/media restore and undo, failed-install rollback, tampered preference bytes, undeclared media/symlink rejection and preservation of undo evidence across repeated-import attempts. Existing backup/migration and dataset-recovery regressions run alongside them. Real Files-provider interaction and owner-driven inspection remain manual acceptance work.
+
+
+## Imported portable-runtime evidence
+
+Supported User Data Model versions: 1.0 base and working 1.1; native backup formats 1/2. Source recovery now also verifies/restores format-two backups containing current native values plus portable canonical baseline/identity evidence. This remains source recovery, distinct from the [editable portable importer](Editable-Import.md). Old format-one captures cannot represent the new runtime evidence and must not strip it.

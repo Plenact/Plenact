@@ -1,0 +1,22 @@
+{
+  "user_data_model_version": "1.1",
+  "payload_schema_version": 1,
+  "record_type": "workspace_appearance",
+  "id": "91000000-0000-4000-8000-000000000001",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "week_board_defaults": {
+      "banner_background": "teal",
+      "collection_background": null,
+      "list_background": null,
+      "card_background": null,
+      "card_detail": null,
+      "card_title_color": null,
+      "card_text_color": null,
+      "add_item_text_color": null,
+      "studio_surface": null,
+      "studio_card_surface": null,
+      "subtitle_italic": false
+    }
+  }
+}

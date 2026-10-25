@@ -39,3 +39,42 @@ The [database overview](Database/README.md), [implementation plan](User-Data-Mod
 ## Simulator recovery test
 
 The working branch now provides an explicit [reviewed source-backup restore and undo](User-Data-Model/iOS-Local-Restore-Test.md) in Simulator builds only. It uses the preserved source format, keeps a verified pre-import destination snapshot and does not claim Model 1.0/account synchronization. Owner-driven acceptance is in progress.
+
+## Expanded native content preview
+
+Board, List and Card converters now emit a validated partial content graph, including archived and nested content, with original timezone confirmation and explicit unresolved dependencies. See [current evidence and limits](User-Data-Model/iOS-Content-Migration.md). Remaining workspace adapters and verified account binding still prevent a complete Model 1.0 export claim.
+
+
+### Calendar/template metadata implementation checkpoint
+
+Supported User Data Model versions: 1.0. iOS preview conversion now includes retained calendar Week/index metadata and saved template/library metadata. Explicit mappings, template order/defaults, example Focus markers and cross-Week checklist ownership are preserved. This extends the partial native preview; full portable workspace import/export and authenticated synchronization remain pending. See [current mapping and acceptance steps](User-Data-Model/iOS-Calendar-Template-Migration.md).
+
+
+### Original-file verification checkpoint
+
+Supported User Data Model versions: 1.0. Local migration previews now verify exact original media, preserve unreferenced files, prepare attachment/drawing links and expose missing/conflicting evidence. Assets remain local drafts until verified account binding; no cloud transfers or full portable import are enabled. See [current Asset boundary and manual acceptance](User-Data-Model/iOS-Asset-Migration.md).
+
+
+### Saved planning preferences, profile and Today shortcuts
+
+Supported User Data Model versions: 1.0. The native preview now prepares account-unbound profile/preference drafts, distinguishes saved settings from compatibility/application defaults, and converts saved Today shortcut order and parent membership. Avatar originals link through verified local Asset evidence. Other appearance/Studio and planning/review domains plus verified account binding and complete portable import/export remain pending. See [current settings slice](User-Data-Model/iOS-Settings-Migration.md).
+
+
+### Studio appearance checkpoint and remaining contract representation
+
+Supported User Data Model versions: 1.0. Saved artwork payloads and Studio/global appearance evidence are now prepared with exact file links. Global Week-theme semantics and saved-artwork ordering still need a separately reviewed versioned canonical representation; local evidence retains them with visible mapping-review notices. Released schemas are unchanged. See [Studio boundaries and verification](User-Data-Model/iOS-Studio-Migration.md). Daily plans/reviews, ownership binding and complete workspace import/export remain pending.
+
+
+### Planning and review-history checkpoint
+
+Supported User Data Model versions: 1.0. Native adapters now convert saved daily/check-in, weekly/periodic review and reminder-intent data. Original snapshots, nullable history and exact owner/creation provenance are preserved without replaying actions or notifications. See [current planning boundary](User-Data-Model/iOS-Planning-Review-Migration.md). Global appearance representation gaps, ownership binding and whole-workspace export/import/recovery acceptance remain pending.
+
+
+### Closing appearance representation gaps with working Model 1.1
+
+Supported User Data Model versions: 1.0 published base and working 1.1 appearance composition. Global Week defaults and authored artwork order now have separate new records, preserving the immutable base and existing identities. The new definition remains local/unpublished; explicit 1.1 capabilities, verified ownership and full portable import/recovery remain integration work. See [versioned mapping and evidence](User-Data-Model/Version-1.1.md).
+
+
+## Editable iOS migration checkpoint
+
+Supported User Data Model versions: 1.0 base and working 1.1. The Simulator now has confirmed portable-to-editable activation with full pre-import backup, verified reload and undo. Local format-two backups retain current edits and canonical baseline/identity evidence. Fresh portable export after editing is intentionally disabled until canonical reconciliation is complete. Real account ownership, production activation and cloud synchronization remain separate pending work. See [editable import status](User-Data-Model/Editable-Import.md).

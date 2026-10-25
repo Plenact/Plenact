@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.1 (composition over immutable 1.0). Working definition; not yet published.",
+  "$id": "urn:plenact:user-data:1.1:workspace-export",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.1"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "base_workspace": {
+      "$ref": "urn:plenact:user-data:1.0:workspace-export"
+    },
+    "workspace_appearance": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.1:workspace-appearance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "artwork_library": {
+      "anyOf": [
+        {
+          "$ref": "urn:plenact:user-data:1.1:artwork-library"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "local_card_deletions": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+      },
+      "uniqueItems": true,
+      "description": "Pending local Card deletions over retained base records. Not server tombstones; readers must suppress these Cards from active and archived presentation while retaining records, references and originals for recovery."
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "base_workspace",
+    "workspace_appearance",
+    "artwork_library"
+  ],
+  "additionalProperties": false
+}

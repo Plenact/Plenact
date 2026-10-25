@@ -1,9 +1,9 @@
 # Plenact User Data Model
 
-**Supported User Data Model versions:** 1.0; Version 0 is historical reference only.
-**Status:** Final specification. Application/API integration is tracked separately.
+**Supported User Data Model versions:** 1.0 published base; 1.1 working appearance composition; Version 0 is historical reference only.
+**Status:** Model 1.0 remains published/frozen. Additive Model 1.1 is a working definition with native preview support; publication and complete application/API integration remain pending.
 
-Model **1.0** defines the complete private workspace contract for iOS, Plenact.com web and Windows C#. Start with the normative [Specification](Specification.md), then [Synchronization](Synchronization.md), [Assets](Assets.md) and [Compatibility](Compatibility.md). The [GitHub publication](Publication.md) freezes documentation, schemas, synthetic examples and conformance tools together.
+Model **1.0** is the published private-workspace base for iOS, Plenact.com web and Windows C#. [Working Model 1.1](Version-1.1.md) adds explicit global Week appearance and saved-artwork order without changing released 1.0 records. Start with the normative [Specification](Specification.md), then [Synchronization](Synchronization.md), [Assets](Assets.md) and [Compatibility](Compatibility.md). The [GitHub publication](Publication.md) freezes documentation, schemas, synthetic examples and conformance tools together.
 
 This is a specification release. Normal application storage remains local; the iOS migration adapter, web/Windows integrations and Model 1.0 production API are not implemented by this release. No personal workspace was uploaded.
 
@@ -42,3 +42,37 @@ Native implementation update: [durable identities and first canonical preview co
 ## Local recovery acceptance follow-up
 
 A [Simulator-only reviewed source-restore test](iOS-Local-Restore-Test.md) is now available on the working branch. The owner chooses the backup and confirms installation into the separate test Simulator; previous destination data is retained for undo. This exercises local recovery, not full Model 1.0 conversion or cloud account import.
+
+## Expanded content conversion
+
+The working branch now includes [Board/List/Card content conversion](iOS-Content-Migration.md), with explicit timezone selection, owner-qualified template copies, archive/history/media-reference preservation and independent graph checks. Full workspace conversion and cloud integration remain pending. The earlier first-slice status above is historical; the new guide is the current content-adapter evidence.
+
+
+### Label and personal-selection preview update
+
+Supported User Data Model versions: 1.0. The content preview now records an explicit current-build default label catalog only when the saved catalog is absent. It also prepares owner-qualified bookmarks/importance in local `SelectionPreview.json`, with unresolved targets and conflicts reported. These drafts remain pending verified account binding; they are not yet canonical selections. See [content and selection evidence](iOS-Content-Migration.md). Full workspace export/import and synchronization remain pending.
+
+
+### Calendar and template metadata update
+
+Supported User Data Model versions: 1.0. Native previews now convert saved Week/index and template/library metadata with explicit original owner mappings, template order/defaults and cross-Week checklist ownership. See [calendar/template conversion evidence and manual test](iOS-Calendar-Template-Migration.md). Other planning/review data, canonical account-bound selections and complete workspace export/import remain pending.
+
+
+### Verified original-file and Asset preparation update
+
+Supported User Data Model versions: 1.0. Native preview now emits account-unbound `AssetPreview.json`, linking attachment/background references and all preserved originals to stable media identities with verified size/checksum, explicit missing-file review and drawing derivation. Canonical account-owned Assets and cloud transfers remain pending. See [file verification and manual test](iOS-Asset-Migration.md). The current focused suites pass 51 native tests and 77 model/tooling checks; earlier counts describe prior checkpoints.
+
+
+### Profile/preferences and Today shortcut checkpoint
+
+Supported User Data Model versions: 1.0. Native previews now prepare local profile/effective preference drafts with explicit source/default provenance and avatar links, and convert saved Today shortcuts using exact owner-qualified membership/order. Account-required profile/preferences remain unbound; Studio and other appearance/planning/review adapters remain pending. See [current settings mapping and acceptance](iOS-Settings-Migration.md). Current focused checks pass 56 native tests and 80 model/tooling tests.
+
+
+### Studio and remaining appearance preparation
+
+Supported User Data Model versions: 1.0. Previews now convert saved artwork payloads and prepare Studio/global Week appearance with exact surface/file references. Global Week defaults and multi-artwork ordering lack complete canonical destinations in the immutable released contract; they are retained in local evidence with explicit mapping-review notices, not silently merged or dropped. See [Studio mapping, representation gaps and acceptance](iOS-Studio-Migration.md). Current focused checks pass 60 native tests and 83 model/tooling tests. These representation gaps, account binding, daily plans/reviews and complete workspace recovery remain pending.
+
+
+### Daily plans, check-ins and review history checkpoint
+
+Supported User Data Model versions: 1.0. Native previews now convert daily plans, weekly/periodic reviews and reminder intent while retaining historical writing/progress, exact source-creation references and nullable history. Missing/deleted targets stay explicit; review decisions and notifications are never executed. See [planning mapping and acceptance](iOS-Planning-Review-Migration.md). Current focused coverage passes 65 native tests and 86 model/tooling checks. Appearance representation gaps, verified ownership and complete portable recovery remain pending.

@@ -533,7 +533,16 @@ extension ContentView
     {
 
 
-        let nextListID = ((lists + archivedLists).map(\.id).max() ?? -1) + 1 /* Board-wide next list ID   */
+        let nextListID: Int
+        do
+        {
+            nextListID = try PortableCreationIdentity.reserve(proposed: ((lists + archivedLists).map(\.id).max() ?? -1) + 1)
+        }
+        catch
+        {
+            DatabaseActivity.shared.report("The new List identity could not be reserved. Please try again.")
+            return
+        }
         let existingTitles = Set(lists.map
             {
                 $0.title.lowercased()
@@ -582,10 +591,21 @@ extension ContentView
             return false
         }
 
-        let nextCardID = ((lists + archivedLists).flatMap
+        let proposedCardID = ((lists + archivedLists).flatMap
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
+        let nextCardID: Int
+        do
+        {
+            nextCardID = try PortableCreationIdentity.reserve(proposed: proposedCardID,
+                count: max(1, MultilineEntry.titles(capture.title).count))
+        }
+        catch
+        {
+            DatabaseActivity.shared.report("The new Card identities could not be reserved. Your draft is unchanged.")
+            return false
+        }
         guard
         let created = ListItemCreation.items(
             capture, in: lists[listIndex], startingAt: nextCardID,

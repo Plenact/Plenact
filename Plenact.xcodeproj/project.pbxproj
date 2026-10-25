@@ -7,6 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D7C9DCE896B5417C994F13D3 /* PortableWorkspaceActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */; };
+		EEA3CF371A05411982A81F72 /* PortableRuntimeEvidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */; };
+		CC85712DD14D468DAA003431 /* PortableEditedExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC85712DD14D468DAA003432 /* PortableEditedExport.swift */; };
+		DD85712DD14D468DAA003431 /* PortableStructuralEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD85712DD14D468DAA003432 /* PortableStructuralEdits.swift */; };
+		EE85712DD14D468DAA003431 /* PortableRichCardExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE85712DD14D468DAA003432 /* PortableRichCardExport.swift */; };
+		4F2BA8708D834D13B2CFCE76 /* PortableWorkspaceCandidate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E0E5FA3D8C4644B5E838C9 /* PortableWorkspaceCandidate.swift */; };
+		EBE0287A3ECD49BE816CDD77 /* PortableMediaPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B19EE5220A4BCEBBD622E6 /* PortableMediaPlacement.swift */; };
+		D155A2CC0C3F4DAC9F1D0CFF /* PortableEditablePlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = F12AC2484083450A9B91BF70 /* PortableEditablePlanning.swift */; };
+		3CF3889F93F743C69B99DC3E /* PortableEditableSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4DB8C029EA4A3F8ADA3AF5 /* PortableEditableSettings.swift */; };
+		B1C62ECA8A334015BA06F72E /* PortableEditableCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C407DF73AC4E46AEA14C61D1 /* PortableEditableCalendar.swift */; };
+		47AAFAB29A95415F9EE9BFD5 /* PortableEditableNested.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF6030969AF472D945EF85B /* PortableEditableNested.swift */; };
+		B5B0FBBA8B1640BD90700EA3 /* PortableEditableContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64DFD80E54AD4B81ABA6785D /* PortableEditableContent.swift */; };
+		D91393BF3ADA498E84A6BA0D /* PortableWorkspaceInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26004D8F433484D89D1C837 /* PortableWorkspaceInspector.swift */; };
+		4A11C765D15140069A053F24 /* PortableTestWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 821DE321CB6B4D1C909F55D1 /* PortableTestWorkspace.swift */; };
+		8BCF95F6228E4C049EF8B80B /* PortablePackageReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15046C1CEA44E29841CAEB2 /* PortablePackageReview.swift */; };
+		1649AC854AE44CDC932EBEC2 /* MigrationTestPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3544F5AD89F84F8584CDFADD /* MigrationTestPackage.swift */; };
 		F85A18C083674224BDE017C1 /* ExampleCardLocations.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017C2 /* ExampleCardLocations.swift */; };
 		F85A18C083674224BDE017B1 /* CardLocationSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017B2 /* CardLocationSearch.swift */; };
 		F85A18C083674224BDE017A1 /* CardLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A18C083674224BDE017A2 /* CardLocation.swift */; };
@@ -163,6 +179,25 @@
 		C0655385313AE5230AE42470 /* LocalBackupRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */; };
 		DFA81399DF9774EE6D7B2776 /* WorkspaceBackupRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */; };
 		A6E044024DE193CE78783DF6 /* LocalBackupRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */; };
+		F30CAF4B4524B3F0EBC826D3 /* MigrationContentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54DF63D665A5C3543EF9F193 /* MigrationContentValues.swift */; };
+		CBB7FFA96722DC4162A0A312 /* MigrationContentDates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A639E12BD86EBA59065DE40 /* MigrationContentDates.swift */; };
+		5D0C1EDF4E43689386B01D03 /* MigrationContentNested.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B233EDD71AC3F79C9B1B55 /* MigrationContentNested.swift */; };
+		24A324E36C286AB1EBF3C8D9 /* MigrationContentGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAC8C89C43FAB078BDCEAD4 /* MigrationContentGuard.swift */; };
+		09CF5A4390F3C2821F8EABC5 /* MigrationContentAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82C5FE9293FDA0AC2751BF29 /* MigrationContentAppearance.swift */; };
+		4E717B1547C0EB85D938CB2A /* MigrationContentConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1FD5975D4C30F8EBE72774 /* MigrationContentConverter.swift */; };
+		5AFC01D018EC487B9D104196 /* MigrationCalendarTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA723AD1DC6D44F69A22F926 /* MigrationCalendarTemplates.swift */; };
+		8BE3C78C73B645E499FF6D6A /* MigrationAssetPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DB8C8B3F224A1F97C96E06 /* MigrationAssetPreview.swift */; };
+		F9E88166F41944888598B073 /* MigrationSettingsPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232C3FB61AAB42B4BBE09F80 /* MigrationSettingsPreview.swift */; };
+		7B1504A1F01A4699A20962C8 /* MigrationStudioPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6EB408F72284B50A29F4A94 /* MigrationStudioPreview.swift */; };
+		817EB429B9E74A2DA70D74D6 /* MigrationAppearanceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A83DB8858CF4435FA97AE90B /* MigrationAppearanceModel.swift */; };
+		5610E8B67A7746CBB6FC2E2A /* MigrationPlanningValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFDD4D1D9664AA5A5B17933 /* MigrationPlanningValues.swift */; };
+		6843BA05D394437C80C7C06C /* MigrationPlanningPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830A9D6502FA447C893FE8C5 /* MigrationPlanningPreview.swift */; };
+		B4C35FDB516B1A9B78427848 /* MigrationTimeZoneRules.json in Resources */ = {isa = PBXBuildFile; fileRef = 76C0B2EB1813D4B6EDE9DF9D /* MigrationTimeZoneRules.json */; };
+		DEF7AA8922FDDBB33017560B /* MigrationContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68313C3C4AFC0E13C1FFA30 /* MigrationContentTests.swift */; };
+		351CC2BDBAA94F1BBD205056 /* MigrationAssetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30F7ABF014C4F3A963290C5 /* MigrationAssetTests.swift */; };
+		021C50262E9F4070A01F23B7 /* MigrationSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */; };
+		4FB34A0D4EE24E85A7617BFE /* MigrationStudioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */; };
+		7122434DA5DD4A91B2A58298 /* MigrationPlanningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +211,22 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableWorkspaceActivation.swift; sourceTree = "<group>"; };
+		6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableRuntimeEvidence.swift; sourceTree = "<group>"; };
+		CC85712DD14D468DAA003432 /* PortableEditedExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditedExport.swift; sourceTree = "<group>"; };
+		DD85712DD14D468DAA003432 /* PortableStructuralEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableStructuralEdits.swift; sourceTree = "<group>"; };
+		EE85712DD14D468DAA003432 /* PortableRichCardExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableRichCardExport.swift; sourceTree = "<group>"; };
+		F9E0E5FA3D8C4644B5E838C9 /* PortableWorkspaceCandidate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableWorkspaceCandidate.swift; sourceTree = "<group>"; };
+		54B19EE5220A4BCEBBD622E6 /* PortableMediaPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableMediaPlacement.swift; sourceTree = "<group>"; };
+		F12AC2484083450A9B91BF70 /* PortableEditablePlanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditablePlanning.swift; sourceTree = "<group>"; };
+		BE4DB8C029EA4A3F8ADA3AF5 /* PortableEditableSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditableSettings.swift; sourceTree = "<group>"; };
+		C407DF73AC4E46AEA14C61D1 /* PortableEditableCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditableCalendar.swift; sourceTree = "<group>"; };
+		EDF6030969AF472D945EF85B /* PortableEditableNested.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditableNested.swift; sourceTree = "<group>"; };
+		64DFD80E54AD4B81ABA6785D /* PortableEditableContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditableContent.swift; sourceTree = "<group>"; };
+		B26004D8F433484D89D1C837 /* PortableWorkspaceInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableWorkspaceInspector.swift; sourceTree = "<group>"; };
+		821DE321CB6B4D1C909F55D1 /* PortableTestWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableTestWorkspace.swift; sourceTree = "<group>"; };
+		B15046C1CEA44E29841CAEB2 /* PortablePackageReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortablePackageReview.swift; sourceTree = "<group>"; };
+		3544F5AD89F84F8584CDFADD /* MigrationTestPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationTestPackage.swift; sourceTree = "<group>"; };
 		F85A18C083674224BDE017C2 /* ExampleCardLocations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCardLocations.swift; sourceTree = "<group>"; };
 		F85A18C083674224BDE017B2 /* CardLocationSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLocationSearch.swift; sourceTree = "<group>"; };
 		F85A18C083674224BDE017A2 /* CardLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLocation.swift; sourceTree = "<group>"; };
@@ -336,6 +387,25 @@
 		9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBackupRestore.swift; sourceTree = "<group>"; };
 		0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceBackupRestore.swift; sourceTree = "<group>"; };
 		C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBackupRestoreTests.swift; sourceTree = "<group>"; };
+		54DF63D665A5C3543EF9F193 /* MigrationContentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentValues.swift; sourceTree = "<group>"; };
+		5A639E12BD86EBA59065DE40 /* MigrationContentDates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentDates.swift; sourceTree = "<group>"; };
+		22B233EDD71AC3F79C9B1B55 /* MigrationContentNested.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentNested.swift; sourceTree = "<group>"; };
+		4FAC8C89C43FAB078BDCEAD4 /* MigrationContentGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentGuard.swift; sourceTree = "<group>"; };
+		82C5FE9293FDA0AC2751BF29 /* MigrationContentAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentAppearance.swift; sourceTree = "<group>"; };
+		EB1FD5975D4C30F8EBE72774 /* MigrationContentConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentConverter.swift; sourceTree = "<group>"; };
+		BA723AD1DC6D44F69A22F926 /* MigrationCalendarTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationCalendarTemplates.swift; sourceTree = "<group>"; };
+		47DB8C8B3F224A1F97C96E06 /* MigrationAssetPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationAssetPreview.swift; sourceTree = "<group>"; };
+		232C3FB61AAB42B4BBE09F80 /* MigrationSettingsPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationSettingsPreview.swift; sourceTree = "<group>"; };
+		F6EB408F72284B50A29F4A94 /* MigrationStudioPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationStudioPreview.swift; sourceTree = "<group>"; };
+		A83DB8858CF4435FA97AE90B /* MigrationAppearanceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationAppearanceModel.swift; sourceTree = "<group>"; };
+		6BFDD4D1D9664AA5A5B17933 /* MigrationPlanningValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPlanningValues.swift; sourceTree = "<group>"; };
+		830A9D6502FA447C893FE8C5 /* MigrationPlanningPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPlanningPreview.swift; sourceTree = "<group>"; };
+		76C0B2EB1813D4B6EDE9DF9D /* MigrationTimeZoneRules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MigrationTimeZoneRules.json; sourceTree = "<group>"; };
+		D68313C3C4AFC0E13C1FFA30 /* MigrationContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationContentTests.swift; sourceTree = "<group>"; };
+		E30F7ABF014C4F3A963290C5 /* MigrationAssetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationAssetTests.swift; sourceTree = "<group>"; };
+		78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationSettingsTests.swift; sourceTree = "<group>"; };
+		E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationStudioTests.swift; sourceTree = "<group>"; };
+		16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPlanningTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -409,6 +479,7 @@
 			children = (
 				AA93E6C495E981EDD7ED252A /* AppRootView.swift */,
 				0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */,
+				6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */,
 				12E7BF6CAA8CDCB83E62735D /* BottomToolbar.swift */,
 				3CCEEE35286732C38F29265D /* LaunchPresentation.swift */,
 				63EBFF4474BD1C3C5430DC3C /* WorkspaceActions.swift */,
@@ -687,6 +758,35 @@
 			isa = PBXGroup;
 			children = (
 				99E9CD5B277CBA6FC23355AC /* BoardPersistence.swift */,
+				76C0B2EB1813D4B6EDE9DF9D /* MigrationTimeZoneRules.json */,
+				EB1FD5975D4C30F8EBE72774 /* MigrationContentConverter.swift */,
+				BA723AD1DC6D44F69A22F926 /* MigrationCalendarTemplates.swift */,
+				47DB8C8B3F224A1F97C96E06 /* MigrationAssetPreview.swift */,
+				232C3FB61AAB42B4BBE09F80 /* MigrationSettingsPreview.swift */,
+				F6EB408F72284B50A29F4A94 /* MigrationStudioPreview.swift */,
+				A83DB8858CF4435FA97AE90B /* MigrationAppearanceModel.swift */,
+				6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */,
+				CC85712DD14D468DAA003432 /* PortableEditedExport.swift */,
+				DD85712DD14D468DAA003432 /* PortableStructuralEdits.swift */,
+				EE85712DD14D468DAA003432 /* PortableRichCardExport.swift */,
+				F9E0E5FA3D8C4644B5E838C9 /* PortableWorkspaceCandidate.swift */,
+				54B19EE5220A4BCEBBD622E6 /* PortableMediaPlacement.swift */,
+				F12AC2484083450A9B91BF70 /* PortableEditablePlanning.swift */,
+				BE4DB8C029EA4A3F8ADA3AF5 /* PortableEditableSettings.swift */,
+				C407DF73AC4E46AEA14C61D1 /* PortableEditableCalendar.swift */,
+				EDF6030969AF472D945EF85B /* PortableEditableNested.swift */,
+				64DFD80E54AD4B81ABA6785D /* PortableEditableContent.swift */,
+				B26004D8F433484D89D1C837 /* PortableWorkspaceInspector.swift */,
+				821DE321CB6B4D1C909F55D1 /* PortableTestWorkspace.swift */,
+				B15046C1CEA44E29841CAEB2 /* PortablePackageReview.swift */,
+				3544F5AD89F84F8584CDFADD /* MigrationTestPackage.swift */,
+				6BFDD4D1D9664AA5A5B17933 /* MigrationPlanningValues.swift */,
+				830A9D6502FA447C893FE8C5 /* MigrationPlanningPreview.swift */,
+				82C5FE9293FDA0AC2751BF29 /* MigrationContentAppearance.swift */,
+				4FAC8C89C43FAB078BDCEAD4 /* MigrationContentGuard.swift */,
+				22B233EDD71AC3F79C9B1B55 /* MigrationContentNested.swift */,
+				5A639E12BD86EBA59065DE40 /* MigrationContentDates.swift */,
+				54DF63D665A5C3543EF9F193 /* MigrationContentValues.swift */,
 				9239C2CA4638AE0177F04C78 /* LocalBackupRestore.swift */,
 				802BC79EBDB0082F536CF3D0 /* MigrationPreview.swift */,
 				31F93A51D551C936A66FCEDC /* MigrationBackupReader.swift */,
@@ -730,6 +830,11 @@
 				086FD4C6ED3F11DBAA364C69 /* BoardInteractionTests2.swift */,
 				76D5237B793FC4831CB778EB /* BoardInteractionTests3.swift */,
 				DD8ACFEB7B1351AC01C7DE3E /* BoardPersistenceTests.swift */,
+				D68313C3C4AFC0E13C1FFA30 /* MigrationContentTests.swift */,
+				E30F7ABF014C4F3A963290C5 /* MigrationAssetTests.swift */,
+				78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */,
+				E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */,
+				16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */,
 				C537D83D1362B06F898401E2 /* LocalBackupRestoreTests.swift */,
 				BEB9BAC30CD82DD4441937FD /* MigrationPreviewTests.swift */,
 				0C49E448AACBB36912BE87FE /* LegacyWorkspaceExportTests.swift */,
@@ -859,6 +964,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B4C35FDB516B1A9B78427848 /* MigrationTimeZoneRules.json in Resources */,
 				F30000000000000000000001 /* CardCoverImages in Resources */,
 				354B6C37BBEC4A4F98B58F97 /* Assets.xcassets in Resources */,
 				A202610120000000000000001 /* PlenactLaunch.storyboard in Resources */,
@@ -880,7 +986,36 @@
 			buildActionMask = 2147483647;
 			files = (
 				BA6FC8192880750F4A36AD40 /* App.swift in Sources */,
+				4E717B1547C0EB85D938CB2A /* MigrationContentConverter.swift in Sources */,
+				5AFC01D018EC487B9D104196 /* MigrationCalendarTemplates.swift in Sources */,
+				8BE3C78C73B645E499FF6D6A /* MigrationAssetPreview.swift in Sources */,
+				F9E88166F41944888598B073 /* MigrationSettingsPreview.swift in Sources */,
+				7B1504A1F01A4699A20962C8 /* MigrationStudioPreview.swift in Sources */,
+				817EB429B9E74A2DA70D74D6 /* MigrationAppearanceModel.swift in Sources */,
+				EEA3CF371A05411982A81F72 /* PortableRuntimeEvidence.swift in Sources */,
+				CC85712DD14D468DAA003431 /* PortableEditedExport.swift in Sources */,
+				DD85712DD14D468DAA003431 /* PortableStructuralEdits.swift in Sources */,
+				EE85712DD14D468DAA003431 /* PortableRichCardExport.swift in Sources */,
+				4F2BA8708D834D13B2CFCE76 /* PortableWorkspaceCandidate.swift in Sources */,
+				EBE0287A3ECD49BE816CDD77 /* PortableMediaPlacement.swift in Sources */,
+				D155A2CC0C3F4DAC9F1D0CFF /* PortableEditablePlanning.swift in Sources */,
+				3CF3889F93F743C69B99DC3E /* PortableEditableSettings.swift in Sources */,
+				B1C62ECA8A334015BA06F72E /* PortableEditableCalendar.swift in Sources */,
+				47AAFAB29A95415F9EE9BFD5 /* PortableEditableNested.swift in Sources */,
+				B5B0FBBA8B1640BD90700EA3 /* PortableEditableContent.swift in Sources */,
+				D91393BF3ADA498E84A6BA0D /* PortableWorkspaceInspector.swift in Sources */,
+				4A11C765D15140069A053F24 /* PortableTestWorkspace.swift in Sources */,
+				8BCF95F6228E4C049EF8B80B /* PortablePackageReview.swift in Sources */,
+				1649AC854AE44CDC932EBEC2 /* MigrationTestPackage.swift in Sources */,
+				5610E8B67A7746CBB6FC2E2A /* MigrationPlanningValues.swift in Sources */,
+				6843BA05D394437C80C7C06C /* MigrationPlanningPreview.swift in Sources */,
+				09CF5A4390F3C2821F8EABC5 /* MigrationContentAppearance.swift in Sources */,
+				24A324E36C286AB1EBF3C8D9 /* MigrationContentGuard.swift in Sources */,
+				5D0C1EDF4E43689386B01D03 /* MigrationContentNested.swift in Sources */,
+				CBB7FFA96722DC4162A0A312 /* MigrationContentDates.swift in Sources */,
+				F30CAF4B4524B3F0EBC826D3 /* MigrationContentValues.swift in Sources */,
 				DFA81399DF9774EE6D7B2776 /* WorkspaceBackupRestore.swift in Sources */,
+				D7C9DCE896B5417C994F13D3 /* PortableWorkspaceActivation.swift in Sources */,
 				C0655385313AE5230AE42470 /* LocalBackupRestore.swift in Sources */,
 				92EA22E035E59A0BAEB27A4D /* MigrationPreview.swift in Sources */,
 				CD1C3072D09937D704C45AF1 /* MigrationBackupReader.swift in Sources */,
@@ -1014,6 +1149,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				C4D5CF5F1DA90AD9DF346C6F /* AttachmentTests.swift in Sources */,
+				DEF7AA8922FDDBB33017560B /* MigrationContentTests.swift in Sources */,
+				351CC2BDBAA94F1BBD205056 /* MigrationAssetTests.swift in Sources */,
+				021C50262E9F4070A01F23B7 /* MigrationSettingsTests.swift in Sources */,
+				4FB34A0D4EE24E85A7617BFE /* MigrationStudioTests.swift in Sources */,
+				7122434DA5DD4A91B2A58298 /* MigrationPlanningTests.swift in Sources */,
 				A6E044024DE193CE78783DF6 /* LocalBackupRestoreTests.swift in Sources */,
 				748AA6244811074241EFAE77 /* MigrationPreviewTests.swift in Sources */,
 				4BBCF012CBA6687B8435C985 /* LegacyWorkspaceExportTests.swift in Sources */,

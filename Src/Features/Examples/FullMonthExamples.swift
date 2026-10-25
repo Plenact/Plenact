@@ -1,7 +1,8 @@
 // --------------------------------------------------------------------------------------------------
 // @file       FullMonthExamples.swift
-// @brief      Reversible demonstration-workspace generation
-// @details    Builds dated sample content and maintains verified user-data backups around explicit
+// @brief      Verified workspace backup, restoration and Simulator portable import recovery
+// @details    Supported User Data Model versions: 1.0 base and working 1.1; native backup formats 1/2.
+//             Builds dated sample content and maintains verified user-data backups around explicit
 //             example loading and restoration.
 //
 // --------------------------------------------------------------------------------------------------
@@ -411,6 +412,14 @@ struct FullMonthExampleStore: Sendable
                 try fm.removeItem(at: previous)
             }
         }
+        if committedOperation() == "portable_import_undo"
+        {
+            let previous = root.appendingPathComponent("BeforePortableImport")
+            if fm.fileExists(atPath: previous.path)
+            {
+                try fm.removeItem(at: previous)
+            }
+        }
         try fm.removeItem(at: transition)
     }
 
@@ -487,6 +496,84 @@ struct FullMonthExampleStore: Sendable
     }
 
 
+    /// @fcn FullMonthExampleStore.hasPortableImportBackup
+    /// @brief Identify retained recovery data from a confirmed editable portable import
+    /// @return Whether the pre-import workspace can be restored
+    var hasPortableImportBackup: Bool
+    {
+
+        fm.fileExists(atPath: root.appendingPathComponent("BeforePortableImport").path)
+    }
+
+
+    /// @fcn FullMonthExampleStore.installPortableWorkspace
+    /// @brief Preserve current data and execute a confirmed portable activation inside the recovery journal
+    /// @param[in] install Native installation and root reload checks
+    /// @return Void after commit, retaining the prior full workspace for undo
+    /// @throws Capture, install, reload or recovery failures
+    func installPortableWorkspace(_ install: () throws -> Void) throws
+    {
+
+        try recoverInterruptedSwitch()
+        guard !hasPortableImportBackup else
+        {
+            throw CocoaError(.fileWriteFileExists)
+        }
+        let previous = root.appendingPathComponent("BeforePortableImport")
+        try capture(to: previous)
+        do
+        {
+            try capture(to: transition)
+            try install()
+            try Data("portable_import".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        }
+        catch
+        {
+            let failure = error
+            try recoverInterruptedSwitch()
+            try? fm.removeItem(at: previous)
+            throw failure
+        }
+        try? finishCommitted()
+    }
+
+
+    /// @fcn FullMonthExampleStore.undoPortableWorkspace
+    /// @brief Restore the full retained pre-import workspace through the existing recovery journal
+    /// @return Void after verified restore and committed cleanup
+    /// @throws Missing backup, verification, persistence or recovery errors
+    func undoPortableWorkspace() throws
+    {
+
+        try recoverInterruptedSwitch()
+        let previous = root.appendingPathComponent("BeforePortableImport")
+        guard fm.fileExists(atPath: previous.path) else
+        {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        try verify(previous)
+        let history = root.appendingPathComponent("PortableImportHistory", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fm.createDirectory(at: history.deletingLastPathComponent(), withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700])
+        try capture(to: history)
+        try capture(to: transition)
+        do
+        {
+            try installFiles(from: previous)
+            try setDomain(savedDomain(in: previous))
+            try Data("portable_import_undo".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
+        }
+        catch
+        {
+            try recoverInterruptedSwitch()
+            throw error
+        }
+        try finishCommitted()
+    }
+
+
+    ///
     /// @fcn FullMonthExampleStore.hasNativeRestoreBackup
     /// @brief Identify retained pre-import recovery evidence
     /// @return True when a prior Simulator restore has an undo snapshot

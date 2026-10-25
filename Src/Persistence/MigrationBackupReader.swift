@@ -1,8 +1,8 @@
 // --------------------------------------------------------------------------------------------------
 // @file       MigrationBackupReader.swift
 // @brief      Verify frozen source bytes before conversion reads any stored values
-// @details    Supported User Data Model versions: 1.0. Local migration preparation only.
-//             Journal/preview format 1 is not a server record, account credential or sync operation.
+// @details    Supported User Data Model versions: 1.0 base and working 1.1 appearance metadata.
+//             Private journal formats 1/2/3; local preview only, without authenticated ownership or sync.
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import Foundation
@@ -80,7 +80,7 @@ enum MigrationBackupReader
         let reportData = try file("NativePreflight.json", in: backup.files)
         guard let report = try JSONSerialization.jsonObject(with: reportData) as? [String: Any],
               report["format"] as? String == "plenact.ios-frozen-backup",
-              report["format_version"] as? Int == 1,
+              [1, 2].contains(report["format_version"] as? Int ?? 0),
               report["portable_conversion_complete"] as? Bool == false,
               let issues = report["review_codes"] as? [String],
               let media = report["media"] as? [[String: Any]] else
@@ -91,6 +91,7 @@ enum MigrationBackupReader
         {
             throw Failure.pendingRecovery
         }
+        let portableRuntime = try PortableRuntimeEvidence.backupFiles(report: report, files: backup.files)
         let preferences = try file("Preferences.plist", in: backup.files)
         guard digest(preferences) == report["preferences_sha256"] as? String,
               let values = try PropertyListSerialization.propertyList(from: preferences, format: nil) as? [String: Any],
@@ -123,6 +124,72 @@ enum MigrationBackupReader
             {
                 throw Failure.integrityMismatch
             }
+        }
+        var actual: Set<String> = []
+        var total = preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
+        guard total <= LegacyWorkspaceExport.maximumBytes else
+        {
+            throw Failure.invalidBackup
+        }
+
+        /// @fcn MigrationBackupReader.walkMedia
+        /// @brief Reject undeclared or nonregular media entries beneath every owned original-file area
+        /// @param[in] wrapper Frozen media subtree
+        /// @param[in] path Exact source-relative location
+        /// @return Void after collecting bounded regular-file identities
+        /// @throws Unsafe, oversized or undeclared source evidence
+        func walkMedia(_ wrapper: FileWrapper, path: String) throws
+        {
+
+            guard !wrapper.isSymbolicLink else
+            {
+                throw Failure.invalidBackup
+            }
+            if wrapper.isDirectory
+            {
+                for (name, child) in wrapper.fileWrappers ?? [:]
+                {
+                    guard !name.isEmpty, name != ".", name != "..", !name.contains("/"), !name.contains("\\") else
+                    {
+                        throw Failure.invalidBackup
+                    }
+                    try walkMedia(child, path: path + "/" + name)
+                }
+            }
+            else
+            {
+                guard wrapper.isRegularFile, let bytes = wrapper.regularFileContents,
+                      bytes.count <= LegacyWorkspaceExport.maximumBytes - total else
+                {
+                    throw Failure.invalidBackup
+                }
+                total += bytes.count
+                actual.insert(path)
+            }
+        }
+        for area in LegacyWorkspaceExport.mediaRoots
+        {
+            var wrapper: FileWrapper? = backup.files
+            for part in area.split(separator: "/")
+            {
+                guard wrapper?.isSymbolicLink != true, wrapper == nil || wrapper?.isDirectory == true else
+                {
+                    throw Failure.invalidBackup
+                }
+                wrapper = wrapper?.fileWrappers?[String(part)]
+            }
+            if let wrapper
+            {
+                guard wrapper.isDirectory else
+                {
+                    throw Failure.invalidBackup
+                }
+                try walkMedia(wrapper, path: area)
+            }
+        }
+        guard actual == seen else
+        {
+            throw Failure.integrityMismatch
         }
         return values
     }

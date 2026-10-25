@@ -28,6 +28,8 @@ struct AppRootView: View
 
     @State var isSwitchingWorkspace = false
     @State var isRestoringWorkspace = false
+    @State var pendingPortableImport: ReviewedPortablePackage?
+    @State var undoingPortableImport = false
     @State var pendingNativeRestore: ReviewedLocalBackup?
     @State var undoingNativeRestore = false
     @State var workspaceRecoveryError: String?
@@ -127,7 +129,11 @@ struct AppRootView: View
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task
                 {
-                    if pendingNativeRestore != nil || undoingNativeRestore
+                    if pendingPortableImport != nil || undoingPortableImport
+                    {
+                        performPortableWorkspaceImport()
+                    }
+                    else if pendingNativeRestore != nil || undoingNativeRestore
                     {
                         performNativeSourceRestore()
                     }
@@ -164,6 +170,15 @@ struct AppRootView: View
         }, undo: {
             pendingNativeRestore = nil
             undoingNativeRestore = true
+            isSwitchingWorkspace = true
+        }))
+        .environment(\.portableWorkspaceImport, PortableWorkspaceImportAccess(install: { package in
+            pendingPortableImport = package
+            undoingPortableImport = false
+            isSwitchingWorkspace = true
+        }, undo: {
+            pendingPortableImport = nil
+            undoingPortableImport = true
             isSwitchingWorkspace = true
         }))
         .databaseActivityOverlay()

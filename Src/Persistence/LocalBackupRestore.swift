@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------------------------------
 // @file       LocalBackupRestore.swift
 // @brief      Reviewed Simulator-only recovery of a preserved native source backup
-// @details    User Data Model 1.0 preparation; source-backup format 1. Restores legacy source bytes,
+// @details    User Data Model 1.0 base and working 1.1; native source-backup formats 1/2. Restores saved bytes,
 //             not portable Model 1.0/cloud data. UI execution requires explicit user confirmation.
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -64,7 +64,7 @@ enum LocalBackupRestore
     /// @param[in] depth Current directory depth
     /// @return Captured regular file or directory wrapper
     /// @throws Unreadable, unsafe or oversized source entries
-    private static func readTree(_ url: URL, remaining: inout Int, depth: Int = 0) throws -> FileWrapper
+    static func readTree(_ url: URL, remaining: inout Int, depth: Int = 0) throws -> FileWrapper
     {
 
         guard depth <= 32 else
@@ -308,6 +308,24 @@ enum LocalBackupRestore
         if let journal = backup.journal
         {
             guard try Data(contentsOf: migration.appendingPathComponent("source-identities-v1.json")) == journal else
+            {
+                throw Failure.invalid
+            }
+        }
+        let portable = try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
+        let runtime = root.appendingPathComponent(PortableRuntimeEvidence.area)
+        if manager.fileExists(atPath: runtime.path)
+        {
+            try manager.removeItem(at: runtime)
+        }
+        if !portable.isEmpty
+        {
+            try manager.createDirectory(at: runtime, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            for (name, bytes) in portable
+            {
+                try bytes.write(to: runtime.appendingPathComponent(name), options: [.atomic, .completeFileProtection])
+            }
+            guard try PortableRuntimeEvidence.capture(root: root) == portable else
             {
                 throw Failure.invalid
             }

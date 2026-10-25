@@ -106,7 +106,7 @@ final class MigrationPreviewTests: XCTestCase
         var journal = MigrationIdentityJournal()
         _ = try journal.resolve(MigrationSourceIdentity(recordType: "label", owner: "labels", legacyID: "one", discriminator: nil))
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: journal.encoded()) as? [String: Any])
-        object["formatVersion"] = 2
+        object["formatVersion"] = 4
         XCTAssertThrowsError(try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: object)))
         object["formatVersion"] = 1
         object["future"] = true

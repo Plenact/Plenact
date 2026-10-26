@@ -22,6 +22,7 @@ final class MigrationContentValues
     var attachmentTargets: [String: String] = [:]
     var originalCards: [String: [String: Any]] = [:]
     var cardTargets: [String: String] = [:]                /* Original owner + numeric Card identity                    */
+    var assetTargets: [String: String] = [:] /* Export-only verified source-path aliases; normal migration uses its journal */
     var originalCollectionIDs: [String: String] = [:]
     var ownerScopesByCollection: [String: [String]] = [:]
     var collectionTargets: [String: String] = [:]          /* Original Collection UUID -> canonical UUID                 */
@@ -159,6 +160,10 @@ final class MigrationContentValues
             throw Failure.invalid("media_filename")
         }
         let path = area + "/" + name
+        if let target = assetTargets[path]
+        {
+            return try reference("asset", target)
+        }
         let target = try id("asset", owner: "owned_media", legacy: path, discriminator: mediaDigests[path])
         return try reference("asset", target)
     }

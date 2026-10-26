@@ -152,3 +152,27 @@ The structural artifact oracle now includes a rich newly created Card: photo, co
 
 
 Existing imported-Card nested edits are independently checked with `check_synthetic_assembly.py ATTACHMENTS --existing-card-package`. The synthetic oracle verifies two comments, five checklists, two attachments, a member, reaction and cover, plus complete schema/reference/hash/original checks. Supported models remain 1.0 base and working 1.1; no publishing or account binding occurs.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --existing-list-package` for the isolated existing-List metadata artifact. It checks the renamed List, subtitle, new-item presentation and gradient/italic appearance in addition to complete schema, relationship, manifest and original-file verification. It accepts synthetic XCTest evidence only; personal exports are not fixtures.
+
+
+`check_synthetic_assembly.py ATTACHMENTS --preferences-package` validates the synthetic preference-edit package, including the saved Focus row count and full schemas/references/manifests/originals. Supported definitions: retained 1.0 records in working 1.1 composition. No account verification or publication occurs.
+
+
+`check_synthetic_assembly.py ATTACHMENTS --rollover-package` checks the two-Week synthetic fixture, new Card and retained Focus preference, alongside full schemas, relationships, manifest hashes and originals. This mode checks XCTest evidence and performs no source workspace mutation, upload or publication.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --personalization-package` to validate the combined synthetic profile/avatar, Studio wallpaper, saved-library order and Week-default fixture, including complete schemas, references, manifests and original bytes. Supported definitions: 1.0 records in working 1.1 composition. The checker performs no upload or ownership verification.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --rhythm-package` to independently validate both new and retained review-rhythm fixtures, all seven authored values, deterministic new identity, complete schemas/references/manifests and original bytes. This accepts synthetic XCTest evidence only. Supported definitions remain 1.0 records within working 1.1 composition; notification intent is data, with no scheduling or cloud upload.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --daily-plan-package` for the synthetic daily-writing/check-in package. It independently verifies complete schemas, relationships, manifests/originals, the retained check-in plus new mood/reflection snapshot and deterministic new plan identity. This fixture has zero originals. Supported definitions: 1.0 records inside working 1.1 composition. Personal exports use general validation without this fixture-name oracle.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --evening-review-package` for synthetic evening-review XCTest evidence. It checks complete schemas/references/manifests/originals, reflection writing, achievements, all retained action kinds plus a dated decision and completion/history timestamps. The fixture contains zero originals; do not apply its oracle to personal exports. Supported definitions remain 1.0 records within working 1.1; no action, scheduling or upload occurs.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --weekly-review-package` for synthetic weekly-review XCTest evidence. It independently checks complete schemas/references/manifests/originals, authored writing, retained history plus a new decision, completion timestamps and deterministic new review identity. The fixture contains zero originals; personal archives require general validation without fixture-name oracles. Supported definitions: 1.0 records within working 1.1; no action, scheduling or upload runs.

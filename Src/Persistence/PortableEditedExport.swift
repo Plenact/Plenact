@@ -37,7 +37,7 @@ enum PortableEditedExport
             switch self
             {
             case .unsupported:
-                return "This export supports Board-created Cards and Lists, same-Board movement and reordering, plus Card text, completion, scheduling, deletion and history. Another saved change needs an export adapter. Your local backup can preserve all changes."
+                return "This export supports Board-created Cards and Lists, same-Board movement and reordering, automatic Week rollover, profile and Studio personalization, saved app and review-rhythm preferences, daily-plan writing, check-ins and evening/weekly-review history, existing List and Collection metadata and appearance, plus supported Card content, completion, scheduling, deletion and history. Another saved change needs an export adapter. Your local backup can preserve all changes."
             case .structureChanged:
                 return "These structural changes cannot yet be exported safely. Creation in Board views, movement within the same Board and reordering are supported; cross-Board transfers and List deletion still need support. Your title, time and other saved changes remain intact; a local backup preserves the complete workspace."
             case .inconsistent:
@@ -48,7 +48,7 @@ enum PortableEditedExport
 
 
     /// @fcn PortableEditedExport.nativeJSON
-    /// @brief Normalize explicitly unordered native Set encodings while preserving authored array order
+    /// @brief Normalize reviewed Set encodings and daily/weekly timestamp precision for comparison
     /// @param[in] bytes Native Codable store bytes
     /// @param[in] store Optional store family for explicit legacy importance-level comparison
     /// @return Comparable decoded store
@@ -68,7 +68,62 @@ enum PortableEditedExport
                 return entry
             }
         }
+        if store == "Plenact.LocalProfile.v1", var profile = value as? [String: Any]
+        {
+            for key in ["avatarColor", "avatarForegroundColor"]
+            {
+                if let raw = profile[key]
+                {
+                    let bytes = try JSONSerialization.data(withJSONObject: raw, options: .fragmentsAllowed)
+                    let color = try JSONDecoder().decode(ProfileColor.self, from: bytes)
+                    profile[key] = ["red": color.red, "green": color.green, "blue": color.blue]
+                }
+            }
+            value = profile
+        }
+        if store == "Plenact.DailyPlans.v1" || store == "Plenact.WeeklyReviews.v1"
+        {
+
+            value = planningTimestampComparison(value)
+        }
         return normalized(value)
+    }
+
+
+    /// @fcn PortableEditedExport.planningTimestampComparison
+    /// @brief Compare declared daily/weekly timestamps at the canonical millisecond precision
+    /// @details Only frozen comparison values change. Exact source seconds remain in the native
+    ///          backup; authored strings, array order, nulls and unrelated numeric values are retained.
+    /// @param[in] value Validated daily-plan or weekly-review subtree
+    /// @return Comparable subtree with integer epoch milliseconds for known timestamp fields
+    private static func planningTimestampComparison(_ value: Any) -> Any
+    {
+
+        if let object = value as? [String: Any]
+        {
+
+            let fields: Set<String> = ["updatedAt", "savedAt", "visionCompletedAt", "completedAt",
+                "recordedAt", "sourceCreatedAt"]
+            return object.mapValues(planningTimestampComparison).reduce(into: [String: Any]()) { result, entry in
+
+                if fields.contains(entry.key), let number = entry.value as? NSNumber
+                {
+
+                    result[entry.key] = floor((number.doubleValue + Date.timeIntervalBetween1970AndReferenceDate) * 1000)
+                }
+                else
+                {
+
+                    result[entry.key] = entry.value
+                }
+            }
+        }
+        if let array = value as? [Any]
+        {
+
+            return array.map(planningTimestampComparison)
+        }
+        return value
     }
 
 
@@ -282,6 +337,338 @@ enum PortableEditedExport
     }
 
 
+    /// @fcn PortableEditedExport.reviewRhythm
+    /// @brief Reconcile saved review invitation and notification intent without scheduling actions
+    /// @details Preserves retained singleton identity and unchanged canonical values. A newly saved
+    ///          store receives a deterministic workspace-qualified identity; malformed fields fail closed.
+    /// @param[in] assembly Reconciled content and personalization package
+    /// @param[in] current Frozen native source values
+    /// @param[in] baseline Retained imported projection
+    /// @return Assembly with validated authored review-rhythm preferences
+    /// @throws Missing retained store, unknown fields, invalid types, ranges or singleton shape
+    private static func reviewRhythm(assembly: [String: Any], current: [String: Any],
+        baseline: PortableWorkspaceCandidate) throws -> [String: Any]
+    {
+
+        let key = "Plenact.ReviewRhythm.v1"  /* Explicitly supported planning preference store */
+        guard let bytes = current[key] as? Data else
+        {
+
+            guard current[key] == nil, baseline.values[key] == nil else
+            {
+
+                throw Failure.unsupported
+            }
+            return assembly
+        }
+        let fields = ["dailyInvitations": "daily_invitations", "weeklyInvitations": "weekly_invitations",
+            "dailyMinutes": "daily_minutes", "weeklyMinutes": "weekly_minutes", "weeklyWeekday": "weekly_weekday",
+            "dailyNotifications": "daily_notifications", "weeklyNotifications": "weekly_notifications"]
+        let raw = try JSONSerialization.jsonObject(with: bytes) as? [String: Any]
+        guard let raw, Set(raw.keys) == Set(fields.keys) else
+        {
+
+            throw Failure.unsupported
+        }
+        let rhythm = try JSONDecoder().decode(ReviewRhythmPreferences.self, from: bytes)
+        guard (0..<1440).contains(rhythm.dailyMinutes), (0..<1440).contains(rhythm.weeklyMinutes),
+              (1...7).contains(rhythm.weeklyWeekday) else
+        {
+
+            throw Failure.unsupported
+        }
+        if let old = baseline.values[key] as? Data,
+           equal(try nativeJSON(old, store: key), try nativeJSON(bytes, store: key))
+        {
+
+            return assembly
+        }
+        var result = assembly
+        var export = result["workspace_export"] as! [String: Any]
+        var base = export["base_workspace"] as! [String: Any]
+        var planning = base["planning"] as! [String: Any]
+        let retained = planning["review_rhythms"] as! [[String: Any]]
+        guard retained.count <= 1, (baseline.values[key] != nil) == !retained.isEmpty else
+        {
+
+            throw Failure.inconsistent
+        }
+        let id = try retained.first?["id"] as? String ?? PortableRichCardExport.identity(
+            namespace: baseline.workspaceID, name: "review_rhythm:" + key)
+        var record = retained.first ?? ["user_data_model_version": "1.0", "payload_schema_version": 1,
+            "record_type": "review_rhythm", "id": id, "workspace_id": baseline.workspaceID]
+        var payload = retained.first?["payload"] as? [String: Any] ?? [:]
+        for (source, target) in fields
+        {
+
+            payload[target] = raw[source]!
+        }
+        record["payload"] = payload
+        planning["review_rhythms"] = [record]
+        base["planning"] = planning
+        export["base_workspace"] = base
+        result["workspace_export"] = export
+        return result
+    }
+
+
+    /// @fcn PortableEditedExport.planningEdits
+    /// @brief Reconcile daily plans or weekly reviews with explicit historical reference provenance
+    /// @details Retains daily/weekly identities and unchanged payload fields. Unknown references, removed records
+    ///          and changed date/time-zone identities fail closed. Review history is data, never replayed.
+    /// @param[in] assembly Reconciled content, personalization and rhythm assembly
+    /// @param[in] current Frozen native values
+    /// @param[in] baseline Imported native projection
+    /// @param[in] aliases Retained and explicitly reserved numeric identities
+    /// @param[in] weekly Select weekly-review records instead of daily plans
+    /// @return Assembly containing verified daily or weekly snapshots
+    /// @throws Invalid source, identity changes, ambiguous references or unsupported removals
+    private static func planningEdits(assembly: [String: Any], current: [String: Any],
+        baseline: PortableWorkspaceCandidate, aliases: [String: Int], weekly: Bool = false) throws -> [String: Any]
+    {
+
+        let key = weekly ? "Plenact.WeeklyReviews.v1" : "Plenact.DailyPlans.v1"
+        let group = weekly ? "weekly_reviews" : "daily_plans"
+        let container = weekly ? "records" : "plans"
+        let identityField = weekly ? "source_review_key" : "date"
+        let kind = weekly ? "weekly_review" : "daily_plan"
+        guard let bytes = current[key] as? Data else
+        {
+
+            guard current[key] == nil, baseline.values[key] == nil else
+            {
+
+                throw Failure.unsupported
+            }
+            return assembly
+        }
+        var result = assembly
+        var export = result["workspace_export"] as! [String: Any]
+        var base = export["base_workspace"] as! [String: Any]
+        var planning = base["planning"] as! [String: Any]
+        let retained = planning[group] as! [[String: Any]]
+        if weekly
+        {
+
+            _ = try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: bytes)
+        }
+        else
+        {
+
+            _ = try JSONDecoder().decode(DailyPlanStore.Document.self, from: bytes)
+        }
+        let rawDocument = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+        guard let sourceRecords = rawDocument[container] as? [String: [String: Any]] else
+        {
+
+            throw Failure.unsupported
+        }
+        var journal = try JSONSerialization.jsonObject(with: JSONEncoder().encode(MigrationIdentityJournal())) as! [String: Any]
+        journal["previewWorkspaceID"] = baseline.workspaceID
+        var entries: [[String: Any]] = []
+        for (date, plan) in sourceRecords.sorted(by: { $0.key < $1.key })
+        {
+
+            let zone = plan["timeZoneID"] as! String
+            let old = retained.first { ($0["payload"] as? [String: Any])?[identityField] as? String == date }
+            if let old, (old["payload"] as? [String: Any])?["time_zone"] as? String != zone
+            {
+
+                throw Failure.unsupported
+            }
+            let name = weekly ? kind + ":" + date : kind + ":" + date + ":" + zone
+            let id = try old?["id"] as? String ?? PortableRichCardExport.identity(namespace: baseline.workspaceID, name: name)
+            var source: [String: Any] = ["recordType": kind, "owner": key, "legacyID": date]
+            if !weekly
+            {
+
+                source["discriminator"] = zone
+            }
+            entries.append(["source": source, "target": id])
+        }
+        guard retained.allSatisfy({ sourceRecords[($0["payload"] as! [String: Any])[identityField] as! String] != nil }) else
+        {
+
+            throw Failure.unsupported
+        }
+        journal["entries"] = entries
+        var seeded = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
+        var records: [[String: Any]] = []
+
+        /// @fcn PortableEditedExport.collectDailyRecords
+        /// @brief Collect canonical records without interpreting opaque strings or source files
+        /// @param[in] value Canonical subtree
+        /// @return Void after collecting uniquely stored records
+        func collect(_ value: Any)
+        {
+
+            if let object = value as? [String: Any]
+            {
+
+                if object["record_type"] is String, object["payload"] != nil,
+                   object["user_data_model_version"] as? String == "1.0"
+                {
+
+                    records.append(object)
+                }
+                else
+                {
+
+                    for child in object.values
+                    {
+
+                        collect(child)
+                    }
+                }
+            }
+            else if let array = value as? [Any]
+            {
+
+                for child in array
+                {
+
+                    collect(child)
+                }
+            }
+        }
+        collect(export)
+        let adapter = try PortableEditableContent(records: records, assetFiles: baseline.media.filenames,
+            retainedAliases: aliases, deletedCardIDs: PortableLocalDeletions.ids(in: export))
+        var historical: [[String: Any]] = []
+
+        /// @fcn PortableEditedExport.collectDailyPriorities
+        /// @brief Retain declared historical targets even when their live Cards have been deleted
+        /// @param[in] value Canonical historical subtree
+        /// @return Void after gathering authored reference snapshots
+        func priorities(_ value: Any)
+        {
+
+            if let object = value as? [String: Any]
+            {
+
+                if object["source_collection_id"] is String, object["card_id"] is String,
+                   object["source_created_at_utc"] != nil
+                {
+
+                    historical.append(object)
+                }
+                for child in object.values
+                {
+
+                    priorities(child)
+                }
+            }
+            else if let array = value as? [Any]
+            {
+
+                for child in array
+                {
+
+                    priorities(child)
+                }
+            }
+        }
+        priorities(planning)
+        let content = planning["content"] as! [String: Any]
+        let lists = content["lists"] as! [[String: Any]]
+        for card in content["cards"] as! [[String: Any]]
+        {
+
+            let payload = card["payload"] as! [String: Any]
+            let list = lists.first { $0["id"] as? String == payload["list_id"] as? String }!
+            let owner = (list["payload"] as! [String: Any])["collection_id"] as! String
+            historical.append(["source_collection_id": owner, "card_id": card["id"]!,
+                "source_created_at_utc": payload["source_created_at_utc"]!, "title": "", "source_location": ""])
+        }
+        let converted = try MigrationPlanningPreview.prepare(values: [key: bytes], records: records, journal: &seeded,
+            priorityResolver: { raw in
+
+                var targets: [String: [String: Any]] = [:]
+                for snapshot in historical
+                {
+
+                    let native = try adapter.priority(snapshot)
+                    let fields = ["cardID"]
+                    if (native["ownerID"] as? String)?.lowercased() == (raw["ownerID"] as? String)?.lowercased(),
+                       fields.allSatisfy({ equal(native[$0] ?? NSNull(), raw[$0] ?? NSNull()) }),
+                       equal(planningTimestampComparison(["sourceCreatedAt": native["sourceCreatedAt"] ?? NSNull()]),
+                           planningTimestampComparison(["sourceCreatedAt": raw["sourceCreatedAt"] ?? NSNull()]))
+                    {
+
+                        targets[snapshot["card_id"] as! String] = snapshot
+                    }
+                }
+                guard targets.count == 1, var target = targets.values.first else
+                {
+
+                    throw Failure.unsupported
+                }
+                target["title"] = raw["title"]!
+                target["source_location"] = raw["location"]!
+                return target
+            })
+        guard converted.unresolvedCount == 0, seeded.entries.count == entries.count else
+        {
+
+            throw Failure.unsupported
+        }
+        let sourceDocument = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+        let sources = sourceDocument[container] as! [String: Any]
+        let previousBytes = baseline.values[key] as? Data
+        let previousDocument = try previousBytes.map { try JSONSerialization.jsonObject(with: $0) as! [String: Any] }
+        let previousSources = previousDocument?[container] as? [String: Any] ?? [:]
+        var sourceFields = ["date": "id", "time_zone": "timeZoneID", "intention": "intention",
+            "constraints": "constraints", "concerns": "concerns", "priorities": "priorities", "updated_at_utc": "updatedAt",
+            "vision_completed_at_utc": "visionCompletedAt", "vision_step": "visionStep", "check_in": "checkIn",
+            "check_ins": "checkIns", "evening_review": "eveningReview"]
+        if weekly
+        {
+
+            sourceFields = ["source_review_key": "id", "start_date": "startKey", "time_zone": "timeZoneID",
+                "first_weekday": "firstWeekday", "step": "step", "highlights": "highlights", "learned": "learned",
+                "direction": "direction", "constraints": "constraints", "risks": "risks", "priorities": "priorities",
+                "decisions": "decisions", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt"]
+        }
+        var updated = retained
+        for record in converted.records
+        {
+
+            if let index = updated.firstIndex(where: { $0["id"] as? String == record["id"] as? String })
+            {
+
+                var old = updated[index]
+                var payload = old["payload"] as! [String: Any]
+                let fresh = record["payload"] as! [String: Any]
+                let date = fresh[identityField] as! String
+                let before = previousSources[date] as? [String: Any] ?? [:]
+                let after = sources[date] as! [String: Any]
+                for (field, value) in fresh
+                {
+
+                    let source = sourceFields[field]!
+                    if !equal(normalized(before[source] ?? NSNull()), normalized(after[source] ?? NSNull()))
+                    {
+
+                        payload[field] = value
+                    }
+                }
+                old["payload"] = payload
+                updated[index] = old
+            }
+            else
+            {
+
+                updated.append(record)
+            }
+        }
+        planning[group] = updated
+        base["planning"] = planning
+        export["base_workspace"] = base
+        result["workspace_export"] = export
+        return result
+    }
+
+
     /// @fcn PortableEditedExport.prepare
     /// @brief Export a frozen native backup using its immutable canonical import baseline
     /// @param[in] backup Current backup including runtime evidence and exact current originals
@@ -290,7 +677,7 @@ enum PortableEditedExport
     static func prepare(_ backup: LegacyWorkspaceBackup) throws -> FileWrapper
     {
 
-        let current = try MigrationBackupReader.values(in: backup)
+        var current = try MigrationBackupReader.values(in: backup)
         let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
         guard (report["review_codes"] as? [String]) == [] else
         {
@@ -312,7 +699,7 @@ enum PortableEditedExport
         guard let snapshot = evidence["CanonicalPackage.bin"].flatMap(FileWrapper.init(serializedRepresentation:)),
               let aliasBytes = evidence["IdentityAliases.json"],
               let aliasObject = try JSONSerialization.jsonObject(with: aliasBytes) as? [String: Any],
-              let aliases = aliasObject["numeric_ids"] as? [String: Int] else
+              var aliases = aliasObject["numeric_ids"] as? [String: Int] else
         {
             throw Failure.inconsistent
         }
@@ -342,7 +729,11 @@ enum PortableEditedExport
         let retainedRecoveryKeys: Set<String> = ["Plenact.ExampleCardLocations.Applied.v1", "Plenact.ExampleCardLocations.Backup.v1"]
         let deviceKeys = Set(current.keys.filter { retainedRecoveryKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.") ||
             ["Plenact.ActivityRecents.v1", "Plenact.LibraryRecents.v1", "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1", "Plenact.Welcome.lastDeparture.v1"].contains($0) })
-        guard Set(current.keys).subtracting(deviceKeys) == Set(baseline.values.keys) else
+        let newSupportedKeys: Set<String> = ["Plenact.WeeklyReviews.v1", "Plenact.DailyPlans.v1", "Plenact.ReviewRhythm.v1", "Plenact.LocalProfile.v1", "Plenact.Studio.Settings.v1",
+            "Plenact.Studio.Artwork.v1", "Plenact.WeekAppearance.v1"]
+        guard Set(current.keys).subtracting(deviceKeys).subtracting(newSupportedKeys)
+                == Set(baseline.values.keys).subtracting(newSupportedKeys),
+              Set(baseline.values.keys).isSubset(of: Set(current.keys)) else
         {
             throw Failure.unsupported
         }
@@ -352,8 +743,18 @@ enum PortableEditedExport
         baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: exportSnapshot),
             retainedAliases: aliases, mediaFilenames: mediaNames)
         let originalAssembly = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: exportSnapshot)) as! [String: Any]
-        let effectiveAssembly = try PortableStructuralEdits.apply(assembly: originalAssembly,
+        let rollover = try PortableStructuralEdits.rollovers(assembly: originalAssembly, current: current,
+            aliases: aliases, baseline: baseline)
+        current = rollover.current
+        aliases = rollover.aliases
+        let rolloverPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: rollover.assembly)
+        baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: rolloverPackage),
+            retainedAliases: aliases, mediaFilenames: mediaNames)
+        let contentAssembly = try PortableStructuralEdits.apply(assembly: rollover.assembly,
             current: current, aliases: aliases, baseline: baseline)
+        let rhythmAssembly = try reviewRhythm(assembly: contentAssembly, current: current, baseline: baseline)
+        let dailyAssembly = try planningEdits(assembly: rhythmAssembly, current: current, baseline: baseline, aliases: aliases)
+        let effectiveAssembly = try planningEdits(assembly: dailyAssembly, current: current, baseline: baseline, aliases: aliases, weekly: true)
         let structuralPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: effectiveAssembly)
         baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: structuralPackage), retainedAliases: aliases, mediaFilenames: mediaNames)
         var edits: [Int: [String: Any]] = [:]

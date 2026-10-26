@@ -147,3 +147,43 @@ Supported versions: unchanged Model 1.0 records in working 1.1, native backup fo
 ### Existing imported Card edits checkpoint
 
 Supported models: 1.0 records and working 1.1 package composition. Edited export now reconciles existing Card comments, checklists/progress, members, reactions, appearance and attachment metadata/covers while retaining identities and untouched canonical fields. Independent original-file checks, clearing and fresh import/export are covered by 52 affected native tests and 112 Python tests. See [Editable import](Editable-Import.md) for scope and remaining Step 1 work. This does not enable cloud synchronization.
+
+
+### Existing List metadata export checkpoint
+
+Supported models: unchanged Model 1.0 records in working 1.1 packages. Existing List titles, subtitles, archive state, new-item defaults and appearance now reconcile while preserving identity and unchanged fields. Fresh re-import/re-export and clearing authored values pass the 52 affected native tests; the existing 112 Python tests pass, and synthetic List package evidence passes independent schemas, references, manifest and original-file checks. See [Editable import](Editable-Import.md#existing-list-metadata-reconciliation--october-25-2026). Owner acceptance is next; broader workspace reconciliation and verified account binding remain pending.
+
+
+### Saved preference reconciliation checkpoint — October 26, 2026
+
+The edited exporter now updates existing saved app preferences through the explicit 1.0 preference field map, retaining record and owner identity inside working 1.1 packages. Focus row count/content-density changes and fresh native installation/re-export are covered. Profile-detail edits and Studio/artwork reconciliation remain subsequent slices. See [scope and owner test](Editable-Import.md#saved-preference-edits--october-26-2026).
+
+
+### Automatic Week rollover checkpoint — October 26, 2026
+
+Newly retained calendar Weeks now export with owner-qualified identities and frozen-only editor alias normalization; older Weeks and edited preferences remain preserved. Repeated export, source immutability and fresh re-import/re-export pass in the 52 affected native tests. The synthetic package passes independent schema/reference/original validation. See [rollover scope and limits](Editable-Import.md#automatic-week-rollover-export--october-26-2026). Production binding and broader planning/personalization reconciliation remain pending.
+
+
+### Profile and Studio reconciliation checkpoint — October 26, 2026
+
+Edited export now preserves profile details/avatars, Studio defaults/wallpapers, global Week appearance and saved-artwork content/order using unchanged 1.0 records in working 1.1 composition. New verified originals, clearing values, fresh import/re-export and rollover compatibility pass the 52 affected native checks, 112 Python checks and independent package validation. See [scope, identity rules and owner test](Editable-Import.md#profile-and-studio-edited-export--october-26-2026). Broader planning/calendar reconciliation and verified account binding remain pending.
+
+
+## Review-rhythm edited export checkpoint
+
+Supported User Data Model versions: immutable 1.0 review-rhythm payloads within working 1.1 composition. Saved invitation, time, weekday and notification-intent changes now export, including creation of the recognized rhythm store. Existing identity and untouched history are retained; malformed/unknown values and retained-store removal are rejected. The 59 affected native tests and 112 tooling tests pass; both new/retained synthetic packages validate independently. No notification scheduling runs during export. See [scope and pending owner acceptance](Editable-Import.md#review-rhythm-edited-export--october-26-2026). v8 remains the latest accepted owner checkpoint; cloud synchronization remains off.
+
+
+## Daily-plan writing/check-in export checkpoint
+
+Supported User Data Model versions: immutable 1.0 daily-plan records within working 1.1 packages. Edited export now supports saved daily writing, priorities, vision progress, check-ins and newly saved dates, preserving explicit historical reference provenance and unchanged values. Unsupported references, retained-plan removal/date-zone identity changes and evening-review edits are rejected. All 60 affected native and 112 tooling tests pass; the synthetic daily package validates independently. See [current scope and pending owner test](Editable-Import.md#daily-plan-writing-and-check-in-edited-export--october-26-2026). No review action or scheduler runs during conversion; Step 1 remains in progress and cloud synchronization remains disabled.
+
+
+## Evening-review edited export checkpoint
+
+Supported User Data Model versions: unchanged 1.0 evening-review objects within working 1.1. Reflection creation/edits, progress/completion, achievements and recorded history now export without executing decisions. All 62 affected native tests, 112 tooling tests and independent evening-package checks pass. See [scope and pending acceptance](Editable-Import.md#evening-review-writing-and-history-edited-export--october-26-2026). v10 remains accepted; unsupported cross-Board outcomes and weekly/periodic edits remain pending, with cloud synchronization disabled.
+
+
+## Weekly-review edited export checkpoint
+
+Supported User Data Model versions: immutable 1.0 weekly-review records within working 1.1. Edited export now reconciles saved weekly writing, priorities, decision history, progress/completion and newly saved reviews with stable identity and explicit source context. No action executes; unsupported outcomes still fail closed. All 65 affected native tests, 112 tooling tests and independent weekly-package checks pass. See [current scope and pending owner test](Editable-Import.md#weekly-review-writing-and-history-edited-export--october-26-2026). v11 remains accepted; cloud synchronization stays disabled.

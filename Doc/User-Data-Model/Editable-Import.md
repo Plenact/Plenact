@@ -174,7 +174,7 @@ Export reads those reservations from the frozen backup, creates new canonical Li
 - Reordering existing/new Lists and active/archive Card membership within that owner.
 - Existing supported Card edits and pending local deletions remain available.
 
-Cross-collection/Board transfers, new collections/Weeks/templates, List deletion, unsupported creation paths without reserved aliases, newly added media, new comments/members/reactions on created Cards, and edits to existing nested content/settings/planning/artwork still require further adapters. Existing List metadata edits beyond structural membership are still rejected by inverse comparison. A transfer that renumbers a Card is not silently exported as deletion plus unrelated creation; a new record reusing an existing creation timestamp is rejected. This remains complete-snapshot test export, not an incremental synchronization outbox or server acknowledgement mechanism.
+Cross-collection/Board transfers, new collections/Weeks/templates, List deletion, unsupported creation paths without reserved aliases, newly added media, new comments/members/reactions on created Cards, and edits to existing nested content/settings/planning/artwork still require further adapters. Existing List metadata reconciliation was added at the later checkpoint below. A transfer that renumbers a Card is not silently exported as deletion plus unrelated creation; a new record reusing an existing creation timestamp is rejected. This remains complete-snapshot test export, not an incremental synchronization outbox or server acknowledgement mechanism.
 
 ### Verification
 
@@ -215,3 +215,149 @@ New supported original files are captured and verified. Removing an attachment o
 All 52 affected native tests and 112 Python tests pass. The synthetic existing-Card package independently passes schemas, references, manifest and original-file checks. Tests cover stable identities, unchanged canonical fields, repeated export, fresh import/export, clearing nested content and retaining removed originals. The owner-operated rich new-Card export/re-import also succeeded before this checkpoint. No personal content is included in repository fixtures.
 
 Rebuild the existing Import Test Simulator and edit a Card already present in the imported workspace. Change a comment, checklist progress or photo/caption, then use **Export supported Card edits to Files…**. No preliminary Undo, re-import or Card recreation is needed. New drawing derivations, cross-Board transfers, List deletion and broader settings/planning/artwork reconciliation remain outside this checkpoint. Account/workspace binding and full Step 1 acceptance are still pending; cloud synchronization stays off.
+
+
+## Existing List metadata reconciliation — October 25, 2026
+
+Supported models: immutable 1.0 List records inside working 1.1 packages. Existing Lists now reconcile title, nullable/empty subtitle, archive flag, new-item presentation default and authored appearance. Changed fields update the retained List record; unchanged payload fields, owner, List identity and Card identities remain preserved. Derived Card List titles are reconstructed from the renamed canonical List. Existing ordering and local deletion-overlay handling remain in effect.
+
+Appearance conversion uses verified canonical Asset references for artwork rather than copying native filenames into the contract. Unsupported references or divergent native Board/calendar copies stop export. Clearing authored subtitle/appearance/default values is represented explicitly and does not revive the original values. Cross-Board transfers, List deletion, new collections/Weeks and global settings/planning edits remain separate work. No released schema changes or cloud ownership claims are introduced.
+
+All 52 affected native tests and 112 Python tests pass, and the synthetic List package passes independent schema/reference/manifest/original validation. The isolated acceptance test changes an existing List, checks metadata and retained Card identities, installs the exported result into a separate native test workspace and verifies identical re-export bytes. It also clears the authored values and checks their absence after reconstruction. Synthetic package evidence is retained for independent schema, relationship, manifest and original-file review.
+
+Owner test: rebuild the current Import Test Simulator, edit an existing List title/subtitle and its appearance or new-item default, then use **Export supported Card edits to Files…** and save a new package. Do not Undo first. For the later re-import check, save and verify the export before using **Undo editable workspace import…**, choose the new package, then import into the editable workspace. The earlier v4 existing-Card manual round trip is confirmed complete; full Step 1 remains unfinished.
+
+
+### Personal List and Board Collection editor coverage
+
+The Library's **Edit Collection** sheet edits the owning Collection, even when presented as a personal List such as a built-in capture destination. Existing Collection title, description, icon, color, archive flag and Board appearance now reconcile against their retained canonical owner record. A single-list rename also reconciles its internal List and derived Card context. Collection identities and kinds cannot change, and ownership transfers/new Collections remain unsupported.
+
+The 52 affected native tests pass with Collection title, description and Board appearance changes included in the fresh installation/identical re-export test. Independent List package evidence additionally checks its Collection metadata. The owner's earlier Collection rename was blocked before this adapter existed; retain that edit and retry export after rebuilding. No Undo or recreation is required. Cloud synchronization remains off.
+
+
+## Saved preference edits — October 26, 2026
+
+Supported models: retained Model 1.0 user-preferences record inside working 1.1 packages. Edits to an existing saved planning-preferences store now update its retained canonical record using the reviewed explicit preference field map. Today Focus ordering tokens are translated explicitly and a default List numeric alias must resolve to a retained canonical List. Canonical account/workspace ownership and record identity remain unchanged. Candidate reconstruction and the complete native inverse comparison still reject unknown or divergent stored values, including mismatched embedded profile preferences.
+
+The synthetic acceptance changes content density and Focus row count, reconstructs the settings, installs into an isolated native workspace and checks byte-identical re-export. Profile creation/detail changes, Studio settings/artwork changes, device-only settings and planning/review reconciliation are not claimed by this preference slice. This is an incremental Step 1 checkpoint, not production account binding or cloud synchronization.
+
+Owner test: on the current Import Test workspace, change **Visible rows in Today's Focus** in Plan Settings, tap **Save**, and use **Export supported Card edits to Files…**. Keep the verified v5 package. No Undo is needed before editing/exporting. Do not combine this test with unimplemented Studio or profile-detail edits.
+
+
+## Automatic Week rollover export — October 26, 2026
+
+Supported models: retained 1.0 calendar/content records in working 1.1 packages. The exporter can add newly dated Weeks created by the normal calendar rollover while retaining the prior Weeks and saved preference edits. It validates dates/day ownership through the existing content/calendar converters, retains the native Collection UUID, and allocates deterministic workspace-qualified portable identities from explicit source identity families and owner scope. Card/List numeric values are not treated as globally unique source identities: newly added Weeks receive separate comparison aliases even when their local numbers overlap older Weeks or each other across types.
+
+Only the frozen comparison candidate is normalized. List/Card alias references, day mappings, bookmarks and owner-qualified importance are translated together. Equivalent legacy palette tokens are compared as RGB and an unset archive flag as false for new Week owners. Exact original native values, runtime baseline and media remain in `EditedNativeBackup`; preparation writes no live workspace or alias store. Repeated export produces identical canonical assembly bytes. Re-import installs globally distinct editor aliases under the usual protected import/Undo coordinator.
+
+The boundary remains explicit: retained Weeks cannot disappear, existing first-weekday policy cannot change, changed cross-Week checklist overrides are rejected, and a non-null default List without owner provenance stops rollover export. Full inverse comparison rejects other unaccounted-for settings, planning or template changes. Cross-Board transfers and List/Week deletion are not enabled by this adapter. No authenticated ownership or server synchronization is established.
+
+All 52 affected native tests pass. The acceptance fixture adds a new Week and Card reusing an older Card number, retains edited Focus preferences, exports twice identically, verifies the source calendar is unchanged, imports into an isolated native workspace and re-exports identical canonical bytes. `RolloverPackage` passes independent schemas, references, manifests and original-file checks. Owner action: rebuild the existing Import Test Simulator and retry **Export supported Card edits to Files…** with the current Week and saved preferences intact. No Undo, re-import or recreation is needed before export.
+
+
+### Rollover bookmark comparison correction
+
+The owner-operated rollover exposed seven saved Cards in the newly generated Week. The first synthetic rollover fixture had no bookmarks. Its frozen comparison must use the same sorted top-level `Plenact.SavedCardIDs.v1` representation as the candidate; arbitrary Set iteration order is not authored ordering and must not block export. The corrected regression uses seven bookmarked Cards, checks all seven after reconstruction, repeated export and fresh re-import/re-export. Canonical selection identities remain owner-qualified; source bookmark state is not modified. This correction does not relax content, reference or original-file validation.
+
+
+## Profile and Studio edited export — October 26, 2026
+
+Supported definitions: unchanged Model 1.0 profile/Studio/artwork records inside working Model 1.1 appearance/library composition. The exporter now reconciles profile creation and edits to display name, email, context and avatar choices, retaining the source-created time and record identity. Profile name/email/source identity remain descriptive values; the synthetic account is not authenticated or replaced. Existing profile identity/creation-time changes are rejected. Unchanged profile fields retain their canonical payloads. Recognized legacy avatar palette encodings compare by their RGB values rather than being confused with a different authored color.
+
+Studio support covers view wallpapers, new Card/Note defaults, coordinated color/header variety and palette, global Week appearance, saved-look creation/editing/removal and authored library order. Existing singleton/library/artwork IDs are seeded before invoking the reviewed Studio converter; new library metadata uses deterministic workspace-qualified identities and new artwork retains its authored UUID. Clearing a view, avatar or saved-look library remains cleared after reconstruction. This remains complete-snapshot export, not a server tombstone/outbox implementation.
+
+New avatar and wallpaper originals use the existing verified-media enrichment. Export-only path aliases connect the current native media areas to the already verified Asset identities; ambiguous duplicate basenames are rejected rather than guessed. The frozen backup independently checks active media references, and inverse native reconstruction verifies actual placements and bytes. Normal migration callers use the original journal path; export aliases are opt-in and are not persisted as new identity claims. Removed originals remain retained for recovery.
+
+All 52 affected native tests pass. The combined synthetic case creates a profile with an avatar, changes a photo wallpaper and Studio defaults, adds/reorders a saved look and changes Week defaults. It verifies profile/artwork identity, exact avatar/wallpaper bytes, fresh import and byte-identical re-export. It then edits the existing profile, clears its avatar and Today wallpaper, empties the saved-look library and verifies the cleared values. The subsequent seven-bookmark Week rollover remains valid. Independent schemas/references/manifests/original checks pass for the personalization and rollover artifacts (six original files). All 112 Python tests pass.
+
+Owner test: rebuild the existing Import Test Simulator, save a small profile change and a Studio wallpaper or saved-look change, then export a new package with **Export supported Card edits to Files…**. Keep v6; no Undo is needed before editing/export. Profile controls may also save the shared preferences, which are already supported. New drawing derivations, broader calendar/planning edits, cross-Board transfers and real account/workspace binding remain outside this checkpoint; cloud synchronization remains off.
+
+
+## Owner acceptance: preferences and Studio variety — October 26, 2026
+
+The owner exported v7 from the existing editable Simulator workspace, then independently validated it against v6 before Undo and re-import. General package schema/reference/manifest/original validation passed. Exactly two canonical values changed: `preferred_maps_app` from `apple` to `google`, and Studio `varies_new_surfaces` from true to false. All five prior originals were byte-preserved; native preferences, media and runtime hashes passed with no native review codes. Content records, two retained Weeks and Today Focus row count remained unchanged.
+
+The owner confirmed successful Undo and editable re-import, with screenshots showing Google Maps selected and Studio “Vary new item colors” off. v7 is the latest owner-accepted checkpoint; retain v6 and recovery history. This accepts shared-preference and Studio variety round trips. It does not establish manual acceptance of profile detail/avatar edits, new wallpaper originals or saved-look edits; those retain synthetic automated coverage. No personal archive, screenshot or extracted content is stored in repository fixtures. Step 1 remains in progress and cloud synchronization remains disabled.
+
+
+## Owner acceptance: profile creation — October 26, 2026
+
+The owner exported v8 from the accepted v7 workspace after creating a local profile. Independent general package validation passed. Comparison with v7 found exactly one new canonical profile and no other canonical changes. Display name, email and planning context matched the owner-provided evidence; profile source identity matched the record identity and source creation time was retained. All five prior originals were byte-preserved. Native preferences/media/runtime hashes passed with no review codes; prior preferences and Studio settings were unchanged.
+
+After validation, the owner performed editable-workspace Undo and v8 re-import and confirmed success. Screenshots show the restored profile's three fields and creation date, plus successful recovery/import messages. Review shows 285 portable records, 163 nondeleted Cards, 37 Lists and five verified originals; the retained pending-deletion Card remains outside the visible count. The separate isolated inspection copy is not the editable workspace and was not replaced by this operation.
+
+v8 is now the latest owner-accepted checkpoint; retain v7 and earlier recovery checkpoints. This accepts profile creation and field restoration. Existing-profile changes, avatar/new wallpaper originals and saved-look edits retain automated coverage but are not manually established by this test. Step 1 remains in progress; cloud synchronization remains disabled. Personal field values and media remain outside repository fixtures.
+
+
+## Review-rhythm edited export — October 26, 2026
+
+Supported definitions: unchanged Model 1.0 review-rhythm records in working 1.1 packages. Edited export now reconciles the seven saved invitation/time/weekday/notification-intent fields, including first creation of the recognized native rhythm store. Retained singleton identity is preserved; newly saved stores use deterministic workspace-qualified identities. Unchanged stores retain canonical values. Missing retained stores, unknown/missing fields, wrong types and invalid minute/weekday ranges are rejected. No notification scheduling or review action runs during conversion. Other planning stores are not added to the new-store allowance.
+
+A separate isolated native test covers new/default and retained/edited settings, all seven choices, unchanged daily-plan writing and other canonical data, runtime/source immutability, repeated export, fresh installation and identical re-export. Malformed fields and retained-store removal fail closed. All 59 affected native tests pass, including six planning tests; all 112 tooling tests pass. NewRhythmPackage and RetainedRhythmPackage pass independent schema/reference/manifest/original validation with two synthetic originals each. Personal Simulator acceptance is pending; v8 remains the current owner-accepted checkpoint.
+
+Owner test: rebuild Plenact Import Test, open Settings → Planning rhythm → Review invitations & reminders, change and save one in-app invitation choice, then export v9 using Export supported Card edits to Files…. Keep v8 and do not Undo before editing/exporting. Validate v9 against v8 before Undo and editable re-import. This accepts invitation preferences only; broader planning/review writing and cloud ownership remain pending.
+
+
+## Daily-plan writing and check-in edited export — October 26, 2026
+
+Supported definitions: unchanged Model 1.0 daily-plan records within working 1.1 packages. Edited export now reconciles saved intentions, constraints, concerns, priorities, updated time, vision progress and check-in snapshots/history, including new dated plans. Existing plan identities and unchanged canonical payload fields are retained; new identities derive deterministically from the retained workspace, saved date and explicit timezone. Removed retained plans and changed retained date/timezone identities fail closed. The native daily store is explicitly recognized; unrelated new planning stores remain unsupported. Evening-review changes are deliberately rejected in this checkpoint, while existing review history is preserved without replaying actions.
+
+The existing strict planning converter accepts an optional export-only reference resolver. Ordinary migration still uses its source journal. Export references require an exact native alias, owner and source-created-time match against declared canonical historical snapshots or verified retained/new Card records. Unknown or ambiguous references are rejected without allocating substitute targets or creating inferred unavailable records. Export-only journals are seeded with daily identities in memory and are never saved into source/runtime evidence.
+
+A separate `MigrationPlanningTests.testDailyPlanEditedExport` exercises rich retained history, changed writing and a new mood/check-in snapshot, a new dated plan, stable unchanged canonical data, clearing, repeated export, frozen defaults/runtime immutability, fresh installation and identical re-export. It rejects unknown fields, owner/numeric/creation mismatches, bad date/timezone/progress, evening-review edits and retained-plan removal. The package fixture begins with resolvable references and exactly representable Card creation seconds; existing migration tests continue to cover unavailable/reused references and fractional precision. No package review gate was relaxed.
+
+All 60 affected native tests and 112 tooling tests pass. Independent `--daily-plan-package` validation checks all schemas/references/manifests, deterministic new identity and authored check-in history. This planning-only synthetic fixture contains zero original files; personal v9 retains five originals. The regression does not schedule notifications, execute review decisions or operate the owner's Simulator.
+
+Owner acceptance is pending: rebuild Plenact Import Test, open Today and tap the date beneath the Today heading to open Today's Plan. Save a small Your intention change, then export v10 through Export supported Card edits to Files…. Keep v9 and do not Undo first. Independently compare v10 with v9 before the later Undo/import and field check. Step 1 continues; cloud synchronization stays disabled.
+
+
+## Daily-plan timestamp precision correction — October 26, 2026
+
+The owner encountered an edited-export rejection after saving an intention. Private read-only backup inspection confirmed the writing was saved, native hashes/review were valid, and the newly saved plan used ordinary submillisecond `updatedAt` precision. Calendar/template differences were unordered Set encodings, not additional authored changes. No Undo or repeated edit was requested.
+
+The earlier synthetic case used an already-millisecond timestamp and missed this comparison gap. Changing it to a synthetic submillisecond save/check-in timestamp reproduced the same unsupported-export failure. Daily-store comparison now normalizes only declared planning timestamps (`updatedAt`, `savedAt`, `visionCompletedAt`, `completedAt`, `recordedAt`, `sourceCreatedAt`) to integer canonical epoch milliseconds. The opt-in historical resolver compares creation instants at the same wire precision while still requiring exact owner/alias matches and a unique target. Exact source timestamp bits remain in the accompanying native backup; the regression explicitly compares its Preferences.plist bytes against the frozen capture. No live source or runtime values are rewritten.
+
+The corrected full round trip passes with submillisecond plan/check-in values. An additional regression distinguishes same-millisecond representation differences from changed milliseconds, reflection writing/counts and unrelated-store numbers. All 61 affected native tests and 112 tooling tests pass; the updated DailyPlanPackage again passes independent schema/reference/hash validation. Owner retry: rebuild and retry edited export of the already saved intention; retain existing packages/native backup and do not Undo first. Personal portable v10 validation and re-import acceptance remain pending.
+
+
+## Owner acceptance: daily-plan writing — October 26, 2026
+
+After the timestamp precision correction, the owner exported portable v10. Independent validation against v9 passed schemas, references, manifests and originals. The only canonical addition was a daily plan dated 2026-10-26; the prior daily record and all other canonical data were unchanged. The intention matched owner-provided evidence, the new identity matched the deterministic workspace/date/timezone rule, and the saved timestamp projected correctly to canonical milliseconds. All five originals were byte-preserved. Native preferences/media/runtime hashes passed with no review codes; the exact daily source bytes also matched the earlier independently verified native backup.
+
+The owner then confirmed editable-workspace Undo, v10 package selection and successful editable re-import. Screenshots show the restored intention and saved time in Today's Plan. v10 is the latest owner-accepted checkpoint; retain v9 and earlier recovery packages. This establishes daily-plan creation/writing round-trip acceptance and the real-save precision fix. Check-in history, priority changes and clearing retain synthetic coverage and were not manually exercised by this test. Review-rhythm values were preserved in the verified package; their separate final toggle inspection remains unrecorded. Step 1 continues, with cloud synchronization disabled. Personal writing, screenshots and archives are not repository fixtures.
+
+
+## Evening-review writing and history edited export — October 26, 2026
+
+Supported definitions: immutable Model 1.0 evening-review objects inside daily-plan records within working 1.1 packages. New/existing reflection writing, step/completion, achievements and recorded decision history now reconcile through the reviewed daily adapter. The former evening-change rejection is removed; strict conversion, owner/alias/creation reference resolution and final inverse verification remain. Recorded actions are data only: export never executes them. Unsupported cross-Board outcomes and weekly/periodic edits remain blocked.
+
+A separate `MigrationPlanningTests.testEveningReviewEditedExport` shares a resolvable portable planning fixture. It covers creation/edits, achievement snapshots, all eight retained action kinds plus a new dated decision, stable IDs/order, submillisecond completion/decision/save times, unchanged other daily fields/native stores, frozen defaults/runtime, exact native-backup preferences, fresh import and identical re-export. Empty and nullable-cleared reviews reconstruct correctly. Invalid progress, unknown nested fields, duplicate decision IDs and invalid dates reject export.
+
+All 62 affected native tests and 112 tooling tests pass. Independent `--evening-review-package` validation checks full schemas/references/manifests, reflections, achievements and action/timestamp history. This synthetic fixture contains zero originals; personal media and archives are not fixtures. v10 remains the latest owner-accepted checkpoint.
+
+Pending owner test: rebuild Plenact Import Test, open Today, tap the date, then Start today's review (moon/stars), or Resume/Revisit today's review if already saved. Daily review opens read-only history and is not the evening editor. Use Save and continue through two steps without applying item decisions. Enter a short What helped? reflection, then Save today's review. Export v11 using Export supported Card edits to Files…; keep v10 and do not Undo first. Independently validate before later Undo/re-import and reflection inspection. Step 1 continues; cloud synchronization remains off.
+
+
+## Owner acceptance: evening-review writing — October 26, 2026
+
+Portable v11 independently validates against v10: the existing current daily plan changes only constraints, evening review, updated time and vision-completion time. Reflection fields match owner evidence; constraints and vision completion match the frozen native source. Other canonical data and all five originals are unchanged; native preferences/media/runtime hashes pass with no review codes. No item decisions or achievements were added in this personal test.
+
+The owner confirmed successful editable re-import and screenshots show all three restored reflection values and saved completion time. v11 is the latest owner-accepted checkpoint; retain v10 and prior recovery packages. This accepts evening-review reflection writing and completion restoration, not personal decision-action or achievement edits. Those have synthetic coverage. Earlier field-focus failure stopped reproducing after reopening the editor; cause remains unconfirmed, with no product UI fix claimed. Standalone and nested hosted focus/typing tests passed individually on the automated Simulator. Step 1 continues, with cloud synchronization disabled. Personal archives and screenshots remain outside repository fixtures.
+
+
+## Weekly-review writing and history edited export — October 26, 2026
+
+Supported definitions: unchanged Model 1.0 weekly-review records within working 1.1 packages. The daily/weekly `planningEdits` adapter now reconciles weekly highlights, learning, direction, constraints, risks, priorities, saved decisions, progress and completion. Existing canonical IDs and unchanged payload fields remain retained. Newly saved reviews use deterministic workspace-qualified identities derived from the complete native review key (start date, timezone and first-weekday policy). Removed retained records, changed identity/context, unknown fields and invalid dates/progress remain rejected. Only the explicitly recognized weekly store is added to the native new-store allowance; periodic reviews remain unsupported.
+
+The same explicit owner/alias/source-created resolver applies to priorities and historical decision snapshots. Export does not execute recorded actions; unsupported cross-Board outcomes still fail comparison. Daily and weekly store comparisons use canonical millisecond timestamp precision, retaining exact original native bytes in the accompanying backup. Existing daily/evening logic uses the shared adapter with unchanged identity rules.
+
+`MigrationPlanningTests.testWeeklyReviewEditedExport` covers new and retained reviews, all reflection fields, retained priority/action history plus a new saved decision, submillisecond timestamps, clearing and strict invalid metadata/removal rejection. It verifies retained canonical identity, unchanged other canonical domains and native stores, frozen defaults/runtime, exact native backup preferences, repeated export and fresh import with identical re-export. All 65 affected native tests and 112 tooling tests pass; the native suite also includes both hosted standalone/nested reflection focus tests. Independent `--weekly-review-package` validation verifies complete schemas/references/manifests, writing/history/timestamps and deterministic new identity. This fixture contains zero originals and no personal content.
+
+Owner acceptance remains pending; v11 is the current accepted checkpoint. Focused test: rebuild Plenact Import Test, open Today, tap the date, then Weekly review. On the first step, enter a short Your highlights value and use Save progress near the bottom. Leave item decisions unchanged. Export v12 with Export supported Card edits to Files…; keep v11 and do not Undo first. Validate v12 independently against v11 before the later Undo/import and highlights inspection. Step 1 continues; cloud synchronization remains off.
+
+
+## Owner acceptance: weekly-review writing — October 26, 2026
+
+Portable v12 independently validates against v11: it adds one completed weekly review for the week starting 2026-10-26 with all five reflection fields matching owner-provided evidence, valid deterministic identity and correct native-to-canonical timestamp projection. The only other canonical difference is the current daily plan's updated time, matching the frozen native source. Daily/evening content, prior records and all five original files are unchanged. Native preferences/media/runtime hashes pass with no review codes. No weekly priorities or item decisions were added in this personal test.
+
+The owner confirmed editable Undo and successful v12 re-import. Screenshots show all five restored weekly fields across steps 3 and 1, and retained daily intention/evening reflections in the weekly summary. Review counts show 288 portable records, 163 nondeleted Cards, 37 Lists and five verified originals. The separate older isolated inspection copy is not the editable workspace. v12 is the latest owner-accepted checkpoint; retain v11 and earlier packages/recovery history. This accepts weekly-review creation/writing and saved completed-review reconstruction. Priorities and decision-history edits retain synthetic coverage, not manual acceptance from this test. Step 1 continues and cloud synchronization remains disabled; personal archives/screenshots/writing remain outside repository fixtures.

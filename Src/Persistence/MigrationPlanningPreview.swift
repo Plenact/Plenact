@@ -128,9 +128,11 @@ enum MigrationPlanningPreview
     /// @param[in] values Frozen property-list stores
     /// @param[in] records Existing canonical content and unavailable evidence
     /// @param[in,out] journal Candidate source identity mapping, published atomically by the caller
+    /// @param[in] priorityResolver Optional verified export-only historical reference resolver
     /// @return Canonical planning records and local precision/store-presence report
     /// @throws Invalid histories, source keys, civil dates, ranges or reference provenance
-    static func prepare(values: [String: Any], records: [[String: Any]], journal: inout MigrationIdentityJournal) throws -> Result
+    static func prepare(values: [String: Any], records: [[String: Any]], journal: inout MigrationIdentityJournal,
+        priorityResolver: (([String: Any]) throws -> [String: Any])? = nil) throws -> Result
     {
 
         let context = MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: [:])
@@ -142,7 +144,7 @@ enum MigrationPlanningPreview
                 context.known.insert(target)
             }
         }
-        let mapper = MigrationPlanningValues(context: context)
+        let mapper = MigrationPlanningValues(context: context, priorityResolver: priorityResolver)
         var output: [[String: Any]] = []
         var converted: [String] = []
         if let value = values[stores[0]]

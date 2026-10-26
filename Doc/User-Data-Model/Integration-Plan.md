@@ -147,3 +147,78 @@ Supported versions: unchanged Model 1.0 records in working 1.1, native backup fo
 ### Existing imported Card edits checkpoint
 
 Supported models: 1.0 records and working 1.1 package composition. Edited export now reconciles existing Card comments, checklists/progress, members, reactions, appearance and attachment metadata/covers while retaining identities and untouched canonical fields. Independent original-file checks, clearing and fresh import/export are covered by 52 affected native tests and 112 Python tests. See [Editable import](Editable-Import.md) for scope and remaining Step 1 work. This does not enable cloud synchronization.
+
+
+### Existing List metadata export checkpoint
+
+Supported models: unchanged Model 1.0 records in working 1.1 packages. Existing List titles, subtitles, archive state, new-item defaults and appearance now reconcile while preserving identity and unchanged fields. Fresh re-import/re-export and clearing authored values pass the 52 affected native tests; the existing 112 Python tests pass, and synthetic List package evidence passes independent schemas, references, manifest and original-file checks. See [Editable import](Editable-Import.md#existing-list-metadata-reconciliation--october-25-2026). Owner acceptance is next; broader workspace reconciliation and verified account binding remain pending.
+
+
+### Saved preference reconciliation checkpoint — October 26, 2026
+
+The edited exporter now updates existing saved app preferences through the explicit 1.0 preference field map, retaining record and owner identity inside working 1.1 packages. Focus row count/content-density changes and fresh native installation/re-export are covered. Profile-detail edits and Studio/artwork reconciliation remain subsequent slices. See [scope and owner test](Editable-Import.md#saved-preference-edits--october-26-2026).
+
+
+### Automatic Week rollover checkpoint — October 26, 2026
+
+Newly retained calendar Weeks now export with owner-qualified identities and frozen-only editor alias normalization; older Weeks and edited preferences remain preserved. Repeated export, source immutability and fresh re-import/re-export pass in the 52 affected native tests. The synthetic package passes independent schema/reference/original validation. See [rollover scope and limits](Editable-Import.md#automatic-week-rollover-export--october-26-2026). Production binding and broader planning/personalization reconciliation remain pending.
+
+
+### Profile and Studio reconciliation checkpoint — October 26, 2026
+
+Edited export now preserves profile details/avatars, Studio defaults/wallpapers, global Week appearance and saved-artwork content/order using unchanged 1.0 records in working 1.1 composition. New verified originals, clearing values, fresh import/re-export and rollover compatibility pass the 52 affected native checks, 112 Python checks and independent package validation. See [scope, identity rules and owner test](Editable-Import.md#profile-and-studio-edited-export--october-26-2026). Broader planning/calendar reconciliation and verified account binding remain pending.
+
+
+### Owner-accepted preferences and Studio variety — October 26, 2026
+
+The owner successfully re-imported independently verified v7 and confirmed Google Maps plus disabled Studio new-item color variety. Comparison with v6 found exactly those two canonical changes, preserved all five originals and verified native backup hashes with no review codes. v7 is the current accepted checkpoint; retain v6. See [acceptance scope](Editable-Import.md#owner-acceptance-preferences-and-studio-variety--october-26-2026). Profile detail/avatar and other personalization manual acceptance remain separate; broader Step 1 reconciliation and verified account binding remain pending. Cloud synchronization is disabled.
+
+
+### Owner-accepted local profile creation — October 26, 2026
+
+Independently verified v8 adds exactly one local profile relative to v7 and preserves all five originals, prior preferences and Studio values. The owner confirmed Undo, editable re-import and restoration of display name, email and planning context. v8 is the latest accepted checkpoint. See [profile acceptance scope](Editable-Import.md#owner-acceptance-profile-creation--october-26-2026). Existing-profile edits and new personalization media retain synthetic coverage; broader reconciliation, real account/workspace binding and final recovery acceptance remain pending. Step 1 continues; cloud synchronization remains off.
+
+
+### Post-v8 edited-export inventory — October 26, 2026
+
+The [code/evidence inventory](Edited-Export-Inventory.md) separates migration/import from subsequent edits and records manual versus synthetic evidence. Planning history, review rhythm and template metadata already import but lack dedicated edit reconciliation. Review-rhythm preferences are the recommended next bounded adapter, followed by daily-plan/review writing. No owner test is required for this documentation review. v8 remains the current accepted workspace; Step 1 remains in progress and cloud synchronization stays disabled.
+
+
+### Review-rhythm export checkpoint — October 26, 2026
+
+Review-rhythm creation and edits now reconcile saved invitation/time/weekday/notification intent while retaining singleton identity, preserving other planning history and rejecting malformed/unknown values. No scheduler runs during export. The 59 affected native tests, 112 tooling tests and independent new/retained-rhythm package checks pass. See [scope and pending owner test](Editable-Import.md#review-rhythm-edited-export--october-26-2026). v8 remains the accepted personal checkpoint. Daily-plan and review-history edits remain next; Step 1 continues and cloud synchronization remains disabled.
+
+
+### Daily-plan writing/check-in export checkpoint — October 26, 2026
+
+Daily writing, priorities, vision progress and check-in snapshots now reconcile on edited export, including newly saved dates. Explicit owner/alias/creation provenance prevents rebinding references; existing identity and unchanged canonical fields are retained. Unknown references, plan removal/date-zone identity changes and evening-review edits fail closed. All 60 affected native and 112 tooling tests pass, along with independent daily-package validation. See [scope and pending owner test](Editable-Import.md#daily-plan-writing-and-check-in-edited-export--october-26-2026). v9 was independently verified and re-imported; the final rhythm-toggle confirmation remains unrecorded. v8 is the last fully documented owner acceptance. Evening/weekly/periodic review edits and template metadata remain follow-up work; cloud synchronization is off.
+
+
+### Daily-plan precision fix — October 26, 2026
+
+A real owner save exposed submillisecond timestamp comparison missing from the original daily-plan fixture. A synthetic submillisecond save reproduced the rejection and now passes after daily-store comparison normalization at canonical millisecond precision. Exact native backup bytes remain preserved; distinct milliseconds and content/reference mismatches remain checked. All 61 affected native and 112 tooling tests plus independent updated package validation pass. See [cause and retry scope](Editable-Import.md#daily-plan-timestamp-precision-correction--october-26-2026). Owner portable v10 retry is pending; no repeat intention edit or Undo is needed.
+
+
+### Owner-accepted daily-plan writing — October 26, 2026
+
+The owner successfully re-imported independently verified portable v10 and confirmed restoration of the saved intention. v10 adds only the expected dated plan relative to v9, retains prior canonical data and all five original files, and passes native backup hashes. It is now the latest owner-accepted checkpoint. See [acceptance scope](Editable-Import.md#owner-acceptance-daily-plan-writing--october-26-2026). Check-in/priority/clearing paths retain synthetic coverage. Evening/weekly/periodic review edits, template/calendar/structural gaps, verified account binding and final reconciliation/recovery acceptance remain pending. Step 1 is not complete; cloud synchronization remains off.
+
+
+### Evening-review export checkpoint — October 26, 2026
+
+Evening-review creation, reflection writing, progress/completion, achievements and decision history now reconcile as saved data without executing actions. All 62 affected native and 112 tooling tests plus independent evening-package checks pass. See [scope and pending owner test](Editable-Import.md#evening-review-writing-and-history-edited-export--october-26-2026). v10 remains the accepted checkpoint. Unsupported cross-Board outcomes, weekly/periodic edits and structural gaps remain pending; Step 1 continues and cloud synchronization is off.
+
+
+### Owner-accepted evening-review writing — October 26, 2026
+
+The owner re-imported independently verified v11 and confirmed all three evening reflection fields and completion time. v11 is the latest owner-accepted checkpoint. See [acceptance scope](Editable-Import.md#owner-acceptance-evening-review-writing--october-26-2026). Next bounded work is weekly-review writing/progress/history reconciliation, followed by periodic reviews and template metadata. Unsupported action outcomes, structural/calendar gaps, authenticated binding and final reconciliation/recovery acceptance remain pending. Step 1 remains in progress and cloud synchronization remains off.
+
+
+### Weekly-review export checkpoint — October 26, 2026
+
+Weekly-review writing, priorities, decision history, progress/completion and new reviews now reconcile using the shared daily/weekly adapter. Explicit identity/context/reference guards remain; no review action executes during export. All 65 affected native tests, 112 tooling tests and independent weekly-package checks pass. See [scope and pending owner test](Editable-Import.md#weekly-review-writing-and-history-edited-export--october-26-2026). v11 remains the accepted checkpoint. Periodic reviews and template/calendar/structural gaps remain pending; Step 1 continues and cloud synchronization remains disabled.
+
+
+### Owner-accepted weekly-review writing — October 26, 2026
+
+The owner re-imported independently verified v12 and confirmed all five weekly reflection fields, with prior daily/evening writing retained. v12 is the latest owner-accepted checkpoint. See [scope and evidence](Editable-Import.md#owner-acceptance-weekly-review-writing--october-26-2026). Next bounded work is periodic-review writing and objective snapshots, followed by template metadata and remaining calendar/structural gaps. Authenticated ownership and final reconciliation/compatibility/recovery acceptance remain pending. Step 1 is not complete; cloud synchronization remains off.

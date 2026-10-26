@@ -17,12 +17,12 @@ final class MigrationStudioTests: XCTestCase
 {
 
     /// @fcn MigrationStudioTests.fixture
-    /// @brief Capture all supported material families, online credit metadata and local originals
+    /// @brief Capture synthetic materials and originals for Studio and planning-export regressions
     /// @param[in] edit Optional raw source mutation before capture
     /// @param[in] body Assertions receiving frozen source and an isolated journal path
     /// @return Void after removing only synthetic files and preferences
     /// @throws Fixture, capture or assertion-support errors
-    private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
 
@@ -972,6 +972,248 @@ final class MigrationStudioTests: XCTestCase
             existingBlobAttachment.name = "ExistingCardPackage-Blobs.json"
             existingBlobAttachment.lifetime = .keepAlways
             add(existingBlobAttachment)
+            // Existing List metadata must retain identities and survive a fresh native projection.
+            var listCalendar = importedCalendar
+            listCalendar.weeks[0].collection.title = "Renamed portable Collection"
+            listCalendar.weeks[0].collection.collectionDescription = "Updated collection description"
+            listCalendar.weeks[0].collection.boardAppearance = BoardAppearance(bannerBackground: .teal, subtitleItalic: true)
+            try listCalendar.weeks[0].collection.lists[0].edit(title: "Renamed portable List", subtitle: "  Authored subtitle  ")
+            listCalendar.weeks[0].collection.lists[0].newItemPresentation = .note
+            listCalendar.weeks[0].collection.lists[0].appearance = ItemAppearance(accent: .rose,
+                studioSurface: StudioSurface(material: .gradient), subtitleItalic: true)
+            structuralDefaults.set(try JSONEncoder().encode(listCalendar), forKey: "Plenact.CalendarWeeks.v1")
+            structuralDefaults.set(try JSONEncoder().encode(listCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
+            let listBackup = try LegacyWorkspaceExport.capture(defaults: structuralDefaults, domain: structuralDomain, root: structuralContainer)
+            let listOutput = try PortableEditedExport.prepare(listBackup)
+            let listReview = try PortablePackageReview.review(files: XCTUnwrap(listOutput.fileWrappers?["PortableTestPackage"]))
+            let listCandidate = try PortableWorkspaceCandidate.prepare(listReview, retainedAliases: expandedAliases)
+            let restoredOwnerCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self,
+                from: XCTUnwrap(listCandidate.values["Plenact.CalendarWeeks.v1"] as? Data))
+            XCTAssertEqual(restoredOwnerCalendar.weeks[0].collection.title, listCalendar.weeks[0].collection.title)
+            XCTAssertEqual(restoredOwnerCalendar.weeks[0].collection.collectionDescription, "Updated collection description")
+            XCTAssertEqual(restoredOwnerCalendar.weeks[0].collection.boardAppearance, listCalendar.weeks[0].collection.boardAppearance)
+            let listBoard = try JSONDecoder().decode([KanbanList].self,
+                from: XCTUnwrap(listCandidate.values["Plenact.Board.v1"] as? Data))
+            XCTAssertEqual(listBoard[0].id, listCalendar.weeks[0].collection.lists[0].id)
+            XCTAssertEqual(listBoard[0].title, "Renamed portable List")
+            XCTAssertEqual(listBoard[0].subtitleOverride, listCalendar.weeks[0].collection.lists[0].subtitleOverride)
+            XCTAssertEqual(listBoard[0].newItemPresentation, .note)
+            XCTAssertEqual(listBoard[0].appearance, listCalendar.weeks[0].collection.lists[0].appearance)
+            XCTAssertEqual(listBoard[0].cards.map(\.id), listCalendar.weeks[0].collection.lists[0].cards.map(\.id))
+            for name in ["Assembly.json", "Manifest.json"]
+            {
+                let item = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: listOutput), uniformTypeIdentifier: "public.json")
+                item.name = "ExistingListPackage-" + name
+                item.lifetime = .keepAlways
+                add(item)
+            }
+            let listBlobAttachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: existingBlobs, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            listBlobAttachment.name = "ExistingListPackage-Blobs.json"
+            listBlobAttachment.lifetime = .keepAlways
+            add(listBlobAttachment)
+            let listStage = base.appendingPathComponent("ExistingListStage")
+            try listCandidate.stage(at: listStage)
+            try listCandidate.install(from: listStage, root: existingContainer, defaults: existingDefaults, domain: existingDomain)
+            let listReexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: listOutput),
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: listReexport))
+            var changedPreferences = try JSONDecoder().decode(LocalProfilePreferences.self,
+                from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.PlanPreferences.v1")))
+            changedPreferences.usesReducedContent.toggle()
+            changedPreferences.todayFocusItemCount = 7
+            existingDefaults.set(try JSONEncoder().encode(changedPreferences), forKey: "Plenact.PlanPreferences.v1")
+            if let profileBytes = existingDefaults.data(forKey: "Plenact.LocalProfile.v1")
+            {
+                var profile = try JSONDecoder().decode(LocalProfile.self, from: profileBytes)
+                profile.preferences = changedPreferences
+                existingDefaults.set(try JSONEncoder().encode(profile), forKey: "Plenact.LocalProfile.v1")
+            }
+            let preferencesOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            let preferencesCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(preferencesOutput.fileWrappers?["PortableTestPackage"])), retainedAliases: expandedAliases)
+            XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self,
+                from: XCTUnwrap(preferencesCandidate.values["Plenact.PlanPreferences.v1"] as? Data)), changedPreferences)
+            let preferencesStage = base.appendingPathComponent("PreferencesStage")
+            try preferencesCandidate.stage(at: preferencesStage)
+            try preferencesCandidate.install(from: preferencesStage, root: existingContainer,
+                defaults: existingDefaults, domain: existingDomain)
+            let preferencesReexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: preferencesOutput),
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: preferencesReexport))
+            for name in ["Assembly.json", "Manifest.json"]
+            {
+                let item = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: preferencesOutput), uniformTypeIdentifier: "public.json")
+                item.name = "PreferencesPackage-" + name
+                item.lifetime = .keepAlways
+                add(item)
+            }
+            let preferencesBlobs = XCTAttachment(data: try JSONSerialization.data(withJSONObject: existingBlobs, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            preferencesBlobs.name = "PreferencesPackage-Blobs.json"
+            preferencesBlobs.lifetime = .keepAlways
+            add(preferencesBlobs)
+            for path in ["Documents/ProfileAvatars/synthetic-avatar.png",
+                "Library/Application Support/PlenactStudioArtwork/synthetic-wall.png"]
+            {
+                let target = existingContainer.appendingPathComponent(path)
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try photoBytes.write(to: target)
+            }
+            let profileForExport = LocalProfile(createdAt: Date(timeIntervalSince1970: 1793600000),
+                displayName: "Synthetic profile", email: "profile@example.test", context: "Personal workspace",
+                avatarPhotoFileName: "synthetic-avatar.png", preferences: changedPreferences)
+            existingDefaults.set(try JSONEncoder().encode(profileForExport), forKey: "Plenact.LocalProfile.v1")
+            var studioForExport = try JSONDecoder().decode(StudioSettings.self,
+                from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.Studio.Settings.v1")))
+            studioForExport.variesNewHeaders.toggle()
+            studioForExport.views["Today"] = StudioSurface(material: .photo, color: "A1B2C3", strength: 0.4,
+                photoFileName: "synthetic-wall.png")
+            existingDefaults.set(try JSONEncoder().encode(studioForExport), forKey: "Plenact.Studio.Settings.v1")
+            var artForExport = try JSONDecoder().decode([StudioArtwork].self,
+                from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.Studio.Artwork.v1")))
+            artForExport.append(StudioArtwork(name: "New synthetic look", surface: StudioSurface(material: .linen)))
+            artForExport.reverse()
+            existingDefaults.set(try JSONEncoder().encode(artForExport), forKey: "Plenact.Studio.Artwork.v1")
+            let weekForExport = BoardAppearance(bannerBackground: .teal, subtitleItalic: true)
+            existingDefaults.set(try JSONEncoder().encode(weekForExport), forKey: "Plenact.WeekAppearance.v1")
+            let personalBackup = try LegacyWorkspaceExport.capture(defaults: existingDefaults, domain: existingDomain, root: existingContainer)
+            let personalOutput = try PortableEditedExport.prepare(personalBackup)
+            let personalCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(personalOutput.fileWrappers?["PortableTestPackage"])))
+            let restoredProfile = try JSONDecoder().decode(LocalProfile.self,
+                from: XCTUnwrap(personalCandidate.values["Plenact.LocalProfile.v1"] as? Data))
+            XCTAssertEqual(restoredProfile.id, profileForExport.id)
+            XCTAssertEqual(restoredProfile.displayName, profileForExport.displayName)
+            let restoredStudio = try JSONDecoder().decode(StudioSettings.self,
+                from: XCTUnwrap(personalCandidate.values["Plenact.Studio.Settings.v1"] as? Data))
+            studioForExport.views["Today"]?.photoFileName = restoredStudio.views["Today"]?.photoFileName
+            XCTAssertEqual(restoredStudio, studioForExport)
+            XCTAssertEqual(personalCandidate.media.files["Documents/ProfileAvatars/" + (restoredProfile.avatarPhotoFileName ?? "missing")], photoBytes)
+            XCTAssertEqual(personalCandidate.media.files["Library/Application Support/PlenactStudioArtwork/" + (restoredStudio.views["Today"]?.photoFileName ?? "missing")], photoBytes)
+            XCTAssertEqual(try JSONDecoder().decode([StudioArtwork].self,
+                from: XCTUnwrap(personalCandidate.values["Plenact.Studio.Artwork.v1"] as? Data)), artForExport)
+            XCTAssertEqual(try JSONDecoder().decode(BoardAppearance.self,
+                from: XCTUnwrap(personalCandidate.values["Plenact.WeekAppearance.v1"] as? Data)), weekForExport)
+            let personalStage = base.appendingPathComponent("PersonalizationStage")
+            try personalCandidate.stage(at: personalStage)
+            try personalCandidate.install(from: personalStage, root: existingContainer,
+                defaults: existingDefaults, domain: existingDomain)
+            let personalReexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: personalOutput),
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: personalReexport))
+            for name in ["Assembly.json", "Manifest.json"]
+            {
+                let item = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: personalOutput), uniformTypeIdentifier: "public.json")
+                item.name = "PersonalizationPackage-" + name
+                item.lifetime = .keepAlways
+                add(item)
+            }
+            let personalOriginals = try XCTUnwrap(personalOutput.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+            let personalBlobValues = try Dictionary(uniqueKeysWithValues: personalOriginals.map { name, file in
+                ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
+            })
+            let personalBlobs = XCTAttachment(data: try JSONSerialization.data(withJSONObject: personalBlobValues, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            personalBlobs.name = "PersonalizationPackage-Blobs.json"
+            personalBlobs.lifetime = .keepAlways
+            add(personalBlobs)
+            var revisedProfile = restoredProfile
+            revisedProfile.displayName = "Revised synthetic profile"
+            revisedProfile.context = ""
+            revisedProfile.avatarPhotoFileName = nil
+            existingDefaults.set(try JSONEncoder().encode(revisedProfile), forKey: "Plenact.LocalProfile.v1")
+            var clearedStudio = studioForExport
+            clearedStudio.views.removeValue(forKey: "Today")
+            existingDefaults.set(try JSONEncoder().encode(clearedStudio), forKey: "Plenact.Studio.Settings.v1")
+            existingDefaults.set(try JSONEncoder().encode([StudioArtwork]()), forKey: "Plenact.Studio.Artwork.v1")
+            let clearPersonalOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            let clearPersonalCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(clearPersonalOutput.fileWrappers?["PortableTestPackage"])))
+            let clearProfile = try JSONDecoder().decode(LocalProfile.self,
+                from: XCTUnwrap(clearPersonalCandidate.values["Plenact.LocalProfile.v1"] as? Data))
+            XCTAssertEqual(clearProfile.id, restoredProfile.id)
+            XCTAssertEqual(clearProfile.displayName, revisedProfile.displayName)
+            XCTAssertNil(clearProfile.avatarPhotoFileName)
+            XCTAssertEqual(try JSONDecoder().decode([StudioArtwork].self,
+                from: XCTUnwrap(clearPersonalCandidate.values["Plenact.Studio.Artwork.v1"] as? Data)).count, 0)
+            XCTAssertNil(try JSONDecoder().decode(StudioSettings.self,
+                from: XCTUnwrap(clearPersonalCandidate.values["Plenact.Studio.Settings.v1"] as? Data)).views["Today"])
+            try personalCandidate.install(from: personalStage, root: existingContainer,
+                defaults: existingDefaults, domain: existingDomain)
+            var rolloverCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self,
+                from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.CalendarWeeks.v1")))
+            let rolloverDate = try XCTUnwrap(PlanningDate.date(rolloverCalendar.currentWeekKey, calendar: rolloverCalendar.calendar))
+                .addingTimeInterval(7 * 86400)
+            var newWeek = DatedPlanningWeek.make(for: rolloverDate, calendar: rolloverCalendar.calendar)
+            let reusedNumber = try XCTUnwrap(rolloverCalendar.weeks[0].collection.lists[0].cards.first).id
+            let rolloverCard = newWeek.collection.lists[0].makeItem(id: reusedNumber, title: "Rollover Card",
+                createdAt: Date(timeIntervalSince1970: 1793600000), creationPreferences: LocalProfilePreferences())
+            newWeek.collection.lists[0].cards = [rolloverCard]
+            for index in 1..<7
+            {
+                let card = newWeek.collection.lists[index].makeItem(id: reusedNumber + index,
+                    title: "Rollover bookmark " + String(index), createdAt: Date(timeIntervalSince1970: 1793600000),
+                    creationPreferences: LocalProfilePreferences())
+                newWeek.collection.lists[index].cards = [card]
+            }
+            newWeek.collection.savedCardIDs = Set(newWeek.collection.lists.flatMap(\.cards).map(\.id))
+            rolloverCalendar.weeks.append(newWeek)
+            rolloverCalendar.currentWeekKey = newWeek.startKey
+            existingDefaults.set(try JSONEncoder().encode(rolloverCalendar), forKey: "Plenact.CalendarWeeks.v1")
+            existingDefaults.set(try JSONEncoder().encode(newWeek.collection.lists), forKey: "Plenact.Board.v1")
+            existingDefaults.set(Array(newWeek.collection.savedCardIDs), forKey: "Plenact.SavedCardIDs.v1")
+            let rolloverBackup = try LegacyWorkspaceExport.capture(defaults: existingDefaults, domain: existingDomain, root: existingContainer)
+            let rolloverOutput = try PortableEditedExport.prepare(rolloverBackup)
+            let rolloverAgain = try PortableEditedExport.prepare(rolloverBackup)
+            XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: rolloverOutput),
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: rolloverAgain))
+            XCTAssertEqual(try JSONDecoder().decode(PlanningCalendarDocument.self, from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.CalendarWeeks.v1"))), rolloverCalendar)
+            for name in ["Assembly.json", "Manifest.json"]
+            {
+                let item = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: rolloverOutput), uniformTypeIdentifier: "public.json")
+                item.name = "RolloverPackage-" + name
+                item.lifetime = .keepAlways
+                add(item)
+            }
+            let rolloverBlobs = XCTAttachment(data: try JSONSerialization.data(withJSONObject: personalBlobValues, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            rolloverBlobs.name = "RolloverPackage-Blobs.json"
+            rolloverBlobs.lifetime = .keepAlways
+            add(rolloverBlobs)
+            let rolloverCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(rolloverOutput.fileWrappers?["PortableTestPackage"])))
+            let roundTripCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self,
+                from: XCTUnwrap(rolloverCandidate.values["Plenact.CalendarWeeks.v1"] as? Data))
+            XCTAssertEqual(roundTripCalendar.weeks.count, rolloverCalendar.weeks.count)
+            XCTAssertEqual(roundTripCalendar.currentWeekKey, newWeek.startKey)
+            XCTAssertEqual(roundTripCalendar.weeks.last?.collection.lists[0].cards.first?.word, "Rollover Card")
+            XCTAssertEqual(roundTripCalendar.weeks.last?.collection.savedCardIDs.count, 7)
+            XCTAssertEqual((rolloverCandidate.values["Plenact.SavedCardIDs.v1"] as? [Int])?.count, 7)
+            let rolloverStage = base.appendingPathComponent("RolloverStage")
+            try rolloverCandidate.stage(at: rolloverStage)
+            try rolloverCandidate.install(from: rolloverStage, root: existingContainer, defaults: existingDefaults, domain: existingDomain)
+            let rolloverReexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: existingDefaults, domain: existingDomain, root: existingContainer))
+            XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: rolloverOutput),
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: rolloverReexport))
+            listCalendar.weeks[0].collection.lists[0].subtitleOverride = nil
+            listCalendar.weeks[0].collection.lists[0].appearance = nil
+            listCalendar.weeks[0].collection.lists[0].newItemPresentation = .card
+            structuralDefaults.set(try JSONEncoder().encode(listCalendar), forKey: "Plenact.CalendarWeeks.v1")
+            structuralDefaults.set(try JSONEncoder().encode(listCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
+            let clearedListOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: structuralDefaults, domain: structuralDomain, root: structuralContainer))
+            let clearedListCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(clearedListOutput.fileWrappers?["PortableTestPackage"])), retainedAliases: expandedAliases)
+            let clearedMetadataLists = try JSONDecoder().decode([KanbanList].self,
+                from: XCTUnwrap(clearedListCandidate.values["Plenact.Board.v1"] as? Data))
+            XCTAssertNil(clearedMetadataLists[0].subtitleOverride)
+            XCTAssertNil(clearedMetadataLists[0].appearance)
+            XCTAssertEqual(clearedMetadataLists[0].newItemPresentation, .card)
+            structuralDefaults.set(try JSONEncoder().encode(importedCalendar), forKey: "Plenact.CalendarWeeks.v1")
+            structuralDefaults.set(try JSONEncoder().encode(importedCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
             // Removing a live attachment must not lose its verified imported original or restore its row.
             let removedName = try XCTUnwrap(originalImported.attachments?.first?.fileName)
             var removedPhoto = importedCalendar.weeks[0].collection.lists[0].cards[0]

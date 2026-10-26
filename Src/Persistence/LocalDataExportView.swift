@@ -330,7 +330,7 @@ struct LocalDataExportView: View
                     }
                     .disabled(preparing || editableImportAccess == nil)
                 }
-                Text("Replaces this Simulator’s main workspace after retaining its full previous state for undo. Uses the package’s test owner; cloud synchronization stays off. Edited export supports new Cards and Lists created in Board views, same-Board moves and reordering, plus existing Card content, checklists, comments, photos, completion, scheduling, deletion and history. Other changes stop export; local backups preserve all changes.")
+                Text("Replaces this Simulator’s main workspace after retaining its full previous state for undo. Uses the package’s test owner; cloud synchronization stays off. Edited export supports new Cards and Lists created in Board views, same-Board moves and reordering, automatic Week rollover, profile and Studio personalization, saved app and review-rhythm preferences, daily-plan writing, check-ins and evening/weekly-review history, existing List and Collection metadata, appearance and new-item defaults, plus existing Card content, checklists, comments, photos, completion, scheduling, deletion and history. Other changes stop export; local backups preserve all changes.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

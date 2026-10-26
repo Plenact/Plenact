@@ -57,15 +57,17 @@ enum MigrationStudioPreview
     /// @param[in] values Frozen source preferences
     /// @param[in] records Existing canonical records proving retained reference targets
     /// @param[in] mediaDigests Verified original-media hashes
+    /// @param[in] assetTargets Optional export-only verified source-path aliases
     /// @param[in,out] journal Candidate migration identities; committed only after success
     /// @return Artwork records plus local Studio/Week evidence and explicit review issues
     /// @throws Unknown source fields, invalid saved shapes, duplicate identities or surface errors
     static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
-        journal: inout MigrationIdentityJournal) throws -> Result
+        journal: inout MigrationIdentityJournal, assetTargets: [String: String] = [:]) throws -> Result
     {
 
         let context = MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
         context.known = Set(records.compactMap { $0["id"] as? String })
+        context.assetTargets = assetTargets
         for record in records where record["record_type"] as? String == "unavailable_reference"
         {
             if let target = (record["payload"] as? [String: Any])?["target_id"] as? String

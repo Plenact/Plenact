@@ -105,9 +105,122 @@ def check_native_package(directory, prefix="NativePackage"):
                                  'content_selection:' + selection['payload']['card_id']))
         if selection['id'] != expected:
             raise ContractError('native_selection_identity_mismatch')
-    if prefix == 'NativePackage':
+    if prefix == 'WeeklyReviewPackage':
+        reviews = base['planning']['weekly_reviews']
+        edited = [r['payload'] for r in reviews if r['payload']['highlights'] == 'Edited weekly highlights']
+        added = [r for r in reviews if r['payload']['highlights'] == 'New weekly highlights']
+        if len(reviews) != 2 or len(edited) != 1 or len(added) != 1:
+            raise ContractError('weekly_native_fixture_missing_changes')
+        review = edited[0]
+        if (review['learned'] != 'Edited weekly learning' or review['direction'] != 'Edited weekly direction'
+                or review['constraints'] != 'Edited weekly constraints' or review['risks'] != 'Edited weekly risks'
+                or review['step'] != 2 or len(review['decisions']) != 9 or len(review['priorities']) != 1
+                or review['completed_at_utc'] != review['decisions'][-1]['recorded_at_utc']):
+            raise ContractError('weekly_native_fixture_missing_history')
+        record = added[0]
+        if record['id'] != str(uuid.uuid5(uuid.UUID(record['workspace_id']),
+                                        'weekly_review:' + record['payload']['source_review_key'])):
+            raise ContractError('weekly_native_identity_mismatch')
+    elif prefix == 'EveningReviewPackage':
+        plans = base['planning']['daily_plans']
+        reviews = [r['payload']['evening_review'] for r in plans]
+        edited = [r for r in reviews if r and r['helped'] == 'Edited evening reflection']
+        added = [r for r in reviews if r and r['helped'] == 'New evening reflection']
+        if len(edited) != 1 or len(added) != 1:
+            raise ContractError('evening_native_fixture_missing_reflections')
+        review = edited[0]
+        if (review['difficult'] != 'A synthetic difficulty' or review['tomorrow'] != 'A synthetic next step'
+                or review['step'] != 2 or len(review['achievements']) != 1 or len(review['decisions']) != 9
+                or review['decisions'][-1]['action'] != {'kind': 'date', 'date': '2026-10-28'}
+                or review['completed_at_utc'] != review['decisions'][-1]['recorded_at_utc']):
+            raise ContractError('evening_native_fixture_missing_history')
+        if {d['action']['kind'] for d in review['decisions']} != {
+                'keep', 'keep_tomorrow', 'table', 'complete', 'archive', 'queue', 'tomorrow', 'date'}:
+            raise ContractError('evening_native_fixture_missing_actions')
+    elif prefix == 'DailyPlanPackage':
+        plans = base['planning']['daily_plans']
+        edited = [r['payload'] for r in plans if r['payload']['intention'] == 'Edited synthetic intention']
+        added = [r for r in plans if r['payload']['intention'] == 'New synthetic daily plan']
+        if len(plans) != 3 or len(edited) != 1 or len(added) != 1:
+            raise ContractError('daily_plan_native_fixture_missing_changes')
+        history = edited[0]['check_ins']
+        if (len(history) != 2 or history[0]['id'] != 'retained-history-id'
+                or history[-1]['changed'] != 'New synthetic check-in'
+                or history[-1]['intention'] != edited[0]['intention']
+                or history[-1]['mood'] != {'emoji': '🌱', 'label': 'Steady'}):
+            raise ContractError('daily_plan_native_fixture_missing_history')
+        record = added[0]
+        expected_id = str(uuid.uuid5(uuid.UUID(record['workspace_id']),
+                                    'daily_plan:' + record['payload']['date'] + ':' + record['payload']['time_zone']))
+        if record['id'] != expected_id:
+            raise ContractError('daily_plan_native_identity_mismatch')
+    elif prefix in ('NewRhythmPackage', 'RetainedRhythmPackage'):
+        rhythms = base['planning']['review_rhythms']
+        expected = {'daily_invitations': False, 'weekly_invitations': False,
+                    'daily_minutes': 17, 'weekly_minutes': 1439, 'weekly_weekday': 7,
+                    'daily_notifications': True, 'weekly_notifications': True}
+        if len(rhythms) != 1 or any(rhythms[0]['payload'].get(k) != v for k, v in expected.items()):
+            raise ContractError('rhythm_native_fixture_missing_choices')
+        if prefix == 'NewRhythmPackage':
+            record = rhythms[0]
+            expected_id = str(uuid.uuid5(uuid.UUID(record['workspace_id']),
+                                        'review_rhythm:Plenact.ReviewRhythm.v1'))
+            if record['id'] != expected_id:
+                raise ContractError('rhythm_native_identity_mismatch')
+    elif prefix == 'NativePackage':
         if len(base['profiles']) != 1 or len(base['planning']['daily_plans']) != 1 or len(base['content_selections']) != 1:
             raise ContractError('combined_native_fixture_missing_slice')
+    elif prefix == 'PersonalizationPackage':
+        profiles = base['profiles']
+        settings = base['studio_settings']['payload']
+        today = next(v['surface'] for v in settings['views'] if v['destination'] == 'today')
+        if (len(profiles) != 1 or profiles[0]['payload']['display_name'] != 'Synthetic profile'
+                or profiles[0]['payload']['avatar_asset_id'] is None or today['material'] != 'photo'
+                or today['photo_asset_id'] is None):
+            raise ContractError('personalization_fixture_lost_profile_or_photo')
+        library = binding['workspace_export']['artwork_library']['payload']['artwork_ids']
+        art = {r['id']: r['payload'] for r in base['artwork']}
+        if not library or art[library[0]]['name'] != 'New synthetic look':
+            raise ContractError('personalization_fixture_lost_order')
+        if binding['workspace_export']['workspace_appearance']['payload']['week_board_defaults']['subtitle_italic'] is not True:
+            raise ContractError('personalization_fixture_lost_week_defaults')
+    elif prefix == 'RolloverPackage':
+        weeks = base['planning']['weeks']
+        index = base['planning']['calendar_indexes'][0]['payload']
+        if len(weeks) != 2 or len(index['week_ids']) != 2:
+            raise ContractError('rollover_fixture_missing_week')
+        if base['user_preferences']['payload']['preferences']['today_focus_item_count'] != 7:
+            raise ContractError('rollover_fixture_lost_preferences')
+        if not any(r['payload']['title'] == 'Rollover Card' for r in base['planning']['content']['cards']):
+            raise ContractError('rollover_fixture_lost_card')
+        incoming = [r for r in base['planning']['content']['collections']
+                    if any(w['payload']['collection_id'] == r['id'] and
+                           w['payload']['start_date'] == index['current_week_start_date'] for w in weeks)]
+        parents = {r['id'] for r in base['planning']['content']['lists']
+                   if r['payload']['collection_id'] == incoming[0]['id']}
+        cards = {r['id'] for r in base['planning']['content']['cards'] if r['payload']['list_id'] in parents}
+        saved = {r['payload']['card_id'] for r in base['content_selections']
+                 if r['payload']['bookmarked'] and r['payload']['card_id'] in cards}
+        if len(saved) != 7:
+            raise ContractError('rollover_fixture_lost_bookmarks')
+    elif prefix == 'PreferencesPackage':
+        if base['user_preferences']['payload']['preferences']['today_focus_item_count'] != 7:
+            raise ContractError('preferences_fixture_lost_edit')
+    elif prefix == 'ExistingListPackage':
+        content = base['planning']['content']
+        lists = [r for r in content['lists'] if r['payload']['title'] == 'Renamed portable List']
+        if len(lists) != 1:
+            raise ContractError('existing_list_fixture_missing_target')
+        value = lists[0]['payload']
+        if (value['subtitle_override'] != 'Authored subtitle' or value['default_item_presentation'] != 'note'
+                or value['appearance']['subtitle_italic'] is not True
+                or value['appearance']['studio_surface']['material'] != 'gradient'):
+            raise ContractError('existing_list_fixture_lost_metadata')
+        owner = next(r['payload'] for r in content['collections'] if r['id'] == value['collection_id'])
+        if (owner['title'] != 'Renamed portable Collection'
+                or owner['description'] != 'Updated collection description'
+                or owner['board_appearance']['subtitle_italic'] is not True):
+            raise ContractError('existing_collection_fixture_lost_metadata')
     elif prefix == 'ExistingCardPackage':
         content = base['planning']['content']
         cards = [r['payload'] for r in content['cards'] if r['payload']['title'] == 'New structural Card']
@@ -157,7 +270,48 @@ def main():
     modes.add_argument('--deleted-package', action='store_true')
     modes.add_argument('--structural-package', action='store_true')
     modes.add_argument('--existing-card-package', action='store_true')
+    modes.add_argument('--existing-list-package', action='store_true')
+    modes.add_argument('--preferences-package', action='store_true')
+    modes.add_argument('--rollover-package', action='store_true')
+    modes.add_argument('--personalization-package', action='store_true')
+    modes.add_argument('--rhythm-package', action='store_true')
+    modes.add_argument('--daily-plan-package', action='store_true')
+    modes.add_argument('--evening-review-package', action='store_true')
+    modes.add_argument('--weekly-review-package', action='store_true')
     args = parser.parse_args()
+    if args.weekly_review_package:
+        count = check_native_package(args.attachments, prefix='WeeklyReviewPackage')
+        print(f'Weekly review package passed independent validation: {count} original files.')
+        return
+    if args.evening_review_package:
+        count = check_native_package(args.attachments, prefix='EveningReviewPackage')
+        print(f'Evening review package passed independent validation: {count} original files.')
+        return
+    if args.daily_plan_package:
+        count = check_native_package(args.attachments, prefix='DailyPlanPackage')
+        print(f'Daily plan package passed independent validation: {count} original files.')
+        return
+    if args.rhythm_package:
+        for prefix in ('NewRhythmPackage', 'RetainedRhythmPackage'):
+            count = check_native_package(args.attachments, prefix=prefix)
+            print(f'{prefix} passed independent validation: {count} original files.')
+        return
+    if args.personalization_package:
+        count = check_native_package(args.attachments, prefix='PersonalizationPackage')
+        print(f'Personalization package passed independent validation: {count} original files.')
+        return
+    if args.rollover_package:
+        count = check_native_package(args.attachments, prefix='RolloverPackage')
+        print(f'Rollover package passed independent validation: {count} original files.')
+        return
+    if args.preferences_package:
+        count = check_native_package(args.attachments, prefix='PreferencesPackage')
+        print(f'Preferences package passed independent validation: {count} original files.')
+        return
+    if args.existing_list_package:
+        count = check_native_package(args.attachments, prefix='ExistingListPackage')
+        print(f'Existing-List package passed independent validation: {count} original files.')
+        return
     if args.existing_card_package:
         count = check_native_package(args.attachments, prefix='ExistingCardPackage')
         print(f'Existing-Card edited package passed independent validation: {count} original files.')

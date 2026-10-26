@@ -15,6 +15,20 @@ struct MigrationPlanningValues
 {
 
     let context: MigrationContentValues
+    let priorityResolver: (([String: Any]) throws -> [String: Any])?
+
+
+    /// @fcn MigrationPlanningValues.init
+    /// @brief Select journal references or an explicit export-only historical resolver
+    /// @param[in] context Frozen conversion context
+    /// @param[in] priorityResolver Optional verified portable reference resolver
+    /// @return Ephemeral value mapper without persistent side effects
+    init(context: MigrationContentValues, priorityResolver: (([String: Any]) throws -> [String: Any])? = nil)
+    {
+
+        self.context = context
+        self.priorityResolver = priorityResolver
+    }
 
 
     /// @fcn MigrationPlanningValues.timestamp
@@ -82,6 +96,11 @@ struct MigrationPlanningValues
     func priority(_ raw: [String: Any]) throws -> [String: Any]
     {
 
+        if let priorityResolver
+        {
+
+            return try priorityResolver(raw)
+        }
         let owner = try MigrationContentValues.lowerUUID(raw["ownerID"])
         let collection = try context.id("collection", owner: "source_collections", legacy: owner)
         let discriminator = (raw["sourceCreatedAt"] as? NSNumber).map { String($0.doubleValue) }

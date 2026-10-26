@@ -233,3 +233,30 @@ Rich structural export coverage (1.0 records within working 1.1) now adds a new 
 ### Existing imported Card edits checkpoint
 
 Supported models: 1.0 records and working 1.1 package composition. Edited export now reconciles existing Card comments, checklists/progress, members, reactions, appearance and attachment metadata/covers while retaining identities and untouched canonical fields. Independent original-file checks, clearing and fresh import/export are covered by 52 affected native tests and 112 Python tests. See [Editable import](../Doc/User-Data-Model/Editable-Import.md) for scope and remaining Step 1 work. This does not enable cloud synchronization.
+
+
+Existing List metadata export (1.0 records, working 1.1 package) is covered in the protected editable-workspace acceptance test: rename, subtitle, new-item default and appearance; retained List/Card identities; fresh installation and byte-identical re-export; and clearing authored values. The affected native suite passes 52 tests. Its `ExistingListPackage` attachments are independently checked by the tooling's `--existing-list-package` mode.
+
+
+Saved preference reconciliation uses synthetic content-density and Today Focus row-count edits in the protected editable-workspace test, followed by native reconstruction, fresh installation and byte-identical re-export. `PreferencesPackage` attachments feed the independent `--preferences-package` checker. Profile-detail and Studio edits remain outside this slice.
+
+
+Automatic Week rollover acceptance adds a dated Week containing a Card whose local number overlaps a retained Card, verifies saved preferences and the untouched source calendar, then checks repeated export and fresh import/re-export byte identity. `RolloverPackage` evidence is checked independently with `--rollover-package`. Only isolated synthetic containers are used. Supported definitions remain 1.0 records in working 1.1 packages.
+
+
+Personalization acceptance covers profile creation with a new original avatar, Studio photo wallpaper/defaults, saved-look addition/order, Week defaults, fresh import/re-export, existing-profile edits and clearing avatar/wallpaper/library. `PersonalizationPackage` evidence independently validates all records and six original files; the seven-bookmark rollover package is also checked after personalization. All data is synthetic and isolated.
+
+
+Review-rhythm edited export adds a separate `MigrationStudioTests.testReviewRhythmEditedExport` case in `MigrationPlanningTests.swift`, sharing the isolated Studio fixture rather than extending the combined activation test. Synthetic new/default and retained/edited stores cover all seven settings, retained/deterministic identity, unchanged daily-plan writing, source/runtime immutability, strict field/range rejection, fresh import and identical re-export. The affected native suite now includes `MigrationPlanningTests`: 59 tests pass. `NewRhythmPackage` and `RetainedRhythmPackage` attachments include assembly, manifest and original blobs for independent `--rhythm-package` validation. No personal data or notification scheduler is used.
+
+
+`MigrationPlanningTests.testDailyPlanEditedExport` covers daily writing, check-in/mood history, new dates, clearing, unchanged canonical fields and other stores, strict reference provenance rejection, source/runtime immutability, fresh import and identical re-export. Initial package references are resolvable with exact synthetic Card creation seconds; existing migration cases retain unavailable/reused/fractional reference coverage. Evening-review changes and retained-plan removal remain rejected. The affected native suites pass 60 tests; tooling passes 112. `DailyPlanPackage` assembly/manifest/blob attachments support independent `--daily-plan-package` checks (zero synthetic originals). No personal data is used.
+
+
+Daily-plan precision regression now uses a submillisecond save/check-in timestamp that reproduced the owner's unsupported-export failure. It verifies canonical millisecond reconstruction, identical re-export and byte-exact frozen/native-backup preferences. `testDailyTimestampComparisonPrecision` checks scoped comparison, changed milliseconds and authored content/count differences. The affected suite passes 61 native tests; tooling remains 112, with independent updated DailyPlanPackage validation passing. Personal archives are not fixtures.
+
+
+`MigrationPlanningTests.testEveningReviewEditedExport` separately covers creation/reflection edits, achievements, retained action history plus a dated decision, stable IDs/order, submillisecond timestamps, unchanged other daily/native data, frozen evidence, fresh import and identical re-export. Clearing and malformed nested values are checked without executing actions. Shared `portableFixture` avoids repeated setup. All 62 affected native and 112 tooling tests pass. `EveningReviewPackage` attachments independently validate with `--evening-review-package` (zero synthetic originals).
+
+
+`MigrationPlanningTests.testWeeklyReviewEditedExport` covers new/retained weekly writing, priorities/action history, progress/completion, real-save timestamp precision, clearing, invalid context/removal rejection, stable canonical identity, unchanged other domains/stores, frozen source/runtime, exact backup bytes and fresh import with identical re-export. The full affected suite now passes 65 native tests, including both synthetic hosted reflection-focus tests; tooling passes 112. `WeeklyReviewPackage` attachments independently validate with `--weekly-review-package` (zero originals). No personal data or action executor is used.

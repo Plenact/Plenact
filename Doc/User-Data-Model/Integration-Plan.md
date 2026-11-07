@@ -222,3 +222,115 @@ Weekly-review writing, priorities, decision history, progress/completion and new
 ### Owner-accepted weekly-review writing — October 26, 2026
 
 The owner re-imported independently verified v12 and confirmed all five weekly reflection fields, with prior daily/evening writing retained. v12 is the latest owner-accepted checkpoint. See [scope and evidence](Editable-Import.md#owner-acceptance-weekly-review-writing--october-26-2026). Next bounded work is periodic-review writing and objective snapshots, followed by template metadata and remaining calendar/structural gaps. Authenticated ownership and final reconciliation/compatibility/recovery acceptance remain pending. Step 1 is not complete; cloud synchronization remains off.
+
+
+### Periodic-review/objective export checkpoint — October 26, 2026
+
+Periodic-review title/writing, progress/completion, priorities and independent starting/current objectives now reconcile with retained IDs and authored UUIDs for new reviews. Removed records, changed retained ranges/zones and malformed objective data fail closed. All 66 affected native tests, 112 tooling tests and independent periodic-package checks pass. See [scope and pending owner test](Editable-Import.md#periodic-review-writing-and-objective-edited-export--october-26-2026). v12 remains accepted. Template metadata, calendar/structural gaps, authenticated binding and final reconciliation/recovery acceptance remain pending; Step 1 continues with cloud synchronization off.
+
+
+### Owner-accepted periodic-review writing/objectives — October 26, 2026
+
+The owner re-imported independently verified v13 and confirmed restored periodic writing, period and objective values/statuses, with earlier weekly reflections retained. v13 is the latest accepted checkpoint. See [scope and evidence](Editable-Import.md#owner-acceptance-periodic-review-writing-and-objectives--october-26-2026). The first checkpoint has empty starting objectives; inherited starting/current snapshot behavior retains synthetic coverage. Next is template metadata/library reconciliation, beginning with a bounded retained-template edit. Remaining calendar/structural gaps, ownership and final reconciliation/recovery acceptance remain pending; Step 1 continues and cloud synchronization remains off.
+
+
+### Retained-template metadata checkpoint — October 26, 2026
+
+Retained template names and library order/default Week selection now reconcile with stable template/library/content IDs, including clearing the default. Creation/removal and template date/weekday/focus policy changes remain unsupported. All 67 affected native tests, 112 tooling tests and independent two-original synthetic package checks pass. See [scope and pending owner test](Editable-Import.md#retained-template-metadata-edited-export--october-26-2026). v13 remains accepted; remaining template lifecycle, calendar/structural gaps, authenticated binding and final reconciliation/recovery acceptance remain pending. Step 1 continues with cloud synchronization off.
+
+
+### Template editor presentation fix — October 26, 2026
+
+The owner encountered immediate editor dismissal before the rename acceptance test. A synthetic hosted library reproduced duplicate presentations from Group-distributed modifiers. One persistent presentation anchor now retains the editor across library loading; isolated tests verify typing/dismissal without changing saved bytes. All 69 selected native checks pass. See [cause and retry scope](Editable-Import.md#template-editor-presentation-correction--october-26-2026). v13 remains accepted; v14 rename export/round-trip is pending, with cloud synchronization off.
+
+
+### Owner-accepted retained-template rename — October 26, 2026
+
+The owner completed editable re-import of independently verified v14 and confirmed the retained template's renamed Name field. v14 is the latest accepted checkpoint. Only that canonical name changed from v13; identities, library order/defaults, prior data and all five originals were preserved. See [acceptance scope](Editable-Import.md#owner-acceptance-retained-template-rename--october-26-2026). Template lifecycle/context changes and remaining calendar/structural, ownership and final reconciliation/recovery work remain pending. Step 1 continues with cloud synchronization off.
+
+
+### New-template creation export checkpoint — October 26, 2026
+
+New Day/Week captures and duplicates in a retained library now export with authored template UUIDs, independent deterministic owner/content identities, verified media and frozen-only alias translation. Copied same-owner references remain attached to copied Cards. Retained-template deletion, context changes, absent-library creation and unresolved references remain blocked. Validation passes 68 export/recovery/template checks, two separately run hosted focus checks, 112 tooling tests and independent three-original package checks. The initial combined runner exited during the existing nested keyboard test; its cause remains unconfirmed. See [scope and pending owner test](Editable-Import.md#captured-and-duplicated-template-creation-edited-export--october-26-2026). v14 remains accepted. Step 1 continues; cloud synchronization is off.
+
+
+### Owner-accepted Day-template creation — October 26, 2026
+
+The owner completed editable re-import of independently verified v15 and confirmed the new Day template with four items in the library. v15 is the latest accepted checkpoint. Its only additions are the template and independent Collection/List/four Cards; all retained data, default/order and five originals are preserved. See [acceptance scope](Editable-Import.md#owner-acceptance-captured-day-template-creation--october-26-2026). Template application, retained-template removal/context changes, absent-library creation, calendar/structural gaps, authenticated binding and final reconciliation/recovery acceptance remain pending. Step 1 continues with cloud synchronization off.
+
+
+## Template deletion checkpoint — October 26, 2026
+
+Complete-snapshot edited export now removes unreferenced templates and exclusively owned content, clears a deleted default, retains explicit empty libraries and preserves originals plus native/runtime recovery evidence. Surviving references, transferred aliases and intersecting pending Card-deletion intent reject export. No server tombstones, published schema changes or authenticated ownership claims are introduced.
+
+Validation passes 69 export/recovery/template checks, 112 tooling tests and independent deleted-template package validation (two synthetic originals). The two existing hosted keyboard-focus checks were excluded from this export run. Default/all-template deletion, no resurrection on load, live Week preservation, repeated export, fresh import/re-export and rejection boundaries have isolated coverage. The latest owner-accepted package remains v15; one focused custom-template deletion/export/re-import test is pending. See [the detailed checkpoint](Editable-Import.md#template-deletion-edited-export--october-26-2026). Step 1 remains in progress; synchronization stays off.
+
+
+## Template deletion UI follow-up — October 26, 2026
+
+v16 is structurally valid but unchanged from v15; the attempted deletion never reached a confirmation dialog. A failing hosted regression reproduced the invisible trailing-anchor problem. Moving confirmation to the visible template row passes that regression plus editor stability and deletion export/recovery checks. Owner retry/export v17 is pending, with no Undo first. v15 remains accepted. See [the repair checkpoint](Editable-Import.md#template-deletion-confirmation-repair--october-26-2026).
+
+
+## Owner acceptance: template deletion v17 — October 26, 2026
+
+The owner completed editable v17 re-import and confirmed the custom Day template stays absent while neighboring retained templates remain. The independent comparison already verified that only the intended template-owned subgraph was removed and all surviving canonical records, five originals and native recovery hashes were preserved. v17 is the latest accepted checkpoint; no repeat test is required. Step 1 remains in progress, with cloud synchronization disabled. See [acceptance evidence](Editable-Import.md#owner-acceptance-template-deletion-v17--october-26-2026).
+
+
+## Retained template Card edit verification — October 26, 2026
+
+A new isolated test verifies the existing adapter for retained template Card title/details and edit history, stable owner/content identity, unchanged live Week/sibling templates, source/runtime recovery preservation and fresh import/identical re-export. No production exporter change was required. The new native test, 112 tooling tests and independent package validation (two synthetic originals) pass. One focused owner title edit/export v18 is pending from accepted v17; no Undo first. See [checkpoint boundaries](Editable-Import.md#retained-template-card-content-checkpoint--october-26-2026).
+
+
+## Owner acceptance: retained template Card v18 — October 26, 2026
+
+The owner confirmed editable v18 re-import and the edited Card title in the retained Week template. This closes the focused title-edit acceptance checkpoint; v18 is now accepted. Independent comparison establishes that only the intended Card title/history changed, preserving all other canonical values, five originals and native recovery integrity. No repeat test is required. Template item creation/deletion and other Step 1 boundaries remain separate work. See [acceptance evidence](Editable-Import.md#owner-acceptance-retained-template-card-v18--october-26-2026).
+
+
+## New template item creation checkpoint — October 26, 2026
+
+The template editor now uses durable portable reservations and an authored creation instant for new Cards/Notes. This closes its local-ID collision and missing-timestamp gaps through the existing structural exporter. Cancellation consumes unused reservations; allocation failure leaves drafts unchanged. Synthetic tests prove unchanged retained/live content and library metadata, Card/Note presentation/order, exact native/runtime recovery, fresh import and identical re-export.
+
+Validation: 72 affected native tests, 112 tooling tests and independent package validation pass (two synthetic originals); the two previously isolated keyboard-focus tests were excluded from this export run. A focused new template Card test/export v19 is pending from accepted v18, with no Undo first. See [scope and evidence](Editable-Import.md#new-cards-and-notes-inside-retained-templates--october-26-2026). Step 1 remains in progress; cloud synchronization is disabled.
+
+
+## Owner acceptance: new template Card v19 — October 26, 2026
+
+The owner reports successful editable v19 re-import. Screenshots confirm the retained Week template now has 43 items and the new Monday Card is restored. The independently verified addition preserves durable identity, prior canonical values, five originals and native recovery integrity. v19 is the latest accepted checkpoint; no repeat test is required. Notes and cancellation/failure retain synthetic coverage; item deletion and other Step 1 boundaries remain separate work. See [acceptance evidence](Editable-Import.md#owner-acceptance-new-template-card-v19--october-26-2026).
+
+
+## Retained template item deletion verification — October 26, 2026
+
+The existing local Card-deletion overlay supports ordinary retained-template item removal without deleting canonical content or changing live Weeks/sibling templates. A new isolated native regression verifies complete assembly preservation except the overlay UUID, source/runtime/native recovery integrity, fresh import with the item absent and identical re-export. Retained focus requiring the target blocks export rather than silently changing that metadata.
+
+The new test, 112 tooling tests and independent deletion-package validation pass (two synthetic originals). No production change or new full-suite count is claimed; the earlier 72-test run remains the broad baseline. Owner removal/export v20 is pending from accepted v19, with no Undo first. See [scope and limits](Editable-Import.md#retained-template-item-deletion-checkpoint--october-26-2026). Step 1 remains in progress with synchronization off.
+
+
+## Owner acceptance and live application follow-up — October 27, 2026
+
+Template item deletion is accepted in v20: the owner completed editable re-import, and read-only saved-template inspection confirms the item stays absent while the earlier title remains. v20 is now the latest accepted package. The owner also explored template application; saved live Week content now extends beyond the v20 export. Preserve that current state and inspect application/export behavior before further replacement. No application acceptance or Step 1 completion is claimed. See [the checkpoint](Editable-Import.md#owner-acceptance-template-item-deletion-v20--october-27-2026).
+
+
+## Additive template application checkpoint — October 27, 2026
+
+Template Apply now reserves and remaps newly copied identities at commit time for retained portable Weeks, preserving read-only preview behavior, copied links, bookmarks and example importance. The structural exporter handles only the explicit false-to-true saved-Week intent transition; other calendar metadata remains guarded. The existing initially absent/new-Week path is unchanged; replacement and wider calendar behavior are not accepted by this checkpoint.
+
+Validation passes 74 affected native tests, 112 tooling tests and independent application-package validation (two synthetic originals). Tests cover two additive applications, nested/reference/selection identity, retained source content, frozen/native recovery evidence, fresh import/re-export and failure guards. The two hosted keyboard-focus checks were excluded from this export run. Owner application/export v21 is pending from accepted v20; no Undo first. See [detailed scope](Editable-Import.md#additive-template-application-to-retained-weeks--october-27-2026). Step 1 continues; cloud synchronization remains disabled.
+
+
+## Applied-template importance ordering follow-up — October 27, 2026
+
+The owner's first application export failed despite valid reserved new item identities. Read-only diagnosis found multiple newly applied importance selections in arbitrary Set order. An expanded synthetic fixture reproduces the unsupported export failure, which is fixed by owner-qualified sorting only in the frozen importance-store comparison. All values/duplicates/unknown fields remain preserved for validation; live stores and runtime evidence are unchanged.
+
+Validation passes 75 native/112 tooling tests and independent synthetic application-package checks. Owner retry is pending: rebuild and export the already applied workspace as v21, with no further Apply or Undo. v20 remains accepted. See [repair evidence](Editable-Import.md#applied-template-importance-ordering-repair--october-27-2026). Step 1 continues with synchronization off.
+
+
+## Owner acceptance: additive template application v22 — October 27, 2026
+
+The owner completed editable v22 re-import and confirmed the copied template title/content alongside original Monday items. Package review shows the expected 353 records, 212 nondeleted Cards, 37 Lists and five originals. Independent comparison already verified the 49 independent copies, seven bookmarks, seven importance markers, unchanged retained canonical values and valid native recovery evidence. v22 is now the accepted checkpoint; no repeat application is needed. Replacement/new-Week application and other Step 1 boundaries remain separate work. See [acceptance evidence](Editable-Import.md#owner-acceptance-additive-template-application-v22--october-27-2026).
+
+
+## Retained Week replacement verification — October 27, 2026
+
+Week-template Replace mode passes explicit synthetic round-trip coverage using existing application/reservation and local deletion behavior. Replaced dated work remains canonical/recoverable; archives and undated work remain native; copied links/bookmarks/importance and original files survive fresh import/re-export. The shared fixture seeds owner-qualified prior importance without weakening ambiguous legacy-reference guards.
+
+Validation passes 76 native/112 tooling tests and independent replacement-package validation (two originals). The two hosted keyboard-focus checks were excluded from this native run. Clarified Week/Day confirmation wording passes the template-screen render test. One owner replacement/export v23 is pending from accepted v22; v22 preserves the Week before the intentional replacement. No Undo before export. See [scope and evidence](Editable-Import.md#week-template-replacement-checkpoint--october-27-2026). Step 1 remains in progress, synchronization off.

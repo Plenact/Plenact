@@ -176,3 +176,42 @@ Use `check_synthetic_assembly.py ATTACHMENTS --evening-review-package` for synth
 
 
 Use `check_synthetic_assembly.py ATTACHMENTS --weekly-review-package` for synthetic weekly-review XCTest evidence. It independently checks complete schemas/references/manifests/originals, authored writing, retained history plus a new decision, completion timestamps and deterministic new review identity. The fixture contains zero originals; personal archives require general validation without fixture-name oracles. Supported definitions: 1.0 records within working 1.1; no action, scheduling or upload runs.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --periodic-review-package` for synthetic periodic-review XCTest evidence. It checks full schemas/references/manifests/originals, new/edited writing, progress/completion and independent starting/current objective identities, statuses and progress. This fixture contains zero originals. Supported definitions remain 1.0 records in working 1.1; personal exports use general validation without fixture oracles. No source mutation, action execution or upload occurs.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --template-metadata-package` for the synthetic retained-template fixture. It verifies complete schemas/references/manifests/originals, renamed template, authored order and default Week target. This fixture contains two originals; personal packages require general validation without fixture-name expectations. Supported definitions remain unchanged 1.0 records within working 1.1; no source mutation or upload occurs.
+
+
+Use `check_synthetic_assembly.py ATTACHMENTS --new-template-package` for the isolated captured/duplicated-template fixture. It checks full schemas/references/manifests/originals, all three new templates, independent deterministic owner identities, copied nested content and default/focus metadata. The fixture has three originals, including one new photo. Supported definitions remain 1.0 records within working 1.1; personal exports require general validation without fixture-name oracles. No source mutation or upload occurs.
+
+
+### Deleted-template native evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --deleted-template-package` validates the synthetic `DeletedTemplatePackage` attachments with the general contract reader, then checks the explicit empty template library and retained live Week/content. The latest evidence has two verified originals. This fixture oracle is synthetic only; do not apply it to personal exports. Native lifecycle tests cover default/all deletion, source/runtime/recovery preservation, fresh import/re-export and guarded surviving references/transfers.
+
+
+### Retained template content native evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --retained-template-content-package` uses the general schema/reference/manifest/original validator and verifies the synthetic title/details edit belongs to a template owner distinct from the unchanged live Week. Latest isolated evidence contains two originals. Do not apply these synthetic fixture-name assertions to personal packages.
+
+
+### Retained-template item creation evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --template-item-creation-package` independently validates the synthetic `TemplateItemCreationPackage` using the general contract reader, then checks authored new Cards/Notes, List membership/order, Note presentation and separate template ownership. Latest evidence has two originals. Personal exports must use general validation and private comparison, without this synthetic fixture-name oracle.
+
+
+### Retained-template item deletion evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --template-item-deletion-package` validates the synthetic `TemplateItemDeletionPackage` with the general contract reader, then verifies the local deletion overlay retains the original Card/List membership under the expected template owner while live Week ownership remains distinct. Latest evidence contains two originals. The fixture oracle is synthetic only; personal packages require general validation and a private comparison.
+
+
+### Template application evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --template-application-package` validates synthetic `TemplateApplicationPackage` attachments using the general contract reader, then checks two independent additive copies, local linked targets, nested identities, bookmark/importance selections and explicit saved-Week intent. Latest evidence has two originals. Use general validation and private comparisons for personal exports; this fixture-name oracle is synthetic only.
+
+
+### Week-template replacement evidence
+
+`check_synthetic_assembly.py ATTACHMENTS --template-replacement-package` validates synthetic `TemplateReplacementPackage` attachments using the general contract reader, then checks replaced target records remain under the correct Week owner/local overlay, archived and undated work remain present, and new replacement copies and explicit saved intent are retained. Latest evidence has two originals. This fixture oracle is synthetic only; personal exports use private comparisons and general validation.

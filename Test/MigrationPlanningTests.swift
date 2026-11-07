@@ -560,6 +560,9 @@ final class MigrationPlanningTests: XCTestCase
         for (index, field) in fields.enumerated()
         {
 
+            window.endEditing(true)
+            try await Task.sleep(for: .milliseconds(300))
+            field.superview?.layoutIfNeeded()
             XCTAssertTrue(field.isEditable)
             XCTAssertTrue(field.isUserInteractionEnabled)
             let point = field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
@@ -635,6 +638,9 @@ final class MigrationPlanningTests: XCTestCase
         for (index, field) in fields.enumerated()
         {
 
+            window.endEditing(true)
+            try await Task.sleep(for: .milliseconds(300))
+            field.superview?.layoutIfNeeded()
             XCTAssertTrue(field.isEditable)
             XCTAssertTrue(field.isUserInteractionEnabled)
             let point = field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
@@ -785,6 +791,178 @@ final class MigrationPlanningTests: XCTestCase
             let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(clearOutput.fileWrappers?["PortableTestPackage"])))
             XCTAssertEqual(try JSONDecoder().decode(WeeklyReviewStore.Document.self,
+                from: XCTUnwrap(clearCandidate.values[key] as? Data)).records[id], cleared.records[id])
+            document.records.removeValue(forKey: id)
+            defaults.set(try JSONEncoder().encode(document), forKey: key)
+            XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: defaults, domain: domain, root: root)))
+        }
+    }
+
+
+    /// @fcn MigrationPlanningTests.testPeriodicReviewEditedExport
+    /// @brief Reconcile periodic reflections and independent objective snapshots without executing recorded decisions
+    /// @details Covers new/retained identities, real-save precision, clearing, strict validation,
+    ///          unchanged other stores, frozen evidence and fresh installation/re-export.
+    /// @return Void after isolated fixture cleanup
+    /// @throws Fixture, conversion or installation failures
+    func testPeriodicReviewEditedExport() throws
+    {
+
+        try portableFixture { backup, url in
+
+            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package = try MigrationTestPackage.prepare(preview)
+            let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
+            let root = url.deletingLastPathComponent().appendingPathComponent("PeriodicContainer")
+            let stage = url.deletingLastPathComponent().appendingPathComponent("PeriodicStage")
+            let domain = "Plenact.PeriodicExportTests." + UUID().uuidString
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            defer
+            {
+
+                defaults.removePersistentDomain(forName: domain)
+            }
+            try candidate.stage(at: stage)
+            try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
+            let key = "Plenact.PeriodicReviews.v1"
+            var document = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
+            let id = try XCTUnwrap(document.records.keys.first)
+            var review = try XCTUnwrap(document.records[id])
+            let starting = review.startingObjectives
+            review.highlights = "Edited periodic highlights"
+            review.learned = "Edited periodic learning"
+            review.direction = "Edited periodic direction"
+            review.title = "Edited periodic title"
+            review.risks = "Edited periodic risks"
+            review.step = 2
+            review.updatedAt = Date(timeIntervalSince1970: 1793059200.456789)
+            review.completedAt = review.updatedAt
+            review.objectives[0].status = .achieved
+            review.objectives[0].progress = "Updated objective progress"
+            review.objectives[0].nextStep = "Updated objective next step"
+            review.objectives.append(ReviewObjective(title: "New objective", status: .released,
+                progress: "Intentional release", nextStep: ""))
+            document.records[id] = review
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = TimeZone(identifier: review.timeZoneID)!
+            var added = PeriodicReviewRecord(title: "New periodic review", start: Date(timeIntervalSince1970: 1793620800),
+                end: Date(timeIntervalSince1970: 1794139200), calendar: calendar)
+            added.highlights = "New periodic highlights"
+            added.updatedAt = review.updatedAt
+            XCTAssertNil(document.records[added.id.uuidString])
+            document.records[added.id.uuidString] = added
+            defaults.set(try JSONEncoder().encode(document), forKey: key)
+            let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime = try PortableRuntimeEvidence.capture(root: root)
+            let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output = try PortableEditedExport.prepare(frozen)
+            let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
+            XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
+                try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: output))
+            XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
+            XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
+            let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
+            let restoredBytes = try XCTUnwrap(rebuilt.values[key] as? Data)
+            XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(JSONEncoder().encode(document), store: key)])
+                .isEqual(to: ["v": try PortableEditedExport.nativeJSON(restoredBytes, store: key)]))
+            let originalAssembly = try JSONSerialization.jsonObject(with:
+                MigrationBackupReader.file("Assembly.json", in: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))) as! [String: Any]
+            let editedAssembly = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            var beforeBase = (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var afterBase = (editedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var beforePlanning = beforeBase["planning"] as! [String: Any]
+            var afterPlanning = afterBase["planning"] as! [String: Any]
+            let retained = beforePlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
+            let exported = afterPlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
+            XCTAssertTrue(exported.contains { $0["id"] as? String == retained[0]["id"] as? String })
+            beforeBase["planning"] = beforePlanning
+            afterBase["planning"] = afterPlanning
+            XCTAssertTrue(NSDictionary(dictionary: beforeBase).isEqual(to: afterBase))
+            let restored = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: restoredBytes)
+            XCTAssertEqual(restored.records[id]?.startingObjectives, starting)
+            XCTAssertNotEqual(restored.records[id]?.startingObjectives, restored.records[id]?.objectives)
+            XCTAssertEqual(restored.records[id]?.objectives, review.objectives)
+            XCTAssertEqual(restored.records[added.id.uuidString]?.id, added.id)
+            for (store, value) in candidate.values where store != key
+            {
+
+                if let before = value as? Data, let after = rebuilt.values[store] as? Data
+                {
+
+                    XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(before, store: store)])
+                        .isEqual(to: ["v": try PortableEditedExport.nativeJSON(after, store: store)]))
+                }
+            }
+            let fresh = url.deletingLastPathComponent().appendingPathComponent("PeriodicFreshStage")
+            try rebuilt.stage(at: fresh)
+            try rebuilt.install(from: fresh, root: root, defaults: defaults, domain: domain)
+            XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in:
+                PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
+            for name in ["Assembly.json", "Manifest.json"]
+            {
+
+                let attachment = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                    uniformTypeIdentifier: "public.json")
+                attachment.name = "PeriodicReviewPackage-" + name
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+            let blobs = XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
+            blobs.name = "PeriodicReviewPackage-Blobs.json"
+            blobs.lifetime = .keepAlways
+            add(blobs)
+            let valid = try XCTUnwrap(defaults.data(forKey: key))
+            for patch: [String: Any] in [["step": 3], ["futureField": true], ["title": " "],
+                ["startKey": "2026-02-30"], ["endKey": "1900-01-01"], ["endKey": "2026-11-30"], ["timeZoneID": "Invalid/Zone"]]
+            {
+
+                var raw = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var records = raw["records"] as! [String: Any]
+                var value = records[id] as! [String: Any]
+                value.merge(patch) { _, replacement in replacement }
+                records[id] = value
+                raw["records"] = records
+                defaults.set(try JSONSerialization.data(withJSONObject: raw), forKey: key)
+                XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                    defaults: defaults, domain: domain, root: root)))
+            }
+            let objective = try MigrationContentValues.object(review.objectives[0])
+            var unknownStatus = objective
+            unknownStatus["status"] = "Unknown"
+            var unknownField = objective
+            unknownField["futureField"] = true
+            for objectives in [[objective, objective], [unknownStatus], [unknownField]]
+            {
+
+                var raw = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var records = raw["records"] as! [String: Any]
+                var value = records[id] as! [String: Any]
+                value["objectives"] = objectives
+                records[id] = value
+                raw["records"] = records
+                defaults.set(try JSONSerialization.data(withJSONObject: raw), forKey: key)
+                XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                    defaults: defaults, domain: domain, root: root)))
+            }
+            var cleared = restored
+            cleared.records[id]?.highlights = ""
+            cleared.records[id]?.learned = ""
+            cleared.records[id]?.direction = ""
+            cleared.records[id]?.startingObjectives = []
+            cleared.records[id]?.objectives = []
+            cleared.records[id]?.risks = ""
+            cleared.records[id]?.priorities = []
+            cleared.records[id]?.completedAt = nil
+            defaults.set(try JSONEncoder().encode(cleared), forKey: key)
+            let clearOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                defaults: defaults, domain: domain, root: root))
+            let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                XCTUnwrap(clearOutput.fileWrappers?["PortableTestPackage"])))
+            XCTAssertEqual(try JSONDecoder().decode(PeriodicReviewStore.Document.self,
                 from: XCTUnwrap(clearCandidate.values[key] as? Data)).records[id], cleared.records[id])
             document.records.removeValue(forKey: id)
             defaults.set(try JSONEncoder().encode(document), forKey: key)

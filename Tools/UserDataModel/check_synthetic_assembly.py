@@ -105,7 +105,153 @@ def check_native_package(directory, prefix="NativePackage"):
                                  'content_selection:' + selection['payload']['card_id']))
         if selection['id'] != expected:
             raise ContractError('native_selection_identity_mismatch')
-    if prefix == 'WeeklyReviewPackage':
+    if prefix == 'TemplateReplacementPackage':
+        export = binding['workspace_export']
+        planning = base['planning']
+        deleted = set(export.get('local_card_deletions', []))
+        cards = {r['id']: r['payload'] for r in planning['content']['cards']}
+        lists = {r['id']: r['payload'] for r in planning['content']['lists']}
+        if len(deleted) != 2 or {cards[id]['title'] for id in deleted} != {'Retained template task', 'Retained Tuesday task'}:
+            raise ContractError('template_replacement_fixture_missing_retained_targets')
+        owner = planning['weeks'][0]['payload']['collection_id']
+        if any(lists[cards[id]['list_id']]['collection_id'] != owner for id in deleted):
+            raise ContractError('template_replacement_fixture_wrong_deleted_owner')
+        archived = [r for r in cards.values() if r['title'] == 'Retained archived task']
+        undated = [r for r in cards.values() if r['title'] == 'Retained undated task']
+        if len(archived) != 1 or not archived[0]['archived'] or len(undated) != 1:
+            raise ContractError('template_replacement_fixture_lost_preserved_work')
+        copies = [r for id, r in cards.items() if id not in deleted and lists[r['list_id']]['collection_id'] == owner
+                  and r['title'] in {'Retained template task', 'Applied link target'}]
+        if len(copies) != 2 or not planning['weeks'][0]['payload']['explicitly_saved']:
+            raise ContractError('template_replacement_fixture_missing_copies')
+    elif prefix == 'TemplateApplicationPackage':
+        planning = base['planning']
+        week = planning['weeks'][0]['payload']
+        parents = {r['id'] for r in planning['content']['lists'] if r['payload']['collection_id'] == week['collection_id']}
+        cards = [r for r in planning['content']['cards'] if r['payload']['list_id'] in parents]
+        targets = [r for r in cards if r['payload']['title'] == 'Applied link target']
+        copies = [r for r in cards if r['payload']['title'] == 'Retained template task' and len(r['payload']['checklists']) == 2]
+        if len(targets) != 2 or len(copies) != 2 or not week['explicitly_saved']:
+            raise ContractError('template_application_fixture_missing_copies')
+        target_ids = {r['id'] for r in targets}
+        for card in copies:
+            link = card['payload']['checklists'][-1]['items'][0]['content']
+            if link['kind'] != 'linked_card' or link['card_id'] not in target_ids:
+                raise ContractError('template_application_fixture_link_mismatch')
+            selection = next(r['payload'] for r in base['content_selections'] if r['payload']['card_id'] == card['id'])
+            if not selection['bookmarked'] or selection['importance'] != 1:
+                raise ContractError('template_application_fixture_focus_mismatch')
+        if len({r['payload']['checklists'][0]['id'] for r in copies}) != 2:
+            raise ContractError('template_application_fixture_nested_identity_reused')
+    elif prefix == 'TemplateItemDeletionPackage':
+        export = binding['workspace_export']
+        deleted = export.get('local_card_deletions', [])
+        planning = base['planning']
+        if len(deleted) != 1:
+            raise ContractError('template_item_deletion_fixture_missing_overlay')
+        card = next(r for r in planning['content']['cards'] if r['id'] == deleted[0])
+        parent = next(r for r in planning['content']['lists'] if r['id'] == card['payload']['list_id'])
+        owner = parent['payload']['collection_id']
+        template = next(r for r in planning['templates'] if r['payload']['collection_id'] == owner)
+        if template['payload']['name'] != 'First week' or deleted[0] not in parent['payload']['card_ids']:
+            raise ContractError('template_item_deletion_fixture_lost_retained_membership')
+        week_owners = {r['payload']['collection_id'] for r in planning['weeks']}
+        if owner in week_owners or card['payload']['title'] != 'Retained template task':
+            raise ContractError('template_item_deletion_fixture_owner_mismatch')
+        if not any(r['payload']['collection_id'] in week_owners for r in planning['content']['lists']):
+            raise ContractError('template_item_deletion_fixture_lost_live_week')
+    elif prefix == 'TemplateItemCreationPackage':
+        planning = base['planning']
+        template = next(r for r in planning['templates'] if r['payload']['name'] == 'First week')
+        owner = template['payload']['collection_id']
+        lists = [r for r in planning['content']['lists'] if r['payload']['collection_id'] == owner]
+        parents = {r['id'] for r in lists}
+        cards = [r for r in planning['content']['cards'] if r['payload']['list_id'] in parents]
+        new = [r for r in cards if r['payload']['title'] in {'New retained template Card', 'New retained template Note'}]
+        if len(new) != 2 or len(cards) != 3 or any(not r['payload']['source_created_at_utc'] for r in new):
+            raise ContractError('template_item_creation_fixture_missing_items')
+        if owner in {r['payload']['collection_id'] for r in planning['weeks']}:
+            raise ContractError('template_item_creation_fixture_owner_mismatch')
+        ordered = lists[0]['payload']['card_ids']
+        by_id = {r['id']: r['payload'] for r in cards}
+        if [by_id[id]['title'] for id in ordered[-2:]] != ['New retained template Card', 'New retained template Note']:
+            raise ContractError('template_item_creation_fixture_order_mismatch')
+        if by_id[ordered[-1]]['presentation'] != 'note':
+            raise ContractError('template_item_creation_fixture_note_mismatch')
+    elif prefix == 'RetainedTemplateContentPackage':
+        planning = base['planning']
+        cards = planning['content']['cards']
+        edited = [r for r in cards if r['payload']['title'] == 'Edited retained template task']
+        if len(edited) != 1 or edited[0]['payload']['description_override'] != 'Edited template details':
+            raise ContractError('retained_template_content_fixture_missing_edit')
+        lists = {r['id']: r['payload']['collection_id'] for r in planning['content']['lists']}
+        template_owners = {r['payload']['collection_id'] for r in planning['templates']}
+        week_owners = {r['payload']['collection_id'] for r in planning['weeks']}
+        owner = lists[edited[0]['payload']['list_id']]
+        if owner not in template_owners or owner in week_owners:
+            raise ContractError('retained_template_content_fixture_owner_mismatch')
+        live = [r for r in cards if lists[r['payload']['list_id']] in week_owners]
+        if not any(r['payload']['title'] == 'Retained template task' for r in live):
+            raise ContractError('retained_template_content_fixture_changed_live_source')
+    elif prefix == 'DeletedTemplatePackage':
+        planning = base['planning']
+        library = planning['template_libraries'][0]['payload']
+        if planning['templates'] or library['template_ids'] or library['default_week_id'] is not None:
+            raise ContractError('deleted_template_fixture_not_empty')
+        if not planning['weeks'] or not planning['content']['cards']:
+            raise ContractError('deleted_template_fixture_lost_live_week')
+    elif prefix == 'NewTemplatePackage':
+        templates = base['planning']['templates']
+        if len(templates) != 6:
+            raise ContractError('new_template_native_fixture_missing_templates')
+        new = [r for r in templates if r['payload']['name'] in {
+            'Captured Week', 'Captured Day', 'Duplicated template'}]
+        if len(new) != 3:
+            raise ContractError('new_template_native_fixture_missing_creations')
+        cards = base['planning']['content']['cards']
+        lists = base['planning']['content']['lists']
+        for template in new:
+            owner = template['payload']['collection_id']
+            if owner != str(uuid.uuid5(uuid.UUID(template['workspace_id']), 'template_owner:' + template['id'])):
+                raise ContractError('new_template_native_owner_identity_mismatch')
+            parents = {r['id'] for r in lists if r['payload']['collection_id'] == owner}
+            owned = [r for r in cards if r['payload']['list_id'] in parents]
+            expected_count = 2 if template['payload']['name'] == 'Captured Week' else 1
+            rich = [r for r in owned if r['payload']['title'] == 'Retained template task']
+            if len(owned) != expected_count or len(rich) != 1 or rich[0]['payload']['checklists'][0]['title'] != 'Copied steps':
+                raise ContractError('new_template_native_fixture_missing_nested_content')
+        captured = next(r for r in new if r['payload']['name'] == 'Captured Week')
+        library = base['planning']['template_libraries'][0]['payload']
+        if library['default_week_id'] != captured['id'] or not captured['payload']['example_focus']['bookmarked']:
+            raise ContractError('new_template_native_fixture_missing_default_focus')
+    elif prefix == 'TemplateMetadataPackage':
+        templates = {r['id']: r['payload'] for r in base['planning']['templates']}
+        libraries = base['planning']['template_libraries']
+        if len(templates) != 3 or len(libraries) != 1:
+            raise ContractError('template_metadata_native_fixture_missing_library')
+        library = libraries[0]['payload']
+        if [templates[id]['name'] for id in library['template_ids']] != [
+                'One day', 'Second week', 'Renamed retained week']:
+            raise ContractError('template_metadata_native_fixture_missing_name_order')
+        if templates[library['default_week_id']]['name'] != 'Second week':
+            raise ContractError('template_metadata_native_fixture_missing_default')
+    elif prefix == 'PeriodicReviewPackage':
+        reviews = base['planning']['periodic_reviews']
+        edited = [r['payload'] for r in reviews if r['payload']['title'] == 'Edited periodic title']
+        added = [r for r in reviews if r['payload']['title'] == 'New periodic review']
+        if len(reviews) != 2 or len(edited) != 1 or len(added) != 1:
+            raise ContractError('periodic_native_fixture_missing_reviews')
+        review = edited[0]
+        if any(review[k] != 'Edited periodic ' + v for k, v in {
+                'highlights': 'highlights', 'learned': 'learning', 'direction': 'direction', 'risks': 'risks'}.items()):
+            raise ContractError('periodic_native_fixture_missing_writing')
+        starting, current = review['starting_objectives'], review['objectives']
+        if (review['step'] != 2 or not review['completed_at_utc'] or len(starting) != 1 or len(current) != 2
+                or starting[0]['id'] != current[0]['id'] or starting[0]['status'] != 'active'
+                or current[0]['status'] != 'achieved' or current[0]['progress'] != 'Updated objective progress'
+                or current[0]['next_step'] != 'Updated objective next step' or current[1]['status'] != 'released'):
+            raise ContractError('periodic_native_fixture_missing_objective_snapshots')
+    elif prefix == 'WeeklyReviewPackage':
         reviews = base['planning']['weekly_reviews']
         edited = [r['payload'] for r in reviews if r['payload']['highlights'] == 'Edited weekly highlights']
         added = [r for r in reviews if r['payload']['highlights'] == 'New weekly highlights']
@@ -278,7 +424,52 @@ def main():
     modes.add_argument('--daily-plan-package', action='store_true')
     modes.add_argument('--evening-review-package', action='store_true')
     modes.add_argument('--weekly-review-package', action='store_true')
+    modes.add_argument('--periodic-review-package', action='store_true')
+    modes.add_argument('--template-metadata-package', action='store_true')
+    modes.add_argument('--template-replacement-package', action='store_true')
+    modes.add_argument('--template-application-package', action='store_true')
+    modes.add_argument('--template-item-deletion-package', action='store_true')
+    modes.add_argument('--template-item-creation-package', action='store_true')
+    modes.add_argument('--retained-template-content-package', action='store_true')
+    modes.add_argument('--deleted-template-package', action='store_true')
+    modes.add_argument('--new-template-package', action='store_true')
     args = parser.parse_args()
+    if args.template_replacement_package:
+        count = check_native_package(args.attachments, prefix='TemplateReplacementPackage')
+        print(f'Template replacement package passed independent validation: {count} original files.')
+        return
+    if args.template_application_package:
+        count = check_native_package(args.attachments, prefix='TemplateApplicationPackage')
+        print(f'Template application package passed independent validation: {count} original files.')
+        return
+    if args.template_item_deletion_package:
+        count = check_native_package(args.attachments, prefix='TemplateItemDeletionPackage')
+        print(f'Template item deletion package passed independent validation: {count} original files.')
+        return
+    if args.template_item_creation_package:
+        count = check_native_package(args.attachments, prefix='TemplateItemCreationPackage')
+        print(f'Template item creation package passed independent validation: {count} original files.')
+        return
+    if args.retained_template_content_package:
+        count = check_native_package(args.attachments, prefix='RetainedTemplateContentPackage')
+        print(f'Retained template content package passed independent validation: {count} original files.')
+        return
+    if args.deleted_template_package:
+        count = check_native_package(args.attachments, prefix='DeletedTemplatePackage')
+        print(f'Deleted template package passed independent validation: {count} original files.')
+        return
+    elif args.new_template_package:
+        count = check_native_package(args.attachments, prefix='NewTemplatePackage')
+        print(f'New template package passed independent validation: {count} original files.')
+        return
+    if args.template_metadata_package:
+        count = check_native_package(args.attachments, prefix='TemplateMetadataPackage')
+        print(f'Template metadata package passed independent validation: {count} original files.')
+        return
+    if args.periodic_review_package:
+        count = check_native_package(args.attachments, prefix='PeriodicReviewPackage')
+        print(f'Periodic review package passed independent validation: {count} original files.')
+        return
     if args.weekly_review_package:
         count = check_native_package(args.attachments, prefix='WeeklyReviewPackage')
         print(f'Weekly review package passed independent validation: {count} original files.')

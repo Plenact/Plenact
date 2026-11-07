@@ -20,6 +20,18 @@ enum PortableEditedExport
 
     static let scheduleFields: Set<String> = ["startDate", "dueDate", "startDateKind", "dueDateKind"]
 
+    /// Selects one explicitly reviewed planning-store family.
+    /// @section Purpose
+    ///     Share reference and preservation rules without accepting unrelated source stores.
+    private enum PlanningFamily: String
+    {
+
+        case daily = "daily_plan"
+        case weekly = "weekly_review"
+        case periodic = "periodic_review"
+    }
+
+
     /// Explains unsupported changes without exposing private content.
     /// @section Purpose
     ///     Prevent an apparently successful package from omitting an unconverted edit.
@@ -37,7 +49,7 @@ enum PortableEditedExport
             switch self
             {
             case .unsupported:
-                return "This export supports Board-created Cards and Lists, same-Board movement and reordering, automatic Week rollover, profile and Studio personalization, saved app and review-rhythm preferences, daily-plan writing, check-ins and evening/weekly-review history, existing List and Collection metadata and appearance, plus supported Card content, completion, scheduling, deletion and history. Another saved change needs an export adapter. Your local backup can preserve all changes."
+                return "This export supports Board-created Cards and Lists, same-Board movement and reordering, automatic Week rollover, profile and Studio personalization, saved app and review-rhythm preferences, daily-plan writing, check-ins and evening, weekly and periodic-review history, new template Cards and Notes, additive template application to retained Weeks, captured/duplicated templates, retained names and library order/defaults, existing List and Collection metadata and appearance, plus supported Card content, completion, scheduling, deletion and history. Another saved change needs an export adapter. Your local backup can preserve all changes."
             case .structureChanged:
                 return "These structural changes cannot yet be exported safely. Creation in Board views, movement within the same Board and reordering are supported; cross-Board transfers and List deletion still need support. Your title, time and other saved changes remain intact; a local backup preserves the complete workspace."
             case .inconsistent:
@@ -48,7 +60,7 @@ enum PortableEditedExport
 
 
     /// @fcn PortableEditedExport.nativeJSON
-    /// @brief Normalize reviewed Set encodings and daily/weekly timestamp precision for comparison
+    /// @brief Normalize reviewed Set/importance encodings and planning timestamp precision for comparison
     /// @param[in] bytes Native Codable store bytes
     /// @param[in] store Optional store family for explicit legacy importance-level comparison
     /// @return Comparable decoded store
@@ -66,6 +78,16 @@ enum PortableEditedExport
                     entry["level"] = 1
                 }
                 return entry
+            }.sorted { left, right in
+
+                let leftOwner = (left["collectionID"] as? String ?? "").lowercased()
+                let rightOwner = (right["collectionID"] as? String ?? "").lowercased()
+                if leftOwner != rightOwner
+                {
+
+                    return leftOwner < rightOwner
+                }
+                return (left["cardID"] as? Int ?? Int.min) < (right["cardID"] as? Int ?? Int.min)
             }
         }
         if store == "Plenact.LocalProfile.v1", var profile = value as? [String: Any]
@@ -81,7 +103,7 @@ enum PortableEditedExport
             }
             value = profile
         }
-        if store == "Plenact.DailyPlans.v1" || store == "Plenact.WeeklyReviews.v1"
+        if ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1"].contains(store ?? "")
         {
 
             value = planningTimestampComparison(value)
@@ -91,10 +113,10 @@ enum PortableEditedExport
 
 
     /// @fcn PortableEditedExport.planningTimestampComparison
-    /// @brief Compare declared daily/weekly timestamps at the canonical millisecond precision
+    /// @brief Compare declared planning timestamps at the canonical millisecond precision
     /// @details Only frozen comparison values change. Exact source seconds remain in the native
     ///          backup; authored strings, array order, nulls and unrelated numeric values are retained.
-    /// @param[in] value Validated daily-plan or weekly-review subtree
+    /// @param[in] value Validated planning-store subtree
     /// @return Comparable subtree with integer epoch milliseconds for known timestamp fields
     private static func planningTimestampComparison(_ value: Any) -> Any
     {
@@ -413,25 +435,27 @@ enum PortableEditedExport
 
 
     /// @fcn PortableEditedExport.planningEdits
-    /// @brief Reconcile daily plans or weekly reviews with explicit historical reference provenance
-    /// @details Retains daily/weekly identities and unchanged payload fields. Unknown references, removed records
+    /// @brief Reconcile daily, weekly or periodic records with explicit historical reference provenance
+    /// @details Retains explicit planning identities and unchanged payload fields. Unknown references, removed records
     ///          and changed date/time-zone identities fail closed. Review history is data, never replayed.
     /// @param[in] assembly Reconciled content, personalization and rhythm assembly
     /// @param[in] current Frozen native values
     /// @param[in] baseline Imported native projection
     /// @param[in] aliases Retained and explicitly reserved numeric identities
-    /// @param[in] weekly Select weekly-review records instead of daily plans
-    /// @return Assembly containing verified daily or weekly snapshots
+    /// @param[in] family Explicit daily, weekly or periodic store family
+    /// @return Assembly containing verified planning snapshots
     /// @throws Invalid source, identity changes, ambiguous references or unsupported removals
     private static func planningEdits(assembly: [String: Any], current: [String: Any],
-        baseline: PortableWorkspaceCandidate, aliases: [String: Int], weekly: Bool = false) throws -> [String: Any]
+        baseline: PortableWorkspaceCandidate, aliases: [String: Int], family: PlanningFamily = .daily) throws -> [String: Any]
     {
 
-        let key = weekly ? "Plenact.WeeklyReviews.v1" : "Plenact.DailyPlans.v1"
-        let group = weekly ? "weekly_reviews" : "daily_plans"
-        let container = weekly ? "records" : "plans"
+        let weekly = family == .weekly
+        let periodic = family == .periodic
+        let key = periodic ? "Plenact.PeriodicReviews.v1" : (weekly ? "Plenact.WeeklyReviews.v1" : "Plenact.DailyPlans.v1")
+        let group = periodic ? "periodic_reviews" : (weekly ? "weekly_reviews" : "daily_plans")
+        let container = family == .daily ? "plans" : "records"
         let identityField = weekly ? "source_review_key" : "date"
-        let kind = weekly ? "weekly_review" : "daily_plan"
+        let kind = family.rawValue
         guard let bytes = current[key] as? Data else
         {
 
@@ -447,7 +471,12 @@ enum PortableEditedExport
         var base = export["base_workspace"] as! [String: Any]
         var planning = base["planning"] as! [String: Any]
         let retained = planning[group] as! [[String: Any]]
-        if weekly
+        if periodic
+        {
+
+            _ = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: bytes)
+        }
+        else if weekly
         {
 
             _ = try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: bytes)
@@ -470,23 +499,43 @@ enum PortableEditedExport
         {
 
             let zone = plan["timeZoneID"] as! String
-            let old = retained.first { ($0["payload"] as? [String: Any])?[identityField] as? String == date }
+            let old = retained.first {
+
+                periodic ? ($0["id"] as? String == date.lowercased()) :
+                    (($0["payload"] as? [String: Any])?[identityField] as? String == date)
+            }
             if let old, (old["payload"] as? [String: Any])?["time_zone"] as? String != zone
             {
 
                 throw Failure.unsupported
             }
+            if periodic, let old
+            {
+
+                let payload = old["payload"] as! [String: Any]
+                guard payload["start_date"] as? String == plan["startKey"] as? String,
+                      payload["end_date"] as? String == plan["endKey"] as? String else
+                {
+
+                    throw Failure.unsupported
+                }
+            }
             let name = weekly ? kind + ":" + date : kind + ":" + date + ":" + zone
-            let id = try old?["id"] as? String ?? PortableRichCardExport.identity(namespace: baseline.workspaceID, name: name)
-            var source: [String: Any] = ["recordType": kind, "owner": key, "legacyID": date]
-            if !weekly
+            let id = try old?["id"] as? String ?? (periodic ? MigrationContentValues.lowerUUID(plan["id"]) :
+                PortableRichCardExport.identity(namespace: baseline.workspaceID, name: name))
+            var source: [String: Any] = ["recordType": kind, "owner": key, "legacyID": periodic ? date.lowercased() : date]
+            if family == .daily
             {
 
                 source["discriminator"] = zone
             }
             entries.append(["source": source, "target": id])
         }
-        guard retained.allSatisfy({ sourceRecords[($0["payload"] as! [String: Any])[identityField] as! String] != nil }) else
+        guard retained.allSatisfy({
+
+            let token = periodic ? ($0["id"] as! String).uppercased() : ($0["payload"] as! [String: Any])[identityField] as! String
+            return sourceRecords[token] != nil
+        }) else
         {
 
             throw Failure.unsupported
@@ -629,6 +678,14 @@ enum PortableEditedExport
                 "direction": "direction", "constraints": "constraints", "risks": "risks", "priorities": "priorities",
                 "decisions": "decisions", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt"]
         }
+        if periodic
+        {
+
+            sourceFields = ["title": "title", "start_date": "startKey", "end_date": "endKey", "time_zone": "timeZoneID",
+                "step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction", "risks": "risks",
+                "priorities": "priorities", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt",
+                "starting_objectives": "startingObjectives", "objectives": "objectives"]
+        }
         var updated = retained
         for record in converted.records
         {
@@ -639,7 +696,7 @@ enum PortableEditedExport
                 var old = updated[index]
                 var payload = old["payload"] as! [String: Any]
                 let fresh = record["payload"] as! [String: Any]
-                let date = fresh[identityField] as! String
+                let date = periodic ? (record["id"] as! String).uppercased() : fresh[identityField] as! String
                 let before = previousSources[date] as? [String: Any] ?? [:]
                 let after = sources[date] as! [String: Any]
                 for (field, value) in fresh
@@ -662,6 +719,95 @@ enum PortableEditedExport
             }
         }
         planning[group] = updated
+        base["planning"] = planning
+        export["base_workspace"] = base
+        result["workspace_export"] = export
+        return result
+    }
+
+
+    /// @fcn PortableEditedExport.templateMetadata
+    /// @brief Reconcile retained template names, library order and default Week selection
+    /// @details Content reconciliation retains owner identities. Creation/removal and changes to
+    ///          template date policy, kind, weekday mappings or example-focus metadata remain blocked.
+    /// @param[in] assembly Content-reconciled assembly
+    /// @param[in] current Frozen native stores
+    /// @param[in] baseline Imported native projection
+    /// @return Assembly with retained template/library identities and supported metadata edits
+    /// @throws Changed identity/context, unsupported library lifecycle or invalid default selection
+    private static func templateMetadata(assembly: [String: Any], current: [String: Any],
+        baseline: PortableWorkspaceCandidate) throws -> [String: Any]
+    {
+
+        let key = "Plenact.PlanningTemplates.v1"
+        guard let bytes = current[key] as? Data, let oldBytes = baseline.values[key] as? Data else
+        {
+
+            guard current[key] == nil, baseline.values[key] == nil else
+            {
+
+                throw Failure.unsupported
+            }
+            return assembly
+        }
+        let library = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: bytes)
+        let previous = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: oldBytes)
+        guard library.version == previous.version, library.version == 1,
+              library.bundledRoutineRevision == previous.bundledRoutineRevision,
+              Set(library.templates.map(\.id)).count == library.templates.count,
+              Set(library.templates.map(\.id)) == Set(previous.templates.map(\.id)) else
+        {
+
+            throw Failure.structureChanged
+        }
+        var result = assembly
+        var export = result["workspace_export"] as! [String: Any]
+        var base = export["base_workspace"] as! [String: Any]
+        var planning = base["planning"] as! [String: Any]
+        var templates = planning["templates"] as! [[String: Any]]
+        var libraries = planning["template_libraries"] as! [[String: Any]]
+        guard libraries.count == 1,
+              Set(templates.compactMap { $0["id"] as? String }) == Set(library.templates.map { $0.id.uuidString.lowercased() }) else
+        {
+
+            throw Failure.inconsistent
+        }
+        for template in library.templates
+        {
+
+            let old = previous.templates.first { $0.id == template.id }!
+            guard old.collection.id == template.collection.id, old.kind == template.kind,
+                  old.anchorKey == template.anchorKey, old.timeZoneID == template.timeZoneID,
+                  old.firstWeekday == template.firstWeekday, old.weekdays == template.weekdays,
+                  old.exampleFocus == template.exampleFocus else
+            {
+
+                throw Failure.unsupported
+            }
+            let index = templates.firstIndex { $0["id"] as? String == template.id.uuidString.lowercased() }!
+            if template.name != old.name
+            {
+
+                var payload = templates[index]["payload"] as! [String: Any]
+                payload["name"] = template.name
+                templates[index]["payload"] = payload
+            }
+        }
+        if let selected = library.defaultWeekID
+        {
+
+            guard library.templates.first(where: { $0.id == selected })?.kind == .week else
+            {
+
+                throw Failure.unsupported
+            }
+        }
+        var payload = libraries[0]["payload"] as! [String: Any]
+        payload["template_ids"] = library.templates.map { $0.id.uuidString.lowercased() }
+        payload["default_week_id"] = library.defaultWeekID?.uuidString.lowercased() as Any? ?? NSNull()
+        libraries[0]["payload"] = payload
+        planning["templates"] = templates
+        planning["template_libraries"] = libraries
         base["planning"] = planning
         export["base_workspace"] = base
         result["workspace_export"] = export
@@ -729,7 +875,7 @@ enum PortableEditedExport
         let retainedRecoveryKeys: Set<String> = ["Plenact.ExampleCardLocations.Applied.v1", "Plenact.ExampleCardLocations.Backup.v1"]
         let deviceKeys = Set(current.keys.filter { retainedRecoveryKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.") ||
             ["Plenact.ActivityRecents.v1", "Plenact.LibraryRecents.v1", "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1", "Plenact.Welcome.lastDeparture.v1"].contains($0) })
-        let newSupportedKeys: Set<String> = ["Plenact.WeeklyReviews.v1", "Plenact.DailyPlans.v1", "Plenact.ReviewRhythm.v1", "Plenact.LocalProfile.v1", "Plenact.Studio.Settings.v1",
+        let newSupportedKeys: Set<String> = ["Plenact.PeriodicReviews.v1", "Plenact.WeeklyReviews.v1", "Plenact.DailyPlans.v1", "Plenact.ReviewRhythm.v1", "Plenact.LocalProfile.v1", "Plenact.Studio.Settings.v1",
             "Plenact.Studio.Artwork.v1", "Plenact.WeekAppearance.v1"]
         guard Set(current.keys).subtracting(deviceKeys).subtracting(newSupportedKeys)
                 == Set(baseline.values.keys).subtracting(newSupportedKeys),
@@ -750,11 +896,25 @@ enum PortableEditedExport
         let rolloverPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: rollover.assembly)
         baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: rolloverPackage),
             retainedAliases: aliases, mediaFilenames: mediaNames)
-        let contentAssembly = try PortableStructuralEdits.apply(assembly: rollover.assembly,
+        let deletionAssembly = try PortableStructuralEdits.removeTemplates(assembly: rollover.assembly,
             current: current, aliases: aliases, baseline: baseline)
-        let rhythmAssembly = try reviewRhythm(assembly: contentAssembly, current: current, baseline: baseline)
+        let deletionPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: deletionAssembly)
+        baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: deletionPackage),
+            retainedAliases: aliases, mediaFilenames: mediaNames)
+        let creation = try PortableStructuralEdits.newTemplates(assembly: deletionAssembly,
+            current: current, aliases: aliases, baseline: baseline)
+        current = creation.current
+        aliases = creation.aliases
+        let creationPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: creation.assembly)
+        baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: creationPackage),
+            retainedAliases: aliases, mediaFilenames: mediaNames)
+        let contentAssembly = try PortableStructuralEdits.apply(assembly: creation.assembly,
+            current: current, aliases: aliases, baseline: baseline)
+        let templateAssembly = try templateMetadata(assembly: contentAssembly, current: current, baseline: baseline)
+        let rhythmAssembly = try reviewRhythm(assembly: templateAssembly, current: current, baseline: baseline)
         let dailyAssembly = try planningEdits(assembly: rhythmAssembly, current: current, baseline: baseline, aliases: aliases)
-        let effectiveAssembly = try planningEdits(assembly: dailyAssembly, current: current, baseline: baseline, aliases: aliases, weekly: true)
+        let weeklyAssembly = try planningEdits(assembly: dailyAssembly, current: current, baseline: baseline, aliases: aliases, family: .weekly)
+        let effectiveAssembly = try planningEdits(assembly: weeklyAssembly, current: current, baseline: baseline, aliases: aliases, family: .periodic)
         let structuralPackage = try PortableLocalDeletions.package(snapshot: exportSnapshot, assembly: effectiveAssembly)
         baseline = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: structuralPackage), retainedAliases: aliases, mediaFilenames: mediaNames)
         var edits: [Int: [String: Any]] = [:]

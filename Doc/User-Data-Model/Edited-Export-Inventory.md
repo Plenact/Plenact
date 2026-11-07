@@ -67,3 +67,78 @@ The [evening-review checkpoint](Editable-Import.md#evening-review-writing-and-hi
 ## Weekly-review implementation update
 
 The [weekly checkpoint](Editable-Import.md#weekly-review-writing-and-history-edited-export--october-26-2026) adds writing, priorities, decision history, progress/completion and new reviews to edited export. It retains explicit identity/context/reference boundaries and does not execute actions. All 65 affected native and 112 tooling tests and independent weekly-package checks pass. Manual acceptance remains pending; v11 remains accepted. Periodic reviews, templates and other calendar/structural gaps remain follow-up work.
+
+
+## Periodic-review implementation update
+
+The [periodic checkpoint](Editable-Import.md#periodic-review-writing-and-objective-edited-export--october-26-2026) adds periodic writing, title/progress/completion, priorities and independent objective snapshots, preserving authored UUIDs for new reviews. All 66 affected native and 112 tooling tests and independent package checks pass. Manual acceptance remains pending; v12 remains accepted. Templates and remaining calendar/structural gaps, ownership and final reconciliation/recovery are still follow-up work.
+
+
+## Retained-template metadata implementation update
+
+The [template metadata checkpoint](Editable-Import.md#retained-template-metadata-edited-export--october-26-2026) adds retained names, authored library order and default Week selection/clearing. All 67 affected native and 112 tooling tests and independent package checks pass. Manual rename acceptance is pending; v13 remains accepted. Template creation/removal, date/weekday/focus changes and remaining calendar/structural gaps still need separate reconciliation, alongside ownership and final recovery acceptance.
+
+
+## New-template creation implementation update
+
+The [creation checkpoint](Editable-Import.md#captured-and-duplicated-template-creation-edited-export--october-26-2026) adds Day/Week capture and duplication within an existing retained library, preserving authored template IDs and independent copied content/reference/media identities. Validation passes 68 export/recovery/template checks, two isolated hosted focus checks, 112 tooling tests and independent package checks. Manual acceptance is pending; v14 remains accepted. Retained-template removal/context changes, absent-library creation, unresolved external references, calendar/structural gaps, ownership and final reconciliation/recovery remain follow-up work.
+
+
+## Template deletion follow-up — October 26, 2026
+
+The [deletion checkpoint](Editable-Import.md#template-deletion-edited-export--october-26-2026) supports unreferenced template removal in complete local snapshots, default clearing and explicit empty libraries. It preserves originals/recovery and rejects surviving references, transferred aliases and pending Card-deletion intersections. Automated export/recovery and independent package checks pass; owner acceptance is pending with v15 retained. Remaining work includes broader calendar operations, cross-Board transfers, List/Week deletion, drawing derivations, real ownership binding and final source/export/recovery reconciliation. Step 1 remains in progress.
+
+
+## Owner acceptance update — October 26, 2026
+
+Template deletion/export/editable re-import is owner-confirmed in v17. The deleted custom Day template remains absent and neighboring retained templates remain visible. Independent comparison verifies unchanged surviving canonical values and all five originals. This closes the focused manual deletion checkpoint; remaining Step 1 boundaries listed above still apply. See [v17 acceptance](Editable-Import.md#owner-acceptance-template-deletion-v17--october-26-2026).
+
+
+## Retained template content evidence update — October 26, 2026
+
+Title/details edits to an existing template Card now have explicit isolated round-trip evidence through the existing generic adapter, including authored history, stable identities and unchanged live Week/sibling copies. The new test and independent package validation pass; owner acceptance is pending from v17. This does not establish item creation/deletion or changed weekday/focus mappings. See [the checkpoint](Editable-Import.md#retained-template-card-content-checkpoint--october-26-2026).
+
+
+## Owner acceptance update: retained template Card v18 — October 26, 2026
+
+The owner confirmed the edited title after editable v18 re-import. Retained-template Card title editing is now owner-accepted; details/history retain synthetic and independent package evidence as documented. v18 is the latest accepted checkpoint. Template item creation/deletion, changed context/mappings and other remaining Step 1 gaps are not implied by this acceptance. See [v18 evidence](Editable-Import.md#owner-acceptance-retained-template-card-v18--october-26-2026).
+
+
+## Retained template item creation update — October 26, 2026
+
+New Cards/Notes authored in a retained template now receive durable portable aliases and an authored creation instant. The existing structural adapter then preserves their independent ownership and order. Automated cancellation/failure, source/runtime recovery and fresh import/re-export checks pass; 72 native export/recovery/template tests and 112 tooling tests pass, with independent synthetic package validation. Owner acceptance is pending from v18. Item deletion and remaining mapping/calendar/transfer/ownership/reconciliation boundaries remain separate work. See [checkpoint](Editable-Import.md#new-cards-and-notes-inside-retained-templates--october-26-2026).
+
+
+## Owner acceptance update: new template Card v19 — October 26, 2026
+
+New Card creation inside a retained template is owner-confirmed after editable v19 re-import, with the expected 43-item count and new Monday Card visible. v19 is now the accepted checkpoint; no repeat test is required. New Notes, cancelled reservations and allocation failure retain synthetic evidence. Template item deletion, application behavior and remaining Step 1 gaps are not implied by this acceptance. See [v19 evidence](Editable-Import.md#owner-acceptance-new-template-card-v19--october-26-2026).
+
+
+## Retained template item deletion evidence update — October 26, 2026
+
+Ordinary template Card deletion now has explicit isolated coverage through the existing working 1.1 local overlay. Canonical Card/List membership remains retained, the editable template omits the target, and fresh import/re-export is stable. Required example-focus references reject deletion. The new native regression, 112 tooling tests and independent synthetic validation pass; focused owner acceptance is pending from v19. Whole-template deletion with pending Card-deletion intent and other remaining structural/ownership/recovery boundaries remain separate work. See [checkpoint](Editable-Import.md#retained-template-item-deletion-checkpoint--october-26-2026).
+
+
+## Owner acceptance update: template item deletion v20 — October 27, 2026
+
+The v20 template item deletion round trip is owner-confirmed and verified in the saved template library. No repeat test is required. Later live template application changes extend beyond the accepted package and require separate application/export validation; preserve the current workspace for that follow-up. See [acceptance and scope](Editable-Import.md#owner-acceptance-template-item-deletion-v20--october-27-2026). Step 1 remains in progress.
+
+
+## Additive template application implementation — October 27, 2026
+
+Applying to a retained imported Week now reserves new List/Card aliases at commit, translates copied links/bookmarks/importance and preserves read-only previews. The explicit saved-Week intent false-to-true transition is reconciled separately. Two-addition synthetic round trips, failure guards and independent package validation pass; 74 native/112 tooling checks pass, excluding the two previously isolated keyboard-focus tests from this native run. Focused owner acceptance is pending from v20. Replacement, initially absent/new-Week application, wider calendar operations and remaining transfer/identity/recovery boundaries are not implied. See [checkpoint](Editable-Import.md#additive-template-application-to-retained-weeks--october-27-2026).
+
+
+## Application importance ordering repair — October 27, 2026
+
+A multi-importance application exposed arbitrary native selection-array order omitted by the initial fixture. The revised test fails before frozen owner-qualified comparison normalization and passes afterward. Duplicates, levels and unknown fields remain retained for rejection checks. All 75 native/112 tooling tests and independent synthetic validation pass; owner export retry is pending on the already applied workspace, without reapplication or Undo. v20 remains accepted. See [the repair checkpoint](Editable-Import.md#applied-template-importance-ordering-repair--october-27-2026).
+
+
+## Owner acceptance update: additive application v22 — October 27, 2026
+
+Additive application to a retained Week is owner-confirmed after editable v22 re-import. Original Monday items and the copied edited template Card are visible together. v22 is the latest accepted package; no repeat test is needed. Replacement, initially absent/new-Week application, wider calendar operations, cross-owner transfers, drawing derivations, authenticated ownership and final reconciliation/recovery remain separate boundaries. See [v22 evidence](Editable-Import.md#owner-acceptance-additive-template-application-v22--october-27-2026).
+
+
+## Week-template Replace mode evidence — October 27, 2026
+
+Replace on a retained Week has explicit synthetic recovery coverage: dated items enter the local deletion overlay with old canonical records exact, while archives/undated work remain unchanged and new copies retain independent identities/references. All 76 native/112 tooling checks and independent replacement validation pass. Confirmation wording now describes the selected Day/Week scope accurately. Owner replacement acceptance is pending from v22; Day replacement and initially absent/new-Week application remain unaccepted. See [checkpoint](Editable-Import.md#week-template-replacement-checkpoint--october-27-2026).

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		82DAAEA37B46483584C3C652 /* ShortcutEditedExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */; };
 		D7C9DCE896B5417C994F13D3 /* PortableWorkspaceActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */; };
 		EEA3CF371A05411982A81F72 /* PortableRuntimeEvidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */; };
 		CC85712DD14D468DAA003431 /* PortableEditedExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC85712DD14D468DAA003432 /* PortableEditedExport.swift */; };
@@ -198,6 +199,8 @@
 		021C50262E9F4070A01F23B7 /* MigrationSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */; };
 		4FB34A0D4EE24E85A7617BFE /* MigrationStudioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */; };
 		7122434DA5DD4A91B2A58298 /* MigrationPlanningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */; };
+		896DF9D2EFD24B8F835B0422 /* TemplateEditedExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */; };
+		26A4C386729B4858960FA040 /* PortableTemplateApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBF3D974C4B4969A07CDA82 /* PortableTemplateApplication.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -211,6 +214,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditedExportTests.swift; sourceTree = "<group>"; };
 		6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableWorkspaceActivation.swift; sourceTree = "<group>"; };
 		6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableRuntimeEvidence.swift; sourceTree = "<group>"; };
 		CC85712DD14D468DAA003432 /* PortableEditedExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableEditedExport.swift; sourceTree = "<group>"; };
@@ -406,6 +410,8 @@
 		78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationSettingsTests.swift; sourceTree = "<group>"; };
 		E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationStudioTests.swift; sourceTree = "<group>"; };
 		16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPlanningTests.swift; sourceTree = "<group>"; };
+		7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateEditedExportTests.swift; sourceTree = "<group>"; };
+		1BBF3D974C4B4969A07CDA82 /* PortableTemplateApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableTemplateApplication.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -768,6 +774,7 @@
 				6C35EC47E3FF48C091212BC5 /* PortableRuntimeEvidence.swift */,
 				CC85712DD14D468DAA003432 /* PortableEditedExport.swift */,
 				DD85712DD14D468DAA003432 /* PortableStructuralEdits.swift */,
+				1BBF3D974C4B4969A07CDA82 /* PortableTemplateApplication.swift */,
 				EE85712DD14D468DAA003432 /* PortableRichCardExport.swift */,
 				F9E0E5FA3D8C4644B5E838C9 /* PortableWorkspaceCandidate.swift */,
 				54B19EE5220A4BCEBBD622E6 /* PortableMediaPlacement.swift */,
@@ -831,6 +838,8 @@
 				76D5237B793FC4831CB778EB /* BoardInteractionTests3.swift */,
 				DD8ACFEB7B1351AC01C7DE3E /* BoardPersistenceTests.swift */,
 				D68313C3C4AFC0E13C1FFA30 /* MigrationContentTests.swift */,
+				7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */,
+				B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */,
 				E30F7ABF014C4F3A963290C5 /* MigrationAssetTests.swift */,
 				78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */,
 				E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */,
@@ -995,6 +1004,7 @@
 				EEA3CF371A05411982A81F72 /* PortableRuntimeEvidence.swift in Sources */,
 				CC85712DD14D468DAA003431 /* PortableEditedExport.swift in Sources */,
 				DD85712DD14D468DAA003431 /* PortableStructuralEdits.swift in Sources */,
+				26A4C386729B4858960FA040 /* PortableTemplateApplication.swift in Sources */,
 				EE85712DD14D468DAA003431 /* PortableRichCardExport.swift in Sources */,
 				4F2BA8708D834D13B2CFCE76 /* PortableWorkspaceCandidate.swift in Sources */,
 				EBE0287A3ECD49BE816CDD77 /* PortableMediaPlacement.swift in Sources */,
@@ -1150,6 +1160,8 @@
 			files = (
 				C4D5CF5F1DA90AD9DF346C6F /* AttachmentTests.swift in Sources */,
 				DEF7AA8922FDDBB33017560B /* MigrationContentTests.swift in Sources */,
+				896DF9D2EFD24B8F835B0422 /* TemplateEditedExportTests.swift in Sources */,
+				82DAAEA37B46483584C3C652 /* ShortcutEditedExportTests.swift in Sources */,
 				351CC2BDBAA94F1BBD205056 /* MigrationAssetTests.swift in Sources */,
 				021C50262E9F4070A01F23B7 /* MigrationSettingsTests.swift in Sources */,
 				4FB34A0D4EE24E85A7617BFE /* MigrationStudioTests.swift in Sources */,

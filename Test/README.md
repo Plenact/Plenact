@@ -260,3 +260,63 @@ Daily-plan precision regression now uses a submillisecond save/check-in timestam
 
 
 `MigrationPlanningTests.testWeeklyReviewEditedExport` covers new/retained weekly writing, priorities/action history, progress/completion, real-save timestamp precision, clearing, invalid context/removal rejection, stable canonical identity, unchanged other domains/stores, frozen source/runtime, exact backup bytes and fresh import with identical re-export. The full affected suite now passes 65 native tests, including both synthetic hosted reflection-focus tests; tooling passes 112. `WeeklyReviewPackage` attachments independently validate with `--weekly-review-package` (zero originals). No personal data or action executor is used.
+
+
+`MigrationPlanningTests.testPeriodicReviewEditedExport` covers periodic writing, stable/new authored UUIDs, independent starting/current objective identity/status/progress, additions and clearing, real-save precision, malformed context/objective rejection, unchanged other domains, frozen source/runtime, exact backup bytes and fresh import with identical re-export. Hosted focus tests dismiss the keyboard before checking the next field's hit target. All 66 affected native and 112 tooling tests pass. `PeriodicReviewPackage` evidence independently validates with `--periodic-review-package` (zero synthetic originals).
+
+
+`MigrationStudioTests.testTemplateMetadataEditedExport` in `MigrationContentTests.swift` covers retained rename, library order/default selection/clearing, stable canonical IDs/content, unchanged other domains, frozen source/runtime, exact backup bytes, repeated export and fresh import with identical re-export. Unknown fields and unsupported context/removal/default/revision changes reject export. All 67 affected native and 112 tooling tests pass. `TemplateMetadataPackage` evidence independently validates with `--template-metadata-package` (two synthetic originals).
+
+
+`MigrationStudioTests.testTemplateEditorPresentationSurvivesLibraryReload` in `MigrationContentTests.swift` reproduced immediate template-editor dismissal from duplicate Group-distributed presentations. With one stable anchor, it verifies continued presentation after loading, native Name typing and dismissal without writes using injected isolated defaults. The affected suites plus `PlenactBoardDocumentTests.testPlanningTemplateScreensRenderWithoutSaving` pass 69 native checks. No personal Simulator UI or source data is operated.
+
+
+`MigrationStudioTests.testNewTemplateEditedExport` in `MigrationContentTests.swift` exercises real Week/Day capture and duplication, borrowed owner UUIDs, overlapping List/Card numbers, copied nested identities and same-owner Card links, photo/cover/caption, focus/default mapping, retained content, exact native evidence, source/runtime immutability and fresh import with identical re-export under independently allocated aliases. `retainedTemplateFixture` shares setup with metadata coverage. Unknown fields and retained-template removal reject export.
+
+Validation passes 68 export/recovery/template checks and two existing hosted focus checks in a separate run, plus 112 tooling tests. A combined run exited in the nested keyboard test; the separate runs passed without claiming a product focus fix. Final same-owner-link coverage passes in a targeted rerun. Logs: `/private/tmp/plenact-new-template-export-final.log`, `/private/tmp/plenact-new-template-focus-final.log`, `/private/tmp/plenact-new-template-linked-final.log`. NewTemplatePackage assembly/manifest/blob evidence passes independent `--new-template-package` checks (three synthetic originals). No personal archives are fixtures.
+
+
+### Template deletion checkpoint
+
+`MigrationStudioTests.testTemplateDeletionEditedExport` verifies default/all-template deletion, explicit empty-library loading without resurrection, retained live Weeks/media, unchanged source/runtime evidence, exact native backup preferences and fresh import/identical re-export. Direct guards reject a surviving typed reference, pending Card deletion and transferred Card alias. The new-template regression additionally removes a retained rich template without losing its original image file. The latest export/recovery run passes 69 checks, excluding the two previously isolated keyboard-focus tests. Tooling passes 112 checks; independent deleted-template evidence passes with two originals. Owner acceptance remains pending against v15.
+
+
+### Visible template deletion confirmation regression
+
+`MigrationStudioTests.testTemplateDeletionConfirmationIsPresented` reproduces the missing dialog on the invisible trailing presentation anchor and passes with the dialog on its visible template row. It checks the title, destructive action and unchanged isolated saved data before confirmation/after dismissal. The editor presentation and deletion export/recovery tests also pass (three targeted checks). Personal v16 preserved the template and does not establish deletion acceptance; the owner retry is pending.
+
+
+### Retained template content isolation
+
+`MigrationStudioTests.testRetainedTemplateContentEditedExport` saves title/details through the checked template store and verifies only the intended Card fields/history change. It covers unchanged live Week/sibling templates/library metadata, stable identities, exact native backup preferences, source/runtime immutability, originals and repeat export/fresh import/identical re-export. History UUIDs/opaque values remain exact; authored history dates use declared canonical millisecond precision. The new test passes, with 112 tooling tests and independent package validation. No production exporter change or new full native-suite count is claimed.
+
+
+### New retained-template Cards/Notes
+
+`Test/TemplateEditedExportTests.swift` adds `MigrationStudioTests.testRetainedTemplateItemCreationEditedExport` using the production allocator and checked library save. It covers cancelled reservation consumption, globally distinct imported aliases, authored creation timestamps, Card/Note presentation/order, unchanged retained/live content/library metadata, original preservation, source/runtime immutability, exact native backup preferences, repeat export, fresh import/identical re-export and malformed-runtime failure without draft mutation. All 72 affected native export/recovery/template tests pass; the two previously isolated keyboard-focus tests were excluded from this run. Tooling passes 112 tests and independent package validation passes with two originals. Owner acceptance remains pending from v18.
+
+
+### Retained-template item deletion
+
+`MigrationStudioTests.testRetainedTemplateItemDeletionEditedExport` covers the existing local overlay for an ordinary template Card: unchanged canonical base, retained List membership, exact native backup preferences, source/runtime immutability, originals, repeat export and fresh import with the item absent/identical re-export. A second baseline verifies a required example-focus reference rejects deletion without changing evidence. The new native test and 112 tooling tests pass, plus independent package validation with two originals. The earlier 72 native checks remain the broader baseline; no production change or new full-suite count is claimed.
+
+
+### Additive template application/export
+
+`MigrationStudioTests.testTemplateApplicationEditedExport` uses real template application plus the production commit reservation helper and isolated calendar/importance persistence. Two additive applications prove collision-free copied identities, local checklist-link and bookmark/importance translation, fresh nested UUIDs preserved through commit, unchanged source template/library and retained Cards, exact native recovery preferences, source/runtime immutability, repeat export and fresh import/identical re-export. It rejects clearing explicit saved-Week intent and malformed runtime reservation without changing saved calendar bytes. This does not claim full UI transaction coverage. All 74 affected native tests and 112 tooling tests pass; the two previously isolated keyboard-focus tests were excluded from this native run. Independent application-package validation passes with two originals. Owner acceptance is pending from v20.
+
+
+### Applied-template importance ordering
+
+The application fixture now marks both copied items important and writes selections in descending order, reproducing the owner's Set-order boundary before the fix. `testImportanceComparisonKeepsIdentityAndUnknownValues` verifies frozen order normalization retains duplicate identities, levels and unknown values. The real application test still proves source/runtime immutability and fresh import/identical re-export. All 75 affected native tests, 112 tooling tests and independent application-package validation pass. The two previously isolated keyboard-focus checks were excluded from this native run. Owner retry is pending on the already saved application; no repeat Apply is needed.
+
+
+### Week-template replacement
+
+`testTemplateReplacementEditedExport` reuses the real application fixture in Replace mode with dated work on two days, archives, undated work and prior bookmark/importance selections. It proves exact old canonical records, precisely scoped local deletion IDs, preserved native archives/undated Lists, independent new links/selections, source/runtime/original recovery, repeat export and fresh import/identical re-export. Initial ambiguous legacy importance is avoided by seeding only after owner-qualified import, without relaxing conversion guards. All 76 affected native tests and 112 tooling tests pass; the two previously isolated keyboard-focus tests were excluded from this native run. Independent replacement evidence passes with two originals. Template-screen rendering also passes after clarified confirmation wording. Owner acceptance is pending from v22.
+
+
+Day-template application/export evidence lives in `TemplateEditedExportTests.swift`: `testDayTemplateApplicationEditedExport` and `testDayTemplateReplacementEditedExport`. They share the Day/Week application fixture and exercise Tuesday-only changes, neighboring Lists and selections, archives/undated work, copied links and complete native/portable recovery. The focused Day/Week run passes four cases; the existing 77-test broad baseline is separate. Export synthetic attachments and use the Day modes documented in `Tools/UserDataModel/README.md` for independent validation. Personal archives remain outside fixtures.
+
+
+`ShortcutEditedExportTests.swift` adds `MigrationStudioTests.testTodayShortcutEditedExport`: isolated absent/empty distinction, creation, order/selection changes, six pins, clearing, wrong-owner/unknown/duplicate/missing target guards, and rollover references across three owners. It checks exact native recovery evidence, source/runtime immutability, repeated export, fresh import and identical re-export. Extract its `ShortcutsPackage` attachments for the independent `--shortcuts-package` checker. No personal data is used.

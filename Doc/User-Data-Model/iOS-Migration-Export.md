@@ -1,5 +1,7 @@
 # iOS native migration and export milestone
 
+**Current implementation status — November 7, 2026:** [Step 1 beta closeout](Step-1-Beta-Closeout.md) is complete for the bounded local beta and handoff to **Step 2 synthetic staging**, with v25 owner-accepted. Deferred operations and production migration/authentication/synchronization gates remain explicit. Cloud synchronization is disabled; Model 1.0 is unchanged and working 1.1 is unpublished. Earlier implementation checkpoints below are historical.
+
 **Supported User Data Model versions:** 1.0; Version 0 historical reference only.
 **Updated:** October 24, 2026.
 
@@ -187,3 +189,38 @@ Supported User Data Model versions: unchanged 1.0 evening-review objects within 
 ## Weekly-review edited export checkpoint
 
 Supported User Data Model versions: immutable 1.0 weekly-review records within working 1.1. Edited export now reconciles saved weekly writing, priorities, decision history, progress/completion and newly saved reviews with stable identity and explicit source context. No action executes; unsupported outcomes still fail closed. All 65 affected native tests, 112 tooling tests and independent weekly-package checks pass. See [current scope and pending owner test](Editable-Import.md#weekly-review-writing-and-history-edited-export--october-26-2026). v11 remains accepted; cloud synchronization stays disabled.
+
+
+## Periodic-review edited export checkpoint
+
+Supported User Data Model versions: immutable 1.0 periodic-review records in working 1.1 composition. Periodic writing, progress/completion, priorities and separate starting/current objectives now export with stable identity, including authored native UUIDs for new reviews. Invalid context/objectives and retained-record removal remain blocked. All 66 affected native tests, 112 tooling tests and independent periodic-package checks pass. See [scope and pending acceptance](Editable-Import.md#periodic-review-writing-and-objective-edited-export--october-26-2026). v12 remains the accepted checkpoint; cloud synchronization stays disabled.
+
+
+## Retained template metadata export checkpoint
+
+Supported User Data Model versions: unchanged 1.0 planning-template/library records in working 1.1. Retained names, library order and default Week selection now export with stable identities. Creation/removal and changed template context/mappings remain blocked. All 67 affected native tests, 112 tooling tests and independent template-package checks pass. See [scope and owner test](Editable-Import.md#retained-template-metadata-edited-export--october-26-2026). v13 remains accepted; cloud synchronization stays disabled.
+
+
+## Captured/duplicated template creation checkpoint
+
+Supported User Data Model versions: unchanged 1.0 template/content records within working 1.1. New captures and duplicates in a retained library now reconcile with independent content identities, copied same-owner references and verified originals, preserving the live source and runtime. Validation passes 68 export/recovery/template checks, two isolated hosted focus checks, 112 tooling tests and independent new-template package checks. See [scope, limits and pending owner test](Editable-Import.md#captured-and-duplicated-template-creation-edited-export--october-26-2026). v14 remains accepted; cloud synchronization stays disabled.
+
+
+## Template deletion checkpoint — October 26, 2026
+
+Edited export supports removing an unreferenced template and its owned content from the complete local snapshot, including default clearing and an explicit empty library. Original bytes and exact native/runtime recovery evidence remain retained. Surviving references, transferred aliases and pending Card-deletion intersections stop export. This is not a server deletion protocol. See [scope, tests and pending owner acceptance](Editable-Import.md#template-deletion-edited-export--october-26-2026). Validation: 69 export/recovery/template tests, 112 tooling tests and independent synthetic deleted-template validation pass. v15 remains owner-accepted; Step 1 continues with cloud synchronization disabled.
+
+
+## New retained-template items — October 26, 2026
+
+The template editor reserves durable identities and authored creation timestamps before adding Cards/Notes to a draft. This enables the existing structural export adapter without guessing identity or changing immutable contracts. Failed reservation leaves the draft unchanged; cancelled reservations are not reused. The [checkpoint](Editable-Import.md#new-cards-and-notes-inside-retained-templates--october-26-2026) records 72 native/112 tooling checks and independent package validation, with focused owner acceptance pending from v18. Cloud synchronization stays off.
+
+
+## Additive template application — October 27, 2026
+
+The checked Apply path reserves newly copied portable aliases for a retained Week and translates copied links/bookmarks/importance without reserving during preview. Export accepts the retained Week's explicit saved-intent false-to-true transition while preserving other metadata guards. Validation passes 74 native/112 tooling checks and independent synthetic package validation; focused owner acceptance is pending from v20. Replacement and new-Week application remain outside this acceptance. See [scope and evidence](Editable-Import.md#additive-template-application-to-retained-weeks--october-27-2026).
+
+
+## Retained Week replacement evidence — October 27, 2026
+
+Existing Week-template Replace behavior now has explicit synthetic export/re-import/recovery coverage, retaining replaced canonical content through the local deletion overlay while preserving native archives/undated work. New copied identities, links and selection state remain independent. Validation passes 76 native/112 tooling checks and independent replacement-package validation; the focused owner test is pending from v22. Day replacement, new-Week application and other remaining Step 1 boundaries are not implied. See [scope](Editable-Import.md#week-template-replacement-checkpoint--october-27-2026).

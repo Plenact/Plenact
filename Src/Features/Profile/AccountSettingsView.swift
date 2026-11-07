@@ -804,11 +804,36 @@ struct PlanSettingsView: View
     @State private var firstWeekday = 1
     @State private var loaded = false
     @State private var showsTemplates = false
+    @State private var opensLibraryAfterTemplates = false
+    @State private var confirmsTemplateNavigation = false
     @State private var showsShortcuts = false
     @State private var showsReviewRhythmSettings = false
     @AppStorage(TodayListPins.key) private var pinData = Data()
     let lists:         [KanbanList]
     let onSaveProfile: (LocalProfile) -> Void
+    var onOpenTemplateLibrary: (() -> Void)? = nil
+
+
+    /// @fcn PlanSettingsView.savePreferences
+    /// @brief Publish the settings draft through the existing checked calendar/profile save path
+    /// @return True after preferences can be saved; false when the calendar rejects its boundary change
+    private func savePreferences() -> Bool
+    {
+
+        guard access?.setFirstWeekday(firstWeekday) != false else
+        {
+
+            return false
+        }
+        PlanPreferencesStore.save(preferences)
+        if var profile = LocalProfileStore.load()
+        {
+
+            profile.preferences = preferences
+            onSaveProfile(profile)
+        }
+        return true
+    }
 
     var body: some View
     {
@@ -906,7 +931,7 @@ struct PlanSettingsView: View
                         showsShortcuts = true
                     }
 
-                    Button("Day & Week Templates", systemImage: "doc.on.doc")
+                    Button("Planning Templates", systemImage: "doc.on.doc")
                     {
                         showsTemplates = true
                     }
@@ -964,20 +989,11 @@ struct PlanSettingsView: View
                     Button("Save")
                     {
 
-                        guard access?.setFirstWeekday(firstWeekday) != false else
-                        {
-                            return
-                        }
-
-                        PlanPreferencesStore.save(preferences)
-                        if var profile = LocalProfileStore.load()
+                        if savePreferences()
                         {
 
-                            profile.preferences = preferences
-                            onSaveProfile(profile)
+                            dismiss()
                         }
-
-                        dismiss()
                     }
 
                 }
@@ -998,9 +1014,58 @@ struct PlanSettingsView: View
             {
                 ReviewRhythmSettingsView()
             }
-            .sheet(isPresented: $showsTemplates)
+            .sheet(isPresented: $showsTemplates, onDismiss:
             {
-                PlanningTemplatesView()
+
+                guard opensLibraryAfterTemplates else
+                {
+
+                    return
+                }
+                opensLibraryAfterTemplates = false
+                let savedFirstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
+                if preferences != PlanPreferencesStore.load() || firstWeekday != savedFirstWeekday
+                {
+
+                    confirmsTemplateNavigation = true
+                }
+                else
+                {
+
+                    onOpenTemplateLibrary?()
+                }
+            })
+            {
+
+                PlanningTemplatesView(onOpenLibrary: onOpenTemplateLibrary == nil ? nil :
+                {
+
+                    opensLibraryAfterTemplates = true
+                    showsTemplates = false
+                })
+            }
+            .confirmationDialog("Save settings before opening Templates?", isPresented: $confirmsTemplateNavigation,
+                titleVisibility: .visible)
+            {
+
+                Button("Save and Open Templates")
+                {
+
+                    if savePreferences()
+                    {
+
+                        onOpenTemplateLibrary?()
+                    }
+                }
+                Button("Discard Settings Changes and Open Templates", role: .destructive)
+                {
+
+                    onOpenTemplateLibrary?()
+                }
+                Button("Keep Editing Settings", role: .cancel)
+                {
+
+                }
             }
             .sheet(isPresented: $showsShortcuts)
             {

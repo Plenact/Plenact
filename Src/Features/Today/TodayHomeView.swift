@@ -112,6 +112,8 @@ struct TodayHomeView: View
     @State private var composerTemplate:            QuickCaptureTemplate?
     @State private var captureAction:               TodayCaptureAction?
     @State private var showsPlanSettings = false
+    @State private var opensTemplateLibraryAfterSettings = false
+    @Environment(\.openTemplateLibrary) private var openTemplateLibrary
     @State private var showsSearch = false                      /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false   /* Deferred center-plus request             */
     @State private var labelLibrary = LabelLibraryStore.load()  /* Local categorized label definitions      */
@@ -1300,10 +1302,26 @@ struct TodayHomeView: View
             }
 
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch))
-            .sheet(isPresented: $showsPlanSettings)
+            .sheet(isPresented: $showsPlanSettings, onDismiss:
             {
 
-                PlanSettingsView(lists: lists, onSaveProfile: onSaveProfile)
+                guard opensTemplateLibraryAfterSettings else
+                {
+
+                    return
+                }
+                opensTemplateLibraryAfterSettings = false
+                openTemplateLibrary?()
+            })
+            {
+
+                PlanSettingsView(lists: lists, onSaveProfile: onSaveProfile,
+                    onOpenTemplateLibrary: openTemplateLibrary == nil ? nil :
+                    {
+
+                        opensTemplateLibraryAfterSettings = true
+                        showsPlanSettings = false
+                    })
             }
 
 

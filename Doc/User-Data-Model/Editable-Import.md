@@ -1,5 +1,7 @@
 # Editable application import bridge
 
+**Current implementation status — November 7, 2026:** [Step 1 beta closeout](Step-1-Beta-Closeout.md) is complete for the bounded local beta and handoff to **Step 2 synthetic staging**, with v25 owner-accepted. Deferred operations and production migration/authentication/synchronization gates remain explicit. Cloud synchronization is disabled; Model 1.0 is unchanged and working 1.1 is unpublished. Earlier implementation checkpoints below are historical.
+
 **Supported User Data Model versions:** 1.0 content; working 1.1 package input.
 
 **Current status:** The Simulator can now import a supported portable package into its normal editable workspace with a full pre-import backup and undo. This remains a synthetic-owner test flow. The guarded edited export now supports Board-created Cards/Lists, movement within one existing Board/collection, List/Card ordering, and Card text, completion, scheduling, deletion, lock/display flags, nested Card content, attachment metadata/covers and history. Other edits stop export explicitly. Native backups preserve every saved change and canonical baseline evidence. This does not yet complete Step 1 or enable production ownership/synchronization.
@@ -361,3 +363,353 @@ Owner acceptance remains pending; v11 is the current accepted checkpoint. Focuse
 Portable v12 independently validates against v11: it adds one completed weekly review for the week starting 2026-10-26 with all five reflection fields matching owner-provided evidence, valid deterministic identity and correct native-to-canonical timestamp projection. The only other canonical difference is the current daily plan's updated time, matching the frozen native source. Daily/evening content, prior records and all five original files are unchanged. Native preferences/media/runtime hashes pass with no review codes. No weekly priorities or item decisions were added in this personal test.
 
 The owner confirmed editable Undo and successful v12 re-import. Screenshots show all five restored weekly fields across steps 3 and 1, and retained daily intention/evening reflections in the weekly summary. Review counts show 288 portable records, 163 nondeleted Cards, 37 Lists and five verified originals. The separate older isolated inspection copy is not the editable workspace. v12 is the latest owner-accepted checkpoint; retain v11 and earlier packages/recovery history. This accepts weekly-review creation/writing and saved completed-review reconstruction. Priorities and decision-history edits retain synthetic coverage, not manual acceptance from this test. Step 1 continues and cloud synchronization remains disabled; personal archives/screenshots/writing remain outside repository fixtures.
+
+
+## Periodic-review writing and objective edited export — October 26, 2026
+
+Supported definitions: immutable Model 1.0 periodic-review records within working 1.1 packages. The explicit `PlanningFamily` selection extends shared planning reconciliation to periodic titles, reflection writing, progress/completion, priorities and independent starting/current objective snapshots. Retained IDs remain stable. New reviews retain the authored native UUID, matching editable reconstruction; export does not replace it with a derived date identity. Retained date-range/timezone changes and record removal are rejected, while new records require canonical UUID keys, nonempty titles and valid dates/zones/ranges. Only the reviewed periodic store is newly recognized. No account ownership, server revision or deletion metadata is fabricated.
+
+Objective IDs, statuses, progress, next steps and order are preserved separately in starting and current arrays. The adapter never reconstructs starting snapshots from current objectives. Unknown/duplicate objective identities, unsupported statuses/fields and malformed source values fail closed through the reviewed converter and final inverse comparison. Historical priorities use the existing explicit owner/alias/creation resolver. Planning timestamp comparison retains the established wire-millisecond policy while exact source values remain in the native backup.
+
+`MigrationPlanningTests.testPeriodicReviewEditedExport` covers existing title/writing edits, achieved/released objective changes and additions, unchanged starting snapshots, creation with the authored UUID, real-save timestamp precision, clearing, retained canonical identity, unchanged other native/canonical domains, frozen defaults/runtime, exact native backup preferences, repeated export and fresh import with identical re-export. It rejects invalid title/progress/range/context, duplicate objectives, unknown status/fields and retained-record removal. The full suite initially exposed keyboard sequencing in an existing hosted focus test; the harness now dismisses the keyboard before hit-testing the next field. No product focus fix is claimed.
+
+All 66 affected native tests and 112 tooling tests pass. Independent `--periodic-review-package` checks validate complete schemas/references/manifests, reflection writing and objective snapshot identities/statuses/progress. The synthetic fixture contains zero originals; personal archives/media remain private and are not fixtures. v12 remains the owner-accepted checkpoint.
+
+Pending owner test: rebuild Plenact Import Test, open Today, tap the date, then Periodic review. Name a checkpoint, keep a valid date range and use Begin review. Enter a short Highlights and achievements value, use Save and continue to step 2, then add one objective and Save progress. Export v13 through Export supported Card edits to Files…; retain v12 and do not Undo first. Independently validate against v12 before later Undo/import and checking the highlight/objective. Step 1 continues; cloud synchronization remains disabled.
+
+
+## Owner acceptance: periodic-review writing and objectives — October 26, 2026
+
+Portable v13 independently validates against v12: its only canonical addition is one completed periodic review, with saved title, period, reflection writing and four ordered objectives matching the native source. Objective UUIDs, statuses, progress and next-step values are preserved. Starting objectives are explicitly empty for this first checkpoint; this personal test does not establish inherited starting-snapshot behavior, which retains synthetic coverage. Prior canonical data and all five originals are unchanged; native preferences/media/runtime hashes pass with no review codes.
+
+The owner confirmed editable Undo, package review and successful v13 editable re-import. Screenshots show the restored saved checkpoint, period, direction/risks, objective values/statuses and highlights, with earlier weekly reflections still available. Package review shows 289 records, 163 nondeleted Cards, 37 Lists and five verified originals. The separate older isolated inspection copy was not replaced. v13 is now the latest owner-accepted checkpoint; retain v12 and prior packages/recovery history. No further manual test is required for this checkpoint. Step 1 continues and cloud synchronization remains disabled. Personal writing, screenshots and archives remain outside repository fixtures.
+
+
+## Retained template metadata edited export — October 26, 2026
+
+Supported definitions: immutable Model 1.0 planning-template/template-library records within working 1.1 packages. Edited export now reconciles retained template names, authored library order and default Week selection (including clearing the default), preserving all template/library and owned-content identities. Content reconciliation runs first; metadata reconciliation then updates only the supported retained name/library fields. New library/template creation, template removal, changed kind, anchor/timezone/first-weekday policy, weekday mappings, example-focus metadata and bundled revision remain outside this adapter. Unsupported source changes still fail the final inverse comparison.
+
+`MigrationStudioTests.testTemplateMetadataEditedExport`, located with calendar/content tests, uses the existing isolated complete-package fixture with two Week templates and one Day template. It checks rename, reversed order, switching the default, clearing it, stable canonical IDs and unchanged other canonical/native domains and owned content. Repeated export, exact native backup preferences, frozen defaults/runtime, fresh installation and identical re-export pass. Unknown template fields, retained-template removal, invalid Day default and changed anchor/timezone/bundled revision reject export. No personal data or live workspace is used.
+
+All 67 affected native tests and 112 tooling tests pass. Independent `--template-metadata-package` validation checks complete schemas/references/manifests/originals and expected retained name/order/default values; the synthetic fixture contains two originals. Personal v13 retains five originals and remains the latest owner-accepted checkpoint.
+
+Pending owner test: rebuild Plenact Import Test, open Settings → Day & Week Templates, choose an existing template's ellipsis menu → Edit template, change only Name and Save. Export v14 with Export supported Card edits to Files…; keep v13 and do not Undo first. Validate v14 independently before later Undo/import and inspection of the renamed template. The focused owner test covers rename only; order/default behavior retains synthetic coverage. Step 1 continues; cloud synchronization remains disabled.
+
+
+## Template editor presentation correction — October 26, 2026
+
+Owner rename acceptance was blocked when Edit template opened and immediately disappeared. A synthetic hosted library reproduced the disappearance and logged multiple simultaneous sheet-presentation attempts. The library applied task/sheet/dialog modifiers to a multi-section Group inside List; SwiftUI distributed the modifiers to multiple presentation owners, and library loading replaced the initial presenting content.
+
+The library now attaches loading, editor/apply sheets and dialogs to one persistent zero-height presentation row. The row survives the unavailable-to-loaded content transition and does not change template data or storage formats. Library defaults are injectable so the regression uses an isolated synthetic suite. The regression verifies that the editor remains presented across loading, the Name input accepts typing, programmatic dismissal works and saved template bytes remain unchanged without Save.
+
+All 69 selected native checks pass, comprising the affected migration/export/recovery suites and the existing template-screen rendering/no-save check. The retained-template package contract is unchanged. Owner retry: rebuild and reopen the same retained template editor, save the intended name, then export v14. v13 remains the latest accepted checkpoint; no Undo or repeated migration procedure is needed before export.
+
+
+## Owner acceptance: retained template rename — October 26, 2026
+
+Portable v14 independently validates against v13. Its only canonical change is one retained planning-template name; template/owner IDs, library order/default selection, all prior content and planning values remain unchanged. All five original files are byte-preserved, and native preferences/media/runtime hashes pass with no review codes.
+
+After editable Undo and package review, the owner initially inspected the restored pre-import workspace. Completing the editable import then restored the renamed template, confirmed by the owner's success report and screenshot of its Name field. v14 is the latest owner-accepted checkpoint; retain v13 and prior recovery packages. The editor presentation fix also allowed the rename to be saved and exported. This manual test accepts retained-template rename; library ordering/default changes retain synthetic coverage. Step 1 remains in progress, cloud synchronization stays disabled, and personal archives/screenshots are not fixtures.
+
+
+## Captured and duplicated template creation edited export — October 26, 2026
+
+Supported definitions: unchanged Model 1.0 planning-template/content records within working 1.1 packages. Edited export now accepts newly captured Day/Week templates and duplicates within an existing retained template library. Authored template UUIDs are retained. Independent template-owner UUIDs and owner-qualified List/Card/nested identities derive deterministically from the retained workspace and explicit source identity. This separates a template copy from the live Week or retained template even when capture/duplicate retains their Collection UUID and local List/Card numbers.
+
+The existing reviewed content/calendar-template converter processes each new owner in isolation with verified labels/originals. Unknown or unresolved references fail closed. Only frozen comparison stores receive translated Collection/numeric/nested identities, same-owner checklist references, cover attachment IDs, weekday maps and example-focus aliases. Opaque edit-history bytes remain unchanged. Omitted empty archive fields remain omitted. Live stores, original files, runtime evidence and migration journals are not rewritten by preparation. The new canonical library membership is then reconstructed before existing structural/metadata reconciliation.
+
+`MigrationStudioTests.testNewTemplateEditedExport` uses real capture plus duplicate operations against isolated imported data. It covers Week and Day capture, duplication with reused owner UUIDs, deliberate List/Card-number overlap, copied checklists, a same-owner link to another copied Card, a new verified photo/cover/caption, example focus and selecting the new Week as default. It checks authored template IDs, independent owners/nested IDs, retained content, exact native backup preferences, defaults/runtime immutability, repeated export, a fresh installation with independently allocated aliases and identical canonical re-export. Unknown fields and removal of a newly retained template reject export.
+
+Validation: 68 export/recovery/template checks pass, plus the two existing hosted focus checks in a separate run; all 112 tooling tests pass. The initial combined run exited unexpectedly in the existing nested keyboard test and was stopped after runner restart/finalization stalled; no product cause or fix is claimed for that incident. Separate runs and the final linked-copy regression passed. Independent `--new-template-package` validation checks complete schemas/references/manifests, independent owner identities, copied content/default/focus and three synthetic originals. Personal v14 retains five originals and remains the latest owner-accepted checkpoint.
+
+Limits remain: removal of retained templates, changed retained date/kind/weekday/focus policy, creation of an initially absent library store, ambiguous nested identities, unresolved external references and new drawing derivations are not enabled. This is complete-snapshot local export, not a server creation/deletion protocol or authenticated ownership claim.
+
+Pending owner test: rebuild Plenact Import Test, open Settings → Day & Week Templates, scroll to Source day / week and choose Save week as template. Give the new template a distinct Name and Save without changing its content. Export v15 using Export supported Card edits to Files…; keep v14 and do not Undo first. Independently validate before later editable Undo/import and checking the new template. Step 1 continues; cloud synchronization remains disabled.
+
+
+## Owner acceptance: captured Day-template creation — October 26, 2026
+
+Portable v15 independently validates against v14: it adds one authored Day template, one independent Collection, one List and four owned Cards. All retained records are unchanged. The authored template UUID matches the native source; the new owner identity follows the deterministic workspace/template rule. Library membership appends the new template while retaining its identity, prior order and default Week. All five originals are byte-preserved, and native preferences/media/runtime hashes pass with no review codes.
+
+After editable Undo, the owner completed v15 editable import and confirmed success. The screenshot shows the new Day template with four items in the library. This establishes captured Day-template creation and library/count restoration; the screenshot does not independently establish every internal Card field or template application behavior. Week capture, duplication, copied links/nested content and photo/cover behavior retain synthetic coverage. v15 is the latest owner-accepted checkpoint; retain v14 and earlier recovery packages. No repeat test is required for this checkpoint. Step 1 continues with cloud synchronization disabled, and personal archives/screenshots remain outside repository fixtures.
+
+
+## Template deletion edited export — October 26, 2026
+
+Edited export now supports deletion from an existing template library as a complete local snapshot operation. It removes the template and its exclusively owned Collection, Lists, Cards and content selections. Deleting the default Week clears that default; deleting every template retains an explicit empty library. This does not add server tombstones or change published Model 1.0. Prior packages and exact native/runtime recovery evidence retain the earlier state. Verified originals remain preserved even when a removed template was their last user.
+
+The adapter runs after rollover and before new-template conversion. It blocks surviving canonical references into the removed owner/content/nested identities, reuse of removed numeric aliases in surviving native owners, and intersecting pending Card-deletion intent. Newly captured templates are qualified separately because capture can legitimately borrow source numbers. Unknown source changes still encounter the final inverse projection checks. Missing-library creation, changed retained template context, cross-Board transfer and new drawing derivations remain unsupported. A reference cleared concurrently can still require a separate checkpoint rather than rewriting historical records.
+
+`MigrationStudioTests.testTemplateDeletionEditedExport` covers default deletion, deleting all templates, unchanged live Week values and original media, exact native backup preferences, source/runtime immutability, repeated export and fresh import with identical canonical re-export. A current bundled revision proves loading the explicit empty library does not resurrect deleted templates. Negative checks cover a surviving typed reference, pending Card deletion and a transferred Card alias. The creation regression also deletes a newly retained rich template, preserving its original image file.
+
+Validation: 69 export/recovery/template checks pass; 112 tooling tests pass. The two previously isolated keyboard-focus tests were excluded from this export run and were not repeated. Independent `--deleted-template-package` validation passes complete schema/reference/manifest/original checks with an empty template library, retained live content and two synthetic originals. Personal v15 has five originals and remains the accepted owner checkpoint.
+
+Pending focused owner test: rebuild Plenact Import Test, open Settings → Day & Week Templates, find the custom Day template created in v15, and use its … menu → Delete template. Delete only that custom template, then export using Export supported Card edits to Files… as v16. Do not Undo first. Independently verify the archive against v15 before editable Undo/import and checking that the template stays absent while retained templates and the current Week remain available. Step 1 continues; cloud synchronization is disabled.
+
+
+## Template deletion confirmation repair — October 26, 2026
+
+Personal v16 passes general package integrity and native preferences/media/runtime hash validation, with all five originals preserved, but is canonically identical to v15. The custom Day template remains in both its native backup and the saved Simulator library. It is not deletion acceptance. The owner reports tapping Delete template merely dismissed the menu without showing confirmation.
+
+A hosted isolated test reproduced the missing confirmation while it was attached to the invisible trailing presentation row. The confirmation now belongs to the visible template row, qualified by template identity. Editor/apply sheets retain their existing stable presentation anchor. The regression fails before the move and passes afterward, checking the confirmation title/destructive action and unchanged saved bytes before confirmation and after dismissal. Three affected hosted/export tests pass, including editor stability and template deletion recovery. No Simulator data was changed by these tests. Pending owner retry: rebuild, delete the custom template, confirm the second dialog, verify its row disappears and export v17 before any Undo. v15 remains the accepted checkpoint; retain v16 as well.
+
+
+## Owner export verification: template deletion v17 — October 26, 2026
+
+The owner screenshots confirm that the repaired deletion dialog appears and the custom Day-template row disappears after confirmation. Independent general validation of personal v17 against accepted v15 passes schemas, references, manifests and originals. Exactly one Day template, one exclusively owned Collection, one List and four Cards are removed. Every surviving canonical value is unchanged, including library order/default, Weeks, earlier planning/reviews, profile, Studio and preferences. The package retains 164 Card records, 37 Lists and 11 Collections; the existing pending-deletion Card remains retained as before.
+
+All five original files are byte-preserved. Exact native preferences, media and runtime hashes pass with no review codes; native template membership matches the portable library. Cloud upload remains disabled and ownership remains unverified. v16 was valid but unchanged from v15; retain it and earlier recovery packages. v17 is independently verified for the intended deletion, with editable Undo/re-import acceptance still pending. No personal archives or extracted records were added to repository fixtures.
+
+
+## Owner acceptance: template deletion v17 — October 26, 2026
+
+After independent v17 validation, the owner completed editable Undo, reviewed the package, confirmed editable import and reported success. Screenshots show the successful editable import and the template library with the deleted custom Day template absent while neighboring retained templates remain. This accepts the focused deletion/export/re-import checkpoint. The screenshots do not independently establish every retained template field or current Week contents; their unchanged canonical values were verified in the private package comparison.
+
+v17 is the latest owner-accepted checkpoint. Keep v15, v16 and earlier recovery packages. No repeat manual deletion test is needed. Step 1 remains in progress; cloud synchronization is disabled and working Model 1.1 remains unpublished. Personal archives and screenshots remain outside repository fixtures.
+
+
+## Retained template Card content checkpoint — October 26, 2026
+
+The existing generic content adapter was verified explicitly for title/details changes inside a retained template. No production exporter change was needed. `MigrationStudioTests.testRetainedTemplateContentEditedExport` uses the checked template store save path and imported owner-qualified aliases. It checks that only the intended Card title, description and authored edit history change; every other canonical field remains equal, aside from the established explicit empty local-deletion overlay. Retained template/owner/Card identities, sibling template copies, live Week content, library metadata/default and originals remain unchanged.
+
+The isolated test verifies exact native backup preferences, source/defaults/runtime immutability, repeat export, fresh import and identical canonical re-export. History UUIDs and opaque changes are preserved; new native history timestamps compare within the canonical millisecond precision. The new test passes. All 112 tooling tests pass, and independent `--retained-template-content-package` validation passes with two synthetic originals and an edited template owner separate from the retained live Week. Earlier native suite results are retained; no new full-suite count is claimed.
+
+Pending owner test from accepted v17: edit one existing Card title inside the retained custom Week template, return to its template editor and Save, then export v18 without Undo. Keep template name, dates, membership and default unchanged. Independently compare v18 with v17 before editable Undo/import and checking the edited title. This checkpoint does not establish template item addition/deletion or changed weekday/focus mappings. Step 1 remains in progress; synchronization remains disabled.
+
+
+## Owner export verification: retained template Card v18 — October 26, 2026
+
+Independent general package validation of personal v18 against accepted v17 passes schemas, references, manifests and originals. Exactly one retained template Card changes, with only its intended title and edit history differing. All prior history entries remain exact and two new entries are retained. Template/Card/owner identities, live Weeks, sibling templates, library/default and all other canonical values remain unchanged.
+
+All five original files are byte-preserved. Exact native preferences/media/runtime hashes pass with no review codes, and the native template source contains the intended edited title. Cloud upload remains disabled and ownership unverified. v18 is independently verified for the intended edit; editable Undo/re-import acceptance remains pending. v17 remains the accepted checkpoint. Personal archives and screenshots remain outside repository fixtures.
+
+
+## Owner acceptance: retained template Card v18 — October 26, 2026
+
+Following independent v18 validation, the owner completed editable Undo, package review and editable re-import. Screenshots show successful activation and the intended edited Monday Card title in the retained Week-template editor. This accepts the focused retained-template Card title/export/re-import checkpoint. The private package comparison separately verified unchanged live Weeks, sibling templates, library/default, all other canonical values and all five originals, with valid native recovery hashes.
+
+v18 is the latest owner-accepted checkpoint. Keep v17, v18 and prior recovery packages; no repeat manual test is required. This does not establish template item addition/deletion, application behavior or changed weekday/focus mappings. Step 1 remains in progress; synchronization is disabled and working Model 1.1 remains unpublished. Personal archives/screenshots remain outside repository fixtures.
+
+
+## New Cards and Notes inside retained templates — October 26, 2026
+
+The template editor now reserves new item identities through `PortableCreationIdentity` and records an authored creation instant. Previously its template-local maximum could overlap imported owners and the new Card had no creation timestamp, so generic structural export correctly rejected it. `PlanningTemplateItemCreation.append` is shared by the real editor and isolated tests. Portable reservations are durable before append; cancelling a draft leaves its unused reservation consumed. Ordinary nonportable libraries retain local numbering. Failure shows an error on the visible Add item control and leaves the draft unchanged. No live Week is edited by creating template content.
+
+The existing structural exporter accepts these reserved new Cards/Notes within retained template owners; no schema relaxation or additional exporter creation heuristic is introduced. Relative schedule policy, retained weekday/focus mappings, missing-library creation and cross-owner transfer boundaries remain unchanged. This checkpoint does not establish List creation/deletion or template Card deletion.
+
+`MigrationStudioTests.testRetainedTemplateItemCreationEditedExport`, in `Test/TemplateEditedExportTests.swift`, uses the production allocator and checked library save. It verifies a cancelled reservation is not reused or exported, Card/Note identities are distinct from all imported aliases, new authored creation values are present, and exactly two new Card records plus the intended List membership are added. Existing content, live Weeks, sibling templates and library metadata remain unchanged. It checks original preservation, exact native backup preferences, frozen source/runtime immutability, repeated export, fresh import/identical re-export and a malformed-runtime failure leaving the draft unchanged. The test file is registered in the existing Xcode test target; the shared synthetic retained-template fixture is internal for reuse.
+
+Validation passes 72 affected native export/recovery/template checks and all 112 tooling tests. The two previously isolated keyboard-focus tests were excluded from this export run. Independent `--template-item-creation-package` validation passes full contract/schema/reference/manifest/original checks, new item membership/order, Note presentation and separate template ownership, with two synthetic originals. v18 remains the latest owner-accepted checkpoint and has five originals.
+
+Pending one focused owner test: rebuild Plenact Import Test, open the retained custom Week template, use Monday's Add item → Card, open the appended item and give it a distinct Title, return to Edit template and Save. Export v19 without Undo. Verify independently against v18 before editable Undo/import and checking the added Card remains in the template. Keep prior packages and recovery history. Step 1 continues; cloud synchronization remains disabled.
+
+
+## Owner export verification: new template Card v19 — October 26, 2026
+
+Independent general validation of personal v19 against accepted v18 passes schemas, references, manifests and originals. Exactly one authored Card is appended to Monday in the retained Week template. Its durable portable identity matches the native Card alias retained in runtime evidence, and its native/canonical creation time is present. All retained Cards, template metadata, live Weeks, planning, preferences and other canonical values remain unchanged; only the owning List's membership extends by the new Card.
+
+All five original files are byte-preserved. Native preferences/media/runtime hashes pass with no review codes. The package retains 165 Card records, 37 Lists and 11 Collections, including the existing pending-deletion Card record. Cloud upload remains disabled and ownership unverified. v19 is independently verified for the intended addition; editable Undo/re-import acceptance remains pending, with v18 still accepted. Personal archives/screenshots remain outside repository fixtures.
+
+
+## Owner acceptance: new template Card v19 — October 26, 2026
+
+Following independent v19 validation, the owner reports successful editable re-import. Screenshots show package review, the retained Week template with its count increased from 42 to 43, and the new Card restored under Monday alongside the previously edited title. This accepts the focused new template Card creation/export/re-import checkpoint. The private package comparison separately verifies durable identity, the single intended membership addition, unchanged retained canonical values and all five originals, with valid native recovery hashes.
+
+v19 is the latest owner-accepted checkpoint. Retain v18, v19 and earlier recovery packages; no repeat test is needed. New Note creation and cancellation/failure boundaries retain synthetic coverage. This acceptance does not establish template item deletion, application behavior, new Lists or changed weekday/focus mappings. Step 1 remains in progress; cloud synchronization is disabled and working Model 1.1 remains unpublished. Personal archives/screenshots remain outside repository fixtures.
+
+
+## Retained template item deletion checkpoint — October 26, 2026
+
+The existing generic local Card-deletion overlay now has explicit retained-template item coverage. No production exporter/editor change was needed. Deleting an ordinary item from a retained template keeps its canonical Card and original List membership intact while adding its UUID to working 1.1 `local_card_deletions`. Reconstruction omits the item from the editable template. This differs from whole-template snapshot removal: it does not remove the underlying record or introduce a server tombstone. Original files, prior packages and exact native/runtime backup evidence remain retained.
+
+`MigrationStudioTests.testRetainedTemplateItemDeletionEditedExport` removes an item through the same library mutation and checked save used by the editor. It verifies the entire canonical assembly is unchanged except the one deletion-overlay UUID, preserving live Weeks, sibling templates, library/default and authored content/history. It checks source/runtime immutability, exact native backup preferences, repeated export, fresh import with the item absent and identical canonical re-export. A separate baseline with example focus on the target confirms export rejects deletion when unchanged retained focus metadata still requires that Card; source/runtime evidence remains unchanged on failure. Other retained references are preserved through canonical record retention, not silently rewritten or discarded.
+
+The new isolated native regression passes, all 112 tooling tests pass, and independent `--template-item-deletion-package` validation passes schemas/references/manifests/originals plus retained template ownership/membership under the local overlay (two synthetic originals). The earlier 72-test native run remains the broader baseline; it was not repeated for this test-only checkpoint. Whole-template removal intersecting pending Card-deletion intent still rejects export as previously documented. No universal template deletion/application support is claimed.
+
+Pending focused owner test from accepted v19: open the retained custom Week template, remove only the newly added Monday Card using the item editor's Edit/delete controls, and Save the template. Export v20 before any Undo. Independently verify v20 against v19, expecting unchanged canonical base content plus one additional local-deletion UUID and all five original files preserved. Only afterward perform editable Undo/import and verify the item remains absent while the earlier edited title remains. No rebuild is needed for this unchanged production path. Step 1 continues; synchronization is disabled.
+
+
+## Owner export verification: template item deletion v20 — October 27, 2026
+
+Independent general validation of personal v20 against accepted v19 passes schemas, references, manifests and originals. Exactly the intended template Card UUID is added to `local_card_deletions`; the prior deletion remains retained. The complete canonical base is unchanged, including all 165 Card records, template metadata, List membership, live Weeks, planning and preferences. Two local deletion UUIDs are now retained. The native template source omits the intended Card while keeping the earlier edited title.
+
+All five originals are byte-preserved. Native preferences/media/runtime hashes pass with no review codes. Cloud upload remains disabled and ownership unverified. v20 is independently verified for the intended deletion; editable Undo/re-import acceptance is pending, and v19 remains the accepted checkpoint. Personal archives/screenshots remain outside repository fixtures.
+
+
+## Owner acceptance: template item deletion v20 — October 27, 2026
+
+The owner reports successful editable v20 re-import, with screenshots showing the import confirmation. Read-only inspection of the current app container's saved template library independently confirms the intended deleted item remains absent and the earlier edited title remains. The saved per-List Card counts match the native v20 backup; raw counts include template dividers. This accepts the focused template item deletion/export/re-import checkpoint. v20 is the latest accepted package; retain v19, v20 and earlier recovery packages. No repeat deletion test is needed.
+
+The screenshots additionally show template preview/application and a populated live Week. Read-only inspection confirms more active Week entries are saved than in the exported v20 backup. Those later live changes are outside the verified v20 package; no claim is made that template application/export has passed. Preserve the current workspace and recovery history for diagnosis/validation before any further Undo or replacement. Personal archives, screenshots and extracted records remain outside repository fixtures. Step 1 continues, with synchronization disabled and working Model 1.1 unpublished.
+
+
+## Additive template application to retained Weeks — October 27, 2026
+
+Applying a template previously allocated fresh numbers only within the target Week. Those numbers could collide with other portable owners and were not reserved in runtime evidence. `PortableTemplateApplication.reserve` now runs at the existing checked Apply/save boundary for retained imported Weeks. Preview/Refresh remain read-only and allocate no durable identities. The helper reserves a single range for newly copied Lists/Cards, translates their explicit copied Card links, bookmark sets, day mappings and example importance markers, and preserves the exact preview's nested UUIDs, created dates and authored values. Existing item aliases and opaque history bytes are not rewritten. Failed save attempts can consume unused reservations; they do not mutate the retained Week through this helper.
+
+The Apply view keeps its existing baseline checks and checked save callbacks, passing the remapped Week and importance set only after reservation succeeds. Reservation failure leaves the preview open with an error. Ordinary nonportable previews and the existing initially absent/new-Week path keep their prior behavior; this checkpoint does not establish new-Week application support. Additive application to retained Weeks is the tested boundary. Replacement, broad calendar context changes, cross-owner transfers, new drawing derivations and other unsupported paths are not implied.
+
+The real apply operation also sets `explicitlySaved` on the retained Week. Export now reconciles only the one-way false-to-true transition for the same retained owner/Week key; clearing that intent still rejects export. Unknown or other changed calendar fields continue through final inverse verification. No immutable schema was changed.
+
+`MigrationStudioTests.testTemplateApplicationEditedExport` applies a synthetic template twice in Add mode using real application, the production commit helper, calendar save and importance-selection functions. It checks distinct reserved identities, copied local links, independently fresh checklist UUIDs preserved across commit, bookmarks/importance, source template/library and retained Card preservation, and the one-way saved-Week flag. It verifies exact native backup preferences, frozen source/runtime immutability, repeated export, fresh import and identical canonical re-export. Negative cases reject clearing saved intent and malformed runtime reservation without changing saved calendar bytes. This test uses isolated stores/containers; it does not claim to exercise the full UI save transaction.
+
+Validation passes 74 affected native export/recovery/template checks and 112 tooling tests. The two previously isolated keyboard-focus tests were excluded from this export run. Independent `--template-application-package` validation passes schemas/references/manifests/originals and checks copied links, independent nested identities, bookmarks/importance and saved-Week intent, with two synthetic originals.
+
+Read-only inspection after the owner's return to v20 shows the same aggregate active Week and source-template entry counts as v20; no additional application count increase is present at that inspection. Pending focused owner test: rebuild Plenact Import Test, preview the retained custom Week template for the current Week, explicitly choose Add to existing, Apply exactly once and export v21 without Undo. Independently verify against v20 before later editable Undo/import and checking the copied Week content. Preserve v20 and recovery history. Step 1 remains in progress, synchronization stays disabled and working Model 1.1 remains unpublished.
+
+
+## Applied-template importance ordering repair — October 27, 2026
+
+The owner's first application export attempt stopped with the unsupported-change alert. Read-only inspection of the current app container found exactly 49 added active Week entries, all with reserved numeric aliases; no retained Week Cards changed and no active media references were missing. Seven new importance selections were saved in nonascending Set-iteration order. Template example-focus differences were only Set ordering. No source stores or originals were changed during this inspection.
+
+The initial application fixture exercised one important item per application and missed within-application ordering. The revised fixture marks both copied items important and persists their selections in descending order. It reproduces the same unsupported export failure before the fix. `PortableEditedExport.nativeJSON` now normalizes only the frozen `Plenact.LibraryImportant.v1` comparison by owner-qualified Card identity, alongside its existing implicit-level normalization. It preserves all entries, levels and unknown fields; live selection storage and runtime evidence are not reordered. Existing structural duplicate/level guards and final inverse verification remain active.
+
+`testImportanceComparisonKeepsIdentityAndUnknownValues` verifies order-independent comparison without collapsing duplicate identities or dropping unknown values. The revised real application round trip verifies copied links, bookmarks and multiple importance markers through repeat export, fresh import and identical re-export. All 75 affected native tests, 112 tooling tests and independent application-package validation pass (two synthetic originals). The two previously isolated keyboard-focus checks were excluded from this native run.
+
+The owner's current application remains saved and has not been independently exported yet. Pending retry: rebuild Plenact Import Test and run Export supported Card edits to Files… again as v21. Do not apply the template again and do not Undo. Independently verify the resulting archive against accepted v20 before re-import. No personal records, media or archives were added to fixtures. Step 1 remains in progress; synchronization is off.
+
+
+## Owner export verification: additive template application v22 — October 27, 2026
+
+Independent general validation of personal v22 against accepted v20 passes schemas, references, manifests and originals. It adds exactly 49 independent copied Card records across the seven current-Week Lists, plus fourteen new selections: seven bookmarked targets and seven important targets. All retained Card records and selection records remain exact. No Lists, templates, owners or originals are created/removed; only the seven destination List memberships extend. All other canonical base values and both prior local deletion UUIDs remain unchanged.
+
+Private comparison maps the active source template's authored item order to the newly reserved aliases per weekday. Source records hidden by the local-deletion overlay are excluded, so the previously deleted template item is not copied. Source titles/kinds match, copied checklist/item UUIDs are fresh, and copied attachments preserve their original asset references and metadata. Local copied links are checked when present; explicit link remapping also retains synthetic coverage. Bookmarks/importance map to the expected new targets with deterministic selection identities. Native copied titles and numeric aliases match the canonical additions.
+
+All five original files are byte-preserved. Native preferences/media/runtime hashes pass with no review codes. This confirms the saved application now exports after the frozen importance-order repair. Cloud upload remains disabled and ownership unverified. v22 is independently verified for one additive application; editable Undo/re-import acceptance remains pending, with v20 still the accepted package. No reapplication is needed. Personal archives/screenshots/records remain outside repository fixtures.
+
+
+## Owner acceptance: additive template application v22 — October 27, 2026
+
+After independent v22 verification, the owner completed editable Undo, package review and editable re-import. Screenshots show 353 reviewed records, 212 nondeleted Cards, 37 Lists and five verified originals, followed by successful activation. The Monday Week view shows original scheduled items alongside the copied template content; the opened copied Card shows the intended edited title, importance display and visible artwork/gallery. This accepts the focused additive retained-Week template application/export/re-import checkpoint. Screenshots do not independently establish every copied field, all seven days or every original file; the private package comparison and synthetic tests supply their separately documented evidence.
+
+v22 is the latest owner-accepted checkpoint. Keep v20, v22 and earlier recovery packages; no repeat application test is required. The package retains 214 canonical Card records, with two prior local deletions explaining the 212 nondeleted review count. Replacement and initially absent/new-Week application remain outside this acceptance, alongside the other remaining Step 1 calendar, transfer, drawing, ownership and final reconciliation/recovery boundaries. Synchronization stays disabled and working Model 1.1 remains unpublished. Personal archives/screenshots remain outside repository fixtures.
+
+
+## Week-template replacement checkpoint — October 27, 2026
+
+Replace mode now has explicit end-to-end synthetic evidence through the existing application, commit-time reservation and local Card-deletion overlay. No new exporter heuristic was needed. Replaced active dated Cards remain exact canonical records with their original content/history and selection evidence, while their IDs enter the local deletion overlay. New copies have independent reserved identities. Archives and undated Lists remain in the native Week. This is local complete-snapshot/recovery behavior, not a server tombstone protocol.
+
+`testTemplateReplacementEditedExport` shares the production application fixture with the additive regression, avoiding duplicated test plumbing. The replacement baseline contains active work on Monday and Tuesday, an archived Card, undated work, and existing bookmarks/importance. Importance is established after owner-qualified import and re-imported as the retained baseline; ambiguous legacy capture-owner references are not guessed and no migration guards are relaxed. The test verifies exactly the replaced dated IDs enter the overlay, every old canonical Card stays exact, archives/undated work remain exact in the reconstructed native Week, new linked Cards/bookmarks/importance remain independent, and fresh import/identical re-export succeeds. Native backup preferences, originals and frozen source/runtime evidence remain preserved.
+
+Validation passes 76 affected native export/recovery/template checks, 112 tooling tests and independent `--template-replacement-package` contract validation with two synthetic originals. The two previously isolated keyboard-focus checks were excluded from this native run. The replacement confirmation text now distinguishes Week-wide dated-List replacement from Day-only replacement; the existing template-screen render check passes after that wording change.
+
+Pending focused owner test from accepted v22: rebuild, preview the retained custom Week template for the current Week, select Replace, Apply and confirm Replace with that template. This intentionally replaces active dated items in the editable Week; v22 preserves the prior accepted state. Apply once, then export v23 before Undo. Independently verify prior canonical records/deletion intent, new copies, originals and native recovery evidence before editable re-import. Keep v22 and earlier recovery packages. This checkpoint does not establish Day replacement, initially absent/new-Week application, cross-Board transfers or final Step 1 reconciliation. Cloud synchronization remains disabled and working Model 1.1 remains unpublished.
+
+
+## Resume: preserve the newer Week before replacement — November 7, 2026
+
+Repository inspection found a clean `feature/ios-local-backup` checkout at `e7b5fe8` before these resume notes. v22 remains the latest owner-accepted package. No v23 archive was present in the known Files storage at inspection.
+
+Read-only inspection located the app data container by bundle metadata after Simulator-service discovery reported a shutdown device. The saved calendar now retains Weeks beginning October 19, October 26 and November 2, with November 2 selected as current. It has 133 active entries across retained Weeks, compared with 105 in v22. Against the retained runtime native baseline, both earlier Weeks remain unchanged after normalizing known Set encodings. Changed baseline stores are limited to Board, calendar, importance and top-level bookmarks. This is consistent with a new 28-entry Week; the corresponding portable rollover has not yet been independently reviewed.
+
+The documented validation requirements were restored into `/private/tmp/plenact-review-2026-11-07-venv` because the earlier temporary environment had lost its configuration/dependencies. All 112 tooling tests pass in the restored environment. A recreated private read-only reviewer revalidated v22's portable schemas/references/manifests/originals and native preferences/media/runtime hashes. v22 still retains 214 canonical Cards, 37 Lists, two Weeks and five originals. No native suite or completed owner round trip was repeated, and no personal data was added to fixtures.
+
+The immediate next action supersedes the older v23 replacement instruction: launch Plenact Import Test and export the current saved workspace as v23 before any Replace or Undo. Independently compare that export with v22 to preserve and verify the newer Week. Then choose the replacement target using the verified current state and use the next archive version for the replacement checkpoint. No extra migration-preview or backup procedure is requested. Step 1 remains in progress; synchronization is disabled and working Model 1.1 remains unpublished.
+
+
+## Resume steering and Simulator disruption — November 7, 2026
+
+The owner explicitly identified the generated beta state as disposable and chose to skip the additional preservation export. The next artifact is therefore v23 for Replace on the retained Week beginning November 2, with v22 retained. This supersedes the extra pre-replacement export proposed in the preceding resume note. No additional backup/migration-preview procedure is required.
+
+During the manual preview/Replace attempt, Xcode reported its LLDB RPC server had exited and Simulator showed the device as unavailable. Read-only diagnostics found simultaneous SIGBUS/KERN_MEMORY_ERROR reports for SpringBoard, DTServiceHub, gamed, chronod and liveactivitiesd. No Plenact crash report was found in the inspected report locations. The iOS 27.2 runtime became installed during this session; a causal connection to the failures is not established. These observations indicate a Simulator/tooling disruption rather than establishing an application defect.
+
+The existing Plenact Import Test device remains available under iOS 27.0 and is shut down. Saved active entry counts remain 28 for October 19, 77 for October 26 and 28 for November 2; the replacement has not persisted. Earlier Weeks match the retained runtime baseline after known Set normalization. Inspection changed no application data, imports or recovery history.
+
+The next recovery action is user-operated: dismiss the debugger alert, quit/reopen Xcode and Simulator, select the existing Plenact Import Test device and run Plenact. Resume the pending Replace test once the app opens normally; do not repeat application if a successful replacement is subsequently saved. No Simulator erasure, cache removal, restore or code change was performed. v22 remains accepted and v23 replacement acceptance is pending.
+
+
+## New-Week replacement importance reconciliation — November 7, 2026
+
+The owner completed a Replace application into the automatically generated November 2 Week, but edited export rejected inconsistent saved references. Read-only inspection found importance entries belonging to removed Cards in that newly generated Week. Unlike the previously tested retained-Week replacement, this Week had not yet been exported.
+
+The checked Week-save path now removes missing importance targets for that owner only when they are absent from the retained native import baseline. Previously exported selection evidence (including local deletion recovery), archive/undated targets and other owners remain preserved. Unknown or duplicate source entries fail closed. Export preparation still never repairs or mutates live stores.
+
+A combined rollover/replacement regression reproduces the rejection, applies the checked-save reconciliation, and checks repeated export, source/runtime immutability, exact native backup preferences and fresh import with identical re-export. Validation passed: 77 affected native tests (the two previously excluded keyboard-focus tests remain excluded), 112 tooling tests, and independent retained-Week replacement package validation with two synthetic originals. Native log: `/private/tmp/plenact-rollover-replacement-full.log`; tooling log: `/private/tmp/plenact-rollover-replacement-python.log`. The existing saved owner workspace will require one checked replacement save after rebuilding; v22 remains the accepted checkpoint and v23 has not been accepted. Step 1 remains in progress, Model 1.0 is unchanged, and cloud synchronization remains disabled.
+
+
+## Linked checklist rollover comparison — November 7, 2026
+
+After the owner rebuilt and repeated the November 2 replacement, read-only inspection confirmed zero orphan importance targets. Export then reached a different unsupported-change guard. The copied Week contains linked checklist actions and retained Card-reference mirrors; the earlier combined rollover fixture contained only ordinary checklist text. Adding linked actions reproduced the rejection in isolated synthetic data.
+
+Rollover now translates explicit nested `cardID` and `retainedCardID` references through the same owner-qualified mapping used for Card identities, only in the frozen comparison. Opaque edit-history evidence stays untouched, unresolved references still reject export, and live source/runtime files are unchanged. The richer fixture also exposed nondeterministic append order for newly added selections from multiple owners. Iterating owners by stable identity fixes new-record order without reordering retained selection records.
+
+The regression checks repeated exports, exact source/native-backup preservation, fresh import, restored active/retained link targets and identical re-export. All 77 affected native tests passed, including eight additional same-snapshot export retries in the linked rollover case (the same two keyboard-focus tests remain excluded). Native log: `/private/tmp/plenact-rollover-links-final.log`. The next owner action is rebuild and export only; another replacement, Undo or import is unnecessary. v22 remains the accepted checkpoint.
+
+
+## Owner v23 export independently verified — November 7, 2026
+
+The supplied v23 archive passed the general portable package reader (schemas, references, manifest and original-file integrity) and independent native Preferences/media/runtime hash checks. Native review codes are empty; synthetic ownership remains unverified and cloud upload remains disabled. The private comparison reads the archives in memory and emits aggregate evidence only. No personal archive or extracted content was added to the repository.
+
+Compared with v22, v23 adds one November 2 Week, one Collection, seven Lists, 49 Cards and 14 content selections. No retained records were removed; only the calendar index payload changes to add/select the new Week. All other retained portable record payloads and the existing local-deletion overlay remain unchanged. All five previous originals are byte-for-byte preserved, with no new originals. The new Week has seven bookmarks, seven importance selections and no orphan importance references. Its native Board matches the current Week.
+
+Expected package-review counts: 425 portable records, 261 nondeleted Cards, 44 Lists and five originals. Canonical storage retains 263 Card records, including the two existing local-deletion targets. There are three retained Weeks. Numeric editor aliases and native timestamp precision can differ from the prior pre-import native backup; stable canonical records are the comparison authority.
+
+Export validation is complete for v23; owner-operated re-import acceptance remains pending. Keep v22 as the previously accepted checkpoint. Next: Undo editable workspace import, choose the unzipped v23 folder, import into the editable Simulator workspace, then verify the November 2 replacement and a copied linked checklist action. Do not repeat template application. Step 1 remains in progress.
+
+
+## Owner v23 re-import acceptance — November 7, 2026
+
+The owner reported completion after restoring the pre-import workspace, reviewing v23 and importing it into the editable Simulator workspace. Supplied screenshots confirm the expected 425 records, 261 nondeleted Cards, 44 Lists and five verified originals, the successful import receipt with cloud synchronization off, and the November 2–8 replacement Week restored in normal Board views. Monday and Saturday show the six task rows and retained divider layout, appearance and importance indicators.
+
+The owner reported the requested acceptance sequence complete. The screenshots do not show a linked checklist action opened; exact active/retained link targets are independently covered by the synthetic fresh-import regression, while v23 passed the general reference validator. No further repeat of this manual checkpoint is requested. v23 is now the latest owner-accepted export/re-import checkpoint; retain v22 and earlier recovery packages. Step 1 remains in progress, with the remaining inventory and ownership/reconciliation gates still open.
+
+
+## Day-template application boundary — November 7, 2026
+
+Two isolated regressions now cover Day-template addition and replacement into Tuesday of a retained Week. They reuse the production Apply/reservation/save/export path and the existing shared fixture rather than introducing a parallel adapter. Two additive copies and one replacement preserve other dated Lists and their bookmarks/importance, the selected day's archive, undated work, retained canonical Cards and local deletion evidence. Copied Card/Note links, source/runtime immutability, exact native recovery, fresh import and identical re-export pass. No production code change was required for this evidence checkpoint.
+
+Validation: all four selected Day/Week application/replacement tests pass; 112 tooling tests pass. Independent `DayTemplateApplicationPackage` and `DayTemplateReplacementPackage` checks pass with two synthetic originals each. The previous broad 77-test run remains the broad baseline; do not describe this focused run as a new 79-test full run. Native log: `/private/tmp/plenact-day-template-focused.log`; tooling log: `/private/tmp/plenact-day-template-python.log`.
+
+One focused owner test is pending from accepted v23: use Vacation Day → Preview & apply, destination November 3, 2026, Apply as Replace, confirm, then export v24. The other days must remain unchanged. The current build already contains the application path; no rebuild or Undo is needed before applying/exporting. Independently validate v24 against v23 before re-import. Step 1 and its remaining inventory gates remain open.
+
+
+## Template settings navigate to Library — November 7, 2026
+
+At the owner's request, Plan Settings → Day & Week Templates no longer repeats individual template rows. It keeps the existing default-Week and capture controls and presents **Open Templates in Library**. The redundant **Reload saved templates** action is also hidden in this Settings sheet and retained beside the Library listings. The action dismisses the nested template sheet, then Plan Settings, before selecting Plans/Library with the Templates filter and cleared search. Library remains the shared browsing/editing/application location; saved templates are not deleted or reclassified as Examples.
+
+Actual unsaved Plan Settings changes offer save/discard/keep-editing; an unchanged Settings draft routes directly. The checked save action is shared with the existing Save button. Navigation is transient and does not change the portable model or recovery state.
+
+The build and three existing Settings/Library/template rendering checks pass (`/private/tmp/plenact-template-settings-navigation-final.log`), including render-without-saving assertions. User-operated end-to-end navigation remains pending. Rebuild Plenact Import Test to check the new button, then continue the pending Vacation Day → November 3 Replace/export v24 test from Library → Templates. v23 remains accepted; no Undo/import is required before the new export.
+
+
+## Owner v24 Day replacement export verified — November 7, 2026
+
+The supplied v24 archive passed the general package schema/reference/manifest/original validator and native Preferences/media/runtime hash verification, with empty native review codes. The private in-memory comparison against accepted v23 confirms exactly three new Cards and two content selections, no removed canonical records, and one retained Tuesday List update (Card membership and subtitle). The seven old Tuesday entries are exactly the newly added local deletion targets; the two prior targets remain. All other retained canonical records and all five original files are unchanged. No personal archive or content was added to fixtures.
+
+One native importance marker points to an intentionally deleted retained Tuesday Card. Its identity resolves through retained runtime aliases into the explicit local-deletion overlay; this is preserved recovery evidence, distinct from the previously fixed unexported orphan markers. The complete package reference validation passes. Screenshots confirm the three Day-template items on November 3 and the neighboring Monday task/divider layout retained before export.
+
+Expected v24 review counts: 430 records, 257 nondeleted Cards, 44 Lists and five verified originals. Storage retains 266 canonical Card records, nine local deletion targets and three Weeks. Cloud synchronization remains off. Owner-operated editable re-import is pending: Undo editable workspace import, choose the unzipped v24 folder, import into editable Simulator workspace, then verify Tuesday's three items and Monday unchanged. No rebuild or repeated template application is required. v23 remains the accepted checkpoint until that focused acceptance completes.
+
+
+## Owner v24 Day replacement acceptance — November 7, 2026
+
+The owner reported the editable re-import acceptance sequence complete. Supplied screenshots confirm pre-import workspace restoration, the expected v24 review counts (430 records, 257 nondeleted Cards, 44 Lists, five originals), availability of editable import, and the three Vacation Day items restored on Tuesday November 3. No import-success alert or post-import Monday screenshot was supplied; the owner completion report establishes the completed sequence, while the earlier pre-export Monday screenshot and independent retained-record comparison establish the neighboring-day evidence.
+
+v24 is now the latest owner-accepted export/re-import checkpoint, with v23 retained as the prior checkpoint. This closes the focused Day-template replacement acceptance; no repeat of this test is requested. Day addition retains synthetic evidence and is not separately owner-accepted. Step 1 remains in progress, with remaining calendar/structural, drawing, ownership and final reconciliation/recovery gates still open. Cloud synchronization remains disabled.
+
+
+## Today shortcuts edited export — November 7, 2026
+
+The next bounded settings adapter supports **My shortcuts** after editable import: explicit empty-store creation, selected owner/List references, authored order, replacement, removal and clearing. Retained singleton identity and unchanged canonical payloads are preserved; a genuinely new singleton gets a deterministic workspace-qualified identity. Only this recognized native store is newly allowed. Missing retained stores, unknown fields, duplicate/excess pins, invalid numbers and unresolved/mismatched ownership reject export rather than being normalized by the UI helper. Explicit `[]` is supported; removing a retained store is not.
+
+The adapter resolves each List through verified numeric aliases plus its explicit Collection owner and membership. Rollover translates shortcuts into newly dated Week Lists only in the frozen comparison, alongside the existing owner-qualified List/Card mappings. Live stores and runtime files remain untouched during export. No authenticated ownership is inferred from a local profile.
+
+A synthetic isolated fixture covers new empty presence, creation, reorder, six-item selection, clearing and references spanning a new Week, an older Week and a personal Collection. It verifies stable singleton identity, authored order, unchanged other canonical groups, exact native preferences/media, frozen-source/runtime immutability, repeated export, fresh installation and identical re-export. Malformed, duplicate, unknown, missing and wrong-owner targets reject without source/runtime changes. Independent `ShortcutsPackage` validation checks the general schemas/references/manifest/originals and the three-owner ordered rollover targets, with two synthetic originals. Tooling passes 112 tests. All 80 affected native tests pass (the same two previously excluded keyboard-focus tests remain excluded). Native log: `/private/tmp/plenact-shortcuts-full.log`; tooling log: `/private/tmp/plenact-shortcuts-python.log`.
+
+One focused owner test is pending from accepted v24: rebuild Plenact Import Test, open Today → gear → My shortcuts, swap the first two Pinned rows, tap Done, then use Your data → Local backup → Export supported Card edits to Files… and save v25. My shortcuts has its own Done save. No Undo or re-import before the export. Independently compare v25 with v24 before the later re-import phase. Step 1 remains in progress; model publication and cloud synchronization stay disabled.
+
+
+## Owner v25 shortcut reorder export verified — November 7, 2026
+
+The owner supplied v25 and screenshots showing a swap of the first two Pinned shortcuts, with the third unchanged. The supplied Downloads path was unavailable; the same-version ZIP was read from the known Simulator Files storage. The separate v24 archive was no longer present in the checked locations, so comparison used the complete retained v24 import snapshot inside v25's verified native runtime evidence. The snapshot and v25 portable package both pass the general schema/reference/manifest/original validator; v25's native preference, media and runtime hashes pass with empty review codes. The retained baseline has the expected 266 canonical Cards and nine local deletion targets.
+
+Only the `today_shortcuts` record changes: singleton identity is exact, the first two of its three owner/List references swap positions, and the third remains exact. No records are added or removed. All other retained canonical values, the local deletion overlay and five original files are unchanged. Private comparison and snapshot decoding operate outside the repository and do not import or mutate the Simulator. No personal content was added to fixtures.
+
+Expected review counts remain 430 records, 257 nondeleted Cards, 44 Lists and five verified originals. Editable re-import acceptance is pending: Undo editable workspace import, review the unzipped v25 folder, import into editable Simulator workspace, then open My shortcuts and verify the swapped order without reordering it again. v24 remains the accepted checkpoint until that completes. Step 1 remains in progress and synchronization remains disabled.
+
+
+## Owner v25 shortcut reorder acceptance — November 7, 2026
+
+The owner supplied the completed Undo/review/editable-import sequence. Screenshots confirm the expected 430 records, 257 nondeleted Cards, 44 Lists and five verified originals; the successful editable import receipt explicitly states synchronization is off. The post-import My shortcuts screen confirms the first two pinned destinations retain their swapped order and the third remains in place. This closes the focused owner reorder round trip.
+
+v25 is now the latest accepted export/re-import checkpoint; retain its ZIP and recovery history. No repeat of this manual test is requested. Shortcut creation, clearing and new-Week destinations retain isolated synthetic evidence rather than separate owner acceptance. Step 1 remains in progress with the remaining calendar/structural, drawing, ownership and final reconciliation/recovery gates open. No staging, commit, publication or synchronization was performed.

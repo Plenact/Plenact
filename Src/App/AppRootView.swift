@@ -49,6 +49,7 @@ struct AppRootView: View
     @State var launchProgress = PlenactLaunchProgress()
     @State var hasLoadedBoard = false                              /* Whether the initial Week snapshot has loaded */
     @State var profile = LocalProfileStore.load()                  /* Optional local identity and settings         */
+    @State private var templateLibraryRequest = 0                  /* Transient Library routing request */
     @State var selectedDestination:       AppDestination = .today  /* Currently selected primary destination       */
     @State var bottomNavigationSafeInset: CGFloat = 34
     var bottomToolbarLayout:              BottomToolbarLayout
@@ -687,6 +688,12 @@ struct AppRootView: View
         .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : bottomNavigationHeight)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
+        .environment(\.openTemplateLibrary,
+        {
+
+            templateLibraryRequest += 1
+            selectedDestination = .lists
+        })
         .environment(\.calendar, calendarDocument?.calendar ?? .current)
         .modifier(
             OwnerImportanceControls(
@@ -1019,6 +1026,7 @@ struct AppRootView: View
                 ?? []),
             collections: $collections,
             newListRequest: newLibraryListRequest,
+            templateLibraryRequest: templateLibraryRequest,
             toolbarCollectionRequest: $toolbarCollectionRequest,
             registerListNewNote: registerPersonalListNewNote,
             onOpenSaved: openSavedDestination,

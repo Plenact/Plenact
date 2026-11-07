@@ -11,17 +11,17 @@ import SwiftUI
 
 
 ///
-/// Presents the standalone reusable-template library
+/// Presents template settings and the Library entry point
 ///
 /// @section    Purpose
-///     Reuses the same stateful rows and editing sheets as the Library filter to keep behavior and
-///     storage consistent.
+///     Retains default-Week and capture controls while directing browsing and application to Library.
 ///
 struct PlanningTemplatesView: View
 {
 
 
     @Environment(\.dismiss) private var dismiss
+    var onOpenLibrary: (() -> Void)? = nil
     var body: some View
     {
 
@@ -30,9 +30,9 @@ struct PlanningTemplatesView: View
 
             List
             {
-                PlanningTemplateLibraryRows()
+                PlanningTemplateLibraryRows(showsTemplateListings: false, onOpenLibrary: onOpenLibrary)
             }
-            .navigationTitle("Day & Week Templates")
+            .navigationTitle("Planning Templates")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
@@ -65,12 +65,15 @@ struct PlanningTemplateLibraryRows: View
 
 
     var query = ""
+    var showsTemplateListings = true
+    var onOpenLibrary: (() -> Void)? = nil
+    var defaults: UserDefaults = .standard
     @Environment(\.planningCalendarAccess) private var access
     @State private var library: PlanningRoutineLibrary?
     @State private var sourceDate = Date.now
-    @State private var editing:  PlanningRoutineTemplate?
+    @State var editing:  PlanningRoutineTemplate?
     @State private var applying: PlanningRoutineTemplate?
-    @State private var deleting: PlanningRoutineTemplate?
+    @State var deleting: PlanningRoutineTemplate?
     @State private var message:  String?
 
 
@@ -87,7 +90,7 @@ struct PlanningTemplateLibraryRows: View
 
         do
         {
-            library = try PlanningRoutineStore.load()
+            library = try PlanningRoutineStore.load(from: defaults)
         }
         catch
         {
@@ -121,7 +124,7 @@ struct PlanningTemplateLibraryRows: View
         change(&next)
         do
         {
-            try PlanningRoutineStore.save(next, baseline: baseline);
+            try PlanningRoutineStore.save(next, baseline: baseline, to: defaults);
             library = next;
             return true
         }
@@ -232,86 +235,162 @@ struct PlanningTemplateLibraryRows: View
 
                 }
 
-                Section("Day & Week templates")
+                Section
                 {
 
-                    let matches = library.templates.filter
+                    if showsTemplateListings
                     {
 
-                        LibraryStarterSearch.matches(
-                            query,
-                            texts: [$0.name, $0.kind.rawValue]
-                            + $0.collection.lists.flatMap
-                            {
-                                [$0.title] + $0.cards.map(\.word)
-                            })
-                    }
-
-                    if matches.isEmpty
-                    {
-                        Text("No matching Day or Week templates").foregroundStyle(.secondary)
-                    }
-
-                    ForEach(matches)
-                    {
-                        template in
-                        VStack(alignment: .leading, spacing: 10)
+                        let matches = library.templates.filter
                         {
 
-                            HStack
+                            LibraryStarterSearch.matches(
+                                query,
+                                texts: [$0.name, $0.kind.rawValue]
+                                + $0.collection.lists.flatMap
+                                {
+                                    [$0.title] + $0.cards.map(\.word)
+                                })
+                        }
+
+                        if matches.isEmpty
+                        {
+                            Text("No matching Day or Week templates").foregroundStyle(.secondary)
+                        }
+
+                        ForEach(matches)
+                        {
+                            template in
+                            VStack(alignment: .leading, spacing: 10)
                             {
 
-                                Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
-                                .font(.headline)
-                                Spacer()
-                                if template.id == library.defaultWeekID
+                                HStack
                                 {
 
-                                    Text("Default").font(.caption).foregroundStyle(.secondary)
+                                    Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
+                                    .font(.headline)
+                                    Spacer()
+                                    if template.id == library.defaultWeekID
+                                    {
+
+                                        Text("Default").font(.caption).foregroundStyle(.secondary)
+                                    }
+
+                                    Menu
+                                    {
+
+                                        Button("Edit template", systemImage: "pencil")
+                                        {
+                                            editing = template
+                                        }
+
+                                        Button("Duplicate", systemImage: "plus.square.on.square")
+                                        {
+
+                                            var copy = template;
+                                            copy.id = UUID();
+                                            copy.name += " Copy";
+                                            editing = copy
+                                        }
+
+                                        Button("Delete template", systemImage: "trash", role: .destructive)
+                                        {
+
+                                            deleting = template
+                                        }
+
+                                    }
+                                    label:
+                                    {
+
+                                        Image(systemName: "ellipsis").frame(width: 44, height: 44)
+                                    }
+                                    .accessibilityLabel(template.name + " actions")
                                 }
 
-                                Menu
+                                Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption)
+                                .foregroundStyle(.secondary)
+                                Button("Preview & apply", systemImage: "calendar.badge.plus")
                                 {
-
-                                    Button("Edit template", systemImage: "pencil")
-                                    {
-                                        editing = template
-                                    }
-
-                                    Button("Duplicate", systemImage: "plus.square.on.square")
-                                    {
-
-                                        var copy = template;
-                                        copy.id = UUID();
-                                        copy.name += " Copy";
-                                        editing = copy
-                                    }
-
-                                    Button("Delete template", systemImage: "trash", role: .destructive)
-                                    {
-
-                                        deleting = template
-                                    }
-
+                                    applying = template
                                 }
-                                label:
-                                {
+                                .frame(minHeight: 44)
+                            } .padding(.vertical, 4)
+                            .confirmationDialog(
+                                            "Delete this template?", isPresented: Binding(get:
+                                                {
+                                                    deleting?.id == template.id
+                                                }, set:
+                                                {
+                                                    if !$0
+                                                    {
+                                                        deleting = nil
+                                                    }
 
-                                    Image(systemName: "ellipsis").frame(width: 44, height: 44)
-                                }
-                                .accessibilityLabel(template.name + " actions")
-                            }
-
-                            Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption)
-                            .foregroundStyle(.secondary)
-                            Button("Preview & apply", systemImage: "calendar.badge.plus")
+                                                }),
+                                            titleVisibility: .visible
+                            )
                             {
-                                applying = template
+
+                                if let deleting
+                                {
+
+                                    Button("Delete " + deleting.name, role: .destructive)
+                                    {
+
+                                        _ = update
+                                        {
+                                            library in
+                                            library.templates.removeAll
+                                            {
+                                                $0.id == deleting.id
+                                            }
+
+                                            if library.defaultWeekID == deleting.id
+                                            {
+                                                library.defaultWeekID = nil
+                                            }
+
+                                        }
+
+                                        self.deleting = nil
+                                    }
+
+                                }
+
+                                Button("Cancel", role: .cancel)
+                                {
+                                    deleting = nil
+                                }
+
                             }
-                            .frame(minHeight: 44)
-                        } .padding(.vertical, 4)
+                            message:
+                            {
+
+                                Text("Applied days and weeks remain. Deleting the default switches new weeks to Empty week.")
+                            }
+                        }
                     }
+                    else
+                    {
 
+                        Button("Open Templates in Library", systemImage: "square.stack.3d.up")
+                        {
+
+                            onOpenLibrary?()
+                        }
+                        .disabled(onOpenLibrary == nil)
+                        .accessibilityIdentifier("settings.templates.openLibrary")
+                    }
+                }
+                header:
+                {
+
+                    if showsTemplateListings
+                    {
+
+                        Text("Day & Week templates")
+                    }
                 }
 
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -345,10 +424,14 @@ struct PlanningTemplateLibraryRows: View
                         )
                     }
 
-                    Section
+                    if showsTemplateListings
                     {
 
-                        Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
+                        Section
+                        {
+
+                            Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
+                        }
                     }
 
                 }
@@ -361,7 +444,27 @@ struct PlanningTemplateLibraryRows: View
                 Button("Retry", action: reload)
             }
 
+            presentationAnchor
         }
+    }
+
+
+    /// @fcn PlanningTemplateLibraryRows.presentationAnchor
+    /// @brief Give editor/apply sheets and load/save errors one stable presentation owner
+    /// @details A Group distributes modifiers across its List sections. This persistent zero-height
+    ///          row avoids duplicate sheet presentations and survives the initial library-load replacement.
+    ///          Destructive confirmation stays on its visible template row rather than this offscreen anchor.
+    /// @return Invisible presentation anchor without changing template content or persistence
+    private var presentationAnchor: some View
+    {
+
+        Color.clear
+        .frame(height: 0)
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+        .environment(\.defaultMinListRowHeight, 0)
+        .id("planning-template-presentations")
         .task
         {
             reload()
@@ -398,59 +501,6 @@ struct PlanningTemplateLibraryRows: View
         {
             template in
             PlanningTemplateApplyView(template: template)
-        }
-        .confirmationDialog(
-                        "Delete this template?", isPresented: Binding(get:
-                            {
-                                deleting != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    deleting = nil
-                                }
-
-                            }),
-                        titleVisibility: .visible
-        )
-        {
-
-            if let deleting
-            {
-
-                Button("Delete " + deleting.name, role: .destructive)
-                {
-
-                    _ = update
-                    {
-                        library in
-                        library.templates.removeAll
-                        {
-                            $0.id == deleting.id
-                        }
-
-                        if library.defaultWeekID == deleting.id
-                        {
-                            library.defaultWeekID = nil
-                        }
-
-                    }
-
-                    self.deleting = nil
-                }
-
-            }
-
-            Button("Cancel", role: .cancel)
-            {
-                deleting = nil
-            }
-
-        }
-        message:
-        {
-
-            Text("Applied days and weeks remain. Deleting the default switches new weeks to Empty week.")
         }
         .alert("Templates", isPresented: Binding(get:
                 {
@@ -624,6 +674,7 @@ struct PlanningTemplateListEditor: View
     @Binding var list: KanbanList
     let allLists:      [KanbanList]
     let anchor:        Date
+    @State private var creationFailed = false
     var body:          some View
     {
 
@@ -671,6 +722,19 @@ struct PlanningTemplateListEditor: View
                 }
 
             }
+            .alert("Item couldn't be added", isPresented: $creationFailed)
+            {
+
+                Button("OK", role: .cancel)
+                {
+
+                }
+            }
+            message:
+            {
+
+                Text("The new item's identity could not be reserved. Your template draft is unchanged. Please retry.")
+            }
 
         }
 
@@ -680,7 +744,8 @@ struct PlanningTemplateListEditor: View
     ///
     /// @fcn        PlanningTemplateListEditor.add
     /// @brief      Append a template item with the chosen presentation
-    /// @details    Creates an editable template entry in the working list for later saving and application.
+    /// @details    Reserves a durable identity and authored creation instant before extending the draft.
+    ///             Reservation failures show an error and leave the draft unchanged.
     ///
     /// @param[in]  presentation  Card, note, or board presentation selected by the caller
     ///
@@ -689,13 +754,56 @@ struct PlanningTemplateListEditor: View
     private func add(_ presentation: ItemPresentation)
     {
 
-        let next = ((allLists.flatMap(\.allCards) + list.cards).map(\.id).max() ?? -1) + 1
-        list.cards.append(
-            KanbanCard(
-                id: next, word: presentation == .note ? "New note" : "New card", listTitle: list.title,
-                checklists: [], descriptionOverride: "", subtitleOverride: "", presentation: presentation))
+        do
+        {
+
+            try PlanningTemplateItemCreation.append(presentation, to: &list, allLists: allLists)
+        }
+        catch
+        {
+
+            creationFailed = true
+        }
     }
 
+}
+
+
+/// Creates template draft items using the same durable identity boundary as Board creation.
+/// @section Purpose
+///     Prevent alias reuse across imported owners while leaving the library unsaved until Save.
+@MainActor
+enum PlanningTemplateItemCreation
+{
+
+    /// @fcn PlanningTemplateItemCreation.append
+    /// @brief Reserve a new identity and append one authored Card or Note to the draft
+    /// @details Unused reservations remain consumed when a draft is cancelled. Reservation failure
+    ///          leaves the draft unchanged; ordinary nonportable libraries keep local numbering.
+    /// @param[in] presentation New Card or Note presentation
+    /// @param[in,out] list Draft List receiving the new item
+    /// @param[in] allLists Other Lists in the template, including archived identities
+    /// @param[in] root App container or isolated synthetic container
+    /// @param[in] createdAt Authored creation instant, independent of the template's anchor date
+    /// @return Void after successful reservation and draft append
+    /// @throws Invalid runtime evidence or exhausted identity space
+    static func append(_ presentation: ItemPresentation, to list: inout KanbanList,
+        allLists: [KanbanList], root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true),
+        createdAt: Date = .now) throws
+    {
+
+        let maximum = ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)
+        guard maximum < Int.max, createdAt.timeIntervalSince1970.isFinite else
+        {
+
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let next = try PortableCreationIdentity.reserve(proposed: maximum + 1, root: root)
+        let card = KanbanCard(id: next, word: presentation == .note ? "New note" : "New card",
+            listTitle: list.title, checklists: [], descriptionOverride: "", subtitleOverride: "",
+            presentation: presentation, createdAt: createdAt)
+        list.cards.append(card)
+    }
 }
 
 
@@ -996,10 +1104,23 @@ struct PlanningTemplateApplyView: View
             return
         }
 
+        let committed: (week: DatedPlanningWeek, importantIDs: Set<Int>)
+        do
+        {
+
+            committed = try PortableTemplateApplication.reserve(preview, original: baseline,
+                importantIDs: exampleImportantIDs)
+        }
+        catch
+        {
+
+            message = "The applied items' identities could not be reserved. Your plans have not changed. Your preview is still open."
+            return
+        }
         let saved =
-        exampleImportantIDs.isEmpty
-        ? access.saveWeek(preview)
-        : (access.saveExampleWeek?(preview, exampleImportantIDs) ?? access.saveWeek(preview))
+        committed.importantIDs.isEmpty
+        ? access.saveWeek(committed.week)
+        : (access.saveExampleWeek?(committed.week, committed.importantIDs) ?? access.saveWeek(committed.week))
         if saved
         {
 
@@ -1160,7 +1281,9 @@ struct PlanningTemplateApplyView: View
             {
 
                 Text(
-                                                "Active items in this target will be replaced by the preview. Other days, archives and undated lists are kept."
+                        template.kind == .week
+                        ? "Active items in this week's dated lists will be replaced by the preview. Archives and undated lists are kept."
+                        : "Active items in this day will be replaced by the preview. Other days, archives and undated lists are kept."
                 )
             }
             .alert("Apply template", isPresented: Binding(get:

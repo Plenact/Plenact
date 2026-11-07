@@ -102,3 +102,10 @@ moving it into tomorrow's dated Day list. Weekly Review can bring a Queue item o
 the Table. Due dates remain visible in both decision flows and are never reset by
 carrying work. See [the full contract](../../../Doc/Design/Review-Rhythm-Invitations.md),
 including the distinction between in-app suppression and repeating notifications.
+
+
+### Template settings entry point
+
+Plan Settings → Planning Templates retains the default-Week picker and day/week capture controls. Its repeated template listings are replaced by **Open Templates in Library**. Browsing, editing, application and **Reload saved templates** use Library → Templates. The reload button is hidden in the Settings sheet. Navigation waits for both Settings sheets to dismiss and clears the Library search/filter scope to show the retained template library. Unsaved Plan Settings changes offer save/discard/keep-editing before leaving; navigation itself creates no templates or exports. The Examples filter remains separate from the saved template library.
+
+The Settings row and sheet title both read **Planning Templates**. The Library button has no section heading in Settings; the Day & Week templates heading remains with the actual listings in Library.

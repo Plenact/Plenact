@@ -998,7 +998,11 @@ extension PlenactBoardDocumentTests
         {
 
             window.frame = CGRect(x: 0, y: 0, width: width, height: 1024)
-            let host = UIHostingController(rootView: PlanningTemplatesView())
+            let host = UIHostingController(rootView: PlanningTemplatesView(onOpenLibrary:
+            {
+
+                XCTFail("Rendering the template settings must not navigate")
+            }))
             window.rootViewController = host;
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(350))

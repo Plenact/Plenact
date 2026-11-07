@@ -694,3 +694,34 @@ struct PinnedListDayContent: View
     }
 
 }
+
+
+/// Routes template browsing to the retained Library tab after Settings sheets have dismissed.
+/// @section Purpose
+///     Keep destination selection in the workspace without persisting navigation as user data.
+private struct OpenTemplateLibraryKey: EnvironmentKey
+{
+
+    static let defaultValue: (() -> Void)? = nil
+}
+
+
+extension EnvironmentValues
+{
+
+    /// Optional workspace action for opening Library with its Templates filter selected.
+    var openTemplateLibrary: (() -> Void)?
+    {
+
+        get
+        {
+
+            self[OpenTemplateLibraryKey.self]
+        }
+        set
+        {
+
+            self[OpenTemplateLibraryKey.self] = newValue
+        }
+    }
+}

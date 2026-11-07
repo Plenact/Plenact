@@ -36,6 +36,7 @@ struct BoardListsView: View
 
     @Binding var collections: [PersonalCollection] /* Shared device-local collections             */
     var newListRequest = 0
+    var templateLibraryRequest = 0
     var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
     let registerListNewNote:      ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
     let onOpenSaved:              () -> Void               /* Select the existing canonical Saved destination */
@@ -2874,6 +2875,19 @@ struct BoardListsView: View
                 Text("Keeps all content on this device. Restore it from Saved.")
             }
 
+        }
+        .onChange(of: templateLibraryRequest, initial: true)
+        {
+            _, request in
+
+            guard request > 0 else
+            {
+
+                return
+            }
+            browseFilter = .templates
+            searchText = ""
+            libraryEditMode = .inactive
         }
         .onChange(of: newListRequest)
         {

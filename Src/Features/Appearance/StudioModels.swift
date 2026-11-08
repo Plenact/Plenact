@@ -146,11 +146,12 @@ struct StudioSettings: Codable, Equatable
 
     /// @fcn StudioSettings.apply(to:settings:)
     /// @brief Apply creation defaults once without repainting existing records
-    /// @details Honors explicit item surfaces and stores random palette choices in the newly created item
+    /// @details Honors explicit item surfaces, rotates Note photos, and stores choices in the newly created item
     /// @param[in,out] card New item receiving appearance defaults
     /// @param[in] settings Optional injected configuration for deterministic callers
     /// @return (Void) updates only an eligible new Card or Note
-    static func apply(to card: inout KanbanCard, settings: StudioSettings = .load())
+    static func apply(to card: inout KanbanCard, settings: StudioSettings = .load(),
+                      defaults: UserDefaults = .standard)
     {
 
 
@@ -161,6 +162,12 @@ struct StudioSettings: Codable, Equatable
 
         var surface = /* Artwork surface definition */
             card.appearance?.studioSurface ?? (card.presentation == .note ? settings.defaultNoteSurface : settings.defaultCardSurface)
+
+        if surface == nil, card.presentation == .note
+        {
+
+            surface = try? CardBackgroundPortfolio.nextSurface(defaults: defaults)
+        }
 
         if settings.variesNewSurfaces, card.appearance?.studioSurface == nil, let color = settings.palette.randomElement()
         {

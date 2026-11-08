@@ -150,6 +150,8 @@ struct StudioSettingsView: View
 
                         StudioSurfaceSettings(surface: $draft.defaultCardSurface, title: "New Card background")
                         StudioSurfaceSettings(surface: $draft.defaultNoteSurface, title: "New Note background")
+                        Text("With no Note override, new Notes rotate through the background portfolio. Choose Plain for Notes without artwork.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink("Coordinated variety")

@@ -529,8 +529,8 @@ struct ItemAppearance: Hashable, Codable, Sendable
 /// Applies creation-only random Card color preferences
 ///
 /// @section    Purpose
-///     Chooses persisted editable appearance fields for new Cards while leaving existing records,
-///     Notes, and dividers unchanged
+///     Chooses persisted editable appearance fields for new items while leaving existing records
+///     and dividers unchanged; Notes receive the shared Studio creation defaults
 ///
 enum NewCardAppearanceDefaults
 {

@@ -133,6 +133,66 @@ enum StudioArtworkStore
 
 
 
+/// Provides bundled photographs through the existing portable local-artwork representation
+/// @section Purpose
+///     Copies a selected image into owned artwork storage before publishing its reference
+///     Keeps the device-local Note rotation separate from saved appearance and shared content
+enum CardBackgroundPortfolio
+{
+
+    static let rotationKey = "Plenact.NoteBackground.Next.v1" /* Next device-local selection */
+    static let titles = /* Stable portfolio order; append new choices to preserve rotation */
+        ["Mountain dawn", "Ocean morning", "Forest light", "Desert curves", "Alpine reflection",
+         "Spring blossoms", "Wildflower meadow", "Evening coast", "Autumn glow", "Lavender fields",
+         "Rainy window", "Twilight clouds", "Winter slopes", "Sunlit shadows", "Bamboo calm"]
+
+    static func assetName(at index: Int) -> String
+    {
+        String(format: "CardBackground%02d", index + 1)
+    }
+
+    /// Materialize an immutable local photo so backups and portable exports include its bytes
+    static func surface(at index: Int, directory: URL? = nil) throws -> StudioSurface
+    {
+
+        guard titles.indices.contains(index) else
+        {
+            throw CocoaError(.fileReadInvalidFileName)
+        }
+
+        let asset = assetName(at: index)                         /* Bundled image identity */
+        let name  = asset + ".jpg"                              /* Portable local filename */
+        let root  = try directory ?? StudioArtworkStore.directory() /* Owned artwork storage */
+        let url   = root.appendingPathComponent(name)            /* Immutable image path */
+
+        if !FileManager.default.fileExists(atPath: url.path)
+        {
+
+            guard let data = UIImage(named: asset)?.jpegData(compressionQuality: 0.86) else
+            {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+
+            try data.write(to: url, options: .atomic)
+        }
+
+        return StudioSurface(material: .photo, strength: 1, readability: 0.35, photoFileName: name)
+    }
+
+    /// Advance only after a usable photo has been prepared; a saved Note keeps its chosen photo
+    static func nextSurface(defaults: UserDefaults = .standard, directory: URL? = nil) throws -> StudioSurface
+    {
+
+        let index   = max(0, defaults.integer(forKey: rotationKey)) % titles.count /* Next image */
+        let surface = try surface(at: index, directory: directory)               /* Owned photo */
+
+        defaults.set((index + 1) % titles.count, forKey: rotationKey)
+        return surface
+    }
+
+}
+
+
 /// Draws a single material consistently across all supported surfaces
 /// @section Purpose
 ///     Uses procedural textures instead of large repeated bitmaps and keeps content readable over artwork

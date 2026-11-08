@@ -431,6 +431,49 @@ struct StudioSurfaceEditor: View
 
             }
 
+            Section("Background portfolio")
+            {
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12)
+                {
+
+                    ForEach(CardBackgroundPortfolio.titles.indices, id: \.self)
+                    {
+                        index in
+                        Button
+                        {
+
+                            do
+                            {
+                                draft = try CardBackgroundPortfolio.surface(at: index)
+                            }
+                            catch
+                            {
+                                self.error = "This background could not be opened. Please try again."
+                            }
+                        }
+                        label:
+                        {
+
+                            VStack(spacing: 5)
+                            {
+
+                                Image(CardBackgroundPortfolio.assetName(at: index))
+                                    .resizable().scaledToFill().frame(height: 90).clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                Text(CardBackgroundPortfolio.titles[index])
+                                    .font(.caption).lineLimit(2)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Use " + CardBackgroundPortfolio.titles[index] + " background")
+                    }
+                }
+
+                Text("Choose a photo for this background. New Notes rotate through this collection unless you choose a creation default.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
             Section("My art")
             {
 

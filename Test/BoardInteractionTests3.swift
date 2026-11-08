@@ -1308,6 +1308,89 @@ extension PlenactBoardDocumentTests
     }
 
 
+    /// @brief Verify every bundled background and a complete persistent Note rotation
+    func testNoteBackgroundPortfolioRotatesAndRetainsPortablePhotos() throws
+    {
+
+        let suite    = "Plenact.NoteBackground.Tests." + UUID().uuidString /* Isolated rotation */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Device preferences */
+        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer
+        {
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        var names = Set<String>() /* One unique photo for each portfolio entry */
+
+        for index in CardBackgroundPortfolio.titles.indices
+        {
+
+            let surface = try CardBackgroundPortfolio.nextSurface(defaults: defaults, directory: root)
+            let name    = try XCTUnwrap(surface.photoFileName) /* Portable local reference */
+            let bytes   = try Data(contentsOf: root.appendingPathComponent(name))
+
+            XCTAssertEqual(name, CardBackgroundPortfolio.assetName(at: index) + ".jpg")
+            XCTAssertEqual(surface.material, .photo)
+            XCTAssertNotNil(UIImage(data: bytes))
+            XCTAssertTrue(names.insert(name).inserted)
+            XCTAssertEqual(try JSONDecoder().decode(StudioSurface.self, from: JSONEncoder().encode(surface)), surface)
+        }
+
+        let reopened = try XCTUnwrap(UserDefaults(suiteName: suite)) /* Reopened local rotation */
+        let wrapped  = try CardBackgroundPortfolio.nextSurface(defaults: reopened, directory: root)
+
+        XCTAssertEqual(wrapped.photoFileName, CardBackgroundPortfolio.assetName(at: 0) + ".jpg")
+        XCTAssertEqual(names.count, 15)
+        XCTAssertThrowsError(try CardBackgroundPortfolio.surface(at: -1, directory: root))
+
+        let position = reopened.integer(forKey: CardBackgroundPortfolio.rotationKey) /* Retained cursor */
+
+        XCTAssertThrowsError(try CardBackgroundPortfolio.nextSurface(
+            defaults: reopened, directory: root.appendingPathComponent("Missing")))
+        XCTAssertEqual(reopened.integer(forKey: CardBackgroundPortfolio.rotationKey), position)
+    }
+
+
+    /// @brief Apply Note photos only during creation while respecting explicit and configured art
+    func testNewNotesUsePortfolioWithoutOverridingAppearance() throws
+    {
+
+        let suite    = "Plenact.NoteCreation.Tests." + UUID().uuidString /* Isolated rotation */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Local test settings */
+
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        var note = KanbanCard(id: 1, word: "Synthetic Note", listTitle: "Inbox", checklists: [], presentation: .note)
+
+        StudioSettings.apply(to: &note, settings: StudioSettings(), defaults: defaults)
+
+        let chosen = try XCTUnwrap(note.appearance?.studioSurface) /* Saved creation choice */
+
+        XCTAssertEqual(chosen.material, .photo)
+        XCTAssertEqual(chosen.photoFileName, CardBackgroundPortfolio.assetName(at: 0) + ".jpg")
+        StudioSettings.apply(to: &note, settings: StudioSettings(), defaults: defaults)
+        XCTAssertEqual(note.appearance?.studioSurface, chosen)
+        XCTAssertEqual(defaults.integer(forKey: CardBackgroundPortfolio.rotationKey), 1)
+
+        var settings = StudioSettings() /* Explicit creation preference */
+
+        settings.defaultNoteSurface = StudioSurface(material: .plain)
+        note.appearance = nil
+        StudioSettings.apply(to: &note, settings: settings, defaults: defaults)
+        XCTAssertEqual(note.appearance?.studioSurface?.material, .plain)
+        XCTAssertEqual(defaults.integer(forKey: CardBackgroundPortfolio.rotationKey), 1)
+
+        var card = KanbanCard(id: 2, word: "Synthetic Card", listTitle: "Inbox", checklists: [])
+
+        StudioSettings.apply(to: &card, settings: StudioSettings(), defaults: defaults)
+        XCTAssertNil(card.appearance)
+        XCTAssertEqual(defaults.integer(forKey: CardBackgroundPortfolio.rotationKey), 1)
+    }
+
+
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain()
     /// @brief Persist independent view wallpapers without changing unconfigured destinations

@@ -119,6 +119,37 @@ final class AppReturnTests: XCTestCase
     }
 
 
+    /// Start the quick-add preview after reveal, then return once at 1.5 seconds unless cancelled
+    func testTodayQuickAddPreviewWaitsForRevealAndReturnsAfterIdle()
+    {
+
+        let now      = ContinuousClock.now /* Synthetic monotonic time */
+        var overview = DailyWeekOverview() /* Shared transient preview policy */
+
+        overview.arm(delay: .milliseconds(1500), waitsForCreatedContent: true)
+        XCTAssertNil(overview.begin(at: now, contentRevealed: false))
+
+        let visible = now.advanced(by: .seconds(2)) /* Card has scrolled into view */
+        let request = overview.begin(at: visible, contentRevealed: true)!
+
+        XCTAssertFalse(overview.consume(request, at: visible.advanced(by: .milliseconds(1499))))
+        XCTAssertTrue(overview.consume(request, at: visible.advanced(by: .milliseconds(1500))))
+        XCTAssertFalse(overview.consume(request, at: visible.advanced(by: .seconds(3))))
+
+        overview.arm(delay: .milliseconds(1500), waitsForCreatedContent: true)
+
+        let cancelled = overview.begin(at: now)!
+
+        overview.cancel()
+        XCTAssertFalse(overview.consume(cancelled, at: now.advanced(by: .seconds(3))))
+        overview.arm()
+        XCTAssertFalse(overview.waitsForCreatedContent)
+        XCTAssertEqual(overview.returnDelay, DailyWeekOverview.delay)
+        XCTAssertNotNil(overview.begin(at: now, contentRevealed: false))
+        XCTAssertFalse(overview.consume(cancelled, at: now.advanced(by: .seconds(3))))
+    }
+
+
     /// Verify visible-time boundaries, permanent cancellation and stale timer rejection
     func testDailyOverviewDeadlineAndCancellation()
     {

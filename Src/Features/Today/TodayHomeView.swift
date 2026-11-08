@@ -74,6 +74,7 @@ struct TodayHomeView: View
     let onAddCard: /* Add card callback */
     (Int, String, String, String, ItemPresentation?, [String]?) ->
     Void /* Create canonical Week records                      */
+    let onAddQuickCard: ((Int, String) -> Void)? /* Inline creation with a transient Week preview */
     let onAddCapture:           (QuickCaptureSubmission) -> Bool /* Add capture callback */
     let onToggleCardCompletion: (Int, Int) -> Void  /* Toggle local card completion                  */
     let onOpenBoardList:        (Int) -> Void       /* Route to Board at the selected list ID        */
@@ -426,6 +427,7 @@ struct TodayHomeView: View
         onSaveProfile: @escaping (LocalProfile) -> Void,
         onRemoveProfile: @escaping () -> Void,
         onAddCard: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
+        onAddQuickCard: ((Int, String) -> Void)? = nil,
         onAddCapture: @escaping (QuickCaptureSubmission) -> Bool,
         onToggleCardCompletion: @escaping (Int, Int) -> Void,
         onOpenBoardList: @escaping (Int) -> Void,
@@ -446,6 +448,7 @@ struct TodayHomeView: View
         self.onSaveProfile = onSaveProfile
         self.onRemoveProfile = onRemoveProfile
         self.onAddCard = onAddCard
+        self.onAddQuickCard = onAddQuickCard
         self.onAddCapture = onAddCapture
         self.onToggleCardCompletion = onToggleCardCompletion
         self.onOpenBoardList = onOpenBoardList
@@ -591,7 +594,14 @@ struct TodayHomeView: View
         }
 
 
-        onAddCard(selectedTodayList.id, title, "", "", nil, nil)
+        if let onAddQuickCard
+        {
+            onAddQuickCard(selectedTodayList.id, title)
+        }
+        else
+        {
+            onAddCard(selectedTodayList.id, title, "", "", nil, nil)
+        }
 
         quickCaptureTitle = ""
 
@@ -1612,8 +1622,8 @@ struct TodayHomeView: View
     ///
     /// @fcn        TodayHomeView.quickCaptureSection
     /// @brief      Build inline card capture and full-editor access
-    /// @details    Disables submission for whitespace-only titles and prompts for a missing
-    ///             destination. The field's accessibility hint identifies the selected Today list
+    /// @details    Empty Plus opens the full composer; a title creates an inline Card. Missing
+    ///             destinations prompt for a List while retaining the draft
     ///
     /// @return     (some View) title field, composer button, and quick-add controls
     /// @post       Submission and selection actions delegate to the Today capture helpers
@@ -1665,7 +1675,19 @@ struct TodayHomeView: View
                 {
 
 
-                    Button(action: addQuickCard)
+                    Button
+                    {
+                        if quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        {
+                            composerInitialPresentation = .card
+                            openQuickNoteEditor()
+                        }
+                        else
+                        {
+                            addQuickCard()
+                        }
+                    }
+                    label:
                     {
 
 
@@ -1677,8 +1699,8 @@ struct TodayHomeView: View
 
                     .offset(x: 35)
                     .buttonStyle(.plain)
-                    .disabled(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityLabel("Add card to today's list")
+                    .accessibilityLabel(quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? "Open new card editor" : "Add card to today's list")
 
                     Button(action: openQuickNoteEditor)
                     {

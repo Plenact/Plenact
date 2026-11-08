@@ -648,6 +648,15 @@ struct AppRootView: View
                             to: listID, title: title, description: description, subtitle: subtitle,
                             presentation: presentation, actions: actions)
                     },
+                    onAddQuickCard:
+                    {
+                        listID, title in
+                        if addCard(to: listID, title: title, description: "", subtitle: "")
+                        {
+                            dailyOverview.arm(delay: .milliseconds(1500), waitsForCreatedContent: true)
+                            beginDailyOverview()
+                        }
+                    },
                     onAddCapture:
                     {
                         capture in
@@ -754,6 +763,14 @@ struct AppRootView: View
                         beginDailyOverview()
                     }
                 }, onInteraction: { dailyOverview.cancel() }))
+            .onReceive(CreatedContentReveal.shared.$target)
+            {
+                target in
+                if target == nil
+                {
+                    Task { @MainActor in beginDailyOverview() }
+                }
+            }
             .onChange(of: boardTargetListID)
             {
                 _, target in

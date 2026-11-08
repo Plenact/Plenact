@@ -173,7 +173,7 @@ extension AppRootView
 }
 
 
-/// One-shot monotonic deadline for an untouched daily Week overview
+/// One-shot monotonic deadline for an untouched daily or quick-add Week overview
 /// @section Purpose
 ///     Cancellation consumes this opening; stale tasks cannot affect another opening
 struct DailyWeekOverview
@@ -181,14 +181,18 @@ struct DailyWeekOverview
 
     static let delay: Duration = .milliseconds(1250) /* Time before starting the transition */
 
+    private(set) var returnDelay = Self.delay           /* Delay for this transient Week preview */
+    private(set) var waitsForCreatedContent = false     /* Wait until the new Card is revealed */
     private(set) var id: UUID?                          /* Record UUID                   */
     private(set) var deadline: ContinuousClock.Instant? /* Monotonic transition deadline */
 
 
-    /// Arm only after the daily opening has been claimed
-    mutating func arm()
+    /// Arm an eligible daily opening or a successfully created inline Card
+    mutating func arm(delay: Duration = Self.delay, waitsForCreatedContent: Bool = false)
     {
 
+        returnDelay = delay
+        self.waitsForCreatedContent = waitsForCreatedContent
         id = UUID()
         deadline = nil
 
@@ -196,16 +200,16 @@ struct DailyWeekOverview
 
 
     /// Begin once the destination is visible and its scroll target has been consumed
-    mutating func begin(at instant: ContinuousClock.Instant) -> UUID?
+    mutating func begin(at instant: ContinuousClock.Instant, contentRevealed: Bool = true) -> UUID?
     {
 
-        guard deadline == nil, let id else
+        guard !waitsForCreatedContent || contentRevealed, deadline == nil, let id else
         {
 
             return nil
         }
 
-        deadline = instant.advanced(by: Self.delay)
+        deadline = instant.advanced(by: returnDelay)
 
         return id
     }
@@ -239,20 +243,23 @@ struct DailyWeekOverview
 extension AppRootView
 {
 
-    /// Start the daily overview only after Week appears and navigation settles
+    /// Start the transient overview only after Week appears and its target has settled
     func beginDailyOverview()
     {
 
         guard dailyWeekVisible, scenePhase == .active, selectedDestination == .board,
               boardTargetListID == nil, !hasProtectedAppReturnContext,
-              let request = dailyOverview.begin(at: .now) else
+              let request = dailyOverview.begin(at: .now,
+                contentRevealed: CreatedContentReveal.shared.target == nil) else
         {
 
             return
         }
+        let delay = dailyOverview.returnDelay /* Capture the delay for this request */
+
         Task { @MainActor in
 
-            try? await Task.sleep(for: DailyWeekOverview.delay)
+            try? await Task.sleep(for: delay)
             guard scenePhase == .active, selectedDestination == .board,
                   !hasProtectedAppReturnContext,
                   dailyOverview.consume(request, at: .now) else

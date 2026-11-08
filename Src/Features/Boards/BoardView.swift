@@ -1035,6 +1035,7 @@ struct ContentView: View
 
                                                     Label("Add list", systemImage: "plus")
                                                     .font(.headline)
+                                                    .lineLimit(1)
                                                     .foregroundStyle(.white)
                                                     .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                                                     .padding(.horizontal, 20)
@@ -1043,7 +1044,11 @@ struct ContentView: View
                                                     )
                                                 }
                                                 .buttonStyle(.plain)
-                                                .frame(width: columnWidth * layoutListScale)
+                                                // Lay out at the same base width as a List, then scale the entire control.
+                                                .frame(width: columnWidth)
+                                                .scaleEffect(layoutListScale, anchor: .top)
+                                                .frame(width: columnWidth * layoutListScale,
+                                                    height: 64 * layoutListScale, alignment: .top)
                                                 .accessibilityIdentifier("board.addList")
                                                 .id(Int.min)
                                             }

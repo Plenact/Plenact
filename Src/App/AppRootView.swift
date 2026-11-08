@@ -159,7 +159,11 @@ struct AppRootView: View
             {
 
 
-                navigationContent
+                AppNavigationSurface
+                {
+
+                    navigationContent
+                }
                 .id(workspaceGeneration)
                 .transition(.opacity)
             }
@@ -532,47 +536,51 @@ struct AppRootView: View
         {
 
 
-            TodayHomeView(
-                lists: $lists.activeLists,
-                archivedLists: $lists.archivedLists,
-                savedCardIDs: $savedCardIDs,
-                profile: profile,
-                onSaveProfile:
-                {
-                    updatedProfile in
-                    profile = updatedProfile
-                    LocalProfileStore.save(updatedProfile)
-                },
-                onRemoveProfile:
-                {
+            AppNavigationSurface
+            {
 
-                    profile = nil
-                    LocalProfileStore.remove()
-                },
-                onAddCard:
-                {
-                    listID, title, description, subtitle, presentation, actions in
-                    addCard(
-                        to: listID, title: title, description: description, subtitle: subtitle,
-                        presentation: presentation, actions: actions)
-                },
-                onAddCapture:
-                {
-                    capture in
-                    addCard(
-                        to: capture.listID, title: capture.title, description: capture.body, subtitle: capture.subtitle,
-                        presentation: capture.presentation, actions: capture.actions, attachments: capture.attachments,
-                        schedule: capture.schedule, checkedSave: true)
-                },
-                onToggleCardCompletion: toggleCardCompletion,
-                onOpenBoardList: openBoardList,
-                onOpenBoardCard: openBoardCard,
-                onArchiveCard: archiveWeekCard,
-                onDeleteCard: deleteWeekCard,
-                onArchiveList: archiveWeekList,
-                onDeleteList: deleteWeekList,
-                quickCreateRequest: quickCreateRequest
-            )
+                TodayHomeView(
+                    lists: $lists.activeLists,
+                    archivedLists: $lists.archivedLists,
+                    savedCardIDs: $savedCardIDs,
+                    profile: profile,
+                    onSaveProfile:
+                    {
+                        updatedProfile in
+                        profile = updatedProfile
+                        LocalProfileStore.save(updatedProfile)
+                    },
+                    onRemoveProfile:
+                    {
+
+                        profile = nil
+                        LocalProfileStore.remove()
+                    },
+                    onAddCard:
+                    {
+                        listID, title, description, subtitle, presentation, actions in
+                        addCard(
+                            to: listID, title: title, description: description, subtitle: subtitle,
+                            presentation: presentation, actions: actions)
+                    },
+                    onAddCapture:
+                    {
+                        capture in
+                        addCard(
+                            to: capture.listID, title: capture.title, description: capture.body, subtitle: capture.subtitle,
+                            presentation: capture.presentation, actions: capture.actions, attachments: capture.attachments,
+                            schedule: capture.schedule, checkedSave: true)
+                    },
+                    onToggleCardCompletion: toggleCardCompletion,
+                    onOpenBoardList: openBoardList,
+                    onOpenBoardCard: openBoardCard,
+                    onArchiveCard: archiveWeekCard,
+                    onDeleteCard: deleteWeekCard,
+                    onArchiveList: archiveWeekList,
+                    onDeleteList: deleteWeekList,
+                    quickCreateRequest: quickCreateRequest
+                )
+            }
             .tabItem
             {
 
@@ -589,56 +597,60 @@ struct AppRootView: View
             .tag(AppDestination.today)
             .toolbar(.hidden, for: .tabBar)
 
-            Group
+            AppNavigationSurface
             {
 
-                if let displayedPlanningWeek
+                Group
                 {
 
-                    PlanningCalendarWeekView(
-                        week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
-                        onLeaveForHome:
-                        {
-                            self.displayedPlanningWeek = nil
-                        }, isWeekTab: true,
-                        initialBoardListID: displayedPlanningListID
-                    )
-                    .id(displayedPlanningWeek.startKey)
-                }
-                else
-                {
+                    if let displayedPlanningWeek
+                    {
 
-                    ContentView(
-                        lists: $lists.activeLists,
-                        archivedLists: $lists.archivedLists,
-                        boardTargetListID: $boardTargetListID,
-                        boardTargetCardID: $boardTargetCardID,
-                        boardRootRequest: weekRootRequest,
-                        savedCardIDs: $savedCardIDs,
-                        onListViewed: rememberLastViewedList,
-                        boardSubtitle: "This Week • "
-                        + (calendarDocument?.weeks.first
+                        PlanningCalendarWeekView(
+                            week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
+                            onLeaveForHome:
                             {
+                                self.displayedPlanningWeek = nil
+                            }, isWeekTab: true,
+                            initialBoardListID: displayedPlanningListID
+                        )
+                        .id(displayedPlanningWeek.startKey)
+                    }
+                    else
+                    {
+
+                        ContentView(
+                            lists: $lists.activeLists,
+                            archivedLists: $lists.archivedLists,
+                            boardTargetListID: $boardTargetListID,
+                            boardTargetCardID: $boardTargetCardID,
+                            boardRootRequest: weekRootRequest,
+                            savedCardIDs: $savedCardIDs,
+                            onListViewed: rememberLastViewedList,
+                            boardSubtitle: "This Week • "
+                            + (calendarDocument?.weeks.first
+                                {
+                                    $0.startKey == calendarDocument?.currentWeekKey
+                                }?
+                                .compactRangeTitle ?? ""),
+                            onArchiveBoard: archiveWeekBoard,
+                            onDeleteBoard: deleteWeekContents,
+                            deleteBoardTitle: "Delete Week contents",
+                            onCommitDeletion: commitWeekDeletion,
+                            onListsChanged:
+                            {
+                                _ in
+                            },
+                            viewportOwnerID: calendarDocument?.weeks.first
+                            {
+
                                 $0.startKey == calendarDocument?.currentWeekKey
-                            }?
-                            .compactRangeTitle ?? ""),
-                        onArchiveBoard: archiveWeekBoard,
-                        onDeleteBoard: deleteWeekContents,
-                        deleteBoardTitle: "Delete Week contents",
-                        onCommitDeletion: commitWeekDeletion,
-                        onListsChanged:
-                        {
-                            _ in
-                        },
-                        viewportOwnerID: calendarDocument?.weeks.first
-                        {
+                            }?.id
+                        )
+                        .id(calendarDocument?.currentWeekKey ?? "week.current")
+                    }
 
-                            $0.startKey == calendarDocument?.currentWeekKey
-                        }?.id
-                    )
-                    .id(calendarDocument?.currentWeekKey ?? "week.current")
                 }
-
             }
             .environment(\.appReturnResetRequest, weekReturnResetRequest)
             .environment(\.appReturnTargetListID, weekReturnTargetListID)
@@ -673,27 +685,31 @@ struct AppRootView: View
 
             libraryTab
 
-            SavedCardsView(
-                planningDocument: calendarDocument,
-                revisitDestination: $activityRevisitDestination,
-                lists: lists.filter
-                {
-                    !$0.isArchived
-                },
-                savedCardIDs: savedCardIDs,
-                collections: $collections,
-                onOpenBoardCard: openBoardCard,
-                onOpenPersonalCard:
-                {
-                    target in
-                    savedPersonalCardTarget = target
-                    selectedDestination = .lists
-                },
-                onRestoreBoard: restoreBoard,
-                onDeleteBoard: deletePersonalBoard,
-                onArchiveCard: archiveWeekCard,
-                onDeleteCard: deleteWeekCard
-            )
+            AppNavigationSurface
+            {
+
+                SavedCardsView(
+                    planningDocument: calendarDocument,
+                    revisitDestination: $activityRevisitDestination,
+                    lists: lists.filter
+                    {
+                        !$0.isArchived
+                    },
+                    savedCardIDs: savedCardIDs,
+                    collections: $collections,
+                    onOpenBoardCard: openBoardCard,
+                    onOpenPersonalCard:
+                    {
+                        target in
+                        savedPersonalCardTarget = target
+                        selectedDestination = .lists
+                    },
+                    onRestoreBoard: restoreBoard,
+                    onDeleteBoard: deletePersonalBoard,
+                    onArchiveCard: archiveWeekCard,
+                    onDeleteCard: deleteWeekCard
+                )
+            }
             .environment(\.appReturnResetRequest, activityReturnResetRequest)
             .tabItem
             {
@@ -1275,4 +1291,36 @@ struct AppRootView: View
         .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: -4)
     }
 
+}
+
+
+/// Defers construction of a large navigation surface to its own SwiftUI body evaluation.
+/// @section Purpose
+///     Store a small closure in the parent instead of copying every tab's full view value through
+///     the root builder. This limits simultaneous debug-build stack allocations on physical devices.
+struct AppNavigationSurface<Content: View>: View
+{
+
+    private let content: () -> Content
+
+
+    /// @fcn AppNavigationSurface.init
+    /// @brief Retain the surface builder without evaluating it in the parent navigation stack
+    /// @param[in] content Builder evaluated by this surface's body
+    /// @return Small, stable view boundary with no navigation or persistence state of its own
+    init(@ViewBuilder content: @escaping () -> Content)
+    {
+
+        self.content = content
+    }
+
+
+    /// @fcn AppNavigationSurface.body
+    /// @brief Build the destination after SwiftUI crosses the parent view boundary
+    /// @return Original content, preserving its bindings, environment and view identity
+    var body: some View
+    {
+
+        content()
+    }
 }

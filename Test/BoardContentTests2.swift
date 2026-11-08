@@ -3,7 +3,7 @@
 // @brief      Board Content regression tests2
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// BoardContent regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -29,10 +29,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that list Appearance Changes Only Canonical Metadata And Resets To Nil
     /// @details    Exercises `card.replacingLocation`, `lists[0].edit`, `DatabaseActivity.shared.dismissError`.
     ///             Checks `XCTAssertTrue(setListAppearance(0, appearance: appearance, in: &lists))`;
-    ///             `XCTAssertEqual(lists, expected)`.
+    ///             `XCTAssertEqual(lists, expected)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil() throws
@@ -92,10 +92,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that picture Rows Have No Footer Or Internal Padding At Both Board Densities
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertEqual(size.width, width)`; `XCTAssertEqual(size.height,
-    ///             (width - 8) / ratio)`.
+    ///             (width - 8) / ratio)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities() async throws
@@ -157,7 +157,7 @@ extension PlenactBoardDocumentTests
                 .environment(\.dynamicTypeSize, .accessibility3)
                 let host = UIHostingController(rootView: row)
 
-                host.safeAreaRegions = []  // Measure the row itself, without window safe-area insets.
+                host.safeAreaRegions = []  // Measure the row itself, without window safe-area insets
                 window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
                 window.rootViewController = host
 
@@ -199,10 +199,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle
     /// @brief      Verify that list Editing Preserves Retained Records And Round Trips Subtitle
     /// @details    Exercises `list.edit`, `collection.rename`. Checks `XCTAssertThrowsError(try list.edit(title: " \n
-    ///             ", subtitle: "Do not save"))`; `XCTAssertEqual(list, original)`.
+    ///             ", subtitle: "Do not save"))`; `XCTAssertEqual(list, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle() throws
     {
@@ -253,10 +253,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that voice Save Options Keep Only Selected Content And Preserve Rich Writing
     /// @details    Exercises `PlanRichText.Run`, `VoiceCaptureSaveOption.audio.body`, `option.body`. Checks
     ///             `XCTAssertEqual(VoiceCaptureSaveOption.audio.body(existing: rich, transcript: transcript), rich)`;
-    ///             `XCTAssertEqual(PlanRichText.plain(body), "Keep this writing\n\nMy reviewed spoken thought")`.
+    ///             `XCTAssertEqual(PlanRichText.plain(body), "Keep this writing\n\nMy reviewed spoken thought")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting() throws
     {
@@ -332,10 +332,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that multiline Entries Preserve Order Ignore Blank Lines And Create Distinct Cards
     /// @details    Exercises `MultilineEntry.titles`, `list.makeItems`, `cards.map`. Checks
     ///             `XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])`;
-    ///             `XCTAssertTrue(MultilineEntry.titles(" \n\t\r\n").isEmpty)`.
+    ///             `XCTAssertTrue(MultilineEntry.titles(" \n\t\r\n").isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws
     {
@@ -969,7 +969,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify native receiver commits preserve the original card record
     /// @details    Exercises a same-token active source against the real receiver callback, rejects
     ///             a foreign token and ended source, and checks unchanged card metadata plus
-    ///             cleared drag state.
+    ///             cleared drag state
     ///
     /// @return     (Void) records assertion failures for accepted or rejected drop behavior
     ///

@@ -4,7 +4,7 @@
 // @details    Defines Day and Week templates with source calendar conventions, versioned routine
 //             storage, and bundled defaults. Builds destination-safe content by remapping
 //             identities and links, shifting relative dates, and preserving example focus markers
-//             before checked publication.
+//             before checked publication
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -15,7 +15,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Keeps important, bookmarked, and all-day source IDs available for remapping when examples
-///     are applied to a live destination.
+///     are applied to a live destination
 ///
 struct PlanningExampleFocus: Codable, Hashable
 {
@@ -33,7 +33,7 @@ struct PlanningExampleFocus: Codable, Hashable
 ///
 /// @section    Purpose
 ///     Stores source calendar conventions and List mappings separately from live scheduled content,
-///     including optional example focus markers.
+///     including optional example focus markers
 ///
 struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 {
@@ -44,7 +44,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     ///
     /// @section    Purpose
     ///     Selects template scope while the enclosing snapshot retains its source calendar and List
-    ///     mapping.
+    ///     mapping
     ///
     enum Kind: String, Codable, CaseIterable
     {
@@ -59,7 +59,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     var timeZoneID:   String
     var firstWeekday: Int
     var collection:   PersonalCollection
-    /// Calendar weekday -> source list identity; Day templates contain one source list.
+    /// Calendar weekday -> source list identity; Day templates contain one source list
     var weekdays:     [Int: Int]
     var exampleFocus: PlanningExampleFocus? = nil
 
@@ -87,11 +87,11 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     /// @fcn        PlanningRoutineTemplate.demonstratingFocus
     /// @brief      Add explicit Focus metadata to a bundled example
     /// @details    Returns a copy with demonstration importance, bookmarks, and date-only Up Next markers while
-    ///             preserving the intended timed schedules.
+    ///             preserving the intended timed schedules
     ///
     /// @return     (PlanningRoutineTemplate) constructed value
     ///
-    /// @note       Explicit bundled demonstrations only; ordinary captured templates have no demo markers.
+    /// @note       Explicit bundled demonstrations only; ordinary captured templates have no demo markers
     ///
     func demonstratingFocus() -> Self
     {
@@ -155,7 +155,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     /// @fcn        PlanningRoutineTemplate.capture
     /// @brief      Capture a reusable day or week routine
     /// @details    Copies the chosen planning content while removing per-instance completion, reaction, and other
-    ///             transient state that should not carry into a fresh application.
+    ///             transient state that should not carry into a fresh application
     ///
     /// @param[in]  name      Storage file name, symbol name, or accessible control name selected for this operation
     /// @param[in]  week      Dated planning week being inspected or saved
@@ -164,7 +164,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     ///
     /// @return     (PlanningRoutineTemplate) constructed value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func capture(name: String, week: DatedPlanningWeek, day: Date? = nil, calendar: Calendar) throws -> Self
     {
@@ -224,7 +224,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
         /// @fcn        PlanningRoutineTemplate.capture.reusableChecklist
         /// @brief      Strip instance-specific state from a captured checklist
         /// @details    Recursively builds checklist content suitable for a reusable routine rather than retaining
-        ///             live linked-card ownership.
+        ///             live linked-card ownership
         ///
         /// @param[in]  source  Original content or location supplying the operation
         ///
@@ -304,7 +304,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 ///
 /// @section    Purpose
 ///     Keeps editable templates, the preferred Week routine, and one-time bundled revision state
-///     separate from scheduled Weeks.
+///     separate from scheduled Weeks
 ///
 struct PlanningRoutineLibrary: Codable, Equatable
 {
@@ -313,7 +313,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
     var version = 1
     var templates:     [PlanningRoutineTemplate]
     var defaultWeekID: UUID?
-    /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr.
+    /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr
     var bundledRoutineRevision: Int?        = nil
     static let jmrID                        = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
     static let jmr: PlanningRoutineTemplate =
@@ -399,7 +399,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
         return template.demonstratingFocus()
     }()
-    /// Optional examples are added to the library without replacing an existing routine.
+    /// Optional examples are added to the library without replacing an existing routine
     static let sectionExamples: [PlanningRoutineTemplate] =
     {
 
@@ -521,7 +521,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Checks template identities and structure before loading or saving and retains checked
-///     updates to the stored library.
+///     updates to the stored library
 ///
 enum PlanningRoutineStore
 {
@@ -534,13 +534,13 @@ enum PlanningRoutineStore
     /// @fcn        PlanningRoutineStore.validate
     /// @brief      Validate the routine library before use or saving
     /// @details    Checks supported structure and template identities so malformed or inconsistent routines are not
-    ///             silently accepted.
+    ///             silently accepted
     ///
     /// @param[in]  value  Value to normalize, encode, or save as described above
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.coderReadCorrupt)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func validate(_ value: PlanningRoutineLibrary) throws
     {
@@ -606,13 +606,13 @@ enum PlanningRoutineStore
     /// @fcn        PlanningRoutineStore.load
     /// @brief      Load routines and migrate recognized bundled examples
     /// @details    Validates stored data and updates known unmodified bundled layouts in memory while preserving
-    ///             user-customized names and content.
+    ///             user-customized names and content
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (PlanningRoutineLibrary) validated routine library with supported bundled-example migrations
     ///             applied in memory
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> PlanningRoutineLibrary
     {
@@ -628,7 +628,7 @@ enum PlanningRoutineStore
         if (result.bundledRoutineRevision ?? 0) == 0
         {
 
-            // Upgrade in memory only. Explicit template saves persist the marker; scheduled weeks are untouched.
+            // Upgrade in memory only. Explicit template saves persist the marker; scheduled weeks are untouched
             if !result.templates.contains(where:
                 {
                     $0.id == PlanningRoutineLibrary.jmrID
@@ -647,7 +647,7 @@ enum PlanningRoutineStore
         if (result.bundledRoutineRevision ?? 0) < 2
         {
 
-            // Add tags only to untagged known bundled examples, never to scheduled weeks or user routines.
+            // Add tags only to untagged known bundled examples, never to scheduled weeks or user routines
             if let index = result.templates.firstIndex(where:
                 {
                     $0.id == PlanningRoutineLibrary.jmrID
@@ -702,7 +702,7 @@ enum PlanningRoutineStore
         if (result.bundledRoutineRevision ?? 0) < 4
         {
 
-            // Add presentation markers only to recognizable bundled layouts; never rewrite scheduled days.
+            // Add presentation markers only to recognizable bundled layouts; never rewrite scheduled days
             let seeds = PlanningRoutineLibrary.seeded.templates
 
             for index in result.templates.indices where result.templates[index].exampleFocus == nil
@@ -756,7 +756,7 @@ enum PlanningRoutineStore
     ///
     /// @fcn        PlanningRoutineStore.save
     /// @brief      Save the routine library using an expected baseline
-    /// @details    Rejects conflicting retained changes or invalid content before encoding the replacement library.
+    /// @details    Rejects conflicting retained changes or invalid content before encoding the replacement library
     ///
     /// @param[in]  value     Value to normalize, encode, or save as described above
     /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
@@ -764,7 +764,7 @@ enum PlanningRoutineStore
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileWriteFileExists)`, `CocoaError(.fileWriteUnknown)`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
         _ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard
@@ -804,12 +804,12 @@ enum PlanningRoutineStore
     /// @fcn        PlanningRoutineStore.retainedFiles
     /// @brief      Collect files referenced by retained routine templates
     /// @details    Loads the library through its checked path and returns its attachment file references for
-    ///             retention decisions.
+    ///             retention decisions
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Set<String>) file names referenced by stored reusable templates
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func retainedFiles(from defaults: UserDefaults = .standard) throws -> Set<String>
     {
@@ -830,14 +830,14 @@ enum PlanningRoutineStore
     /// @fcn        PlanningRoutineStore.newWeekImportantIDs
     /// @brief      Compute default-template importance for a fresh week
     /// @details    Uses the same template application identity allocation as newWeek so returned IDs refer to the
-    ///             generated week's cards.
+    ///             generated week's cards
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Set<Int>) important-card IDs corresponding to the configured newly generated week
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func newWeekImportantIDs(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
     -> Set<Int>
@@ -862,7 +862,7 @@ enum PlanningRoutineStore
     /// @fcn        PlanningRoutineStore.newWeek
     /// @brief      Construct a new week using the configured default routine
     /// @details    Applies the selected default template when available and otherwise builds the normal empty dated
-    ///             week.
+    ///             week
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -870,7 +870,7 @@ enum PlanningRoutineStore
     ///
     /// @return     (DatedPlanningWeek) new dated week produced by the default routine or the standard empty-week
     ///             fallback
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func newWeek(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
     -> DatedPlanningWeek
@@ -898,7 +898,7 @@ enum PlanningRoutineStore
 ///
 /// @section    Purpose
 ///     Remaps identities and links, shifts relative dates, and maps example focus markers before
-///     callers publish a checked result.
+///     callers publish a checked result
 ///
 enum PlanningTemplateApplication
 {
@@ -909,7 +909,7 @@ enum PlanningTemplateApplication
     ///
     /// @section    Purpose
     ///     Controls how generated content joins the destination while leaving confirmation and
-    ///     persistence with the caller.
+    ///     persistence with the caller
     ///
     enum Mode: String, CaseIterable
     {
@@ -922,7 +922,7 @@ enum PlanningTemplateApplication
     /// @fcn        PlanningTemplateApplication.exampleImportantIDs
     /// @brief      Map example importance markers into destination-safe card IDs
     /// @details    Predicts the same allocation used by apply, considering active and archived destination cards so
-    ///             marker identity stays consistent.
+    ///             marker identity stays consistent
     ///
     /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
     /// @param[in]  original  Original dated planning week retained for comparison or transformation
@@ -947,7 +947,7 @@ enum PlanningTemplateApplication
     /// @fcn        PlanningTemplateApplication.apply
     /// @brief      Apply a day or week template to a dated planning week
     /// @details    Validates the routine, allocates fresh identities, shifts applicable dates, resets instance state,
-    ///             and maps bookmarks and explicit example Focus metadata into the result.
+    ///             and maps bookmarks and explicit example Focus metadata into the result
     ///
     /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
     /// @param[in]  original  Original dated planning week retained for comparison or transformation
@@ -958,7 +958,7 @@ enum PlanningTemplateApplication
     ///
     /// @return     (DatedPlanningWeek) dated week containing the applied fresh routine instances
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func apply(
         _ template: PlanningRoutineTemplate, to original: DatedPlanningWeek, date: Date,
@@ -994,7 +994,7 @@ enum PlanningTemplateApplication
         /// @fcn        PlanningTemplateApplication.apply.shifted
         /// @brief      Shift a template schedule endpoint into its destination
         /// @details    Uses the enclosing application day offset and preserves the precision rules for time-only and
-        ///             date-bearing values.
+        ///             date-bearing values
         ///
         /// @param[in]  value  Optional schedule value; nil explicitly clears the endpoint
         /// @param[in]  kind   Date, review, or collection kind selecting this operation's behavior
@@ -1056,7 +1056,7 @@ enum PlanningTemplateApplication
         /// @fcn        PlanningTemplateApplication.apply.freshChecklist
         /// @brief      Create a fresh checklist instance for template application
         /// @details    Rebuilds nested checklist content with the enclosing identity mapping and resets per-instance
-        ///             completion state.
+        ///             completion state
         ///
         /// @param[in]  source  Original content or location supplying the operation
         ///
@@ -1105,7 +1105,7 @@ enum PlanningTemplateApplication
         /// @fcn        PlanningTemplateApplication.apply.fresh
         /// @brief      Create one fresh card or note from a template entry
         /// @details    Uses a new card identity and destination list title, resets instance state, and applies
-        ///             remapped schedule and content metadata.
+        ///             remapped schedule and content metadata
         ///
         /// @param[in]  card   Card or note being inspected or changed
         /// @param[in]  title  Display title or proposed title text

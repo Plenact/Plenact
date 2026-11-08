@@ -2,7 +2,7 @@
 // @file       ListDetailView.swift
 // @brief      Focused Day and personal List presentation
 // @details    Renders one canonical List, resolves its dated or personal owner, and saves accepted
-//             content through injected workspace access.
+//             content through injected workspace access
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -36,7 +36,7 @@ struct TodayListDetailView: View
 
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
-    /// Archived lists and cards retained to reserve identities during creation.
+    /// Archived lists and cards retained to reserve identities during creation
     let reservedLists:         [KanbanList]  /* Retained lists whose card identities remain unavailable for reuse */
     @Binding var labelLibrary: LabelLibrary  /* Shared reusable label library                                     */
     @Binding var savedCardIDs: Set<Int>      /* Device-local saved cards                                          */
@@ -136,7 +136,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.insertionMarker
     /// @brief      Render the current drag insertion position
     /// @details    Shows a decorative accent line only for the matching before-card target and excludes it from
-    ///             interaction and accessibility.
+    ///             interaction and accessibility
     ///
     /// @param[in]  cardID  Numeric card identity within its owner
     ///
@@ -166,7 +166,7 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.clearCardDrag
     /// @brief      Clear the active card drag identity and location
-    /// @details    Resets both drag fields so subsequent gestures begin without a stale source or pointer position.
+    /// @details    Resets both drag fields so subsequent gestures begin without a stale source or pointer position
     ///
     /// @return     (Void) no return value
     ///
@@ -183,7 +183,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.cardDragSource
     /// @brief      Attach normal press-and-hold dragging to a card
     /// @details    Installs the drag source outside Edit mode and scopes begin, move, and end callbacks to the active
-    ///             card identity.
+    ///             card identity
     ///
     /// @param[in]  cardID  Numeric card identity within its owner
     ///
@@ -244,7 +244,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.finishCardDrag
     /// @brief      Resolve and apply the final card-drop location
     /// @details    Always clears drag state, rejects missing sources or targets, and reports movement errors instead
-    ///             of claiming success.
+    ///             of claiming success
     ///
     /// @param[in]  point  Touch or drop location in the operation's coordinate space
     ///
@@ -311,7 +311,7 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.usesCompactCards
     /// @brief      Resolve whether a card uses a compact preview
-    /// @details    Combines board, list, and card appearance through the shared detail-resolution rules.
+    /// @details    Combines board, list, and card appearance through the shared detail-resolution rules
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -328,7 +328,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.cardPreviewHeight
     /// @brief      Choose the compact or standard preview height
     /// @details    Returns the compact row height when inherited appearance selects compact detail; otherwise uses
-    ///             the standard minimum.
+    ///             the standard minimum
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -345,7 +345,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.cardPreview
     /// @brief      Build a preview appropriate to the list's display mode
     /// @details    Uses a note row for note-list mode or a styled card preview with the existing edit, completion,
-    ///             archive, and delete callbacks.
+    ///             archive, and delete callbacks
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -441,7 +441,7 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.sessionGuidance(for:)
     /// @brief      Build the visit-scoped information card
-    /// @details    Shares guidance state and header toggles across empty and populated list layouts.
+    /// @details    Shares guidance state and header toggles across empty and populated list layouts
     ///
     /// @param[in]  focusedList  Current list supplying content and appearance
     /// @return     (some View) session-scoped list content
@@ -464,7 +464,7 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.inlineCapture(for:)
     /// @brief      Build the list capture controls
-    /// @details    Keeps empty-list capture in the guide row so its position follows the same animated height.
+    /// @details    Keeps empty-list capture in the guide row so its position follows the same animated height
     ///
     /// @param[in]  focusedList  Current list supplying content and appearance
     /// @return     (some View) session-scoped list content
@@ -555,7 +555,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.selectDay
     /// @brief      Open the requested day through the available navigation path
     /// @details    Prefers the injected day-selection callback; otherwise resolves a calendar-backed selection and
-    ///             leaves state unchanged if unavailable.
+    ///             leaves state unchanged if unavailable
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -586,7 +586,7 @@ struct TodayListDetailView: View
     /// @fcn        TodayListDetailView.keyboardNavigation
     /// @brief      Build previous and next card navigation actions
     /// @details    Enables actions only for existing neighbors and resolves each neighbor again when invoked to avoid
-    ///             using a stale ordering.
+    ///             using a stale ordering
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -672,7 +672,7 @@ struct TodayListDetailView: View
                     .background
                     {
 
-                        // Match the Day banner below the gold edge through the home-indicator area.
+                        // Match the Day banner below the gold edge through the home-indicator area
                         headerColor
                         .ignoresSafeArea(edges: .bottom)
                     }
@@ -893,7 +893,7 @@ struct TodayListDetailView: View
                         }
 
                         .listStyle(.plain)
-                        // List reads this value when sizing rows; the hidden guide must occupy zero height.
+                        // List reads this value when sizing rows; the hidden guide must occupy zero height
                         .environment(\.defaultMinListRowHeight, 0)
                         .environment(\.editMode, $editMode)
                         .scrollContentBackground(.hidden)
@@ -904,7 +904,7 @@ struct TodayListDetailView: View
                             ? Color(.systemBackground).opacity(
                                 focusedList.appearance?.resolvedListBackgroundOpacity ?? 1) : .clear
                         )
-                        // Explicit task focus takes priority over restoring an old viewport.
+                        // Explicit task focus takes priority over restoring an old viewport
                         .background(
                             BoardViewportScrollProbe(
                                 memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical")
@@ -1012,7 +1012,7 @@ struct TodayListDetailView: View
                                 return
                             }
 
-                            // List registers its row IDs after its first layout pass.
+                            // List registers its row IDs after its first layout pass
                             do
                             {
                                 try await Task.sleep(for: .milliseconds(150))
@@ -1787,7 +1787,7 @@ struct TodayListDetailView: View
     /// @details    Validates the destination, allocates identities across retained Lists, and
     ///             constructs complete items through the shared factory. Saves the resolved
     ///             calendar or personal owner before updating local bindings and requesting a
-    ///             reveal; rejected saves leave the draft available.
+    ///             reveal; rejected saves leave the draft available
     ///
     /// @param[in]  capture  Complete destination-scoped creation submission with writing, media,
     ///             and scheduling

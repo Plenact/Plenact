@@ -2,7 +2,7 @@
 // @file       RichTextEditor.swift
 // @brief      Rich-text serialization and native editing bridge
 // @details    Preserves attributed runs and plain-text access while coordinating focus and
-//             selection through the active editor bindings.
+//             selection through the active editor bindings
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -12,7 +12,7 @@ import UniformTypeIdentifiers
 
 
 // Rich text remains in the existing string fields, with a versioned, portable run representation.
-// Ordinary text stays ordinary text; legacy descriptions and comments need no migration.
+// Ordinary text stays ordinary text; legacy descriptions and comments need no migration
 
 
 ///
@@ -20,7 +20,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Converts between stored runs, attributed editing content, and plain text while supporting
-///     the versioned string prefix.
+///     the versioned string prefix
 ///
 enum PlanRichText
 {
@@ -34,7 +34,7 @@ enum PlanRichText
     ///
     /// @section    Purpose
     ///     Retains writing and optional font, color, bold, and italic attributes independently of
-    ///     UIKit editor state.
+    ///     UIKit editor state
     ///
     struct Run: Codable, Equatable
     {
@@ -59,7 +59,7 @@ enum PlanRichText
     /// @fcn        PlanRichText.runs
     /// @brief      Decode Plenact's optional rich-text run representation
     /// @details    Requires the stored prefix and valid base64 JSON; ordinary text or invalid encoded data returns
-    ///             nil.
+    ///             nil
     ///
     /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
     ///
@@ -81,7 +81,7 @@ enum PlanRichText
     ///
     /// @fcn        PlanRichText.plain
     /// @brief      Return the plain text represented by a stored rich-text value
-    /// @details    Concatenates decoded runs when present and otherwise returns the original value unchanged.
+    /// @details    Concatenates decoded runs when present and otherwise returns the original value unchanged
     ///
     /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
     ///
@@ -97,7 +97,7 @@ enum PlanRichText
     /// @fcn        PlanRichText.attributed
     /// @brief      Build UIKit attributed text from the stored representation
     /// @details    Applies supported font traits, bounded sizes, and named colors while retaining metadata needed for
-    ///             later round-trip encoding.
+    ///             later round-trip encoding
     ///
     /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
     ///
@@ -177,7 +177,7 @@ enum PlanRichText
     /// @fcn        PlanRichText.encode
     /// @brief      Encode supported attributed formatting for persistence
     /// @details    Enumerates attribute runs and uses sorted-key base64 JSON only when formatting exists; plain text
-    ///             and failed encoding fall back to the original string.
+    ///             and failed encoding fall back to the original string
     ///
     /// @param[in]  value  Attributed content whose supported formatting should be encoded
     ///
@@ -231,7 +231,7 @@ enum PlanRichText
     /// @fcn        PlanRichText.display
     /// @brief      Build SwiftUI attributed text from persisted rich-text runs
     /// @details    Applies supported family, size, bold, italic, and named colors, with plain-text fallback when no
-    ///             runs decode.
+    ///             runs decode
     ///
     /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
     ///
@@ -306,7 +306,7 @@ enum PlanRichText
 ///
 /// @section    Purpose
 ///     Binds the stored text representation to a native text view with configurable focus,
-///     placeholder, and minimum height.
+///     placeholder, and minimum height
 ///
 struct RichTextEditor: UIViewRepresentable
 {
@@ -323,7 +323,7 @@ struct RichTextEditor: UIViewRepresentable
     /// @fcn        RichTextEditor.makeCoordinator
     /// @brief      Create the native bridge coordinator
     /// @details    Creates the coordinator retained by SwiftUI for RichTextEditor so its delegate or observation
-    ///             state can span view updates.
+    ///             state can span view updates
     ///
     /// @return     (Coordinator) retained native bridge coordinator
     ///
@@ -337,7 +337,7 @@ struct RichTextEditor: UIViewRepresentable
     /// @fcn        RichTextEditor.makeUIView
     /// @brief      Create the native rich-text editor and keyboard controls
     /// @details    Configures dynamic type, the placeholder, delegate, supported formatting toolbar, and initial
-    ///             attributed content.
+    ///             attributed content
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -407,7 +407,7 @@ struct RichTextEditor: UIViewRepresentable
     /// @fcn        RichTextEditor.updateUIView
     /// @brief      Synchronize retained rich-text content without losing selection
     /// @details    Refreshes the coordinator's parent, replaces only changed attributed content, clamps the insertion
-    ///             position, and defers UIKit focus reconciliation until after the SwiftUI update.
+    ///             position, and defers UIKit focus reconciliation until after the SwiftUI update
     ///
     /// @param[in]  view     Native view inspected or synchronized by the operation
     /// @param[in]  context  Framework-supplied update context and coordinator access
@@ -431,7 +431,7 @@ struct RichTextEditor: UIViewRepresentable
 
         context.coordinator.hint?.isHidden = !PlanRichText.plain(text).isEmpty
 
-        // UIKit focus changes must happen after SwiftUI finishes its current view update.
+        // UIKit focus changes must happen after SwiftUI finishes its current view update
         context.coordinator.scheduleFocusUpdate(view)
     }
 
@@ -440,7 +440,7 @@ struct RichTextEditor: UIViewRepresentable
     /// @fcn        RichTextEditor.sizeThatFits
     /// @brief      Measure the rich editor using its proposed width
     /// @details    Returns nil without a width proposal and otherwise fits native text height above the configured
-    ///             minimum.
+    ///             minimum
     ///
     /// @param[in]  proposal  Parent layout proposal, including an optional available width
     /// @param[in]  uiView    Native editor whose fitting size is being measured
@@ -468,7 +468,7 @@ struct RichTextEditor: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Retains current bindings, tracks the text view and placeholder weakly, and guards
-    ///     deferred focus updates against re-entry.
+    ///     deferred focus updates against re-entry
     ///
     class Coordinator: NSObject, UITextViewDelegate
     {
@@ -485,7 +485,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.init
         /// @brief      Retain the rich-text representable for native delegate callbacks
         /// @details    Stores the parent value that supplies the text and optional focus bindings; later
-        ///             representable updates refresh that value.
+        ///             representable updates refresh that value
         ///
         /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
         ///
@@ -503,7 +503,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.scheduleFocusUpdate
         /// @brief      Reconcile requested editor focus after the current view update
         /// @details    Coalesces main-queue work, rereads the latest binding, requires an attached view, and
-        ///             suppresses delegate feedback during programmatic focus changes.
+        ///             suppresses delegate feedback during programmatic focus changes
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -538,7 +538,7 @@ struct RichTextEditor: UIViewRepresentable
                     return
                 }
 
-                // Read the latest request: a user may have tapped another field while this was queued.
+                // Read the latest request: a user may have tapped another field while this was queued
                 self.applyingFocus = true
 
                 defer
@@ -566,7 +566,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.textViewDidChange
         /// @brief      Publish native rich-text edits back to the binding
         /// @details    Encodes supported formatting, updates placeholder visibility, and refreshes the shared
-        ///             keyboard controls.
+        ///             keyboard controls
         ///
         /// @param[in]  textView  Native rich-text editor delivering the delegate callback
         ///
@@ -586,7 +586,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.textViewDidBeginEditing
         /// @brief      Reflect user-driven rich-editor focus in SwiftUI
         /// @details    Sets the parent focus binding only when the change was not initiated by the coordinator's
-        ///             focus reconciliation.
+        ///             focus reconciliation
         ///
         /// @param[in]  textView  Native rich-text editor delivering the delegate callback
         ///
@@ -609,7 +609,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.textViewDidEndEditing
         /// @brief      Reflect user-driven rich-editor blur in SwiftUI
         /// @details    Clears the parent focus binding while avoiding a feedback loop from programmatic focus
-        ///             changes.
+        ///             changes
         ///
         /// @param[in]  textView  Native rich-text editor delivering the delegate callback
         ///
@@ -632,7 +632,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.restore
         /// @brief      Restore attributed text, selection, and typing attributes
         /// @details    Registers the inverse state with Undo, clamps the restored selection to valid bounds, and
-        ///             republishes the resulting text change.
+        ///             republishes the resulting text change
         ///
         /// @param[in]  text       Attributed or plain text to restore or display
         /// @param[in]  selection  Text selection or resolved navigation selection to retain
@@ -672,7 +672,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.apply
         /// @brief      Apply a formatting transform with Undo support
         /// @details    Registers the previous content and selection, transforms typing attributes for an insertion
-        ///             point, or rewrites selected attributed runs while preserving selection.
+        ///             point, or rewrites selected attributed runs while preserving selection
         ///
         /// @param[in]  change  Transform from the current attributed-text attributes to their edited values
         ///
@@ -723,7 +723,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.toggle
         /// @brief      Toggle one font trait for the current editing context
         /// @details    Derives the requested trait state from the caret or selection and applies it through the
-        ///             shared undoable attribute transform.
+        ///             shared undoable attribute transform
         ///
         /// @param[in]  trait  UIFont symbolic trait to toggle in the current selection or typing attributes
         ///
@@ -774,7 +774,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.font
         /// @brief      Apply a font family or size without discarding traits
         /// @details    Keeps existing symbolic traits and unspecified settings while retaining Plenact font metadata
-        ///             for persistence.
+        ///             for persistence
         ///
         /// @param[in]  name  Requested font family; nil retains the current family
         /// @param[in]  size  Requested font size; nil retains the current size
@@ -832,7 +832,7 @@ struct RichTextEditor: UIViewRepresentable
         /// @fcn        RichTextEditor.Coordinator.color
         /// @brief      Apply a named rich-text foreground color
         /// @details    Uses the shared color catalog and removes explicit stored color metadata when the Default
-        ///             color is selected.
+        ///             color is selected
         ///
         /// @param[in]  name  Named rich-text color; Default clears the explicit color override
         ///

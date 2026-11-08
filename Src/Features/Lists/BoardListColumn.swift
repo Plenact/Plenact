@@ -2,7 +2,7 @@
 // @file       BoardListColumn.swift
 // @brief      One Board List column and its canonical Card rows
 // @details    Composes List headings, previews, creation controls, and row actions while retaining
-//             native List identity and owner callbacks.
+//             native List identity and owner callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -59,10 +59,10 @@ struct KanbanListView: View
 
 
     let list: KanbanList /* The kanban list data rendered by the view                      */
-    /// Maximum vertical space available to the list's card collection.
+    /// Maximum vertical space available to the list's card collection
     let availableListHeight: CGFloat               /* Vertical viewport space available to this list panel           */
     let displaySettings:     BoardDisplaySettings  /* The board's display settings affecting card and list rendering */
-    /// Layout preset that controls the list's card dimensions.
+    /// Layout preset that controls the list's card dimensions
     let presentation:       BoardPresentation                 /* Board layout controlling list density and dimensions         */
     let labelLibrary:       LabelLibrary                      /* Shared categorized labels available to the cards             */
     let toggleCardTitle:    (Int) -> Void                     /* The action invoked to toggle the title of a card             */
@@ -74,21 +74,21 @@ struct KanbanListView: View
     let onMoveList:         (Int) -> Void   /* The action invoked to move the list by a specified offset      */
     let onSortList:         (Bool) -> Void  /* The action invoked to sort the list based on a specified order */
     let onArchiveCompleted: () -> Void      /* The action invoked to archive all completed cards in the list  */
-    /// Archived cards retained by this list.
+    /// Archived cards retained by this list
     @Binding var archivedCards: [KanbanCard] /* Retained records belonging to this list's archive */
-    /// Requests restoration of an archived card by identity.
+    /// Requests restoration of an archived card by identity
     let onRestoreArchivedCard: (Int) -> Void  /* Restores a retained card to the active list              */
     let onDeleteArchivedCard:  (Int) -> Void  /* Confirmed removal of a retained card                     */
     let onArchiveList:         () -> Void     /* The action invoked to archive the entire list            */
     let onDeleteList:          () -> Void     /* Confirmed removal of this list and its retained content  */
     let onDeleteCard:          (Int) -> Void  /* The action invoked to delete a card at a specified index */
-    /// Requests archival of an active card by identity.
+    /// Requests archival of an active card by identity
     let onArchiveCard: (Int) -> Void         /* Archives an active card by identity                */
     let onUpdateCard:  (KanbanCard) -> Void  /* The action invoked to save edited card information */
     let onMoveCard:    (Int, Int) -> Void    /* Move a card to a destination index in this list    */
-    /// Reports list-reorder drag updates to the owning board.
+    /// Reports list-reorder drag updates to the owning board
     let onListDragChanged: (DragGesture.Value?) -> Void /* Reports list-reorder gesture samples to the Board */
-    /// Reports completion or cancellation of a list-reorder drag.
+    /// Reports completion or cancellation of a list-reorder drag
     let onListDragEnded:  () -> Void  /* Ends the parent Board's list-reorder session            */
     var draggedCardID:    Int?            = nil   /* Active native-drag record identity                      */
     var dropBeforeCardID: Int?            = nil   /* Card identity marking the current insertion boundary    */
@@ -174,7 +174,7 @@ struct KanbanListView: View
 
 
     @State private var activeSheet: ActiveSheet? /* The currently active sheet presented modally        */
-    /// Opens card creation after the active list-actions sheet has dismissed.
+    /// Opens card creation after the active list-actions sheet has dismissed
     @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
     @State private var isWatching                 = false  /* Indicates whether the user is watching the list      */
 
@@ -195,14 +195,14 @@ struct KanbanListView: View
 
     @State private var editMode:     EditMode = .inactive  /* Indicates whether the list is in edit mode */
     @State private var deletingCard: KanbanCard?           /* Swipe deletion awaiting confirmation       */
-    /// Measured height of the list header used to size its card collection.
+    /// Measured height of the list header used to size its card collection
     @State private var headerHeight: CGFloat = 72 /* Measured list-header height with an initial estimate */
-    /// Measured card heights keyed by stable card identity.
+    /// Measured card heights keyed by stable card identity
     @State private var measuredCardHeights: [Int: CGFloat] = [:] /* Actual card-row heights keyed by identity */
-    /// Dynamic Type scaling factor applied to card content.
+    /// Dynamic Type scaling factor applied to card content
     @ScaledMetric(relativeTo: .body) private var cardScale =
     1.0 /* Text-size scale applied to minimum card dimensions */
-    /// Transient state indicating a list title is being held for reordering.
+    /// Transient state indicating a list title is being held for reordering
     @GestureState private var isHoldingList = false /* Long-press state enabling the list-reorder gesture */
 
 
@@ -307,7 +307,7 @@ struct KanbanListView: View
     /// @fcn        KanbanListView.usesCompactCards(_:)
     /// @brief      Resolve whether an item uses compact Board detail
     /// @details    Applies the Board appearance resolver to the Card and List overrides without
-    ///             changing their retained settings.
+    ///             changing their retained settings
     ///
     /// @param[in]  card  Canonical item whose resolved preview or navigation context is requested
     ///
@@ -324,7 +324,7 @@ struct KanbanListView: View
     /// @fcn        KanbanListView.cardHeight
     /// @brief      Calculate a scaled card preview height
     /// @details    Uses the compact height or the selected presentation's minimum height before applying the card
-    ///             scale.
+    ///             scale
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -389,7 +389,7 @@ struct KanbanListView: View
     /// @fcn        KanbanListView.cardInsertionMarker(before:)
     /// @brief      Render the insertion boundary for the current card-drop target
     /// @details    Shows an accent line only when this list and boundary match the active
-    ///             destination. The marker is noninteractive and hidden from accessibility.
+    ///             destination. The marker is noninteractive and hidden from accessibility
     ///
     /// @param[in]  cardID  Board-local identity of the card being dragged or moved
     ///
@@ -438,7 +438,7 @@ struct KanbanListView: View
     ///
     /// @fcn        KanbanListView.panelHeader
     /// @brief      Compose the List title, subtitle, and header actions
-    /// @details    Keeps header gestures and measurement in a separate compiler expression.
+    /// @details    Keeps header gestures and measurement in a separate compiler expression
     /// @return     (some View) the composed List panel content
     ///
     @ViewBuilder private var panelHeader: some View
@@ -641,7 +641,7 @@ struct KanbanListView: View
     ///
     /// @fcn        KanbanListView.cardCollection
     /// @brief      Compose the List guidance, Card rows, and capture footer
-    /// @details    Preserves row identity, ordering, drag targets, and collection sizing.
+    /// @details    Preserves row identity, ordering, drag targets, and collection sizing
     /// @return     (some View) the composed List panel content
     ///
     @ViewBuilder private var cardCollection: some View

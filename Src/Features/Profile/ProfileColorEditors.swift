@@ -2,7 +2,7 @@
 // @file       ProfileColorEditors.swift
 // @brief      Local avatar and accessible color editing
 // @details    Provides photo cropping, icon choices, color maps, presets, and RGB controls without
-//             remote identity or authentication.
+//             remote identity or authentication
 //
 // --------------------------------------------------------------------------------------------------
 import ImageIO

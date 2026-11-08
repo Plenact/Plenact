@@ -3,7 +3,7 @@
 // @brief      Importance Activity regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// ImportanceActivity regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,10 +28,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testImportanceLevelsRequireSeparateGesturesAndRetainLegacyMarks
     /// @brief      Verify one-step importance, legacy migration, and owner isolation
     /// @details    Exercises every increase and decrease, clamping, unrelated edits, and legacy
-    ///             presence-only decoding without losing higher-level selections.
+    ///             presence-only decoding without losing higher-level selections
     ///
     /// @return     (Void) records bounded-step and persistence assertions
-    /// @throws     Propagates fixture encoding failures.
+    /// @throws     Propagates fixture encoding failures
     ///
     func testImportanceLevelsRequireSeparateGesturesAndRetainLegacyMarks() throws
     {
@@ -81,10 +81,10 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn        PlenactBoardDocumentTests.testImportanceStarStyleDefaultsTuckedAndPersistsWithoutChangingLevels
     /// @brief      Verify the display preference is independent of importance
-    /// @details    Legacy preferences default to Tucked; both choices round-trip with all other fields.
+    /// @details    Legacy preferences default to Tucked; both choices round-trip with all other fields
     ///
     /// @return     (Void) records default and Codable assertions
-    /// @throws     Propagates fixture serialization failures.
+    /// @throws     Propagates fixture serialization failures
     ///
     func testImportanceStarStyleDefaultsTuckedAndPersistsWithoutChangingLevels() throws
     {
@@ -129,10 +129,10 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn        PlenactBoardDocumentTests.testExampleUndoRetainsExactImportanceLevelsAndLegacySnapshots
     /// @brief      Verify example undo snapshots retain layered importance
-    /// @details    Saves mixed levels and verifies old snapshots without levels remain readable.
+    /// @details    Saves mixed levels and verifies old snapshots without levels remain readable
     ///
     /// @return     (Void) records undo persistence assertions
-    /// @throws     Propagates temporary defaults or JSON failures.
+    /// @throws     Propagates temporary defaults or JSON failures
     ///
     func testExampleUndoRetainsExactImportanceLevelsAndLegacySnapshots() throws
     {
@@ -164,7 +164,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testImportanceExamplesDemonstrateBusyDaysWithoutChangingExistingOwners
     /// @brief      Verify example levels and preservation of unrelated personal importance
     /// @details    Work, Gym, and Dinner demonstrate distinct layered states; arbitrary example
-    ///             titles also receive levels only through explicit example seeding.
+    ///             titles also receive levels only through explicit example seeding
     ///
     /// @return     (Void) records fresh-example and preservation assertions
     ///
@@ -201,7 +201,7 @@ extension PlenactBoardDocumentTests
     ///             [0])`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusImportanceUsesOwnerQualifiedStateAndSeedsOnlyNamedDemoRecords() throws
     {
@@ -275,10 +275,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that jmr Upgrade Keeps Saved Templates And Does Not Rewrite Scheduled Weeks
     /// @details    Exercises `legacy.templates.removeAll`, `PlanningDate.date`, `DatedPlanningWeek.make`. Checks
     ///             `XCTAssertEqual(upgraded.templates.count, 6)`; `XCTAssertEqual(upgraded.templates[0],
-    ///             legacy.templates[0])`.
+    ///             legacy.templates[0])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testJmrUpgradeKeepsSavedTemplatesAndDoesNotRewriteScheduledWeeks() throws
     {
@@ -354,10 +354,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `target.collection.lists.firstIndex`.
     ///             Checks `XCTAssertEqual(result.collection.lists[monday].cards.map(\.word),
     ///             day.collection.lists[0].cards.map(\.word))`;
-    ///             `XCTAssertTrue(result.collection.lists[monday].cards.allSatisfy { $0.id > 70 })`.
+    ///             `XCTAssertTrue(result.collection.lists[monday].cards.allSatisfy { $0.id > 70 })`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningDayReplacementKeepsOtherDaysArchivesAndBookmarks() throws
     {
@@ -406,10 +406,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that weekly Review Renders All Steps And Preserves Saved Record
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(defaults.data(forKey:
-    ///             WeeklyReviewStore.key), bytes)`.
+    ///             WeeklyReviewStore.key), bytes)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testWeeklyReviewRendersAllStepsAndPreservesSavedRecord() async throws
@@ -479,10 +479,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that today Plan Renders Saved Context And Live Priorities Without Source Mutations
     /// @details    Exercises `DatedPlanningWeek.make`, `access.searchableItems.map`, `DailyPlanStore.save`. Checks
     ///             `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), saved)`;
-    ///             `XCTAssertEqual(access.library.first, originalSource)`.
+    ///             `XCTAssertEqual(access.library.first, originalSource)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayPlanRendersSavedContextAndLivePrioritiesWithoutSourceMutations() async throws
@@ -579,10 +579,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that important Indicator Uses Collection And Card Identity
     /// @details    Exercises `LibraryImportanceSelection.contains`. Checks
     ///             `XCTAssertTrue(LibraryImportanceSelection.contains(cardID: 7, collectionID: owner, data: data))`;
-    ///             `XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: other, data: data))`.
+    ///             `XCTAssertFalse(LibraryImportanceSelection.contains(cardID: 7, collectionID: other, data: data))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testImportantIndicatorUsesCollectionAndCardIdentity() throws
     {
@@ -606,10 +606,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testWholeListMovePreservesContentBookmarksAndCrossBoardLinks
     /// @brief      Verify that whole List Move Preserves Content Bookmarks And Cross Board Links
     /// @details    Exercises `.linkedCard`, `CrossBoardListMovement.move`, `boards[0].lists.map`. Checks
-    ///             `XCTAssertEqual(boards[0].lists.map(\.id), [9])`; `XCTAssertEqual(boards[1].lists.count, 2)`.
+    ///             `XCTAssertEqual(boards[0].lists.map(\.id), [9])`; `XCTAssertEqual(boards[1].lists.count, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testWholeListMovePreservesContentBookmarksAndCrossBoardLinks() throws
     {
@@ -693,10 +693,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that activity History Retains Owners Bounds And Clears Only Shortcuts
     /// @details    Exercises `LibraryRecentStore.remember`, `ActivityRecentStore.remember`,
     ///             `ActivityRecentStore.load`. Checks `XCTAssertEqual(ActivityRecentStore.load(from: defaults),
-    ///             [library, week])`; `XCTAssertEqual(ActivityRecentStore.load(from: defaults).count, 20)`.
+    ///             [library, week])`; `XCTAssertEqual(ActivityRecentStore.load(from: defaults).count, 20)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testActivityHistoryRetainsOwnersBoundsAndClearsOnlyShortcuts() throws
     {
@@ -743,10 +743,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Recents Persist Deduplicate And Keep Collections Separate
     /// @details    Exercises `LibraryRecentStore.remember`, `LibraryRecentStore.load`. Checks
     ///             `XCTAssertEqual(LibraryRecentStore.remember(first, defaults: defaults), [first, second])`;
-    ///             `XCTAssertEqual(LibraryRecentStore.load(from: defaults), [first, second])`.
+    ///             `XCTAssertEqual(LibraryRecentStore.load(from: defaults), [first, second])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibraryRecentsPersistDeduplicateAndKeepCollectionsSeparate() throws
     {
@@ -785,10 +785,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that tablet Today Plan Summary Renders Saved And Empty States Without Writing
     /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
     ///             `scene.windows.first`. Checks `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), before)`;
-    ///             `XCTAssertEqual(opens, 0)`.
+    ///             `XCTAssertEqual(opens, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTabletTodayPlanSummaryRendersSavedAndEmptyStatesWithoutWriting() async throws
@@ -911,10 +911,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that date Time Editor Opening Does Not Save Draft
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertEqual(saves, 0)`;
-    ///             `XCTAssertGreaterThan(host.view.bounds.height, 0)`.
+    ///             `XCTAssertGreaterThan(host.view.bounds.height, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDateTimeEditorOpeningDoesNotSaveDraft() async throws
@@ -962,10 +962,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that week Start Migration Keeps Dates Archives Bookmarks And Unique I Ds
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `.linkedCard`. Checks
     ///             `XCTAssertEqual(document.currentWeekKey, "2026-10-05")`;
-    ///             `XCTAssertEqual(document.calendar.firstWeekday, 2)`.
+    ///             `XCTAssertEqual(document.calendar.firstWeekday, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs() throws
     {
@@ -985,7 +985,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testWeekStartMigrationKeepsDatesArchivesBookmarksAndUniqueIDs.fill
         /// @brief      Prepare fill for the enclosing regression test
         /// @details    Supplies the local fixture for week Start Migration Keeps Dates Archives Bookmarks And Unique
-        ///             I Ds. Uses `list.makeItem`.
+        ///             I Ds. Uses `list.makeItem`
         ///
         /// @param[in,out]  week  Dated planning week being inspected or saved
         ///
@@ -1144,10 +1144,10 @@ extension PlenactBoardDocumentTests
     ///             `PlanningDate.date`, `ActivityFocusSelection.isDueSoon`. Checks
     ///             `XCTAssertTrue(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))`;
     ///             `XCTAssertTrue(ActivityFocusSelection.dueReason(card, now: now, calendar:
-    ///             calendar).hasPrefix("Overdue"))`.
+    ///             calendar).hasPrefix("Overdue"))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems() throws
     {
@@ -1200,10 +1200,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `CrossBoardCardMovement.move`, `original.replacingLocation`,
     ///             `collections[0].savedCardIDs.contains`. Checks `XCTAssertEqual(moved,
     ///             original.replacingLocation(id: original.id, listTitle: "Ideas"))`;
-    ///             `XCTAssertTrue(week[0].cards.isEmpty)`.
+    ///             `XCTAssertTrue(week[0].cards.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCrossBoardCardMoveRoundTripPreservesContentAndBookmark() throws
     {

@@ -2,14 +2,14 @@
 // @file       PortableEditedExport.swift
 // @brief      Reconcile supported editable Card changes with their retained canonical identities
 // @details    Supported User Data Model versions: 1.0 base and working 1.1. Simulator test packages only.
-//             Refuses unsupported edits and changed originals; never changes the active workspace or baseline.
+//             Refuses unsupported edits and changed originals; never changes the active workspace or baseline
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Produces a new reviewed package while preserving unmapped canonical values and original bytes.
+/// Produces a new reviewed package while preserving unmapped canonical values and original bytes
 /// @section Purpose
-///     Establish a reversible edit/export/import path without treating native numeric IDs as global identities.
+///     Establish a reversible edit/export/import path without treating native numeric IDs as global identities
 @MainActor
 enum PortableEditedExport
 {
@@ -20,9 +20,9 @@ enum PortableEditedExport
 
     static let scheduleFields: Set<String> = ["startDate", "dueDate", "startDateKind", "dueDateKind"]
 
-    /// Selects one explicitly reviewed planning-store family.
+    /// Selects one explicitly reviewed planning-store family
     /// @section Purpose
-    ///     Share reference and preservation rules without accepting unrelated source stores.
+    ///     Share reference and preservation rules without accepting unrelated source stores
     private enum PlanningFamily: String
     {
 
@@ -32,9 +32,9 @@ enum PortableEditedExport
     }
 
 
-    /// Explains unsupported changes without exposing private content.
+    /// Explains unsupported changes without exposing private content
     /// @section Purpose
-    ///     Prevent an apparently successful package from omitting an unconverted edit.
+    ///     Prevent an apparently successful package from omitting an unconverted edit
     enum Failure: LocalizedError
     {
 
@@ -129,7 +129,7 @@ enum PortableEditedExport
     /// @fcn PortableEditedExport.planningTimestampComparison
     /// @brief Compare declared planning timestamps at the canonical millisecond precision
     /// @details Only frozen comparison values change. Exact source seconds remain in the native
-    ///          backup; authored strings, array order, nulls and unrelated numeric values are retained.
+    ///          backup; authored strings, array order, nulls and unrelated numeric values are retained
     /// @param[in] value Validated planning-store subtree
     /// @return Comparable subtree with integer epoch milliseconds for known timestamp fields
     private static func planningTimestampComparison(_ value: Any) -> Any
@@ -266,7 +266,7 @@ enum PortableEditedExport
 
                 var patch = Dictionary(uniqueKeysWithValues: allowed.map { ($0, after[$0] ?? NSNull()) })
 
-                // The native model omits its false lock flag; canonical records require an explicit Boolean.
+                // The native model omits its false lock flag; canonical records require an explicit Boolean
                 patch["editingLocked"] = after["editingLocked"] ?? false
 
                 if let existing = edits[id], !equal(existing, patch)
@@ -413,7 +413,7 @@ enum PortableEditedExport
     /// @fcn PortableEditedExport.reviewRhythm
     /// @brief Reconcile saved review invitation and notification intent without scheduling actions
     /// @details Preserves retained singleton identity and unchanged canonical values. A newly saved
-    ///          store receives a deterministic workspace-qualified identity; malformed fields fail closed.
+    ///          store receives a deterministic workspace-qualified identity; malformed fields fail closed
     /// @param[in] assembly Reconciled content and personalization package
     /// @param[in] current Frozen native source values
     /// @param[in] baseline Retained imported projection
@@ -500,7 +500,7 @@ enum PortableEditedExport
     /// @fcn PortableEditedExport.planningEdits
     /// @brief Reconcile daily, weekly or periodic records with explicit historical reference provenance
     /// @details Retains explicit planning identities and unchanged payload fields. Unknown references, removed records
-    ///          and changed date/time-zone identities fail closed. Review history is data, never replayed.
+    ///          and changed date/time-zone identities fail closed. Review history is data, never replayed
     /// @param[in] assembly Reconciled content, personalization and rhythm assembly
     /// @param[in] current Frozen native values
     /// @param[in] baseline Imported native projection
@@ -836,7 +836,7 @@ enum PortableEditedExport
     /// @fcn PortableEditedExport.templateMetadata
     /// @brief Reconcile retained template names, library order and default Week selection
     /// @details Content reconciliation retains owner identities. Creation/removal and changes to
-    ///          template date policy, kind, weekday mappings or example-focus metadata remain blocked.
+    ///          template date policy, kind, weekday mappings or example-focus metadata remain blocked
     /// @param[in] assembly Content-reconciled assembly
     /// @param[in] current Frozen native stores
     /// @param[in] baseline Imported native projection
@@ -938,7 +938,7 @@ enum PortableEditedExport
     /// @fcn PortableEditedExport.shortcuts
     /// @brief Preserve authored Today shortcut selection and order against explicit owner/List identities
     /// @details Keeps retained singleton identity and unchanged canonical bytes; an explicitly saved new
-    ///          store gets a deterministic workspace identity. Missing, malformed or ambiguous targets reject.
+    ///          store gets a deterministic workspace identity. Missing, malformed or ambiguous targets reject
     /// @param[in] assembly Current reconciled content graph
     /// @param[in] current Frozen native values, including rollover comparison aliases
     /// @param[in] baseline Retained imported settings projection
@@ -1096,7 +1096,7 @@ enum PortableEditedExport
             }
         }
 
-        // Device navigation and recovery values have no portable meaning. Every user-data key must match.
+        // Device navigation and recovery values have no portable meaning. Every user-data key must match
         let retainedRecoveryKeys: Set<String> = ["Plenact.ExampleCardLocations.Applied.v1", "Plenact.ExampleCardLocations.Backup.v1"]
         let deviceKeys                        = Set(current.keys.filter { retainedRecoveryKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.") ||
             ["Plenact.ActivityRecents.v1", "Plenact.LibraryRecents.v1", "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1", "Plenact.Welcome.lastDeparture.v1"].contains($0) })
@@ -1267,7 +1267,7 @@ enum PortableEditedExport
         {
             throw Failure.inconsistent
         }
-        // A second complete projection detects missed fields, stale duplicate Cards and lossy conversion.
+        // A second complete projection detects missed fields, stale duplicate Cards and lossy conversion
         for (key, value) in rebuilt.values
         {
             if let bytes = value as? Data, let live = current[key] as? Data
@@ -1306,9 +1306,9 @@ enum PortableEditedExport
 }
 
 
-/// Retains offline deletion intent without manufacturing server revision or acknowledgement metadata.
+/// Retains offline deletion intent without manufacturing server revision or acknowledgement metadata
 /// @section Purpose
-///     Model 1.1 keeps pre-deletion records and aliases while applying an explicit local presentation overlay.
+///     Model 1.1 keeps pre-deletion records and aliases while applying an explicit local presentation overlay
 @MainActor
 enum PortableLocalDeletions
 {

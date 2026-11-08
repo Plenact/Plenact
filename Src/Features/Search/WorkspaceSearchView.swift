@@ -2,7 +2,7 @@
 // @file       WorkspaceSearchView.swift
 // @brief      Common workspace search presentation
 // @details    Shares filters and recent search behavior and opens resolved owner destinations
-//             through existing navigation callbacks.
+//             through existing navigation callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -12,7 +12,7 @@ import Speech
 import SwiftUI
 
 
-/// Searches card content in the local Board and opens results in their existing lists.
+/// Searches card content in the local Board and opens results in their existing lists
 ///
 /// Searches the local Board and presents matching destinations
 ///
@@ -451,7 +451,7 @@ struct TodaySearchView: View
 ///
 /// @section    Purpose
 ///     Keeps snapshot-only actions where valid and resolves an owning workspace before exposing
-///     mutable source operations.
+///     mutable source operations
 ///
 struct SharedSearchLifecycleActions: ViewModifier
 {
@@ -467,7 +467,7 @@ struct SharedSearchLifecycleActions: ViewModifier
     ///
     /// @fcn        SharedSearchLifecycleActions.body
     /// @brief      Attach lifecycle controls when shared search permits them
-    /// @details    Installs archive and delete handling only when enabled; otherwise preserves the supplied content.
+    /// @details    Installs archive and delete handling only when enabled; otherwise preserves the supplied content
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -498,7 +498,7 @@ struct SharedSearchLifecycleActions: ViewModifier
 ///
 /// @section    Purpose
 ///     Uses the same Today search scopes and recent history from every toolbar and delegates result
-///     navigation to its owner.
+///     navigation to its owner
 ///
 struct PlanningSharedSearchPresentation: ViewModifier
 {
@@ -518,7 +518,7 @@ struct PlanningSharedSearchPresentation: ViewModifier
     /// @fcn        PlanningSharedSearchPresentation.body
     /// @brief      Present workspace-wide search and its selected route
     /// @details    Supplies calendar-backed results and routes chosen matches through the shared destination
-    ///             presentation rather than an isolated search copy.
+    ///             presentation rather than an isolated search copy
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -573,7 +573,7 @@ struct PlanningSharedSearchPresentation: ViewModifier
 
                 }
             )
-            // Keep Search alive beneath its result, preserving query, scope, and scroll.
+            // Keep Search alive beneath its result, preserving query, scope, and scroll
             .fullScreenCover(item: $route)
             {
                 route in

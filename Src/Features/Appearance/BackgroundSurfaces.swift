@@ -2,7 +2,7 @@
 // @file       BackgroundSurfaces.swift
 // @brief      Appearance rendering and independent background storage
 // @details    Resolves palette values, item visuals, and collection backgrounds while keeping
-//             custom background photos separate from attachment pruning. Supplies inherited subtitle styling.
+//             custom background photos separate from attachment pruning. Supplies inherited subtitle styling
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -19,7 +19,7 @@ import UIKit
 ///
 /// @section    Purpose
 ///     Keeps model tint cases independent of presentation while supplying the muted List surface
-///     colors.
+///     colors
 ///
 extension KanbanListTint
 {
@@ -52,7 +52,7 @@ extension KanbanListTint
 /// Maps stored item accents to presentation colors
 ///
 /// @section    Purpose
-///     Supplies standard and dark-header variants without altering the persisted accent identity.
+///     Supplies standard and dark-header variants without altering the persisted accent identity
 ///
 extension ItemAccent
 {
@@ -115,7 +115,7 @@ extension ItemAccent
     ///
     /// @fcn        ItemAccent.bannerColor
     /// @brief      Resolve an accent's banner surface color
-    /// @details    Uses the increased-contrast choice to select the appropriate opacity or treatment for the accent.
+    /// @details    Uses the increased-contrast choice to select the appropriate opacity or treatment for the accent
     ///
     /// @param[in]  increasedContrast  Whether the system requests increased visual contrast
     ///
@@ -161,7 +161,7 @@ extension ItemAccent
 ///
 /// @section    Purpose
 ///     Uses the configured icon tint with a secondary fallback and hides purely decorative artwork
-///     from accessibility.
+///     from accessibility
 ///
 struct ItemAppearanceMark: View
 {
@@ -190,7 +190,7 @@ struct ItemAppearanceMark: View
 ///
 /// @section    Purpose
 ///     Resolves appearance and accessibility contrast while leaving content and mutation behavior
-///     with the wrapped view.
+///     with the wrapped view
 ///
 struct ItemBannerBackground: ViewModifier
 {
@@ -204,7 +204,7 @@ struct ItemBannerBackground: ViewModifier
     /// @fcn        ItemBannerBackground.body
     /// @brief      Apply a decorative item banner background
     /// @details    Uses the available item appearance and accessibility contrast context to render the banner
-    ///             surface.
+    ///             surface
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -236,7 +236,7 @@ struct ItemBannerBackground: ViewModifier
 ///
 /// @section    Purpose
 ///     Keeps call sites independent of the modifier implementation and accepts absent appearance
-///     overrides.
+///     overrides
 ///
 extension View
 {
@@ -245,7 +245,7 @@ extension View
     ///
     /// @fcn        View.itemBannerBackground
     /// @brief      Attach the shared appearance-driven banner modifier
-    /// @details    Wraps the view in ItemBannerBackground using the optional appearance supplied by its owner.
+    /// @details    Wraps the view in ItemBannerBackground using the optional appearance supplied by its owner
     ///
     /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
     ///
@@ -264,7 +264,7 @@ extension View
 /// Displays a complete item picture preview
 ///
 /// @section    Purpose
-///     Reuses the thumbnail loader and preserves the selected image's natural aspect ratio.
+///     Reuses the thumbnail loader and preserves the selected image's natural aspect ratio
 ///
 struct ItemPicturePreview: View
 {
@@ -376,7 +376,7 @@ struct ItemPicturePreview: View
 ///
 /// @section    Purpose
 ///     Updates only display metadata through the supplied owner action without changing Card or
-///     Note identity.
+///     Note identity
 ///
 struct ItemDisplayFormatMenu: View
 {
@@ -427,7 +427,7 @@ struct ItemDisplayFormatMenu: View
 /// Edits an optional Card preview display profile
 ///
 /// @section    Purpose
-///     Stores Unchanged as no override so inherited presentation remains available.
+///     Stores Unchanged as no override so inherited presentation remains available
 ///
 struct CardDisplayProfilePicker: View
 {
@@ -457,7 +457,7 @@ struct CardDisplayProfilePicker: View
 ///
 /// @section    Purpose
 ///     Uses separate light and dark component values so stored palette choices remain legible
-///     across appearances.
+///     across appearances
 ///
 extension ListPreviewTextColor
 {
@@ -523,7 +523,7 @@ extension ListPreviewTextColor
 }
 
 
-// Board colors are a draft until Save; applying to all clears only List color overrides.
+// Board colors are a draft until Save; applying to all clears only List color overrides
 
 
 ///
@@ -531,7 +531,7 @@ extension ListPreviewTextColor
 ///
 /// @section    Purpose
 ///     Keeps background files outside Card attachment storage so ordinary attachment pruning cannot
-///     remove a collection's image.
+///     remove a collection's image
 ///
 enum CollectionBackgroundPhotoStore
 {
@@ -544,10 +544,10 @@ enum CollectionBackgroundPhotoStore
     /// @fcn        CollectionBackgroundPhotoStore.directory
     /// @brief      Resolve the directory for collection background photos
     /// @details    Creates the application-owned storage directory when needed and propagates directory access
-    ///             failures.
+    ///             failures
     ///
     /// @return     (URL) application-owned directory used for saved collection backgrounds
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func directory() throws -> URL
     {
@@ -565,13 +565,13 @@ enum CollectionBackgroundPhotoStore
     /// @fcn        CollectionBackgroundPhotoStore.preparedPhoto
     /// @brief      Prepare a bounded JPEG collection background
     /// @details    Decodes the source with orientation correction, caps its thumbnail at 2048 pixels, and encodes
-    ///             JPEG at 0.8 quality; invalid input throws.
+    ///             JPEG at 0.8 quality; invalid input throws
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
     /// @return     (Data) orientation-corrected JPEG thumbnail bytes with a 2048-pixel bound
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func preparedPhoto(_ data: Data) throws -> Data
     {
@@ -599,12 +599,12 @@ enum CollectionBackgroundPhotoStore
     /// @fcn        CollectionBackgroundPhotoStore.save
     /// @brief      Write prepared background-photo bytes under a fresh file name
     /// @details    Writes the supplied bytes atomically to a UUID-named .jpg file and returns the storage name; image
-    ///             conversion is performed separately by preparedPhoto.
+    ///             conversion is performed separately by preparedPhoto
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
     /// @return     (String) newly written background photo's UUID-based .jpg file name
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(_ data: Data) throws -> String
     {
@@ -620,7 +620,7 @@ enum CollectionBackgroundPhotoStore
     /// @fcn        CollectionBackgroundPhotoStore.image
     /// @brief      Load and cache a stored collection background photo
     /// @details    Requires a last-path-component .jpg name, reuses the image cache, and returns nil if storage or
-    ///             image decoding is unavailable.
+    ///             image decoding is unavailable
     ///
     /// @param[in]  name  Storage file name, symbol name, or accessible control name selected for this operation
     ///
@@ -658,7 +658,7 @@ enum CollectionBackgroundPhotoStore
     /// @fcn        CollectionBackgroundPhotoStore.remove
     /// @brief      Remove a stored collection background photo and cached image
     /// @details    Accepts only a last-path-component name, attempts file removal when the directory is available,
-    ///             and evicts its cache entry; file-removal errors are ignored.
+    ///             and evicts its cache entry; file-removal errors are ignored
     ///
     /// @param[in]  name  Storage file name, symbol name, or accessible control name selected for this operation
     ///
@@ -684,7 +684,7 @@ enum CollectionBackgroundPhotoStore
 ///
 /// @section    Purpose
 ///     Combines stationary procedural or photo backgrounds with the configured appearance behind
-///     List content.
+///     List content
 ///
 struct CollectionBackgroundSurface: View
 {
@@ -822,7 +822,7 @@ struct CollectionBackgroundSurface: View
 ///
 /// @section    Purpose
 ///     Keeps inheritance available in previews, navigation destinations, and appearance sheets
-///     while allowing each item to apply its own optional override.
+///     while allowing each item to apply its own optional override
 ///
 private struct SubtitleItalicKey: EnvironmentKey
 {
@@ -836,7 +836,7 @@ private struct SubtitleItalicKey: EnvironmentKey
 /// Exposes the parent subtitle style within the workspace
 ///
 /// @section    Purpose
-///     Carries a display-only inherited value without rewriting descendants' stored appearance.
+///     Carries a display-only inherited value without rewriting descendants' stored appearance
 ///
 extension EnvironmentValues
 {

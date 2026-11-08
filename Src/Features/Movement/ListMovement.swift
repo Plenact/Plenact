@@ -2,7 +2,7 @@
 // @file       ListMovement.swift
 // @brief      Canonical whole-List copy and transfer transforms
 // @details    Reserves active and archived identities and remaps internal links before publishing
-//             source and destination owners.
+//             source and destination owners
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Allocates fresh local identities and remaps internal Card links while preserving retained
-///     content.
+///     content
 ///
 enum ListCopying
 {
@@ -23,7 +23,7 @@ enum ListCopying
     /// @fcn        ListCopying.copy
     /// @brief      Copy a list with destination-safe identities
     /// @details    Allocates new list and card IDs against the destination and updates checklist references according
-    ///             to whether the copy crosses owners.
+    ///             to whether the copy crosses owners
     ///
     /// @param[in]  source       Original list whose content is being copied
     /// @param[in]  destination  Existing destination lists used when allocating collision-free identities
@@ -51,7 +51,7 @@ enum ListCopying
         /// @fcn        ListCopying.copy.copyCard
         /// @brief      Copy one card using the enclosing identity map
         /// @details    Rewrites checklist references consistently with the copied list's destination and cross-board
-        ///             policy.
+        ///             policy
         ///
         /// @param[in]  card  Card or note being inspected or changed
         ///
@@ -127,7 +127,7 @@ enum ListCopying
 ///
 /// @section    Purpose
 ///     Reserves active and archived identities and builds source and destination snapshots before
-///     checked publication.
+///     checked publication
 ///
 enum CrossBoardListMovement
 {
@@ -137,7 +137,7 @@ enum CrossBoardListMovement
     /// @fcn        CrossBoardListMovement.detach
     /// @brief      Detach one board list into a standalone collection
     /// @details    Validates its owner, preserves the moved content, and redirects affected references as the
-    ///             ownership changes.
+    ///             ownership changes
     ///
     /// @param[in]      listID       Numeric list identity within its owner
     /// @param[in]      sourceID     Identity of the source owner
@@ -145,7 +145,7 @@ enum CrossBoardListMovement
     ///
     /// @return     (PersonalCollection) new standalone collection containing the detached list
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func detach(
         listID: Int, from sourceID: UUID,
@@ -197,7 +197,7 @@ enum CrossBoardListMovement
     /// @fcn        CrossBoardListMovement.move
     /// @brief      Transfer an entire list between existing owners
     /// @details    Uses destination-safe IDs and rewrites affected checklist links and saved-card ownership while
-    ///             retaining the list's content.
+    ///             retaining the list's content
     ///
     /// @param[in]      listID         Numeric list identity within its owner
     /// @param[in]      sourceID       Identity of the source owner
@@ -207,7 +207,7 @@ enum CrossBoardListMovement
     /// @return     (KanbanList) list at its new owner with remapped identities and links
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.validationNumberTooLarge)`. Errors from throwing dependencies propagate unless
-    ///             handled within this operation.
+    ///             handled within this operation
     ///
     static func move(
         listID: Int, from sourceID: UUID, to destinationID: UUID,
@@ -304,7 +304,7 @@ enum CrossBoardListMovement
         /// @fcn        CrossBoardListMovement.move.relocate
         /// @brief      Rewrite a moved card for its destination owner
         /// @details    Uses the enclosing list and card identity maps so internal checklist links follow the
-        ///             transferred content.
+        ///             transferred content
         ///
         /// @param[in]  card  Card or note being inspected or changed
         ///
@@ -325,7 +325,7 @@ enum CrossBoardListMovement
 
                     var item = item
 
-                    // Implicit references originally belonged to the source board, including hidden links.
+                    // Implicit references originally belonged to the source board, including hidden links
                     if item.retainedCardID != nil
                     ||
                     {
@@ -365,7 +365,7 @@ enum CrossBoardListMovement
             snapshot[destinationIndex].savedCardIDs.insert(mapping[id]!)
         }
 
-        // Redirect references from every retained board to each moved card's new owner and identity.
+        // Redirect references from every retained board to each moved card's new owner and identity
         for boardIndex in snapshot.indices
         {
 
@@ -376,7 +376,7 @@ enum CrossBoardListMovement
             /// @fcn        CrossBoardListMovement.move.redirect
             /// @brief      Redirect links that point to the transferred list
             /// @details    Traverses card checklist content using the enclosing source and destination identity
-            ///             mapping.
+            ///             mapping
             ///
             /// @param[in]  card  Card or note being inspected or changed
             ///

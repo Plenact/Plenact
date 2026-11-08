@@ -2,7 +2,7 @@
 // @file       ItemMetadata.swift
 // @brief      Shared item presentation and authored metadata
 // @details    Defines serializable assignees, comments, scheduling intent, reactions, section
-//             layout, and sharing values.
+//             layout, and sharing values
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -125,7 +125,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 /// Defines the item's editing presentation
 ///
 /// @section    Purpose
-///     Selects Card or Note interface while preserving identity and all retained content.
+///     Selects Card or Note interface while preserving identity and all retained content
 ///
 enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -152,7 +152,7 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Separates Card, Note, and picture preview choices from creation-time Card or Note
-///     presentation defaults.
+///     presentation defaults
 ///
 enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -200,7 +200,7 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Preserves scheduling intent so calendar-day comparisons and visible date badges do not infer
-///     a time the user did not choose.
+///     a time the user did not choose
 ///
 enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 {
@@ -245,7 +245,7 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     /// @fcn        CardDateKind.normalized
     /// @brief      Normalize a date value for its stored precision
     /// @details    Date-only values use the supplied calendar's day boundary; other kinds retain their time
-    ///             information.
+    ///             information
     ///
     /// @param[in]  value     Date value whose precision or display components should be resolved
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -262,7 +262,7 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     ///
     /// @fcn        CardDateKind.label
     /// @brief      Format a date value using this kind's components
-    /// @details    Selects date-only, time-only, or combined formatting so the label reflects the stored precision.
+    /// @details    Selects date-only, time-only, or combined formatting so the label reflects the stored precision
     ///
     /// @param[in]  value  Date value whose precision or display components should be resolved
     ///
@@ -301,7 +301,7 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 /// @section    Purpose
 ///     Keeps author identity and emoji independent of labels, importance, bookmarks, and
-///     completion.
+///     completion
 ///
 struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 {
@@ -317,7 +317,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     /// @fcn        ItemEmojiReaction.validatedEmoji
     /// @brief      Accept a single supported emoji reaction
     /// @details    Trims surrounding whitespace and rejects empty, multi-character, or nonemoji input by returning
-    ///             nil.
+    ///             nil
     ///
     /// @param[in]  input  User-entered emoji text to trim and validate
     ///
@@ -351,7 +351,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     /// @fcn        ItemEmojiReaction.toggling
     /// @brief      Toggle the current author's reaction for one emoji
     /// @details    Rejects invalid emoji; otherwise removes the matching author's existing reaction or adds a new one
-    ///             while preserving other authors.
+    ///             while preserving other authors
     ///
     /// @param[in]  input      User-entered emoji text to trim and validate
     /// @param[in]  authorID   Stable local author UUID for the explicit reaction action
@@ -391,7 +391,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Preserves identity across profile creation and avoids creating an identifier merely by
-///     reading reactions.
+///     reading reactions
 ///
 enum LocalReactionIdentity
 {
@@ -404,7 +404,7 @@ enum LocalReactionIdentity
     /// @fcn        LocalReactionIdentity.current
     /// @brief      Read the existing local reaction author identity
     /// @details    Returns nil for missing or invalid storage without creating a new identity as a side effect of
-    ///             rendering.
+    ///             rendering
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -420,7 +420,7 @@ enum LocalReactionIdentity
     ///
     /// @fcn        LocalReactionIdentity.forUserAction
     /// @brief      Obtain a stable author identity for an explicit reaction
-    /// @details    Reuses a stored UUID or creates and persists one only when the user acts.
+    /// @details    Reuses a stored UUID or creates and persists one only when the user acts
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -556,7 +556,7 @@ enum NoteTextSharing
 ///
 /// @section    Purpose
 ///     Controls presentation ordering and visibility without removing the content stored in hidden
-///     sections.
+///     sections
 ///
 enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 {
@@ -598,7 +598,7 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Normalizes repeated or omitted section identifiers for display while preserving the data in
-///     hidden sections.
+///     hidden sections
 ///
 struct CardSectionLayout: Hashable, Codable, Sendable
 {
@@ -627,7 +627,7 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Combines a title, formatted value, and system symbol and derives a concise accessibility
-///     label.
+///     label
 ///
 struct CardScheduleBadge: Equatable
 {

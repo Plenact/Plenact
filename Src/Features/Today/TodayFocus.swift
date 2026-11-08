@@ -3,7 +3,7 @@
 // @brief      Derived Focus entries, filtering, and direct detail access
 // @details    Combines configured selection sources and section context while preserving personal
 //             importance and caller-specific return routes. Gives item taps a soft selection glow,
-//             icon-based completion, and guarded in-place editing of visible schedule values.
+//             icon-based completion, and guarded in-place editing of visible schedule values
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -17,7 +17,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Keeps deliberately chosen combination hues distinct instead of blending selections into an
-///     ambiguous average.
+///     ambiguous average
 ///
 struct TodayFocusFilterColor
 {
@@ -27,7 +27,7 @@ struct TodayFocusFilterColor
     /// @fcn        TodayFocusFilterColor.rgb
     /// @brief      Choose the distinct RGB color for a Focus-filter combination
     /// @details    Uses the selected-filter bit combination and light or dark palette; returns nil for the unfiltered
-    ///             All state.
+    ///             All state
     ///
     /// @param[in]  upNext      Whether the Up Next filter is selected
     /// @param[in]  important   Importance selections or the Important filter state
@@ -42,7 +42,7 @@ struct TodayFocusFilterColor
     {
 
         let selection = (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
-        // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral.
+        // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral
         let light: [Int: Int] = [
             1: 0x1D4ED8, 2: 0xB42336, 4: 0x276524,
             3: 0x7E22CE, 5: 0x00666B, 6: 0x9A4100, 7: 0x535766
@@ -68,7 +68,7 @@ struct TodayFocusFilterColor
     /// @fcn        TodayFocusFilterColor.color
     /// @brief      Resolve the Focus combination color for display
     /// @details    Converts the shared RGB selection into a SwiftUI color and uses the unfiltered fallback when no
-    ///             specific filter is active.
+    ///             specific filter is active
     ///
     /// @param[in]  upNext      Whether the Up Next filter is selected
     /// @param[in]  important   Importance selections or the Important filter state
@@ -97,7 +97,7 @@ struct TodayFocusFilterColor
 ///
 /// @section    Purpose
 ///     Renders derived entries with optional section grouping, importance controls, and direct
-///     detail navigation without duplicating the Day's records.
+///     detail navigation without duplicating the Day's records
 ///
 struct TodayFocusSection: View
 {
@@ -145,7 +145,7 @@ struct TodayFocusSection: View
     /// @fcn        TodayFocusSection.focusDateControl
     /// @brief      Open a Focus date independently of Card navigation
     /// @details    Preserves the surrounding label styling, consumes the date tap, and leaves
-    ///             locked items display-only. The section owns the editor across row reordering.
+    ///             locked items display-only. The section owns the editor across row reordering
     /// @param[in]  label   Visible date or time text
     /// @param[in]  card    Item whose selected date will be edited
     /// @param[in]  isStart Whether to edit its start rather than due date
@@ -227,7 +227,7 @@ struct TodayFocusSection: View
     /// @fcn        TodayFocusSection.beginsGroup
     /// @brief      Check whether an entry begins a visible Focus section
     /// @details    Requires section grouping and a known entry; the first entry or a change from the preceding
-    ///             section ID begins a group.
+    ///             section ID begins a group
     ///
     /// @param[in]  entry  Focus entry carrying its card and section context
     ///
@@ -438,7 +438,7 @@ struct TodayFocusSection: View
     /// @fcn        TodayFocusSection.showsSchedule
     /// @brief      Keep time and whole-day progress tied to time-aware Focus selections
     /// @details    All items is represented by no active filter flags; Up Next also enables
-    ///             schedule information when combined with other selection sources.
+    ///             schedule information when combined with other selection sources
     /// @return     (Bool) whether time and whole-list progress belong in this Focus presentation
     ///
     private var showsSchedule: Bool
@@ -976,7 +976,7 @@ struct TodayFocusSection: View
 ///
 /// @section    Purpose
 ///     Dismisses back to Today and forwards edits to the owning workspace rather than inserting an
-///     intermediate Day route.
+///     intermediate Day route
 ///
 struct TodayFocusCardDetailView: View
 {
@@ -997,7 +997,7 @@ struct TodayFocusCardDetailView: View
     /// @fcn        TodayFocusCardDetailView.keyboardNavigation
     /// @brief      Build keyboard navigation among current Focus entries
     /// @details    Resolves previous and next candidates from the live Focus context before changing the detail
-    ///             selection.
+    ///             selection
     ///
     /// @param[in]  card  Card or note being inspected or changed
     ///
@@ -1114,7 +1114,7 @@ struct TodayFocusCardDetailView: View
 ///
 /// @section    Purpose
 ///     Resolves identity and the current editing lock at save time, then merges only the chosen
-///     date into live content. Ordinary List assignment retains the existing edit-history behavior.
+///     date into live content. Ordinary List assignment retains the existing edit-history behavior
 ///
 enum TodayFocusDateUpdate
 {
@@ -1124,7 +1124,7 @@ enum TodayFocusDateUpdate
     /// @fcn        TodayFocusDateUpdate.apply
     /// @brief      Merge a selected start or due value into the current Card
     /// @details    Rejects deleted, replaced, archived-list, and locked records. Unrelated content
-    ///             and the other date remain current even when the editor began with an old snapshot.
+    ///             and the other date remain current even when the editor began with an old snapshot
     /// @param[in]  edited   Snapshot carrying the edited date and precision
     /// @param[in]  isStart  Whether the edited value is the start date rather than the due date
     /// @param[in,out] lists Live active workspace lists receiving the accepted edit
@@ -1190,7 +1190,7 @@ enum TodayFocusDateUpdate
 /// @section    Purpose
 ///     Uses picture previews or custom icons when configured, otherwise the item's standard
 ///     type symbol. A small completion badge preserves that identity when checked; the row
-///     supplies the completion button separately from title navigation and trailing actions.
+///     supplies the completion button separately from title navigation and trailing actions
 ///
 private struct TodayFocusItemMark: View
 {
@@ -1204,7 +1204,7 @@ private struct TodayFocusItemMark: View
     /// @brief      Render a compact picture, custom symbol, or default item-type symbol
     /// @details    Matches picture-mode List previews and honors custom icon colors. Completed
     ///             items retain their artwork with a check badge. The enclosing button owns the
-    ///             accessible completion label and action.
+    ///             accessible completion label and action
     /// @return     (some View) a consistently sized mark subordinate to the item title
     ///
     var body: some View
@@ -1248,7 +1248,7 @@ private struct TodayFocusItemMark: View
 ///
 /// @section    Purpose
 ///     Combines native press state with a short accepted-selection highlight so feedback is
-///     visible before navigation. The owner cancels pending navigation when its rows disappear.
+///     visible before navigation. The owner cancels pending navigation when its rows disappear
 ///
 private struct TodayFocusSelectionStyle: ButtonStyle
 {
@@ -1263,7 +1263,7 @@ private struct TodayFocusSelectionStyle: ButtonStyle
     /// @details    Retains the glow briefly after release until the owner opens the selected Card.
     ///             Alpha-based shadows follow the rendered glyphs, leaving row space transparent.
     ///             Reduce Motion uses an immediate gold glyph tint without an animated glow.
-    ///             Decorative layers do not intercept touches or add accessibility elements.
+    ///             Decorative layers do not intercept touches or add accessibility elements
     /// @param[in]  configuration  Native button label and current pressed state
     /// @return     (some View) original item label with transient selection feedback
     ///

@@ -4,15 +4,15 @@
 // @details    Uses monotonic elapsed time, preserves open items/editors, and resets only the active tab.
 //             No navigation state is added to shared preferences, packages or cloud data. A new process
 //             uses the separate daily-opening rule; other launches start on Today. Restoring prior
-//             navigation/drafts after termination is a separate feature.
+//             navigation/drafts after termination is a separate feature
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UIKit
 
 
-/// Decides whether a background return should resume or reset a tab's browsing context.
+/// Decides whether a background return should resume or reset a tab's browsing context
 /// @section Purpose
-///     Keep first activation and transient inactivity separate from a genuine Home-screen absence.
+///     Keep first activation and transient inactivity separate from a genuine Home-screen absence
 struct AppReturnSession
 {
 
@@ -86,9 +86,9 @@ struct AppReturnSession
 }
 
 
-/// Shares transient return protection and scoped reset requests within the current scene.
+/// Shares transient return protection and scoped reset requests within the current scene
 /// @section Purpose
-///     Protect navigated Cards/Notes and inline writing without persisting user content or navigation.
+///     Protect navigated Cards/Notes and inline writing without persisting user content or navigation
 private struct AppReturnProtectionKey: EnvironmentKey
 {
 
@@ -101,9 +101,9 @@ private struct AppReturnProtectionKey: EnvironmentKey
 }
 
 
-/// Carries a scoped, in-memory request to reset a tab's browsing position.
+/// Carries a scoped, in-memory request to reset a tab's browsing position
 /// @section Purpose
-///     Avoid reconstructing inactive tabs or adding navigation to the shared data model.
+///     Avoid reconstructing inactive tabs or adding navigation to the shared data model
 private struct AppReturnResetKey: EnvironmentKey
 {
 
@@ -112,9 +112,9 @@ private struct AppReturnResetKey: EnvironmentKey
 }
 
 
-/// Optional explicit List target for a daily opening; ordinary timeout resets keep it nil.
+/// Optional explicit List target for a daily opening; ordinary timeout resets keep it nil
 /// @section Purpose
-///     Distinguish today's List from the Week's first dated List without changing content.
+///     Distinguish today's List from the Week's first dated List without changing content
 private struct AppReturnTargetKey: EnvironmentKey
 {
 
@@ -176,9 +176,9 @@ extension EnvironmentValues
 }
 
 
-/// Keeps open content and active inline drafts ahead of the timeout policy.
+/// Keeps open content and active inline drafts ahead of the timeout policy
 /// @section Purpose
-///     Uses a per-view token so closing one editor does not unprotect another visible editor.
+///     Uses a per-view token so closing one editor does not unprotect another visible editor
 private struct AppReturnProtection: ViewModifier
 {
 
@@ -217,7 +217,7 @@ private struct AppReturnProtection: ViewModifier
 extension View
 {
 
-    /// Mark an open item or unfinished editor as protected from automatic return resets.
+    /// Mark an open item or unfinished editor as protected from automatic return resets
     func protectsAppReturn(_ active: Bool = true) -> some View
     {
 
@@ -226,9 +226,9 @@ extension View
 }
 
 
-/// Retains only a weak reference to the scene window for detecting presented sheets.
+/// Retains only a weak reference to the scene window for detecting presented sheets
 /// @section Purpose
-///     Preserve all modal editors without coupling the timeout rule to each feature's sheet state.
+///     Preserve all modal editors without coupling the timeout rule to each feature's sheet state
 @MainActor
 final class AppReturnWindow
 {
@@ -243,17 +243,17 @@ final class AppReturnWindow
 }
 
 
-/// Locates the owning scene window without retaining its UIKit hierarchy.
+/// Locates the owning scene window without retaining its UIKit hierarchy
 /// @section Purpose
-///     Let the return policy preserve existing modal editors in the correct window.
+///     Let the return policy preserve existing modal editors in the correct window
 struct AppReturnWindowProbe: UIViewRepresentable
 {
 
     let reference: AppReturnWindow
 
-    /// Reports its actual window after UIKit attaches the probe.
+    /// Reports its actual window after UIKit attaches the probe
     /// @section Purpose
-    ///     Keep window detection independent of global key-window selection.
+    ///     Keep window detection independent of global key-window selection
     final class Marker: UIView
     {
 
@@ -370,9 +370,9 @@ extension AppRootView
 }
 
 
-/// Describes the navigation that follows a successful manual Week-template operation.
+/// Describes the navigation that follows a successful manual Week-template operation
 /// @section Purpose
-///     Keep explicit creation/replacement separate from ordinary edits, day templates and rollover.
+///     Keep explicit creation/replacement separate from ordinary edits, day templates and rollover
 struct ManualWeekOpening
 {
 

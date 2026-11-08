@@ -3,7 +3,7 @@
 // @brief      Today's main composition and capture entry points
 // @details    Presents the selected Day, shortcuts, planning context, and full capture
 //             destinations without duplicating canonical tasks. Focus observes live workspace edits
-//             directly; a separate clock advances time-sensitive selections and weekday changes.
+//             directly; a separate clock advances time-sensitive selections and weekday changes
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -36,7 +36,7 @@ struct TodayHomeView: View
     /// @fcn        TodayHomeView.calendarDayList
     /// @brief      Resolve the active list representing a particular day
     /// @details    Uses the available current-week snapshot or retained calendar mapping and returns nil when no
-    ///             active matching list is available.
+    ///             active matching list is available
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  snapshot  Snapshot values or directory used for the operation
@@ -332,7 +332,7 @@ struct TodayHomeView: View
     /// @details    Anchored to the screen above the workspace toolbar, independently of scrolling content.
     ///             Lives outside the filtered rows so removing their membership cannot dismiss Undo.
     ///             Slides into and out of its fixed position; Reduce Motion uses a short fade.
-    ///             Restores only the removed identifier, preserving any other bookmark edits.
+    ///             Restores only the removed identifier, preserving any other bookmark edits
     ///
     /// @return     (some View) accessible bottom notice while a removal is pending
     ///
@@ -476,7 +476,7 @@ struct TodayHomeView: View
     }
 
 
-    /// Pinned, owner-qualified list shortcuts chosen by the user and persisted across launches.
+    /// Pinned, owner-qualified list shortcuts chosen by the user and persisted across launches
     private var yourShortcutsSection: some View
     {
 
@@ -625,7 +625,7 @@ struct TodayHomeView: View
     /// @brief      Prepare the selected quick-capture mode
     /// @details    Cancels the welcome cue, clears the template, and retains the capture action.
     ///             Requests a Today List first when no destination is selected; otherwise opens the
-    ///             full composer.
+    ///             full composer
     ///
     /// @param[in]  action  Requested quick-capture mode, including photo, voice, or drawing entry
     ///
@@ -655,7 +655,7 @@ struct TodayHomeView: View
     ///
     /// @fcn        TodayHomeView.presentQuickNoteEditor
     /// @brief      Open the full-featured quick capture editor
-    /// @details    Selects the current quick-note creation presentation from the Today home view.
+    /// @details    Selects the current quick-note creation presentation from the Today home view
     ///
     /// @return     (Void) no return value
     ///
@@ -818,7 +818,7 @@ struct TodayHomeView: View
                             )
                             .padding(16)
                         }
-                        // Reclaim the action row’s 52 points from the space before capture.
+                        // Reclaim the action row’s 52 points from the space before capture
                         .padding(.bottom, -16)
                     }
 
@@ -832,7 +832,7 @@ struct TodayHomeView: View
                     }
 
 
-                    // Read live workspace inputs directly; the clock only advances time-based selection.
+                    // Read live workspace inputs directly; the clock only advances time-based selection
                     let focusLists        = lists
                     let focusBookmarks    = savedCardIDs
                     let importantFocusIDs =
@@ -846,7 +846,7 @@ struct TodayHomeView: View
                     }
 
                     ?? []
-                    // Keep the Focus identity stable while its contents and preferences change.
+                    // Keep the Focus identity stable while its contents and preferences change
                     let focusPreferences =
                     (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData))
                     ?? PlanPreferencesStore.load()
@@ -1030,7 +1030,7 @@ struct TodayHomeView: View
 
                 }
                 .padding(20)
-                // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone.
+                // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone
                 .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 10)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding(.bottom, 112)
@@ -1058,7 +1058,7 @@ struct TodayHomeView: View
             }
             .task
             {
-                // Advance Up Next and the weekday at least once a minute without caching Card data.
+                // Advance Up Next and the weekday at least once a minute without caching Card data
                 while !Task.isCancelled
                 {
 
@@ -1183,7 +1183,7 @@ struct TodayHomeView: View
             .task(id: reviewNotifications.pending?.id)
             {
 
-                // Preserve a tapped reminder until the current editor/sheet is closed.
+                // Preserve a tapped reminder until the current editor/sheet is closed
                 while let pending = reviewNotifications.pending, !Task.isCancelled
                 {
 

@@ -2,14 +2,14 @@
 // @file       MigrationPlanningValues.swift
 // @brief      Historical planning values and exact owner/creation-qualified links
 // @details    Supported User Data Model versions: 1.0. Reads original native reference-epoch dates;
-//             never recomputes saved writing, progress, moods or decisions from current Cards.
+//             never recomputes saved writing, progress, moods or decisions from current Cards
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Maps nested planning history while preserving nullable and independent snapshots.
+/// Maps nested planning history while preserving nullable and independent snapshots
 /// @section Purpose
-///     Resolve historical links only when original owner, numeric ID and creation provenance agree.
+///     Resolve historical links only when original owner, numeric ID and creation provenance agree
 @MainActor
 struct MigrationPlanningValues
 {

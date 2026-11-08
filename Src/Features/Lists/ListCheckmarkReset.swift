@@ -2,7 +2,7 @@
 // @file       ListCheckmarkReset.swift
 // @brief      Temporary completion-only restoration snapshots
 // @details    Clears and restores captured checklist state without replacing current writing or
-//             unrelated metadata.
+//             unrelated metadata
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Restores only captured completion values and never replaces current writing or unrelated
-///     Card content.
+///     Card content
 ///
 struct ListCheckmarkReset: Equatable
 {
@@ -27,7 +27,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.values
     /// @brief      Capture completion state throughout a list
     /// @details    Uses stable nested identity paths so card and checklist checkmarks can be compared and restored
-    ///             separately from other metadata.
+    ///             separately from other metadata
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -55,7 +55,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.reset
     /// @brief      Create a cleared copy and restoration snapshot
     /// @details    Records original and cleared completion values and returns transformed cards without mutating the
-    ///             supplied list.
+    ///             supplied list
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -83,7 +83,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.canRestore
     /// @brief      Check whether the captured checkmarks can still be restored
     /// @details    Requires the current list's completion values to match the cleared snapshot, preventing an Undo
-    ///             from overwriting later checkmark edits.
+    ///             from overwriting later checkmark edits
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -99,7 +99,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.restoring
     /// @brief      Restore captured checkmarks when the snapshot is still valid
     /// @details    Returns nil after a conflicting completion change; otherwise restores only completion fields while
-    ///             keeping current card content.
+    ///             keeping current card content
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -126,7 +126,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.transform
     /// @brief      Transform completion values recursively by identity path
     /// @details    Copies the supplied hierarchy and invokes the change closure for each card or nested checklist
-    ///             path.
+    ///             path
     ///
     /// @param[in]  cards   Canonical card values in their current order
     /// @param[in]  change  Transform receiving the stable identity path and current completion value
@@ -160,7 +160,7 @@ struct ListCheckmarkReset: Equatable
     /// @fcn        ListCheckmarkReset.transform
     /// @brief      Transform completion values recursively by identity path
     /// @details    Copies the supplied hierarchy and invokes the change closure for each card or nested checklist
-    ///             path.
+    ///             path
     ///
     /// @param[in]  lists   Lists participating in the operation
     /// @param[in]  path    Stable hierarchy path or writable field key path used by the operation

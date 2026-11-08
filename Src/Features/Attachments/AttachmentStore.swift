@@ -2,7 +2,7 @@
 // @file       AttachmentStore.swift
 // @brief      Retained attachment metadata and local media files
 // @details    Validates links and stores imported media separately from owner JSON while
-//             preserving attachment identities and safe file boundaries.
+//             preserving attachment identities and safe file boundaries
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -19,7 +19,7 @@ import UIKit
 ///
 /// @section    Purpose
 ///     Distinguishes retained photos, videos, audio, and web links for storage and preview
-///     selection.
+///     selection
 ///
 enum KanbanAttachmentKind: String, Codable, Sendable
 {
@@ -37,7 +37,7 @@ enum KanbanAttachmentKind: String, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Keeps attachment identity, local filename or remote URL, media kind, creation time, example
-///     artwork, and optional caption together.
+///     artwork, and optional caption together
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
 {

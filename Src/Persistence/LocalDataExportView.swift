@@ -2,15 +2,15 @@
 // @file       LocalDataExportView.swift
 // @brief      Private local backup preparation and explicit Files export
 // @details    Supports User Data Model 1.0 base and working 1.1; native backup formats 1/2.
-//             Preserves originals beside explicit partial conversion and Simulator-only source recovery.
+//             Preserves originals beside explicit partial conversion and Simulator-only source recovery
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UniformTypeIdentifiers
 
 
-/// Transfers a frozen directory into Files only after the user chooses its destination.
+/// Transfers a frozen directory into Files only after the user chooses its destination
 /// @section Purpose
-///     Keep export preparation separate from saving or sharing private source content.
+///     Keep export preparation separate from saving or sharing private source content
 struct LegacyBackupDocument: FileDocument
 {
 
@@ -65,9 +65,9 @@ struct LegacyBackupDocument: FileDocument
 }
 
 
-/// Provides an explicit local source-backup milestone before Model 1.0 conversion.
+/// Provides an explicit local source-backup milestone before Model 1.0 conversion
 /// @section Purpose
-///     Let the owner preserve saved data, inspect preflight results and choose a Files destination.
+///     Let the owner preserve saved data, inspect preflight results and choose a Files destination
 struct LocalDataExportView: View
 {
 
@@ -675,7 +675,7 @@ struct LocalDataExportView: View
 
     /// @fcn LocalDataExportView.prepareTestPackage
     /// @brief Assemble an explicitly synthetic package from the current frozen migration preview
-    /// @details Saves no workspace changes; source coverage and review gates must pass first.
+    /// @details Saves no workspace changes; source coverage and review gates must pass first
     /// @return Void after publishing a Files-export document or a bounded review message
     private func prepareTestPackage()
     {
@@ -718,7 +718,7 @@ struct LocalDataExportView: View
 
     /// @fcn LocalDataExportView.preparePreview
     /// @brief Convert supported fields from the existing frozen snapshot using durable local IDs
-    /// @details The private journal is persisted before the preview is made available to Files.
+    /// @details The private journal is persisted before the preview is made available to Files
     /// @return Void; retains the original backup if conversion cannot complete
     private func preparePreview()
     {
@@ -778,7 +778,7 @@ struct LocalDataExportView: View
 
     /// @fcn LocalDataExportView.prepare
     /// @brief Render preparation state before freezing saved source content
-    /// @details No live data is logged, uploaded or rewritten. Failed attempts discard stale exports.
+    /// @details No live data is logged, uploaded or rewritten. Failed attempts discard stale exports
     /// @return Void; publishes either a complete source backup or a bounded error
     private func prepare()
     {

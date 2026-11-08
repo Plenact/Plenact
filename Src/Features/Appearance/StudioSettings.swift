@@ -2,14 +2,14 @@
 // @file       StudioSettings.swift
 // @brief      Personalization Studio settings and per-view wallpaper integration
 // @details    Keeps workspace choices local until Save and exposes independent Card/Note creation
-//             defaults, reusable artwork, and wallpaper choices for primary workspace destinations.
+//             defaults, reusable artwork, and wallpaper choices for primary workspace destinations
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
-/// Edits global creation defaults and main-view wallpapers.
+/// Edits global creation defaults and main-view wallpapers
 /// @section Purpose
-///     Makes personalization discoverable from Plan Settings while preserving all existing defaults.
+///     Makes personalization discoverable from Plan Settings while preserving all existing defaults
 struct StudioSettingsView: View
 {
 
@@ -24,7 +24,7 @@ struct StudioSettingsView: View
 
     /// @fcn StudioSettingsView.destinationBinding(_:)
     /// @brief Bind one optional view wallpaper into the shared editor
-    /// @details Removing an override preserves the destination's established background.
+    /// @details Removing an override preserves the destination's established background
     /// @param[in] destination Workspace view being personalized
     /// @return (Binding<StudioSurface?>) optional wallpaper draft
     private func destinationBinding(_ destination: StudioDestination) -> Binding<StudioSurface?>
@@ -112,7 +112,7 @@ struct StudioSettingsView: View
     /// @fcn        StudioSettingsView.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
@@ -262,9 +262,9 @@ struct StudioSettingsView: View
 
 
 
-/// Places a saved wallpaper above an existing fallback without replacing unconfigured views.
+/// Places a saved wallpaper above an existing fallback without replacing unconfigured views
 /// @section Purpose
-///     Shares per-view selection consistently across primary destinations and their existing safe areas.
+///     Shares per-view selection consistently across primary destinations and their existing safe areas
 struct StudioWorkspaceBackground: View
 {
 
@@ -276,7 +276,7 @@ struct StudioWorkspaceBackground: View
     /// @fcn        StudioWorkspaceBackground.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
@@ -297,9 +297,9 @@ struct StudioWorkspaceBackground: View
 
 
 
-/// Applies configured wallpapers to native forms while preserving their default rendering when unset.
+/// Applies configured wallpapers to native forms while preserving their default rendering when unset
 /// @section Purpose
-///     Keeps Settings wallpaper opt-in and avoids changing unconfigured form backgrounds.
+///     Keeps Settings wallpaper opt-in and avoids changing unconfigured form backgrounds
 struct StudioFormWallpaper: ViewModifier
 {
 
@@ -311,7 +311,7 @@ struct StudioFormWallpaper: ViewModifier
     /// @fcn        StudioFormWallpaper.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @param[in]  content  Existing workspace content receiving the optional wallpaper
     /// @return     (some View) accessible surface controls or resolved workspace background

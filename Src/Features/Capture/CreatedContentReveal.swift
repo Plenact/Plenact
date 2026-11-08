@@ -2,7 +2,7 @@
 // @file       CreatedContentReveal.swift
 // @brief      One-shot navigation to newly committed items
 // @details    Retains owner-local identity and creation time until mounted rows can reveal
-//             accepted content after layout settles.
+//             accepted content after layout settles
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Includes List ID, Card ID, and creation time so a one-shot request cannot accidentally match
-///     a reused local identity.
+///     a reused local identity
 ///
 struct CreatedContentTarget: Identifiable, Equatable
 {
@@ -30,7 +30,7 @@ struct CreatedContentTarget: Identifiable, Equatable
     ///
     /// @fcn        CreatedContentTarget.matches
     /// @brief      Match a reveal request to its destination list
-    /// @details    Checks list ID, card ID, and creation timestamp together to avoid matching a reused numeric ID.
+    /// @details    Checks list ID, card ID, and creation timestamp together to avoid matching a reused numeric ID
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -54,7 +54,7 @@ struct CreatedContentTarget: Identifiable, Equatable
 ///
 /// @section    Purpose
 ///     Keeps List, Card, and creation-time identity together so mounted rows can consume the
-///     correct request after composition ends.
+///     correct request after composition ends
 ///
 @MainActor
 final class CreatedContentReveal: ObservableObject
@@ -69,7 +69,7 @@ final class CreatedContentReveal: ObservableObject
     /// @fcn        CreatedContentReveal.request
     /// @brief      Queue a newly created card for scrolling into view
     /// @details    Stores its list, ID, and creation timestamp; cards without a timestamp do not replace the current
-    ///             request.
+    ///             request
     ///
     /// @param[in]  listID  Numeric list identity within its owner
     /// @param[in]  card    Card or note being inspected or changed
@@ -92,7 +92,7 @@ final class CreatedContentReveal: ObservableObject
     ///
     /// @fcn        CreatedContentReveal.complete
     /// @brief      Consume the reveal request that just finished
-    /// @details    Clears the pending target only if its identity still matches, preserving a newer request.
+    /// @details    Clears the pending target only if its identity still matches, preserving a newer request
     ///
     /// @param[in]  request  Request supplied to this operation
     ///
@@ -118,7 +118,7 @@ final class CreatedContentReveal: ObservableObject
 ///
 /// @section    Purpose
 ///     Waits for row registration and composer dismissal and repeats measurement after the preview
-///     reaches its final height.
+///     reaches its final height
 ///
 struct RevealCreatedContent: ViewModifier
 {
@@ -144,7 +144,7 @@ struct RevealCreatedContent: ViewModifier
     ///
     /// @fcn        RevealCreatedContent.body
     /// @brief      Attach scrolling support for newly created content
-    /// @details    Reuses an existing scroll proxy when supplied; otherwise installs its own ScrollViewReader.
+    /// @details    Reuses an existing scroll proxy when supplied; otherwise installs its own ScrollViewReader
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -177,7 +177,7 @@ struct RevealCreatedContent: ViewModifier
     /// @fcn        RevealCreatedContent.revealing
     /// @brief      Scroll to a pending creation after layout settles
     /// @details    Checks cancellation and request identity around delayed scrolling, respects Reduce Motion, and
-    ///             consumes only the completed request.
+    ///             consumes only the completed request
     ///
     /// @param[in]  content  View content to decorate with this modifier
     /// @param[in]  proxy    Scroll proxy for the enclosing content reader
@@ -229,7 +229,7 @@ struct RevealCreatedContent: ViewModifier
                 reveal.complete(request)
             }
             catch
-            {  /* A changed destination or dismissed view cancels its reveal. */
+            {  /* A changed destination or dismissed view cancels its reveal  */
 
             }
 

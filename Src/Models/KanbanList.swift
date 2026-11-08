@@ -2,7 +2,7 @@
 // @file       KanbanList.swift
 // @brief      Canonical List records and item construction
 // @details    Keeps active and archived content together and applies destination defaults only
-//             when constructing new items. Retains per-Card field history at the content-update boundary.
+//             when constructing new items. Retains per-Card field history at the content-update boundary
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -25,7 +25,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     private(set) var title: String         /* Title updated with retained card context            */
     var subtitleOverride:   String? = nil  /* nil preserves legacy generated copy; empty hides it */
 
-    /// Records accepted content edits at the shared owner boundary, including nested value edits.
+    /// Records accepted content edits at the shared owner boundary, including nested value edits
     var cards: [KanbanCard]
     {
         didSet
@@ -67,7 +67,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanList.setSingleListViewMode
     /// @brief      Change a list's single-list presentation mode
-    /// @details    Stores the selected mode in the list appearance, preserving the other appearance fields.
+    /// @details    Stores the selected mode in the list appearance, preserving the other appearance fields
     ///
     /// @param[in]  mode  Mode supplied to this operation
     ///
@@ -88,7 +88,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanList.defaultHeaderIcon
     /// @brief      Choose the standard icon associated with a list title
     /// @details    Recognizes Plenact's special list names and returns nil for an ordinary title without a fixed
-    ///             default.
+    ///             default
     ///
     /// @param[in]  title  Display title or proposed title text
     ///
@@ -118,7 +118,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanList.fixedIconColor
     /// @brief      Resolve the fixed icon color for a special list
     /// @details    Maps recognized special-list titles to their established colors; ordinary titles have no fixed
-    ///             color.
+    ///             color
     ///
     /// @param[in]  title  Display title or proposed title text
     ///
@@ -146,7 +146,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanList.fixedHeaderIconColor
     /// @brief      Resolve the special list header's fixed icon color
-    /// @details    Uses the title-based fixed-color rules for header presentation.
+    /// @details    Uses the title-based fixed-color rules for header presentation
     ///
     /// @param[in]  title  Display title or proposed title text
     ///
@@ -155,7 +155,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     static func fixedHeaderIconColor(for title: String) -> ProfileColor?
     {
 
-        // A warm highlight remains legible against On the Table's burgundy banner.
+        // A warm highlight remains legible against On the Table's burgundy banner
         title == "On the Table" ? ProfileColor(red: 1, green: 0.84, blue: 0.55) : fixedIconColor(for: title)
     }
 
@@ -163,7 +163,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanList.resolvedIconColor
     /// @brief      Resolve the displayed list icon color
-    /// @details    Combines fixed special-list styling with appearance and collection-level color choices.
+    /// @details    Combines fixed special-list styling with appearance and collection-level color choices
     ///
     /// @param[in]  collectionColor  Optional inherited collection icon color
     ///
@@ -180,7 +180,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         Self.defaultHeaderIcon(for: title) != nil
     }
 
-    /// The three built-in shortcut Lists always retain their header identity.
+    /// The three built-in shortcut Lists always retain their header identity
     var showsIconInHeader: Bool
     {
 
@@ -192,7 +192,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanList.headerAppearance
     /// @brief      Build the effective icon appearance for the list header
     /// @details    Combines list overrides, collection icon defaults, and special-list styling without changing
-    ///             stored appearance.
+    ///             stored appearance
     ///
     /// @param[in]  collectionIcon   Optional inherited collection icon choice
     /// @param[in]  collectionColor  Optional inherited collection icon color
@@ -217,7 +217,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     }
 
 
-    /// Today focuses the first actionable Card in saved order without moving records.
+    /// Today focuses the first actionable Card in saved order without moving records
     var firstUncheckedTaskID: Int?
     {
 
@@ -237,7 +237,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     private var defaultItemPresentation:
     ItemPresentation? /* Optional persisted default kind for newly created records */
 
-    /// Applies only at creation; changing this preference never converts retained items.
+    /// Applies only at creation; changing this preference never converts retained items
     var newItemPresentation: ItemPresentation
     {  /* Effective creation kind with the legacy Card fallback */
 
@@ -581,16 +581,16 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanList.edit
     /// @brief      Validate and update editable list metadata
-    /// @details    Rejects a blank proposed title before assigning the title and optional subtitle override.
+    /// @details    Rejects a blank proposed title before assigning the title and optional subtitle override
     ///
     /// @param[in]  proposedTitle  Proposed list title, validated before assignment
     /// @param[in]  subtitle       Supporting subtitle text
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
-    /// @note       Updates display metadata without replacing retained records or changing their identities.
+    /// @note       Updates display metadata without replacing retained records or changing their identities
     ///
     mutating func edit(title proposedTitle: String, subtitle: String?) throws
     {
@@ -632,7 +632,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Allocates owner-local identities, interprets divider syntax, and applies the requested
-///     content, presentation, and creation defaults.
+///     content, presentation, and creation defaults
 ///
 extension KanbanList
 {
@@ -642,7 +642,7 @@ extension KanbanList
     /// @fcn        KanbanList.makeItems
     /// @brief      Create cards or notes from a multiline title submission
     /// @details    Allocates sequential IDs, interprets divider syntax, and applies supplied content, actions,
-    ///             presentation, and creation preferences to the generated items.
+    ///             presentation, and creation preferences to the generated items
     ///
     /// @param[in]  id                   Starting numeric card ID or owner-local content identity
     /// @param[in]  titles               Multiline item-title input
@@ -678,7 +678,7 @@ extension KanbanList
 /// One persisted field change with reversible JSON values
 ///
 /// @section    Purpose
-///     Retains only changed fields; nil denotes an absent optional key rather than an encoded value.
+///     Retains only changed fields; nil denotes an absent optional key rather than an encoded value
 ///
 struct CardEditChange: Codable, Hashable, Sendable
 {
@@ -695,7 +695,7 @@ struct CardEditChange: Codable, Hashable, Sendable
 ///
 /// @section    Purpose
 ///     Groups a single accepted update under a stable identity and timestamp without recursively
-///     copying prior history. Values are retained for future reversal; no restore action is exposed.
+///     copying prior history. Values are retained for future reversal; no restore action is exposed
 ///
 struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 {
@@ -708,7 +708,7 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
     ///
     /// @fcn        CardEditRecord.summary
     /// @brief      Describe saved changes using user-facing field names
-    /// @details    Groups related technical fields, such as a date and its precision, into one label.
+    /// @details    Groups related technical fields, such as a date and its precision, into one label
     /// @return     (String) concise list of changed areas for the history timeline
     ///
     var summary: String
@@ -748,7 +748,7 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Preserves prior history across reconstructed editor snapshots and excludes list context,
-///     identity, and creation metadata from content comparisons.
+///     identity, and creation metadata from content comparisons
 ///
 extension KanbanCard
 {
@@ -762,7 +762,7 @@ extension KanbanCard
     ///             Consecutive autosaves to the same writing fields within two seconds share one
     ///             entry retaining the original value and latest text; other edits stay distinct.
     ///             New insertions and decoding do not call this comparison. Failure to encode
-    ///             preserves prior history without preventing the content update.
+    ///             preserves prior history without preventing the content update
     /// @param[in]  previous  Canonical value before this accepted update
     /// @param[in]  date      Timestamp assigned to this update
     /// @return     (KanbanCard) proposed content carrying its accumulated edit history
@@ -843,7 +843,7 @@ extension KanbanCard
                 Set(changes.map(\.field)).isSubset(of: ["word", "subtitleOverride", "descriptionOverride"])
         {
 
-            // Autosaved typing is one readable update rather than an entry per keystroke.
+            // Autosaved typing is one readable update rather than an entry per keystroke
             let merged = changes.map
             {
                 change in

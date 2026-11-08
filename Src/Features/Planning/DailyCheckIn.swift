@@ -2,7 +2,7 @@
 // @file       DailyCheckIn.swift
 // @brief      Morning guidance, submitted check-ins, and retained history
 // @details    Keeps live priority context separate from historical plan and progress snapshots and
-//             saves deliberate submissions through checked callbacks.
+//             saves deliberate submissions through checked callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -12,7 +12,7 @@ import SwiftUI
 /// Derives morning priority suggestions
 ///
 /// @section    Purpose
-///     Projects canonical dated content and existing priorities without moving items automatically.
+///     Projects canonical dated content and existing priorities without moving items automatically
 ///
 enum TodayVisionSelection
 {
@@ -22,7 +22,7 @@ enum TodayVisionSelection
     /// @fcn        TodayVisionSelection.candidates
     /// @brief      Select live candidates for the day's planning vision
     /// @details    Uses calendar access and reference-label exclusions to offer suitable workspace content for
-    ///             explicit priority selection.
+    ///             explicit priority selection
     ///
     /// @param[in]  date               Represented date for the operation
     /// @param[in]  access             Checked calendar and personal-owner access callbacks
@@ -101,7 +101,7 @@ enum TodayVisionSelection
 ///
 /// @section    Purpose
 ///     Edits the shared Daily plan, offers live workspace candidates, and routes deliberate
-///     movement and saving through checked callbacks.
+///     movement and saving through checked callbacks
 ///
 struct TodayVisionView: View
 {
@@ -169,7 +169,7 @@ struct TodayVisionView: View
     /// @fcn        TodayVisionView.isScheduled
     /// @brief      Check whether a vision candidate belongs to the Scheduled list
     /// @details    Matches its owner UUID against active calendar access library collections whose kind is list and
-    ///             title is Scheduled.
+    ///             title is Scheduled
     ///
     /// @param[in]  source  Live source item with its calendar or Library location
     ///
@@ -189,7 +189,7 @@ struct TodayVisionView: View
     ///
     /// @fcn        TodayVisionView.select
     /// @brief      Apply the user's vision candidate selection
-    /// @details    Updates the working plan's priorities using the source's owner-qualified identity.
+    /// @details    Updates the working plan's priorities using the source's owner-qualified identity
     ///
     /// @param[in]  source  Live source item with its calendar or Library location
     ///
@@ -214,7 +214,7 @@ struct TodayVisionView: View
     ///
     /// @fcn        TodayVisionView.advance
     /// @brief      Save vision progress and move to its next step
-    /// @details    Uses the accepted plan-save callback before advancing the guided planning flow.
+    /// @details    Uses the accepted plan-save callback before advancing the guided planning flow
     ///
     /// @return     (Void) no return value
     ///
@@ -577,7 +577,7 @@ struct TodayVisionView: View
 
                     transfer = nil
 
-                    // The move is already committed; retain the link and report any plan-save failure.
+                    // The move is already committed; retain the link and report any plan-save failure
                     if !onSave()
                     {
 
@@ -647,7 +647,7 @@ struct TodayVisionView: View
 ///
 /// @section    Purpose
 ///     Stores the chosen focus, changed-context writing, and optional submission time independently
-///     of historical check-in entries.
+///     of historical check-in entries
 ///
 struct DailyCheckIn: Codable, Equatable
 {
@@ -665,7 +665,7 @@ struct DailyCheckIn: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Preserves the original emoji and label even when presets change or the user chooses a custom
-///     feeling.
+///     feeling
 ///
 struct CheckInMood: Codable, Equatable
 {
@@ -684,7 +684,7 @@ struct CheckInMood: Codable, Equatable
     /// @fcn        CheckInMood.custom
     /// @brief      Validate a custom emoji-and-label check-in mood
     /// @details    Requires usable mood text and a valid emoji selection and returns nil when the input cannot form a
-    ///             supported mood.
+    ///             supported mood
     ///
     /// @param[in]  emoji  Emoji text proposed for a reaction or check-in mood
     /// @param[in]  label  User-visible description accompanying the custom mood
@@ -729,7 +729,7 @@ struct CheckInMood: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Maps named choices to retained emoji and label values while leaving none and custom choices
-///     unresolved for user input.
+///     unresolved for user input
 ///
 enum CheckInMoodChoice: String, CaseIterable, Identifiable
 {
@@ -787,7 +787,7 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Stores its writing, focus, plan context, and available progress snapshot so subsequent plan
-///     edits do not rewrite history.
+///     edits do not rewrite history
 ///
 struct DailyCheckInEntry: Codable, Equatable, Identifiable
 {
@@ -816,13 +816,13 @@ struct DailyCheckInEntry: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Exposes retained entries and converts a legacy submitted check-in without inventing
-///     unavailable plan or progress snapshots.
+///     unavailable plan or progress snapshots
 ///
 extension DailyPlan
 {
 
 
-    /// Legacy records have no historical plan/progress snapshot. Do not invent one.
+    /// Legacy records have no historical plan/progress snapshot. Do not invent one
     var checkInHistory: [DailyCheckInEntry]
     {
 
@@ -849,7 +849,7 @@ extension DailyPlan
     /// @fcn        DailyPlan.recordCheckIn
     /// @brief      Append a snapshot of the current daily check-in
     /// @details    Captures the user's reflection, mood, priorities, and their live completion context at the
-    ///             supplied timestamp.
+    ///             supplied timestamp
     ///
     /// @param[in]  changed    User-authored reflection describing what changed
     /// @param[in]  sources    Live owner-qualified workspace items used to resolve retained references
@@ -887,7 +887,7 @@ extension DailyPlan
 ///
 /// @section    Purpose
 ///     Reads saved intentions, check-ins, and reviews without writing a plan merely because history
-///     is opened.
+///     is opened
 ///
 struct DailyHistoryReviewView: View
 {
@@ -908,7 +908,7 @@ struct DailyHistoryReviewView: View
     /// @fcn        DailyHistoryReviewView.init
     /// @brief      Configure history observation for a represented day
     /// @details    Retains calendar and preferences and binds stored daily-plan bytes so later saves can refresh the
-    ///             displayed history.
+    ///             displayed history
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -941,7 +941,7 @@ struct DailyHistoryReviewView: View
     /// @fcn        DailyHistoryReviewView.reload
     /// @brief      Reload retained planning and check-in history
     /// @details    Reads the represented day's saved plan and updates the view's history or retained-data error
-    ///             state.
+    ///             state
     ///
     /// @return     (Void) no return value
     ///
@@ -968,7 +968,7 @@ struct DailyHistoryReviewView: View
     ///
     /// @fcn        DailyHistoryReviewView.checkInTime
     /// @brief      Format a check-in timestamp in its recorded time zone
-    /// @details    Uses the saved time-zone identifier with a fallback when that identifier is no longer available.
+    /// @details    Uses the saved time-zone identifier with a fallback when that identifier is no longer available
     ///
     /// @param[in]  timestamp   Explicit timestamp to store or format
     /// @param[in]  timeZoneID  Recorded time-zone identifier used to format the check-in timestamp
@@ -989,7 +989,7 @@ struct DailyHistoryReviewView: View
     ///
     /// @fcn        DailyHistoryReviewView.text
     /// @brief      Build a labeled history-text section
-    /// @details    Presents the recorded value using the history view's shared heading and body styling.
+    /// @details    Presents the recorded value using the history view's shared heading and body styling
     ///
     /// @param[in]  title  Display title or proposed title text
     /// @param[in]  value  Stored or user-entered text to decode, inspect, or display
@@ -1282,7 +1282,7 @@ struct DailyHistoryReviewView: View
 ///
 /// @section    Purpose
 ///     Counts task completion while retaining Notes and unavailable links as separate context
-///     rather than treating them as unfinished tasks.
+///     rather than treating them as unfinished tasks
 ///
 enum DailyCheckInProgress
 {
@@ -1292,7 +1292,7 @@ enum DailyCheckInProgress
     /// @fcn        DailyCheckInProgress.counts
     /// @brief      Count task, note, and unresolved daily priorities
     /// @details    Counts all resolved tasks in tasks and their completed subset separately; notes and missing live
-    ///             source references have their own counts.
+    ///             source references have their own counts
     ///
     /// @param[in]  plan     Daily plan supplying the retained priorities and review state
     /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
@@ -1348,7 +1348,7 @@ enum DailyCheckInProgress
     /// @fcn        DailyCheckInProgress.focus
     /// @brief      Resolve the daily plan's still-eligible check-in focus
     /// @details    Requires the recorded focus to remain among the priorities and resolve to a live note or
-    ///             incomplete task; otherwise returns nil.
+    ///             incomplete task; otherwise returns nil
     ///
     /// @param[in]  plan     Daily plan supplying the retained priorities and review state
     /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
@@ -1382,7 +1382,7 @@ enum DailyCheckInProgress
 ///
 /// @section    Purpose
 ///     Resolves live priorities, records current context and progress on submission, and leaves the
-///     draft available when saving fails.
+///     draft available when saving fails
 ///
 struct TodayCheckInView: View
 {
@@ -1432,7 +1432,7 @@ struct TodayCheckInView: View
     /// @fcn        TodayCheckInView.init
     /// @brief      Seed check-in editing from the shared daily plan
     /// @details    Retains the plan binding, represented date, and checked save callback and restores the currently
-    ///             recorded focus selection.
+    ///             recorded focus selection
     ///
     /// @param[in]  plan    Daily plan supplying the retained priorities and review state
     /// @param[in]  date    Represented date for the operation
@@ -1469,7 +1469,7 @@ struct TodayCheckInView: View
     /// @fcn        TodayCheckInView.selectFocus
     /// @brief      Stage the check-in focus selection
     /// @details    Assigns the optional priority to local selection state; the shared plan is updated only by the
-    ///             later save action.
+    ///             later save action
     ///
     /// @param[in]  priority  Owner-qualified daily priority, or nil when clearing an optional selection
     ///
@@ -1487,7 +1487,7 @@ struct TodayCheckInView: View
     /// @fcn        TodayCheckInView.save
     /// @brief      Save a single check-in snapshot with optional mood
     /// @details    Rejects duplicate saves and invalid custom moods, retains the previous plan before mutation, and
-    ///             restores it if the checked save callback fails.
+    ///             restores it if the checked save callback fails
     ///
     /// @return     (Void) no return value
     ///
@@ -1855,7 +1855,7 @@ struct TodayCheckInView: View
 ///
 /// @section    Purpose
 ///     Uses the same retained plan as the review workflows and delegates opening without modifying
-///     history.
+///     history
 ///
 struct TodayPlanSummaryPanel: View
 {
@@ -1880,7 +1880,7 @@ struct TodayPlanSummaryPanel: View
     /// @fcn        TodayPlanSummaryPanel.init
     /// @brief      Configure a live daily-plan summary and open action
     /// @details    Retains its represented date, source context, welcome choice, and callback and observes daily-plan
-    ///             storage without writing a plan.
+    ///             storage without writing a plan
     ///
     /// @param[in]  date          Represented date for the operation
     /// @param[in]  calendar      Calendar supplying local-day, time-zone, and week-boundary rules
@@ -1913,7 +1913,7 @@ struct TodayPlanSummaryPanel: View
     /// @fcn        TodayPlanSummaryPanel.reload
     /// @brief      Refresh the represented day's quiet plan summary
     /// @details    Loads the retained plan for display and exposes storage failures without inventing replacement
-    ///             history.
+    ///             history
     ///
     /// @return     (Void) no return value
     ///

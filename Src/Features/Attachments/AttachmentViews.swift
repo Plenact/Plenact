@@ -2,7 +2,7 @@
 // @file       AttachmentViews.swift
 // @brief      Media sources, galleries, captions, ordering, and playback
 // @details    Presents retained attachments and delegates accepted mutations to the current owner
-//             rather than modifying snapshots implicitly.
+//             rather than modifying snapshots implicitly
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -424,7 +424,7 @@ struct CardLinkAttachmentSheet: View
 ///
 /// @section    Purpose
 ///     Delegates caption, ordering, removal, and cover selection to the owner while retaining
-///     native attachment opening and photo selection.
+///     native attachment opening and photo selection
 ///
 struct CardPhotoGallery: View
 {
@@ -587,7 +587,7 @@ struct CardPhotoGallery: View
     /// @brief      Build one photo-gallery tile and its actions
     /// @details    Uses the attachment and gallery position for the photo preview, caption, and gallery controls.
     ///             Touch and hold exposes Set as Cover through the existing owner callback; tapping opens the photo
-    ///             and dragging still reorders it. The cover action is also available to accessibility users.
+    ///             and dragging still reorders it. The cover action is also available to accessibility users
     ///
     /// @param[in]  photo  Photo attachment represented by the editor or gallery tile
     /// @param[in]  index  Current zero-based gallery photo index
@@ -740,7 +740,7 @@ struct CardPhotoGallery: View
     /// @fcn        CardPhotoGallery.movePhoto
     /// @brief      Request a relative gallery-photo move
     /// @details    Builds the revised photo ID ordering for the requested offset and uses the checked reorder
-    ///             callback before accepting a change.
+    ///             callback before accepting a change
     ///
     /// @param[in]  index   Current zero-based gallery photo index
     /// @param[in]  offset  Relative section or photo movement, or normalized scroll displacement
@@ -766,7 +766,7 @@ struct CardPhotoGallery: View
 ///
 /// @section    Purpose
 ///     Seeds local writing from the attachment and dismisses only when the owner's checked callback
-///     accepts it.
+///     accepts it
 ///
 struct CardPhotoCaptionSheet: View
 {
@@ -782,7 +782,7 @@ struct CardPhotoCaptionSheet: View
     /// @fcn        CardPhotoCaptionSheet.init
     /// @brief      Seed photo-caption editing from its attachment
     /// @details    Retains the photo and checked save callback and uses an empty draft caption when the attachment
-    ///             has none.
+    ///             has none
     ///
     /// @param[in]  photo   Photo attachment represented by the editor or gallery tile
     /// @param[in]  onSave  Save callback returning true only when the owner accepts the edited value
@@ -870,7 +870,7 @@ struct CardPhotoCaptionSheet: View
 ///
 /// @section    Purpose
 ///     Publishes an ordered identity list through the checked callback rather than rewriting
-///     attachment records locally.
+///     attachment records locally
 ///
 struct CardPhotoArrangementSheet: View
 {
@@ -1063,7 +1063,7 @@ struct CardAttachmentThumbnail: View
 ///
 /// @section    Purpose
 ///     Owns the audio player and publishes playback status and errors while allowing the
-///     presentation to stop playback on lifecycle changes.
+///     presentation to stop playback on lifecycle changes
 ///
 @MainActor
 final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate
@@ -1078,7 +1078,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     /// @fcn        CaptureAudioPlayback.toggle
     /// @brief      Toggle playback of the requested audio URL
     /// @details    Stops current playback or creates and starts an audio player, publishing playback state and
-    ///             reporting setup failures.
+    ///             reporting setup failures
     ///
     /// @param[in]  url  File URL for the requested audio resource
     ///
@@ -1124,7 +1124,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     ///
     /// @fcn        CaptureAudioPlayback.stop
     /// @brief      Stop and release the current audio player
-    /// @details    Clears the retained player and resets the observable playing state.
+    /// @details    Clears the retained player and resets the observable playing state
     ///
     /// @return     (Void) no return value
     ///
@@ -1152,7 +1152,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     /// @fcn        CaptureAudioPlayback.audioPlayerDidFinishPlaying
     /// @brief      Clear playback state when audio finishes
     /// @details    Handles the delegate completion by releasing the finished playback session through the shared stop
-    ///             path.
+    ///             path
     ///
     /// @param[in]  player  Audio player delivering completion
     /// @param[in]  flag    Whether the system reports successful completion
@@ -1178,7 +1178,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 ///
 /// @section    Purpose
 ///     Owns playback state for the supplied file URL and responds to scene changes so audio does
-///     not outlive its intended presentation.
+///     not outlive its intended presentation
 ///
 struct AudioAttachmentPlayer: View
 {
@@ -1238,7 +1238,7 @@ struct AudioAttachmentPlayer: View
 ///
 /// @section    Purpose
 ///     Selects the appropriate viewer and supports checked drawing updates when an editing callback
-///     is supplied.
+///     is supplied
 ///
 struct CardAttachmentPreview: View
 {

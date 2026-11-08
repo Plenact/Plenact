@@ -2,15 +2,15 @@
 // @file       MigrationContentGuard.swift
 // @brief      Source-shape audit before any native decoder can normalize or discard fields
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import CoreFoundation
 import Foundation
 
 
-/// Rejects unsupported stored fields while retaining compatible legacy omissions.
+/// Rejects unsupported stored fields while retaining compatible legacy omissions
 /// @section Purpose
-///     Keep the native migration adapter from silently flattening future source payloads.
+///     Keep the native migration adapter from silently flattening future source payloads
 enum MigrationContentGuard
 {
 

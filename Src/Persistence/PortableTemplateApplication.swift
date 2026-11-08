@@ -3,14 +3,14 @@
 // @brief      Reserve durable identities when a template preview is committed to an imported Week
 // @details    Supported User Data Model versions: 1.0 base and working 1.1.
 //             Preview generation remains read-only. Existing Cards/Lists and authored nested identities
-//             remain unchanged; only newly copied native aliases and their explicit references move.
+//             remain unchanged; only newly copied native aliases and their explicit references move
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Translates a prepared template application at the checked save boundary.
+/// Translates a prepared template application at the checked save boundary
 /// @section Purpose
-///     Avoid collisions with other imported owners without reserving identities for cancelled previews.
+///     Avoid collisions with other imported owners without reserving identities for cancelled previews
 @MainActor
 enum PortableTemplateApplication
 {
@@ -173,7 +173,7 @@ enum PortableTemplateApplication
     /// @fcn PortableTemplateApplication.importanceForSavedWeek
     /// @brief Remove stale unexported importance markers only for the Week being saved
     /// @details Retains active/archive targets and previously exported selection evidence, including
-    ///          locally deleted canonical Cards. Other owners and the retained runtime are untouched.
+    ///          locally deleted canonical Cards. Other owners and the retained runtime are untouched
     /// @param[in] week New checked Week snapshot
     /// @param[in] data Current native importance bytes
     /// @param[in] root App container or isolated synthetic container

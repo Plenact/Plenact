@@ -2,7 +2,7 @@
 // @file       ImportanceControls.swift
 // @brief      Layered importance stars and deliberate gesture controls
 // @details    Presents Tucked or Fanned styling, one-step tap and hold actions, and the native
-//             geometry needed to avoid whole-Card lifting.
+//             geometry needed to avoid whole-Card lifting
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -20,7 +20,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Uses a fixed Tucked footprint or wider Fanned arrangement, with overlapping gold stars
-///     rather than a visible numeric rank.
+///     rather than a visible numeric rank
 ///
 struct ImportanceStarCluster: View
 {
@@ -64,7 +64,7 @@ struct ImportanceStarCluster: View
     ///
     /// @fcn        ImportanceStarCluster.position(depth:)
     /// @brief      Tuck layers into a bounded cluster or arrange a small fan
-    /// @details    Front stars stay bright while rear points convey accumulated attention.
+    /// @details    Front stars stay bright while rear points convey accumulated attention
     ///
     /// @param[in]  depth  Rear layer depth; zero is the front star
     ///
@@ -99,7 +99,7 @@ struct ImportanceStarCluster: View
 ///
 /// @section    Purpose
 ///     A tap increases one level up to five; a hold decreases one level to zero and excludes the
-///     control from whole-Card lifting.
+///     control from whole-Card lifting
 ///
 struct ImportantItemIndicator: View
 {
@@ -190,7 +190,7 @@ struct ImportantItemIndicator: View
     /// @fcn        ImportantItemIndicator.adjustImportance(by:)
     /// @brief      Apply one mutually exclusive tap or hold gesture to the current importance
     /// @details    Shares owner-qualified persistence with menu actions. A successful hold gives
-    ///             one selection haptic and never repeats while the finger remains down.
+    ///             one selection haptic and never repeats while the finger remains down
     ///
     /// @param[in]  direction  Positive adds a layer; negative removes one
     ///
@@ -235,7 +235,7 @@ struct ImportantItemIndicator: View
 ///
 /// @section    Purpose
 ///     Supplies their mounted bounds so a star hold changes importance instead of lifting the
-///     entire Card.
+///     entire Card
 ///
 struct ImportanceInteractionRegion: UIViewRepresentable
 {
@@ -246,7 +246,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Provides geometry for whole-Card drag exclusion while SwiftUI continues to own star tap
-    ///     and hold gestures.
+    ///     and hold gestures
     ///
     final class Marker: UIView
     {
@@ -257,7 +257,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     /// @fcn        ImportanceInteractionRegion.makeUIView(context:)
     /// @brief      Create a noninteractive native marker behind the star control
-    /// @details    SwiftUI owns the importance gesture; this marker supplies only its bounds.
+    /// @details    SwiftUI owns the importance gesture; this marker supplies only its bounds
     ///
     /// @param[in]  context  SwiftUI bridge context
     ///
@@ -277,7 +277,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     /// @fcn        ImportanceInteractionRegion.updateUIView(_:context:)
     /// @brief      Keep the geometry marker free of touch handling
-    /// @details    Layout follows the control automatically; no gesture is installed here.
+    /// @details    Layout follows the control automatically; no gesture is installed here
     ///
     /// @param[in]  marker   Existing native marker
     /// @param[in]  context  SwiftUI bridge context
@@ -294,7 +294,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     /// @fcn        ImportanceInteractionRegion.contains(_:from:in:)
     /// @brief      Determine whether a native drag starts over an importance control
     /// @details    Converts coordinates for visible marker descendants, including nested hosting
-    ///             containers. Unmarked parts of the Card retain their ordinary drag behavior.
+    ///             containers. Unmarked parts of the Card retain their ordinary drag behavior
     ///
     /// @param[in]  point            Touch position supplied by the drag session
     /// @param[in]  coordinateSpace  View whose coordinates define the point
@@ -330,7 +330,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
 ///
 /// @section    Purpose
 ///     Previews Tucked and Fanned arrangements while changing only visual preference, never an
-///     item's stored level.
+///     item's stored level
 ///
 struct ImportanceStarStylePicker: View
 {

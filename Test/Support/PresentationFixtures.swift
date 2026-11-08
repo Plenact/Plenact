@@ -3,7 +3,7 @@
 // @brief      Presentation Fixtures
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -19,7 +19,7 @@ import XCTest
 ///
 /// @section    Purpose
 ///     Retains the navigation path and visible editor identities so tests can assert toolbar
-///     visibility through push and pop transitions.
+///     visibility through push and pop transitions
 ///
 @MainActor
 final class NoteNavigationProbe: ObservableObject
@@ -41,7 +41,7 @@ final class NoteNavigationProbe: ObservableObject
 /// Hosts a Note detail navigation stack for regression testing
 ///
 /// @section    Purpose
-///     Reports editor visibility to the probe while using real CardDetailView destinations.
+///     Reports editor visibility to the probe while using real CardDetailView destinations
 ///
 struct NoteNavigationTestView: View
 {
@@ -87,7 +87,7 @@ struct NoteNavigationTestView: View
 ///
 /// @section    Purpose
 ///     Publishes the presentation flag independently of source ownership so return behavior can be
-///     asserted.
+///     asserted
 ///
 @MainActor
 final class DirectReturnTestProbe: ObservableObject
@@ -104,7 +104,7 @@ final class DirectReturnTestProbe: ObservableObject
 ///
 /// @section    Purpose
 ///     Opens calendar or personal-owner detail content and checks that Back returns to the original
-///     presentation rather than invoking home navigation.
+///     presentation rather than invoking home navigation
 ///
 struct DirectReturnTestView: View
 {

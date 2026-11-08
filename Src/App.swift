@@ -2,7 +2,7 @@
 // @file       App.swift
 // @brief      Application entry point and scene recovery
 // @details    Installs the shared app scene and starts the workspace through the existing
-//             restoration boundary.
+//             restoration boundary
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
@@ -36,7 +36,7 @@ struct Plenact: App
     /// @fcn        Plenact.init
     /// @brief      Install notification handling and recover interrupted storage work
     /// @details    Attempts review-journal and dataset-switch recovery at launch, retaining an error for the recovery
-    ///             interface if either operation fails.
+    ///             interface if either operation fails
     ///
     /// @return     (Plenact) initialized instance
     ///

@@ -2,15 +2,15 @@
 // @file       MigrationSettingsPreview.swift
 // @brief      Explicit profile/preferences preparation and owner-qualified Today shortcut conversion
 // @details    Supported User Data Model versions: 1.0. Local settings-preview format 1. Profile
-//             and preferences remain account-unbound; no authentication identity is manufactured.
+//             and preferences remain account-unbound; no authentication identity is manufactured
 // --------------------------------------------------------------------------------------------------
 import CoreFoundation
 import Foundation
 
 
-/// Prepares saved settings while keeping local profile identity separate from authenticated ownership.
+/// Prepares saved settings while keeping local profile identity separate from authenticated ownership
 /// @section Purpose
-///     Preserve effective preference precedence and exact source provenance without hiding defaults.
+///     Preserve effective preference precedence and exact source provenance without hiding defaults
 @MainActor
 enum MigrationSettingsPreview
 {
@@ -29,9 +29,9 @@ enum MigrationSettingsPreview
     ]
 
 
-    /// Canonical shortcuts and local account-unbound settings evidence remain separately counted.
+    /// Canonical shortcuts and local account-unbound settings evidence remain separately counted
     /// @section Purpose
-    ///     Link profile avatar originals without disguising a local draft as a canonical user record.
+    ///     Link profile avatar originals without disguising a local draft as a canonical user record
     struct Result
     {
 
@@ -125,7 +125,7 @@ enum MigrationSettingsPreview
 
     /// @fcn MigrationSettingsPreview.prepare
     /// @brief Convert saved shortcuts and prepare effective preferences/profile with explicit provenance
-    /// @details Caller publishes this settings slice and journal atomically, or reports its blocker.
+    /// @details Caller publishes this settings slice and journal atomically, or reports its blocker
     /// @param[in] values Frozen preference values
     /// @param[in] records Existing canonical content records
     /// @param[in] mediaDigests Verified original-file digest mapping

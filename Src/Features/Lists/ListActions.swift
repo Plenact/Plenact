@@ -2,7 +2,7 @@
 // @file       ListActions.swift
 // @brief      List options and owner-qualified destination selection
 // @details    Presents copy, move, appearance, and reset actions while leaving content allocation
-//             and persistence with checked owner operations.
+//             and persistence with checked owner operations
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -48,9 +48,9 @@ struct KanbanListActionsSheet: View
     @Binding var cardEditMode:
     EditMode                            /* Manual card ordering in the owning List          */
     let onArchiveCompleted: () -> Void  /* Action to perform when archiving completed cards */
-    /// Archived cards available to restore to the active list.
+    /// Archived cards available to restore to the active list
     @Binding var archivedCards: [KanbanCard] /* Shared retained records in this list's archive */
-    /// Restores an archived card by stable card identity.
+    /// Restores an archived card by stable card identity
     let onRestoreArchivedCard:     (Int) -> Void  /* Restores a retained record by identity           */
     let onDeleteArchivedCard:      (Int) -> Void  /* Permanently remove a confirmed archived card     */
     let onArchiveList:             () -> Void     /* Action to perform when archiving the entire list */
@@ -464,7 +464,7 @@ struct KanbanListActionsSheet: View
     ///
     /// @fcn        KanbanListActionsSheet.footerActionLabel
     /// @brief      Build a consistent list-action footer label
-    /// @details    Stacks the icon and wrapping caption in a shared minimum-height touch region.
+    /// @details    Stacks the icon and wrapping caption in a shared minimum-height touch region
     ///
     /// @param[in]  title   Display title or proposed title text
     /// @param[in]  symbol  SF Symbol name used by the control
@@ -497,7 +497,7 @@ struct KanbanListActionsSheet: View
 ///
 /// @section    Purpose
 ///     Keeps the source snapshot and current owner context together and routes copies through
-///     checked workspace access.
+///     checked workspace access
 ///
 struct CopyListDestinationSheet: View
 {
@@ -514,7 +514,7 @@ struct CopyListDestinationSheet: View
     /// @fcn        CopyListDestinationSheet.destinationWeeks
     /// @brief      List active calendar-week copy destinations
     /// @details    Excludes the current source week and archived collections while retaining the calendar's week
-    ///             ordering.
+    ///             ordering
     ///
     /// @param[in]  access  Checked calendar and personal-owner access callbacks
     ///
@@ -537,7 +537,7 @@ struct CopyListDestinationSheet: View
     /// @fcn        CopyListDestinationSheet.copy
     /// @brief      Copy the source list into a calendar week
     /// @details    Creates a cross-board copy and dismisses with confirmation only after the checked week save
-    ///             succeeds.
+    ///             succeeds
     ///
     /// @param[in]  week    Dated planning week being inspected or saved
     /// @param[in]  access  Checked calendar and personal-owner access callbacks
@@ -673,7 +673,7 @@ struct CopyListDestinationSheet: View
 ///
 /// @section    Purpose
 ///     Resolves the source owner and delegates cross-Board transfer through the injected workspace
-///     callbacks.
+///     callbacks
 ///
 struct MoveListDestinationSheet: View
 {
@@ -698,7 +698,7 @@ struct MoveListDestinationSheet: View
     /// @fcn        MoveListDestinationSheet.move
     /// @brief      Move the source list to the selected owner
     /// @details    Requires the source owner and a successful movement callback before dismissing the destination
-    ///             sheet.
+    ///             sheet
     ///
     /// @param[in]  id  Stable identity used by this operation
     ///
@@ -822,7 +822,7 @@ struct MoveListDestinationSheet: View
 ///
 /// @section    Purpose
 ///     Requests confirmation from the owning List, which retains the temporary checkmark
-///     restoration session.
+///     restoration session
 ///
 struct ListCheckmarkResetControl: View
 {
@@ -865,7 +865,7 @@ struct ListCheckmarkResetControl: View
     /// @fcn        ListCheckmarkResetControl.apply
     /// @brief      Publish only cards changed by a checkmark operation
     /// @details    Compares each candidate against the current list and invokes the update callback only for
-    ///             differing records.
+    ///             differing records
     ///
     /// @param[in]  cards  Canonical card values in their current order
     ///
@@ -892,7 +892,7 @@ struct ListCheckmarkResetControl: View
 ///
 /// @section    Purpose
 ///     Captures restoration state before publishing Card updates without replacing unrelated
-///     content fields.
+///     content fields
 ///
 struct ListCheckmarkResetConfirmation: ViewModifier
 {
@@ -908,7 +908,7 @@ struct ListCheckmarkResetConfirmation: ViewModifier
     /// @fcn        ListCheckmarkResetConfirmation.body
     /// @brief      Confirm clearing a list's nested checkmarks
     /// @details    Captures a restoration session before publishing changed cards and explains when that restoration
-    ///             remains available.
+    ///             remains available
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///

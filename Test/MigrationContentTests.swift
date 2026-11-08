@@ -2,7 +2,7 @@
 // @file       MigrationContentTests.swift
 // @brief      Synthetic canonical content conversion, ownership and date regression coverage
 // @details    Supported User Data Model versions: 1.0; private journal formats 1/2.
-//             No personal backup is read or imported. Native JSON output is attached for independent checks.
+//             No personal backup is read or imported. Native JSON output is attached for independent checks
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import Foundation
@@ -10,9 +10,9 @@ import XCTest
 import SwiftUI
 
 
-/// Exercises real native content models and frozen backups without fallback/example loaders.
+/// Exercises real native content models and frozen backups without fallback/example loaders
 /// @section Purpose
-///     Prove explicit content mapping, repeatable IDs, rejection boundaries and source preservation.
+///     Prove explicit content mapping, repeatable IDs, rejection boundaries and source preservation
 @MainActor
 final class MigrationContentTests: XCTestCase
 {
@@ -1039,9 +1039,9 @@ final class MigrationContentTests: XCTestCase
 }
 
 
-/// Verifies retained template metadata using the isolated complete portable-package fixture.
+/// Verifies retained template metadata using the isolated complete portable-package fixture
 /// @section Purpose
-///     Separate library metadata coverage from content conversion and the combined recovery test.
+///     Separate library metadata coverage from content conversion and the combined recovery test
 @MainActor
 extension MigrationStudioTests
 {
@@ -1219,7 +1219,7 @@ extension MigrationStudioTests
     /// @fcn MigrationStudioTests.testNewTemplateEditedExport
     /// @brief Preserve captured and duplicated templates with independent content identities
     /// @details Uses real capture with overlapping live/template aliases, copied nested content,
-    ///          example focus, default selection, source immutability and fresh import/re-export.
+    ///          example focus, default selection, source immutability and fresh import/re-export
     /// @return Void after isolated cleanup
     /// @throws Capture, conversion, installation or assertion-support failures
     func testNewTemplateEditedExport() throws

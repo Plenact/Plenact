@@ -4,7 +4,7 @@
 // @details    Provides profile creation and removal, avatar selection and cropping, and accessible
 //             color controls. Edits planning and display preferences including Today Focus,
 //             new-Card colors, title reading, corner Back navigation, and importance-star
-//             presentation through explicit settings drafts.
+//             presentation through explicit settings drafts
 //
 // --------------------------------------------------------------------------------------------------
 import ImageIO
@@ -128,7 +128,7 @@ struct AccountSettingsView: View
     ///
     /// @section    Purpose
     ///     Separates profile information from preferences without creating independent profile
-    ///     drafts.
+    ///     drafts
     ///
     private enum SettingsTab: String, CaseIterable
     {
@@ -808,7 +808,7 @@ struct AccountSettingsView: View
 ///
 /// @section    Purpose
 ///     Binds independent random-header and random-background switches while explaining that
-///     existing content and Notes retain their colors.
+///     existing content and Notes retain their colors
 ///
 struct NewCardColorDefaultsSection: View
 {
@@ -851,7 +851,7 @@ struct NewCardColorDefaultsSection: View
 ///
 /// @section    Purpose
 ///     Binds item count, ordering, section grouping, completion visibility, and selection sources
-///     within the surrounding settings draft.
+///     within the surrounding settings draft
 ///
 struct TodayFocusSettingsSection: View
 {

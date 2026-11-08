@@ -3,7 +3,7 @@
 // @brief      Device-specific bottom-toolbar geometry and stable background coverage
 // @details    Keeps explicit phone and tablet geometry independent of the workspace's stored
 //             planning content. Draws the footer surface through an explicit bottom allowance
-//             so sheet transitions cannot remove coverage by changing inherited safe-area rules.
+//             so sheet transitions cannot remove coverage by changing inherited safe-area rules
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -17,7 +17,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Keeps explicit phone and tablet presets available for independent tuning without changing
-///     navigation behavior.
+///     navigation behavior
 ///
 struct BottomToolbarLayout
 {
@@ -41,7 +41,7 @@ struct BottomToolbarLayout
     var horizontalLabels:   Bool
     var labelStyle:         Font.TextStyle
 
-    // iPhone layouts: edits here do not affect iPad.
+    // iPhone layouts: edits here do not affect iPad
     static let phoneRegular = Self(
         height: 74, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 25, newOffset: 14, tabMinimumHeight: 54, tabIconSize: 23, newButtonSize: 68, newIconSize: 24,
@@ -51,7 +51,7 @@ struct BottomToolbarLayout
         tabsOffset: 0, newOffset: 0, tabMinimumHeight: 44, tabIconSize: 23, newButtonSize: 44, newIconSize: 24,
         tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
 
-    // iPad layouts: independently configurable, including compact-height windows.
+    // iPad layouts: independently configurable, including compact-height windows
     static let padRegular = Self(
         height: 84, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 25, newOffset: 14, tabMinimumHeight: 59, tabIconSize: 28, newButtonSize: 78, newIconSize: 29,
@@ -65,7 +65,7 @@ struct BottomToolbarLayout
     ///
     /// @fcn        BottomToolbarLayout.configuration
     /// @brief      Select the toolbar dimensions for device and size mode
-    /// @details    Chooses among the phone and tablet compact or regular layout presets.
+    /// @details    Chooses among the phone and tablet compact or regular layout presets
     ///
     /// @param[in]  isTablet  Whether the current device uses the tablet layout
     /// @param[in]  compact   Whether the compact presentation is selected
@@ -87,7 +87,7 @@ struct BottomToolbarLayout
     ///
     /// @fcn        BottomToolbarLayout.reservedHeight
     /// @brief      Calculate toolbar space beyond the existing bottom inset
-    /// @details    Adds only the remaining nonnegative safe-area allowance to the toolbar's height.
+    /// @details    Adds only the remaining nonnegative safe-area allowance to the toolbar's height
     ///
     /// @param[in]  bottomInset  Bottom safe-area inset already provided by the container
     ///
@@ -106,7 +106,7 @@ struct BottomToolbarLayout
 /// Draws the custom toolbar surface independently of its interactive controls
 ///
 /// @section    Purpose
-///     Keep the paper, tint, and upper border together while covering the home-indicator region.
+///     Keep the paper, tint, and upper border together while covering the home-indicator region
 ///
 struct BottomToolbarBackground: View
 {
@@ -120,7 +120,7 @@ struct BottomToolbarBackground: View
     /// @brief      Render the paper-backed toolbar surface
     /// @details    Extends the measured surface by the explicit bottom allowance instead of relying
     ///             on inherited safe-area expansion. Retains the preset top gap, covers missing
-    ///             paper with an opaque base, and leaves control layout and hit testing unchanged.
+    ///             paper with an opaque base, and leaves control layout and hit testing unchanged
     ///
     /// @return     (some View) decorative navigation background
     ///

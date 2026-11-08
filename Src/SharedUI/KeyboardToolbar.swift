@@ -2,7 +2,7 @@
 // @file       KeyboardToolbar.swift
 // @brief      Shared native editing context and accessory controls
 // @details    Coordinates Card navigation, formatting, Undo, and toolbar visibility for the
-//             currently active native text input.
+//             currently active native text input
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Uses an inert default so standalone editors can report appearance without requiring a root
-///     toolbar owner.
+///     toolbar owner
 ///
 struct WorkspaceNoteVisibilityKey: EnvironmentKey
 {
@@ -35,7 +35,7 @@ struct WorkspaceNoteVisibilityKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Passes editor identity and visibility to the injected owner so workspace chrome can follow
-///     the active presentation.
+///     the active presentation
 ///
 extension EnvironmentValues
 {
@@ -65,7 +65,7 @@ extension EnvironmentValues
 /// Defines the workspace bottom-bar height environment value
 ///
 /// @section    Purpose
-///     Defaults to zero when content is hosted outside the main workspace chrome.
+///     Defaults to zero when content is hosted outside the main workspace chrome
 ///
 struct WorkspaceBottomBarHeightKey: EnvironmentKey
 {
@@ -81,7 +81,7 @@ struct WorkspaceBottomBarHeightKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Lets descendants account for the owning toolbar's height without querying a particular
-///     native view hierarchy.
+///     native view hierarchy
 ///
 extension EnvironmentValues
 {
@@ -107,7 +107,7 @@ extension EnvironmentValues
 }
 
 
-// Shared accessory actions are scoped to the visible editor, never persisted.
+// Shared accessory actions are scoped to the visible editor, never persisted
 
 
 ///
@@ -115,7 +115,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Leaves unavailable neighbors nil so keyboard controls can reflect the current owner's
-///     navigable content.
+///     navigable content
 ///
 struct CardKeyboardNavigation
 {
@@ -131,7 +131,7 @@ struct CardKeyboardNavigation
 /// Defines default Card keyboard navigation in the environment
 ///
 /// @section    Purpose
-///     Uses empty actions until an owning List supplies valid neighboring destinations.
+///     Uses empty actions until an owning List supplies valid neighboring destinations
 ///
 struct CardKeyboardNavigationKey: EnvironmentKey
 {
@@ -146,7 +146,7 @@ struct CardKeyboardNavigationKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Passes previous and next actions to detail editors without giving them ownership of List
-///     ordering.
+///     ordering
 ///
 extension EnvironmentValues
 {
@@ -177,7 +177,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Flattens eligible active List content and finds adjacent identities without modifying the
-///     Board.
+///     Board
 ///
 enum CardKeyboardNeighbors
 {
@@ -187,7 +187,7 @@ enum CardKeyboardNeighbors
     /// @fcn        CardKeyboardNeighbors.resolve
     /// @brief      Find navigable neighbors around the current card
     /// @details    Flattens eligible active list content in display order and resolves previous and next cards by
-    ///             identity without modifying the lists.
+    ///             identity without modifying the lists
     ///
     /// @param[in]  card   Card or note being inspected or changed
     /// @param[in]  lists  Lists participating in the operation
@@ -236,7 +236,7 @@ enum CardKeyboardNeighbors
 ///
 /// @section    Purpose
 ///     Keeps exit, Card navigation, attachment, checklist, and border choices optional for
-///     different editing surfaces.
+///     different editing surfaces
 ///
 struct KeyboardCardActions
 {
@@ -257,7 +257,7 @@ struct KeyboardCardActions
 ///
 /// @section    Purpose
 ///     Separates trait, color, and font changes from toolbar construction and underlying text
-///     storage.
+///     storage
 ///
 struct KeyboardFormatting
 {
@@ -275,7 +275,7 @@ struct KeyboardFormatting
 ///
 /// @section    Purpose
 ///     Retains an ordered context stack and a weak native input so toolbar actions follow the
-///     current Card or capture editor.
+///     current Card or capture editor
 ///
 @MainActor
 final class PlenactKeyboard
@@ -297,7 +297,7 @@ final class PlenactKeyboard
     /// @fcn        PlenactKeyboard.setContext
     /// @brief      Register the active card or capture keyboard actions
     /// @details    Retains the context identity and action set and refreshes available controls for the active
-    ///             editor.
+    ///             editor
     ///
     /// @param[in]  id       Stable draft or objective identity
     /// @param[in]  actions  Action lines or contextual keyboard actions supplied by the caller
@@ -321,7 +321,7 @@ final class PlenactKeyboard
     /// @fcn        PlenactKeyboard.removeContext
     /// @brief      Remove keyboard actions only for the matching context
     /// @details    Prevents an older departing editor from clearing a newer context and refreshes controls when
-    ///             removal applies.
+    ///             removal applies
     ///
     /// @param[in]  id  Stable draft or objective identity
     ///
@@ -342,7 +342,7 @@ final class PlenactKeyboard
     /// @fcn        PlenactKeyboard.install
     /// @brief      Install shared native keyboard focus observation
     /// @details    Registers the notifications needed to track active text inputs and maintain the common keyboard
-    ///             accessory.
+    ///             accessory
     ///
     /// @return     (Void) no return value
     ///
@@ -400,7 +400,7 @@ final class PlenactKeyboard
     ///
     /// @fcn        PlenactKeyboard.activate
     /// @brief      Track a native text input as the active keyboard target
-    /// @details    Associates the view with the shared keyboard toolbar and updates its available actions.
+    /// @details    Associates the view with the shared keyboard toolbar and updates its available actions
     ///
     /// @param[in]  view  Native view inspected or synchronized by the operation
     ///
@@ -442,7 +442,7 @@ final class PlenactKeyboard
     ///
     /// @fcn        PlenactKeyboard.refreshActive
     /// @brief      Refresh controls for the currently active text input
-    /// @details    Updates the retained toolbar's actions and Undo availability from the latest editor context.
+    /// @details    Updates the retained toolbar's actions and Undo availability from the latest editor context
     ///
     /// @return     (Void) no return value
     ///
@@ -463,7 +463,7 @@ final class PlenactKeyboard
 ///
 /// @section    Purpose
 ///     Connects contextual navigation, Undo, and optional rich-text formatting to the active input
-///     without retaining it strongly.
+///     without retaining it strongly
 ///
 @MainActor
 final class PlenactKeyboardToolbar: UIView
@@ -484,7 +484,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.init
     /// @brief      Create the shared native keyboard accessory toolbar
     /// @details    Retains its input and optional formatting actions, configures a forty-four-point flexible-width
-    ///             surface with an extended backdrop, and builds its controls.
+    ///             surface with an extended backdrop, and builds its controls
     ///
     /// @param[in]  input       Native text input served by the shared keyboard accessory
     /// @param[in]  formatting  Optional rich-text formatting actions available to the toolbar
@@ -501,7 +501,7 @@ final class PlenactKeyboardToolbar: UIView
 
         autoresizingMask = [.flexibleWidth]
         backgroundColor = .clear
-        // Extend only the background beneath the system keyboard; controls remain in 44pt.
+        // Extend only the background beneath the system keyboard; controls remain in 44pt
         clipsToBounds = false
         keyboardBackdrop.isUserInteractionEnabled = false
         keyboardBackdrop.accessibilityElementsHidden = true
@@ -520,7 +520,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.init
     /// @brief      Create the shared native keyboard accessory toolbar
     /// @details    Retains its input and optional formatting actions, configures a forty-four-point flexible-width
-    ///             surface with an extended backdrop, and builds its controls.
+    ///             surface with an extended backdrop, and builds its controls
     ///
     /// @param[in]  coder  Decoder required by the UIKit initialization protocol
     ///
@@ -535,7 +535,7 @@ final class PlenactKeyboardToolbar: UIView
     ///
     /// @fcn        PlenactKeyboardToolbar.layoutSubviews
     /// @brief      Refresh toolbar layout and surface-dependent styling
-    /// @details    Runs native layout first, then updates the toolbar for its current hierarchy and available width.
+    /// @details    Runs native layout first, then updates the toolbar for its current hierarchy and available width
     ///
     /// @return     (Void) no return value
     ///
@@ -580,7 +580,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.overlaysLightNeutralSurface
     /// @brief      Decide whether the keyboard toolbar needs a light-surface upper border
     /// @details    Returns false in dark appearance, honors an explicit context choice, and otherwise uses the
-    ///             presence of a modal presentation as the neutral-surface fallback.
+    ///             presence of a modal presentation as the neutral-surface fallback
     ///
     /// @return     (Bool) true when the toolbar's hierarchy indicates a light neutral underlying surface
     ///
@@ -598,7 +598,7 @@ final class PlenactKeyboardToolbar: UIView
         }
 
         // Standard modal forms use neutral surfaces; Today and the workspace keep
-        // their unoutlined edge. No screen snapshots or pixel sampling are needed.
+        // their unoutlined edge. No screen snapshots or pixel sampling are needed
         return input?.window?.rootViewController?.presentedViewController != nil
     }
 
@@ -606,7 +606,7 @@ final class PlenactKeyboardToolbar: UIView
     ///
     /// @fcn        PlenactKeyboardToolbar.action
     /// @brief      Create an accessible keyboard toolbar item
-    /// @details    Uses the requested title, symbol, and callback for a single action.
+    /// @details    Uses the requested title, symbol, and callback for a single action
     ///
     /// @param[in]  title   Display title or proposed title text
     /// @param[in]  symbol  SF Symbol name used by the control
@@ -635,7 +635,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.contextual
     /// @brief      Build a toolbar action backed by the active card context
     /// @details    Resolves the requested optional callback from the current action set so unavailable contextual
-    ///             actions can remain disabled.
+    ///             actions can remain disabled
     ///
     /// @param[in]  title   Display title or proposed title text
     /// @param[in]  symbol  SF Symbol name used by the control
@@ -660,7 +660,7 @@ final class PlenactKeyboardToolbar: UIView
     ///
     /// @fcn        PlenactKeyboardToolbar.rebuild
     /// @brief      Rebuild keyboard controls for the current editor context
-    /// @details    Arranges navigation, editing, formatting, and dismissal actions from the active capabilities.
+    /// @details    Arranges navigation, editing, formatting, and dismissal actions from the active capabilities
     ///
     /// @return     (Void) no return value
     ///
@@ -734,7 +734,7 @@ final class PlenactKeyboardToolbar: UIView
         if #available(iOS 26.0, *)
         {
 
-            // A 44pt accessory has no space for automatic scroll-edge blur.
+            // A 44pt accessory has no space for automatic scroll-edge blur
             scroll.topEdgeEffect.isHidden = true;
             scroll.bottomEdgeEffect.isHidden = true
             scroll.leftEdgeEffect.isHidden = true;
@@ -786,7 +786,7 @@ final class PlenactKeyboardToolbar: UIView
     ///
     /// @fcn        PlenactKeyboardToolbar.updateAvailability
     /// @brief      Refresh enabled states without replacing the toolbar
-    /// @details    Rechecks native Undo and Redo and the current optional contextual actions.
+    /// @details    Rechecks native Undo and Redo and the current optional contextual actions
     ///
     /// @return     (Void) no return value
     ///
@@ -819,7 +819,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.performUndo
     /// @brief      Run Undo or Redo and publish the native text change
     /// @details    Uses the input's undo manager, notifies the appropriate text-view delegate or text-field change
-    ///             channels, and refreshes toolbar action availability.
+    ///             channels, and refreshes toolbar action availability
     ///
     /// @param[in]  redo  Whether to execute Redo instead of Undo
     ///
@@ -857,7 +857,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @fcn        PlenactKeyboardToolbar.formattingMenu
     /// @brief      Build the native rich-text formatting menu
     /// @details    Exposes the supported trait, font, size, and color choices through the installed formatting
-    ///             callbacks.
+    ///             callbacks
     ///
     /// @return     (UIMenu) native menu of the formatting actions supported by the active editor
     ///

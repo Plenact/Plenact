@@ -2,7 +2,7 @@
 // @file       StarterContent.swift
 // @brief      Deterministic Week starters and built-in List guidance
 // @details    Provides authored examples and conservative legacy welcome-card recognition without
-//             adding persisted guides during ordinary List visits.
+//             adding persisted guides during ordinary List visits
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -22,12 +22,12 @@ enum SampleData
 {
 
 
-    /// Titles assigned to the seven horizontally navigable Board lists.
+    /// Titles assigned to the seven horizontally navigable Board lists
     static let listTitles = [ /* Weekday list ordering for the starter Board */
             "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     ]
 
-    /// Planning-oriented card titles aligned with each weekday list.
+    /// Planning-oriented card titles aligned with each weekday list
     static let cardTitlesByDay: [[String]] = [ /* Synthetic activity titles grouped by weekday */
         [
                     "Review the week ahead",
@@ -184,7 +184,7 @@ enum SampleData
     }
 
 
-    /// Complete starter Board generated from weekday lists and planning cards.
+    /// Complete starter Board generated from weekday lists and planning cards
     static let lists: [KanbanList] =
     {  /* Deterministic seven-day starter Board */
 
@@ -272,7 +272,7 @@ enum SampleData
                 }
 
 
-                // A few local Picture rows demonstrate mixed Lists without replacing activity content.
+                // A few local Picture rows demonstrate mixed Lists without replacing activity content
                 let picture: ExampleCoverImage?
 
                 switch (listIndex, cardTitle)
@@ -399,7 +399,7 @@ enum SampleData
 ///
 /// @section    Purpose
 ///     Creates empty Lists by default, supplies read-only session guide snapshots, and
-///     conservatively removes untouched legacy welcome Cards.
+///     conservatively removes untouched legacy welcome Cards
 ///
 enum DefaultListTutorial
 {
@@ -409,7 +409,7 @@ enum DefaultListTutorial
     /// @fcn        DefaultListTutorial.guidance(for:)
     /// @brief      Build transient read-only guidance for a built-in List
     /// @details    Returns no record for ordinary Lists. The caller presents this value outside
-    ///             stored content, counts, search, and progress.
+    ///             stored content, counts, search, and progress
     ///
     /// @param[in]  title  Built-in List title
     ///
@@ -439,7 +439,7 @@ enum DefaultListTutorial
     /// @fcn        DefaultListTutorial.removingUntouchedWelcomeCards(from:)
     /// @brief      Replace pristine legacy welcome records with session guidance
     /// @details    Requires an exact original snapshot apart from generated checklist identities.
-    ///             Edited, completed, archived, copied, or otherwise customized records are retained.
+    ///             Edited, completed, archived, copied, or otherwise customized records are retained
     ///
     /// @param[in]  collection  Saved owner being loaded
     ///
@@ -501,7 +501,7 @@ enum DefaultListTutorial
     ///
     /// @fcn        DefaultListTutorial.defaultBanner
     /// @brief      Choose the tutorial banner accent for a special list
-    /// @details    Recognizes the built-in list names and returns nil for titles without a tutorial accent.
+    /// @details    Recognizes the built-in list names and returns nil for titles without a tutorial accent
     ///
     /// @param[in]  title  Display title or proposed title text
     ///
@@ -530,7 +530,7 @@ enum DefaultListTutorial
     /// @fcn        DefaultListTutorial.makeStarter
     /// @brief      Create the initial special-list tutorial collection
     /// @details    Builds the welcome content and default appearance for the requested list; callers control when a
-    ///             starter is installed.
+    ///             starter is installed
     ///
     /// @param[in]  title                Display title or proposed title text
     /// @param[in]  includesWelcomeCard  Internal legacy fixture generation; new Lists start empty

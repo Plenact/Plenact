@@ -2,7 +2,7 @@
 // @file       AppRootView.swift
 // @brief      Workspace composition and view-owned presentation state
 // @details    Composes retained owners, navigation destinations, and child callbacks while related
-//             operations remain in focused extensions.
+//             operations remain in focused extensions
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Coordinates calendar and Library persistence, recovery, capture, search, and tab
-///     destinations while passing checked mutation callbacks to child views.
+///     destinations while passing checked mutation callbacks to child views
 ///
 struct AppRootView: View
 {
@@ -541,7 +541,7 @@ struct AppRootView: View
 
             await Task.yield()
 
-            // Preparation is complete; keep the steady icons visible during the existing minimum launch time.
+            // Preparation is complete; keep the steady icons visible during the existing minimum launch time
             launchProgress.finished = true
 
             do
@@ -553,7 +553,7 @@ struct AppRootView: View
                 return
             }
 
-            // Finish with a full second of shadow fade before revealing the workspace.
+            // Finish with a full second of shadow fade before revealing the workspace
             launchShadowFading = true
 
             do
@@ -565,7 +565,7 @@ struct AppRootView: View
                 return
             }
 
-            // Briefly hold the shadow-free logo before revealing the workspace.
+            // Briefly hold the shadow-free logo before revealing the workspace
             do
             {
                 try await Task.sleep(for: .milliseconds(250))
@@ -1402,10 +1402,10 @@ struct AppRootView: View
 }
 
 
-/// Defers construction of a large navigation surface to its own SwiftUI body evaluation.
+/// Defers construction of a large navigation surface to its own SwiftUI body evaluation
 /// @section Purpose
 ///     Store a small closure in the parent instead of copying every tab's full view value through
-///     the root builder. This limits simultaneous debug-build stack allocations on physical devices.
+///     the root builder. This limits simultaneous debug-build stack allocations on physical devices
 struct AppNavigationSurface<Content: View>: View
 {
 

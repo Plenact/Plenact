@@ -2,7 +2,7 @@
 // @file       CoverLibrary.swift
 // @brief      Offline illustration catalog and cover selection
 // @details    Provides bundled artwork discovery and previews alongside explicit attachment or
-//             library cover choices.
+//             library cover choices
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -567,7 +567,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @fcn        ExampleCoverImage.search
     /// @brief      Filter cover choices by album and search text
     /// @details    Applies the optional album restriction and each cover's shared query matching rules without
-    ///             changing the catalog.
+    ///             changing the catalog
     ///
     /// @param[in]  query  User-entered search text
     /// @param[in]  album  Optional cover-category restriction
@@ -589,7 +589,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @fcn        ExampleCoverImage.matches
     /// @brief      Match a built-in cover against descriptive search text
     /// @details    Uses the cover's searchable metadata and normalized query, allowing an empty query to retain the
-    ///             cover.
+    ///             cover
     ///
     /// @param[in]  query  User-entered search text
     ///

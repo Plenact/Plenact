@@ -2,15 +2,15 @@
 // @file       StudioSurfaces.swift
 // @brief      Shared material rendering and independently retained personal artwork
 // @details    Draws lightweight textures and canvases, renders credited online photographs, and
-//             keeps imported images outside attachment pruning and individual Card lifecycles.
+//             keeps imported images outside attachment pruning and individual Card lifecycles
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UIKit
 
 
-/// Resolves an ancestor's default Card and Note material.
+/// Resolves an ancestor's default Card and Note material
 /// @section Purpose
-///     Lets per-item surfaces override List and Board defaults without rewriting descendants.
+///     Lets per-item surfaces override List and Board defaults without rewriting descendants
 private struct StudioCardSurfaceKey: EnvironmentKey
 {
 
@@ -21,9 +21,9 @@ private struct StudioCardSurfaceKey: EnvironmentKey
 
 
 
-/// Makes inherited preview and detail materials available to descendants.
+/// Makes inherited preview and detail materials available to descendants
 /// @section Purpose
-///     Shares presentation metadata across navigation and sheet boundaries.
+///     Shares presentation metadata across navigation and sheet boundaries
 extension EnvironmentValues
 {
 
@@ -49,9 +49,9 @@ extension EnvironmentValues
 
 
 
-/// Owns immutable imported artwork independently of attachments.
+/// Owns immutable imported artwork independently of attachments
 /// @section Purpose
-///     Reuses bounded image preparation and never deletes art because one item stops using it.
+///     Reuses bounded image preparation and never deletes art because one item stops using it
 enum StudioArtworkStore
 {
 
@@ -61,9 +61,9 @@ enum StudioArtworkStore
 
     /// @fcn StudioArtworkStore.directory()
     /// @brief Resolve the dedicated artwork directory
-    /// @details Creates local application-support storage only when needed.
+    /// @details Creates local application-support storage only when needed
     /// @return (URL) artwork storage directory
-    /// @throws Filesystem errors propagate to the importing editor.
+    /// @throws Filesystem errors propagate to the importing editor
     static func directory() throws -> URL
     {
 
@@ -80,10 +80,10 @@ enum StudioArtworkStore
 
     /// @fcn StudioArtworkStore.importImage(_:)
     /// @brief Store one orientation-corrected, bounded user image
-    /// @details Uses immutable filenames and atomic writes; callers can reuse the returned reference.
+    /// @details Uses immutable filenames and atomic writes; callers can reuse the returned reference
     /// @param[in] data Encoded image bytes supplied by Photos or Files
     /// @return (String) safe local filename
-    /// @throws Image preparation or filesystem errors propagate without updating appearance.
+    /// @throws Image preparation or filesystem errors propagate without updating appearance
     static func importImage(_ data: Data) throws -> String
     {
 
@@ -99,7 +99,7 @@ enum StudioArtworkStore
 
     /// @fcn StudioArtworkStore.image(_:)
     /// @brief Read a valid locally owned artwork reference
-    /// @details Rejects path traversal and caches decoded images across preview reuse.
+    /// @details Rejects path traversal and caches decoded images across preview reuse
     /// @param[in] name Optional stored filename
     /// @return (UIImage?) image when available, otherwise nil for a readable fallback
     static func image(_ name: String?) -> UIImage?
@@ -130,9 +130,9 @@ enum StudioArtworkStore
 
 
 
-/// Draws a single material consistently across all supported surfaces.
+/// Draws a single material consistently across all supported surfaces
 /// @section Purpose
-///     Uses procedural textures instead of large repeated bitmaps and keeps content readable over artwork.
+///     Uses procedural textures instead of large repeated bitmaps and keeps content readable over artwork
 struct StudioSurfaceView: View
 {
 
@@ -143,7 +143,7 @@ struct StudioSurfaceView: View
 
     /// @fcn StudioSurfaceView.color(_:)
     /// @brief Decode a six-digit user palette color
-    /// @details Falls back to a neutral color when persisted color text is malformed.
+    /// @details Falls back to a neutral color when persisted color text is malformed
     /// @param[in] hex RGB color representation
     /// @return (Color) opaque display color
     static func color(_ hex: String) -> Color
@@ -163,13 +163,13 @@ struct StudioSurfaceView: View
 
     /// @fcn StudioSurfaceView.body
     /// @brief Render the selected material with bounded framing and a readability wash
-    /// @details Artwork is decorative; remote photographs retain a visible linked credit.
+    /// @details Artwork is decorative; remote photographs retain a visible linked credit
     /// @return (some View) opaque background with accessible provider attribution where required
     ///
     /// @fcn        StudioSurfaceView.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
@@ -214,7 +214,7 @@ struct StudioSurfaceView: View
 
     /// @fcn StudioSurfaceView.artwork(size:)
     /// @brief Draw a photo, gradient, canvas, or repeating texture
-    /// @details Applies per-use zoom and vertical framing while preserving the original image.
+    /// @details Applies per-use zoom and vertical framing while preserving the original image
     /// @param[in] size Available background bounds
     /// @return (some View) selected artwork or neutral fallback
     @ViewBuilder
@@ -347,9 +347,9 @@ struct StudioSurfaceView: View
 
 
 
-/// Resolves a Card or Note surface through owner defaults and saved global creation choices.
+/// Resolves a Card or Note surface through owner defaults and saved global creation choices
 /// @section Purpose
-///     Keeps preview visibility independent of the full detail background.
+///     Keeps preview visibility independent of the full detail background
 struct StudioItemBackground: View
 {
 
@@ -363,7 +363,7 @@ struct StudioItemBackground: View
     /// @fcn        StudioItemBackground.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///

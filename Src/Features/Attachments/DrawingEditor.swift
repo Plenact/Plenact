@@ -2,7 +2,7 @@
 // @file       DrawingEditor.swift
 // @brief      Editable PencilKit capture and drawing export
 // @details    Keeps a stable native canvas and stroke data alongside bounded previews, explicit
-//             saves, and user-selected sharing.
+//             saves, and user-selected sharing
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -22,7 +22,7 @@ import UIKit
 ///
 /// @section    Purpose
 ///     Uses a stable draft identity and bounded raster preview so composer updates do not
-///     repeatedly render PencilKit content.
+///     repeatedly render PencilKit content
 ///
 struct DrawingCaptureDraft: Identifiable
 {
@@ -37,7 +37,7 @@ struct DrawingCaptureDraft: Identifiable
     /// @fcn        DrawingCaptureDraft.init
     /// @brief      Create an editable drawing draft with a cached preview
     /// @details    Retains its identity and PencilKit strokes and renders a bounded 960-point preview so composer
-    ///             typing does not repeatedly rasterize the drawing.
+    ///             typing does not repeatedly rasterize the drawing
     ///
     /// @param[in]  id       Stable draft or objective identity
     /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
@@ -49,7 +49,7 @@ struct DrawingCaptureDraft: Identifiable
 
         self.id = id
         self.drawing = drawing
-        // Cache a bounded preview so typing in the composer never rerenders every drawing.
+        // Cache a bounded preview so typing in the composer never rerenders every drawing
         preview = DrawingImageExport.image(drawing, transparent: false, maximumDimension: 960)
 
     }
@@ -62,7 +62,7 @@ struct DrawingCaptureDraft: Identifiable
 ///
 /// @section    Purpose
 ///     Distinguishes PNG from JPEG so encoding and transparency behavior can follow the user's
-///     export choice.
+///     export choice
 ///
 enum DrawingImageFormat: String, CaseIterable
 {
@@ -77,7 +77,7 @@ enum DrawingImageFormat: String, CaseIterable
 ///
 /// @section    Purpose
 ///     Bounds output dimensions and controls transparency independently of the editable stroke
-///     data.
+///     data
 ///
 enum DrawingImageExport
 {
@@ -87,7 +87,7 @@ enum DrawingImageExport
     /// @fcn        DrawingImageExport.image
     /// @brief      Render a drawing into a bounded raster image
     /// @details    Uses drawing bounds and the requested maximum dimension, applying a transparent or opaque export
-    ///             surface as requested.
+    ///             surface as requested
     ///
     /// @param[in]  drawing           PencilKit strokes used as the editable drawing source
     /// @param[in]  transparent       Whether the exported PNG or drawing image should preserve transparency
@@ -95,7 +95,7 @@ enum DrawingImageExport
     ///
     /// @return     (UIImage) bounded raster preview of the drawing with the requested background treatment
     ///
-    /// @note       Crop to the marks with a small margin; cap raster size without changing editable strokes.
+    /// @note       Crop to the marks with a small margin; cap raster size without changing editable strokes
     ///
     static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage
     {
@@ -130,7 +130,7 @@ enum DrawingImageExport
     /// @fcn        DrawingImageExport.data
     /// @brief      Encode nonempty drawing strokes as PNG or JPEG
     /// @details    Rejects an empty drawing, permits transparency only for PNG, uses 0.95 JPEG quality, and throws if
-    ///             image encoding fails.
+    ///             image encoding fails
     ///
     /// @param[in]  drawing      PencilKit strokes used as the editable drawing source
     /// @param[in]  format       Selected drawing export format
@@ -138,7 +138,7 @@ enum DrawingImageExport
     ///
     /// @return     (Data) PNG or JPEG image bytes for the nonempty drawing
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func data(_ drawing: PKDrawing, format: DrawingImageFormat, transparent: Bool = false) throws -> Data
     {
@@ -167,7 +167,7 @@ enum DrawingImageExport
 ///
 /// @section    Purpose
 ///     Writes strokes and preview files together while retaining an existing attachment identity
-///     when updating a drawing.
+///     when updating a drawing
 ///
 enum DrawingAttachmentStore
 {
@@ -177,16 +177,16 @@ enum DrawingAttachmentStore
     /// @fcn        DrawingAttachmentStore.save
     /// @brief      Save both editable strokes and a drawing preview
     /// @details    Creates the files needed by the attachment and preserves the appropriate previous attachment
-    ///             identity when updating an existing drawing.
+    ///             identity when updating an existing drawing
     ///
     /// @param[in]  draft     Editable value proposed for persistence
     /// @param[in]  previous  Previous saved drawing attachment or preceding review, when available
     ///
     /// @return     (KanbanAttachment) photo attachment linking the new preview and editable stroke files
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
-    /// @note       New files are written before publishing metadata. Previous files remain safe until normal pruning.
+    /// @note       New files are written before publishing metadata. Previous files remain safe until normal pruning
     ///
     static func save(_ draft: DrawingCaptureDraft, replacing previous: KanbanAttachment? = nil) throws
     -> KanbanAttachment
@@ -232,13 +232,13 @@ enum DrawingAttachmentStore
     ///
     /// @fcn        DrawingAttachmentStore.load
     /// @brief      Restore editable strokes from a drawing attachment
-    /// @details    Reads the attachment's retained drawing data and throws when the editable source cannot be loaded.
+    /// @details    Reads the attachment's retained drawing data and throws when the editable source cannot be loaded
     ///
     /// @param[in]  attachment  Attachment whose retained drawing source should be loaded
     ///
     /// @return     (DrawingCaptureDraft) editable drawing draft reconstructed from the stored stroke file
     /// @throws     Explicit failures include `CocoaError(.fileReadNoSuchFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func load(_ attachment: KanbanAttachment) throws -> DrawingCaptureDraft
     {
@@ -263,7 +263,7 @@ enum DrawingAttachmentStore
 ///
 /// @section    Purpose
 ///     Publishes mark and Undo availability through canvas delegate events while preserving the
-///     native canvas across SwiftUI updates.
+///     native canvas across SwiftUI updates
 ///
 @MainActor
 final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
@@ -280,7 +280,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     /// @fcn        DrawingCanvasState.init
     /// @brief      Configure a retained PencilKit canvas for editing
     /// @details    Loads the initial strokes, installs the delegate and black pen, enables any input, and sets the
-    ///             canvas size and maximum zoom.
+    ///             canvas size and maximum zoom
     ///
     /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
     ///
@@ -308,7 +308,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     /// @fcn        DrawingCanvasState.canvasViewDrawingDidChange
     /// @brief      Publish a canvas stroke change to editor state
-    /// @details    Updates the observable drawing and undo availability from the PencilKit delegate callback.
+    /// @details    Updates the observable drawing and undo availability from the PencilKit delegate callback
     ///
     /// @param[in]  canvasView  Canvas view supplied to this operation
     ///
@@ -319,7 +319,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 
         hasMarks = !canvasView.drawing.strokes.isEmpty
 
-        // PencilKit registers undo after its drawing-change delegate callback.
+        // PencilKit registers undo after its drawing-change delegate callback
         DispatchQueue.main.async
         {
             [weak self] in
@@ -332,7 +332,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     /// @fcn        DrawingCanvasState.refreshUndo
     /// @brief      Refresh the canvas's undo and redo availability
-    /// @details    Reads both capabilities from the canvas undo manager for the editor controls.
+    /// @details    Reads both capabilities from the canvas undo manager for the editor controls
     ///
     /// @return     (Void) no return value
     ///
@@ -348,7 +348,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     /// @fcn        DrawingCanvasState.undo
     /// @brief      Undo the canvas's most recent drawing edit
-    /// @details    Delegates to its undo manager and refreshes the published control availability.
+    /// @details    Delegates to its undo manager and refreshes the published control availability
     ///
     /// @return     (Void) no return value
     ///
@@ -362,7 +362,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     /// @fcn        DrawingCanvasState.redo
     /// @brief      Redo the canvas's next available drawing edit
-    /// @details    Uses the canvas undo manager and refreshes availability after the operation.
+    /// @details    Uses the canvas undo manager and refreshes availability after the operation
     ///
     /// @return     (Void) no return value
     ///
@@ -377,7 +377,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     /// @fcn        DrawingCanvasState.clear
     /// @brief      Clear canvas strokes with a registered inverse edit
     /// @details    Captures the previous drawing in the canvas undo manager before assigning an empty drawing and
-    ///             refreshing Undo availability.
+    ///             refreshing Undo availability
     ///
     /// @return     (Void) no return value
     ///
@@ -402,7 +402,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     /// @fcn        DrawingCanvasState.restore
     /// @brief      Restore canvas strokes with a registered inverse edit
     /// @details    Captures the previous drawing for Undo, replaces the native canvas drawing, and refreshes Undo and
-    ///             Redo availability.
+    ///             Redo availability
     ///
     /// @param[in]  drawing  PencilKit strokes used as the editable drawing source
     ///
@@ -432,7 +432,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 ///
 /// @section    Purpose
 ///     Responds to window and size changes so drawing tools and canvas presentation follow the
-///     native view lifecycle.
+///     native view lifecycle
 ///
 @MainActor
 final class DrawingCanvasView: PKCanvasView
@@ -446,7 +446,7 @@ final class DrawingCanvasView: PKCanvasView
     ///
     /// @fcn        DrawingCanvasView.didMoveToWindow
     /// @brief      Reconnect the PencilKit tool picker after attachment
-    /// @details    Calls the superclass lifecycle method and updates tool presentation for the current window.
+    /// @details    Calls the superclass lifecycle method and updates tool presentation for the current window
     ///
     /// @return     (Void) no return value
     ///
@@ -479,7 +479,7 @@ final class DrawingCanvasView: PKCanvasView
     /// @fcn        DrawingCanvasView.showTools
     /// @brief      Present the tool picker for the attached drawing canvas
     /// @details    Associates the picker with the canvas and requests the appropriate first-responder tool
-    ///             interaction.
+    ///             interaction
     ///
     /// @return     (Void) no return value
     ///
@@ -499,7 +499,7 @@ final class DrawingCanvasView: PKCanvasView
     ///
     /// @fcn        DrawingCanvasView.layoutSubviews
     /// @brief      Refresh drawing-tool placement after layout
-    /// @details    Runs the superclass layout before updating the canvas's tool-picker presentation.
+    /// @details    Runs the superclass layout before updating the canvas's tool-picker presentation
     ///
     /// @return     (Void) no return value
     ///
@@ -529,7 +529,7 @@ final class DrawingCanvasView: PKCanvasView
 ///
 /// @section    Purpose
 ///     Reuses DrawingCanvasState's native view so strokes and Undo history survive declarative view
-///     updates.
+///     updates
 ///
 struct DrawingCanvas: UIViewRepresentable
 {
@@ -542,7 +542,7 @@ struct DrawingCanvas: UIViewRepresentable
     /// @fcn        DrawingCanvas.makeUIView
     /// @brief      Create the editor's native PencilKit canvas
     /// @details    Returns the canvas held by the shared drawing state so its strokes and Undo manager remain stable
-    ///             across SwiftUI updates.
+    ///             across SwiftUI updates
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -558,7 +558,7 @@ struct DrawingCanvas: UIViewRepresentable
     /// @fcn        DrawingCanvas.updateUIView
     /// @brief      Retain the existing canvas during SwiftUI updates
     /// @details    No incremental update is needed because DrawingCanvasState owns and directly updates the same
-    ///             native canvas instance.
+    ///             native canvas instance
     ///
     /// @param[in]  view     Native view inspected or synchronized by the operation
     /// @param[in]  context  Framework-supplied update context and coordinator access
@@ -577,7 +577,7 @@ struct DrawingCanvas: UIViewRepresentable
 /// Identifies a prepared drawing export file
 ///
 /// @section    Purpose
-///     Keeps the temporary URL associated with a particular share presentation.
+///     Keeps the temporary URL associated with a particular share presentation
 ///
 struct DrawingExportFile: Identifiable
 {
@@ -594,7 +594,7 @@ struct DrawingExportFile: Identifiable
 ///
 /// @section    Purpose
 ///     Passes the prepared file URL to UIActivityViewController so the user chooses its
-///     destination.
+///     destination
 ///
 struct DrawingShareSheet: UIViewControllerRepresentable
 {
@@ -607,7 +607,7 @@ struct DrawingShareSheet: UIViewControllerRepresentable
     /// @fcn        DrawingShareSheet.makeUIViewController
     /// @brief      Create the system sheet for a drawing export
     /// @details    Passes the exported file URL to UIActivityViewController for the user's chosen share or save
-    ///             action.
+    ///             action
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -623,7 +623,7 @@ struct DrawingShareSheet: UIViewControllerRepresentable
     ///
     /// @fcn        DrawingShareSheet.updateUIViewController
     /// @brief      Retain the current drawing share controller during updates
-    /// @details    No incremental controller update is needed because the share payload is supplied at creation.
+    /// @details    No incremental controller update is needed because the share payload is supplied at creation
     ///
     /// @param[in]  controller  Native controller supplied to the lifecycle callback
     /// @param[in]  context     Framework-supplied update context and coordinator access
@@ -643,7 +643,7 @@ struct DrawingShareSheet: UIViewControllerRepresentable
 ///
 /// @section    Purpose
 ///     Owns canvas state, export presentation, and errors; checked saves preserve an editable draft
-///     when the caller rejects the result.
+///     when the caller rejects the result
 ///
 struct DrawingCaptureEditor: View
 {
@@ -664,7 +664,7 @@ struct DrawingCaptureEditor: View
     /// @fcn        DrawingCaptureEditor.init
     /// @brief      Initialize a drawing editor without saving its draft
     /// @details    Retains the initial draft and checked save callback and creates a state object containing its
-    ///             editable PencilKit canvas.
+    ///             editable PencilKit canvas
     ///
     /// @param[in]  initial  Initial editable drawing draft
     /// @param[in]  onSave   Save callback returning true only when the owner accepts the edited value
@@ -690,7 +690,7 @@ struct DrawingCaptureEditor: View
     /// @fcn        DrawingCaptureEditor.export
     /// @brief      Create a temporary drawing export for sharing
     /// @details    Encodes the selected format and transparency, retains the export URL for presentation, and reports
-    ///             failures without replacing the draft drawing.
+    ///             failures without replacing the draft drawing
     ///
     /// @param[in]  format       Selected drawing export format
     /// @param[in]  transparent  Whether the exported PNG or drawing image should preserve transparency
@@ -737,7 +737,7 @@ struct DrawingCaptureEditor: View
     /// @fcn        DrawingCaptureEditor.cleanExport
     /// @brief      Remove the editor's temporary export file
     /// @details    Releases the current export URL after removing its file so later sharing begins with a fresh
-    ///             export.
+    ///             export
     ///
     /// @return     (Void) no return value
     ///
@@ -932,7 +932,7 @@ struct DrawingCaptureEditor: View
         .task
         {
 
-            // Wait for the sheet's navigation controller to finish attaching its canvas.
+            // Wait for the sheet's navigation controller to finish attaching its canvas
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else
             {

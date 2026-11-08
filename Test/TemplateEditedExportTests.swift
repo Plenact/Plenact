@@ -2,16 +2,16 @@
 // @file       TemplateEditedExportTests.swift
 // @brief      Isolated retained-template item creation/deletion, durable identity and recovery coverage
 // @details    Uses synthetic stores and temporary containers. Personal workspaces are never read.
-//             Supported User Data Model versions: 1.0 records within working 1.1 packages.
+//             Supported User Data Model versions: 1.0 records within working 1.1 packages
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import Foundation
 import XCTest
 
 
-/// Exercises the production template item allocator and complete portable export/import boundary.
+/// Exercises the production template item allocator and complete portable export/import boundary
 /// @section Purpose
-///     Keep new template content separate from existing owners, cancelled drafts and native aliases.
+///     Keep new template content separate from existing owners, cancelled drafts and native aliases
 @MainActor
 extension MigrationStudioTests
 {
@@ -195,7 +195,7 @@ extension MigrationStudioTests
 
     /// @fcn MigrationStudioTests.testRetainedTemplateItemDeletionEditedExport
     /// @brief Preserve a deleted template Card in the local overlay while keeping live content unchanged
-    /// @details Also rejects deletion when retained example-focus metadata still requires the target.
+    /// @details Also rejects deletion when retained example-focus metadata still requires the target
     /// @return Void after isolated defaults and temporary-container cleanup
     /// @throws Fixture, reconstruction, export or evidence failures
     func testRetainedTemplateItemDeletionEditedExport() throws
@@ -611,7 +611,7 @@ extension MigrationStudioTests
             if mode == .replace || day
             {
 
-                // Establish importance after owner-qualified import, without ambiguous legacy capture owners.
+                // Establish importance after owner-qualified import, without ambiguous legacy capture owners
                 let imported = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
                 let week     = imported.weeks[0]
                 let active   = week.collection.lists[0].cards[0].id

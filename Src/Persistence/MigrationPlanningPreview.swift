@@ -2,14 +2,14 @@
 // @file       MigrationPlanningPreview.swift
 // @brief      Daily plans, historical check-ins, reviews and reminder-intent conversion
 // @details    Supported User Data Model versions: 1.0. Local migration preview only. Historical
-//             snapshots remain authored values; review decisions and OS notifications are never run.
+//             snapshots remain authored values; review decisions and OS notifications are never run
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Converts actual saved planning history without replacing it with current workspace values.
+/// Converts actual saved planning history without replacing it with current workspace values
 /// @section Purpose
-///     Retain reflection writing, progress snapshots and owner/creation-qualified references.
+///     Retain reflection writing, progress snapshots and owner/creation-qualified references
 @MainActor
 enum MigrationPlanningPreview
 {
@@ -29,9 +29,9 @@ enum MigrationPlanningPreview
         "rhythm": ["dailyInvitations", "weeklyInvitations", "dailyMinutes", "weeklyMinutes", "weeklyWeekday", "dailyNotifications", "weeklyNotifications"]]
 
 
-    /// Canonical history records and explicit local source/precision evidence.
+    /// Canonical history records and explicit local source/precision evidence
     /// @section Purpose
-    ///     Count converted source domains independently from complete workspace acceptance.
+    ///     Count converted source domains independently from complete workspace acceptance
     struct Result
     {
 

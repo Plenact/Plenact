@@ -4,7 +4,7 @@
 // @details    Decodes the supplied cover catalog and renders semantic artwork with AppKit into the
 //             requested output directory. Provides deterministic palettes, supported glyphs, raster
 //             encoding, and command-line generation; this utility is separate from the iOS
-//             application target.
+//             application target
 //
 // --------------------------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-// Rebuild the 352 expanded offline covers from semantic metadata. Existing covers stay untouched.
+// Rebuild the 352 expanded offline covers from semantic metadata. Existing covers stay untouched
 
 
 ///
@@ -21,7 +21,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Carries catalog identity, category, artwork symbol, tags, and optional context for offline
-///     cover asset generation.
+///     cover asset generation
 ///
 struct Cover: Decodable
 {
@@ -51,13 +51,13 @@ let contextSymbols = ["house", "leaf", "book.closed", "fork.knife", "map", "pain
 /// @fcn        color
 /// @brief      Convert authored hexadecimal RGB text into an AppKit color
 /// @details    Force-parses the hexadecimal value, separates its RGB components, and applies the requested alpha;
-///             this generator expects valid authored color text.
+///             this generator expects valid authored color text
 ///
 /// @param[in]  hex    Hexadecimal RGB color text
 /// @param[in]  alpha  Requested color opacity
 ///
 /// @return     (NSColor) AppKit color with the decoded RGB components and requested opacity
-/// @pre        hex must be valid hexadecimal text representable as UInt32.
+/// @pre        hex must be valid hexadecimal text representable as UInt32
 ///
 func color(_ hex: String, alpha: CGFloat = 1) -> NSColor
 {
@@ -72,14 +72,14 @@ func color(_ hex: String, alpha: CGFloat = 1) -> NSColor
 /// @fcn        glyph
 /// @brief      Draw a supported cover symbol or custom glyph
 /// @details    Handles the generator's custom vector shapes first and otherwise draws the configured system symbol,
-///             propagating unavailable-symbol failures.
+///             propagating unavailable-symbol failures
 ///
 /// @param[in]  name    Storage file name, symbol name, or accessible control name selected for this operation
 /// @param[in]  rect    Destination drawing rectangle
 /// @param[in]  colors  Palette colors used when drawing the symbol
 ///
 /// @return     (Void) no return value
-/// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+/// @throws     Errors from throwing dependencies propagate unless handled within this operation
 ///
 func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 {
@@ -218,7 +218,7 @@ for (index, cover) in covers.enumerated()
 
     context.setFillColor(NSColor.white.withAlphaComponent(0.65).cgColor)
     context.fillEllipse(in: CGRect(x: centerX - 168, y: 92, width: 336, height: 336))
-    // Surrounding objects add scene context without text baked into the artwork.
+    // Surrounding objects add scene context without text baked into the artwork
     context.setFillColor(primary.withAlphaComponent(0.16).cgColor)
     for n in 0 ..< 3
     {

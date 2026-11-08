@@ -2,7 +2,7 @@
 // @file       WorkspaceHeaders.swift
 // @brief      Adaptive workspace headings and manual overflow reading
 // @details    Keeps title measurement, control spacing, and visible reading cues consistent while
-//             retaining native touch regions.
+//             retaining native touch regions
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Shares glyph dimensions and touch areas across primary header controls without owning their
-///     navigation actions.
+///     navigation actions
 ///
 struct WorkspaceHeaderIcon: View
 {
@@ -39,7 +39,7 @@ struct WorkspaceHeaderIcon: View
 /// Adds accessibility navigation to a Day header
 ///
 /// @section    Purpose
-///     Applies button semantics only when an action exists, preserving a passive heading otherwise.
+///     Applies button semantics only when an action exists, preserving a passive heading otherwise
 ///
 struct DayHeaderAccessibility: ViewModifier
 {
@@ -53,7 +53,7 @@ struct DayHeaderAccessibility: ViewModifier
     /// @fcn        DayHeaderAccessibility.body
     /// @brief      Expose an actionable day header to accessibility
     /// @details    Adds a button label and action when navigation exists; otherwise returns the content without
-    ///             additional traits.
+    ///             additional traits
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -87,7 +87,7 @@ struct DayHeaderAccessibility: ViewModifier
 ///
 /// @section    Purpose
 ///     Uses native scrolling and overflow cues on either edge while preserving touch cancellation,
-///     momentum, and the original title value.
+///     momentum, and the original title value
 ///
 struct SlideableHeaderText: View
 {
@@ -342,7 +342,7 @@ struct SlideableHeaderText: View
 ///
 /// @section    Purpose
 ///     Uses an explicit layout value so adaptive spacing can distinguish intrinsic title width from
-///     neighboring controls.
+///     neighboring controls
 ///
 struct WorkspaceHeaderTitleKey: LayoutValueKey
 {
@@ -358,7 +358,7 @@ struct WorkspaceHeaderTitleKey: LayoutValueKey
 ///
 /// @section    Purpose
 ///     Bases compact-gap decisions on intrinsic text width rather than a previously clipped
-///     measurement.
+///     measurement
 ///
 enum WorkspaceHeaderSpacing
 {
@@ -368,7 +368,7 @@ enum WorkspaceHeaderSpacing
     /// @fcn        WorkspaceHeaderSpacing.gap
     /// @brief      Choose compact spacing only when header text would clip
     /// @details    Subtracts control widths and regular gaps, then returns zero if the ideal title exceeds the
-    ///             remaining space by more than one point.
+    ///             remaining space by more than one point
     ///
     /// @param[in]  availableWidth   Total width available to the header in points
     /// @param[in]  titleIdealWidth  Intrinsic width required by the title and subtitle
@@ -397,7 +397,7 @@ enum WorkspaceHeaderSpacing
 ///
 /// @section    Purpose
 ///     Tightens spacing only between controls and preserves native control dimensions and their
-///     interactive regions.
+///     interactive regions
 ///
 struct AdaptiveWorkspaceHeaderLayout: Layout
 {
@@ -411,7 +411,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     /// @fcn        AdaptiveWorkspaceHeaderLayout.arrangement
     /// @brief      Measure a header with adaptive control spacing
     /// @details    Reserves intrinsic control sizes, detects the marked title child, and gives that child the
-    ///             remaining width after the chosen gaps.
+    ///             remaining width after the chosen gaps
     ///
     /// @param[in]  width     Available horizontal extent in points
     /// @param[in]  subviews  Layout children to measure or position
@@ -468,7 +468,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     ///
     /// @fcn        AdaptiveWorkspaceHeaderLayout.sizeThatFits
     /// @brief      Measure the adaptive header's required size
-    /// @details    Uses the proposed width and the tallest arranged child without modifying the layout cache.
+    /// @details    Uses the proposed width and the tallest arranged child without modifying the layout cache
     ///
     /// @param[in]      proposal  Parent layout proposal, including an optional available width
     /// @param[in]      subviews  Layout children to measure or position
@@ -489,7 +489,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     /// @fcn        AdaptiveWorkspaceHeaderLayout.placeSubviews
     /// @brief      Position header children in the current reading direction
     /// @details    Uses the shared measurement result and reverses horizontal placement for right-to-left layouts
-    ///             while centering children vertically.
+    ///             while centering children vertically
     ///
     /// @param[in]      bounds    Assigned layout rectangle in which children should be placed
     /// @param[in]      proposal  Parent layout proposal, including an optional available width

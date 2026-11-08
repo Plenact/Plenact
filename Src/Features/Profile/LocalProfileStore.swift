@@ -3,7 +3,7 @@
 // @brief      Device-local profile, avatar files, and planning preference storage
 // @details    Loads and saves optional local identity, retains avatar photo files separately from
 //             Codable profile data, and exposes planning preferences before a profile exists.
-//             Profile removal does not delete workspace collections, labels, or Card attachments.
+//             Profile removal does not delete workspace collections, labels, or Card attachments
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -230,7 +230,7 @@ enum ProfileAvatarPhotoStore
 ///
 /// @section    Purpose
 ///     Keeps plan controls available before local profile creation and resolves compatible stored
-///     defaults.
+///     defaults
 ///
 enum PlanPreferencesStore
 {
@@ -243,7 +243,7 @@ enum PlanPreferencesStore
     /// @fcn        PlanPreferencesStore.load
     /// @brief      Load display preferences without creating new storage
     /// @details    Prefers standalone planning preferences, falls back to saved profile preferences for legacy
-    ///             installations, and uses established defaults only when neither record is readable.
+    ///             installations, and uses established defaults only when neither record is readable
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -264,7 +264,7 @@ enum PlanPreferencesStore
     /// @brief      Resolve display preferences consistently from observed or stored records
     /// @details    A readable standalone record takes precedence, including an explicitly disabled shortcut.
     ///             Otherwise reads the legacy profile's preferences; missing or unreadable records use defaults.
-    ///             Resolution never writes or migrates either record.
+    ///             Resolution never writes or migrates either record
     ///
     /// @param[in]  preferencesData  Optional encoded standalone planning preferences
     /// @param[in]  profileData      Optional encoded local profile containing legacy preferences
@@ -294,7 +294,7 @@ enum PlanPreferencesStore
     ///
     /// @fcn        PlanPreferencesStore.save
     /// @brief      Persist the supplied display preferences
-    /// @details    Encodes the complete preference value before writing it to the configured preferences key.
+    /// @details    Encodes the complete preference value before writing it to the configured preferences key
     ///
     /// @param[in]  value     Value to normalize, encode, or save as described above
     /// @param[in]  defaults  Preferences store used for this operation

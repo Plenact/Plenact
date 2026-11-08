@@ -3,7 +3,7 @@
 // @brief      Calendar regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// Calendar regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -29,10 +29,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that focus Chronology Honors Time Only Date Only And Due Fallback
     /// @details    Exercises `(1...5).map`, `preferences.todayFocusEntries`, `entries.map`. Checks
     ///             `XCTAssertEqual(entries.map(\.id), [3, 2, 4, 1, 5])`; `XCTAssertEqual(entries[1].scheduleDate(on:
-    ///             day, calendar: calendar), time(9, day: 19))`.
+    ///             day, calendar: calendar), time(9, day: 19))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback() throws
     {
@@ -48,7 +48,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback.time
         /// @brief      Prepare time for the enclosing regression test
         /// @details    Supplies the local fixture for focus Chronology Honors Time Only Date Only And Due Fallback.
-        ///             Uses `calendar.date`.
+        ///             Uses `calendar.date`
         ///
         /// @param[in]  hour  Hour-of-day component used by the fixture
         /// @param[in]  date  Represented date for the operation
@@ -91,10 +91,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
     ///             Checks `XCTAssertEqual(applied.collection.lists.first { $0.id == 50 }, undated)`;
     ///             `XCTAssertEqual(applied.collection.lists[monday].archivedCards,
-    ///             week.collection.lists[monday].archivedCards)`.
+    ///             week.collection.lists[monday].archivedCards)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningWeekReplacementPreservesUndatedAndArchivedContent() throws
     {
@@ -144,10 +144,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that daily Plan Preserves Unreadable And Unsupported Stored Data
     /// @details    Exercises `DailyPlanStore.load`, `DailyPlanStore.save`. Checks `XCTAssertThrowsError(try
     ///             DailyPlanStore.load(from: defaults))`; `XCTAssertThrowsError(try
-    ///             DailyPlanStore.save(DailyPlan(date: .now), replacing: nil, to: defaults))`.
+    ///             DailyPlanStore.save(DailyPlan(date: .now), replacing: nil, to: defaults))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDailyPlanPreservesUnreadableAndUnsupportedStoredData() throws
@@ -181,10 +181,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that full Month Backup Restores All Preferences And Local Files And Keeps Original
     /// @details    Exercises `folder.appendingPathComponent`, `store.documents.appendingPathComponent`,
     ///             `store.support.appendingPathComponent`. Checks `XCTAssertTrue(store.hasUserData)`;
-    ///             `XCTAssertNotNil(try PlanningCalendarStore.load(from: defaults))`.
+    ///             `XCTAssertNotNil(try PlanningCalendarStore.load(from: defaults))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFullMonthBackupRestoresAllPreferencesAndLocalFilesAndKeepsOriginal() throws
     {
@@ -233,7 +233,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: original))
         XCTAssertEqual(try Data(contentsOf: attachment), Data([1, 2, 3]))
         XCTAssertEqual(try Data(contentsOf: background), Data([4, 5, 6]))
-        // A later session creates a new backup of the newly current user workspace.
+        // A later session creates a new backup of the newly current user workspace
         defaults.set("new user edit", forKey: "Plenact.CustomSetting")
         try store.loadExample(example)
         try store.restoreUserData()
@@ -247,10 +247,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `CollectionBackground.isAllowed`. Checks
     ///             `XCTAssertTrue(CollectionBackground.isAllowed(collectionID: personalID, datedWeekIDs: [weekID],
     ///             isDatedView: false))`; `XCTAssertFalse(CollectionBackground.isAllowed(collectionID: nil,
-    ///             datedWeekIDs: [weekID], isDatedView: false))`.
+    ///             datedWeekIDs: [weekID], isDatedView: false))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCollectionBackgroundsPersistAndExcludeDatedViews() throws
     {
@@ -295,7 +295,7 @@ extension PlenactBoardDocumentTests
     ///             $0.lists[0].allCards.count == 1 })`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFreshInstallationSeedsTutorialListsAndOrderedShortcutsOnlyOnce() throws
     {
@@ -343,10 +343,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testSameDayDateOnlySchedulesDoNotRepeatTheListDate
     /// @brief      Verify that same Day Date Only Schedules Do Not Repeat The List Date
     /// @details    Exercises `card.scheduleBadges`. Checks `XCTAssertTrue(card.scheduleBadges(on: day, calendar:
-    ///             calendar).isEmpty)`; `XCTAssertEqual(card, original)`.
+    ///             calendar).isEmpty)`; `XCTAssertEqual(card, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testSameDayDateOnlySchedulesDoNotRepeatTheListDate() throws
     {
@@ -389,10 +389,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that week Calendar Grid Aligns Rows Across Months And Week Starts
     /// @details    Exercises `PlanningDate.date`, `PlanningWeekSelector.monthDays`, `days[(row * 7)..<(row * 7 +
     ///             7)].map`. Checks `XCTAssertEqual(days.count, 42)`; `XCTAssertEqual(calendar.component(.weekday,
-    ///             from: days[0]), firstWeekday)`.
+    ///             from: days[0]), firstWeekday)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts() throws
     {
@@ -442,10 +442,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that calendar Content Matches Planned And Scheduled Items Across Week Boundaries
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.list`. Checks
     ///             `XCTAssertEqual(Set(today.map { $0.card.word }), ["Planned and scheduled", "Starts today"])`;
-    ///             `XCTAssertEqual(today.count, 2)`.
+    ///             `XCTAssertEqual(today.count, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCalendarContentMatchesPlannedAndScheduledItemsAcrossWeekBoundaries() throws
     {
@@ -519,7 +519,7 @@ extension PlenactBoardDocumentTests
                     {
                         $0.card.word
                     }), ["Planned and scheduled", "Starts today"])
-            XCTAssertEqual(today.count, 2)  // A Card with both dates and day membership still counts once.
+            XCTAssertEqual(today.count, 2)  // A Card with both dates and day membership still counts once
             XCTAssertEqual(
                 PlanningCalendarContent.items(on: nextDate, document: document, sources: sources).map
                 {
@@ -541,10 +541,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testWeekCalendarPickerRendersSelectedWeekAndDay
     /// @brief      Verify that week Calendar Picker Renders Selected Week And Day
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`. Uses
-    ///             the fixture and assertions below to verify week Calendar Picker Renders Selected Week And Day.
+    ///             the fixture and assertions below to verify week Calendar Picker Renders Selected Week And Day
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testWeekCalendarPickerRendersSelectedWeekAndDay() async throws
@@ -644,7 +644,7 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `progress.status`, `PlenactLaunchStage.allCases.allSatisfy`, `finished.status`. Checks
     ///             `XCTAssertEqual(progress.status(for: step), step.rawValue < stage.rawValue ? .complete : (step ==
     ///             stage ? .running : .waiting))`; `XCTAssertTrue(PlenactLaunchStage.allCases.allSatisfy {
-    ///             finished.status(for: $0) == .complete })`.
+    ///             finished.status(for: $0) == .complete })`
     ///
     /// @return     (Void) no return value
     ///
@@ -685,7 +685,7 @@ extension PlenactBoardDocumentTests
     ///             1, 2, 3])`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems() throws
     {
@@ -698,7 +698,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems.due
         /// @brief      Prepare due for the enclosing regression test
         /// @details    Supplies the local fixture for library Plate Ranks Urgency And Excludes Completed Archived And
-        ///             Undated Items. Uses `calendar.date`.
+        ///             Undated Items. Uses `calendar.date`
         ///
         /// @param[in]  days  Calendar-day offset used by the regression fixture
         ///
@@ -719,7 +719,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems.task
         /// @brief      Prepare task for the enclosing regression test
         /// @details    Supplies the local fixture for library Plate Ranks Urgency And Excludes Completed Archived And
-        ///             Undated Items.
+        ///             Undated Items
         ///
         /// @param[in]  id    Starting numeric card ID or owner-local content identity
         /// @param[in]  days  Calendar-day offset used by the regression fixture
@@ -775,10 +775,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that list Creation Draft Survives Recreation And Stays In Its Collection
     /// @details    Exercises `ListCreationDraft.key`, `draft.save`, `ListCreationDraft.load`. Checks
     ///             `XCTAssertEqual(ListCreationDraft.load(key: key, defaults: defaults), draft)`;
-    ///             `XCTAssertEqual(ListCreationDraft.load(key: other, defaults: defaults), ListCreationDraft())`.
+    ///             `XCTAssertEqual(ListCreationDraft.load(key: other, defaults: defaults), ListCreationDraft())`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListCreationDraftSurvivesRecreationAndStaysInItsCollection() throws
     {
@@ -808,10 +808,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that card Date Kinds Persist And Copy Without Inventing Dates
     /// @details    Exercises `decoded.startDateLabel.contains`, `decoded.listDueDateLabel?.contains`,
     ///             `decoded.dueDateLabel.contains`. Checks `XCTAssertEqual(decoded.startDateKind, kind)`;
-    ///             `XCTAssertEqual(decoded.dueDateKind, kind)`.
+    ///             `XCTAssertEqual(decoded.dueDateKind, kind)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCardDateKindsPersistAndCopyWithoutInventingDates() throws
     {
@@ -892,10 +892,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that new Card Due Date Default Preferences Persist And Legacy Defaults To True
     /// @details    Exercises `KanbanCard.defaultDueDateVisibility`, `LocalProfileStore.save`,
     ///             `LocalProfileStore.load`. Checks `XCTAssertTrue(KanbanCard.defaultDueDateVisibility(from:
-    ///             defaults))`; `XCTAssertTrue(profile.preferences.showsDueDatesOnNewCards)`.
+    ///             defaults))`; `XCTAssertTrue(profile.preferences.showsDueDatesOnNewCards)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testNewCardDueDateDefaultPreferencesPersistAndLegacyDefaultsToTrue() throws
     {
@@ -946,10 +946,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that monday Week Start Across Year Boundary And Stored Reload
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `document.changeFirstWeekday`. Checks
     ///             `XCTAssertEqual(document.currentWeekKey, "2026-12-28")`; `XCTAssertEqual(document.week(for:
-    ///             date)?.collection.lists.first?.title, "Monday")`.
+    ///             date)?.collection.lists.first?.title, "Monday")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testMondayWeekStartAcrossYearBoundaryAndStoredReload() throws
     {
@@ -991,10 +991,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Hosted Calendar Layout Does Not Persist Browsing
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertEqual(saveCount, 0)`; `XCTAssertEqual(access.document,
-    ///             original)`.
+    ///             original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPlanningHostedCalendarLayoutDoesNotPersistBrowsing() async throws
@@ -1087,10 +1087,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningDate.date`, `PlanningDate.days`, `PlanningDate.weekKey`. Checks
     ///             `XCTAssertEqual(PlanningDate.weekKey(yearEnd, calendar: calendar), "2026-12-27")`;
     ///             `XCTAssertEqual(PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map {
-    ///             PlanningDate.key($0, calendar: calendar) }, "2027-01-02")`.
+    ///             PlanningDate.key($0, calendar: calendar) }, "2027-01-02")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningDateKeysAcrossDSTAndYearBoundary() throws
     {
@@ -1123,10 +1123,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Cards Move Between Dated Week Library And Current Week
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `future.list`. Checks
     ///             `XCTAssertEqual(moved, original.replacingLocation(id: original.id, listTitle:
-    ///             destination.title))`; `XCTAssertTrue(current[0].cards.isEmpty)`.
+    ///             destination.title))`; `XCTAssertTrue(current[0].cards.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningCardsMoveBetweenDatedWeekLibraryAndCurrentWeek() throws
     {
@@ -1179,10 +1179,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues
     /// @brief      Verify that focus Trailing Time Prefers Timed Start And Skips Date Only Values
     /// @details    Exercises `start.addingTimeInterval`. Checks `XCTAssertNil(entry().previewTime)`;
-    ///             `XCTAssertEqual(entry().previewTime?.date, due)`.
+    ///             `XCTAssertEqual(entry().previewTime?.date, due)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues() throws
     {
@@ -1198,7 +1198,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues.entry
         /// @brief      Prepare entry for the enclosing regression test
         /// @details    Supplies the local fixture for focus Trailing Time Prefers Timed Start And Skips Date Only
-        ///             Values.
+        ///             Values
         ///
         /// @return     (TodayFocusEntry) result described by this operation's contract
         ///
@@ -1236,10 +1236,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `lists[0].makeItem`, `lists[0].cards.append`, `TodayListSelection.ensureCurrentDayList`.
     ///             Checks `XCTAssertTrue(editBoardList(4, title: "My plans", subtitle: defaultSubtitle, in:
     ///             &lists))`; `XCTAssertNil(lists[0].subtitleOverride, "Unchanged generated text must keep the legacy
-    ///             optional-field shape")`.
+    ///             optional-field shape")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCanonicalListEditorSaveRetainsLatestRecordsAndWeekdayRecreation() throws
@@ -1285,10 +1285,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that capture Start Stop Dates Are Optional Validated And Persist As Calendar Dates
     /// @details    Exercises `schedule.isValid`, `schedule.apply`, `pair.0.map`. Checks
     ///             `XCTAssertTrue(schedule.isValid(calendar: calendar))`; `XCTAssertEqual(saved.startDate, pair.0.map
-    ///             { times ? $0 : calendar.startOfDay(for: $0) })`.
+    ///             { times ? $0 : calendar.startOfDay(for: $0) })`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCaptureStartStopDatesAreOptionalValidatedAndPersistAsCalendarDates() throws
     {
@@ -1348,7 +1348,7 @@ extension PlenactBoardDocumentTests
     ///             329)`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews() async throws
@@ -1382,7 +1382,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews.collections
         /// @brief      Find collections in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UICollectionView. Returns all collected matches
-        ///             in hierarchy order.
+        ///             in hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1435,7 +1435,7 @@ extension PlenactBoardDocumentTests
         controller.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(400))
 
-        // The native card collection is inset four points inside each List panel.
+        // The native card collection is inset four points inside each List panel
         let frames = collections(in: controller.view).map
         {
 
@@ -1562,7 +1562,7 @@ extension PlenactBoardDocumentTests
     ///             current-weekday list unchanged when it is already available
     ///
     /// @return     (Void) records assertion failures for the behavior described above
-    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest
     ///
     func testQuickCaptureCreatesMissingCurrentWeekdayList() throws
     {

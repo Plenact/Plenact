@@ -2,7 +2,7 @@
 // @file       PreviewText.swift
 // @brief      Measured overflowing preview text presentation
 // @details    Reveals long writing within stable row dimensions and suspends unnecessary animation
-//             for visibility or accessibility.
+//             for visibility or accessibility
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Accepts the latest child measurement so overflowing content can be distinguished from text
-///     that already fits.
+///     that already fits
 ///
 struct PreviewTextWidthKey: PreferenceKey
 {
@@ -28,7 +28,7 @@ struct PreviewTextWidthKey: PreferenceKey
     ///
     /// @fcn        PreviewTextWidthKey.reduce
     /// @brief      Accept the latest measured preview text width
-    /// @details    Replaces the accumulated preference with the next measurement from the view hierarchy.
+    /// @details    Replaces the accumulated preference with the next measurement from the view hierarchy
     ///
     /// @param[in,out]  value      Accumulated preference value replaced by the next child measurement
     /// @param[in]      nextValue  Closure supplying the next child preference value
@@ -49,7 +49,7 @@ struct PreviewTextWidthKey: PreferenceKey
 /// Collects the available preview viewport width
 ///
 /// @section    Purpose
-///     Propagates the latest visible width used to bound and schedule preview movement.
+///     Propagates the latest visible width used to bound and schedule preview movement
 ///
 struct PreviewViewportWidthKey: PreferenceKey
 {
@@ -61,7 +61,7 @@ struct PreviewViewportWidthKey: PreferenceKey
     ///
     /// @fcn        PreviewViewportWidthKey.reduce
     /// @brief      Accept the latest measured preview viewport width
-    /// @details    Uses the next child preference as the current available reading width.
+    /// @details    Uses the next child preference as the current available reading width
     ///
     /// @param[in,out]  value      Accumulated preference value replaced by the next child measurement
     /// @param[in]      nextValue  Closure supplying the next child preference value
@@ -83,7 +83,7 @@ struct PreviewViewportWidthKey: PreferenceKey
 ///
 /// @section    Purpose
 ///     Uses supported scroll visibility or appearance callbacks so offscreen previews can stop
-///     unnecessary movement.
+///     unnecessary movement
 ///
 struct PreviewVisibility: ViewModifier
 {
@@ -96,7 +96,7 @@ struct PreviewVisibility: ViewModifier
     /// @fcn        PreviewVisibility.body
     /// @brief      Track whether an animated preview is visible
     /// @details    Uses scroll visibility where supported and falls back to appearance callbacks on older supported
-    ///             systems.
+    ///             systems
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -143,7 +143,7 @@ struct PreviewVisibility: ViewModifier
 ///
 /// @section    Purpose
 ///     Measures text and viewport extents, keeps fitting text still, and suspends movement when
-///     accessibility or visibility requires it.
+///     accessibility or visibility requires it
 ///
 struct GentleCollectionPreview: View
 {
@@ -164,7 +164,7 @@ struct GentleCollectionPreview: View
     ///
     /// @section    Purpose
     ///     Combines text, travel distance, and activity state so changes restart the appropriate
-    ///     animation task.
+    ///     animation task
     ///
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -319,7 +319,7 @@ struct GentleCollectionPreview: View
 
             }
             catch
-            {  /* Leaving the row or changing preferences cancels its loop. */
+            {  /* Leaving the row or changing preferences cancels its loop  */
 
             }
 

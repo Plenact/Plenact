@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------------------------------
 // @file       BookmarkStore.swift
 // @brief      Device-local bookmark persistence
-// @details    Retains personal saved identities independently of shared Board snapshot content.
+// @details    Retains personal saved identities independently of shared Board snapshot content
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -10,7 +10,7 @@ import Speech
 import SwiftUI
 
 
-/// Persists device-local bookmarks without changing the shared Board document.
+/// Persists device-local bookmarks without changing the shared Board document
 ///
 /// @section    Purpose
 ///     Isolate bookmark preference reads and writes from the shared Board snapshot

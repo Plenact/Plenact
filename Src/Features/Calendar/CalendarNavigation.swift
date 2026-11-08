@@ -2,7 +2,7 @@
 // @file       CalendarNavigation.swift
 // @brief      Dated owner access and caller-specific return routes
 // @details    Supplies checked owner callbacks, resolves targeted Lists or Cards, and preserves
-//             direct-detail return context.
+//             direct-detail return context
 //
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Supplies current owner snapshots and checked save, navigation, review, and movement
-///     callbacks from the workspace root.
+///     callbacks from the workspace root
 ///
 struct PlanningCalendarAccess
 {
@@ -118,7 +118,7 @@ struct PlanningCalendarAccess
 /// Defines optional workspace access in the environment
 ///
 /// @section    Purpose
-///     Uses nil by default so detached views cannot assume a writable calendar owner.
+///     Uses nil by default so detached views cannot assume a writable calendar owner
 ///
 struct PlanningCalendarAccessKey: EnvironmentKey
 {
@@ -134,7 +134,7 @@ struct PlanningCalendarAccessKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Defaults to no Week key so consumers distinguish general workspace contexts from a dated
-///     Board.
+///     Board
 ///
 struct PlanningDisplayedWeekKey: EnvironmentKey
 {
@@ -149,7 +149,7 @@ struct PlanningDisplayedWeekKey: EnvironmentKey
 /// Provides shared calendar access and displayed Week context
 ///
 /// @section    Purpose
-///     Stores injected owner callbacks separately from the currently browsed Week key.
+///     Stores injected owner callbacks separately from the currently browsed Week key
 ///
 extension EnvironmentValues
 {
@@ -196,7 +196,7 @@ extension EnvironmentValues
 /// Carries a selected Week and optional item destination
 ///
 /// @section    Purpose
-///     Keeps Week, Day, and Card targeting together for one identifiable presentation route.
+///     Keeps Week, Day, and Card targeting together for one identifiable presentation route
 ///
 struct PlanningWeekRoute: Identifiable
 {
@@ -219,7 +219,7 @@ struct PlanningWeekRoute: Identifiable
 ///
 /// @section    Purpose
 ///     Supports optional Day and Card targeting while coordinating shared navigation and the
-///     caller's home exit.
+///     caller's home exit
 ///
 struct PlanningCalendarWeekView: View
 {
@@ -449,7 +449,7 @@ struct PlanningCalendarWeekView: View
                 return
             }
 
-            // Merely opening a draft never writes; an actual edit saves the week.
+            // Merely opening a draft never writes; an actual edit saves the week
             if isRevertingEdit
             {
 
@@ -552,7 +552,7 @@ struct PlanningCalendarWeekView: View
 ///
 /// @section    Purpose
 ///     Allows a detail opened from Activity or another direct destination to return to its caller
-///     instead of opening the source List.
+///     instead of opening the source List
 ///
 struct PlanningDirectItemReturnKey: EnvironmentKey
 {
@@ -568,7 +568,7 @@ struct PlanningDirectItemReturnKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Keeps the caller's return action available to nested Card presentation without changing
-///     source ownership.
+///     source ownership
 ///
 extension EnvironmentValues
 {
@@ -599,7 +599,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Uses an absent default so nested calendar screens leave their outer navigation unchanged
-///     unless an owner supplies an exit.
+///     unless an owner supplies an exit
 ///
 struct PlanningHomeExitKey: EnvironmentKey
 {
@@ -615,7 +615,7 @@ struct PlanningHomeExitKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Allows nested destinations to request the caller's established home route without owning tab
-///     state.
+///     state
 ///
 extension EnvironmentValues
 {
@@ -645,7 +645,7 @@ extension EnvironmentValues
 /// Identifies one shared-search navigation request
 ///
 /// @section    Purpose
-///     Retains the selected result and its composite identity for destination presentation.
+///     Retains the selected result and its composite identity for destination presentation
 ///
 struct PlanningSearchRoute: Identifiable
 {
@@ -666,7 +666,7 @@ struct PlanningSearchRoute: Identifiable
 ///
 /// @section    Purpose
 ///     Targets the resolved List and Card and sends checked edits back through injected workspace
-///     access, reverting rejected changes.
+///     access, reverting rejected changes
 ///
 struct PlanningSearchLibraryView: View
 {
@@ -790,7 +790,7 @@ struct PlanningSearchLibraryView: View
 ///
 /// @section    Purpose
 ///     Preserves date-qualified references when calendar migration separates Lists that previously
-///     shared an owner.
+///     shared an owner
 ///
 struct PlanningChecklistLink: View
 {
@@ -871,7 +871,7 @@ struct PlanningChecklistLink: View
 ///
 /// @section    Purpose
 ///     Combines the normalized date, owning Week, and List ID so retained and unsaved Weeks follow
-///     the same navigation rules.
+///     the same navigation rules
 ///
 struct PlanningDaySelection
 {
@@ -886,7 +886,7 @@ struct PlanningDaySelection
     /// @fcn        PlanningDaySelection.resolve
     /// @brief      Resolve an active day-list navigation target
     /// @details    Normalizes the day and uses a retained or unsaved week; returns nil if the day mapping does not
-    ///             identify an active list.
+    ///             identify an active list
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  document  Retained document containing the operation's current workspace records
@@ -920,7 +920,7 @@ struct PlanningDaySelection
 ///
 /// @section    Purpose
 ///     Resolves the correct dated owner and sends checked edits back to that Week while preserving
-///     date navigation.
+///     date navigation
 ///
 struct PlanningSelectedDayView: View
 {
@@ -941,7 +941,7 @@ struct PlanningSelectedDayView: View
     /// @fcn        PlanningSelectedDayView.init
     /// @brief      Initialize navigation and editing for a selected calendar day
     /// @details    Retains the resolved selection and return callbacks and seeds the working week from the selection
-    ///             snapshot.
+    ///             snapshot
     ///
     /// @param[in]  selection               Text selection or resolved navigation selection to retain
     /// @param[in]  currentUserName         Display name used in the selected-day interface

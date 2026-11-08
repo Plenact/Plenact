@@ -3,7 +3,7 @@
 // @brief      Reusable label identities, catalog storage, and chip presentation
 // @details    Defines categorized labels, stable Card assignment IDs, a serializable color
 //             palette, and device-local catalog persistence. Provides compact SwiftUI chips while
-//             keeping label names and category ownership in the catalog rather than each Card.
+//             keeping label names and category ownership in the catalog rather than each Card
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -212,7 +212,7 @@ struct LabelLibrary: Hashable, Codable
     static let referenceLabel    = KanbanLabel(
         id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
 
-    /// Keep the built-in tutorial label available without changing existing user labels.
+    /// Keep the built-in tutorial label available without changing existing user labels
     var includingReference: LabelLibrary
     {
 

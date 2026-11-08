@@ -2,7 +2,7 @@
 // @file       CollectionPersistence.swift
 // @brief      Local personal collection storage and migration
 // @details    Loads complete owners, validates supported content, and preserves records during
-//             explicit checked updates.
+//             explicit checked updates
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -18,7 +18,7 @@ enum PersonalCollectionStore
 {
 
 
-    /// Versioned storage key for saved personal collections.
+    /// Versioned storage key for saved personal collections
     private static let key = "Plenact.PersonalCollections.v1" /* Versioned personal collection persistence key */
 
 

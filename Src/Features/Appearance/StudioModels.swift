@@ -2,14 +2,14 @@
 // @file       StudioModels.swift
 // @brief      Reusable personalization surfaces, saved looks, and workspace defaults
 // @details    Stores additive appearance metadata without changing Card content or attachment ownership.
-//             Imported artwork lives independently; online photography retains its provider attribution.
+//             Imported artwork lives independently; online photography retains its provider attribution
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Describes a reusable surface material.
+/// Describes a reusable surface material
 /// @section Purpose
-///     Provides the same selection vocabulary for Cards, Notes, Lists, Boards, and workspace views.
+///     Provides the same selection vocabulary for Cards, Notes, Lists, Boards, and workspace views
 enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 {
 
@@ -29,9 +29,9 @@ enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 
 
 
-/// Retains approved online image URLs and visible photographer attribution.
+/// Retains approved online image URLs and visible photographer attribution
 /// @section Purpose
-///     Keeps external photographs separate from offline user imports and preserves required credits.
+///     Keeps external photographs separate from offline user imports and preserves required credits
 struct StudioRemotePhoto: Codable, Hashable, Sendable
 {
 
@@ -46,9 +46,9 @@ struct StudioRemotePhoto: Codable, Hashable, Sendable
 
 
 
-/// Stores one portable surface description, with optional references to locally owned artwork.
+/// Stores one portable surface description, with optional references to locally owned artwork
 /// @section Purpose
-///     Allows each use of an artwork to retain independent strength, readability, and framing.
+///     Allows each use of an artwork to retain independent strength, readability, and framing
 struct StudioSurface: Codable, Hashable, Sendable
 {
 
@@ -68,9 +68,9 @@ struct StudioSurface: Codable, Hashable, Sendable
 
 
 
-/// Names a reusable look including optional header and subtitle styling.
+/// Names a reusable look including optional header and subtitle styling
 /// @section Purpose
-///     Stores references rather than duplicated image bytes, so removing an individual use leaves art intact.
+///     Stores references rather than duplicated image bytes, so removing an individual use leaves art intact
 struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
 {
 
@@ -87,9 +87,9 @@ struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
 
 
 
-/// Enumerates workspace wallpaper destinations.
+/// Enumerates workspace wallpaper destinations
 /// @section Purpose
-///     Keeps per-view defaults distinct from Board and List overrides.
+///     Keeps per-view defaults distinct from Board and List overrides
 enum StudioDestination: String, Codable, CaseIterable, Identifiable
 {
 
@@ -105,9 +105,9 @@ enum StudioDestination: String, Codable, CaseIterable, Identifiable
 
 
 
-/// Retains device-local workspace choices without changing existing content by default.
+/// Retains device-local workspace choices without changing existing content by default
 /// @section Purpose
-///     Provides new-item defaults and per-view wallpapers while leaving unset destinations unchanged.
+///     Provides new-item defaults and per-view wallpapers while leaving unset destinations unchanged
 struct StudioSettings: Codable, Equatable
 {
 
@@ -124,7 +124,7 @@ struct StudioSettings: Codable, Equatable
 
     /// @fcn StudioSettings.load(from:)
     /// @brief Load workspace personalization without writing defaults
-    /// @details Returns the established appearance when no valid settings have been saved.
+    /// @details Returns the established appearance when no valid settings have been saved
     /// @param[in] defaults Preferences domain to inspect
     /// @return (StudioSettings) retained choices or an unchanged default configuration
     static func load(from defaults: UserDefaults = .standard) -> StudioSettings
@@ -144,7 +144,7 @@ struct StudioSettings: Codable, Equatable
 
     /// @fcn StudioSettings.apply(to:settings:)
     /// @brief Apply creation defaults once without repainting existing records
-    /// @details Honors explicit item surfaces and stores random palette choices in the newly created item.
+    /// @details Honors explicit item surfaces and stores random palette choices in the newly created item
     /// @param[in,out] card New item receiving appearance defaults
     /// @param[in] settings Optional injected configuration for deterministic callers
     /// @return (Void) updates only an eligible new Card or Note

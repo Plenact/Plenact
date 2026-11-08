@@ -2,14 +2,14 @@
 // @file       PortableEditableCalendar.swift
 // @brief      Reconstruct editable calendar Weeks and template libraries from portable ownership records
 // @details    Supported User Data Model versions: 1.0 calendar/template records. Preserves authored
-//             ordering and explicit day ownership; no title-based matching, loaders or persistence.
+//             ordering and explicit day ownership; no title-based matching, loaders or persistence
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Extends the editable bridge with explicit calendar and routine ownership.
+/// Extends the editable bridge with explicit calendar and routine ownership
 /// @section Purpose
-///     Rebuild day mappings without treating renamed Lists as a source of calendar identity.
+///     Rebuild day mappings without treating renamed Lists as a source of calendar identity
 extension PortableEditableContent
 {
 
@@ -178,7 +178,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            // Canonical nested UUIDs are retained directly in the reconstructed checklists.
+            // Canonical nested UUIDs are retained directly in the reconstructed checklists
             let matches = weeks.flatMap { $0.collection.lists }.flatMap { $0.cards + $0.archivedCards }
                 .reduce(0) { $0 + checklistOccurrences(itemID, in: $1.checklists) }
 

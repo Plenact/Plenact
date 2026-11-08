@@ -3,13 +3,13 @@
 // @brief      Exercise portable JSON and content-envelope Codable round trips
 // @details    Supported User Data Model versions: 1.0, final specification.
 //             Local prototype only; input validation belongs to the shared schema/semantic runner.
-//             Not an application migration adapter, sync engine, or authorization boundary.
+//             Not an application migration adapter, sync engine, or authorization boundary
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
-/// Retains complete JSON payloads without dropping nested or future fields.
+/// Retains complete JSON payloads without dropping nested or future fields
 /// @section Purpose
-///     Separate a codec round trip from legacy Kanban model reconstruction.
+///     Separate a codec round trip from legacy Kanban model reconstruction
 indirect enum PortableJSONValue: Codable
 {
     case object([String: PortableJSONValue])
@@ -93,9 +93,9 @@ indirect enum PortableJSONValue: Codable
     }
 }
 
-/// Decodes the content envelope while retaining its entire schema-validated payload.
+/// Decodes the content envelope while retaining its entire schema-validated payload
 /// @section Purpose
-///     Exercise shared wire names independently of platform-specific app models.
+///     Exercise shared wire names independently of platform-specific app models
 struct PortableContentDocument: Codable
 {
 
@@ -117,7 +117,7 @@ struct PortableContentDocument: Codable
     }
 }
 
-/// Describes a shared fixture expectation without defining runtime sync behavior.
+/// Describes a shared fixture expectation without defining runtime sync behavior
 struct FixtureCase: Decodable
 {
 
@@ -127,7 +127,7 @@ struct FixtureCase: Decodable
 
 }
 
-/// Retains the shared fixture list consumed by prototype codecs.
+/// Retains the shared fixture list consumed by prototype codecs
 struct FixtureManifest: Decodable
 {
 
@@ -212,7 +212,7 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
     return count
 }
 
-// Execute only as a standalone tooling probe, outside the Plenact app target.
+// Execute only as a standalone tooling probe, outside the Plenact app target
 do
 {
     guard CommandLine.arguments.count == 3 else

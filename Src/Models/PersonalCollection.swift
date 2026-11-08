@@ -2,7 +2,7 @@
 // @file       PersonalCollection.swift
 // @brief      User-owned personal Lists and Boards
 // @details    Retains collection identity, complete List snapshots, personal references, and
-//             explicit local draft operations.
+//             explicit local draft operations
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -187,7 +187,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     var boardAppearance:       BoardAppearance? = nil  /* Independent persisted List color defaults   */
     var collectionDescription: String?          = nil
 
-    /// The three shortcut Lists share their focused layout across Today and Plans.
+    /// The three shortcut Lists share their focused layout across Today and Plans
     var preferredFocusedListID: Int?
     {
 
@@ -469,7 +469,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     /// @details    Rejects unavailable destinations, blank titles, and invalid schedules. Allocates
     ///             beyond retained identities, applies the selected presentation and creation
     ///             defaults, retains media, and reveals the containing section without changing the
-    ///             List's creation default.
+    ///             List's creation default
     ///
     /// @param[in]  title                User-entered Note title
     /// @param[in]  body                 Note body preserved exactly

@@ -3,7 +3,7 @@
 // @brief      Local Profile Store regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact

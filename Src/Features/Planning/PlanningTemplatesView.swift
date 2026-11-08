@@ -4,7 +4,7 @@
 // @details    Shares template discovery between the standalone library and Plans filters. Provides
 //             nested List, Card, and checklist draft editors, previews additive or replacement
 //             application to dated owners, and captures quick-start content as templates while
-//             preserving the live Week.
+//             preserving the live Week
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -14,7 +14,7 @@ import SwiftUI
 /// Presents template settings and the Library entry point
 ///
 /// @section    Purpose
-///     Retains default-Week and capture controls while directing browsing and application to Library.
+///     Retains default-Week and capture controls while directing browsing and application to Library
 ///
 struct PlanningTemplatesView: View
 {
@@ -59,7 +59,7 @@ struct PlanningTemplatesView: View
 ///
 /// @section    Purpose
 ///     Coordinates searching, editing, applying, and deleting templates while keeping routine
-///     storage separate from live calendar content.
+///     storage separate from live calendar content
 ///
 struct PlanningTemplateLibraryRows: View
 {
@@ -83,7 +83,7 @@ struct PlanningTemplateLibraryRows: View
     /// @fcn        PlanningTemplateLibraryRows.reload
     /// @brief      Reload the retained routine-template library
     /// @details    Refreshes visible library state from the checked store and reports load failures through the
-    ///             view's error state.
+    ///             view's error state
     ///
     /// @return     (Void) no return value
     ///
@@ -111,7 +111,7 @@ struct PlanningTemplateLibraryRows: View
     /// @fcn        PlanningTemplateLibraryRows.update
     /// @brief      Apply and save a library edit against its baseline
     /// @details    Mutates a working copy through the supplied closure and publishes it only after the checked
-    ///             routine-library save succeeds.
+    ///             routine-library save succeeds
     ///
     /// @param[in]  change  Mutation to apply to a working library copy before checked saving
     ///
@@ -151,7 +151,7 @@ struct PlanningTemplateLibraryRows: View
     /// @fcn        PlanningTemplateLibraryRows.capture
     /// @brief      Capture the requested day or week as a routine
     /// @details    Builds a reusable template from the current planning context and adds it through the checked
-    ///             library-update path.
+    ///             library-update path
     ///
     /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
     ///
@@ -482,7 +482,7 @@ struct PlanningTemplateLibraryRows: View
     /// @brief Give editor/apply sheets and load/save errors one stable presentation owner
     /// @details A Group distributes modifiers across its List sections. This persistent zero-height
     ///          row avoids duplicate sheet presentations and survives the initial library-load replacement.
-    ///          Destructive confirmation stays on its visible template row rather than this offscreen anchor.
+    ///          Destructive confirmation stays on its visible template row rather than this offscreen anchor
     /// @return Invisible presentation anchor without changing template content or persistence
     private var presentationAnchor: some View
     {
@@ -585,7 +585,7 @@ struct PlanningTemplateLibraryRows: View
 ///
 /// @section    Purpose
 ///     Retains the original snapshot for comparison and publishes accepted changes only through the
-///     checked save callback.
+///     checked save callback
 ///
 struct PlanningTemplateEditor: View
 {
@@ -600,7 +600,7 @@ struct PlanningTemplateEditor: View
     /// @fcn        PlanningTemplateEditor.init
     /// @brief      Create an editable copy of a routine template
     /// @details    Retains the original template for comparison and the checked save callback while seeding local
-    ///             draft state.
+    ///             draft state
     ///
     /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
     /// @param[in]  onSave    Save callback returning true only when the owner accepts the edited value
@@ -718,7 +718,7 @@ struct PlanningTemplateEditor: View
 ///
 /// @section    Purpose
 ///     Binds to the template snapshot and passes its anchor date to nested Card and checklist
-///     editors.
+///     editors
 ///
 struct PlanningTemplateListEditor: View
 {
@@ -799,7 +799,7 @@ struct PlanningTemplateListEditor: View
     /// @fcn        PlanningTemplateListEditor.add
     /// @brief      Append a template item with the chosen presentation
     /// @details    Reserves a durable identity and authored creation instant before extending the draft.
-    ///             Reservation failures show an error and leave the draft unchanged.
+    ///             Reservation failures show an error and leave the draft unchanged
     ///
     /// @param[in]  presentation  Card, note, or board presentation selected by the caller
     ///
@@ -824,9 +824,9 @@ struct PlanningTemplateListEditor: View
 }
 
 
-/// Creates template draft items using the same durable identity boundary as Board creation.
+/// Creates template draft items using the same durable identity boundary as Board creation
 /// @section Purpose
-///     Prevent alias reuse across imported owners while leaving the library unsaved until Save.
+///     Prevent alias reuse across imported owners while leaving the library unsaved until Save
 @MainActor
 enum PlanningTemplateItemCreation
 {
@@ -834,7 +834,7 @@ enum PlanningTemplateItemCreation
     /// @fcn PlanningTemplateItemCreation.append
     /// @brief Reserve a new identity and append one authored Card or Note to the draft
     /// @details Unused reservations remain consumed when a draft is cancelled. Reservation failure
-    ///          leaves the draft unchanged; ordinary nonportable libraries keep local numbering.
+    ///          leaves the draft unchanged; ordinary nonportable libraries keep local numbering
     /// @param[in] presentation New Card or Note presentation
     /// @param[in,out] list Draft List receiving the new item
     /// @param[in] allLists Other Lists in the template, including archived identities
@@ -870,7 +870,7 @@ enum PlanningTemplateItemCreation
 ///
 /// @section    Purpose
 ///     Updates writing, presentation, relative dates, and checklists in the reusable draft rather
-///     than a scheduled live item.
+///     than a scheduled live item
 ///
 struct PlanningTemplateCardEditor: View
 {
@@ -1011,7 +1011,7 @@ struct PlanningTemplateCardEditor: View
 ///
 /// @section    Purpose
 ///     Reconstructs the checklist from bound title and item edits so the surrounding template
-///     remains the sole draft owner.
+///     remains the sole draft owner
 ///
 struct PlanningTemplateChecklistEditor: View
 {
@@ -1095,7 +1095,7 @@ struct PlanningTemplateChecklistEditor: View
 ///
 /// @section    Purpose
 ///     Keeps the destination baseline and generated preview separate, supports additive or
-///     replacement modes, and requires checked persistence.
+///     replacement modes, and requires checked persistence
 ///
 struct PlanningTemplateApplyView: View
 {
@@ -1118,7 +1118,7 @@ struct PlanningTemplateApplyView: View
     /// @fcn        PlanningTemplateApplyView.prepare
     /// @brief      Build a preview of applying the selected routine
     /// @details    Computes the target week and example importance mapping without writing the preview into the
-    ///             calendar.
+    ///             calendar
     ///
     /// @return     (Void) no return value
     ///
@@ -1160,7 +1160,7 @@ struct PlanningTemplateApplyView: View
     /// @fcn        PlanningTemplateApplyView.apply
     /// @brief      Commit the prepared template through checked calendar access
     /// @details    Confirms the source baseline still matches and uses the example-aware save callback when
-    ///             importance markers must accompany the applied week.
+    ///             importance markers must accompany the applied week
     ///
     /// @return     (Void) no return value
     ///
@@ -1432,7 +1432,7 @@ struct PlanningTemplateApplyView: View
 /// Matches authored and saved Library starters
 ///
 /// @section    Purpose
-///     Shares token-based search across routine templates and bundled starting points.
+///     Shares token-based search across routine templates and bundled starting points
 ///
 enum LibraryStarterSearch
 {
@@ -1441,7 +1441,7 @@ enum LibraryStarterSearch
     ///
     /// @fcn        LibraryStarterSearch.matches
     /// @brief      Match a starter against a normalized query
-    /// @details    Searches the supplied descriptive strings and treats an empty query as an unfiltered match.
+    /// @details    Searches the supplied descriptive strings and treats an empty query as an unfiltered match
     ///
     /// @param[in]  query  User-entered search text
     /// @param[in]  texts  Searchable starter descriptions to match against the query
@@ -1469,7 +1469,7 @@ enum LibraryStarterSearch
 ///
 /// @section    Purpose
 ///     Reuses item creation policy, reserves archived identities, and retains the live Week while
-///     constructing the saved routine snapshot.
+///     constructing the saved routine snapshot
 ///
 enum LibraryTemplateCapture
 {
@@ -1479,7 +1479,7 @@ enum LibraryTemplateCapture
     /// @fcn        LibraryTemplateCapture.adding
     /// @brief      Build a week containing a new reusable capture
     /// @details    Uses the full capture content to extend a copy of the source week for subsequent template
-    ///             creation.
+    ///             creation
     ///
     /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
     /// @param[in]  source   Original dated week to extend without mutating it
@@ -1487,7 +1487,7 @@ enum LibraryTemplateCapture
     /// @return     (DatedPlanningWeek) copied source week containing the full captured content for reusable-template
     ///             creation
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func adding(_ capture: QuickCaptureSubmission, to source: DatedPlanningWeek) throws -> DatedPlanningWeek
     {
@@ -1547,7 +1547,7 @@ enum LibraryTemplateCapture
 ///
 /// @section    Purpose
 ///     Reuses full creation and attachment handling but saves into the routine library rather than
-///     directly into the active Week.
+///     directly into the active Week
 ///
 struct LibraryQuickTemplateComposer: View
 {
@@ -1563,7 +1563,7 @@ struct LibraryQuickTemplateComposer: View
     /// @fcn        LibraryQuickTemplateComposer.save
     /// @brief      Save a captured card or note as a routine template
     /// @details    Builds and persists the reusable template through the checked library store and returns false with
-    ///             feedback on failure.
+    ///             feedback on failure
     ///
     /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
     ///
@@ -1693,7 +1693,7 @@ struct LibraryQuickTemplateComposer: View
 ///
 /// @section    Purpose
 ///     Keeps the bundled example available as an editable reusable routine within the Examples
-///     catalog.
+///     catalog
 ///
 struct LibraryExampleWeekTemplateButton: View
 {

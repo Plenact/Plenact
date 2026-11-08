@@ -16,6 +16,8 @@
 //             Type headers describe the declaration and include a focused @section Purpose
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Omit final periods from prose comment descriptions; retain punctuation within paragraphs
+//             Preserve meaningful abbreviations, URLs, ellipses, code examples, and ! or ? endings
 //             Vertically align = in consecutive let/var declarations at the same indentation
 //             Keep blank lines and intervening statements as alignment-group boundaries
 //             Leave at least one blank line above and below each stored/local declaration block
@@ -338,7 +340,7 @@ final class ItemListViewModel: ObservableObject
 /// @fcn        formatDate(_:style:)
 /// @brief      Format a date using the requested date style and a short time
 /// @details    Creates a DateFormatter for this call and applies the supplied date style before
-///             formatting the value.
+///             formatting the value
 ///
 /// @param[in]  date   Date value to format
 /// @param[in]  style  DateFormatter date style to apply

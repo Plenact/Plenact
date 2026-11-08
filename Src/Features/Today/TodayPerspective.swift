@@ -2,7 +2,7 @@
 // @file       TodayPerspective.swift
 // @brief      Read-only overview of the represented Day
 // @details    Summarizes canonical content and offers navigation to existing planning surfaces
-//             without creating new records.
+//             without creating new records
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -17,7 +17,7 @@ import SwiftUI
 /// @section    Purpose
 ///     Summarize the current focus and expose completion and list-navigation actions
 ///
-/// Optional perspective below Today’s action area; all content derives from canonical lists.
+/// Optional perspective below Today’s action area; all content derives from canonical lists
 struct TodayPerspectiveSection: View
 {
 
@@ -146,7 +146,7 @@ struct TodayPerspectiveSection: View
     ///
     /// @fcn        TodayPerspectiveSection.heading
     /// @brief      Build a consistent perspective-section heading
-    /// @details    Combines the authored title and symbol using the shared lower-Today section styling.
+    /// @details    Combines the authored title and symbol using the shared lower-Today section styling
     ///
     /// @param[in]  title   Display title or proposed title text
     /// @param[in]  symbol  SF Symbol name used by the control

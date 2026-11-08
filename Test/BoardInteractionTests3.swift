@@ -3,7 +3,7 @@
 // @brief      Board Interaction regression tests3
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// BoardInteraction regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,7 +28,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMapSearchTracksQueriesSelectionAndFailureStates
     /// @brief      Keep map-search results distinct from an accepted Card location
     /// @details    Uses a deterministic provider to verify normalization, no implicit selection,
-    ///             query edits, empty results, failures, and clearing without any Card persistence.
+    ///             query edits, empty results, failures, and clearing without any Card persistence
     /// @return     (Void) records query, selection, and feedback regressions
     ///
     @MainActor
@@ -86,7 +86,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMapSearchIgnoresResponsesFromAnOlderQuery
     /// @brief      Prevent a slow earlier search from replacing current matches
     /// @details    Completes injected requests in reverse order and verifies selected current
-    ///             results remain intact; leaving the search invalidates the selection.
+    ///             results remain intact; leaving the search invalidates the selection
     /// @return     (Void) records stale-response and cancellation regressions
     ///
     @MainActor
@@ -163,7 +163,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMapSearchTaskCancellationDiscardsPendingResults
     /// @brief      Return to idle when the active search task is cancelled
     /// @details    An injected provider intentionally finishes after cancellation, proving that
-    ///             its late response cannot become selectable or leave a permanent loading state.
+    ///             its late response cannot become selectable or leave a permanent loading state
     /// @return     (Void) records cancelled-request state regressions
     ///
     @MainActor
@@ -208,7 +208,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMapSearchSelectionBuildsUsefulPlaceText
     /// @brief      Retain a place and distinguishing address without duplicated display text
     /// @details    Covers named places, address-only results, duplicate names, and coordinate
-    ///             fallback so the existing preferred-provider links can reopen the chosen place.
+    ///             fallback so the existing preferred-provider links can reopen the chosen place
     /// @return     (Void) records location-text formatting regressions
     ///
     func testCardMapSearchSelectionBuildsUsefulPlaceText()
@@ -230,7 +230,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMapSearchRendersResultsWithoutAcceptingOrSaving
     /// @brief      Render the searchable map with a deterministic place and explicit selection
     /// @details    Does not contact the live search service, launch another app, or accept a
-    ///             result during rendering. Captures a native map picker preview for visual review.
+    ///             result during rendering. Captures a native map picker preview for visual review
     /// @return     (Void) records unintended selection callbacks or map-picker rendering failures
     /// @throws     Propagates missing simulator scene and preview image errors
     ///
@@ -317,7 +317,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardLocationsPersistCopyAndDecodeLegacyRecords
     /// @brief      Retain optional place text across storage and destination-local copies
     /// @details    Legacy records have no location; outer whitespace is trimmed and blank values
-    ///             remain absent. Relocation retains the place without inventing new content.
+    ///             remain absent. Relocation retains the place without inventing new content
     /// @return     (Void) records location compatibility and retention regressions
     /// @throws     Propagates fixture encoding and decoding errors
     ///
@@ -348,7 +348,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardLocationHistoryAndLocksUseNormalContentRules
     /// @brief      Record saved place changes and enforce the existing Card lock
     /// @details    Adding and removing a location use ordinary List history. A locked Card cannot
-    ///             accept a place edit, and an in-place date change preserves live location text.
+    ///             accept a place edit, and an in-place date change preserves live location text
     /// @return     (Void) records content-history, lock, and schedule-merge regressions
     ///
     func testCardLocationHistoryAndLocksUseNormalContentRules()
@@ -407,7 +407,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPreferredMapsAppDefaultsAndPersistsWithoutAProfile
     /// @brief      Default fresh and older settings to Apple Maps and retain Google selection
     /// @details    Uses an isolated preference domain and checks Codable persistence without
-    ///             creating a profile or modifying the running app's preferences.
+    ///             creating a profile or modifying the running app's preferences
     /// @return     (Void) records provider default and storage regressions
     /// @throws     Propagates decoding and isolated-domain creation errors
     ///
@@ -440,7 +440,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLocationLinksEncodePlaceTextWithoutRequestingDirections
     /// @brief      Keep every place query inside the selected provider's official search URL
     /// @details    Covers Unicode, literal plus signs, reserved punctuation, multiline addresses,
-    ///             empty values, and text resembling a URL without changing the destination host.
+    ///             empty values, and text resembling a URL without changing the destination host
     /// @return     (Void) records query-encoding and place-only routing regressions
     /// @throws     Propagates missing URL and component errors
     ///
@@ -491,7 +491,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLocationEditorAndRowsRenderWithoutSavingOrLaunchingMaps
     /// @brief      Render the native editor and saved-place controls without side effects
     /// @details    Exercises empty, saved, and read-only rows plus the provider settings picker.
-    ///             Captures a preview for visual review and asserts rendering never invokes actions.
+    ///             Captures a preview for visual review and asserts rendering never invokes actions
     /// @return     (Void) records unintended mutations or external map launches
     /// @throws     Propagates simulator scene and preview image errors
     ///
@@ -599,7 +599,7 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingDefaultsOnAndPersistsOptOut
     /// @brief      Enable automatic Day ordering for fresh and legacy preferences
-    /// @details    Keeps an explicit opt-out through standalone preferences and Codable round trips.
+    /// @details    Keeps an explicit opt-out through standalone preferences and Codable round trips
     /// @return     (Void) records default and persistence regressions
     /// @throws     Propagates preference encoding and decoding errors
     ///
@@ -634,7 +634,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingKeepsUntimedLastAndFocusInSync
     /// @brief      Sort timed Day Cards and Focus consistently after an edited time
     /// @details    Covers stable equal times, untimed and date-only contents, due-time fallback,
-    ///             time-only normalization, start-time precedence, and manual opt-out.
+    ///             time-only normalization, start-time precedence, and manual opt-out
     /// @return     (Void) records ordering and live rescheduling regressions
     ///
     func testDayTimeOrderingKeepsUntimedLastAndFocusInSync()
@@ -649,7 +649,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testDayTimeOrderingKeepsUntimedLastAndFocusInSync.card
         /// @brief      Build a Card with an optional timed start on one controlled day
-        /// @details    Fixture offsets produce independent identities without relying on wall-clock time.
+        /// @details    Fixture offsets produce independent identities without relying on wall-clock time
         /// @param[in]  id   Stable fixture identity
         /// @param[in]  hour Optional start hour; nil creates an untimed Card
         /// @return     (KanbanCard) an explicit precision-aware schedule fixture
@@ -715,7 +715,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingPreservesSectionsAndNonDayLists
     /// @brief      Limit canonical sorting to active date-mapped Lists and existing sections
     /// @details    Reorders no Card across a divider, creates no history entries, and leaves personal
-    ///             and archived Lists untouched. Repeated normalization is idempotent.
+    ///             and archived Lists untouched. Repeated normalization is idempotent
     /// @return     (Void) records scope, section, history, and stability regressions
     ///
     func testDayTimeOrderingPreservesSectionsAndNonDayLists()
@@ -758,7 +758,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFocusDateUpdatesMergeOnlyTheSelectedLiveValue
     /// @brief      Save Focus dates without reverting unrelated edits or bypassing locks
     /// @details    Covers start and due values, date removal, retained history, stale snapshots,
-    ///             deleted items, replacement identities, and a lock applied while editing.
+    ///             deleted items, replacement identities, and a lock applied while editing
     /// @return     (Void) records schedule-merge and identity protection regressions
     ///
     func testFocusDateUpdatesMergeOnlyTheSelectedLiveValue()
@@ -829,7 +829,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Refresh native Focus rows without navigation or a minute ticking over
     /// @details    Keeps the same Today screen identity while changing titles, completion, dates,
     ///             bookmarks, and membership through its shared bindings. Inspects the native Focus collection,
-    ///             isolating its rendered rows from unrelated slogan and subtitle animations.
+    ///             isolating its rendered rows from unrelated slogan and subtitle animations
     /// @return     (Void) records stale row or membership regressions
     /// @throws     Propagates missing simulator scene, collection, and image errors
     ///
@@ -868,7 +868,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.makeToday
         /// @brief      Recreate the parent value while retaining the Today screen identity
-        /// @details    Uses the same live workspace bindings on every parent update.
+        /// @details    Uses the same live workspace bindings on every parent update
         /// @return     (TodayHomeView) the configured Today screen
         ///
         func makeToday() -> TodayHomeView
@@ -943,7 +943,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.collection
         /// @brief      Locate the native collection backing Focus rows
-        /// @details    Searches only the current hosted Today view hierarchy.
+        /// @details    Searches only the current hosted Today view hierarchy
         /// @param[in]  view  Root or descendant UIKit view
         /// @return     (UICollectionView?) first native collection, if rendered
         ///
@@ -984,7 +984,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testTodayFocusRefreshesLiveWorkspaceEdits.rowsImage
         /// @brief      Capture only the current native Focus rows
-        /// @details    Excludes the surrounding Today content and its timed visual effects.
+        /// @details    Excludes the surrounding Today content and its timed visual effects
         /// @return     (Data) PNG data suitable for comparing before and after an edit
         /// @throws     Propagates absent collection and image encoding errors
         ///
@@ -1078,7 +1078,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFocusMetadataMatchesSelectionAndExplainsItsSources()
     /// @brief      Keep schedules and whole-day progress out of purely personal Focus selections
     /// @details    Covers all filter combinations and verifies that the context names selected
-    ///             sources without describing a filtered collection as the entire day.
+    ///             sources without describing a filtered collection as the entire day
     /// @return     (Void) records metadata-policy or context regressions
     ///
     func testFocusMetadataMatchesSelectionAndExplainsItsSources()
@@ -1114,9 +1114,9 @@ extension PlenactBoardDocumentTests
     /// @fcn PlenactBoardDocumentTests.testStudioNativeEditorRendersReadableMaterialControls()
     /// @brief Host the native editor to verify live artwork and native controls mount together
     /// @details Uses a synthetic canvas and captures a review image without importing, saving,
-    ///          or changing the user's appearance preferences.
+    ///          or changing the user's appearance preferences
     /// @return (Void) records presentation failures
-    /// @throws Fixture setup and image export failures propagate to XCTest.
+    /// @throws Fixture setup and image export failures propagate to XCTest
     ///
     @MainActor
     func testStudioNativeEditorRendersReadableMaterialControls() async throws
@@ -1160,9 +1160,9 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioMaterialsRoundTripWithoutChangingLegacyAppearance()
     /// @brief Preserve existing appearance defaults and explicit new material metadata
-    /// @details Exercises every material kind, explicit plain overrides, Card relocation, and saved-look reuse.
+    /// @details Exercises every material kind, explicit plain overrides, Card relocation, and saved-look reuse
     /// @return (Void) records persistence or compatibility failures
-    /// @throws Fixture encoding and decoding failures propagate to XCTest.
+    /// @throws Fixture encoding and decoding failures propagate to XCTest
     ///
     func testStudioMaterialsRoundTripWithoutChangingLegacyAppearance() throws
     {
@@ -1201,7 +1201,7 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioCreationDefaultsRespectExplicitArtAndNotes()
     /// @brief Store new-item variety once while honoring existing per-item artwork and headers
-    /// @details Uses an injected single-color palette for deterministic results and checks divider exclusion.
+    /// @details Uses an injected single-color palette for deterministic results and checks divider exclusion
     /// @return (Void) records creation-default or explicit-choice regressions
     ///
     func testStudioCreationDefaultsRespectExplicitArtAndNotes()
@@ -1250,9 +1250,9 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain()
     /// @brief Persist independent view wallpapers without changing unconfigured destinations
-    /// @details Confirms defaults do not write preferences and settings retain explicit preview visibility.
+    /// @details Confirms defaults do not write preferences and settings retain explicit preview visibility
     /// @return (Void) records workspace setting persistence failures
-    /// @throws Fixture encoding and preferences setup failures propagate to XCTest.
+    /// @throws Fixture encoding and preferences setup failures propagate to XCTest
     ///
     func testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain() throws
     {
@@ -1278,9 +1278,9 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioImportOwnsImagesOutsideAttachmentStorage()
     /// @brief Keep reusable personal artwork independent of attachment cleanup
-    /// @details Imports a synthetic image, validates safe lookup, and removes only the test's generated file.
+    /// @details Imports a synthetic image, validates safe lookup, and removes only the test's generated file
     /// @return (Void) records image import, ownership, or lookup failures
-    /// @throws Image preparation and filesystem errors propagate to XCTest.
+    /// @throws Image preparation and filesystem errors propagate to XCTest
     ///
     @MainActor
     func testStudioImportOwnsImagesOutsideAttachmentStorage() throws
@@ -1307,7 +1307,7 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn PlenactBoardDocumentTests.testStudioUnsplashRejectsCredentialRequestsToOtherHosts()
     /// @brief Prevent saved metadata from sending provider credentials to arbitrary hosts
-    /// @details Uses invalid hosts and insecure URLs, all rejected before any network request.
+    /// @details Uses invalid hosts and insecure URLs, all rejected before any network request
     /// @return (Void) records missing credential-boundary enforcement
     ///
     func testStudioUnsplashRejectsCredentialRequestsToOtherHosts() async
@@ -1331,7 +1331,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testSubtitleItalicsInheritAndPreserveExplicitRegularOverrides()
     /// @brief      Resolve Board, List, and Card subtitle styles without losing explicit false
     /// @details    Covers legacy defaults, the complete override chain, optional-field encoding,
-    ///             and clearing List overrides when applying Board defaults.
+    ///             and clearing List overrides when applying Board defaults
     /// @return     (Void) records inheritance, compatibility, or persistence failures
     /// @throws     Propagates JSON fixture decoding and encoding failures to XCTest
     ///
@@ -1388,7 +1388,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testSubtitleOverridesSurviveCardAndListPersistence()
     /// @brief      Retain italic and regular choices through canonical Card and List saves
     /// @details    Exercises explicit regular Card overrides, italic List defaults, relocation,
-    ///             and archive restoration without changing subtitle content.
+    ///             and archive restoration without changing subtitle content
     /// @return     (Void) records content or appearance retention failures
     /// @throws     Propagates JSON fixture encoding and decoding failures to XCTest
     ///
@@ -1422,7 +1422,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardHistoryCoalescesTypingWithoutCombiningSeparateActions()
     /// @brief      Keep autosaved writing readable while preserving initial and final values
     /// @details    Uses deterministic timestamps to distinguish a typing burst, a later title
-    ///             edit, and a separate completion action.
+    ///             edit, and a separate completion action
     /// @return     (Void) records grouping or retained-value failures
     /// @throws     Propagates fixture unwrap and JSON decoding failures to XCTest
     ///
@@ -1466,7 +1466,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardHistoryRecordsGroupedEditsAndRetainsReversibleValues()
     /// @brief      Persist a grouped save and accumulate subsequent preview and completion edits
     /// @details    Exercises the List owner boundary, no-op saves, stale reconstructed snapshots,
-    ///             precise before/after values, and JSON round trips with synthetic content.
+    ///             precise before/after values, and JSON round trips with synthetic content
     /// @return     (Void) records history grouping, retention, or persistence failures
     /// @throws     Propagates fixture encoding and unwrapping failures to XCTest
     ///
@@ -1519,7 +1519,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardHistoryPreservesPreparedEventsAndLegacyLocks()
     /// @brief      Avoid duplicate detail-save entries and maintain locked Card update protection
     /// @details    Reconciles a pre-recorded detail edit with the canonical owner, excludes reorder
-    ///             and list-context changes, and decodes legacy Cards without a history key.
+    ///             and list-context changes, and decodes legacy Cards without a history key
     /// @return     (Void) records duplicate, compatibility, or protection failures
     /// @throws     Propagates synthetic fixture encoding and unwrap failures to XCTest
     ///
@@ -1572,7 +1572,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testActivityBrowserScrollsWithinVisibleBounds()
     /// @brief      Keep long Saved results inside the Activity browser viewport
     /// @details    Hosts eighty synthetic bookmarks with isolated preferences, scrolls to the last
-    ///             row, and verifies the viewport and independent header retain their positions.
+    ///             row, and verifies the viewport and independent header retain their positions
     ///
     /// @return     (Void) records failures for unbounded content or coupled scrolling
     /// @throws     Propagates missing window, preferences, or browser fixture failures to XCTest
@@ -1633,7 +1633,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        scrollViews(in:)
         /// @brief      Collect UIKit scrolling viewports beneath the hosted Activity view
-        /// @details    Descends all child views without depending on private SwiftUI class names.
+        /// @details    Descends all child views without depending on private SwiftUI class names
         ///
         /// @param      view (UIView) subtree to inspect
         /// @return     ([UIScrollView]) scrolling views in traversal order
@@ -1673,7 +1673,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify built-app type registration, local token payload, and one-time cleanup
     /// @details    Reads the bundled exported type declaration, loads the synthetic token
     ///             representation, and checks active-state transitions plus UIKit recognition of
-    ///             the session-end selector.
+    ///             the session-end selector
     ///
     /// @return     (Void) records assertion failures for registration, payload, or lifecycle
     ///             regressions
@@ -1773,7 +1773,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testNativeCardDragSourceSurvivesSourceRemovalUntilSessionEnd()
     /// @brief      Verify source virtualization does not end a live native session
     /// @details    Dismantles a synthetic active source probe, checks that cancellation is
-    ///             deferred, and confirms explicit finish ends the session exactly once.
+    ///             deferred, and confirms explicit finish ends the session exactly once
     ///
     /// @return     (Void) records assertion failures for premature or repeated session completion
     ///
@@ -1856,7 +1856,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that a transient missing safe-area environment does not uncover the footer
     /// @details    Renders the actual toolbar surface over a conspicuous green workspace, with an explicit
     ///             home-indicator allowance and no inherited container inset. Checks pixels in the controls'
-    ///             background and the lower reserved strip independently of the toolbar buttons.
+    ///             background and the lower reserved strip independently of the toolbar buttons
     ///
     /// @return     (Void) records rendered background coverage assertions
     /// @throws     Image rendering or bitmap fixture errors propagate to XCTest

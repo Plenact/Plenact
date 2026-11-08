@@ -2,14 +2,14 @@
 // @file       PortableWorkspaceInspector.swift
 // @brief      Read-only inspection of the installed portable test workspace
 // @details    Supported User Data Model versions: 1.0 base and working 1.1. Displays portable records
-//             directly; does not load legacy preferences or offer editing in the main application.
+//             directly; does not load legacy preferences or offer editing in the main application
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
-/// Lets the owner compare installed Lists, Cards and saved metadata without modifying either workspace.
+/// Lets the owner compare installed Lists, Cards and saved metadata without modifying either workspace
 /// @section Purpose
-///     Make portable test installation visible independently of the original native backup.
+///     Make portable test installation visible independently of the original native backup
 struct PortableWorkspaceInspector: View
 {
 

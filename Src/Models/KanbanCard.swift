@@ -2,7 +2,7 @@
 // @file       KanbanCard.swift
 // @brief      Canonical Card, Note, and divider records
 // @details    Retains content, scheduling, checklists, media, reactions, locks, and compatibility
-//             fields and optional edit history independently of any one presentation.
+//             fields and optional edit history independently of any one presentation
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -14,7 +14,7 @@ import Foundation
 /// @section    Purpose
 ///     Preserves identity, writing, checklists, scheduling, attachments, appearance, and
 ///     compatibility fields; optional editing lock protects content without changing its
-///     presentation kind.
+///     presentation kind
 ///
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 {
@@ -84,7 +84,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @brief      Reject content changes to a locked item while allowing an explicit unlock
     /// @details    Editable items accept normal owner updates. A locked item accepts an unchanged snapshot or a
     ///             snapshot differing only by its cleared lock flag, preventing stale editors from modifying content
-    ///             as part of unlocking. Structural movement uses replacingLocation and retains the lock.
+    ///             as part of unlocking. Structural movement uses replacingLocation and retains the lock
     ///
     /// @param[in]  updated  Proposed complete card value for this owner
     ///
@@ -110,7 +110,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     }
 
 
-    /// Missing presentation remains a Card; the default needs no new persisted key.
+    /// Missing presentation remains a Card; the default needs no new persisted key
     var presentation: ItemPresentation
     {  /* Effective item kind with the legacy Card fallback */
 
@@ -136,7 +136,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     }
 
 
-    /// Explicit choices override historical dash titles without modifying retained content.
+    /// Explicit choices override historical dash titles without modifying retained content
     var displayFormat: ItemDisplayFormat
     {
 
@@ -264,14 +264,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanCard.setPhotoCaption
     /// @brief      Update a particular photo attachment's caption
     /// @details    Validates the photo identity and normalizes caption input before changing the attachment array;
-    ///             invalid targets throw.
+    ///             invalid targets throw
     ///
     /// @param[in]  caption  Proposed photo caption text
     /// @param[in]  id       Stable draft or objective identity
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     mutating func setPhotoCaption(_ caption: String, for id: UUID) throws
     {
@@ -298,13 +298,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanCard.reorderGalleryPhotos
     /// @brief      Apply a validated photo-gallery order
-    /// @details    Requires the supplied photo IDs to match the gallery contents and preserves nonphoto attachments.
+    /// @details    Requires the supplied photo IDs to match the gallery contents and preserves nonphoto attachments
     ///
     /// @param[in]  orderedIDs  Photo identities in the requested complete gallery order
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     mutating func reorderGalleryPhotos(_ orderedIDs: [UUID]) throws
     {
@@ -496,7 +496,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @brief      Extract a heading from supported named-divider syntax
     /// @details    Trims input, requires at least three supported dash characters followed by
     ///             whitespace, and returns the remaining nonempty heading without changing the
-    ///             title.
+    ///             title
     ///
     /// @param[in]  title  Candidate card title
     ///
@@ -555,7 +555,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanCard.isDividerTitle
     /// @brief      Recognize the divider entry syntax
-    /// @details    Trims the input before checking the dash-based syntax used to create plain and named dividers.
+    /// @details    Trims the input before checking the dash-based syntax used to create plain and named dividers
     ///
     /// @param[in]  title  Display title or proposed title text
     ///
@@ -968,7 +968,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     }
 
 
-    /// The badge is derived only from a stored due date and this card's saved display preference.
+    /// The badge is derived only from a stored due date and this card's saved display preference
     var listDueDateLabel: String?
     {
         showsDueDateInList && hasDueDate ? dueDateLabel : nil
@@ -979,7 +979,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanCard.dueDateBadge
     /// @brief      Build the due-date badge for this card's context
     /// @details    Uses the represented list date and calendar to decide whether a due badge is meaningful; returns
-    ///             nil when it should be omitted.
+    ///             nil when it should be omitted
     ///
     /// @param[in]  listDate  Calendar date represented by the owning list, when available
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -987,7 +987,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     ((label: String, systemImage: String)?) due label and symbol, or nil when the list context already
     ///             supplies the date
     ///
-    /// @note       Omit a date already supplied by the owning list, while retaining any explicit time.
+    /// @note       Omit a date already supplied by the owning list, while retaining any explicit time
     ///
     func dueDateBadge(on listDate: Date?, calendar: Calendar = .current) -> (label: String, systemImage: String)?
     {
@@ -1023,7 +1023,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanCard.usesTimeOnlySchedule
     /// @brief      Determine whether schedule badges can omit the date
     /// @details    Compares stored schedule precision and the represented list day before choosing time-only
-    ///             presentation.
+    ///             presentation
     ///
     /// @param[in]  listDate  Calendar date represented by the owning list, when available
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -1062,14 +1062,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanCard.scheduleBadges
     /// @brief      Build the applicable start and due schedule badges
     /// @details    Uses date precision and list context to retain useful schedule information without redundant date
-    ///             text.
+    ///             text
     ///
     /// @param[in]  listDate  Calendar date represented by the owning list, when available
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
     ///
     /// @return     ([CardScheduleBadge]) applicable start and due badges for the represented list date
     ///
-    /// @note       Presentation-only schedule labels for a card in a dated Day or Week list.
+    /// @note       Presentation-only schedule labels for a card in a dated Day or Week list
     ///
     func scheduleBadges(on listDate: Date?, calendar: Calendar = .current) -> [CardScheduleBadge]
     {
@@ -1102,7 +1102,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             entries.append(("Finish", dueDate, dueDateKind))
         }
 
-        // A date-only schedule adds no information when every date is already the list's day.
+        // A date-only schedule adds no information when every date is already the list's day
         if let listDate, !entries.isEmpty,
         entries.allSatisfy(
             {
@@ -1165,7 +1165,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @fcn        KanbanCard.defaultDueDateVisibility
     /// @brief      Read the default due-date badge preference
     /// @details    Loads the stored display preferences and uses their due-date visibility setting for new
-    ///             presentation decisions.
+    ///             presentation decisions
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///

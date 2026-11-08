@@ -2,7 +2,7 @@
 // @file       CardDetailView.swift
 // @brief      Card and Note detail composition and retained editor state
 // @details    Owns the working presentation and synchronization context; focused extensions
-//             provide mutation and section rendering behavior.
+//             provide mutation and section rendering behavior
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -11,7 +11,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 
-/// Identifies a checklist's requested position within its card.
+/// Identifies a checklist's requested position within its card
 ///
 /// @section    Purpose
 ///     Represent adjacent and absolute checklist move operations
@@ -37,7 +37,7 @@ enum ChecklistMoveDirection
 ///
 /// @section    Purpose
 ///     Defaults to an empty set of Cards until the owning workspace injects eligible canonical link
-///     destinations.
+///     destinations
 ///
 struct ChecklistCandidatesKey: EnvironmentKey
 {
@@ -52,7 +52,7 @@ struct ChecklistCandidatesKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Injects the currently eligible canonical Cards without coupling checklist controls to a
-///     particular owner store.
+///     particular owner store
 ///
 extension EnvironmentValues
 {
@@ -83,7 +83,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Coordinates writing, checklists, dates, attachments, appearance, reactions, and importance
-///     through owner callbacks; locked content uses a read-only presentation.
+///     through owner callbacks; locked content uses a read-only presentation
 ///
 struct CardDetailView: View
 {
@@ -402,13 +402,13 @@ struct CardDetailView: View
     let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?  /* Permanently removes the Note from its current collection */
     let onToggleMovedNoteBookmark:
     ((UUID, Int, Bool) -> Bool)? /* Persists the relocated Note's saved state                */
-    /// Optional callback that archives the latest synchronized card snapshot.
+    /// Optional callback that archives the latest synchronized card snapshot
     let onArchive: (() -> Void)? /* Archives the record through its original owner */
-    /// Optional callback permanently deleting this card and its caller-owned content.
+    /// Optional callback permanently deleting this card and its caller-owned content
     let onDelete: (() -> Bool)? /* Save-first removal; false keeps the editor and drafts open */
 
     @Environment(\.dismiss) var dismiss /* Dismiss action for the card detail view                      */
-    @State var richTextFocusedField: EditableField?  // UIKit editors retain focus independently of SwiftUI text fields.
+    @State var richTextFocusedField: EditableField?  // UIKit editors retain focus independently of SwiftUI text fields
     @State var editingHeaderField:   EditableField?
     @FocusState var focusedField:    EditableField? /* current focused editable field within the card detail view   */
 
@@ -1392,7 +1392,7 @@ struct CardDetailView: View
                     }
 
                     .padding(.bottom, 12)
-                    // Add scrollable clearance without shortening the visible card-detail viewport.
+                    // Add scrollable clearance without shortening the visible card-detail viewport
                     .contentMargins(.bottom, workspaceBottomBarHeight, for: .scrollContent)
                 }
 
@@ -1774,7 +1774,7 @@ struct CardDetailView: View
             }
             .protectsAppReturn()
             // Keep the Note's navigation toolbar at the screen bottom, beneath the keyboard.
-            // The focused editor supplies its own accessory controls above the keyboard.
+            // The focused editor supplies its own accessory controls above the keyboard
             .ignoresSafeArea(.keyboard, edges: presentation == .note && displayFormat != .divider ? .bottom : [])
             .onAppear
             {

@@ -3,7 +3,7 @@
 // @brief      Draft label catalog browsing and Card assignment editing
 // @details    Browses labels by category, edits the selected Card's label IDs, and creates catalog
 //             entries in a local draft. Returns catalog and assignment changes together on Save;
-//             cancellation leaves the owner's retained values unchanged.
+//             cancellation leaves the owner's retained values unchanged
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -31,8 +31,8 @@ struct CardLabelsSheet: View
     @State private var library:          LabelLibrary             /* Draft label library      */
     @State private var selectedLabelIDs: [String]                 /* Currently selected IDs   */
     @State private var labelNameDraft                  = ""       /* Draft name for new label */
-    @State private var categorySelection               = ""       /* Currently selected cat.  */
-    @State private var newCategoryDraft                = ""       /* Draft name for new cat.  */
+    @State private var categorySelection               = ""       /* Currently selected cat   */
+    @State private var newCategoryDraft                = ""       /* Draft name for new cat   */
     @State private var selectedColor: KanbanLabelColor = .yellow  /* Currently selected color */
 
     private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */

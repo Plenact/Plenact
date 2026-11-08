@@ -4,7 +4,7 @@
 // @details    Composes standard, panoramic, and gallery Boards alongside focused Day and personal
 //             Lists. Coordinates native Card dragging and swipe routing, inline List naming and
 //             item capture, temporary List guidance, section movement, appearance, archives, and
-//             configurable corner Back navigation.
+//             configurable corner Back navigation
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 /// ContentView behavior grouped separately from stored view state
 ///
 /// @section    Purpose
-///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle.
+///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle
 ///
 extension ContentView
 {
@@ -26,7 +26,7 @@ extension ContentView
     /// @fcn        ContentView.saveBoardAppearance
     /// @brief      Save board styling and optionally restore list inheritance
     /// @details    Uses the supplied appearance binding or the checked current-week encoding path; reports failures
-    ///             and returns false when the change cannot be saved.
+    ///             and returns false when the change cannot be saved
     ///
     /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
     /// @param[in]  applyToAll  Whether list surface and text overrides should inherit the board settings
@@ -82,7 +82,7 @@ extension ContentView
     ///
     /// @fcn        ContentView.refreshActiveDragGeometry
     /// @brief      Invalidate geometry while a card or list drag is active
-    /// @details    Advances the revision only when a drag exists, avoiding unnecessary geometry refreshes at rest.
+    /// @details    Advances the revision only when a drag exists, avoiding unnecessary geometry refreshes at rest
     ///
     /// @return     (Void) no return value
     ///
@@ -103,7 +103,7 @@ extension ContentView
     /// @fcn        ContentView.persistViewport
     /// @brief      Save the board's current presentation and zoom state
     /// @details    Copies zoom, panorama, gallery, presentation, and visible-list values into owner-scoped memory
-    ///             before flushing.
+    ///             before flushing
     ///
     /// @return     (Void) no return value
     ///
@@ -124,7 +124,7 @@ extension ContentView
     /// @fcn        ContentView.resetBoardZoom
     /// @brief      Reset zoom to the current mode's baseline
     /// @details    Ignores requests during dragging and disables the transition animation when Reduce Motion is
-    ///             enabled.
+    ///             enabled
     ///
     /// @return     (Void) no return value
     ///
@@ -150,7 +150,7 @@ extension ContentView
     /// @fcn        ContentView.adjustBoardZoom
     /// @brief      Adjust zoom through accessibility controls
     /// @details    Applies a bounded fifteen percent step outside gallery mode and ignores requests during an active
-    ///             drag.
+    ///             drag
     ///
     /// @param[in]  direction  Accessibility adjustment direction selecting a zoom increment or decrement
     ///
@@ -186,7 +186,7 @@ extension ContentView
     /// @fcn        ContentView.toggleBoardZoom
     /// @brief      Toggle between panoramic and standard board modes
     /// @details    Resets zoom to the new mode's preset and respects Reduce Motion; active drags prevent mode
-    ///             changes.
+    ///             changes
     ///
     /// @return     (Void) no return value
     ///
@@ -515,7 +515,7 @@ extension ContentView
     /// @fcn        ContentView.dayDate(for:)
     /// @brief      Resolve the calendar date assigned to a Board List
     /// @details    Finds the current or explicitly owned calendar Week, resolves its List-to-day
-    ///             mapping, and returns nil when the workspace or mapping is unavailable.
+    ///             mapping, and returns nil when the workspace or mapping is unavailable
     ///
     /// @param[in]  listID  Owner-local List identity used to resolve its represented calendar date
     ///
@@ -549,7 +549,7 @@ extension ContentView
     /// @brief      Append a uniquely named empty list to the board
     /// @details    Allocates an ID beyond active and archived lists, avoids case-insensitive title collisions, and
     ///             makes the new list the visible target. Focuses its inline column title and selects the generated
-    ///             name so typing replaces it without presenting a separate editor.
+    ///             name so typing replaces it without presenting a separate editor
     ///
     /// @return     (Void) no return value
     ///
@@ -605,7 +605,7 @@ extension ContentView
     /// @details    Allocates identities across active and archived content, constructs all
     ///             submitted items, and persists the complete snapshot before updating bindings.
     ///             Failed validation or saving leaves the draft available; success requests a
-    ///             reveal of the first created item.
+    ///             reveal of the first created item
     ///
     /// @param[in]  capture  Complete destination-scoped creation submission with writing, media,
     ///             and scheduling
@@ -798,7 +798,7 @@ extension ContentView
     /// @brief      Reorder an entire named section within its List
     /// @details    Finds the source List and delegates boundary-aware movement to DaySections,
     ///             retaining each member's identity and content. An unavailable List leaves state
-    ///             unchanged.
+    ///             unchanged
     ///
     /// @param[in]  listID     Owner-local List identity used to resolve its represented calendar date
     /// @param[in]  sectionID  Named divider identity of the complete section to reorder
@@ -827,7 +827,7 @@ extension ContentView
     /// @fcn        ContentView.moveCard
     /// @brief      Reorder a card or an entire named section
     /// @details    Uses the canonical section-aware ordering helper, reveals the moved card's section, and animates
-    ///             only a changed order.
+    ///             only a changed order
     ///
     /// @param[in]  listID            Numeric list identity within its owner
     /// @param[in]  cardID            Numeric card identity within its owner
@@ -1478,7 +1478,7 @@ extension ContentView
     /// @brief      Build keyboard navigation actions for adjacent Cards
     /// @details    Resolves eligible neighbors in display order and re-resolves them when invoked
     ///             so navigation follows current content. Missing neighbors leave the corresponding
-    ///             action unavailable.
+    ///             action unavailable
     ///
     /// @param[in]  card  Canonical item whose resolved preview or navigation context is requested
     ///
@@ -1531,7 +1531,7 @@ extension ContentView
     /// @fcn        ContentView.updateCard
     /// @brief      Replace the matching active card with its edited value
     /// @details    Searches lists by card identity, updates the first match, and prunes attachments after
-    ///             replacement.
+    ///             replacement
     ///
     /// @param[in]  updatedCard  Edited card value to publish at its existing identity
     ///
@@ -1685,7 +1685,7 @@ extension ContentView
     /// @fcn        ContentView.updateCardDrag(_:location:)
     /// @brief      Update the pointer location for the currently claimed card session
     /// @details    Ignores callbacks whose card identity does not match the active drag; hovering
-    ///             does not modify Board records.
+    ///             does not modify Board records
     ///
     /// @param[in]  cardID    Board-local identity of the card being dragged or moved
     /// @param[in]  location  Current or final pointer position in global Board geometry
@@ -1713,7 +1713,7 @@ extension ContentView
     /// @fcn        ContentView.beginCardDrag(_:location:)
     /// @brief      Claim an idle Board for a native card drag
     /// @details    Records the card identity and starting location only when neither a list drag
-    ///             nor another card drag is active.
+    ///             nor another card drag is active
     ///
     /// @param[in]  cardID    Board-local identity of the card being dragged or moved
     /// @param[in]  location  Current or final pointer position in global Board geometry
@@ -1742,7 +1742,7 @@ extension ContentView
     /// @brief      Finish a matching card session and optionally commit its final drop
     /// @details    Validates the release point against measured Board geometry and moves the
     ///             canonical card. Clears matching session state on exit; movement errors retain
-    ///             content and reach the database-activity banner.
+    ///             content and reach the database-activity banner
     ///
     /// @param[in]  cardID    Board-local identity of the card being dragged or moved
     /// @param[in]  commit    Whether to attempt movement after validating the destination

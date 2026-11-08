@@ -2,7 +2,7 @@
 // @file       LaunchPresentation.swift
 // @brief      Launch progress, loading artwork, and welcome cues
 // @details    Presents restoration progress and occasional welcome decoration with the user's
-//             motion and lifecycle preferences.
+//             motion and lifecycle preferences
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Provides ordered restoration, planning, readiness, and welcome symbols and labels without
-///     owning workspace restoration state.
+///     owning workspace restoration state
 ///
 enum PlenactLaunchStage: Int, CaseIterable
 {
@@ -70,7 +70,7 @@ enum PlenactLaunchStage: Int, CaseIterable
 ///
 /// @section    Purpose
 ///     Separates the current launch stage from completion so visible pacing can finish
-///     independently of restoration work.
+///     independently of restoration work
 ///
 struct PlenactLaunchProgress: Equatable
 {
@@ -81,7 +81,7 @@ struct PlenactLaunchProgress: Equatable
     ///
     /// @section    Purpose
     ///     Distinguishes stages that have not started, are running, or have completed for
-    ///     consistent indicator rendering.
+    ///     consistent indicator rendering
     ///
     enum Status
     {
@@ -97,7 +97,7 @@ struct PlenactLaunchProgress: Equatable
     /// @fcn        PlenactLaunchProgress.paced
     /// @brief      Pace visible launch stages from elapsed time
     /// @details    Limits the displayed stage to the supported range and withholds finished state until the minimum
-    ///             presentation interval has elapsed.
+    ///             presentation interval has elapsed
     ///
     /// @param[in]  elapsed  Elapsed time in seconds since the current animation or launch anchor
     ///
@@ -118,7 +118,7 @@ struct PlenactLaunchProgress: Equatable
     /// @fcn        PlenactLaunchProgress.status
     /// @brief      Classify a launch stage as waiting, running, or complete
     /// @details    Treats earlier stages and a finished launch as complete while identifying the current unfinished
-    ///             stage as running.
+    ///             stage as running
     ///
     /// @param[in]  step  Launch or review stage whose status should be evaluated
     ///
@@ -143,7 +143,7 @@ struct PlenactLaunchProgress: Equatable
 ///
 /// @section    Purpose
 ///     Maps progress to stage symbols and animation while respecting the user's Reduce Motion
-///     preference.
+///     preference
 ///
 struct PlenactLaunchIndicators: View
 {
@@ -195,7 +195,7 @@ struct PlenactLaunchIndicators: View
 ///
 /// @section    Purpose
 ///     Retains a local animation anchor and supplies paced progress through a timeline without
-///     changing workspace data.
+///     changing workspace data
 ///
 struct PlenactLaunchSequence: View
 {
@@ -226,7 +226,7 @@ struct PlenactLaunchSequence: View
 ///
 /// @section    Purpose
 ///     Combines logo, shadow, and stage indicators while adapting decorative movement to
-///     accessibility preferences.
+///     accessibility preferences
 ///
 struct PlenactLoadingView: View
 {
@@ -306,7 +306,7 @@ struct PlenactLoadingView: View
 ///
 /// @section    Purpose
 ///     Tracks launch and meaningful foreground absence, then targets the appropriate planning or
-///     profile entry point.
+///     profile entry point
 ///
 @MainActor
 final class TodayWelcomeCue: ObservableObject
@@ -318,7 +318,7 @@ final class TodayWelcomeCue: ObservableObject
     ///
     /// @section    Purpose
     ///     Distinguishes the profile and planning settings targets used by the welcome
-    ///     presentation.
+    ///     presentation
     ///
     enum Target: Equatable
     {
@@ -342,7 +342,7 @@ final class TodayWelcomeCue: ObservableObject
     /// @fcn        TodayWelcomeCue.init
     /// @brief      Create welcome-cue state using the supplied preferences store
     /// @details    Retains the store used to record foreground departures; constructing the cue does not start its
-    ///             animation.
+    ///             animation
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -360,7 +360,7 @@ final class TodayWelcomeCue: ObservableObject
     /// @fcn        TodayWelcomeCue.becameActive
     /// @brief      Queue a welcome cue for an eligible foreground return
     /// @details    Greets on first activation or after the configured departure interval and resets departure
-    ///             tracking.
+    ///             tracking
     ///
     /// @param[in]  now  Reference time used instead of an implicit clock read
     ///
@@ -392,7 +392,7 @@ final class TodayWelcomeCue: ObservableObject
     ///
     /// @fcn        TodayWelcomeCue.leftForeground
     /// @brief      Remember departure and stop the current welcome cue
-    /// @details    Records the first departure timestamp in preferences and cancels any pending or illuminated cue.
+    /// @details    Records the first departure timestamp in preferences and cancels any pending or illuminated cue
     ///
     /// @param[in]  now  Reference time used instead of an implicit clock read
     ///
@@ -416,7 +416,7 @@ final class TodayWelcomeCue: ObservableObject
     ///
     /// @fcn        TodayWelcomeCue.cancel
     /// @brief      Invalidate pending welcome animation work
-    /// @details    Advances the generation token and clears the target and illumination without animation.
+    /// @details    Advances the generation token and clears the target and illumination without animation
     ///
     /// @return     (Void) no return value
     ///
@@ -444,7 +444,7 @@ final class TodayWelcomeCue: ObservableObject
     ///
     /// @fcn        TodayWelcomeCue.highlights
     /// @brief      Check whether a particular welcome target is illuminated
-    /// @details    Requires both a matching target and the current illumination flag.
+    /// @details    Requires both a matching target and the current illumination flag
     ///
     /// @param[in]  candidate  Welcome target whose current illumination should be checked
     ///
@@ -460,7 +460,7 @@ final class TodayWelcomeCue: ObservableObject
     /// @fcn        TodayWelcomeCue.play
     /// @brief      Play the pending profile and plan welcome cues
     /// @details    Uses a generation token and cancellation checks around the injected asynchronous pauses, respects
-    ///             Reduce Motion, and clears its own target on completion.
+    ///             Reduce Motion, and clears its own target on completion
     ///
     /// @param[in]  reduceMotion    Whether accessibility preferences require reduced motion
     /// @param[in]  planPulseSpeed  Multiplier for the daily-plan welcome pulse speed
@@ -491,7 +491,7 @@ final class TodayWelcomeCue: ObservableObject
         ///
         /// @fcn        TodayWelcomeCue.play.current
         /// @brief      Check that this welcome sequence is still current
-        /// @details    Compares the captured generation with live state and rejects a cancelled task.
+        /// @details    Compares the captured generation with live state and rejects a cancelled task
         ///
         /// @return     (Bool) true while this sequence's generation is current and its task is not cancelled
         ///
@@ -505,7 +505,7 @@ final class TodayWelcomeCue: ObservableObject
         /// @fcn        TodayWelcomeCue.play.light
         /// @brief      Set illumination using the requested motion policy
         /// @details    Updates directly with Reduce Motion or animates using the plan-specific pulse-speed
-        ///             adjustment.
+        ///             adjustment
         ///
         /// @param[in]  value  New illumination state
         ///
@@ -612,7 +612,7 @@ final class TodayWelcomeCue: ObservableObject
 
         }
         catch
-        {  /* View disappearance/backgrounding cancels the finite sequence. */
+        {  /* View disappearance/backgrounding cancels the finite sequence  */
 
         }
 
@@ -626,7 +626,7 @@ final class TodayWelcomeCue: ObservableObject
 ///
 /// @section    Purpose
 ///     Highlights the requested control without changing layout, intercepting touches, or creating
-///     accessibility elements.
+///     accessibility elements
 ///
 struct TodayWelcomeGlow: ViewModifier
 {
@@ -642,7 +642,7 @@ struct TodayWelcomeGlow: ViewModifier
     /// @fcn        TodayWelcomeGlow.body
     /// @brief      Apply the quiet welcome highlight to a view
     /// @details    Adds a decorative gold background and shadow and uses scale motion only when accessibility
-    ///             preferences allow it.
+    ///             preferences allow it
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///

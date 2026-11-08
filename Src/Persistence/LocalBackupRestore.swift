@@ -2,15 +2,15 @@
 // @file       LocalBackupRestore.swift
 // @brief      Reviewed Simulator-only recovery of a preserved native source backup
 // @details    User Data Model 1.0 base and working 1.1; native source-backup formats 1/2. Restores saved bytes,
-//             not portable Model 1.0/cloud data. UI execution requires explicit user confirmation.
+//             not portable Model 1.0/cloud data. UI execution requires explicit user confirmation
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import SwiftUI
 
 
-/// Retains a verified source snapshot and counts for explicit restore review.
+/// Retains a verified source snapshot and counts for explicit restore review
 /// @section Purpose
-///     Separate selecting/validating files from any destination mutation.
+///     Separate selecting/validating files from any destination mutation
 struct ReviewedLocalBackup
 {
 
@@ -25,16 +25,16 @@ struct ReviewedLocalBackup
 }
 
 
-/// Performs bounded read/review and a protected local recovery test in a Simulator.
+/// Performs bounded read/review and a protected local recovery test in a Simulator
 /// @section Purpose
-///     Exercise source-backup recovery independently from incomplete portable conversion.
+///     Exercise source-backup recovery independently from incomplete portable conversion
 @MainActor
 enum LocalBackupRestore
 {
 
-    /// User-visible validation failures never authorize source repair or partial installation.
+    /// User-visible validation failures never authorize source repair or partial installation
     /// @section Purpose
-    ///     Refuse incomplete, inconsistent or unsafe source evidence.
+    ///     Refuse incomplete, inconsistent or unsafe source evidence
     enum Failure: LocalizedError
     {
 
@@ -144,7 +144,7 @@ enum LocalBackupRestore
     /// @fcn LocalBackupRestore.review
     /// @brief Freeze and verify a selected native backup without changing the app's saved data
     /// @details All declared originals are hash-checked. A consistent active calendar Week is required
-    ///          for the current root reload path; source defaults/examples are never loaded.
+    ///          for the current root reload path; source defaults/examples are never loaded
     /// @param[in] url Folder containing Preferences.plist and NativePreflight.json
     /// @return Fully reviewed source snapshot and human-readable counts
     /// @throws Integrity, native decoding or reconciliation errors
@@ -275,7 +275,7 @@ enum LocalBackupRestore
     /// @fcn LocalBackupRestore.install
     /// @brief Install reviewed legacy stores/media inside the caller's rollback-protected transaction
     /// @details Simulator only. Replace reviewed app-owned stores/areas and retain unrelated platform
-    ///          values. The caller must first remove the navigation tree and flush queued saves.
+    ///          values. The caller must first remove the navigation tree and flush queued saves
     /// @param[in] backup Reviewed immutable source snapshot
     /// @param[in] root Destination app container or isolated fixture container
     /// @param[in] defaults Destination preferences
@@ -392,9 +392,9 @@ enum LocalBackupRestore
 }
 
 
-/// Routes confirmed test recovery through the root's navigation teardown/reload boundary.
+/// Routes confirmed test recovery through the root's navigation teardown/reload boundary
 /// @section Purpose
-///     Prevent a Settings sheet from installing data while old editors can still autosave.
+///     Prevent a Settings sheet from installing data while old editors can still autosave
 struct LocalBackupRestoreAccess
 {
 
@@ -404,9 +404,9 @@ struct LocalBackupRestoreAccess
 }
 
 
-/// Keeps recovery routing absent unless explicitly installed by the app root.
+/// Keeps recovery routing absent unless explicitly installed by the app root
 /// @section Purpose
-///     Make standalone previews inert rather than mutating storage.
+///     Make standalone previews inert rather than mutating storage
 private struct LocalBackupRestoreKey: EnvironmentKey
 {
 

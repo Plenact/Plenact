@@ -2,7 +2,7 @@
 // @file       TransferNotices.swift
 // @brief      Transient content-transfer confirmations and guarded Undo
 // @details    Hosts visible notices across presentations while limiting touch interception to the
-//             interactive Undo panel.
+//             interactive Undo panel
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Combines title, destination, and move-or-copy action into a confirmation message without
-///     retaining mutable workspace content.
+///     retaining mutable workspace content
 ///
 struct TransferConfirmation: Equatable
 {
@@ -24,7 +24,7 @@ struct TransferConfirmation: Equatable
     ///
     /// @section    Purpose
     ///     Selects the verb in transfer confirmation messages without affecting the completed
-    ///     operation.
+    ///     operation
     ///
     enum Action
     {
@@ -50,7 +50,7 @@ struct TransferConfirmation: Equatable
 ///
 /// @section    Purpose
 ///     Uses a noninteractive notice window and a narrowly interactive Undo overlay so unrelated
-///     workspace touches continue to reach their views.
+///     workspace touches continue to reach their views
 ///
 @MainActor
 final class TransferConfirmationPresenter
@@ -68,7 +68,7 @@ final class TransferConfirmationPresenter
     /// @fcn        TransferConfirmationPresenter.dismiss
     /// @brief      Remove the current transfer feedback presentation
     /// @details    Cancels its maintenance task and clears the retained overlay, hosting controller, and any
-    ///             transient feedback window.
+    ///             transient feedback window
     ///
     /// @return     (Void) no return value
     ///
@@ -92,7 +92,7 @@ final class TransferConfirmationPresenter
     /// @fcn        TransferConfirmationPresenter.showUndo
     /// @brief      Show a persistent section-transfer Undo notice
     /// @details    Hosts the notice in the existing key window and keeps it above later presentations; Undo uses the
-    ///             supplied checked callback and can report a failed restoration.
+    ///             supplied checked callback and can report a failed restoration
     ///
     /// @param[in]  confirmation  Transfer message and action metadata to present
     /// @param[in]  undo          Checked restoration callback; false keeps feedback available for a failed Undo
@@ -100,7 +100,7 @@ final class TransferConfirmationPresenter
     /// @return     (Void) no return value
     ///
     /// @note       Unlike the transient confirmation, this remains available across navigation until used or
-    ///             dismissed.
+    ///             dismissed
     ///
     func showUndo(_ confirmation: TransferConfirmation, undo: @escaping () -> Bool)
     {
@@ -123,7 +123,7 @@ final class TransferConfirmationPresenter
         dismiss()
 
         // Keep native drag sessions in their original window. A second, persistent
-        // UIWindow can intercept the system's drag routing even when taps pass through.
+        // UIWindow can intercept the system's drag routing even when taps pass through
         let overlay = TransferUndoOverlay(frame: mainWindow.bounds)
 
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -171,7 +171,7 @@ final class TransferConfirmationPresenter
         UIAccessibility.post(notification: .announcement, argument: confirmation.message + " Undo available.")
 
         // UIKit may add a presentation above the root view during navigation.
-        // Retain the same panel and bring it above that presentation, without another window.
+        // Retain the same panel and bring it above that presentation, without another window
         dismissTask = Task
         {
             [weak self, weak overlay, weak mainWindow] in
@@ -208,7 +208,7 @@ final class TransferConfirmationPresenter
     /// @fcn        TransferConfirmationPresenter.show
     /// @brief      Show a short-lived transfer confirmation
     /// @details    Replaces previous feedback with a noninteractive presentation that dismisses after its display
-    ///             interval.
+    ///             interval
     ///
     /// @param[in]  confirmation  Transfer message and action metadata to present
     ///
@@ -278,7 +278,7 @@ final class TransferConfirmationPresenter
 ///
 /// @section    Purpose
 ///     Passes touches outside the retained panel rectangle through to the existing application
-///     interface.
+///     interface
 ///
 final class TransferUndoOverlay: UIView
 {
@@ -291,7 +291,7 @@ final class TransferUndoOverlay: UIView
     /// @fcn        TransferUndoOverlay.hitTest
     /// @brief      Restrict the Undo overlay to its hosted notice panel
     /// @details    Returns a normal child hit only inside the retained panel rectangle; touches outside pass through
-    ///             to the existing application window.
+    ///             to the existing application window
     ///
     /// @param[in]  point  Touch or drop location in the operation's coordinate space
     /// @param[in]  event  Optional UIKit event accompanying hit testing
@@ -317,7 +317,7 @@ final class TransferUndoOverlay: UIView
 ///
 /// @section    Purpose
 ///     Returns no touch hit so notices remain visible across presentations without intercepting
-///     underlying interactions.
+///     underlying interactions
 ///
 final class TransferConfirmationWindow: UIWindow
 {
@@ -334,7 +334,7 @@ final class TransferConfirmationWindow: UIWindow
     ///
     /// @fcn        TransferConfirmationWindow.hitTest
     /// @brief      Keep transient confirmation windows noninteractive
-    /// @details    Returns nil so underlying application content continues receiving touches.
+    /// @details    Returns nil so underlying application content continues receiving touches
     ///
     /// @param[in]  point  Touch or drop location in the operation's coordinate space
     /// @param[in]  event  Optional UIKit event accompanying hit testing
@@ -360,7 +360,7 @@ final class TransferConfirmationWindow: UIWindow
 ///
 /// @section    Purpose
 ///     Animates the supplied message while respecting Reduce Motion and leaving application content
-///     interactive.
+///     interactive
 ///
 struct TransferConfirmationToast: View
 {
@@ -432,7 +432,7 @@ struct TransferConfirmationToast: View
 ///
 /// @section    Purpose
 ///     Delegates Undo and dismissal, reports its interactive frame, and displays failure without
-///     discarding current content.
+///     discarding current content
 ///
 struct SectionUndoToast: View
 {

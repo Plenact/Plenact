@@ -2,14 +2,14 @@
 // @file       PortableWorkspaceActivation.swift
 // @brief      User-confirmed Simulator activation of a reconstructed editable portable workspace
 // @details    Supported User Data Model versions: 1.0 base and working 1.1. Retains complete pre-import
-//             recovery and canonical evidence. Cloud sync stays off; edited export has an explicit limited scope.
+//             recovery and canonical evidence. Cloud sync stays off; edited export has an explicit limited scope
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
-/// Routes explicit import/undo requests through root navigation teardown.
+/// Routes explicit import/undo requests through root navigation teardown
 /// @section Purpose
-///     Prevent old editors from saving into the reconstructed workspace during activation.
+///     Prevent old editors from saving into the reconstructed workspace during activation
 struct PortableWorkspaceImportAccess
 {
 
@@ -19,9 +19,9 @@ struct PortableWorkspaceImportAccess
 }
 
 
-/// Optional root-owned import routing; absence disables activation controls.
+/// Optional root-owned import routing; absence disables activation controls
 /// @section Purpose
-///     Keep views from installing native stores directly.
+///     Keep views from installing native stores directly
 private struct PortableWorkspaceImportKey: EnvironmentKey
 {
 

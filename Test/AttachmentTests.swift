@@ -3,7 +3,7 @@
 // @brief      Attachment regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// Attachment regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -30,10 +30,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningRoutineStore.load`, `PlanningRoutineStore.save`,
     ///             `PlanningRoutineStore.retainedFiles`. Checks `XCTAssertEqual(try
     ///             PlanningRoutineStore.retainedFiles(from: defaults), ["routine-preview.png",
-    ///             "routine-strokes.drawing"])`; `XCTAssertNil(defaults.object(forKey: PlanningRoutineStore.key))`.
+    ///             "routine-strokes.drawing"])`; `XCTAssertNil(defaults.object(forKey: PlanningRoutineStore.key))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPlanningTemplateMediaRetentionAndWorkspaceBackup() throws
@@ -88,10 +88,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFullMonthExampleCoversPastTodayAndSparseFuture
     /// @brief      Verify that full Month Example Covers Past Today And Sparse Future
     /// @details    Exercises `FullMonthExample.make`, `example.document.week`, `PlanningDate.key`. Checks
-    ///             `XCTAssertEqual(example.document.firstWeekday, 2)`; `XCTAssertGreaterThanOrEqual(cards.count, 3)`.
+    ///             `XCTAssertEqual(example.document.firstWeekday, 2)`; `XCTAssertGreaterThanOrEqual(cards.count, 3)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFullMonthExampleCoversPastTodayAndSparseFuture() throws
     {
@@ -178,10 +178,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that list Composer Submission Preserves Kind Schedule Actions And Attachments
     /// @details    Exercises `start.addingTimeInterval`, `ListItemCreation.items`,
     ///             `card.checklists.flatMap(\.items).map`. Checks `XCTAssertEqual(card.id, 99)`;
-    ///             `XCTAssertEqual(card.presentation, presentation)`.
+    ///             `XCTAssertEqual(card.presentation, presentation)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListComposerSubmissionPreservesKindScheduleActionsAndAttachments() throws
     {
@@ -223,10 +223,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPersonalNoteCreationPreservesMultipleAttachmentMetadata
     /// @brief      Verify that personal Note Creation Preserves Multiple Attachment Metadata
     /// @details    Exercises `collection.addNote`. Checks `XCTAssertEqual(item.attachments, attachments)`;
-    ///             `XCTAssertEqual(item.coverAttachmentID, attachments[1].id)`.
+    ///             `XCTAssertEqual(item.coverAttachmentID, attachments[1].id)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPersonalNoteCreationPreservesMultipleAttachmentMetadata() throws
     {
@@ -262,10 +262,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that creation Attachment List Presents Shared Menu In Light And Dark
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertNotNil(host.presentedViewController)`;
-    ///             `XCTAssertEqual(draft.entries.count, 2)`.
+    ///             `XCTAssertEqual(draft.entries.count, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCreationAttachmentListPresentsSharedMenuInLightAndDark() async throws
@@ -351,11 +351,11 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that creation Attachment Draft Keeps Multiple Entries And Cleans Rejected Files
     /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image`,
     ///             `UIColor.blue.setFill`, `context.fill`. Checks `XCTAssertEqual(attachments.count, 23)`;
-    ///             `XCTAssertTrue(rejectedFiles.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })`.
+    ///             `XCTAssertTrue(rejectedFiles.allSatisfy { FileManager.default.fileExists(atPath: $0.path) })`
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     @MainActor
     func testCreationAttachmentDraftKeepsMultipleEntriesAndCleansRejectedFiles() throws
@@ -467,10 +467,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1800), format:
     ///             format).image`, `UIColor.systemTeal.setFill`, `context.fill`. Checks
     ///             `XCTAssertLessThanOrEqual(max(photo.size.width, photo.size.height), 2048)`;
-    ///             `XCTAssertEqual(photo.size.width / photo.size.height, 3000.0 / 1800.0)`.
+    ///             `XCTAssertEqual(photo.size.width / photo.size.height, 3000.0 / 1800.0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testBackgroundPhotoResizesStoresAndRejectsInvalidImages() throws
@@ -512,10 +512,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that default List Photos Are Bundled And Respect Custom Backgrounds
     /// @details    Exercises `CollectionBackground.defaultListBackground`, `CollectionBackground.isAllowed`. Checks
     ///             `XCTAssertEqual(CollectionBackground.defaultListBackground(for: title)?.preset, preset)`;
-    ///             `XCTAssertNotNil(UIImage(named: asset))`.
+    ///             `XCTAssertNotNil(UIImage(named: asset))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDefaultListPhotosAreBundledAndRespectCustomBackgrounds() throws
     {
@@ -555,7 +555,7 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `ExampleCoverImage.search`, `ExampleCoverImage.search("quiet morning", in:
     ///             .rest).contains`, `ExampleCoverImage.search("WATER plants", in: .nature).contains`. Checks
     ///             `XCTAssertEqual(ExampleCoverImage.search("").count, 400)`;
-    ///             `XCTAssertEqual(ExampleCoverImage.search(" ", in: .nature).count, 50)`.
+    ///             `XCTAssertEqual(ExampleCoverImage.search(" ", in: .nature).count, 50)`
     ///
     /// @return     (Void) no return value
     ///
@@ -604,10 +604,10 @@ extension PlenactBoardDocumentTests
     ///             Activities
     /// @details    Exercises `lists.flatMap(\.cards).filter`, `lists.flatMap`, `pictures.map`. Checks
     ///             `XCTAssertEqual(pictures.map(\.word), ["Capture a new idea", "Take a walk", "Capture notes and
-    ///             ideas"])`; `XCTAssertEqual(pictures.map(\.listTitle), ["Tuesday", "Wednesday", "Sunday"])`.
+    ///             ideas"])`; `XCTAssertEqual(pictures.map(\.listTitle), ["Tuesday", "Wednesday", "Sunday"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testStarterAndExampleWeekPictureRowsUseExplicitBundledCoversAndRetainActivities() throws
     {
@@ -655,10 +655,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that example Week Galleries Use Bundled Photos And Preserve Cover And Content
     /// @details    Exercises `lists.flatMap`, `cards.filter`, `galleryCards.map`. Checks
     ///             `XCTAssertEqual(galleryCards.map(\.word), [ "Review the week ahead", "Plan the weekend", "Spend
-    ///             time outdoors" ])`; `XCTAssertEqual(galleryCards.map { $0.galleryPhotos.count }, [3, 3, 3])`.
+    ///             time outdoors" ])`; `XCTAssertEqual(galleryCards.map { $0.galleryPhotos.count }, [3, 3, 3])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testExampleWeekGalleriesUseBundledPhotosAndPreserveCoverAndContent() throws
     {
@@ -732,10 +732,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that photo Captions Decode Legacy Attachments And Preserve Metadata
     /// @details    Exercises `JSONSerialization.jsonObject`, `card.setPhotoCaption`. Checks
     ///             `XCTAssertNil(json["caption"])`; `XCTAssertEqual(try JSONDecoder().decode(KanbanAttachment.self,
-    ///             from: legacyData), photo)`.
+    ///             from: legacyData), photo)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPhotoCaptionsDecodeLegacyAttachmentsAndPreserveMetadata() throws
     {
@@ -781,10 +781,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that photo Gallery Reorder Keeps Cover And Nonphoto Slots And Rejects Invalid Orders
     /// @details    Exercises `card.reorderGalleryPhotos`, `card.setCover`, `card.removeAttachment`. Checks
     ///             `XCTAssertEqual(card.galleryPhotos, [first, second, third])`; `XCTAssertEqual(card.attachments,
-    ///             [third, video, cover, first, link, second])`.
+    ///             [third, video, cover, first, link, second])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPhotoGalleryReorderKeepsCoverAndNonphotoSlotsAndRejectsInvalidOrders() throws
     {
@@ -831,10 +831,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that photo Gallery Edits Persist In Both Stores And Retain Archived Copies
     /// @details    Exercises `original.setPhotoCaption`, `original.reorderGalleryPhotos`,
     ///             `KanbanBoardPersistence.saveListsChecked`. Checks `XCTAssertEqual(restoredWeek, lists)`;
-    ///             `XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [personal])`.
+    ///             `XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [personal])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPhotoGalleryEditsPersistInBothStoresAndRetainArchivedCopies() async throws
     {
@@ -891,7 +891,7 @@ extension PlenactBoardDocumentTests
     ///             $0.contentSize.width > $0.bounds.width })`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords() async throws
@@ -926,7 +926,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testHostedPhotoGalleryScrollsHorizontallyWithoutEditingRecords.scrollViews
         /// @brief      Find scroll views in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1016,10 +1016,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that voice Audio Commit Round Trips Playback File And Cleans Rejected Save
     /// @details    Exercises `data[0].initialize`, `file.write`, `CardAttachmentStore.removeDeletedFiles`. Checks
     ///             `XCTAssertTrue(try QuickCaptureMediaCommit.save([], audio: audio) { attachments in retained =
-    ///             attachments; return true })`; `XCTAssertEqual(attachment.kind, .audio)`.
+    ///             attachments; return true })`; `XCTAssertEqual(attachment.kind, .audio)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testVoiceAudioCommitRoundTripsPlaybackFileAndCleansRejectedSave() throws
@@ -1121,10 +1121,10 @@ extension PlenactBoardDocumentTests
     ///             Imports
     /// @details    Exercises `UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image`,
     ///             `UIColor.systemBlue.setFill`, `context.fill`. Checks `XCTAssertEqual(attachments.count, 1)`;
-    ///             `XCTAssertEqual(try Data(contentsOf: url), photo.data)`.
+    ///             `XCTAssertEqual(try Data(contentsOf: url), photo.data)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testQuickCapturePhotoCommitRetainsSuccessfulFilesAndCleansRejectedOrPartialImports() throws
@@ -1204,10 +1204,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that drawing Capture Persists Editable Strokes And Retains Both Files
     /// @details    Exercises `CardAttachmentStore.removeDeletedFiles`, `saved.flatMap`,
     ///             `QuickCaptureMediaCommit.save`. Checks `XCTAssertTrue(try QuickCaptureMediaCommit.save([],
-    ///             drawings: [draft]) { saved = $0; return true })`; `XCTAssertEqual(attachment.kind, .photo)`.
+    ///             drawings: [draft]) { saved = $0; return true })`; `XCTAssertEqual(attachment.kind, .photo)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDrawingCapturePersistsEditableStrokesAndRetainsBothFiles() throws
@@ -1254,7 +1254,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(replacement.id, attachment.id)
         XCTAssertEqual(replacement.addedAt, attachment.addedAt)
         XCTAssertNotEqual(replacement.fileName, attachment.fileName)
-        // Editing prepares new files and never overwrites strokes referenced by a saved snapshot.
+        // Editing prepares new files and never overwrites strokes referenced by a saved snapshot
         XCTAssertNoThrow(try DrawingAttachmentStore.load(attachment))
         XCTAssertNoThrow(try DrawingAttachmentStore.load(replacement))
 
@@ -1278,10 +1278,10 @@ extension PlenactBoardDocumentTests
     ///             attachment)).deletingLastPathComponent`, `CardAttachmentStore.fileURL`. Checks `XCTAssertFalse(try
     ///             QuickCaptureMediaCommit.save([], drawings: [draft]) { rejected = $0; return false })`;
     ///             `XCTAssertFalse(FileManager.default.fileExists(atPath:
-    ///             directory.appendingPathComponent(name).path))`.
+    ///             directory.appendingPathComponent(name).path))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDrawingRejectedAndPartialSavesCleanBothFiles() throws
@@ -1326,10 +1326,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that drawing Exports PNG Transparency And JPEG Without Changing Strokes
     /// @details    Exercises `drawing.dataRepresentation`, `DrawingImageExport.data`, `transparent.prefix`. Checks
     ///             `XCTAssertEqual(Array(transparent.prefix(8)), [137, 80, 78, 71, 13, 10, 26, 10])`;
-    ///             `XCTAssertEqual(Array(jpeg.prefix(2)), [255, 216])`.
+    ///             `XCTAssertEqual(Array(jpeg.prefix(2)), [255, 216])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes() throws
@@ -1357,12 +1357,12 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testDrawingExportsPNGTransparencyAndJPEGWithoutChangingStrokes.cornerAlpha
         /// @brief      Read the exported image corner alpha for transparency assertions
         /// @details    Decodes the image, draws its corner into a one-pixel bitmap, and returns the alpha byte;
-        ///             failed image or context creation throws through XCTUnwrap.
+        ///             failed image or context creation throws through XCTUnwrap
         ///
         /// @param[in]  data  Encoded input or media bytes
         ///
         /// @return     (UInt8) result described by this operation's contract
-        /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+        /// @throws     Errors from throwing dependencies propagate unless handled within this operation
         ///
         func cornerAlpha(_ data: Data) throws -> UInt8
         {
@@ -1392,10 +1392,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that drawing Editor Renders On Phone And Tablet Without Saving
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(canvas.drawing.strokes.count, 1)`;
-    ///             `XCTAssertTrue(canvas.isFirstResponder)`.
+    ///             `XCTAssertTrue(canvas.isFirstResponder)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDrawingEditorRendersOnPhoneAndTabletWithoutSaving() async throws
@@ -1444,7 +1444,7 @@ extension PlenactBoardDocumentTests
             /// @fcn        PlenactBoardDocumentTests.testDrawingEditorRendersOnPhoneAndTabletWithoutSaving.canvases
             /// @brief      Find canvases in the hosted view hierarchy
             /// @details    Recursively inspects native subviews for PKCanvasView. Returns all collected matches in
-            ///             hierarchy order.
+            ///             hierarchy order
             ///
             /// @param[in]  view  Native view inspected or synchronized by the operation
             ///

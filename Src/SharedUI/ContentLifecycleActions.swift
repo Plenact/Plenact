@@ -2,7 +2,7 @@
 // @file       ContentLifecycleActions.swift
 // @brief      Confirmed content archive and deletion presentation
 // @details    Delegates mutations to canonical owners and retains confirmation state separately
-//             from the source records.
+//             from the source records
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -17,7 +17,7 @@ import UniformTypeIdentifiers
 ///     Keep Search, labels, Calendar, and list pickers from owning duplicate content
 ///
 /// Reveal Delete without UIKit's optimistic destructive-row removal. The owning
-/// screen confirms the action and performs its existing checked deletion.
+/// screen confirms the action and performs its existing checked deletion
 struct ListItemSwipeDelete: ViewModifier
 {
 
@@ -30,7 +30,7 @@ struct ListItemSwipeDelete: ViewModifier
     /// @fcn        ListItemSwipeDelete.body
     /// @brief      Install an explicit trailing swipe-delete action
     /// @details    Exposes Delete only when enabled and disables full-swipe deletion so the user must choose the
-    ///             action.
+    ///             action
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -65,7 +65,7 @@ struct ListItemSwipeDelete: ViewModifier
 ///
 /// @section    Purpose
 ///     Delegates mutations to the owner, retains destructive confirmation state, and dismisses
-///     snapshot presentations after accepted removal.
+///     snapshot presentations after accepted removal
 ///
 struct ContentLifecycleActions: ViewModifier
 {

@@ -3,7 +3,7 @@
 // @brief      Versioned Board payload and shared-demo response contracts
 // @details    Defines the app-owned Board JSON shape, validation, and snapshot decoding for
 //             explicit shared-demo exchange. Keeps server revision and actor provenance in response
-//             envelopes rather than embedding them in canonical local Card content.
+//             envelopes rather than embedding them in canonical local Card content
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation

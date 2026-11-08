@@ -2,16 +2,16 @@
 // @file       MigrationPreviewTests.swift
 // @brief      Repeatable source identities and first canonical migration adapters
 // @details    Supported User Data Model versions: 1.0; local journal/preview format 1.
-//             Uses isolated source preferences and temporary media/journals only; never real accounts.
+//             Uses isolated source preferences and temporary media/journals only; never real accounts
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import Foundation
 import XCTest
 
 
-/// Exercises retry identity, integrity failure and explicit partial conversion boundaries.
+/// Exercises retry identity, integrity failure and explicit partial conversion boundaries
 /// @section Purpose
-///     Demonstrate source preservation and portable metadata before full-workspace migration.
+///     Demonstrate source preservation and portable metadata before full-workspace migration
 @MainActor
 final class MigrationPreviewTests: XCTestCase
 {

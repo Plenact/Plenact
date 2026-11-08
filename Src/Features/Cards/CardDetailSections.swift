@@ -2,7 +2,7 @@
 // @file       CardDetailSections.swift
 // @brief      Reusable Card detail sections and controls
 // @details    Keeps shared metadata rows, action tiles, date labels, and collapse controls
-//             consistent between reading and editing surfaces.
+//             consistent between reading and editing surfaces
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -335,7 +335,7 @@ struct DetailRow: View
 ///
 /// @section    Purpose
 ///     Matches checklist chevron behavior while leaving the retained collapse state with the owning
-///     editor.
+///     editor
 ///
 struct SectionCollapseButton: View
 {

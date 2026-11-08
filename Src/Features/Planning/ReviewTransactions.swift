@@ -2,7 +2,7 @@
 // @file       ReviewTransactions.swift
 // @brief      Recovery boundary for multi-store review mutations
 // @details    Retains original preference bytes before changing source content or review progress
-//             and restores interrupted operations before normal use.
+//             and restores interrupted operations before normal use
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Records original preferences before mutation and clears the transaction only after source
-///     content and review progress have both saved.
+///     content and review progress have both saved
 ///
 @MainActor
 enum DailyReviewTransaction
@@ -31,14 +31,14 @@ enum DailyReviewTransaction
     /// @fcn        DailyReviewTransaction.begin
     /// @brief      Capture preferences before a checked review transaction
     /// @details    Snapshots the core keys and explicitly allowed additional keys into a recovery journal before
-    ///             mutation begins.
+    ///             mutation begins
     ///
     /// @param[in]  defaults        Preferences store used for this operation
     /// @param[in]  additionalKeys  Additional explicitly allowed preference keys to include in the recovery journal
     ///
     /// @return     (Data) encoded recovery journal capturing the allowed preference keys and their prior values
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func begin(in defaults: UserDefaults = .standard, additionalKeys: [String] = []) throws -> Data
     {
@@ -82,13 +82,13 @@ enum DailyReviewTransaction
     /// @fcn        DailyReviewTransaction.recover
     /// @brief      Restore a retained review transaction snapshot
     /// @details    Validates journal keys and restores their captured values; legacy journals use the original key
-    ///             set so uncaptured preferences are preserved.
+    ///             set so uncaptured preferences are preserved
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`, `CocoaError(.fileWriteUnknown)`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func recover(in defaults: UserDefaults = .standard) throws
     {
@@ -152,7 +152,7 @@ enum DailyReviewTransaction
     /// @fcn        DailyReviewTransaction.perform
     /// @brief      Execute a review update with recoverable preferences
     /// @details    Begins a journal, runs the throwing action, and completes the journal on success; a failure
-    ///             attempts restoration before being propagated.
+    ///             attempts restoration before being propagated
     ///
     /// @param[in]  defaults        Preferences store used for this operation
     /// @param[in]  additionalKeys  Additional explicitly allowed preference keys to include in the recovery journal
@@ -160,7 +160,7 @@ enum DailyReviewTransaction
     ///
     /// @return     (T) value returned by the successfully completed transaction action
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func perform<T>(
         in defaults: UserDefaults = .standard, additionalKeys: [String] = [], _ action: () throws -> T

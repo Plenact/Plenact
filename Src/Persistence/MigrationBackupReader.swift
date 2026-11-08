@@ -2,22 +2,22 @@
 // @file       MigrationBackupReader.swift
 // @brief      Verify frozen source bytes before conversion reads any stored values
 // @details    Supported User Data Model versions: 1.0 base and working 1.1 appearance metadata.
-//             Private journal formats 1/2/3; local preview only, without authenticated ownership or sync.
+//             Private journal formats 1/2/3; local preview only, without authenticated ownership or sync
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import Foundation
 
 
-/// Validates the native source backup's declared files and hashes before conversion.
+/// Validates the native source backup's declared files and hashes before conversion
 /// @section Purpose
-///     Keep migration attached to preserved evidence rather than live or modified app storage.
+///     Keep migration attached to preserved evidence rather than live or modified app storage
 @MainActor
 enum MigrationBackupReader
 {
 
-    /// Source-integrity errors block conversion without altering originals.
+    /// Source-integrity errors block conversion without altering originals
     /// @section Purpose
-    ///     Separate invalid snapshot evidence from a legitimate absent source store.
+    ///     Separate invalid snapshot evidence from a legitimate absent source store
     enum Failure: Error
     {
 
@@ -75,7 +75,7 @@ enum MigrationBackupReader
 
     /// @fcn MigrationBackupReader.values
     /// @brief Verify native evidence and return only the captured persistent-domain values
-    /// @details This is integrity checking, not an authenticated publisher signature or source restore.
+    /// @details This is integrity checking, not an authenticated publisher signature or source restore
     /// @param[in] backup Native preserved source snapshot
     /// @return Exact captured property-list values
     /// @throws Integrity, unsupported evidence or unresolved recovery errors

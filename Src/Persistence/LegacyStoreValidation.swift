@@ -2,15 +2,15 @@
 // @file       LegacyStoreValidation.swift
 // @brief      Native decoder preflight for retained local workspace stores
 // @details    Supports User Data Model 1.0 migration preparation; source backup format 1.
-//             Preserves legacy storage without conversion, restoration, network access or fallback data.
+//             Preserves legacy storage without conversion, restoration, network access or fallback data
 // --------------------------------------------------------------------------------------------------
 import CoreFoundation
 import Foundation
 
 
-/// Validates stored bytes without calling loaders that supply examples or repair data.
+/// Validates stored bytes without calling loaders that supply examples or repair data
 /// @section Purpose
-///     Establish which legacy stores can be decoded before Model 1.0 conversion.
+///     Establish which legacy stores can be decoded before Model 1.0 conversion
 @MainActor
 enum LegacyStoreValidation
 {
@@ -40,7 +40,7 @@ enum LegacyStoreValidation
 
     /// @fcn LegacyStoreValidation.includes
     /// @brief Identify reviewed user, device and recovery values
-    /// @details Unknown Plenact keys are reported separately, never guessed safe to export.
+    /// @details Unknown Plenact keys are reported separately, never guessed safe to export
     /// @param[in] key Original preference name
     /// @return True for a known key or reviewed dynamic prefix
     static func includes(_ key: String) -> Bool
@@ -53,7 +53,7 @@ enum LegacyStoreValidation
 
     /// @fcn LegacyStoreValidation.decode
     /// @brief Exercise the actual app decoder without reconstructing or saving its output
-    /// @details The source bytes remain authoritative even if a legacy decoder normalizes values.
+    /// @details The source bytes remain authoritative even if a legacy decoder normalizes values
     /// @param[in] type Native source type
     /// @param[in] data Original stored JSON bytes
     /// @return Void after successful decoding
@@ -68,7 +68,7 @@ enum LegacyStoreValidation
 
     /// @fcn LegacyStoreValidation.mediaIssues
     /// @brief Locate unsafe or missing file references without altering retained JSON bytes
-    /// @details Source paths stay private; diagnostic codes identify only the affected store.
+    /// @details Source paths stay private; diagnostic codes identify only the affected store
     /// @param[in] value Decoded legacy JSON subtree
     /// @param[in] store Original source store name
     /// @param[in] files Exact relative paths included in the backup
@@ -133,7 +133,7 @@ enum LegacyStoreValidation
 
     /// @fcn LegacyStoreValidation.check
     /// @brief Preflight a present source value and return a stable review code if necessary
-    /// @details Future versions and corrupt bytes are preserved, never replaced with empty stores.
+    /// @details Future versions and corrupt bytes are preserved, never replaced with empty stores
     /// @param[in] key Original preference name
     /// @param[in] value Original property-list value
     /// @return Optional diagnostic code; nil means the checks available here passed

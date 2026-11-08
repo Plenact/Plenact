@@ -2,7 +2,7 @@
 // @file       WorkspaceContentActions.swift
 // @brief      Workspace content creation and restoration actions
 // @details    Restores Boards, targets canonical Cards, and creates content through the existing
-//             owner and recovery boundaries.
+//             owner and recovery boundaries
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -15,7 +15,7 @@ import SwiftUI
 /// AppRootView behavior grouped separately from stored view state
 ///
 /// @section    Purpose
-///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle.
+///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle
 ///
 extension AppRootView
 {
@@ -233,7 +233,7 @@ extension AppRootView
     /// @details    Builds destination-local items with the submitted presentation, writing,
     ///             actions, attachments, and schedule. Explicit checked saves, media, or
     ///             scheduling persist calendar and Board snapshots through a recovery
-    ///             transaction before publication; failure returns false and retains the draft.
+    ///             transaction before publication; failure returns false and retains the draft
     ///
     /// @param[in]  listID        Existing destination list identity
     /// @param[in]  title         Card title supplied by the composer or quick capture

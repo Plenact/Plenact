@@ -3,7 +3,7 @@
 // @brief      Database activity presentation and content-transfer confirmations
 // @details    Publishes active database requests and dismissible errors through a shared
 //             observable state. Hosts transient move or copy notices and guarded section-move Undo
-//             using windows and overlays that limit interception to the interactive notice panel.
+//             using windows and overlays that limit interception to the interactive notice panel
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -20,14 +20,14 @@ final class DatabaseActivity: ObservableObject
 {
 
 
-    /// Process-wide activity state observed by database-backed views.
+    /// Process-wide activity state observed by database-backed views
     static let shared = DatabaseActivity() /* Process-wide activity state observed by database-backed views */
 
-    /// Active operation identifiers paired with their visible progress messages.
+    /// Active operation identifiers paired with their visible progress messages
     @Published private(set) var operations: [(id: UUID, message: String)] =
     [] /* Active operation identifiers and visible progress messages */
 
-    /// Latest error message awaiting dismissal.
+    /// Latest error message awaiting dismissal
     @Published private(set) var errorMessage: String? /* Latest database error awaiting dismissal */
 
     ///
@@ -145,7 +145,7 @@ struct DatabaseActivityOverlay: ViewModifier
 {
 
 
-    /// Shared database activity observed by this modifier.
+    /// Shared database activity observed by this modifier
     @ObservedObject private var activity = DatabaseActivity
     .shared /* Shared activity source rendered by this overlay */
 

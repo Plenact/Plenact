@@ -2,7 +2,7 @@
 // @file       CreationAttachments.swift
 // @brief      In-memory attachment capture before item creation
 // @details    Retains pending media, links, and drawings and limits failed-save cleanup to files
-//             created by the current draft.
+//             created by the current draft
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -19,7 +19,7 @@ import UIKit
 ///
 /// @section    Purpose
 ///     Keeps media in memory until explicit Add or Save and removes only newly written files on a
-///     failed commit, retaining the draft for retry.
+///     failed commit, retaining the draft for retry
 ///
 @MainActor
 final class CreationAttachmentDraft: ObservableObject
@@ -31,7 +31,7 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     /// @section    Purpose
     ///     Wraps media, link, or drawing content with a stable draft ID and derived labels for the
-    ///     composer.
+    ///     composer
     ///
     struct Entry: Identifiable
     {
@@ -42,7 +42,7 @@ final class CreationAttachmentDraft: ObservableObject
         ///
         /// @section    Purpose
         ///     Retains encoded media, a link URL, or an editable drawing until explicit item
-        ///     creation persists them.
+        ///     creation persists them
         ///
         enum Content
         {
@@ -96,7 +96,7 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     /// @section    Purpose
     ///     Distinguishes source selection, link entry, and drawing editing while preserving the
-    ///     selected drawing draft.
+    ///     selected drawing draft
     ///
     enum Sheet: Identifiable
     {
@@ -131,7 +131,7 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     /// @fcn        CreationAttachmentDraft.openSources
     /// @brief      Open attachment capture choices from the draft
-    /// @details    Ends the current text-editing context as needed and presents the available attachment sources.
+    /// @details    Ends the current text-editing context as needed and presents the available attachment sources
     ///
     /// @return     (Void) no return value
     ///
@@ -149,7 +149,7 @@ final class CreationAttachmentDraft: ObservableObject
     /// @fcn        CreationAttachmentDraft.paste
     /// @brief      Add supported clipboard content to the attachment draft
     /// @details    Reads available pasteboard media and reports unsupported or failed imports without creating a
-    ///             workspace card.
+    ///             workspace card
     ///
     /// @return     (Void) no return value
     ///
@@ -199,7 +199,7 @@ final class CreationAttachmentDraft: ObservableObject
     /// @fcn        CreationAttachmentDraft.importSelection
     /// @brief      Load selected photo items into the draft
     /// @details    Processes the current selection asynchronously and retains successfully loaded draft media for a
-    ///             later checked save.
+    ///             later checked save
     ///
     /// @return     (Void) no return value
     ///
@@ -275,7 +275,7 @@ final class CreationAttachmentDraft: ObservableObject
     /// @fcn        CreationAttachmentDraft.save
     /// @brief      Import draft attachments and run the checked owner commit
     /// @details    Rejects pending photo imports, saves each media or drawing entry, and removes newly stored files
-    ///             when commit returns false or throws; links require no file import.
+    ///             when commit returns false or throws; links require no file import
     ///
     /// @param[in]  commit  Owner-save callback that accepts imported attachment records and reports whether they were
     ///                     retained
@@ -283,7 +283,7 @@ final class CreationAttachmentDraft: ObservableObject
     /// @return     (Bool) true if the owner retains the imported attachments; false after a rejected commit and
     ///             cleanup
     /// @throws     Explicit failures include `CocoaError(.fileReadUnknown)`, `CocoaError(.fileReadCorruptFile)`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     func save(commit: ([KanbanAttachment]) throws -> Bool) throws -> Bool
     {
@@ -344,7 +344,7 @@ final class CreationAttachmentDraft: ObservableObject
 /// Displays pending attachments in a creation draft
 ///
 /// @section    Purpose
-///     Shows media previews and removal controls that update only the in-memory draft entries.
+///     Shows media previews and removal controls that update only the in-memory draft entries
 ///
 struct CreationAttachmentList: View
 {
@@ -416,7 +416,7 @@ struct CreationAttachmentList: View
 /// Connects attachment presentation to a creation draft
 ///
 /// @section    Purpose
-///     Hosts source, link, and drawing sheets and imports selected media without creating a Card.
+///     Hosts source, link, and drawing sheets and imports selected media without creating a Card
 ///
 struct CreationAttachmentPresentation: ViewModifier
 {
@@ -429,7 +429,7 @@ struct CreationAttachmentPresentation: ViewModifier
     /// @fcn        CreationAttachmentPresentation.body
     /// @brief      Present creation attachment sources, links, and drawing capture
     /// @details    Connects source and drawing sheets to the draft, imports photo selections asynchronously, and
-    ///             presents attachment notices without creating a card.
+    ///             presents attachment notices without creating a card
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///

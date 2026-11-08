@@ -2,7 +2,7 @@
 // @file       InlineListCapture.swift
 // @brief      Inline List creation and full-composer handoff
 // @details    Supports keyboard quick creation and plus-button expansion with prefilled writing
-//             while retaining rejected or cancelled drafts.
+//             while retaining rejected or cancelled drafts
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Stores unsaved title, description, and supporting creation values separately from committed
-///     List content.
+///     List content
 ///
 struct ListCreationDraft: Codable, Equatable
 {
@@ -30,7 +30,7 @@ struct ListCreationDraft: Codable, Equatable
     /// @fcn        ListCreationDraft.key
     /// @brief      Build the storage key for a destination's creation draft
     /// @details    Includes the collection UUID or current-week sentinel and the numeric list ID to keep drafts
-    ///             separate.
+    ///             separate
     ///
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
     /// @param[in]  listID        Numeric list identity within its owner
@@ -47,7 +47,7 @@ struct ListCreationDraft: Codable, Equatable
     ///
     /// @fcn        ListCreationDraft.load
     /// @brief      Restore a destination-specific creation draft
-    /// @details    Returns an empty draft when the key has no data or its encoded value cannot be decoded.
+    /// @details    Returns an empty draft when the key has no data or its encoded value cannot be decoded
     ///
     /// @param[in]  key       Storage key or stable lookup key used by this operation
     /// @param[in]  defaults  Preferences store used for this operation
@@ -70,7 +70,7 @@ struct ListCreationDraft: Codable, Equatable
     ///
     /// @fcn        ListCreationDraft.save
     /// @brief      Persist the current creation draft
-    /// @details    Writes encoded draft data under the supplied key only when encoding succeeds.
+    /// @details    Writes encoded draft data under the supplied key only when encoding succeeds
     ///
     /// @param[in]  key       Storage key or stable lookup key used by this operation
     /// @param[in]  defaults  Preferences store used for this operation
@@ -91,7 +91,7 @@ struct ListCreationDraft: Codable, Equatable
     ///
     /// @fcn        ListCreationDraft.clear
     /// @brief      Remove a completed or cancelled creation draft
-    /// @details    Deletes only the specified draft key from the supplied preferences store.
+    /// @details    Deletes only the specified draft key from the supplied preferences store
     ///
     /// @param[in]  key       Storage key or stable lookup key used by this operation
     /// @param[in]  defaults  Preferences store used for this operation
@@ -111,7 +111,7 @@ struct ListCreationDraft: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Keeps editable content stable across sheet reconstruction and persists draft changes
-///     independently of final item creation.
+///     independently of final item creation
 ///
 final class ListCreationDraftModel: ObservableObject
 {
@@ -151,7 +151,7 @@ final class ListCreationDraftModel: ObservableObject
     ///
     /// @fcn        ListCreationDraftModel.init
     /// @brief      Load editable creation fields for a destination key
-    /// @details    Retains the key and initializes title, subtitle, and description from the saved draft.
+    /// @details    Retains the key and initializes title, subtitle, and description from the saved draft
     ///
     /// @param[in]  key  Storage key or stable lookup key used by this operation
     ///
@@ -175,7 +175,7 @@ final class ListCreationDraftModel: ObservableObject
     /// @fcn        ListCreationDraftModel.beginSession
     /// @brief      Reload draft fields before accepting editor changes
     /// @details    Temporarily suspends edits during restoration so field assignments do not persist intermediate
-    ///             values.
+    ///             values
     ///
     /// @return     (Void) no return value
     ///
@@ -198,14 +198,14 @@ final class ListCreationDraftModel: ObservableObject
     /// @fcn        ListCreationDraftModel.finishSession
     /// @brief      Clear a finished draft and reject delayed editor callbacks
     /// @details    Stops accepting edits before clearing fields and storage, preventing keyboard dismissal from
-    ///             recreating the draft.
+    ///             recreating the draft
     ///
     /// @return     (Void) no return value
     ///
     func finishSession()
     {
 
-        // Dismissal can deliver a final text-editor callback after Add or Cancel.
+        // Dismissal can deliver a final text-editor callback after Add or Cancel
         acceptsEdits = false
         title = ""
         subtitle = ""
@@ -218,7 +218,7 @@ final class ListCreationDraftModel: ObservableObject
     ///
     /// @fcn        ListCreationDraftModel.binding
     /// @brief      Bind a creation field while the session accepts edits
-    /// @details    Reads through the supplied reference key path and ignores writes after the session has finished.
+    /// @details    Reads through the supplied reference key path and ignores writes after the session has finished
     ///
     /// @param[in]  field  Selected editable field or field key path
     ///
@@ -249,7 +249,7 @@ final class ListCreationDraftModel: ObservableObject
     ///
     /// @fcn        ListCreationDraftModel.save
     /// @brief      Persist editable draft fields during an active session
-    /// @details    Returns without writing once edits are disabled, preserving the completed-session cleanup.
+    /// @details    Returns without writing once edits are disabled, preserving the completed-session cleanup
     ///
     /// @return     (Void) no return value
     ///
@@ -272,7 +272,7 @@ final class ListCreationDraftModel: ObservableObject
 ///
 /// @section    Purpose
 ///     Keyboard submission creates the typed title in place; the adjacent plus opens the full
-///     composer with that writing prefilled.
+///     composer with that writing prefilled
 ///
 struct InlineListCapture: View
 {
@@ -361,7 +361,7 @@ struct InlineListCapture: View
     ///
     /// @fcn        InlineListCapture.createInline()
     /// @brief      Save a title directly into the current List
-    /// @details    Retains focus for successive captures and retains writing if saving fails.
+    /// @details    Retains focus for successive captures and retains writing if saving fails
     ///
     /// @return     (Void) requests creation without opening a detail view
     ///
@@ -375,7 +375,7 @@ struct InlineListCapture: View
             return
         }
 
-        // Keep successive captures at the footer rather than centering the new Card above it.
+        // Keep successive captures at the footer rather than centering the new Card above it
         if let request = CreatedContentReveal.shared.target,
         request.id != previousRevealID, request.listID == list.id
         {
@@ -395,7 +395,7 @@ struct InlineListCapture: View
 ///
 /// @section    Purpose
 ///     Clears the draft only after the canonical List creation callback accepts the new item,
-///     leaving failed submissions editable.
+///     leaving failed submissions editable
 ///
 struct InlineListCaptureDraft
 {
@@ -408,7 +408,7 @@ struct InlineListCaptureDraft
     /// @fcn        InlineListCaptureDraft.submit(to:onCreate:)
     /// @brief      Submit a nonblank title through the existing List creation path
     /// @details    Uses the destination's Card or Note default and clears only after a successful
-    ///             save. Empty submissions never invoke creation or open another view.
+    ///             save. Empty submissions never invoke creation or open another view
     ///
     /// @param[in]  list      Destination List and its default item presentation
     /// @param[in]  onCreate  Checked canonical creation callback
@@ -447,7 +447,7 @@ struct InlineListCaptureDraft
 ///
 /// @section    Purpose
 ///     Reuses the central New composer with destination context and an optional initial title
-///     rather than an outdated separate editor.
+///     rather than an outdated separate editor
 ///
 struct ListItemComposer: View
 {
@@ -487,7 +487,7 @@ struct ListItemComposer: View
 ///
 /// @section    Purpose
 ///     Uses destination-local allocation and full capture content without mutating an unrelated
-///     Board or calendar Week.
+///     Board or calendar Week
 ///
 enum ListItemCreation
 {
@@ -497,7 +497,7 @@ enum ListItemCreation
     /// @fcn        ListItemCreation.items
     /// @brief      Build full-featured cards or notes from a capture submission
     /// @details    Validates the active destination, title, and schedule; applies scheduling to each created item and
-    ///             attaches imported media and its photo cover to the first item.
+    ///             attaches imported media and its photo cover to the first item
     ///
     /// @param[in]  capture   Full capture submission including presentation, text, schedule, and attachments
     /// @param[in]  list      List supplying the current content and metadata

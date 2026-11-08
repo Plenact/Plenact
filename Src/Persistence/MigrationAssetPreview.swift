@@ -2,21 +2,21 @@
 // @file       MigrationAssetPreview.swift
 // @brief      Verified original-file links and account-unbound Asset preparation
 // @details    Supported User Data Model versions: 1.0. Local preview format 1 only. Original bytes
-//             stay in the backup; no account, upload endpoint or authenticated ownership is invented.
+//             stay in the backup; no account, upload endpoint or authenticated ownership is invented
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Prepares file identities, exact integrity evidence and source-derived drawing relationships.
+/// Prepares file identities, exact integrity evidence and source-derived drawing relationships
 /// @section Purpose
-///     Make attachment recovery reviewable before account-bound canonical Asset publication exists.
+///     Make attachment recovery reviewable before account-bound canonical Asset publication exists
 @MainActor
 enum MigrationAssetPreview
 {
 
-    /// Local file evidence with separate verified, unavailable and review counts.
+    /// Local file evidence with separate verified, unavailable and review counts
     /// @section Purpose
-    ///     Keep file preservation distinct from complete portable conversion or upload success.
+    ///     Keep file preservation distinct from complete portable conversion or upload success
     struct Result
     {
 
@@ -84,7 +84,7 @@ enum MigrationAssetPreview
     /// @brief Recheck frozen media and link every converted Asset target or preserved original file
     /// @details Missing references retain unavailable evidence; malformed integrity evidence fails closed.
     ///          Local source paths never enter canonical Asset records. Type detection is a signature
-    ///          hint, not decoder/playback verification; drawing roles come from native source metadata.
+    ///          hint, not decoder/playback verification; drawing roles come from native source metadata
     /// @param[in] backup Verified frozen source backup
     /// @param[in] records Actual converted content and metadata records
     /// @param[in,out] journal Durable original-media identity mappings

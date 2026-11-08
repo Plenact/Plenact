@@ -3,7 +3,7 @@
 // @brief      Optional Card locations and app-wide map-provider selection
 // @details    Stores a place name or address without geocoding, opens a place search in the chosen
 //             maps provider, and keeps location edits in a checked Save/Cancel draft. Optional
-//             Apple Maps search fills that draft without committing the Card.
+//             Apple Maps search fills that draft without committing the Card
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Uses official HTTPS place-search links so Maps owns place resolution and subsequent actions.
-///     Google links open its app when available and its website otherwise; no API key is required.
+///     Google links open its app when available and its website otherwise; no API key is required
 ///
 enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -41,7 +41,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
     /// @fcn        PreferredMapsApp.placeURL
     /// @brief      Build a provider-controlled place-search link for a saved location
     /// @details    Treats all entered text as one encoded query, including punctuation and Unicode.
-    ///             Never requests directions or navigation and returns nil for an empty location.
+    ///             Never requests directions or navigation and returns nil for an empty location
     /// @param[in]  location Optional user-entered place name or address
     /// @return     (URL?) official provider URL containing the normalized location query
     ///
@@ -62,7 +62,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
         components.queryItems = self == .apple
         ? [URLQueryItem(name: "q", value: query)]
         : [URLQueryItem(name: "api", value: "1"), URLQueryItem(name: "query", value: query)]
-        // Preserve literal plus signs when a provider decodes form-style query parameters.
+        // Preserve literal plus signs when a provider decodes form-style query parameters
         components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
 
         return components.url
@@ -77,7 +77,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Accepts place names and addresses, trims accidental outer whitespace, and treats empty
-///     text as removal. Cards created before location support continue to have no location.
+///     text as removal. Cards created before location support continue to have no location
 ///
 enum CardLocation
 {
@@ -86,7 +86,7 @@ enum CardLocation
     ///
     /// @fcn        CardLocation.normalized
     /// @brief      Convert a location draft into optional persisted place text
-    /// @details    Preserves internal punctuation and line breaks while discarding empty drafts.
+    /// @details    Preserves internal punctuation and line breaks while discarding empty drafts
     /// @param[in]  value Optional unnormalized place text
     /// @return     (String?) trimmed location, or nil when absent or blank
     ///
@@ -111,7 +111,7 @@ enum CardLocation
 ///
 /// @section    Purpose
 ///     Reads the current app-wide maps preference at display time. Locked and read-only Cards
-///     retain their location link while hiding editing controls.
+///     retain their location link while hiding editing controls
 ///
 struct CardLocationRow: View
 {
@@ -132,7 +132,7 @@ struct CardLocationRow: View
     /// @fcn        CardLocationRow.body
     /// @brief      Render a saved place link or an Add location affordance
     /// @details    Keeps the link and pencil as separate accessible actions and supports multiline
-    ///             addresses without changing the stored Card when a place is opened.
+    ///             addresses without changing the stored Card when a place is opened
     /// @return     (some View) an optional metadata row with provider-aware place navigation
     ///
     var body: some View
@@ -207,7 +207,7 @@ struct CardLocationRow: View
 ///
 /// @section    Purpose
 ///     Saves only after explicit confirmation, supports removing an existing location, and
-///     retains the draft when the owning Card cannot accept an update.
+///     retains the draft when the owning Card cannot accept an update
 ///
 struct CardLocationEditorSheet: View
 {
@@ -223,7 +223,7 @@ struct CardLocationEditorSheet: View
     ///
     /// @fcn        CardLocationEditorSheet.init
     /// @brief      Initialize a location draft from the current Card value
-    /// @details    Keeps editing local until Save or Remove is explicitly accepted by the owner.
+    /// @details    Keeps editing local until Save or Remove is explicitly accepted by the owner
     /// @param[in]  location Existing optional place text
     /// @param[in]  onSave   Callback accepting or rejecting the submitted location
     /// @return     (CardLocationEditorSheet) initialized location editor
@@ -242,7 +242,7 @@ struct CardLocationEditorSheet: View
     ///
     /// @fcn        CardLocationEditorSheet.save
     /// @brief      Submit a normalized draft and dismiss only after acceptance
-    /// @details    A rejected update retains the text and explains that the Card was not changed.
+    /// @details    A rejected update retains the text and explains that the Card was not changed
     /// @param[in]  value Place text to retain, or nil to remove the location
     /// @return     (Void) dismisses the accepted draft or presents failure feedback
     ///
@@ -270,7 +270,7 @@ struct CardLocationEditorSheet: View
     /// @fcn        CardLocationEditorSheet.body
     /// @brief      Present the optional place field with Save, Cancel, and Remove actions
     /// @details    Accepts manual text or an Apple Maps place selection without device-location
-    ///             permission. Map selection fills this draft; Save remains the content boundary.
+    ///             permission. Map selection fills this draft; Save remains the content boundary
     /// @return     (some View) native form for editing the Card's location
     ///
     var body: some View
@@ -376,7 +376,7 @@ struct CardLocationEditorSheet: View
 ///
 /// @section    Purpose
 ///     Keeps provider selection consistent between Account settings and Plan settings, using
-///     their existing Save and Cancel behavior rather than changing a preference on selection.
+///     their existing Save and Cancel behavior rather than changing a preference on selection
 ///
 struct MapsAppSettingsSection: View
 {
@@ -388,7 +388,7 @@ struct MapsAppSettingsSection: View
     ///
     /// @fcn        MapsAppSettingsSection.body
     /// @brief      Offer Apple Maps and Google Maps as the app-wide place-link provider
-    /// @details    Apple Maps is the default; the selected provider owns all subsequent map actions.
+    /// @details    Apple Maps is the default; the selected provider owns all subsequent map actions
     /// @return     (some View) a settings section bound to the surrounding preference draft
     ///
     var body: some View

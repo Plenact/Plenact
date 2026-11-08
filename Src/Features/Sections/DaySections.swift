@@ -2,7 +2,7 @@
 // @file       DaySections.swift
 // @brief      Named section membership and ordering policy
 // @details    Derives boundaries, collapsed visibility, and whole-section movement while
-//             preserving original item identities.
+//             preserving original item identities
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Treats a named divider as owner of subsequent items until the next named divider while
-///     retaining identities through collapse and reordering.
+///     retaining identities through collapse and reordering
 ///
 enum DaySections
 {
@@ -23,7 +23,7 @@ enum DaySections
     /// @fcn        DaySections.owner
     /// @brief      Find the named heading that owns a card
     /// @details    Scans canonical order until the next named heading; cards before the first heading have no section
-    ///             owner.
+    ///             owner
     ///
     /// @param[in]  id     Starting numeric card ID or owner-local content identity
     /// @param[in]  cards  Canonical card values in their current order
@@ -61,7 +61,7 @@ enum DaySections
     /// @fcn        DaySections.visible
     /// @brief      Project canonical cards into the expanded section rows
     /// @details    Retains headings and ungrouped content while omitting members of collapsed sections; stored cards
-    ///             remain untouched.
+    ///             remain untouched
     ///
     /// @param[in]  cards  Canonical card values in their current order
     ///
@@ -92,7 +92,7 @@ enum DaySections
     ///
     /// @fcn        DaySections.reveal
     /// @brief      Expand the section containing a particular card
-    /// @details    Finds its named heading and clears the collapsed appearance flag without changing card order.
+    /// @details    Finds its named heading and clears the collapsed appearance flag without changing card order
     ///
     /// @param[in]      id     Starting numeric card ID or owner-local content identity
     /// @param[in,out]  cards  Canonical card values in their current order
@@ -122,7 +122,7 @@ enum DaySections
     /// @fcn        DaySections.visibleMove
     /// @brief      Translate a visible native-list move into canonical indices
     /// @details    Maps visible source and destination positions back to full card order so collapsed members are not
-    ///             lost or misindexed.
+    ///             lost or misindexed
     ///
     /// @param[in]  cards              Canonical card values in their current order
     /// @param[in]  sourceOffsets      Indices in the visible native-list projection being moved
@@ -131,7 +131,7 @@ enum DaySections
     /// @return     ((id: Int, index: Int)?) canonical source identity and insertion index, or nil for an invalid
     ///             visible move
     ///
-    /// @note       Translate native List offsets through the visible projection, keeping hidden members in storage.
+    /// @note       Translate native List offsets through the visible projection, keeping hidden members in storage
     ///
     static func visibleMove(_ cards: [KanbanCard], sourceOffsets: IndexSet, destinationOffset: Int) -> (
         id: Int, index: Int
@@ -177,7 +177,7 @@ enum DaySections
     /// @fcn        DaySections.reordered
     /// @brief      Reorder a card or named section in canonical card order
     /// @details    Moves a heading with its complete section block and delegates ordinary-card movement while
-    ///             preserving the ungrouped prefix.
+    ///             preserving the ungrouped prefix
     ///
     /// @param[in]  cards        Canonical card values in their current order
     /// @param[in]  itemID       Canonical card or divider identity to reorder
@@ -236,7 +236,7 @@ enum DaySections
     /// @fcn        DaySections.moved
     /// @brief      Move a named section relative to neighboring sections
     /// @details    Treats the heading and all following members up to the next named heading as one block and leaves
-    ///             invalid requests unchanged.
+    ///             invalid requests unchanged
     ///
     /// @param[in]  cards      Canonical card values in their current order
     /// @param[in]  sectionID  Named divider identity whose complete section should move

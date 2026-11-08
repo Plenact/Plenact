@@ -2,16 +2,16 @@
 // @file       LocalBackupRestoreTests.swift
 // @brief      Isolated Simulator backup review, source recovery and undo regression tests
 // @details    User Data Model 1.0 preparation; legacy-source restore only. Synthetic private
-//             preference suites and temporary containers never access the user's Simulator data.
+//             preference suites and temporary containers never access the user's Simulator data
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import Foundation
 import XCTest
 
 
-/// Verifies review-before-write and rollback-protected source recovery.
+/// Verifies review-before-write and rollback-protected source recovery
 /// @section Purpose
-///     Demonstrate recovery behavior without claiming complete portable migration.
+///     Demonstrate recovery behavior without claiming complete portable migration
 @MainActor
 final class LocalBackupRestoreTests: XCTestCase
 {

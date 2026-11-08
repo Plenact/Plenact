@@ -4,7 +4,7 @@
 // @details    Retains normalized invitation times, dismissal history, and notification choices.
 //             Derives prompts from saved review progress, reconciles system reminders, and routes
 //             invitations into the existing review workflows without applying task decisions
-//             automatically.
+//             automatically
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -16,7 +16,7 @@ import UserNotifications
 ///
 /// @section    Purpose
 ///     Selects daily or weekly review navigation and leaves all content decisions to the user
-///     inside that workflow.
+///     inside that workflow
 ///
 enum ReviewRhythmKind: String, Codable, CaseIterable
 {
@@ -48,7 +48,7 @@ enum ReviewRhythmKind: String, Codable, CaseIterable
 /// Identifies a requested daily or weekly review
 ///
 /// @section    Purpose
-///     Pairs review kind with the represented date for sheet and notification navigation.
+///     Pairs review kind with the represented date for sheet and notification navigation
 ///
 struct ReviewRhythmRoute: Identifiable
 {
@@ -66,7 +66,7 @@ struct ReviewRhythmRoute: Identifiable
 ///
 /// @section    Purpose
 ///     Stores local minute-of-day and weekday choices separately from in-app invitation and system
-///     notification switches.
+///     notification switches
 ///
 struct ReviewRhythmPreferences: Codable, Equatable
 {
@@ -76,7 +76,7 @@ struct ReviewRhythmPreferences: Codable, Equatable
     var weeklyInvitations   = true
     var dailyMinutes        = 20 * 60 + 30
     var weeklyMinutes       = 18 * 60
-    var weeklyWeekday       = 1 // Calendar weekday: Sunday.
+    var weeklyWeekday       = 1 // Calendar weekday: Sunday
     var dailyNotifications  = false
     var weeklyNotifications = false
 
@@ -84,7 +84,7 @@ struct ReviewRhythmPreferences: Codable, Equatable
     ///
     /// @fcn        ReviewRhythmPreferences.normalized
     /// @brief      Clamp review reminder choices to supported ranges
-    /// @details    Normalizes day and minute values before they are used for invitations or notification scheduling.
+    /// @details    Normalizes day and minute values before they are used for invitations or notification scheduling
     ///
     /// @return     (ReviewRhythmPreferences) constructed value
     ///
@@ -125,7 +125,7 @@ struct ReviewRhythmPreferences: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Loads normalized settings, records dismissals, and determines eligible review prompts
-///     against saved review progress.
+///     against saved review progress
 ///
 enum ReviewRhythmStore
 {
@@ -139,7 +139,7 @@ enum ReviewRhythmStore
     /// @fcn        ReviewRhythmStore.load
     /// @brief      Read review invitation preferences
     /// @details    Decodes the stored value and normalizes it, falling back to defaults when no valid value is
-    ///             available.
+    ///             available
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -162,14 +162,14 @@ enum ReviewRhythmStore
     ///
     /// @fcn        ReviewRhythmStore.save
     /// @brief      Persist normalized review invitation preferences
-    /// @details    Encodes the normalized value before replacing the preferences key.
+    /// @details    Encodes the normalized value before replacing the preferences key
     ///
     /// @param[in]  value     Value to normalize, encode, or save as described above
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func save(_ value: ReviewRhythmPreferences, to defaults: UserDefaults = .standard) throws
     {
@@ -193,7 +193,7 @@ enum ReviewRhythmStore
     ///
     /// @fcn        ReviewRhythmStore.periodID
     /// @brief      Identify the daily or weekly review period
-    /// @details    Uses local calendar-day or week keys so invitation deferrals belong to the intended review period.
+    /// @details    Uses local calendar-day or week keys so invitation deferrals belong to the intended review period
     ///
     /// @param[in]  kind      Date, review, or collection kind selecting this operation's behavior
     /// @param[in]  date      Represented date for the operation
@@ -215,7 +215,7 @@ enum ReviewRhythmStore
     /// @fcn        ReviewRhythmStore.isDue
     /// @brief      Check whether a review invitation should be shown now
     /// @details    Combines enabled timing, period completion, and an optional deferral rather than automatically
-    ///             moving unfinished work.
+    ///             moving unfinished work
     ///
     /// @param[in]  kind           Date, review, or collection kind selecting this operation's behavior
     /// @param[in]  now            Reference time used instead of an implicit clock read
@@ -261,7 +261,7 @@ enum ReviewRhythmStore
     /// @fcn        ReviewRhythmStore.deferInvitation
     /// @brief      Record a review invitation deferral for its period
     /// @details    Stores the period identifier and requested future invitation time in the supplied preferences
-    ///             store.
+    ///             store
     ///
     /// @param[in]  kind      Date, review, or collection kind selecting this operation's behavior
     /// @param[in]  date      Represented date for the operation
@@ -289,7 +289,7 @@ enum ReviewRhythmStore
         if values.count > 64
         {
 
-            // The date component in each key retains recent periods, including permanent skips.
+            // The date component in each key retains recent periods, including permanent skips
             let keys = values.keys.sorted
             {
 
@@ -315,7 +315,7 @@ enum ReviewRhythmStore
     /// @fcn        ReviewRhythmStore.notificationRequests
     /// @brief      Build enabled daily and weekly notification requests
     /// @details    Uses normalized review timing and stable identifiers to produce repeating calendar notifications
-    ///             without requesting permission itself.
+    ///             without requesting permission itself
     ///
     /// @param[in]  value  Value to normalize, encode, or save as described above
     ///
@@ -347,7 +347,7 @@ enum ReviewRhythmStore
 
             }
 
-            // No explicit time zone: these reminders follow local wall-clock time.
+            // No explicit time zone: these reminders follow local wall-clock time
             let content = UNMutableNotificationContent()
 
             content.title = kind.title
@@ -370,7 +370,7 @@ enum ReviewRhythmStore
 ///
 /// @section    Purpose
 ///     Installs notification handling, reconciles requested reminders, and publishes a pending
-///     review route without making review decisions automatically.
+///     review route without making review decisions automatically
 ///
 @MainActor
 final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotificationCenterDelegate
@@ -386,7 +386,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     ///
     /// @fcn        ReviewRhythmNotifications.install
     /// @brief      Install the review notification-center delegate
-    /// @details    Makes this notification handler the delegate for the current notification center.
+    /// @details    Makes this notification handler the delegate for the current notification center
     ///
     /// @return     (Void) no return value
     ///
@@ -403,14 +403,14 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     /// @brief      Reconcile enabled review reminders with notification permission
     /// @details    Requests authorization only for an explicit permitted action, serializes overlapping
     ///             reconciliation passes, rereads preferences, and replaces the stable daily and weekly requests when
-    ///             authorized.
+    ///             authorized
     ///
     /// @param[in]  requestPermission  Whether this explicit user action may request notification authorization
     ///
     /// @return     (Bool) true when reminder synchronization succeeds under the current authorization state
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
-    /// @note       Permission is requested only after an explicit Save with a reminder switch enabled.
+    /// @note       Permission is requested only after an explicit Save with a reminder switch enabled
     ///
     func synchronize(requestPermission: Bool = false) async throws -> Bool
     {
@@ -428,7 +428,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
         }
 
-        // Serialize reconciliation, then read the latest saved choices again on a queued pass.
+        // Serialize reconciliation, then read the latest saved choices again on a queued pass
         if isReconciling
         {
 
@@ -475,7 +475,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     /// @fcn        ReviewRhythmNotifications.userNotificationCenter
     /// @brief      Handle a review notification-center callback
     /// @details    Routes notification responses to the matching review or supplies foreground presentation options,
-    ///             and completes the system callback.
+    ///             and completes the system callback
     ///
     /// @param[in]  center             Notification center delivering the delegate callback
     /// @param[in]  response           User response to a delivered review notification
@@ -513,7 +513,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     /// @fcn        ReviewRhythmNotifications.userNotificationCenter
     /// @brief      Handle a review notification-center callback
     /// @details    Routes notification responses to the matching review or supplies foreground presentation options,
-    ///             and completes the system callback.
+    ///             and completes the system callback
     ///
     /// @param[in]  center             Notification center delivering the delegate callback
     /// @param[in]  notification       Review notification delivered while the application is active
@@ -538,7 +538,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 ///
 /// @section    Purpose
 ///     Combines retained settings, dismissal history, and daily or weekly progress, then delegates
-///     opening and settings navigation.
+///     opening and settings navigation
 ///
 struct ReviewRhythmPanel: View
 {
@@ -564,7 +564,7 @@ struct ReviewRhythmPanel: View
     /// @fcn        ReviewRhythmPanel.due
     /// @brief      Determine whether this panel should invite a review
     /// @details    Combines the current period's saved completion and deferral state with the shared review-rhythm
-    ///             timing rules.
+    ///             timing rules
     ///
     /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
     /// @param[in]  now   Reference time used instead of an implicit clock read
@@ -694,7 +694,7 @@ struct ReviewRhythmPanel: View
 ///
 /// @section    Purpose
 ///     Opens daily evening review or weekly review with the route's date and the workspace calendar
-///     context.
+///     context
 ///
 struct ReviewRhythmDestination: View
 {
@@ -727,7 +727,7 @@ struct ReviewRhythmDestination: View
 ///
 /// @section    Purpose
 ///     Retains a local preferences draft, requests notification reconciliation on save, and keeps
-///     failures visible for retry.
+///     failures visible for retry
 ///
 struct ReviewRhythmSettingsView: View
 {
@@ -743,7 +743,7 @@ struct ReviewRhythmSettingsView: View
     /// @fcn        ReviewRhythmSettingsView.time
     /// @brief      Expose a stored minute-of-day setting as a date binding
     /// @details    Converts between the selected time and the review preference key path for the settings time
-    ///             picker.
+    ///             picker
     ///
     /// @param[in]  key  Key path selecting the editable preference or optional contextual callback
     ///

@@ -2,7 +2,7 @@
 // @file       CardLocationSearch.swift
 // @brief      Apple Maps place search for Card location drafts
 // @details    Searches MapKit, previews selectable results on a map, and returns a place name and
-//             address only after explicit selection. Card persistence remains with the parent editor.
+//             address only after explicit selection. Card persistence remains with the parent editor
 //
 // --------------------------------------------------------------------------------------------------
 import MapKit
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Separates provider objects from observable presentation state and creates an unambiguous
-///     place-and-address string compatible with the existing optional Card location field.
+///     place-and-address string compatible with the existing optional Card location field
 ///
 struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 {
@@ -59,7 +59,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     ///
     /// @fcn        CardLocationSearchResult.init
     /// @brief      Initialize an independently testable map result
-    /// @details    Retains explicit coordinates and visible place text under a stable result identity.
+    /// @details    Retains explicit coordinates and visible place text under a stable result identity
     /// @param[in]  id        Identity used for map markers and result-list selection
     /// @param[in]  name      Place name returned by the provider
     /// @param[in]  address   Address text used to distinguish similarly named places
@@ -84,7 +84,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     /// @fcn        CardLocationSearchResult.init
     /// @brief      Extract a place's name, formatted address, and valid coordinate from MapKit
     /// @details    Uses current address APIs on iOS 26 and newer with a compatible iOS 17 fallback.
-    ///             Invalid coordinates are excluded instead of rendering an unusable marker.
+    ///             Invalid coordinates are excluded instead of rendering an unusable marker
     /// @param[in]  item MapKit search result to represent
     /// @return     (CardLocationSearchResult?) retained result, or nil for invalid coordinates
     ///
@@ -130,7 +130,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 ///
 /// @section    Purpose
 ///     Keeps loading, empty, and failure states explicit; stale responses cannot replace a newer
-///     query or selection. An injected search function supports deterministic offline tests.
+///     query or selection. An injected search function supports deterministic offline tests
 ///
 @MainActor
 final class CardLocationSearchModel: ObservableObject
@@ -143,7 +143,7 @@ final class CardLocationSearchModel: ObservableObject
     /// Identifies the current place-search presentation state
     ///
     /// @section    Purpose
-    ///     Distinguishes an empty query, an active request, results, no matches, and service failure.
+    ///     Distinguishes an empty query, an active request, results, no matches, and service failure
     ///
     enum Phase
     {
@@ -190,7 +190,7 @@ final class CardLocationSearchModel: ObservableObject
     ///
     /// @fcn        CardLocationSearchModel.init
     /// @brief      Initialize a search session from the current location draft
-    /// @details    Does not search until the view starts its debounced request or the caller asks.
+    /// @details    Does not search until the view starts its debounced request or the caller asks
     /// @param[in]  query    Initial place or address text
     /// @param[in]  searcher Optional test provider; nil uses Apple's native local search
     /// @return     (CardLocationSearchModel) initialized search session
@@ -209,7 +209,7 @@ final class CardLocationSearchModel: ObservableObject
     /// @fcn        CardLocationSearchModel.cancel
     /// @brief      Invalidate pending results and clear the previous selection
     /// @details    Called immediately when query text changes or the search view departs, keeping
-    ///             a previously selected place from being used for a different query.
+    ///             a previously selected place from being used for a different query
     /// @return     (Void) resets the session without editing the Card or parent draft
     ///
     func cancel()
@@ -228,7 +228,7 @@ final class CardLocationSearchModel: ObservableObject
     /// @fcn        CardLocationSearchModel.search
     /// @brief      Fetch matches for the latest query and accept only the current response
     /// @details    Empty queries reset the session. Cancellation and late responses leave newer
-    ///             state intact; failures retain manual-entry access in the parent editor.
+    ///             state intact; failures retain manual-entry access in the parent editor
     /// @param[in]  region Optional visible map region used as a search hint
     /// @return     (Void) publishes current matches or an honest empty/failure state
     ///
@@ -297,7 +297,7 @@ final class CardLocationSearchModel: ObservableObject
     /// @fcn        CardLocationSearchModel.findPlaces
     /// @brief      Perform an Apple Maps search for an explicit place or address
     /// @details    Requests address and point-of-interest results without user-location access.
-    ///             Cancels the MapKit request when its view task is superseded or dismissed.
+    ///             Cancels the MapKit request when its view task is superseded or dismissed
     /// @param[in]  query  Normalized place search text
     /// @param[in]  region Optional visible-region hint, omitted for a world-scale map
     /// @return     ([CardLocationSearchResult]) valid selectable place results
@@ -349,7 +349,7 @@ final class CardLocationSearchModel: ObservableObject
 ///
 /// @section    Purpose
 ///     Combines a native map, debounced place search, and explicit result selection. Use this
-///     location fills the parent draft; neither searching nor leaving the view saves the Card.
+///     location fills the parent draft; neither searching nor leaving the view saves the Card
 ///
 struct CardLocationSearchView: View
 {
@@ -367,7 +367,7 @@ struct CardLocationSearchView: View
     ///
     /// @fcn        CardLocationSearchView.init
     /// @brief      Start a map-search screen using the current location draft
-    /// @details    A supplied model keeps tests independent of live search service responses.
+    /// @details    A supplied model keeps tests independent of live search service responses
     /// @param[in]  query    Initial location text to search
     /// @param[in]  model    Optional injected search session
     /// @param[in]  onSelect Callback invoked only by Use this location
@@ -388,7 +388,7 @@ struct CardLocationSearchView: View
     /// @fcn        CardLocationSearchView.searchFeedback
     /// @brief      Show current result rows or the appropriate request status
     /// @details    Place rows select a marker without accepting it; empty and failed searches
-    ///             remain retryable and never substitute the query for a chosen result.
+    ///             remain retryable and never substitute the query for a chosen result
     /// @return     (some View) result list or compact search-state feedback
     ///
     @ViewBuilder
@@ -483,7 +483,7 @@ struct CardLocationSearchView: View
     /// @fcn        CardLocationSearchView.body
     /// @brief      Present the searchable map with an explicit location-selection action
     /// @details    Queries are debounced and cancelled when superseded. Selected markers and rows
-    ///             share one identity; leaving without Use this location preserves the parent draft.
+    ///             share one identity; leaving without Use this location preserves the parent draft
     /// @return     (some View) native Apple Maps search and selection workspace
     ///
     var body: some View

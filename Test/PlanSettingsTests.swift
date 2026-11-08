@@ -2,16 +2,16 @@
 // @file       PlanSettingsTests.swift
 // @brief      Modular settings layout and shared-draft editing regression coverage
 // @details    Uses synthetic bindings and automated-Simulator windows. Rendering never saves or
-//             requests notification permission; attachments contain synthetic settings only.
+//             requests notification permission; attachments contain synthetic settings only
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import XCTest
 @testable import Plenact
 
 
-/// Verifies readable module heights and draft continuity across settings destinations.
+/// Verifies readable module heights and draft continuity across settings destinations
 /// @section Purpose
-///     Catch oversized preference pages and controls that accidentally write while browsing.
+///     Catch oversized preference pages and controls that accidentally write while browsing
 @MainActor
 final class PlanSettingsTests: XCTestCase
 {
@@ -26,7 +26,7 @@ final class PlanSettingsTests: XCTestCase
     }
 
 
-    /// Binds the same synthetic draft into each focused page.
+    /// Binds the same synthetic draft into each focused page
     private struct Page: View
     {
 

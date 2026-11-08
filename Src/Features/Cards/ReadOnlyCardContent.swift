@@ -2,7 +2,7 @@
 // @file       ReadOnlyCardContent.swift
 // @brief      Locked Card and Note reading surfaces
 // @details    Displays retained writing, media, and nested checklist context without installing
-//             content editing controls.
+//             content editing controls
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Displays retained sections and attachments without editing controls and optionally explains
-///     how an editable lock can be removed.
+///     how an editable lock can be removed
 ///
 struct ReadOnlyCardContent: View
 {
@@ -211,7 +211,7 @@ struct ReadOnlyCardContent: View
 ///
 /// @section    Purpose
 ///     Keeps completion marks and expanded action details readable while respecting the Card's
-///     editing lock.
+///     editing lock
 ///
 struct ReadOnlyChecklistContent: View
 {

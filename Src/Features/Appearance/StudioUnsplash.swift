@@ -2,15 +2,15 @@
 // @file       StudioUnsplash.swift
 // @brief      Optional credited Unsplash search and selection
 // @details    Keeps the access key in Keychain, hotlinks provider images, and tracks selection before
-//             applying artwork. Unsplash photos are not copied into the offline artwork directory.
+//             applying artwork. Unsplash photos are not copied into the offline artwork directory
 // --------------------------------------------------------------------------------------------------
 import Security
 import SwiftUI
 
 
-/// Provides checked requests to the optional online photography catalog.
+/// Provides checked requests to the optional online photography catalog
 /// @section Purpose
-///     Restricts credential-bearing requests to the Unsplash API and preserves provider credits.
+///     Restricts credential-bearing requests to the Unsplash API and preserves provider credits
 enum StudioUnsplash
 {
 
@@ -20,7 +20,7 @@ enum StudioUnsplash
 
     /// @fcn StudioUnsplash.key()
     /// @brief Read the locally configured developer access key
-    /// @details Never embeds credentials in URLs, Card history, or saved artwork.
+    /// @details Never embeds credentials in URLs, Card history, or saved artwork
     /// @return (String) configured key or an empty string
     static func key() -> String
     {
@@ -43,10 +43,10 @@ enum StudioUnsplash
 
     /// @fcn StudioUnsplash.saveKey(_:)
     /// @brief Store or clear the provider access key securely
-    /// @details Uses a device-only Keychain item and reports failures instead of silently losing configuration.
+    /// @details Uses a device-only Keychain item and reports failures instead of silently losing configuration
     /// @param[in] key Access key entered in the provider configuration screen
     /// @return (Void) updates local Keychain configuration
-    /// @throws Keychain write failures propagate to the configuration UI.
+    /// @throws Keychain write failures propagate to the configuration UI
     static func saveKey(_ key: String) throws
     {
 
@@ -91,10 +91,10 @@ enum StudioUnsplash
 
     /// @fcn StudioUnsplash.request(_:)
     /// @brief Send one credential-bearing provider API request
-    /// @details Requires HTTPS and the exact API host, checks HTTP status, and leaves CDN image loading separate.
+    /// @details Requires HTTPS and the exact API host, checks HTTP status, and leaves CDN image loading separate
     /// @param[in] url Approved API endpoint
     /// @return (Data) response bytes
-    /// @throws Invalid hosts, missing configuration, and HTTP/network errors propagate to the picker.
+    /// @throws Invalid hosts, missing configuration, and HTTP/network errors propagate to the picker
     static func request(_ url: URL) async throws -> Data
     {
 
@@ -123,10 +123,10 @@ enum StudioUnsplash
 
     /// @fcn StudioUnsplash.search(_:)
     /// @brief Search a bounded page of provider photographs
-    /// @details Validates CDN and profile hosts before making results selectable.
+    /// @details Validates CDN and profile hosts before making results selectable
     /// @param[in] query User-entered search text
     /// @return ([StudioRemotePhoto]) credited photo references
-    /// @throws Request or response validation failures propagate without changing artwork.
+    /// @throws Request or response validation failures propagate without changing artwork
     static func search(_ query: String) async throws -> [StudioRemotePhoto]
     {
 
@@ -173,9 +173,9 @@ enum StudioUnsplash
 
 
 
-/// Searches and selects credited online photos after optional provider configuration.
+/// Searches and selects credited online photos after optional provider configuration
 /// @section Purpose
-///     Keeps failed or cancelled searches from applying an image; the final surface editor tracks each use.
+///     Keeps failed or cancelled searches from applying an image; the final surface editor tracks each use
 struct StudioUnsplashPicker: View
 {
 
@@ -193,7 +193,7 @@ struct StudioUnsplashPicker: View
     /// @fcn        StudioUnsplashPicker.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///

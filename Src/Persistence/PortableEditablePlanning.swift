@@ -2,14 +2,14 @@
 // @file       PortableEditablePlanning.swift
 // @brief      Reconstruct native planning and review documents from retained portable snapshots
 // @details    Supported User Data Model versions: 1.0. Saved writing, progress, decisions and reminders
-//             are decoded as data only; no review actions, notifications or persistence operations run.
+//             are decoded as data only; no review actions, notifications or persistence operations run
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Holds reconstructed native planning stores without installing or executing them.
+/// Holds reconstructed native planning stores without installing or executing them
 /// @section Purpose
-///     Keep complete saved history separate from current Card state and runtime workflow actions.
+///     Keep complete saved history separate from current Card state and runtime workflow actions
 struct PortablePlanningDocuments
 {
 
@@ -21,9 +21,9 @@ struct PortablePlanningDocuments
 }
 
 
-/// Reconstructs historical snapshots independently of current content values.
+/// Reconstructs historical snapshots independently of current content values
 /// @section Purpose
-///     Preserve unavailable references and authored historical text rather than replacing them with live Cards.
+///     Preserve unavailable references and authored historical text rather than replacing them with live Cards
 extension PortableEditableContent
 {
 

@@ -401,10 +401,7 @@ struct TodayPlanView: View
     @State private var date:     Date                         /* Date used by this operation    */
     private let defaults:        UserDefaults                 /* Preference storage domain      */
     @State private var draft:    DailyPlan                    /* Local editing draft            */
-    @State private var baseline: DailyPlan?                   /* Original state for comparison  */
-    @State private var loaded = false                         /* Initial load completed         */
-    @State private var loadError: String?                     /* Load error                     */
-    @State private var saveError: String?                     /* Save error                     */
+    @State private var loaded              = false                         /* Initial load completed         */
     @State private var showsPicker         = false            /* Picker visibility              */
     @State private var showsNewPriority    = false            /* New Priority visibility        */
     @State private var showsVision         = false            /* Vision visibility              */
@@ -414,8 +411,12 @@ struct TodayPlanView: View
     @State private var showsWeeklyReview   = false            /* Weekly Review visibility       */
     @State private var showsPeriodicReview = false            /* Periodic Review visibility     */
     @State private var confirmsDiscard     = false            /* Confirms discard               */
-    @State private var openedItem:  PlanningSearchResult?     /* Opened item                    */
     private let opensEveningReview: Bool                      /* Opens evening review           */
+
+    @State private var baseline: DailyPlan?                   /* Original state for comparison  */
+    @State private var loadError: String?                     /* Load error                     */
+    @State private var saveError: String?                     /* Save error                     */
+    @State private var openedItem:  PlanningSearchResult?     /* Opened item                    */
 
 
     ///
@@ -1381,10 +1382,11 @@ struct NewDailyPriorityView: View
     @State private var title                          = ""     /* User-facing title             */
     @State private var bodyText                       = ""     /* Body text                     */
     @State private var presentation: ItemPresentation = .card  /* Current presentation style    */
+    @State private var initialized                    = false                     /* Initialized state flag        */
+    @State private var confirmsDiscard                = false                 /* Confirms discard              */
+
     @State private var destination:  WorkspaceListReference?   /* Destination for the operation */
-    @State private var initialized = false                     /* Initialized state flag        */
     @State private var error: String?                          /* Reported operation failure    */
-    @State private var confirmsDiscard = false                 /* Confirms discard              */
 
     private var destinations: [WorkspaceListDestination] /* Available operation destinations */
     {

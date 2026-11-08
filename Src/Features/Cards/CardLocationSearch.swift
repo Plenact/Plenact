@@ -361,8 +361,9 @@ struct CardLocationSearchView: View
     @StateObject private var model: CardLocationSearchModel /* Current data model              */
     @State private var position: MapCameraPosition =        /* Current layout or item position */
         .automatic
-    @State private var visibleRegion: MKCoordinateRegion? /* Visible region */
     @State private var retryRevision = 0 /* Retry revision */
+
+    @State private var visibleRegion: MKCoordinateRegion? /* Visible region */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 

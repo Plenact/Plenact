@@ -329,13 +329,14 @@ struct SavedCardsView: View
         false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion /* Reduce recent motion */
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
-    @State private var query         = "" /* Search text */
-    @State private var showsSearch   = false /* Search visibility */
-    @State private var confirmsClear = false /* Confirms clear */
-    @State private var historicalTarget: ActivityRecentResult? /* Historical target */
+    @State private var query                           = "" /* Search text */
+    @State private var showsSearch                     = false /* Search visibility */
+    @State private var confirmsClear                   = false /* Confirms clear */
     @State private var focus:            ActivityFocus = .saved /* Today Focus selection */
+    @State private var activityHeaderHeight: CGFloat   = 0 /* Activity header height */
+
+    @State private var historicalTarget: ActivityRecentResult? /* Historical target */
     @State private var selectedLabelID:  String? /* Selected label ID */
-    @State private var activityHeaderHeight: CGFloat = 0 /* Activity header height */
     @State private var focusLabelLibrary             = /* Focus label library */
         LabelLibraryStore.load()
 

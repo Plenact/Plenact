@@ -33,8 +33,9 @@ struct PlanningCalendarView: View
         Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
     @State private var selectedDate                                                = /* Selected date */
         Calendar.current.startOfDay(for: .now)
-    @State private var route: PlanningWeekRoute? /* Requested navigation destination */
     @State private var showsSearch = false       /* Search visibility                */
+
+    @State private var route: PlanningWeekRoute? /* Requested navigation destination */
 
 
     ///

@@ -77,25 +77,26 @@ struct StudioSurfaceEditor: View
 {
 
 
-    @Binding private var surface:       StudioSurface? /* Artwork surface definition */
     let header:                         Binding<ItemAccent?>? /* Resolved header appearance */
     let italic:                         Binding<Bool?>? /* Inherited subtitle emphasis */
     let titleColor:                     Binding<ListPreviewTextColor?>? /* Title color */
     let textColor:                      Binding<ListPreviewTextColor?>? /* Text color */
+    @State private var draft:           StudioSurface /* Local editing draft */
+    @State private var importsFile    = false /* Imports file */
+    @State private var artworkName    = "My look" /* Artwork name */
+    @State private var showsLibrary   = false /* Library visibility */
+    @State private var showsUnsplash  = false /* Unsplash visibility */
+    @State private var isApplying     = false /* Apply operation in progress */
+    @State private var savedToLibrary = false /* Saved to library */
+
+    @Binding private var surface:       StudioSurface? /* Artwork surface definition */
     @State private var draftHeader:     ItemAccent? /* Draft header */
     @State private var draftItalic:     Bool? /* Draft italic */
     @State private var draftTitleColor: ListPreviewTextColor? /* Draft title color */
     @State private var draftTextColor:  ListPreviewTextColor? /* Draft text color */
-    @State private var draft:           StudioSurface /* Local editing draft */
     @State private var photo:           PhotosPickerItem? /* Photo selection or source */
-    @State private var importsFile = false /* Imports file */
     @State private var error: String? /* Reported operation failure */
-    @State private var artworkName   = "My look" /* Artwork name */
-    @State private var showsLibrary  = false /* Library visibility */
-    @State private var showsUnsplash = false /* Unsplash visibility */
     @State private var applyTask: Task<Void, Never>? /* Apply task */
-    @State private var isApplying     = false /* Apply operation in progress */
-    @State private var savedToLibrary = false /* Saved to library */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     @AppStorage(StudioSettings.libraryKey) private var libraryData = Data() /* Library data */
 
@@ -648,9 +649,10 @@ struct StudioLibraryView: View
     var onSelect: ((StudioArtwork) -> Void)?                = nil /* Handle the selected value */
     @AppStorage(StudioSettings.libraryKey) private var data = Data() /* Persisted settings bytes */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var renamed = "" /* Item after renaming */
+
     @State private var error:    String? /* Reported operation failure */
     @State private var renaming: StudioArtwork? /* Item with an edited name */
-    @State private var renamed = "" /* Item after renaming */
 
     private var artworks: [StudioArtwork] /* Reusable saved artwork */
     {

@@ -210,13 +210,14 @@ struct TodayReviewView: View
     let onCommitted:   (DailyPlan) -> Void /* Committed callback */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var step = 0 /* Current review step */
+    @State private var step           = 0 /* Current review step */
+    @State private var selectedDate   = Date() /* Selected date */
+    @State private var operationError = false /* Operation error */
+
     @State private var pendingSource: PlanningSearchResult? /* Pending source */
     @State private var pendingAction: DailyReviewAction? /* Pending action */
     @State private var dateSource:    PlanningSearchResult? /* Date source */
-    @State private var selectedDate = Date() /* Selected date */
     @State private var chosenDateDecision: (PlanningSearchResult, String)? /* Chosen date decision */
-    @State private var operationError = false /* Operation error */
 
     private var calendar: Calendar /* Date calculation calendar */
     {
@@ -1062,13 +1063,14 @@ struct WeeklyReviewView: View
     @State private var records: [WeeklyReviewRecord] = [] /* Records being processed */
     @State private var loaded                        = false /* Initial load completed      */
     @State private var loadFailed                    = false /* Load failed */
+    @State private var showsPicker                   = false /* Picker visibility */
+    @State private var confirmsDiscard               = false /* Confirms discard */
+    @State private var targetDate                    = Date() /* Target date */
+
     @State private var error: String? /* Reported operation failure */
-    @State private var showsPicker     = false /* Picker visibility */
-    @State private var confirmsDiscard = false /* Confirms discard */
     @State private var pending:    PlanningSearchResult? /* Operation awaiting completion */
     @State private var action:     DailyReviewAction? /* Requested user operation */
     @State private var dateSource: PlanningSearchResult? /* Date source */
-    @State private var targetDate = Date() /* Target date */
     @State private var chosenDate: (PlanningSearchResult, String)? /* Chosen date */
 
 

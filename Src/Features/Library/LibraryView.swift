@@ -24,8 +24,9 @@ struct BoardListsView: View
 
     @State private var openedHelpArticle: PlenactHelpArticle?            /* Opened help article  */
     @Environment(\.planningCalendarAccess) private var planningAccess    /* Planning access      */
-    @State private var browsedLabel: KanbanLabel?                        /* Browsed label        */
     @State private var browseLabelLibrary = LabelLibraryStore.load()     /* Browse label library */
+
+    @State private var browsedLabel: KanbanLabel?                        /* Browsed label        */
     @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight /* Bottom bar height    */
 
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
@@ -59,8 +60,9 @@ struct BoardListsView: View
 
     }  /* Acknowledge a handled or invalid Saved request */
 
-    @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
     @FocusState private var isLibrarySearchFocused: Bool /* Library Search Focused state */
+
+    @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
     @State private var showsRecentShelf                                                           = /* Recent Shelf visibility */
         false
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = /* Important data */

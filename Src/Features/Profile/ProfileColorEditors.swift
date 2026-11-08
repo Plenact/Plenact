@@ -198,10 +198,11 @@ struct ProfileAvatarIconPicker: View
     @State private var draftAvatarColor:     ProfileAvatarColor            /* Unsaved avatar background               */
     @State private var draftForegroundColor: ProfileAvatarForegroundColor  /* Unsaved foreground color                */
     @State private var isEditingColorMap = false                           /* Whether a nested color editor is active */
+    @State private var isLoadingPhoto    = false                              /* Whether selected photo data is loading  */
+
     @State private var draftPhotoData: Data?                               /* Unsaved photo bytes                     */
     @State private var selectedPhoto:  PhotosPickerItem?                   /* Current system photo selection          */
     @State private var cropImage:      AvatarCropImage?                    /* Image awaiting crop confirmation        */
-    @State private var isLoadingPhoto = false                              /* Whether selected photo data is loading  */
     @State private var photoError: String?                                 /* Photo selection or decoding error       */
 
     private let columns = [GridItem(.adaptive(minimum: 76), spacing: 12)] /* Adaptive icon-grid layout */

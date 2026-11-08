@@ -440,9 +440,10 @@ struct CardPhotoGallery: View
 
     @ScaledMetric(relativeTo: .body) private var photoWidth  = 220 /* Photo width            */
     @ScaledMetric(relativeTo: .body) private var photoHeight = 180 /* Photo height           */
+    @State private var showsArrangement = false                    /* Arrangement visibility */
+
     @State private var captionPhoto: KanbanAttachment?             /* Caption photo          */
     @State private var removalPhoto: KanbanAttachment?             /* Removal photo          */
-    @State private var showsArrangement = false                    /* Arrangement visibility */
 
     var body: some View /* Card Photo Gallery layout */
     {
@@ -1248,8 +1249,9 @@ struct CardAttachmentPreview: View
 
     var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = /* Save drawing callback */
         nil
-    @State private var editedAttachment: KanbanAttachment? /* Edited attachment         */
     @State private var showsDrawingEditor = false          /* Drawing Editor visibility */
+
+    @State private var editedAttachment: KanbanAttachment? /* Edited attachment         */
 
     private var currentAttachment: KanbanAttachment /* Current attachment */
     {

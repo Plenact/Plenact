@@ -292,8 +292,9 @@ struct ItemPicturePreview: View
         return text.isEmpty ? "Picture" : text
     }
 
-    @State private var image: UIImage?     /* Image used by this operation */
     @State private var unavailable = false /* Unresolved reference state   */
+
+    @State private var image: UIImage?     /* Image used by this operation */
 
     var body: some View /* Item Picture Preview layout */
     {

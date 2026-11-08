@@ -216,9 +216,10 @@ struct TodayFocusSection: View
             bookmarked: includesBookmarked, dark: colorScheme == .dark)
     }
 
+    @State private var editsStartDate = true /* Edits start date */
+
     @State private var selectedFocusCard: KanbanCard?  /* Pending item retained during visible tap feedback */
     @State private var editingDateCard: KanbanCard? /* Editing date card */
-    @State private var editsStartDate = true /* Edits start date */
     @State private var deletingCard: KanbanCard? /* Deleting card */
 
     @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28 /* Heading height */
@@ -987,13 +988,14 @@ struct TodayFocusCardDetailView: View
         Data()
 
 
-    @State private var keyboardCard: KanbanCard?   /* Keyboard card            */
     let card:                        KanbanCard    /* Card under consideration */
     @Binding var lists:              [KanbanList]  /* Ordered List records     */
     @Binding var labelLibrary:       LabelLibrary  /* Label library            */
     @Binding var savedCardIDs:       Set<Int>      /* Saved card i ds          */
     let currentUserName:             String        /* Current user name        */
     let onDelete:                    (Int) -> Bool /* Delete the selected item */
+
+    @State private var keyboardCard: KanbanCard?   /* Keyboard card            */
 
 
     ///

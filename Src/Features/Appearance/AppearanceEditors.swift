@@ -32,8 +32,9 @@ struct ItemAppearanceSheet: View
     let showsListBackground:         Bool /* List Background visibility */
     let inheritedAddItemTextColor:   Color? /* Inherited add item text color */
     let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)? /* Save display callback */
-    @State private var draftDisplay: ItemDisplayFormat? /* Draft display */
     @State private var draft:        ItemAppearance /* Local editing draft */
+
+    @State private var draftDisplay: ItemDisplayFormat? /* Draft display */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
@@ -493,11 +494,12 @@ struct BoardAppearanceSheet: View
 {
 
 
+    @State private var isImportingPhoto = false /* Importing Photo state */
+    let allowsCollectionBackground:          Bool /* Allows collection background */
+
     @State private var photoSelection: PhotosPickerItem? /* Photo selection */
     @State private var draftPhoto:     Data? /* Draft photo */
-    @State private var isImportingPhoto = false /* Importing Photo state */
     @State private var backgroundError:      String? /* Background error */
-    let allowsCollectionBackground:          Bool /* Allows collection background */
     var defaultCollectionBackground:         CollectionBackground? = /* Default collection background */
         nil
     @State private var draft:                BoardAppearance /* Local editing draft */
@@ -505,12 +507,13 @@ struct BoardAppearanceSheet: View
     let onSaveListSurface:                   ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? /* Save list surface callback */
     @State private var draftSurfaceOpacity:  Double /* Draft surface opacity */
     @State private var draftShowsHeaderIcon: Bool /* Draft shows header icon */
-    @State private var draftIconColor:       ProfileColor? /* Draft icon color */
     @State private var draftHeaderIcon:      PersonalCollectionIcon /* Draft header icon */
     @State private var applyToAll = false /* Apply to all */
     @State private var draftPresentation: BoardPresentation /* Draft presentation */
     let onSavePresentation:               ((BoardPresentation) -> Void)? /* Save presentation callback */
     let onSave:                           (BoardAppearance, Bool) -> Bool /* Persist the edited value */
+
+    @State private var draftIconColor:       ProfileColor? /* Draft icon color */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 

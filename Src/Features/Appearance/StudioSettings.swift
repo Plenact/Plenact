@@ -17,8 +17,9 @@ struct StudioSettingsView: View
     @State private var draft   = StudioSettings.load() /* Local editing draft   */
     @State private var palette =                       /* Artwork color palette */
         StudioSettings.load().palette.joined(separator: ", ")
-    @State private var error: String?                         /* Reported operation failure     */
     @State private var showsLibrary = false                   /* Library visibility             */
+
+    @State private var error: String?                         /* Reported operation failure     */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
     @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes       */
 

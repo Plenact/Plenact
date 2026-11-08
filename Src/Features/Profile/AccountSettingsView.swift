@@ -161,7 +161,6 @@ struct AccountSettingsView: View
     @State private var avatarColor:                  ProfileAvatarColor            /* Draft avatar color     */
     @State private var avatarIcon:                   ProfileAvatarIcon             /* Draft avatar icon      */
     @State private var avatarForegroundColor:        ProfileAvatarForegroundColor  /* Draft icon color       */
-    @State private var defaultListID:                Int?                          /* Draft default list     */
     @State private var usesReducedContent:           Bool                          /* Draft content density  */
     @State private var scrollsOverflowingTitles:     Bool /* Scrolls overflowing titles */
     @State private var importanceStarStyle:          ImportanceStarStyle /* Importance star style */
@@ -180,6 +179,8 @@ struct AccountSettingsView: View
     @State private var todayFocusHidesCompleted:     Bool /* Today focus hides completed */
     @State private var todayFocusItemCount:          Int /* Today focus item count */
     @State private var showsNavigationLabels:        Bool /* Draft navigation captions */
+
+    @State private var defaultListID:                Int?                          /* Draft default list     */
     @State private var showsReviewRhythmSettings              = /* Reminder editor visibility        */
         false
     @State private var confirmsRemoval                        = false /* Removal confirmation                        */

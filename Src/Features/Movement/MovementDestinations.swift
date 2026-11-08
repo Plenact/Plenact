@@ -138,9 +138,10 @@ struct SectionMoveSheet: View
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     @State private var chooseDate = false /* Choose date */
     @State private var date       = Date() /* Date used by this operation */
-    @State private var destination: CardMoveDestination? /* Destination for the operation */
     @State private var shiftDates = false /* Shift dates */
     @State private var failed     = false /* Rejected operation result */
+
+    @State private var destination: CardMoveDestination? /* Destination for the operation */
 
     private var destinations: [CardMoveDestination] /* Available operation destinations */
     {

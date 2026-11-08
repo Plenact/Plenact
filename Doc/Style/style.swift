@@ -22,6 +22,8 @@
 //             Preserve meaningful abbreviations, URLs, ellipses, code examples, and ! or ? endings
 //             Vertically align = in consecutive let/var declarations at the same indentation
 //             Keep blank lines and intervening statements as alignment-group boundaries
+//             Group independent optional declarations last, separated by a blank line
+//             Preserve initializer dependencies, side-effect order, and synthesized initializer APIs
 //             Leave at least one blank line above and below each stored/local declaration block
 //             Apply this spacing to single declarations and multiline initializers; keep docs attached
 //             Leave at least one blank line above and below consecutive assignment statements too

@@ -113,13 +113,14 @@ struct TodayVisionView: View
     let onSave:        () -> Bool                             /* Persist the edited value       */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @State private var step        = 0                        /* Current review step            */
-    @State private var showsPicker = false                    /* Picker visibility              */
-    @State private var showsNew    = false                    /* New visibility                 */
-    @State private var transfer: PlanningSearchResult?        /* Prepared owner-qualified move  */
+    @State private var step           = 0                        /* Current review step            */
+    @State private var showsPicker    = false                    /* Picker visibility              */
+    @State private var showsNew       = false                    /* New visibility                 */
     @State private var transferError  = false                 /* Transfer error                 */
     @State private var planSaveFailed = false                 /* Plan save failed               */
     @State private var saving         = false                 /* Save operation in progress     */
+
+    @State private var transfer: PlanningSearchResult?        /* Prepared owner-qualified move  */
 
     private var calendar: Calendar /* Date calculation calendar */
     {
@@ -903,10 +904,11 @@ struct DailyHistoryReviewView: View
     @Environment(\.scenePhase) private var scenePhase         /* Scene phase                    */
     @State private var date: Date                             /* Date used by this operation    */
     @State private var document = DailyPlanStore.Document()   /* Daily-plan store snapshot      */
-    @State private var loadError:       String?               /* Load error                     */
     @AppStorage private var storedData: Data                  /* Stored data                    */
     private let calendar:               Calendar              /* Date calculation calendar      */
     private let defaults:               UserDefaults          /* Preference storage domain      */
+
+    @State private var loadError:       String?               /* Load error                     */
 
 
     ///
@@ -1881,8 +1883,9 @@ struct TodayPlanSummaryPanel: View
     private let defaults:                                          UserDefaults /* Preference storage domain */
     @AppStorage private var storedData:                            Data /* Stored data */
     @Environment(\.scenePhase) private var scenePhase /* Scene phase */
-    @State private var plan: DailyPlan? /* Daily planning record */
     @State private var readFailed = false /* Read failed */
+
+    @State private var plan: DailyPlan? /* Daily planning record */
 
 
     ///

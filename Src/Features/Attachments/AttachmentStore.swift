@@ -51,7 +51,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     let exampleImage:    ExampleCoverImage?     /* Immutable original example illustration, never user media */
     var drawingFileName: String? = nil          /* Editable PencilKit strokes, absent in legacy photos       */
 
-    var storedFileNames: [String]
+    var storedFileNames: [String] /* Stored file names */
     {
         [fileName, drawingFileName].compactMap
         {
@@ -73,7 +73,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     /// @pre        The attachment contains its persisted metadata
     /// @post       No attachment fields are modified
     ///
-    var kind: KanbanAttachmentKind
+    var kind: KanbanAttachmentKind /* Content kind discriminator */
     {  /* Resolved kind for legacy and current records */
 
         mediaKind ?? (url == nil ? .photo : .link)
@@ -207,7 +207,8 @@ enum CardAttachmentStore
     {
 
 
-        let retained = retained.union(try PlanningRoutineStore.retainedFiles())
+        let retained = /* State retained for recovery */
+            retained.union(try PlanningRoutineStore.retainedFiles())
 
         for name in candidates.subtracting(retained)
         {
@@ -271,15 +272,15 @@ enum CardAttachmentStore
 
 
         let attachmentID        = UUID() /* Stable identity for the new media file */
-        let normalizedExtension = fileExtension.trimmingCharacters(
+        let normalizedExtension = fileExtension.trimmingCharacters( /* Normalized extension */
             in: CharacterSet(charactersIn: ". ")) /* Clean extension input                  */
-        let safeExtension =
+        let safeExtension = /* Safe extension */
         normalizedExtension.isEmpty
         ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg"))
         : normalizedExtension                                         /* Valid file extension      */
         let fileName     = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename    */
         let directoryURL = try attachmentsDirectory()                    /* App-local media directory */
-        let fileURL      = directoryURL.appendingPathComponent(
+        let fileURL      = directoryURL.appendingPathComponent( /* File URL */
             fileName, isDirectory: false) /* Destination file URL                   */
 
         try mediaData.write(to: fileURL, options: .atomic)
@@ -418,7 +419,7 @@ enum CardAttachmentStore
             return
         }
 
-        let fileNames = fileNames.union(templateFiles)
+        let fileNames = fileNames.union(templateFiles) /* File names */
 
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
@@ -429,7 +430,7 @@ enum CardAttachmentStore
         }
 
 
-        let directoryURL = documentsURL.appendingPathComponent(
+        let directoryURL = documentsURL.appendingPathComponent( /* Directory URL */
             directoryName, isDirectory: true) /* Attachment folder URL */
 
         guard
@@ -479,7 +480,7 @@ enum CardAttachmentStore
         }
 
 
-        let directoryURL = documentsURL.appendingPathComponent(
+        let directoryURL = documentsURL.appendingPathComponent( /* Directory URL */
             directoryName, isDirectory: true) /* Attachment folder URL */
 
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)

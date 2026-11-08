@@ -14,8 +14,10 @@ import Foundation
 enum PortableRuntimeEvidence
 {
 
-    static let area               = "Library/Application Support/PlenactPortableRuntime"
-    static let names: Set<String> = ["CanonicalPackage.bin", "IdentityAliases.json", "NativeStores.plist"]
+    static let area               = /* Native media storage area */
+        "Library/Application Support/PlenactPortableRuntime"
+    static let names: Set<String> = /* Names used by this operation */
+        ["CanonicalPackage.bin", "IdentityAliases.json", "NativeStores.plist"]
 
 
     /// @fcn PortableRuntimeEvidence.capture
@@ -26,23 +28,25 @@ enum PortableRuntimeEvidence
     static func capture(root: URL) throws -> [String: Data]
     {
 
-        let directory = root.appendingPathComponent(area)
-        let manager   = FileManager.default
+        let directory = root.appendingPathComponent(area) /* Working directory location  */
+        let manager   = FileManager.default               /* Filesystem or media manager */
 
         if !manager.fileExists(atPath: directory.path)
         {
             return [:]
         }
 
-        var remaining = LegacyWorkspaceExport.maximumBytes
-        let files     = try LocalBackupRestore.readTree(directory, remaining: &remaining)
+        var remaining = LegacyWorkspaceExport.maximumBytes /* Entries still to process     */
+        let files     =                                    /* Files used by this operation */
+            try LocalBackupRestore.readTree(directory, remaining: &remaining)
 
         guard files.isDirectory, Set(files.fileWrappers?.keys.map { $0 } ?? []) == names else
         {
             throw PortablePackageReview.Failure.invalid
         }
 
-        let bytes = try Dictionary(uniqueKeysWithValues: names.map { name in
+        let bytes = /* Serialized or original bytes */
+            try Dictionary(uniqueKeysWithValues: names.map { name in
             (name, try MigrationBackupReader.file(name, in: files))
         })
 
@@ -99,7 +103,7 @@ enum PortableRuntimeEvidence
             throw PortablePackageReview.Failure.invalid
         }
 
-        var output: [String: Data] = [:]
+        var output: [String: Data] = [:] /* Operation output */
 
         for entry in entries
         {
@@ -109,7 +113,8 @@ enum PortableRuntimeEvidence
                 throw PortablePackageReview.Failure.invalid
             }
 
-            let bytes = try MigrationBackupReader.file(name, in: directory)
+            let bytes = /* Serialized or original bytes */
+                try MigrationBackupReader.file(name, in: directory)
 
             guard entry["sha256"] as? String == MigrationBackupReader.digest(bytes), entry["byte_length"] as? Int == bytes.count else
             {

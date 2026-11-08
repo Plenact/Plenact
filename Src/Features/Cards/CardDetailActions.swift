@@ -94,7 +94,8 @@ extension CardDetailView
     {
 
 
-        let normalizedName = memberName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedName = /* Normalized name */
+            memberName.trimmingCharacters(in: .whitespacesAndNewlines)
         .lowercased() /* Member-color lookup key */
 
         return memberColors[normalizedName] ?? .accentColor
@@ -120,7 +121,7 @@ extension CardDetailView
             return
         }
 
-        var updated = card.replacingLocation(
+        var updated = card.replacingLocation( /* Edited value to publish */
             id: recordID, listTitle: currentListTitle) /* Edited record retaining its current location identity */
 
         updated.attachments = attachments
@@ -326,12 +327,12 @@ extension CardDetailView
     func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View
     {
 
-        let photos = visibleAttachments.filter
+        let photos = visibleAttachments.filter /* Photo selections or gallery entries */
         {
             $0.kind == .photo
         }
 
-        let otherMedia = visibleAttachments.filter
+        let otherMedia = visibleAttachments.filter /* Other media */
         {
             $0.kind != .photo
         }
@@ -403,7 +404,7 @@ extension CardDetailView
     func updatePhotoCaption(_ id: UUID, _ caption: String) -> Bool
     {
 
-        var updated = workingCardSnapshot
+        var updated = workingCardSnapshot /* Edited value to publish */
 
         do
         {
@@ -441,7 +442,7 @@ extension CardDetailView
     func reorderGalleryPhotos(_ ids: [UUID]) -> Bool
     {
 
-        var updated = workingCardSnapshot
+        var updated = workingCardSnapshot /* Edited value to publish */
 
         do
         {
@@ -573,7 +574,7 @@ extension CardDetailView
 
 
                 let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type        */
-                let isVideo     = photoItem.supportedContentTypes.contains
+                let isVideo     = photoItem.supportedContentTypes.contains /* Video state */
                 {  /* Whether the selection is video media */
 
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
@@ -581,11 +582,11 @@ extension CardDetailView
 
 
                 let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category            */
-                let fileExtension                   =
+                let fileExtension                   = /* File extension */
                 contentType?.preferredFilenameExtension
                 ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
 
-                let attachment = try CardAttachmentStore.saveMedia(
+                let attachment = try CardAttachmentStore.saveMedia( /* Owned attachment content */
                     mediaData, kind: mediaKind, fileExtension: fileExtension) /* Persisted media record ready to attach */
 
                 attachments.append(attachment)
@@ -670,7 +671,7 @@ extension CardDetailView
             return false
         }
 
-        let previous = attachments
+        let previous = attachments /* Previous value for comparison */
 
         do
         {
@@ -746,15 +747,15 @@ extension CardDetailView
             return
         }
 
-        let pasteboard = UIPasteboard.general
+        let pasteboard = UIPasteboard.general /* System clipboard contents */
 
         activeSheet = nil
 
         if let images = pasteboard.images, !images.isEmpty
         {
 
-            let previous                     = attachments
-            var imported: [KanbanAttachment] = []
+            let previous                     = attachments /* Previous value for comparison */
+            var imported: [KanbanAttachment] = []          /* Imported isolated content     */
 
             do
             {
@@ -796,7 +797,8 @@ extension CardDetailView
         }
 
 
-        let clipboardText = pasteboard.url?.absoluteString ?? pasteboard.string ?? ""
+        let clipboardText = /* Clipboard text */
+            pasteboard.url?.absoluteString ?? pasteboard.string ?? ""
 
         guard let url = CardAttachmentStore.webURL(from: clipboardText) else
         {
@@ -852,7 +854,7 @@ extension CardDetailView
     {
 
 
-        let removesCover =
+        let removesCover = /* Removes cover */
         coverAttachmentID == attachment.id  /* Whether removing this attachment also clears the cover */
         var updated = card                  /* Card snapshot excluding the removed attachment         */
 
@@ -1050,7 +1052,7 @@ extension CardDetailView
         if locked
         {
 
-            var snapshot = workingCardSnapshot
+            var snapshot = workingCardSnapshot /* Working state snapshot */
 
             snapshot.isEditingLocked = true
             lockedSnapshot = snapshot
@@ -1092,14 +1094,14 @@ extension CardDetailView
             return
         }
 
-        let author = LocalReactionIdentity.forUserAction()
+        let author = LocalReactionIdentity.forUserAction() /* Discussion author */
 
         guard let updated = ItemEmojiReaction.toggling(emoji, authorID: author, in: reactions ?? []) else
         {
             return
         }
 
-        let previous = reactions
+        let previous = reactions /* Previous value for comparison */
 
         reactions = updated.isEmpty ? nil : updated
         reactionAuthorID = author
@@ -1375,9 +1377,10 @@ extension CardDetailView
     func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool
     {
 
-        let previousStart = startDate, previousDue = dueDate
-        let previousStartKind = startDateKind, previousDueKind = dueDateKind
-        let normalized = value.map
+        let previousStart = startDate, previousDue = dueDate /* Schedule before editing   */
+        let previousStartKind =                              /* Prior schedule date kinds */
+            startDateKind, previousDueKind = dueDateKind
+        let normalized = value.map /* Comparison-normalized value */
         {
             kind.normalized($0)
         }
@@ -1575,21 +1578,23 @@ extension CardDetailView
 
 
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
-        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate)
-        let iconName    =
+        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate) /* Time only */
+        let iconName    = /* Icon name */
         timeOnly
         ? (field == .start ? "clock" : "checkmark.circle")
         : (field == .start ? "calendar" : "calendar.badge.clock")
-        let title     = timeOnly ? (field == .start ? "Start" : "Finish") : field.title
-        let kind      = field == .start ? startDateKind : dueDateKind
-        let dateLabel = currentDate.map
+        let title     = /* User-facing title */
+            timeOnly ? (field == .start ? "Start" : "Finish") : field.title
+        let kind      = /* Content kind discriminator */
+            field == .start ? startDateKind : dueDateKind
+        let dateLabel = currentDate.map /* Date label */
         {
             (timeOnly ? CardDateKind.time : kind).label(for: $0)
         }
         ?? "Add date"
         let fieldName = field.title.lowercased() /* Accessibility label value */
 
-        let row = HStack(alignment: .center)
+        let row = HStack(alignment: .center) /* Rendered or stored item row */
         {  /* Shared date-row presentation */
 
 
@@ -1798,11 +1803,11 @@ extension CardDetailView
         }
 
 
-        let checklist            = checklists[checklistIndex] /* Current checklist snapshot      */
-        let allItemsAreCompleted =
+        let checklist            = checklists[checklistIndex] /* Current checklist snapshot */
+        let allItemsAreCompleted =                            /* All items are completed    */
         !checklist.items.isEmpty
         && checklist.completedItemIndices.count == checklist.items.count /* Whether all items are complete  */
-        let completedIndices =
+        let completedIndices = /* Completed indices */
         allItemsAreCompleted ? Set<Int>() : Set(checklist.items.indices) /* Completion indices after toggle */
 
         checklists[checklistIndex] = KanbanChecklist(
@@ -1925,14 +1930,14 @@ extension CardDetailView
         }
 
 
-        let titles = MultilineEntry.titles(text)
+        let titles = MultilineEntry.titles(text) /* Ordered display titles */
 
         guard !titles.isEmpty else
         {
             return
         }
 
-        let checklist = checklists[checklistIndex]
+        let checklist = checklists[checklistIndex] /* Checklist group and items */
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id, title: checklist.title,
@@ -2240,7 +2245,7 @@ extension CardDetailView
     {
 
 
-        let checklistIndex =
+        let checklistIndex = /* Checklist index */
         checklists.firstIndex(where:
             {
                 $0.id == checklist.id
@@ -2322,9 +2327,9 @@ extension CardDetailView
                     return false
                 }
 
-                let previous = checklists
-                var items    = checklists[index].items
-                var updated  = item
+                let previous = checklists              /* Previous value for comparison */
+                var items    = checklists[index].items /* Items being processed         */
+                var updated  = item                    /* Edited value to publish       */
 
                 if case .linkedCard = updated.content, updated.linkedCollectionID == nil
                 {
@@ -2372,11 +2377,11 @@ extension CardDetailView
     func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool
     {
 
-        let previousAppearance   = appearance
-        let previousFormat       = displayFormat
-        let previousPresentation = presentation
-        let previousDescription  = descriptionText
-        let previousDetails      = showsNoteDetails
+        let previousAppearance   = appearance       /* Previous appearance   */
+        let previousFormat       = displayFormat    /* Previous format       */
+        let previousPresentation = presentation     /* Previous presentation */
+        let previousDescription  = descriptionText  /* Previous description  */
+        let previousDetails      = showsNoteDetails /* Previous details      */
 
         dismissEditing()
 

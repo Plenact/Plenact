@@ -25,16 +25,16 @@ struct ItemAppearanceSheet: View
 {
 
 
-    let title:                       String
-    let onSave:                      (ItemAppearance?) -> Bool
-    let onOpenCover:                 (() -> Void)?
-    let onOpenLayout:                (() -> Void)?
-    let showsListBackground:         Bool
-    let inheritedAddItemTextColor:   Color?
-    let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)?
-    @State private var draftDisplay: ItemDisplayFormat?
-    @State private var draft:        ItemAppearance
-    @Environment(\.dismiss) private var dismiss
+    let title:                       String /* User-facing title */
+    let onSave:                      (ItemAppearance?) -> Bool /* Persist the edited value */
+    let onOpenCover:                 (() -> Void)? /* Open cover callback */
+    let onOpenLayout:                (() -> Void)? /* Open layout callback */
+    let showsListBackground:         Bool /* List Background visibility */
+    let inheritedAddItemTextColor:   Color? /* Inherited add item text color */
+    let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)? /* Save display callback */
+    @State private var draftDisplay: ItemDisplayFormat? /* Draft display */
+    @State private var draft:        ItemAppearance /* Local editing draft */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
     ///
@@ -76,7 +76,7 @@ struct ItemAppearanceSheet: View
     }
 
 
-    var body: some View
+    var body: some View /* Item Appearance layout */
     {
 
         NavigationStack
@@ -447,8 +447,9 @@ struct ItemAppearanceSheet: View
                     Button("Save")
                     {
 
-                        let appearance = draft.isEmpty ? nil : draft
-                        let saved: Bool
+                        let appearance = /* Resolved appearance choices */
+                            draft.isEmpty ? nil : draft
+                        let saved: Bool /* Saved state under review */
 
                         if let draftDisplay, let onSaveDisplay
                         {
@@ -492,24 +493,25 @@ struct BoardAppearanceSheet: View
 {
 
 
-    @State private var photoSelection: PhotosPickerItem?
-    @State private var draftPhoto:     Data?
-    @State private var isImportingPhoto = false
-    @State private var backgroundError:      String?
-    let allowsCollectionBackground:          Bool
-    var defaultCollectionBackground:         CollectionBackground? = nil
-    @State private var draft:                BoardAppearance
-    let listSurface:                         KanbanList?
-    let onSaveListSurface:                   ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)?
-    @State private var draftSurfaceOpacity:  Double
-    @State private var draftShowsHeaderIcon: Bool
-    @State private var draftIconColor:       ProfileColor?
-    @State private var draftHeaderIcon:      PersonalCollectionIcon
-    @State private var applyToAll = false
-    @State private var draftPresentation: BoardPresentation
-    let onSavePresentation:               ((BoardPresentation) -> Void)?
-    let onSave:                           (BoardAppearance, Bool) -> Bool
-    @Environment(\.dismiss) private var dismiss
+    @State private var photoSelection: PhotosPickerItem? /* Photo selection */
+    @State private var draftPhoto:     Data? /* Draft photo */
+    @State private var isImportingPhoto = false /* Importing Photo state */
+    @State private var backgroundError:      String? /* Background error */
+    let allowsCollectionBackground:          Bool /* Allows collection background */
+    var defaultCollectionBackground:         CollectionBackground? = /* Default collection background */
+        nil
+    @State private var draft:                BoardAppearance /* Local editing draft */
+    let listSurface:                         KanbanList? /* List surface */
+    let onSaveListSurface:                   ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? /* Save list surface callback */
+    @State private var draftSurfaceOpacity:  Double /* Draft surface opacity */
+    @State private var draftShowsHeaderIcon: Bool /* Draft shows header icon */
+    @State private var draftIconColor:       ProfileColor? /* Draft icon color */
+    @State private var draftHeaderIcon:      PersonalCollectionIcon /* Draft header icon */
+    @State private var applyToAll = false /* Apply to all */
+    @State private var draftPresentation: BoardPresentation /* Draft presentation */
+    let onSavePresentation:               ((BoardPresentation) -> Void)? /* Save presentation callback */
+    let onSave:                           (BoardAppearance, Bool) -> Bool /* Persist the edited value */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
     ///
@@ -563,7 +565,7 @@ struct BoardAppearanceSheet: View
     }
 
 
-    var body: some View
+    var body: some View /* Board Appearance layout */
     {
 
         NavigationStack
@@ -819,7 +821,8 @@ struct BoardAppearanceSheet: View
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
-                let prepared = try await Task.detached(priority: .userInitiated)
+                let prepared = /* Prepared operation input */
+                    try await Task.detached(priority: .userInitiated)
                 {
 
                     try CollectionBackgroundPhotoStore.preparedPhoto(data)
@@ -878,7 +881,7 @@ struct BoardAppearanceSheet: View
     }
 
 
-    private var collectionBackgroundSection: some View
+    private var collectionBackgroundSection: some View /* Collection background section */
     {
 
         Section("Background")
@@ -982,8 +985,8 @@ struct BoardAppearanceSheet: View
             return
         }
 
-        var updated = draft
-        var importedName: String?
+        var updated = draft       /* Edited value to publish */
+        var importedName: String? /* Imported name           */
 
         do
         {
@@ -991,7 +994,8 @@ struct BoardAppearanceSheet: View
             if allowsCollectionBackground, updated.collectionBackground?.preset == .photo, let draftPhoto
             {
 
-                let name = try CollectionBackgroundPhotoStore.save(draftPhoto)
+                let name = /* Display or lookup name */
+                    try CollectionBackgroundPhotoStore.save(draftPhoto)
 
                 importedName = name
                 updated.collectionBackground?.photoFileName = name
@@ -1045,10 +1049,10 @@ struct AddItemTextColorSection: View
 {
 
 
-    @Binding var selection: ProfileColor?
-    var defaultColor:       Color = .primary
+    @Binding var selection: ProfileColor?    /* Current selection state */
+    var defaultColor:       Color = .primary /* Default color           */
 
-    var body: some View
+    var body: some View /* Add Item Text Color layout */
     {
 
         Section("Add Card field")
@@ -1065,10 +1069,10 @@ struct AddItemTextColorSection: View
                                         {
                                             color in
 
-                                            var red: CGFloat   = 0
-                                            var green: CGFloat = 0
-                                            var blue: CGFloat  = 0
-                                            var alpha: CGFloat = 0
+                                            var red: CGFloat   = 0 /* Resolved red channel     */
+                                            var green: CGFloat = 0 /* Resolved green channel   */
+                                            var blue: CGFloat  = 0 /* Resolved blue channel    */
+                                            var alpha: CGFloat = 0 /* Resolved opacity channel */
 
                                             guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else
                                             {
@@ -1108,9 +1112,9 @@ struct PreviewTextColorsSection: View
 {
 
 
-    @Binding var titleColor: ListPreviewTextColor?
-    @Binding var textColor:  ListPreviewTextColor?
-    let explanation:         String
+    @Binding var titleColor: ListPreviewTextColor? /* Title color              */
+    @Binding var textColor:  ListPreviewTextColor? /* Text color               */
+    let explanation:         String                /* Explanation display text */
 
 
     ///
@@ -1140,7 +1144,7 @@ struct PreviewTextColorsSection: View
 
     }
 
-    var body: some View
+    var body: some View /* Preview Text Colors layout */
     {
 
         Section("Preview text colors")
@@ -1173,11 +1177,11 @@ struct ListSurfaceOpacityPicker: View
 {
 
 
-    let title:            String
-    var tint:             KanbanListTint = .neutral
-    @Binding var opacity: Double
+    let title:            String                    /* User-facing title     */
+    var tint:             KanbanListTint = .neutral /* Resolved display tint */
+    @Binding var opacity: Double                    /* Surface opacity       */
 
-    var body:             some View
+    var body:             some View /* List Surface Opacity Picker layout */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -1243,15 +1247,15 @@ struct ListIconColorPicker: View
 {
 
 
-    @Binding var selection: ProfileColor?
-    var fixedColor:         ProfileColor?            = nil
-    private let presets:    [(String, ProfileColor)] = [
+    @Binding var selection: ProfileColor?                  /* Current selection state      */
+    var fixedColor:         ProfileColor?            = nil /* Fixed color                  */
+    private let presets:    [(String, ProfileColor)] = [   /* Available appearance presets */
         ("Teal", .teal), ("Blue", .blue), ("Green", .green), ("Orange", .orange),
         ("Coral", .coral), ("Graphite", .graphite), ("White", .white),
         ("Charcoal", .charcoal), ("Yellow", .lemon), ("Sky", .sky)
     ]
 
-    var body: some View
+    var body: some View /* List Icon Color Picker layout */
     {
 
         if let fixedColor

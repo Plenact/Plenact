@@ -50,7 +50,7 @@ struct ContentView: View
 {
 
 
-    @ObservedObject var creationReveal = CreatedContentReveal.shared
+    @ObservedObject var creationReveal = CreatedContentReveal.shared /* Creation reveal */
 
     @Binding var lists: [KanbanList] /* Shared kanban board lists                        */
     /// Archived lists belonging to the same board
@@ -71,14 +71,14 @@ struct ContentView: View
     let allowsAddingLists: Bool /* Whether the board offers list creation */
     /// Lets a single-list personal collection fill the Standard viewport without changing Overview
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
-    @State var standaloneListActionsRequest = 0
+    @State var standaloneListActionsRequest = 0 /* Standalone list actions request */
 
-    var isStandaloneListView: Bool
+    var isStandaloneListView: Bool /* Standalone List View state */
     {
         fillsAvailableListWidth && lists.count == 1
     }
 
-    var standaloneViewMode: Binding<SingleListViewMode>?
+    var standaloneViewMode: Binding<SingleListViewMode>? /* Standalone view mode */
     {
 
         guard isStandaloneListView else
@@ -106,7 +106,7 @@ struct ContentView: View
             })
     }
 
-    var standaloneSubtitle: String
+    var standaloneSubtitle: String /* Standalone subtitle */
     {
 
         guard isStandaloneListView, let description = lists.first?.subtitleOverride,
@@ -128,23 +128,25 @@ struct ContentView: View
     /// Names the special Week clearing action without implying removal of its tab
     let deleteBoardTitle: String /* Context-specific label for the Board deletion action */
     /// Optional save-first boundary for confirmed card/list removal
-    let onCommitDeletion:
+    let onCommitDeletion: /* Commit deletion callback */
     (([KanbanList], Set<Int>) throws -> Void)? /* Checked persistence boundary for confirmed content removal */
     /// Receives active-list snapshots for caller-owned persistence
-    let onListsChanged:
+    let onListsChanged: /* Lists changed callback */
     @MainActor ([KanbanList]) -> Void /* Publishes active-list snapshots for caller-owned persistence */
     /// Supplies other retained snapshots whose attachment files must not be pruned
     let retainedAttachmentLists: () -> [KanbanList]  /* Supplies external snapshots protecting referenced media */
     let personalCollectionID:    UUID?               /* Owning personal collection; nil for the Week workspace  */
-    let appearanceBinding:       Binding<BoardAppearance?>?
-    @AppStorage(BoardAppearance.weekStorageKey) var weekAppearanceData = Data()
-    @State var showsBoardAppearance                                    = false
-    @State var focusedDayListID: Int?
+    let appearanceBinding:       Binding<BoardAppearance?>? /* Appearance binding */
+    @AppStorage(BoardAppearance.weekStorageKey) var weekAppearanceData = /* Week appearance data */
+        Data()
+    @State var showsBoardAppearance                                    = /* Board Appearance visibility */
+        false
+    @State var focusedDayListID: Int? /* Focused day list ID */
 
-    var storedBoardAppearance: BoardAppearance
+    var storedBoardAppearance: BoardAppearance /* Stored board appearance */
     {
 
-        var appearance: BoardAppearance
+        var appearance: BoardAppearance /* Resolved appearance choices */
 
         if let appearanceBinding
         {
@@ -169,11 +171,11 @@ struct ContentView: View
     }
 
 
-    var currentBoardAppearance: BoardAppearance
+    var currentBoardAppearance: BoardAppearance /* Current board appearance */
     {
 
-        var appearance     = storedBoardAppearance
-        let isPlanningWeek =
+        var appearance     = storedBoardAppearance /* Resolved appearance choices */
+        let isPlanningWeek =                       /* Planning Week state         */
         personalCollectionID == nil
         || planningCalendarAccess?.document.weeks.contains(where:
             {
@@ -198,7 +200,7 @@ struct ContentView: View
     }
 
 
-    var displayedCollectionBackground: CollectionBackground?
+    var displayedCollectionBackground: CollectionBackground? /* Displayed collection background */
     {
 
         guard allowsCollectionBackground else
@@ -213,7 +215,7 @@ struct ContentView: View
     }
 
 
-    var allowsCollectionBackground: Bool
+    var allowsCollectionBackground: Bool /* Allows collection background */
     {
 
         CollectionBackground.isAllowed(
@@ -223,25 +225,25 @@ struct ContentView: View
     }
 
 
-    let availablePersonalLists: [PersonalCollection] /* Personal Lists available for moving Notes                 */
-    let onMoveNoteToPersonalList:
+    let availablePersonalLists: [PersonalCollection] /* Personal Lists available for moving Notes */
+    let onMoveNoteToPersonalList:                    /* Move note to personal list callback       */
     ((KanbanCard, UUID, UUID) -> KanbanCard?)? /* Moves a Note and returns its persisted destination record */
-    let onUpdateMovedNote:
+    let onUpdateMovedNote: /* Update moved note callback */
     ((UUID, KanbanCard) -> Bool)? /* Persists edits to a Note after collection movement        */
-    let onArchiveMovedNote:
+    let onArchiveMovedNote: /* Archive moved note callback */
     ((UUID, KanbanCard) -> Bool)? /* Archives a Note under its current collection owner        */
-    let onDeleteMovedNote:
+    let onDeleteMovedNote: /* Delete moved note callback */
     ((UUID, KanbanCard) -> Bool)? /* Deletes a Note under its current collection owner         */
-    let onToggleMovedNoteBookmark:
+    let onToggleMovedNoteBookmark: /* Toggle moved note bookmark callback */
     ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state  */
     /// Controls presentation of the calendar sheet
-    @Environment(\.appReturnResetRequest) var appReturnResetRequest
-    @Environment(\.appReturnTargetListID) var appReturnTargetListID
-    @Environment(\.planningCalendarAccess) var planningCalendarAccess
-    @Environment(\.planningHomeExit) var planningHomeExit
-    @Environment(\.planningDisplayedWeekKey) var displayedWeekKey
+    @Environment(\.appReturnResetRequest) var appReturnResetRequest /* App return reset request */
+    @Environment(\.appReturnTargetListID) var appReturnTargetListID /* App return target list ID */
+    @Environment(\.planningCalendarAccess) var planningCalendarAccess /* Planning calendar access */
+    @Environment(\.planningHomeExit) var planningHomeExit /* Planning home exit */
+    @Environment(\.planningDisplayedWeekKey) var displayedWeekKey /* Displayed week key */
 
-    var calendarOpeningDate: Date
+    var calendarOpeningDate: Date /* Calendar opening date */
     {
 
         if let displayedWeekKey, let date = PlanningDate.date(displayedWeekKey)
@@ -262,21 +264,21 @@ struct ContentView: View
         return PlanningDate.date(week.startKey) ?? .now
     }
 
-    @State var showsSharedSearch = false
-    @State var showsWeekSelector = false
+    @State var showsSharedSearch = false /* Shared Search visibility */
+    @State var showsWeekSelector = false /* Week Selector visibility */
     @State var showsCalendar     = false                        /* Calendar sheet presentation state         */
     @State var calendarCardTarget: (listID: Int, cardID: Int)?  /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists
     @State var showsArchivedLists = false /* Archived-list browser presentation state */
     /// Navigation stack path for card-detail destinations
-    @State var listToCopy:      KanbanList?
-    @State var listToMove:      KanbanList?
-    @State var namingNewListID: Int?
-    @Environment(\.planningDirectItemReturn) var directItemReturn
-    @State var openedDirectItem         = false
+    @State var listToCopy:      KanbanList? /* List selected for copying */
+    @State var listToMove:      KanbanList? /* List to move */
+    @State var namingNewListID: Int? /* Naming new list ID */
+    @Environment(\.planningDirectItemReturn) var directItemReturn /* Direct item return */
+    @State var openedDirectItem         = false /* Opened direct item */
     @State var navigationPath           = NavigationPath() /* Card-detail destinations in the Board navigation stack       */
     @State var boardBoundaryJumpRequest = 0                /* Trigger distinguishing repeated boundary-navigation requests */
-    @State var boardBoundaryJumpTarget:
+    @State var boardBoundaryJumpTarget: /* Board boundary jump target */
     BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation         */
     /// Last visible list identity sent through `onListViewed`
     @State var lastReportedVisibleListID: Int? /* Last centered list reported to the parent */
@@ -285,34 +287,34 @@ struct ContentView: View
     /// List identity currently being dragged for reordering
     @State var draggedListID: Int? /* List identity participating in active reordering */
     /// Measured horizontal centers keyed by list identity
-    @State var dragGeometry         = BoardDragGeometryCache()
-    @State var dragGeometryRevision = 0
+    @State var dragGeometry         = BoardDragGeometryCache() /* Drag geometry          */
+    @State var dragGeometryRevision = 0                        /* Drag geometry revision */
     // /* Measured horizontal centers keyed by list identity */
     /// Current horizontal location of an active list drag
     @State var listDragLocation: CGFloat? /* Horizontal pointer position during list reordering */
     /// Horizontal offset between the drag start and the grabbed list center
     @State var listDragGrabOffset:    CGFloat = 0 /* Offset between the initial pointer and grabbed list center */
     @State var listDragInitialCenter: CGFloat?    // Center before the temporary drag overview
-    @State var listDragTilt:          Double = 0
-    @State var viewportMemory:        BoardViewportMemory
-    @State var isPanoramic         = false
-    @State var isGallery           = false
-    @State var todayHighlightDate  = Date.now
-    @State var boardScale: CGFloat = 1
-    @GestureState var boardPinch   = BoardPinchState()
+    @State var listDragTilt:          Double = 0          /* List drag tilt       */
+    @State var viewportMemory:        BoardViewportMemory /* Viewport memory      */
+    @State var isPanoramic         = false                /* Panoramic state      */
+    @State var isGallery           = false                /* Gallery state        */
+    @State var todayHighlightDate  = Date.now             /* Today highlight date */
+    @State var boardScale: CGFloat = 1                    /* Board scale          */
+    @GestureState var boardPinch   = BoardPinchState()    /* Board pinch          */
 
-    var boardZoomScale: CGFloat
+    var boardZoomScale: CGFloat /* Board zoom scale */
     {
 
         BoardPanoramicZoom.scale(start: boardScale, magnification: boardPinch.magnification)
     }
 
-    var usesFreeBoardScrolling: Bool
+    var usesFreeBoardScrolling: Bool /* Uses free board scrolling */
     {
         isPanoramic || boardPinch.active || abs(boardZoomScale - 1) > 0.001
     }
 
-    var boardPinchGesture: some Gesture
+    var boardPinchGesture: some Gesture /* Board pinch gesture */
     {
 
         MagnifyGesture(minimumScaleDelta: 0.01)
@@ -343,7 +345,7 @@ struct ContentView: View
 
     }
 
-    var listDragScale: CGFloat
+    var listDragScale: CGFloat /* List drag scale */
     {
 
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
@@ -460,14 +462,15 @@ struct ContentView: View
     {
 
 
-        let memory = BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current", defaults: viewportDefaults)
+        let memory = /* Owner-scoped viewport state */
+            BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current", defaults: viewportDefaults)
 
         _viewportMemory = State(initialValue: memory)
         _boardScale = State(initialValue: CGFloat(memory.state.scale))
         _isPanoramic = State(initialValue: memory.state.panoramic)
         _isGallery = State(initialValue: memory.state.gallery)
 
-        let savedList = memory.state.visibleListID.flatMap
+        let savedList = memory.state.visibleListID.flatMap /* Saved list */
         {
             id in
             lists.wrappedValue.contains(where:
@@ -522,7 +525,7 @@ struct ContentView: View
     /// @pre        lists contains the current in-memory board state
     /// @post       No board data is modified; duplicate and empty names are omitted from the result
     ///
-    var activeMembers: [String]
+    var activeMembers: [String] /* Active members */
     {  /* Unique names assigned to non-divider cards */
 
 
@@ -539,9 +542,9 @@ struct ContentView: View
         {
             assignee in
 
-            let trimmedMember = assignee.displayName.trimmingCharacters(
+            let trimmedMember = assignee.displayName.trimmingCharacters( /* Trimmed member */
                 in: .whitespacesAndNewlines) /* Display name                                              */
-            let normalizedMember =
+            let normalizedMember = /* Normalized member */
             trimmedMember.lowercased() /* Normalize the member name for case-insensitive comparison */
 
             guard !trimmedMember.isEmpty, seenMembers.insert(normalizedMember).inserted else
@@ -558,7 +561,7 @@ struct ContentView: View
     }
 
 
-    var cardDropTarget: BoardCardDropTarget?
+    var cardDropTarget: BoardCardDropTarget? /* Card drop target */
     {
 
         _ = dragGeometryRevision /* Valid list and insertion anchor under the card-drag pointer */
@@ -591,7 +594,7 @@ struct ContentView: View
     ///             Drag release/disappearance cancels edge work; unexpected movement errors reach the banner
     /// @note       Reduce Motion suppresses drag lift scaling and reorder/edge-scroll animations
     ///
-    var body: some View
+    var body: some View /* Board layout and navigation */
     {  /* Board scene and list collection */
 
 
@@ -753,19 +756,21 @@ struct ContentView: View
                             {
                                 listArea in
 
-                                let columnWidth = presentation.columnWidth(
+                                let columnWidth = presentation.columnWidth( /* Column width */
                                     viewportWidth: listArea.size.width,
                                     accessibilitySize: dynamicTypeSize.isAccessibilitySize,
                                     fillsAvailableWidth: fillsAvailableListWidth
                                 )
-                                let tabletScale = BoardTabletSizing.scale(
+                                let tabletScale = BoardTabletSizing.scale( /* Tablet scale */
                                     viewportWidth: listArea.size.width, columnWidth: columnWidth,
                                     isTablet: UIDevice.current.userInterfaceIdiom == .pad,
                                     enabled: presentation == .standard && !fillsAvailableListWidth
                                     && !dynamicTypeSize.isAccessibilitySize)
-                                let layoutZoomScale = boardZoomScale * tabletScale
-                                let layoutListScale = listDragScale * tabletScale
-                                let horizontalInset =
+                                let layoutZoomScale = /* Layout zoom scale */
+                                    boardZoomScale * tabletScale
+                                let layoutListScale = /* Layout list scale */
+                                    listDragScale * tabletScale
+                                let horizontalInset = /* Horizontal inset */
                                 presentation == .standard && !isPanoramic
                                 ? max(14, (listArea.size.width - columnWidth * layoutListScale) / 2)
                                 : 14
@@ -1382,9 +1387,10 @@ struct ContentView: View
                                                     continue
                                                 }  /* Current dragged-list position                       */
 
-                                                let direction = BoardListReordering.edgeDirection(
+                                                let direction = /* Requested move direction */
+                                                    BoardListReordering.edgeDirection(
                                                     at: location, viewportWidth: listArea.size.width) /* Activated left or right viewport edge               */
-                                                let destination =
+                                                let destination = /* Destination for the operation */
                                                 source
                                                 + direction /* Neighbor position reached by edge navigation        */
 
@@ -1470,7 +1476,7 @@ struct ContentView: View
                                                 }
 
 
-                                                let direction =
+                                                let direction = /* Requested move direction */
                                                 BoardListReordering.edgeDirection( /* Activated edge relative to the card-drag viewport */
                                                     at: location.x - dragGeometry.viewport.minX,
                                                     viewportWidth: dragGeometry.viewport.width
@@ -1489,7 +1495,8 @@ struct ContentView: View
                                                     continue
                                                 }
 
-                                                let nextID = lists[current + direction]
+                                                let nextID = /* Next ID */
+                                                    lists[current + direction]
                                                 .id /* Adjacent list identity to reveal during the card drag */
 
                                                 withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2))
@@ -1664,18 +1671,20 @@ struct ContentView: View
                 viewportMemory.horizontalRestoreAllowed = false
                 isGallery = false
 
-                let week = planningCalendarAccess?.document.weeks.first
+                let week = /* Dated Week under consideration */
+                    planningCalendarAccess?.document.weeks.first
                 {
 
                     BoardViewportMemory.prefix + $0.id.uuidString == viewportMemory.key
                 }
-                let explicit = appReturnTargetListID.flatMap
+                let explicit = appReturnTargetListID.flatMap /* Mapped explicit values */
                 {
                     target in
 
                     lists.contains(where: { $0.id == target }) ? target : nil
                 }
-                let firstID = explicit ?? AppReturnSession.firstListID(in: week, lists: lists)
+                let firstID = /* First ID */
+                    explicit ?? AppReturnSession.firstListID(in: week, lists: lists)
 
                 visibleListID = firstID
                 boardTargetCardID = nil
@@ -1876,7 +1885,8 @@ struct ContentView: View
                             return
                         }
 
-                        var appearance = lists[0].appearance ?? ItemAppearance()
+                        var appearance = /* Resolved appearance choices */
+                            lists[0].appearance ?? ItemAppearance()
 
                         appearance.listBackgroundOpacity = value
                         appearance.showsIconInHeader = showsHeaderIcon

@@ -16,17 +16,17 @@ import UIKit
 struct AppReturnSession
 {
 
-    static let timeout: Duration = .seconds(300)
-    private var departure: ContinuousClock.Instant?
-    private var protectedAtDeparture = false
+    static let timeout: Duration = .seconds(300)    /* Foreground return threshold */
+    private var departure: ContinuousClock.Instant? /* Departure operation value   */
+    private var protectedAtDeparture = false        /* Protected at departure      */
 
-    var hasBackgroundDeparture: Bool
+    var hasBackgroundDeparture: Bool /* Background Departure availability */
     {
 
         departure != nil
     }
 
-    var hasProtectedDeparture: Bool
+    var hasProtectedDeparture: Bool /* Protected Departure availability */
     {
 
         protectedAtDeparture
@@ -41,8 +41,9 @@ struct AppReturnSession
     static func firstListID(in week: DatedPlanningWeek?, lists: [KanbanList]) -> Int?
     {
 
-        let active = Set(lists.map(\.id))
-        let dated  = week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
+        let active = Set(lists.map(\.id)) /* Active operation state */
+        let dated  =                      /* Calendar-backed owner  */
+            week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
 
         return dated.first { active.contains($0) } ?? lists.first?.id
     }
@@ -76,7 +77,8 @@ struct AppReturnSession
             return false
         }
 
-        let shouldReset = !protected && !protectedAtDeparture && departure.duration(to: instant) >= Self.timeout
+        let shouldReset = /* Reset decision */
+            !protected && !protectedAtDeparture && departure.duration(to: instant) >= Self.timeout
 
         self.departure = nil
         protectedAtDeparture = false
@@ -92,7 +94,7 @@ struct AppReturnSession
 private struct AppReturnProtectionKey: EnvironmentKey
 {
 
-    static let defaultValue: (UUID, Bool) -> Void =
+    static let defaultValue: (UUID, Bool) -> Void = /* Fallback environment callback */
     {
         _, _ in
 
@@ -107,7 +109,7 @@ private struct AppReturnProtectionKey: EnvironmentKey
 private struct AppReturnResetKey: EnvironmentKey
 {
 
-    static let defaultValue = 0
+    static let defaultValue = 0 /* Fallback environment value */
 
 }
 
@@ -118,7 +120,7 @@ private struct AppReturnResetKey: EnvironmentKey
 private struct AppReturnTargetKey: EnvironmentKey
 {
 
-    static let defaultValue: Int? = nil
+    static let defaultValue: Int? = nil /* Fallback environment value */
 
 }
 
@@ -126,7 +128,7 @@ private struct AppReturnTargetKey: EnvironmentKey
 extension EnvironmentValues
 {
 
-    var appReturnTargetListID: Int?
+    var appReturnTargetListID: Int? /* App return target list ID */
     {
 
         get
@@ -142,7 +144,7 @@ extension EnvironmentValues
         }
     }
 
-    var appReturnProtection: (UUID, Bool) -> Void
+    var appReturnProtection: (UUID, Bool) -> Void /* App return protection callback */
     {
 
         get
@@ -158,7 +160,7 @@ extension EnvironmentValues
         }
     }
 
-    var appReturnResetRequest: Int
+    var appReturnResetRequest: Int /* App return reset request */
     {
 
         get
@@ -182,9 +184,9 @@ extension EnvironmentValues
 private struct AppReturnProtection: ViewModifier
 {
 
-    let active: Bool
-    @State private var token = UUID()
-    @Environment(\.appReturnProtection) private var report
+    let active: Bool                                       /* Active operation state   */
+    @State private var token = UUID()                      /* Retained operation token */
+    @Environment(\.appReturnProtection) private var report /* Validation findings      */
 
     /// @fcn AppReturnProtection.body
     /// @brief Register the visible editor's lifetime and current protection state
@@ -233,9 +235,9 @@ extension View
 final class AppReturnWindow
 {
 
-    weak var window: UIWindow?
+    weak var window: UIWindow? /* Scene window for rendering */
 
-    var hasPresentation: Bool
+    var hasPresentation: Bool /* Presentation availability */
     {
 
         window?.rootViewController?.presentedViewController != nil
@@ -249,7 +251,7 @@ final class AppReturnWindow
 struct AppReturnWindowProbe: UIViewRepresentable
 {
 
-    let reference: AppReturnWindow
+    let reference: AppReturnWindow /* Qualified record reference */
 
     /// Reports its actual window after UIKit attaches the probe
     /// @section Purpose
@@ -257,7 +259,7 @@ struct AppReturnWindowProbe: UIViewRepresentable
     final class Marker: UIView
     {
 
-        var reference: AppReturnWindow?
+        var reference: AppReturnWindow? /* Qualified record reference */
 
         /// @fcn AppReturnWindowProbe.Marker.didMoveToWindow
         /// @brief Refresh the weak scene-window reference after attachment
@@ -282,7 +284,7 @@ struct AppReturnWindowProbe: UIViewRepresentable
     func makeUIView(context: Context) -> Marker
     {
 
-        let view = Marker()
+        let view = Marker() /* View being rendered */
 
         view.isUserInteractionEnabled = false
         view.reference = reference
@@ -313,7 +315,7 @@ struct AppReturnWindowProbe: UIViewRepresentable
 extension AppRootView
 {
 
-    var hasProtectedAppReturnContext: Bool
+    var hasProtectedAppReturnContext: Bool /* Protected App Return Context */
     {
 
         !appReturnProtectionIDs.isEmpty || appReturnWindow.hasPresentation
@@ -326,9 +328,11 @@ extension AppRootView
     func handleAppReturn()
     {
 
-        let fromBackground = appReturnSession.hasBackgroundDeparture
-        let protected      = hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
-        let reset          = appReturnSession.becameActive(at: .now, protected: protected)
+        let fromBackground = appReturnSession.hasBackgroundDeparture /* From background */
+        let protected      = /* Open-work navigation guard */
+            hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
+        let reset          = /* Requested state reset */
+            appReturnSession.becameActive(at: .now, protected: protected)
 
         guard hasLoadedBoard, !protected else
         {
@@ -376,16 +380,16 @@ extension AppRootView
 struct ManualWeekOpening
 {
 
-    let week: DatedPlanningWeek
-    let replaced: Bool
+    let week: DatedPlanningWeek /* Dated Week under consideration */
+    let replaced: Bool          /* State after replacement        */
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         replaced ? "Week replaced" : "Week created"
     }
 
-    var firstListID: Int?
+    var firstListID: Int? /* Initial List navigation target */
     {
 
         week.collection.lists.first(where: { !$0.isArchived })?.id
@@ -421,7 +425,8 @@ struct ManualWeekOpening
     func resetViewport(in defaults: UserDefaults = .standard)
     {
 
-        let memory = BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
+        let memory = /* Owner-scoped viewport state */
+            BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
 
         memory.resetScrollOffsets()
 
@@ -449,7 +454,8 @@ extension AppRootView
             return
         }
 
-        let opening = ManualWeekOpening(week: week, replaced: completion.replaced)
+        let opening = /* Prepared explicit Week navigation */
+            ManualWeekOpening(week: week, replaced: completion.replaced)
 
         dailyOverview.cancel()
         dailyOverviewFade.cancel()

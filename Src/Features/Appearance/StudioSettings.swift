@@ -14,12 +14,13 @@ struct StudioSettingsView: View
 {
 
 
-    @State private var draft   = StudioSettings.load()
-    @State private var palette = StudioSettings.load().palette.joined(separator: ", ")
-    @State private var error: String?
-    @State private var showsLibrary = false
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage(StudioSettings.key) private var data = Data()
+    @State private var draft   = StudioSettings.load() /* Local editing draft   */
+    @State private var palette =                       /* Artwork color palette */
+        StudioSettings.load().palette.joined(separator: ", ")
+    @State private var error: String?                         /* Reported operation failure     */
+    @State private var showsLibrary = false                   /* Library visibility             */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes       */
 
 
     /// @fcn StudioSettingsView.destinationBinding(_:)
@@ -49,7 +50,7 @@ struct StudioSettingsView: View
     private func save()
     {
 
-        let colors = palette.split(separator: ",").map
+        let colors = palette.split(separator: ",").map /* Colors used by this appearance */
         {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -116,7 +117,7 @@ struct StudioSettingsView: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio directory and editors */
     {
 
 
@@ -269,8 +270,8 @@ struct StudioWorkspaceBackground: View
 {
 
 
-    let destination: StudioDestination
-    @AppStorage(StudioSettings.key) private var data = Data()
+    let destination: StudioDestination                        /* Destination for the operation */
+    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
 
     ///
     /// @fcn        StudioWorkspaceBackground.body
@@ -280,7 +281,7 @@ struct StudioWorkspaceBackground: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Workspace Background layout */
     {
 
 
@@ -304,8 +305,8 @@ struct StudioFormWallpaper: ViewModifier
 {
 
 
-    let destination: StudioDestination
-    @AppStorage(StudioSettings.key) private var data = Data()
+    let destination: StudioDestination                        /* Destination for the operation */
+    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
 
     ///
     /// @fcn        StudioFormWallpaper.body

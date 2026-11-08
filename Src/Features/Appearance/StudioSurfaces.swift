@@ -15,7 +15,7 @@ private struct StudioCardSurfaceKey: EnvironmentKey
 {
 
 
-    static let defaultValue: StudioSurface? = nil
+    static let defaultValue: StudioSurface? = nil /* Fallback environment value */
 
 }
 
@@ -28,7 +28,7 @@ extension EnvironmentValues
 {
 
 
-    var studioCardSurface: StudioSurface?
+    var studioCardSurface: StudioSurface? /* Studio card surface */
     {
 
         get
@@ -56,7 +56,7 @@ enum StudioArtworkStore
 {
 
 
-    private static let cache = NSCache<NSString, UIImage>()
+    private static let cache = NSCache<NSString, UIImage>() /* Reusable lookup results */
 
 
     /// @fcn StudioArtworkStore.directory()
@@ -68,9 +68,11 @@ enum StudioArtworkStore
     {
 
 
-        let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
+        let root = /* Workspace or view root */
+            try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
             appropriateFor: nil, create: true)
-        let url = root.appendingPathComponent("PlenactStudioArtwork", isDirectory: true)
+        let url = /* Resolved file location */
+            root.appendingPathComponent("PlenactStudioArtwork", isDirectory: true)
 
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
@@ -88,8 +90,9 @@ enum StudioArtworkStore
     {
 
 
-        let prepared = try CollectionBackgroundPhotoStore.preparedPhoto(data)
-        let name     = UUID().uuidString + ".jpg"
+        let prepared = /* Prepared operation input */
+            try CollectionBackgroundPhotoStore.preparedPhoto(data)
+        let name     = UUID().uuidString + ".jpg" /* Display or lookup name */
 
         try prepared.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
@@ -137,8 +140,8 @@ struct StudioSurfaceView: View
 {
 
 
-    let surface: StudioSurface
-    @Environment(\.colorScheme) private var scheme
+    let surface: StudioSurface                     /* Artwork surface definition       */
+    @Environment(\.colorScheme) private var scheme /* Current light or dark appearance */
 
 
     /// @fcn StudioSurfaceView.color(_:)
@@ -173,7 +176,7 @@ struct StudioSurfaceView: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Surface layout */
     {
 
 
@@ -222,8 +225,8 @@ struct StudioSurfaceView: View
     {
 
 
-        let first  = Self.color(surface.color)
-        let second = Self.color(surface.secondaryColor)
+        let first  = Self.color(surface.color)          /* First comparison value  */
+        let second = Self.color(surface.secondaryColor) /* Second comparison value */
 
         switch surface.material
         {
@@ -272,12 +275,12 @@ struct StudioSurfaceView: View
 
             context, bounds in
 
-                let ink = second
+                let ink = second /* Drawing stroke content */
 
                 if surface.material == .canvas
                 {
 
-                    var mountain = Path()
+                    var mountain = Path() /* Mountain operation value */
 
                     mountain.move(to: CGPoint(x: 0, y: bounds.height * 0.8))
                     mountain.addLine(to: CGPoint(x: bounds.width * 0.38, y: bounds.height * 0.28))
@@ -292,7 +295,8 @@ struct StudioSurfaceView: View
                 else
                 {
 
-                    let step: CGFloat = surface.material == .linen ? 4 : 24
+                    let step: CGFloat = /* Current review step */
+                        surface.material == .linen ? 4 : 24
 
                     for x in stride(from: CGFloat(0), through: bounds.width, by: step)
                     {
@@ -311,7 +315,7 @@ struct StudioSurfaceView: View
                         if [.grid, .linen].contains(surface.material)
                         {
 
-                            var line = Path()
+                            var line = Path() /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: x, y: 0));
                             line.addLine(to: CGPoint(x: x, y: bounds.height))
@@ -326,7 +330,7 @@ struct StudioSurfaceView: View
                         for y in stride(from: CGFloat(0), through: bounds.height, by: step)
                         {
 
-                            var line = Path()
+                            var line = Path() /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: 0, y: y));
                             line.addLine(to: CGPoint(x: bounds.width, y: y))
@@ -354,10 +358,10 @@ struct StudioItemBackground: View
 {
 
 
-    let appearance: ItemAppearance?
-    let isNote:     Bool
-    var preview = false
-    @Environment(\.studioCardSurface) private var inherited
+    let appearance: ItemAppearance?                         /* Resolved appearance choices     */
+    let isNote:     Bool                                    /* Note state                      */
+    var preview = false                                     /* Prepared content preview        */
+    @Environment(\.studioCardSurface) private var inherited /* Appearance inherited from owner */
 
     ///
     /// @fcn        StudioItemBackground.body
@@ -367,7 +371,7 @@ struct StudioItemBackground: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Item Background layout */
     {
 
 

@@ -19,8 +19,8 @@ struct BoardCardDropTarget: Equatable
 {
 
 
-    let listID:       Int   /* Destination list identity for the drop             */
-    let beforeCardID: Int?  /* Insertion anchor; nil appends after existing cards */
+    let listID:       Int  /* Destination list identity for the drop             */
+    let beforeCardID: Int? /* Insertion anchor; nil appends after existing cards */
 
 }
 
@@ -63,7 +63,7 @@ enum BoardCardMovement
     {
 
 
-        let sources = lists.indices.filter
+        let sources = lists.indices.filter /* Source records or files */
         {
 
             lists[$0].cards.contains
@@ -208,12 +208,12 @@ enum BoardCardMovement
         }
 
 
-        let cards = list.cards.filter
+        let cards = list.cards.filter /* Card records under consideration */
         {
             $0.id != cardID
         }  /* Destination rows excluding the dragged card          */
 
-        let measured = cards.enumerated().filter
+        let measured = cards.enumerated().filter /* Measured layout result */
         {
 
             cardFrames[$0.element.id] != nil
@@ -298,7 +298,7 @@ enum BoardCardReordering
         }
 
 
-        let safeDestinationIndex = min(
+        let safeDestinationIndex = min( /* Safe destination index */
             max(destinationIndex, 0), cards.count - 1) /* Valid insertion position within the existing records */
 
         guard sourceIndex != safeDestinationIndex else
@@ -548,7 +548,7 @@ enum PersonalCollectionNoteMovement
 
         var source        = collections[sourceIndex]      /* Source collection snapshot receiving the removal   */
         var destination   = collections[destinationIndex] /* Destination collection snapshot receiving the Note */
-        let sourceMatches = source.lists.indices.flatMap
+        let sourceMatches = source.lists.indices.flatMap /* Source matches */
         {
 
         listIndex in /* Matching Note positions used to reject ambiguity   */
@@ -579,9 +579,9 @@ enum PersonalCollectionNoteMovement
         }
 
 
-        var moved = source.lists[sourceListIndex].cards.remove(
+        var moved = source.lists[sourceListIndex].cards.remove( /* Item after transfer */
             at: cardIndex) /* Note detached from its source before relocation            */
-        let destinationIDs = Set(
+        let destinationIDs = Set( /* Destination i ds */
             destination.lists.flatMap(\.allCards).map(\.id)) /* Active and archived identities reserved in the destination */
 
         var destinationCardID = moved.id /* Resulting Note identity adjusted only for a collision */
@@ -590,7 +590,8 @@ enum PersonalCollectionNoteMovement
         {
 
 
-            let (nextID, overflow) = (destinationIDs.max() ?? -1).addingReportingOverflow(
+            let (nextID, overflow) = /* Next ID overflow */
+                (destinationIDs.max() ?? -1).addingReportingOverflow(
                 1) /* Next unused identity and its overflow status */
 
             guard !overflow else
@@ -690,7 +691,7 @@ enum BoardContentDeletion
     {
 
 
-        let removedIDs = Set(
+        let removedIDs = Set( /* Removed i ds */
             lists.filter
             {
                 $0.id == id
@@ -718,13 +719,13 @@ struct CardMoveDestination: Identifiable, Hashable
 {
 
 
-    let collectionID: UUID?
-    let listID:       Int
-    let title:        String
-    let group:        String
-    var columnTitle:  String? = nil
+    let collectionID: UUID?         /* Collection ID               */
+    let listID:       Int           /* Owner-local List identifier */
+    let title:        String        /* User-facing title           */
+    let group:        String        /* Related operation entries   */
+    var columnTitle:  String? = nil /* Column title                */
 
-    var id:           String
+    var id:           String /* Record or view identity */
     {
             "\(collectionID?.uuidString ?? "week"):\(listID)"
     }
@@ -768,8 +769,8 @@ enum CrossBoardCardMovement
     ) throws
     {
 
-        var sourceLists: [KanbanList]
-        var sourceSaved: Set<Int>
+        var sourceLists: [KanbanList] /* Source lists */
+        var sourceSaved: Set<Int>     /* Source saved */
 
         if let sourceID
         {
@@ -795,7 +796,7 @@ enum CrossBoardCardMovement
 
         }
 
-        let matches = sourceLists.indices.filter
+        let matches = sourceLists.indices.filter /* Matching source entries */
         {
 
             !sourceLists[$0].isArchived && sourceLists[$0].cards.contains
@@ -813,9 +814,9 @@ enum CrossBoardCardMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var targetLists: [KanbanList]
-        var targetSaved: Set<Int>
-        let sameBoard = sourceID == destination.collectionID
+        var targetLists: [KanbanList]                        /* Target lists */
+        var targetSaved: Set<Int>                            /* Target saved */
+        let sameBoard = sourceID == destination.collectionID /* Same board   */
 
         if sameBoard
         {
@@ -857,13 +858,15 @@ enum CrossBoardCardMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var newID    = card.id
-        let reserved = Set(targetLists.flatMap(\.allCards).map(\.id))
+        var newID    = card.id /* New ID                     */
+        let reserved =         /* Reserved record identities */
+            Set(targetLists.flatMap(\.allCards).map(\.id))
 
         if !sameBoard && reserved.contains(newID)
         {
 
-            let (next, overflow) = (reserved.max() ?? -1).addingReportingOverflow(1)
+            let (next, overflow) = /* Next overflow */
+                (reserved.max() ?? -1).addingReportingOverflow(1)
 
             guard !overflow else
             {

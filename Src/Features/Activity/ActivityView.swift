@@ -22,9 +22,9 @@ struct PersonalSavedCardTarget: Equatable
 {
 
 
-    let collectionID: UUID  /* Owning personal collection         */
-    let listID:       Int   /* Containing collection-local list   */
-    let cardID:       Int   /* Collection-local bookmarked record */
+    let collectionID: UUID /* Owning personal collection         */
+    let listID:       Int  /* Containing collection-local list   */
+    let cardID:       Int  /* Collection-local bookmarked record */
 
 }
 
@@ -40,9 +40,9 @@ struct SavedCardResult: Identifiable
 {
 
 
-    let card:      KanbanCard  /* Saved card data           */
-    let listID:    Int         /* List opened when selected */
-    let listTitle: String      /* Containing list title     */
+    let card:      KanbanCard /* Saved card data           */
+    let listID:    Int        /* List opened when selected */
+    let listTitle: String     /* Containing list title     */
 
     ///
     /// @fcn        SavedCardResult.id
@@ -53,7 +53,7 @@ struct SavedCardResult: Identifiable
     /// @pre        Card IDs are unique within the displayed Week Board
     /// @post       Bookmark membership and card content remain unchanged
     ///
-    var id: Int
+    var id: Int /* Owner-local numeric ID */
     {
         card.id
     }  /* Saved card's stable Board-local identity */
@@ -73,12 +73,12 @@ enum ActivityFocus: String, CaseIterable, Identifiable
 
 
     case saved = "Saved", dueSoon = "Due soon", labels = "By label"
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -183,12 +183,12 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
 
     case recent, bookmarked, archived
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -206,7 +206,7 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
     }
 
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -224,7 +224,7 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
     }
 
-    var detail: String
+    var detail: String /* Owned action detail */
     {
 
         switch self
@@ -254,9 +254,9 @@ struct ToolbarRevisitMenu: View
 {
 
 
-    let onChoose: (ToolbarRevisitDestination) -> Void
+    let onChoose: (ToolbarRevisitDestination) -> Void /* Choose callback */
 
-    var body:     some View
+    var body:     some View /* Toolbar Revisit Menu layout */
     {
 
         VStack(alignment: .leading, spacing: 4)
@@ -312,43 +312,49 @@ struct SavedCardsView: View
 {
 
 
-    let planningDocument:   PlanningCalendarDocument?
-    var revisitDestination: Binding<ToolbarRevisitDestination?> = .constant(nil)
+    let planningDocument:   PlanningCalendarDocument?             /* Planning document   */
+    var revisitDestination: Binding<ToolbarRevisitDestination?> = /* Revisit destination */
+        .constant(nil)
 
-    private var revisit:    ToolbarRevisitDestination?
+    private var revisit:    ToolbarRevisitDestination? /* Requested Activity destination */
     {
         revisitDestination.wrappedValue
     }
 
-    @AppStorage(ActivityRecentStore.key) private var recentData                        = Data()
-    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers                 = true
-    @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = false
-    @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion
-    @Environment(\.appReturnResetRequest) private var appReturnResetRequest
-    @State private var query         = ""
-    @State private var showsSearch   = false
-    @State private var confirmsClear = false
-    @State private var historicalTarget: ActivityRecentResult?
-    @State private var focus:            ActivityFocus = .saved
-    @State private var selectedLabelID:  String?
-    @State private var activityHeaderHeight: CGFloat = 0
-    @State private var focusLabelLibrary             = LabelLibraryStore.load()
+    @AppStorage(ActivityRecentStore.key) private var recentData                        = /* Recent data */
+        Data()
+    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers                 = /* Covers visibility */
+        true
+    @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = /* Uses square recent cards */
+        false
+    @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion /* Reduce recent motion */
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
+    @State private var query         = "" /* Search text */
+    @State private var showsSearch   = false /* Search visibility */
+    @State private var confirmsClear = false /* Confirms clear */
+    @State private var historicalTarget: ActivityRecentResult? /* Historical target */
+    @State private var focus:            ActivityFocus = .saved /* Today Focus selection */
+    @State private var selectedLabelID:  String? /* Selected label ID */
+    @State private var activityHeaderHeight: CGFloat = 0 /* Activity header height */
+    @State private var focusLabelLibrary             = /* Focus label library */
+        LabelLibraryStore.load()
 
-    private var focusCalendar: Calendar
+    private var focusCalendar: Calendar /* Focus calendar */
     {
         planningDocument?.calendar ?? .current
     }
 
 
-    private var availableFocusItems: [ActivityRecentResult]
+    private var availableFocusItems: [ActivityRecentResult] /* Available focus items */
     {
 
-        var items: [ActivityRecentResult] = []
+        var items: [ActivityRecentResult] = [] /* Items being processed */
 
         for week in planningDocument?.weeks ?? []
         {
 
-            let current = week.startKey == planningDocument?.currentWeekKey
+            let current = /* Current operation snapshot */
+                week.startKey == planningDocument?.currentWeekKey
 
             for list in (current ? lists : week.collection.lists) where !list.isArchived
             {
@@ -391,10 +397,10 @@ struct SavedCardsView: View
         return items
     }
 
-    private var availableFocusLabels: [KanbanLabel]
+    private var availableFocusLabels: [KanbanLabel] /* Available focus labels */
     {
 
-        let assigned = Set(availableFocusItems.flatMap
+        let assigned = Set(availableFocusItems.flatMap /* Mapped assigned values */
             {
                 $0.card.labelIDs
             })
@@ -410,7 +416,7 @@ struct SavedCardsView: View
 
     }
 
-    private var selectedFocusLabel: KanbanLabel?
+    private var selectedFocusLabel: KanbanLabel? /* Selected focus label */
     {
 
         availableFocusLabels.first
@@ -420,10 +426,10 @@ struct SavedCardsView: View
 
     }
 
-    private var focusedItems: [ActivityRecentResult]
+    private var focusedItems: [ActivityRecentResult] /* Focused items */
     {
 
-        let items = availableFocusItems.filter
+        let items = availableFocusItems.filter /* Items being processed */
         {
             matches($0.card.word, $0.location)
         }
@@ -464,7 +470,7 @@ struct SavedCardsView: View
 
     }
 
-    private var focusHeading: some View
+    private var focusHeading: some View /* Focus heading */
     {
 
         Menu
@@ -497,7 +503,7 @@ struct SavedCardsView: View
         .accessibilityLabel("Activity view: " + focus.rawValue)
     }
 
-    private var focusContent: some View
+    private var focusContent: some View /* Focus content */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -621,14 +627,14 @@ struct SavedCardsView: View
     {
 
 
-        let item:      LibraryRecentItem
-        let card:      KanbanCard
-        let list:      KanbanList
-        let location:  String
-        let week:      DatedPlanningWeek?
-        let isCurrent: Bool
+        let item:      LibraryRecentItem  /* Item under consideration       */
+        let card:      KanbanCard         /* Card under consideration       */
+        let list:      KanbanList         /* List under consideration       */
+        let location:  String             /* Resolved place metadata        */
+        let week:      DatedPlanningWeek? /* Dated Week under consideration */
+        let isCurrent: Bool               /* Current state                  */
 
-        var id:        String
+        var id:        String /* Record or view identity */
         {
             item.id
         }
@@ -654,10 +660,10 @@ struct SavedCardsView: View
         || (title + " " + location).localizedStandardContains(query.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
-    private var recents: [ActivityRecentResult]
+    private var recents: [ActivityRecentResult] /* Recently accessed items */
     {
 
-        let items =
+        let items = /* Items being processed */
         recentData.isEmpty
         ? ActivityRecentStore.load()
         : ((try? JSONDecoder().decode([LibraryRecentItem].self, from: recentData)) ?? [])
@@ -698,8 +704,10 @@ struct SavedCardsView: View
                 return nil
             }
 
-            let current = week.startKey == planningDocument?.currentWeekKey
-            let source  = current ? lists : week.collection.lists
+            let current = /* Current operation snapshot */
+                week.startKey == planningDocument?.currentWeekKey
+            let source  = /* Source value for this operation */
+                current ? lists : week.collection.lists
 
             guard
             let list = source.first(where:
@@ -743,7 +751,7 @@ struct SavedCardsView: View
 
     }
 
-    private var recentSection: some View
+    private var recentSection: some View /* Recent section */
     {
 
         VStack(alignment: .leading, spacing: 10)
@@ -845,7 +853,7 @@ struct SavedCardsView: View
     let savedCardIDs:         Set<Int>              /* Local bookmark set                                */
     @Binding var collections: [PersonalCollection]  /* Collections whose archived boards can be restored */
     let onOpenBoardCard:      (Int, Int) -> Void    /* Open the exact bookmarked item                    */
-    let onOpenPersonalCard:
+    let onOpenPersonalCard: /* Open personal card callback */
     (PersonalSavedCardTarget) -> Void                        /* Navigate to a bookmarked personal record             */
     let onRestoreBoard:                 (UUID) -> Void       /* Restore a saved board by identity                    */
     let onDeleteBoard:                  (UUID) -> Bool       /* Save permanent collection removal and report success */
@@ -865,7 +873,7 @@ struct SavedCardsView: View
     /// @pre        The caller supplies active Week lists
     /// @post       Stale bookmark IDs are not removed from the stored set
     ///
-    private var savedCards: [SavedCardResult]
+    private var savedCards: [SavedCardResult] /* Saved cards */
     {  /* Bookmarked cards paired with their containing lists */
 
         lists.flatMap
@@ -898,7 +906,7 @@ struct SavedCardsView: View
     ///
     /// @return     ([PersonalCollectionBookmarkedCard]) available personal bookmark rows
     ///
-    private var archivedCollections: [PersonalCollection]
+    private var archivedCollections: [PersonalCollection] /* Archived collections */
     {
 
         collections.filter
@@ -908,7 +916,7 @@ struct SavedCardsView: View
 
     }
 
-    private var personalSavedCards: [PersonalCollectionBookmarkedCard]
+    private var personalSavedCards: [PersonalCollectionBookmarkedCard] /* Personal saved cards */
     {  /* Active personal bookmarks for Saved */
 
         collections.filter(\.isActive).flatMap(\.bookmarkedCards).filter
@@ -930,7 +938,7 @@ struct SavedCardsView: View
     ///
     /// @return     (some View) Activity heading, optional search, revisit controls, and Recent cards
     ///
-    private var activityHeader: some View
+    private var activityHeader: some View /* Activity header */
     {
 
         VStack(alignment: .leading, spacing: 16)
@@ -1038,7 +1046,7 @@ struct SavedCardsView: View
     ///
     /// @return     (some View) selected browser content without its own outer scrolling surface
     ///
-    private var activityBrowserContents: some View
+    private var activityBrowserContents: some View /* Activity browser contents */
     {
 
         VStack(alignment: .leading, spacing: 16)
@@ -1323,7 +1331,7 @@ struct SavedCardsView: View
     /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
     ///             opens the bookmarked item directly without removing the bookmark
     ///
-    var body: some View
+    var body: some View /* Activity and saved-item browser */
     {  /* Saved-card directory and navigation destinations */
 
 
@@ -1337,12 +1345,13 @@ struct SavedCardsView: View
             {
                 geometry in
 
-                let hasBrowser                 = revisit != .recent
-                let browserAllowance: CGFloat  = hasBrowser ? 128 : 0
-                let selectorAllowance: CGFloat = revisit == nil ? 60 : 0
+                let hasBrowser                 = revisit != .recent      /* Browser availability */
+                let browserAllowance: CGFloat  = hasBrowser ? 128 : 0    /* Browser allowance    */
+                let selectorAllowance: CGFloat = revisit == nil ? 60 : 0 /* Selector allowance   */
                 // Keep the browser above the toolbar when the tab extends beneath its safe-area inset
-                let bottomClearance = geometry.safeAreaInsets.bottom + 5
-                let headerLimit     = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
+                let bottomClearance = geometry.safeAreaInsets.bottom + 5 /* Bottom clearance */
+                let headerLimit     =                                    /* Header limit     */
+                    max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
 
                 VStack(alignment: .leading, spacing: 16)
                 {

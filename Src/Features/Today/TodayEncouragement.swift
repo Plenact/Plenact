@@ -22,7 +22,7 @@ enum TodaySloganCatalog
 {
 
 
-    static let slogans: [String] = [
+    static let slogans: [String] = [ /* Available encouragement text */
             "small steps today, bringing your plans to life",
             "a fresh page today, with room for what matters",
             "begin where you are, and grow from here",
@@ -101,13 +101,15 @@ enum TodaySloganCatalog
     {
 
         // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST
-        var local = Calendar(identifier: .gregorian)
+        var local = Calendar(identifier: .gregorian) /* Local workspace representation */
 
         local.timeZone = calendar.timeZone
 
-        let anchor = local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
-        let days   = local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
-        let index  = ((days % slogans.count) + slogans.count) % slogans.count
+        let anchor = /* Layout anchor position */
+            local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
+        let days   = /* Dates in the selected range */
+            local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
+        let index  = ((days % slogans.count) + slogans.count) % slogans.count /* Element position */
 
         return slogans[index]
     }
@@ -126,10 +128,10 @@ struct TodaySloganView: View
 {
 
 
-    @State private var showsFullSlogan = false
-    @Environment(\.colorScheme) private var colorScheme
+    @State private var showsFullSlogan = false          /* Full Slogan visibility */
+    @Environment(\.colorScheme) private var colorScheme /* Color scheme           */
 
-    var body: some View
+    var body: some View /* Today Slogan layout */
     {
 
         TimelineView(.everyMinute)
@@ -217,7 +219,7 @@ enum TodaySloganMotion
     static func position(elapsed: TimeInterval, start: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat
     {
 
-        let distance = viewport + textWidth
+        let distance = viewport + textWidth /* Distance between layout positions */
 
         guard distance > 0 else
         {
@@ -231,8 +233,9 @@ enum TodaySloganMotion
 
         // When released completely offscreen, restart at the invisible right edge
         // after the reading pause instead of spending minutes crossing blank space
-        let resumeStart = start > viewport || start < -textWidth ? viewport : start
-        let proposed    = resumeStart - elapsed * 35.1
+        let resumeStart = /* Resume start */
+            start > viewport || start < -textWidth ? viewport : start
+        let proposed    = resumeStart - elapsed * 35.1 /* Proposed edit state */
 
         if proposed >= -textWidth
         {
@@ -276,17 +279,17 @@ struct InteractiveSloganPreview: View
 {
 
 
-    let text:      String
-    let textColor: Color
-    let onTap:     () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var textWidth: CGFloat      = 0
-    @State private var visible                 = false
-    @State private var anchorDate              = Date()
-    @State private var anchorOffset:  CGFloat? = nil
-    @State private var dragStart:     CGFloat? = nil
-    @State private var draggedOffset: CGFloat? = nil
+    let text:      String /* Text being processed */
+    let textColor: Color /* Text color */
+    let onTap:     () -> Void /* Tap callback */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @Environment(\.dynamicTypeSize) private var typeSize /* Type size */
+    @State private var textWidth: CGFloat      = 0 /* Text width */
+    @State private var visible                 = false /* Current visibility state */
+    @State private var anchorDate              = Date() /* Anchor date */
+    @State private var anchorOffset:  CGFloat? = nil /* Scroll anchor displacement */
+    @State private var dragStart:     CGFloat? = nil /* Drag start */
+    @State private var draggedOffset: CGFloat? = nil /* Dragged offset */
 
 
     ///
@@ -308,14 +311,15 @@ struct InteractiveSloganPreview: View
             return draggedOffset
         }
 
-        let start   = anchorOffset ?? width
-        let elapsed = max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
+        let start   = anchorOffset ?? width /* Range start                    */
+        let elapsed =                       /* Time since the operation began */
+            max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
 
         return TodaySloganMotion.position(elapsed: elapsed, start: start, viewport: width, textWidth: textWidth)
     }
 
 
-    var body: some View
+    var body: some View /* Interactive Slogan Preview layout */
     {
 
         Group
@@ -482,7 +486,8 @@ enum TodayFocusPresentation
     {
 
 
-        let selected = [(upNext, "Up Next"), (important, "Important"), (bookmarked, "Bookmarked")]
+        let selected = /* Current selection */
+            [(upNext, "Up Next"), (important, "Important"), (bookmarked, "Bookmarked")]
         .filter
         {
             $0.0

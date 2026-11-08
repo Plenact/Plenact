@@ -26,9 +26,9 @@ struct ProfileAvatarView: View
 {
 
 
-    let profile:   LocalProfile?  /* Current local profile                                      */
-    let size:      CGFloat        /* Stable avatar size                                         */
-    var photoData: Data? = nil    /* In-memory photo override for the profile's stored filename */
+    let profile:   LocalProfile? /* Current local profile                                      */
+    let size:      CGFloat       /* Stable avatar size                                         */
+    var photoData: Data? = nil   /* In-memory photo override for the profile's stored filename */
 
     ///
     /// @fcn        ProfileAvatarView.body
@@ -41,7 +41,7 @@ struct ProfileAvatarView: View
     /// @pre        The optional profile and avatar size are configured
     /// @post       Rendering does not modify profile or photo data
     ///
-    var body: some View
+    var body: some View /* Profile Avatar layout */
     {  /* Circular local-profile avatar */
 
 
@@ -138,18 +138,19 @@ struct AccountSettingsView: View
         case settings = "Settings"
     }
 
-    @State private var selectedTab: SettingsTab = .account
+    @State private var selectedTab: SettingsTab = .account /* Selected tab */
 
-    let profile:  LocalProfile?           /* Existing local profile */
-    let lists:    [KanbanList]            /* Default-list choices   */
-    let onSave:   (LocalProfile) -> Void  /* Profile save callback  */
-    let onRemove: () -> Void              /* Profile removal        */
+    let profile:  LocalProfile?          /* Existing local profile */
+    let lists:    [KanbanList]           /* Default-list choices   */
+    let onSave:   (LocalProfile) -> Void /* Profile save callback  */
+    let onRemove: () -> Void             /* Profile removal        */
 
-    @Environment(\.planningCalendarAccess) private var planningAccess
-    @AppStorage(TodayListPins.key) private var listPinData = Data()
-    @State private var showsShortcutEditor                 = false
-    @State private var firstWeekday                        = 1
-    @State private var didLoadWeekStart                    = false
+    @Environment(\.planningCalendarAccess) private var planningAccess /* Planning access */
+    @AppStorage(TodayListPins.key) private var listPinData = Data() /* List pin data */
+    @State private var showsShortcutEditor                 = false /* Shortcut Editor visibility */
+    @State private var firstWeekday                        = 1 /* Calendar week boundary */
+    @State private var didLoadWeekStart                    = /* Load Week Start completion flag */
+        false
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal       */
 
     @State private var profileID:                    UUID                          /* Draft profile ID       */
@@ -162,30 +163,31 @@ struct AccountSettingsView: View
     @State private var avatarForegroundColor:        ProfileAvatarForegroundColor  /* Draft icon color       */
     @State private var defaultListID:                Int?                          /* Draft default list     */
     @State private var usesReducedContent:           Bool                          /* Draft content density  */
-    @State private var scrollsOverflowingTitles:     Bool
-    @State private var importanceStarStyle:          ImportanceStarStyle
-    @State private var enablesLowerCornerBack:       Bool
+    @State private var scrollsOverflowingTitles:     Bool /* Scrolls overflowing titles */
+    @State private var importanceStarStyle:          ImportanceStarStyle /* Importance star style */
+    @State private var enablesLowerCornerBack:       Bool /* Enables lower corner back */
     @State private var usesLargeControls:            Bool /* Draft control sizing   */
-    @State private var randomizesNewCardHeaders:     Bool
-    @State private var randomizesNewCardBackgrounds: Bool
-    @State private var showsDueDatesOnNewCards:      Bool
-    @State private var todayFocusIncludesUpNext:     Bool
-    @State private var todayFocusIncludesImportant:  Bool
-    @State private var todayFocusIncludesBookmarked: Bool
-    @State private var preferredMapsApp:             PreferredMapsApp
-    @State private var keepsDayListsInTimeOrder:     Bool
-    @State private var todayFocusOrder:              TodayFocusOrder
-    @State private var todayFocusGroupsBySection:    Bool
-    @State private var todayFocusHidesCompleted:     Bool
-    @State private var todayFocusItemCount:          Int
+    @State private var randomizesNewCardHeaders:     Bool /* Randomizes new card headers */
+    @State private var randomizesNewCardBackgrounds: Bool /* Randomizes new card backgrounds */
+    @State private var showsDueDatesOnNewCards:      Bool /* Due Dates On New Cards visibility */
+    @State private var todayFocusIncludesUpNext:     Bool /* Today focus includes up next */
+    @State private var todayFocusIncludesImportant:  Bool /* Today focus includes important */
+    @State private var todayFocusIncludesBookmarked: Bool /* Today focus includes bookmarked */
+    @State private var preferredMapsApp:             PreferredMapsApp /* Preferred maps app */
+    @State private var keepsDayListsInTimeOrder:     Bool /* Chronological Day List ordering */
+    @State private var todayFocusOrder:              TodayFocusOrder /* Today focus order */
+    @State private var todayFocusGroupsBySection:    Bool /* Today focus groups by section */
+    @State private var todayFocusHidesCompleted:     Bool /* Today focus hides completed */
+    @State private var todayFocusItemCount:          Int /* Today focus item count */
     @State private var showsNavigationLabels:        Bool /* Draft navigation captions */
-    @State private var showsReviewRhythmSettings              = false
+    @State private var showsReviewRhythmSettings              = /* Reminder editor visibility        */
+        false
     @State private var confirmsRemoval                        = false /* Removal confirmation                        */
     @State private var isChoosingAvatarIcon                   = false /* Whether the nested avatar picker is visible */
-    @State private var profileSheetDetent: PresentationDetent =
+    @State private var profileSheetDetent: PresentationDetent = /* Profile sheet detent */
     .large                                       /* Current profile-sheet height        */
-    @State private var avatarPhotoData: Data?    /* Draft avatar photo bytes            */
-    @State private var photoSaveError:  String?  /* Avatar photo persistence error text */
+    @State private var avatarPhotoData: Data?   /* Draft avatar photo bytes            */
+    @State private var photoSaveError:  String? /* Avatar photo persistence error text */
 
 
     ///
@@ -198,7 +200,7 @@ struct AccountSettingsView: View
     /// @pre        displayName contains the current draft
     /// @post       The draft remains unchanged
     ///
-    private var trimmedDisplayName: String
+    private var trimmedDisplayName: String /* Trimmed display name */
     {  /* Normalized name */
 
         displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -382,7 +384,7 @@ struct AccountSettingsView: View
     /// @post       Profile and settings changes stay local; loading the synthetic example board is
     ///             an explicit local replacement action
     ///
-    var body: some View
+    var body: some View /* Profile and preference editor */
     {  /* Local profile form and local example-board controls */
 
 
@@ -814,10 +816,10 @@ struct NewCardColorDefaultsSection: View
 {
 
 
-    @Binding var headers:     Bool
-    @Binding var backgrounds: Bool
+    @Binding var headers:     Bool /* List or Card header settings */
+    @Binding var backgrounds: Bool /* Resolved surface choices     */
 
-    var body:                 some View
+    var body:                 some View /* New Card Color Defaults layout */
     {
 
         Section
@@ -857,16 +859,16 @@ struct TodayFocusSettingsSection: View
 {
 
 
-    @Binding var count:          Int
-    @Binding var order:          TodayFocusOrder
-    @Binding var groups:         Bool
-    @Binding var hidesCompleted: Bool
-    @Binding var important:      Bool
-    @Binding var bookmarked:     Bool
-    @Binding var upNext:         Bool
-    @Binding var keepsTimeOrder: Bool
+    @Binding var count:          Int             /* Number of entries          */
+    @Binding var order:          TodayFocusOrder /* Display ordering policy    */
+    @Binding var groups:         Bool            /* Groups state flag          */
+    @Binding var hidesCompleted: Bool            /* Hides completed            */
+    @Binding var important:      Bool            /* Importance selection state */
+    @Binding var bookmarked:     Bool            /* Saved Card selection state */
+    @Binding var upNext:         Bool            /* Up next                    */
+    @Binding var keepsTimeOrder: Bool            /* Keeps time order           */
 
-    var body: some View
+    var body: some View /* Today Focus Settings layout */
     {
 
         Section

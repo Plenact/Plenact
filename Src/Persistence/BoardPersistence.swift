@@ -24,7 +24,7 @@ enum KanbanBoardPersistence
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
 
     /// Serial queue used for Board snapshot I/O
-    private static let queue = DispatchQueue(
+    private static let queue = DispatchQueue( /* Queue operation value */
         label: "Plenact.Board.persistence", qos: .userInitiated) /* Serial worker for ordered Board persistence */
 
 
@@ -68,7 +68,7 @@ enum KanbanBoardPersistence
         try queue.sync
         {
 
-            let defaults = try persistenceDefaults(
+            let defaults = try persistenceDefaults( /* Preference storage domain */
                 suiteName: suiteName) /* Validated preferences store receiving the Board document */
 
             defaults.set(data, forKey: storageKey)
@@ -105,7 +105,8 @@ enum KanbanBoardPersistence
         }
 
 
-        let result: Result<[KanbanList], Error> = await withCheckedContinuation
+        let result: Result<[KanbanList], Error> = /* Decoded list records */
+            await withCheckedContinuation
         {
 
         continuation in /* Background load outcome delivered to the caller */
@@ -116,7 +117,7 @@ enum KanbanBoardPersistence
                     returning: Result
                     {
 
-                        let defaults = try persistenceDefaults(
+                        let defaults = try persistenceDefaults( /* Preference storage domain */
                             suiteName: suiteName) /* Validated preferences store supplying the Board document */
 
                         guard let data = defaults.data(forKey: storageKey)
@@ -196,12 +197,12 @@ enum KanbanBoardPersistence
         queue.async
         {
 
-            let result = Result
+            let result = Result /* Result being assembled */
             {  /* Success or failure of the queued persistence operation   */
 
-                let defaults = try persistenceDefaults(
+                let defaults = try persistenceDefaults( /* Preference storage domain */
                     suiteName: suiteName) /* Validated preferences store receiving the Board document */
-                let data = try JSONEncoder().encode(
+                let data = try JSONEncoder().encode( /* Encoded record bytes */
                     lists) /* Encoded Board snapshot ready for storage                 */
 
                 defaults.set(data, forKey: storageKey)

@@ -30,14 +30,14 @@ extension AppRootView
 
         }
 
-        var committed = false
+        var committed = false /* Saved operation result */
 
         do
         {
             #if targetEnvironment(simulator)
             KanbanBoardPersistence.waitForPendingSaves()
 
-            let store = try FullMonthExampleStore.live()
+            let store = try FullMonthExampleStore.live() /* Persistence boundary */
 
             if undoingNativeRestore
             {

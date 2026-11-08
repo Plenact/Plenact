@@ -53,7 +53,7 @@ enum TodayListPickerMode: String, Identifiable
     /// @return     (String) picker-mode raw value
     /// @post       No presentation or stored state is changed
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable tab-selection identity */
@@ -67,7 +67,7 @@ enum TodayListPickerMode: String, Identifiable
     /// @return     (String) heading for choosing today's list or browsing Board lists
     /// @post       No selection is changed
     ///
-    var title: String
+    var title: String /* User-facing title */
     {  /* User-facing list-picker title */
 
         switch self
@@ -113,7 +113,7 @@ enum TodayListSelection
 
         let title = weekdayTitle(for: date, calendar: calendar) /* List title matching the requested day */
 
-        let matches = lists.filter
+        let matches = lists.filter /* Matching source entries */
         {  /* Active lists matching the weekday */
 
 
@@ -167,7 +167,7 @@ enum TodayListSelection
 
 
         let nextID  = (lists.map(\.id).max() ?? -1) + 1 /* Fresh ID reserved across active and archived lists */
-        let dayList = KanbanList(
+        let dayList = KanbanList( /* Day list */
             id: nextID, title: title, cards: []) /* New empty list for the actual weekday              */
 
         return (lists + [dayList], dayList)
@@ -186,7 +186,7 @@ enum TodayListSelection
     {
 
 
-        let weekdays = [
+        let weekdays = [ /* Ordered weekday values */
                         "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
         ] /* Calendar-indexed weekday names */
 
@@ -311,10 +311,10 @@ struct WorkspaceListReference: Hashable, Codable, Identifiable
 {
 
 
-    let ownerID: UUID
-    let listID:  Int
+    let ownerID: UUID /* Record owner identifier     */
+    let listID:  Int  /* Owner-local List identifier */
 
-    var id:      String
+    var id:      String /* Record or view identity */
     {
             "\(ownerID):\(listID)"
     }
@@ -332,15 +332,15 @@ struct WorkspaceListDestination: Identifiable
 {
 
 
-    let owner:     PersonalCollection
-    let list:      KanbanList
+    let owner:     PersonalCollection /* Owning collection or Week */
+    let list:      KanbanList         /* List under consideration  */
 
-    var reference: WorkspaceListReference
+    var reference: WorkspaceListReference /* Qualified record reference */
     {
         WorkspaceListReference(ownerID: owner.id, listID: list.id)
     }
 
-    var id: String
+    var id: String /* Record or view identity */
     {
         reference.id
     }
@@ -358,10 +358,10 @@ struct WorkspaceLabelUsage: Identifiable
 {
 
 
-    let label:   KanbanLabel
-    let matches: [PlanningSearchResult]
+    let label:   KanbanLabel            /* Resolved display label  */
+    let matches: [PlanningSearchResult] /* Matching source entries */
 
-    var id:      String
+    var id:      String /* Record or view identity */
     {
         label.id
     }
@@ -397,7 +397,7 @@ enum WorkspaceBrowseIndex
             {
                 week in
 
-                var owner = week.collection
+                var owner = week.collection /* Owning collection or Week */
 
                 owner.title = (week.startKey == document?.currentWeekKey ? "This Week · " : "") + week.rangeTitle
 
@@ -449,7 +449,7 @@ enum WorkspaceBrowseIndex
     static func labels(in owners: [PersonalCollection], catalog: LabelLibrary) -> [WorkspaceLabelUsage]
     {
 
-        var matches: [String: [PlanningSearchResult]] = [:]
+        var matches: [String: [PlanningSearchResult]] = [:] /* Matching source entries */
 
         for destination in lists(in: owners)
         {
@@ -457,7 +457,7 @@ enum WorkspaceBrowseIndex
             for card in destination.list.cards where !card.isSectionDivider
             {
 
-                let result = PlanningSearchResult(
+                let result = PlanningSearchResult( /* Result being assembled */
                     weekKey: nil, collectionID: destination.owner.id,
                     collectionTitle: destination.owner.title, listID: destination.list.id,
                     listTitle: destination.list.title, card: card)
@@ -498,12 +498,12 @@ struct WorkspacePinnedListView: View
 {
 
 
-    let reference: WorkspaceListReference
-    var returnDestinationTitle = "Today"
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
+    let reference: WorkspaceListReference                     /* Qualified record reference     */
+    var returnDestinationTitle = "Today"                      /* Return destination title       */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
 
-    var body: some View
+    var body: some View /* Workspace Pinned List layout */
     {
 
         if let week = access?.document.weeks.first(where:
@@ -588,15 +588,15 @@ struct PinnedListDayContent: View
 {
 
 
-    @State var collection: PersonalCollection
-    let reference:         WorkspaceListReference
-    let date:              Date?
-    let week:              DatedPlanningWeek?
-    let onClose:           () -> Void
-    var returnDestinationTitle = "Today"
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var labels    = LabelLibraryStore.load()
-    @State private var reverting = false
+    @State var collection: PersonalCollection                 /* Personal collection record     */
+    let reference:         WorkspaceListReference             /* Qualified record reference     */
+    let date:              Date?                              /* Date used by this operation    */
+    let week:              DatedPlanningWeek?                 /* Dated Week under consideration */
+    let onClose:           () -> Void                         /* Close the current surface      */
+    var returnDestinationTitle = "Today"                      /* Return destination title       */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @State private var labels    = LabelLibraryStore.load()   /* Available label definitions    */
+    @State private var reverting = false                      /* Reverting state flag           */
 
 
     ///
@@ -623,7 +623,7 @@ struct PinnedListDayContent: View
         return access?.saveLibrary(collection) == true
     }
 
-    var body: some View
+    var body: some View /* Pinned List Day Content layout */
     {
 
         TodayListDetailView(
@@ -647,7 +647,7 @@ struct PinnedListDayContent: View
             {
                 cardID in
 
-                var updated = collection
+                var updated = collection /* Edited value to publish */
 
                 BoardContentDeletion.card(cardID, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
                 guard save(updated) else
@@ -724,7 +724,7 @@ struct PinnedListDayContent: View
 private struct OpenTemplateLibraryKey: EnvironmentKey
 {
 
-    static let defaultValue: (() -> Void)? = nil
+    static let defaultValue: (() -> Void)? = nil /* Fallback environment callback */
 
 }
 
@@ -733,7 +733,7 @@ extension EnvironmentValues
 {
 
     /// Optional workspace action for opening Library with its Templates filter selected
-    var openTemplateLibrary: (() -> Void)?
+    var openTemplateLibrary: (() -> Void)? /* Open template library callback */
     {
 
         get

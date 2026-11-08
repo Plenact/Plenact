@@ -21,11 +21,11 @@ struct CalendarCardResult: Identifiable
 {
 
 
-    let cardID:    Int     /* Stable card identity                  */
-    let title:     String  /* Card title shown on the selected date */
-    let listID:    Int     /* Board list opened when selected       */
-    let listTitle: String  /* Containing Board list                 */
-    let dateLabel: String  /* Start/due marker for this date        */
+    let cardID:    Int    /* Stable card identity                  */
+    let title:     String /* Card title shown on the selected date */
+    let listID:    Int    /* Board list opened when selected       */
+    let listTitle: String /* Containing Board list                 */
+    let dateLabel: String /* Start/due marker for this date        */
 
     ///
     /// @fcn        CalendarCardResult.id
@@ -36,7 +36,7 @@ struct CalendarCardResult: Identifiable
     /// @pre        Card IDs are unique within the displayed Board
     /// @post       Card dates and result content remain unchanged
     ///
-    var id: Int
+    var id: Int /* Owner-local numeric ID */
     {
         cardID
     }  /* Stable card identity for the destination */
@@ -54,16 +54,16 @@ struct TodayCalendarView: View
 {
 
 
-    let lists:           [KanbanList]        /* Current Board snapshot                             */
-    let onArchiveCard:   (Int) -> Void       /* Canonical archive callback                         */
-    let onDeleteCard:    (Int) -> Bool       /* Confirmed deletion result                          */
-    let onOpenBoardCard: (Int, Int) -> Void  /* Navigate using containing list and card identities */
+    let lists:           [KanbanList]       /* Current Board snapshot                             */
+    let onArchiveCard:   (Int) -> Void      /* Canonical archive callback                         */
+    let onDeleteCard:    (Int) -> Bool      /* Confirmed deletion result                          */
+    let onOpenBoardCard: (Int, Int) -> Void /* Navigate using containing list and card identities */
 
-    @State private var displayedMonth =
+    @State private var displayedMonth = /* Displayed month */
     Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now       /* Visible month      */
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)  /* Selected local day */
 
-    private let weekdayColumns = Array(
+    private let weekdayColumns = Array( /* Weekday columns */
         repeating: GridItem(.flexible(), spacing: 2), count: 7) /* Seven localized calendar columns */
 
     ///
@@ -74,7 +74,7 @@ struct TodayCalendarView: View
     /// @return     ([String]) weekday headings in calendar-column order
     /// @post       Calendar preferences are unchanged
     ///
-    private var weekdaySymbols: [String]
+    private var weekdaySymbols: [String] /* Weekday symbols */
     {  /* Locale weekday headings ordered by the calendar */
 
         let calendar = Calendar.current                           /* User's local calendar */
@@ -97,7 +97,7 @@ struct TodayCalendarView: View
     /// @return     ([Date?]) grid cells, or an empty array when month metadata cannot be resolved
     /// @post       Displayed month and selection remain unchanged
     ///
-    private var monthDays: [Date?]
+    private var monthDays: [Date?] /* Month days */
     {  /* Month grid dates with leading alignment placeholders */
 
         let calendar = Calendar.current /* User's local calendar                                */
@@ -114,10 +114,10 @@ struct TodayCalendarView: View
         }
 
 
-        let leadingDays =
+        let leadingDays = /* Leading days */
         (calendar.component(.weekday, from: monthStart) - calendar.firstWeekday + 7)
         % 7 /* Empty cells before day one                   */
-        var days: [Date?] = Array(
+        var days: [Date?] = Array( /* Dates in the selected range */
             repeating: nil, count: leadingDays) /* Grid cells assembled after weekday alignment */
 
         days += dayRange.compactMap
@@ -139,7 +139,7 @@ struct TodayCalendarView: View
     /// @return     ([CalendarCardResult]) selected-day results in list/card order
     /// @post       Dates and selection remain unchanged
     ///
-    private var selectedDayCards: [CalendarCardResult]
+    private var selectedDayCards: [CalendarCardResult] /* Selected day cards */
     {  /* Cards scheduled for the chosen calendar date */
 
         cards(on: selectedDate)
@@ -155,7 +155,7 @@ struct TodayCalendarView: View
     /// @return     (some View) paper-backed calendar surface
     /// @post       Date/month controls update local display state; navigation does not edit card dates
     ///
-    var body: some View
+    var body: some View /* Today Calendar layout */
     {  /* Calendar grid and selected-day card results */
 
 
@@ -448,14 +448,14 @@ struct TodayCalendarView: View
                 }
 
 
-                let starts =
+                let starts = /* Section boundary indices */
                 card.startDateKind.includesDate
                 && (card.startDate.map
                     {
                         calendar.isDate($0, inSameDayAs: date)
                     }
                     ?? false) /* Start date marker */
-                let due =
+                let due = /* Due date or time */
                 card.dueDateKind.includesDate
                 && (card.dueDate.map
                     {
@@ -471,7 +471,7 @@ struct TodayCalendarView: View
                 }
 
 
-                let dateLabel =
+                let dateLabel = /* Date label */
                 starts && due ? "Starts & due" : (due ? "Due" : "Starts") /* Display-only date meaning */
 
                 return CalendarCardResult(

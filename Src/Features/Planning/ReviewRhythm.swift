@@ -23,12 +23,12 @@ enum ReviewRhythmKind: String, Codable, CaseIterable
 
 
     case daily, weekly
-    var title: String
+    var title: String /* User-facing title */
     {
         self == .daily ? "Make room for tomorrow" : "Make room for the coming week"
     }
 
-    var message: String
+    var message: String /* User-facing status message */
     {
 
         self == .daily
@@ -36,7 +36,7 @@ enum ReviewRhythmKind: String, Codable, CaseIterable
         : "What in the Queue would you like to bring into the coming week?"
     }
 
-    var notificationID: String
+    var notificationID: String /* Notification ID */
     {
             "Plenact.ReviewRhythm." + rawValue
     }
@@ -54,9 +54,9 @@ struct ReviewRhythmRoute: Identifiable
 {
 
 
-    let id = UUID()
-    let kind: ReviewRhythmKind
-    let date: Date
+    let id = UUID()            /* Record UUID                 */
+    let kind: ReviewRhythmKind /* Content kind discriminator  */
+    let date: Date             /* Date used by this operation */
 
 }
 
@@ -72,13 +72,13 @@ struct ReviewRhythmPreferences: Codable, Equatable
 {
 
 
-    var dailyInvitations    = true
-    var weeklyInvitations   = true
-    var dailyMinutes        = 20 * 60 + 30
-    var weeklyMinutes       = 18 * 60
+    var dailyInvitations    = true         /* Daily invitations  */
+    var weeklyInvitations   = true         /* Weekly invitations */
+    var dailyMinutes        = 20 * 60 + 30 /* Daily minutes      */
+    var weeklyMinutes       = 18 * 60      /* Weekly minutes     */
     var weeklyWeekday       = 1 // Calendar weekday: Sunday
-    var dailyNotifications  = false
-    var weeklyNotifications = false
+    var dailyNotifications  = false /* Daily notifications  */
+    var weeklyNotifications = false /* Weekly notifications */
 
 
     ///
@@ -91,7 +91,7 @@ struct ReviewRhythmPreferences: Codable, Equatable
     func normalized() -> Self
     {
 
-        var copy = self
+        var copy = self /* Independent working copy */
 
         if !(0 ..< 1440).contains(copy.dailyMinutes)
         {
@@ -131,8 +131,8 @@ enum ReviewRhythmStore
 {
 
 
-    static let key           = "Plenact.ReviewRhythm.v1"
-    static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1"
+    static let key           = "Plenact.ReviewRhythm.v1"           /* Persistence lookup key */
+    static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1" /* Dismissals key         */
 
 
     ///
@@ -204,7 +204,7 @@ enum ReviewRhythmStore
     static func periodID(_ kind: ReviewRhythmKind, date: Date, calendar: Calendar) -> String
     {
 
-        let key =
+        let key = /* Local Week boundary key */
         kind == .daily ? PlanningDate.key(date, calendar: calendar) : PlanningDate.weekKey(date, calendar: calendar)
 
         return kind.rawValue + "|" + key + "|" + calendar.timeZone.identifier + "|" + String(calendar.firstWeekday)
@@ -241,8 +241,9 @@ enum ReviewRhythmStore
             return false
         }
 
-        let value   = preferences.normalized()
-        let minutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+        let value   = preferences.normalized() /* Value being processed  */
+        let minutes =                          /* Minute count or offset */
+            calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
 
         switch kind
         {
@@ -277,7 +278,7 @@ enum ReviewRhythmStore
     )
     {
 
-        var values =
+        var values = /* Values being processed */
         (defaults.data(forKey: dismissalsKey).flatMap
             {
                 try? JSONDecoder().decode([String: Date].self, from: $0)
@@ -290,7 +291,7 @@ enum ReviewRhythmStore
         {
 
             // The date component in each key retains recent periods, including permanent skips
-            let keys = values.keys.sorted
+            let keys = values.keys.sorted /* Keys used by this operation */
             {
 
                 ($0.split(separator: "|").dropFirst().first ?? "") > ($1.split(separator: "|").dropFirst().first ?? "")
@@ -324,7 +325,7 @@ enum ReviewRhythmStore
     static func notificationRequests(_ value: ReviewRhythmPreferences) -> [UNNotificationRequest]
     {
 
-        let value = value.normalized()
+        let value = value.normalized() /* Value being processed */
 
         return ReviewRhythmKind.allCases.compactMap
         {
@@ -334,8 +335,9 @@ enum ReviewRhythmStore
                 return nil
             }
 
-            let minutes    = kind == .daily ? value.dailyMinutes : value.weeklyMinutes
-            var components = DateComponents()
+            let minutes    = /* Minute count or offset */
+                kind == .daily ? value.dailyMinutes : value.weeklyMinutes
+            var components = DateComponents() /* Parsed value components */
 
             components.hour = minutes / 60;
             components.minute = minutes % 60
@@ -348,7 +350,7 @@ enum ReviewRhythmStore
             }
 
             // No explicit time zone: these reminders follow local wall-clock time
-            let content = UNMutableNotificationContent()
+            let content = UNMutableNotificationContent() /* Content being processed */
 
             content.title = kind.title
             content.body = kind.message
@@ -377,10 +379,10 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 {
 
 
-    static let shared = ReviewRhythmNotifications()
-    @Published var pending: ReviewRhythmRoute?
-    private var isReconciling  = false
-    private var needsReconcile = false
+    static let shared = ReviewRhythmNotifications() /* Shared operation value        */
+    @Published var pending: ReviewRhythmRoute?      /* Operation awaiting completion */
+    private var isReconciling  = false              /* Reconciling state             */
+    private var needsReconcile = false              /* Needs reconcile               */
 
 
     ///
@@ -415,10 +417,12 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     func synchronize(requestPermission: Bool = false) async throws -> Bool
     {
 
-        let center             = UNUserNotificationCenter.current()
-        let preferences        = ReviewRhythmStore.load()
-        let wantsNotifications = preferences.dailyNotifications || preferences.weeklyNotifications
-        var status             = await center.notificationSettings().authorizationStatus
+        let center             = UNUserNotificationCenter.current() /* Layout center point */
+        let preferences        = ReviewRhythmStore.load() /* Planning and display choices */
+        let wantsNotifications = /* Wants notifications */
+            preferences.dailyNotifications || preferences.weeklyNotifications
+        var status             = /* Current operation status */
+            await center.notificationSettings().authorizationStatus
 
         if wantsNotifications && requestPermission && status == .notDetermined
         {
@@ -453,7 +457,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
             center.removePendingNotificationRequests(withIdentifiers: ReviewRhythmKind.allCases.map(\.notificationID))
 
-            let latest = ReviewRhythmStore.load()
+            let latest = ReviewRhythmStore.load() /* Most recent retained value */
 
             if status == .authorized || status == .provisional || status == .ephemeral
             {
@@ -493,7 +497,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         let kind = ReviewRhythmKind(rawValue: raw)
         {
 
-            let date = response.notification.date
+            let date = response.notification.date /* Date used by this operation */
 
             Task
             {
@@ -544,17 +548,21 @@ struct ReviewRhythmPanel: View
 {
 
 
-    let onOpen:      (ReviewRhythmRoute) -> Void
-    let onSettings:  () -> Void
-    var defaults:    UserDefaults = .standard
-    var nowOverride: Date?        = nil
-    @Environment(\.planningCalendarAccess) private var access
-    @AppStorage(ReviewRhythmStore.key) private var preferencesData          = Data()
-    @AppStorage(ReviewRhythmStore.dismissalsKey) private var dismissalsData = Data()
-    @AppStorage(DailyPlanStore.key) private var dailyData                   = Data()
-    @AppStorage(WeeklyReviewStore.key) private var weeklyData               = Data()
+    let onOpen:      (ReviewRhythmRoute) -> Void /* Open the selected destination */
+    let onSettings:  () -> Void /* Settings callback */
+    var defaults:    UserDefaults = .standard /* Preference storage domain */
+    var nowOverride: Date?        = nil /* Now override */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @AppStorage(ReviewRhythmStore.key) private var preferencesData          = /* Preferences data */
+        Data()
+    @AppStorage(ReviewRhythmStore.dismissalsKey) private var dismissalsData = /* Dismissals data */
+        Data()
+    @AppStorage(DailyPlanStore.key) private var dailyData                   = /* Daily data */
+        Data()
+    @AppStorage(WeeklyReviewStore.key) private var weeklyData               = /* Weekly data */
+        Data()
 
-    private var calendar: Calendar
+    private var calendar: Calendar /* Date calculation calendar */
     {
         access?.document.calendar ?? .current
     }
@@ -574,7 +582,7 @@ struct ReviewRhythmPanel: View
     private func due(_ kind: ReviewRhythmKind, at now: Date) -> Bool
     {
 
-        let completed: Bool
+        let completed: Bool /* Completion state */
 
         if kind == .daily
         {
@@ -587,13 +595,14 @@ struct ReviewRhythmPanel: View
         else
         {
 
-            let id = WeeklyReviewRecord(date: now, calendar: calendar).id
+            let id = /* Record or view identity */
+                WeeklyReviewRecord(date: now, calendar: calendar).id
 
             completed = (try? WeeklyReviewStore.load(from: defaults).records[id]?.completedAt) != nil
 
         }
 
-        let deferred =
+        let deferred = /* Work postponed until dismissal */
         (try? JSONDecoder().decode(
                 [String: Date].self, from: defaults.data(forKey: ReviewRhythmStore.dismissalsKey) ?? Data()))? [
         ReviewRhythmStore.periodID(kind, date: now, calendar: calendar)]
@@ -603,14 +612,14 @@ struct ReviewRhythmPanel: View
             completed: completed, deferredUntil: deferred)
     }
 
-    var body: some View
+    var body: some View /* Review Rhythm Panel layout */
     {
 
         TimelineView(.everyMinute)
         {
             timeline in
 
-            let now = nowOverride ?? timeline.date
+            let now = nowOverride ?? timeline.date /* Current reference instant */
 
             VStack(alignment: .leading, spacing: 12)
             {
@@ -700,10 +709,10 @@ struct ReviewRhythmDestination: View
 {
 
 
-    let route: ReviewRhythmRoute
-    @Environment(\.planningCalendarAccess) private var access
+    let route: ReviewRhythmRoute                              /* Requested navigation destination */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations      */
 
-    var body: some View
+    var body: some View /* Review Rhythm Destination layout */
     {
 
         if route.kind == .daily
@@ -733,10 +742,10 @@ struct ReviewRhythmSettingsView: View
 {
 
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var preferences = ReviewRhythmStore.load()
-    @State private var saving      = false
-    @State private var error: String?
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var preferences = ReviewRhythmStore.load() /* Planning and display choices   */
+    @State private var saving      = false                    /* Save operation in progress     */
+    @State private var error: String?                         /* Reported operation failure     */
 
 
     ///
@@ -770,7 +779,7 @@ struct ReviewRhythmSettingsView: View
             })
     }
 
-    var body: some View
+    var body: some View /* Review reminder controls */
     {
 
         NavigationStack

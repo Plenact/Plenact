@@ -31,7 +31,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     /// @details    Uses the fixed display name; saved collections receive independent UUIDs
     /// @return     (String) example identity
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable personal List example identity */
@@ -43,7 +43,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     /// @details    Only three examples demonstrate covers; the remaining cards stay text-only
     /// @return     (ExampleCoverImage?) bundled illustration without creating attachment files
     ///
-    var coverIllustration: ExampleCoverImage?
+    var coverIllustration: ExampleCoverImage? /* Cover illustration */
     {  /* Offline illustration featured on the example's first card */
 
         switch self
@@ -69,7 +69,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     /// @details    Describes optional use rather than assigning dates or required lifecycle states
     /// @return     (String) chooser explanation
     ///
-    var summary: String
+    var summary: String /* Aggregate operation results */
     {  /* Brief description shown in the example picker */
 
 
@@ -100,7 +100,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     /// @details    Fixtures contain no real personal records, user-media references, assignments, or dates
     /// @return     ([(String, String)]) ordered title/detail pairs
     ///
-    var cards: [(String, String)]
+    var cards: [(String, String)] /* Card records under consideration */
     {  /* Seeded example card headings and descriptions */
 
 
@@ -199,8 +199,8 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     {
 
 
-        let icon: PersonalCollectionIcon  /* Collection symbol selected for this example */
-        let color: ProfileColor           /* Collection accent selected for this example */
+        let icon: PersonalCollectionIcon /* Collection symbol selected for this example */
+        let color: ProfileColor          /* Collection accent selected for this example */
 
         switch self
         {
@@ -233,9 +233,10 @@ enum PersonalListExample: String, CaseIterable, Identifiable
         }
 
 
-        let title = PersonalCollection.uniqueTitle(
+        let title = PersonalCollection.uniqueTitle( /* User-facing title */
             rawValue, existingTitles: existingTitles) /* Example name made unique within the directory */
-        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+        var collection = /* Personal collection record */
+            PersonalCollection(title: title, kind: .list, icon: icon, color: color)
 
         if KanbanList.defaultHeaderIcon(for: title) != nil
         {
@@ -259,7 +260,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
             {  /* Featured offline image for the first seeded card */
 
 
-                let attachment = KanbanAttachment(
+                let attachment = KanbanAttachment( /* Owned attachment content */
                     mediaKind: .photo, exampleImage: illustration) /* Photo record referencing the bundled example image */
 
                 card.attachments = [attachment]
@@ -293,12 +294,12 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
     case home = "A home to love"
     case travel = "Travel dreams"
     case life = "Life in Motion · Zoom playground"
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var summary: String
+    var summary: String /* Aggregate operation results */
     {
 
         switch self
@@ -316,17 +317,17 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
     }
 
-    private var topics: [(String, CoverCategory, [String])]
+    private var topics: [(String, CoverCategory, [String])] /* Available help topics */
     {
 
-        let garden: (String, CoverCategory, [String]) = (
+        let garden: (String, CoverCategory, [String]) = ( /* Garden operation value */
                         "Garden", .nature,
                         [
                                             "Plan the herb bed", "Choose pollinator flowers", "Check the soil", "Water the seedlings",
                                             "Prepare a compost corner", "Sketch a garden path", "Harvest something fresh", "Record what is growing"
                         ]
         )
-        let home: (String, CoverCategory, [String]) = (
+        let home: (String, CoverCategory, [String]) = ( /* Home operation value */
                         "Home", .home,
                         [
                                             "Refresh the reading corner", "Organize the entryway", "Measure the desk space", "Choose a warm lamp",
@@ -334,7 +335,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                                             "Capture room inspiration"
                         ]
         )
-        let travel: (String, CoverCategory, [String]) = (
+        let travel: (String, CoverCategory, [String]) = ( /* Travel operation value */
                         "Travel", .travel,
                         [
                                             "Choose a dream destination", "Explore a walking route", "Compare places to stay",
@@ -342,14 +343,14 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                                             "Write a travel memory"
                         ]
         )
-        let food: (String, CoverCategory, [String]) = (
+        let food: (String, CoverCategory, [String]) = ( /* Food operation value */
                         "Kitchen", .food,
                         [
                                             "Save a seasonal recipe", "Plan a simple dinner", "Prepare a market list", "Try a new breakfast",
                                             "Share a meal", "Stock the pantry", "Bake something comforting", "Record a favorite flavor"
                         ]
         )
-        let learning: (String, CoverCategory, [String]) = (
+        let learning: (String, CoverCategory, [String]) = ( /* Learning operation value */
                         "Learning", .work,
                         [
                                             "Choose a useful book", "Explore a new skill", "Collect one reference", "Make a study plan",
@@ -357,14 +358,14 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                                             "Review the next step"
                         ]
         )
-        let health: (String, CoverCategory, [String]) = (
+        let health: (String, CoverCategory, [String]) = ( /* Health operation value */
                         "Wellbeing", .health,
                         [
                                             "Take a morning walk", "Prepare for a stretch", "Plan an outdoor break", "Choose a gentle workout",
                                             "Make time to recharge", "Reflect on energy", "Build a small routine", "Celebrate steady progress"
                         ]
         )
-        let creative: (String, CoverCategory, [String]) = (
+        let creative: (String, CoverCategory, [String]) = ( /* Creative operation value */
                         "Creative projects", .creativity,
                         [
                                             "Collect a color palette", "Sketch a small idea", "Capture a photograph", "Write a short story",
@@ -372,7 +373,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                                             "Keep an inspiration note"
                         ]
         )
-        let rest: (String, CoverCategory, [String]) = (
+        let rest: (String, CoverCategory, [String]) = ( /* Rest operation value */
                         "Reflection", .rest,
                         [
                                             "Notice a small win", "Write a gratitude note", "Make space for quiet", "Reflect on the week",
@@ -416,7 +417,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
     }
 
-    var listSummaries: [(title: String, count: Int)]
+    var listSummaries: [(title: String, count: Int)] /* List summaries */
     {
 
         topics.enumerated().map
@@ -444,7 +445,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
     func makeCollection(existingTitles: [String], now: Date = .now, calendar: Calendar = .current) -> PersonalCollection
     {
 
-        var board = PersonalCollection(
+        var board = PersonalCollection( /* Board state under review */
             title: PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles), kind: .board,
             icon: self == .garden ? .home : .project, color: self == .garden ? .green : .teal)
 
@@ -453,15 +454,17 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
             bannerBackground: .teal, listBackground: .neutral, cardBackground: .neutral,
             cardDetail: self == .life ? .compact : .detailed)
 
-        let accents: [ItemAccent]   = [.green, .blue, .orange, .purple, .rose, .teal]
-        let tints: [KanbanListTint] = [.green, .blue, .orange, .neutral, .red]
-        var nextID                  = 0
+        let accents: [ItemAccent]   = /* Selectable accent colors */
+            [.green, .blue, .orange, .purple, .rose, .teal]
+        let tints: [KanbanListTint] = /* Resolved display tints */
+            [.green, .blue, .orange, .neutral, .red]
+        var nextID                  = 0 /* Next ID */
 
         board.lists = topics.enumerated().map
         {
             listIndex, topic in
 
-            var list = KanbanList(
+            var list = KanbanList( /* List under consideration */
                 id: listIndex, title: topic.0, cards: [], newItemPresentation: listIndex % 3 == 0 ? .note : .card)
 
             list.subtitleOverride = "Ideas, useful next steps, and discoveries for " + topic.0.lowercased()
@@ -470,12 +473,12 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                 background: listIndex % 2 == 0 ? accents[listIndex % accents.count] : nil,
                 listBackground: listIndex % 2 == 0 ? tints[listIndex % tints.count] : nil)
 
-            let images = topic.1.images
+            let images = topic.1.images /* Decoded image values */
 
             for index in 0 ..< listSummaries[listIndex].count
             {
 
-                let id = nextID;
+                let id = nextID; /* Record or view identity */
 
                 nextID += 1
 
@@ -487,11 +490,11 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                     continue
                 }
 
-                let action = topic.2 [(index - 1) % topic.2.count]
-                let prefix =
+                let action = topic.2 [(index - 1) % topic.2.count] /* Requested user operation */
+                let prefix = /* Leading lookup or display text */
                 index > topic.2.count
                 ? ["Review: ", "Explore: ", "Reflect: "] [((index - 1) / topic.2.count - 1) % 3] : ""
-                var card = KanbanCard(
+                var card = KanbanCard( /* Card under consideration */
                     id: id, word: prefix + action, listTitle: topic.0, checklists: [],
                     descriptionOverride:
                                                         "An example for your \(topic.0.lowercased()) workspace. Make this idea your own.\n\nNotice what interests you, collect the context, and choose one useful next step.",
@@ -527,7 +530,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                 if card.displayFormat == .picture || index % 3 == 0 || index % 10 == 4
                 {
 
-                    let image = KanbanAttachment(
+                    let image = KanbanAttachment( /* Image used by this operation */
                         mediaKind: .photo, addedAt: now,
                         exampleImage: images[(listIndex * 7 + index) % images.count],
                         caption: "Inspiration for " + topic.0.lowercased())
@@ -556,7 +559,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                     card.dueDateKind = index % 2 == 0 ? .dateAndTime : .date
                     card.showsDueDateInList = index % 4 != 0
 
-                    let detail = KanbanChecklistActionDetail(
+                    let detail = KanbanChecklistActionDetail( /* Owned action detail */
                         description: "Prepare the context before taking this step.",
                         checklists: [
                             KanbanChecklist(title: "Prepare", items: ["Gather a reference", "Choose the next step"])
@@ -610,7 +613,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
         for listIndex in board.lists.indices
         {
 
-            let nextList = board.lists[(listIndex + 1) % board.lists.count]
+            let nextList = board.lists[(listIndex + 1) % board.lists.count] /* Next list */
 
             guard let target = nextList.cards.first(where:
                 {
@@ -625,18 +628,20 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                 continue
             }
 
-            var item = KanbanChecklistItem(title: "Open a related note", content: .linkedCard(cardID: target.id))
+            var item = /* Item under consideration */
+                KanbanChecklistItem(title: "Open a related note", content: .linkedCard(cardID: target.id))
 
             item.linkedCollectionID = board.id
 
-            let checklist = board.lists[listIndex].cards[source].checklists[0]
+            let checklist = /* Checklist group and items */
+                board.lists[listIndex].cards[source].checklists[0]
 
             board.lists[listIndex].cards[source].checklists[0] = KanbanChecklist(
                 id: checklist.id, title: checklist.title, items: checklist.items + [item])
 
         }
 
-        var archived = KanbanCard(
+        var archived = KanbanCard( /* Archived records or state */
             id: nextID, word: "An earlier idea kept for reference", listTitle: board.lists[0].title,
             checklists: [], descriptionOverride: "This example demonstrates restoring an archived card.", createdAt: now
         )
@@ -644,14 +649,14 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
         archived.labelIDs = ["leisure-hobby"]
         board.lists[0].archivedCards = [archived]
 
-        let archiveList = KanbanList(
+        let archiveList = KanbanList( /* Archive list */
             id: board.lists.count, title: "Past season",
             cards: [
                 KanbanCard(
                     id: nextID + 1, word: "A completed chapter", listTitle: "Past season", checklists: [],
                     descriptionOverride: "Restore this archived list to revisit its content.")
             ])
-        var retained = archiveList;
+        var retained = archiveList; /* State retained for recovery */
 
         retained.isArchived = true;
 
@@ -676,12 +681,12 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
     case planDay = "Plan a day"
     case exploreIdea = "Explore an idea"
     case startProject = "Start a project"
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var summary: String
+    var summary: String /* Aggregate operation results */
     {
 
         switch self
@@ -697,7 +702,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
     }
 
-    var illustration: ExampleCoverImage
+    var illustration: ExampleCoverImage /* Illustration operation value */
     {
 
         switch self
@@ -715,7 +720,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
     }
 
-    var items: [(String, String, ItemDisplayFormat)]
+    var items: [(String, String, ItemDisplayFormat)] /* Items being processed */
     {
 
         switch self
@@ -787,15 +792,17 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
     func makeCollection(existingTitles: [String]) -> PersonalCollection
     {
 
-        let title      = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
-        var collection = PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
+        let title      = /* User-facing title */
+            PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
+        var collection = /* Personal collection record */
+            PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
 
         collection.collectionDescription = summary
         collection.lists[0].cards = items.enumerated().map
         {
             index, item in
 
-            var card = KanbanCard(
+            var card = KanbanCard( /* Card under consideration */
                 id: index, word: item.0, listTitle: title, checklists: [],
                 descriptionOverride: item.1, subtitleOverride: "", listDisplayFormat: item.2)
 
@@ -809,7 +816,8 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
             if item.2 == .picture
             {
 
-                let image = KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
+                let image = /* Image used by this operation */
+                    KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
 
                 card.attachments = [image]
                 card.coverAttachmentID = image.id
@@ -849,8 +857,9 @@ extension PersonalCollection
     static func exampleWeek(existingTitles: [String]) -> PersonalCollection
     {
 
-        let title = uniqueTitle("Week View", existingTitles: existingTitles)
-        var draft = PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)
+        let title = uniqueTitle("Week View", existingTitles: existingTitles) /* User-facing title */
+        var draft = /* Local editing draft */
+            PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)
 
         draft.collectionDescription = "A week of plans, everyday actions, and room for reflection."
         draft.lists = SampleData.lists

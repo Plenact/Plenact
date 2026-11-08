@@ -22,63 +22,79 @@ struct BoardListsView: View
 {
 
 
-    @State private var openedHelpArticle: PlenactHelpArticle?
-    @Environment(\.planningCalendarAccess) private var planningAccess
-    @State private var browsedLabel: KanbanLabel?
-    @State private var browseLabelLibrary = LabelLibraryStore.load()
-    @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight
+    @State private var openedHelpArticle: PlenactHelpArticle?            /* Opened help article  */
+    @Environment(\.planningCalendarAccess) private var planningAccess    /* Planning access      */
+    @State private var browsedLabel: KanbanLabel?                        /* Browsed label        */
+    @State private var browseLabelLibrary = LabelLibraryStore.load()     /* Browse label library */
+    @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight /* Bottom bar height    */
 
-    @Environment(\.appReturnResetRequest) private var appReturnResetRequest
-    @State private var libraryEditMode: EditMode = .inactive
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
+    @State private var libraryEditMode: EditMode = .inactive /* Library edit mode */
 
-    @State private var showsSharedSearch = false
+    @State private var showsSharedSearch = false /* Shared Search visibility */
 
     let retainedWeekLists: [KanbanList] /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection] /* Shared device-local collections             */
-    var newListRequest                                              = 0
-    var templateLibraryRequest                                      = 0
-    var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
+    var newListRequest                                              = 0 /* New list request */
+    var templateLibraryRequest                                      = /* Template library request */
+        0
+    var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = /* Toolbar collection request */
+        nil
     let registerListNewNote:      ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
     let onOpenSaved:              () -> Void               /* Select the existing canonical Saved destination */
-    var onLoadExampleWeek:        (() -> Bool)?                  = nil
-    var onUndoExampleWeek:        (() -> Bool)?                  = nil
-    var onLoadExampleMonth:       (() -> Void)?                  = nil
-    var onRestoreUserData:        (() -> Void)?                  = nil
-    var hasUserDataBackup                                        = false
+    var onLoadExampleWeek:        (() -> Bool)?                  = /* Load example week callback */
+        nil
+    var onUndoExampleWeek:        (() -> Bool)?                  = /* Undo example week callback */
+        nil
+    var onLoadExampleMonth:       (() -> Void)?                  = /* Load example month callback */
+        nil
+    var onRestoreUserData:        (() -> Void)?                  = /* Restore user data callback */
+        nil
+    var hasUserDataBackup                                        = /* User Data Backup availability */
+        false
     var savedPersonalCardTarget:        PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation  */
-    var onClearSavedPersonalCardTarget: () -> Void               =
+    var onClearSavedPersonalCardTarget: () -> Void               = /* Clear saved personal card target */
     {
 
     }  /* Acknowledge a handled or invalid Saved request */
 
     @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
-    @FocusState private var isLibrarySearchFocused: Bool
-    @State private var showsRecentShelf                                                           = false
-    @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = Data()
-    @State private var recentItems                                                                = LibraryRecentStore.load()
-    @AppStorage(LibraryRecentStore.key) private var libraryRecentData                             = Data()
-    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews     = false
-    @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
-    @State private var showsCollectionFilter                                                      = false
+    @FocusState private var isLibrarySearchFocused: Bool /* Library Search Focused state */
+    @State private var showsRecentShelf                                                           = /* Recent Shelf visibility */
+        false
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = /* Important data */
+        Data()
+    @State private var recentItems                                                                = /* Recent items */
+        LibraryRecentStore.load()
+    @AppStorage(LibraryRecentStore.key) private var libraryRecentData                             = /* Library recent data */
+        Data()
+    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews     = /* Collection Previews visibility */
+        false
+    @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = /* Scrolls collection previews */
+        false
+    @State private var showsCollectionFilter                                                      = /* Collection Filter visibility */
+        false
     @State var browseFilter:                                      LibraryBrowseFilter             = .all /* Initial scope may be supplied by Library navigation */
-    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         = 110
+    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         = /* Plate tile height */
+        110
     @State var searchText                                                                         = ""   /* Directory search query                     */
-    @State private var importanceExampleDrafts: Set<UUID>                                         = []
+    @State private var importanceExampleDrafts: Set<UUID>                                         = /* Importance example drafts */
+        []
     @State private var editingCollection:       PersonalCollection?  /* Collection draft being edited              */
     @State private var openedCollection:        PersonalCollection?  /* Collection board presented full-screen     */
     @State private var boardTargetListID:       Int?                 /* Exact collection list requested from Saved */
     @State private var boardTargetCardID:       Int?                 /* Exact collection card requested from Saved */
     @State private var deletingCollection:      PersonalCollection?  /* Collection awaiting delete confirmation    */
-    @State private var createdNoteDestination:  PersonalCollection?
-    @State private var newNoteDraftDestination:
+    @State private var createdNoteDestination:  PersonalCollection? /* Created note destination */
+    @State private var newNoteDraftDestination: /* New note draft destination */
     PersonalCollection?                                 /* Personal List selected for the presented Note draft */
     @State private var mostRecentlyOpenedListID: UUID?  /* Last opened List used as the next Note destination  */
-    @State private var libraryQuickTemplate:     QuickCaptureTemplate?
-    @State private var weekExampleAction:        String?
-    @State private var libraryStarterError:      String?
-    @State private var examplePreview:           LibraryExamplePreview?
-    @State private var daySectionExampleToApply: PlanningRoutineTemplate?
+    @State private var libraryQuickTemplate:     QuickCaptureTemplate? /* Library quick template */
+    @State private var weekExampleAction:        String? /* Week example action */
+    @State private var libraryStarterError:      String? /* Library starter error */
+    @State private var examplePreview:           LibraryExamplePreview? /* Example preview */
+    @State private var daySectionExampleToApply: PlanningRoutineTemplate? /* Day section example to apply */
 
 
     ///
@@ -90,11 +106,13 @@ struct BoardListsView: View
     /// @post       Archived collections remain stored but are not returned
     ///
     @ViewBuilder
-    private var libraryLabelRows: some View
+    private var libraryLabelRows: some View /* Library label rows */
     {
 
-        let owners = WorkspaceBrowseIndex.owners(document: planningAccess?.document, library: collections)
-        let usages = WorkspaceBrowseIndex.labels(in: owners, catalog: browseLabelLibrary).filter
+        let owners = /* Qualified record owners */
+            WorkspaceBrowseIndex.owners(document: planningAccess?.document, library: collections)
+        let usages = /* Retained reference locations */
+            WorkspaceBrowseIndex.labels(in: owners, catalog: browseLabelLibrary).filter
         {
 
             searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -147,10 +165,10 @@ struct BoardListsView: View
     }
 
 
-    private var filteredCollections: [PersonalCollection]
+    private var filteredCollections: [PersonalCollection] /* Filtered collections */
     {  /* Active directory entries matching the search */
 
-        let owners = Set(librarySearchResults.compactMap(\.ownerID))
+        let owners = Set(librarySearchResults.compactMap(\.ownerID)) /* Qualified record owners */
 
         return collections.filter
         {
@@ -160,7 +178,7 @@ struct BoardListsView: View
     }
 
 
-    private var librarySearchResults: [TodaySearchResult]
+    private var librarySearchResults: [TodaySearchResult] /* Library search results */
     {
 
         LibrarySearchIndex.results(
@@ -213,7 +231,7 @@ struct BoardListsView: View
     private func librarySearchRow(_ result: TodaySearchResult) -> some View
     {
 
-        let card = collections.first
+        let card = collections.first /* Card under consideration */
         {
             $0.id == result.ownerID
         }?.lists.first
@@ -271,7 +289,7 @@ struct BoardListsView: View
     {
 
 
-        let collectionSubtitle =
+        let collectionSubtitle = /* Collection subtitle */
         collection.kind == .board /* Kind-specific directory row summary */
         ? "Board · \(collection.lists.filter { !$0.isArchived } .count) lists"
         : "List"
@@ -412,7 +430,7 @@ struct BoardListsView: View
     }
 
 
-    private var directoryNoteDestination: PersonalCollection?
+    private var directoryNoteDestination: PersonalCollection? /* Directory note destination */
     {  /* Active List resolved for directory-level Note creation */
 
 
@@ -669,7 +687,7 @@ struct BoardListsView: View
 
 
         var snapshot = collections /* Collection snapshot carrying both sides of the Note move */
-        let moved    =
+        let moved    =             /* Item after transfer                                      */
         try PersonalCollectionNoteMovement.move( /* Note returned with its destination-local identity        */
             noteID: noteID, from: sourceID, to: destinationID, in: &snapshot
         )
@@ -940,11 +958,11 @@ struct BoardListsView: View
         }
 
 
-        let retainedLists =
+        let retainedLists = /* Retained lists */
         collections.flatMap(\.lists) /* Retained lists considered before deleting Note media */
         + retainedWeekLists
         + (ExampleLoadUndoStore.load()?.lists ?? [])
-        let retainedFileNames = Set(
+        let retainedFileNames = Set( /* Retained file names */
             retainedLists.flatMap(\.allCards) /* Attachment filenames still referenced by retained records */
             .flatMap
             {
@@ -1029,18 +1047,18 @@ struct BoardListsView: View
     {
 
 
-        let otherCollectionLists =
+        let otherCollectionLists = /* Other collection lists */
         collections /* Lists outside the presented collection protecting shared media */
         .filter
         {
             $0.id != collection.id
         }
         .flatMap(\.lists)
-        let retainedLists =
+        let retainedLists = /* Retained lists */
         retainedWeekLists /* External and undo snapshots protecting referenced attachments */
         + otherCollectionLists
         + (ExampleLoadUndoStore.load()?.lists ?? [])
-        let activePersonalLists = collections.filter
+        let activePersonalLists = collections.filter /* Active personal lists */
         {
 
             $0.kind == .list && $0.isActive
@@ -1062,7 +1080,7 @@ struct BoardListsView: View
             onDelete:
             {
 
-                let updated = collections.filter
+                let updated = collections.filter /* Edited value to publish */
                 {
 
                     $0.id != collection.id
@@ -1255,19 +1273,19 @@ struct BoardListsView: View
     /// @return     (some View) accessible toolbar creation menu
     /// @post       Choosing an entry sets editingCollection without changing stored collections
     ///
-    private var importantItems: [LibraryRecentItem]
+    private var importantItems: [LibraryRecentItem] /* Important items */
     {
 
         (try? JSONDecoder().decode([LibraryRecentItem].self, from: importantData)) ?? []
     }
 
-    private var plateItems: [LibraryPlateItem]
+    private var plateItems: [LibraryPlateItem] /* Plate items */
     {
 
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
 
-    private var showsPlateShelf: Bool
+    private var showsPlateShelf: Bool /* Plate Shelf visibility */
     {
 
         browseFilter.browsesCollections && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1275,7 +1293,7 @@ struct BoardListsView: View
     }
 
 
-    private var plateSection: some View
+    private var plateSection: some View /* Plate section */
     {
 
         VStack(alignment: .leading, spacing: 10)
@@ -1360,7 +1378,7 @@ struct BoardListsView: View
     }
 
 
-    private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)]
+    private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)] /* Available recents */
     {
 
         recentItems.compactMap
@@ -1395,7 +1413,7 @@ struct BoardListsView: View
     }
 
 
-    private var recentShelf: some View
+    private var recentShelf: some View /* Recent shelf */
     {
 
         ScrollView(.horizontal, showsIndicators: false)
@@ -1452,7 +1470,7 @@ struct BoardListsView: View
     }
 
 
-    private var collectionFilterMenu: some View
+    private var collectionFilterMenu: some View /* Collection filter menu */
     {
 
         Button
@@ -1494,7 +1512,7 @@ struct BoardListsView: View
     }
 
 
-    private var libraryHeader: some View
+    private var libraryHeader: some View /* Library header */
     {
 
         VStack(spacing: 12)
@@ -1680,7 +1698,7 @@ struct BoardListsView: View
     }
 
 
-    private var createMenu: some View
+    private var createMenu: some View /* Create menu */
     {
 
         Menu
@@ -1715,7 +1733,7 @@ struct BoardListsView: View
     }
 
 
-    private var starterListsMenu: some View
+    private var starterListsMenu: some View /* Starter lists menu */
     {
 
         Menu("Starter Lists", systemImage: "list.bullet")
@@ -1741,7 +1759,7 @@ struct BoardListsView: View
     }
 
 
-    private var starterBoardsMenu: some View
+    private var starterBoardsMenu: some View /* Starter boards menu */
     {
 
         Menu("Starter Boards", systemImage: "rectangle.3.group")
@@ -1766,7 +1784,7 @@ struct BoardListsView: View
     }
 
 
-    private var examplesMenu: some View
+    private var examplesMenu: some View /* Examples menu */
     {
 
         Menu("Examples", systemImage: "sparkles")
@@ -1816,7 +1834,7 @@ struct BoardListsView: View
     }
 
 
-    private var daySectionExamplesMenu: some View
+    private var daySectionExamplesMenu: some View /* Day section examples menu */
     {
 
         Menu("Day section examples", systemImage: "rectangle.3.group")
@@ -1871,7 +1889,7 @@ struct BoardListsView: View
     }
 
 
-    private var fullMonthExamplesMenu: some View
+    private var fullMonthExamplesMenu: some View /* Full month examples menu */
     {
 
         Menu("Full-month examples", systemImage: "calendar")
@@ -1883,7 +1901,8 @@ struct BoardListsView: View
                 Button("Preview month")
                 {
 
-                    let example = FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
+                    let example = /* Seeded example content */
+                        FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
 
                     examplePreview = LibraryExamplePreview(
                         title: "A month in motion",
@@ -1910,7 +1929,7 @@ struct BoardListsView: View
     }
 
 
-    private var weekExamplesMenu: some View
+    private var weekExamplesMenu: some View /* Week examples menu */
     {
 
         Menu("Week View examples", systemImage: "calendar")
@@ -1968,7 +1987,7 @@ struct BoardListsView: View
     }
 
 
-    private var listExamplesMenu: some View
+    private var listExamplesMenu: some View /* List examples menu */
     {
 
         Menu("List examples", systemImage: "list.bullet")
@@ -1997,7 +2016,7 @@ struct BoardListsView: View
     private func listExampleMenu(_ example: PersonalListExample) -> some View
     {
 
-        let draft = example.makeCollection(existingTitles: [])
+        let draft = example.makeCollection(existingTitles: []) /* Local editing draft */
 
         return Menu(example.rawValue)
         {
@@ -2041,12 +2060,12 @@ struct BoardListsView: View
 
 
     @ViewBuilder
-    private var libraryTemplateRows: some View
+    private var libraryTemplateRows: some View /* Library template rows */
     {
 
         PlanningTemplateLibraryRows(query: searchText)
 
-        let listTemplates = MixedListTemplate.allCases.filter
+        let listTemplates = MixedListTemplate.allCases.filter /* List templates */
         {
 
             LibraryStarterSearch.matches(
@@ -2094,7 +2113,7 @@ struct BoardListsView: View
 
         }
 
-        let quickTemplates = QuickCaptureTemplate.allCases.filter
+        let quickTemplates = QuickCaptureTemplate.allCases.filter /* Quick templates */
         {
 
             LibraryStarterSearch.matches(
@@ -2159,10 +2178,10 @@ struct BoardListsView: View
 
 
     @ViewBuilder
-    private var libraryExampleRows: some View
+    private var libraryExampleRows: some View /* Library example rows */
     {
 
-        let listExamples = PersonalListExample.allCases.filter
+        let listExamples = PersonalListExample.allCases.filter /* List examples */
         {
 
             LibraryStarterSearch.matches(
@@ -2172,23 +2191,24 @@ struct BoardListsView: View
                 })
         }
 
-        let boardExamples = PersonalBoardExample.allCases.filter
+        let boardExamples = PersonalBoardExample.allCases.filter /* Board examples */
         {
 
             LibraryStarterSearch.matches(
                 searchText, texts: [$0.rawValue, $0.summary, "Board example"] + $0.listSummaries.map(\.title))
         }
 
-        let weekMatches = LibraryStarterSearch.matches(
+        let weekMatches = LibraryStarterSearch.matches( /* Week matches */
             searchText,
             texts: ["Example Week Work Week Board calendar seven days"]
             + SampleData.lists.flatMap
             {
                 [$0.title] + $0.cards.map(\.word)
             })
-        let monthMatches = LibraryStarterSearch.matches(
+        let monthMatches = LibraryStarterSearch.matches( /* Month matches */
             searchText, texts: ["A month in motion Full-month example calendar fictional plans"])
-        let sectionExamples = LibraryDaySectionExamples.matches(query: searchText)
+        let sectionExamples = /* Section examples */
+            LibraryDaySectionExamples.matches(query: searchText)
 
         if listExamples.isEmpty && boardExamples.isEmpty && sectionExamples.isEmpty && !weekMatches && !monthMatches
         {
@@ -2234,7 +2254,8 @@ struct BoardListsView: View
                         Button("Preview " + example.rawValue, systemImage: "eye")
                         {
 
-                            let draft = example.makeCollection(existingTitles: collections.map(\.title))
+                            let draft = /* Local editing draft */
+                                example.makeCollection(existingTitles: collections.map(\.title))
 
                             examplePreview = LibraryExamplePreview(
                                 title: example.rawValue, summary: example.summary, lists: draft.lists)
@@ -2282,7 +2303,8 @@ struct BoardListsView: View
                         Button("Preview " + example.rawValue, systemImage: "eye")
                         {
 
-                            let draft = example.makeCollection(existingTitles: collections.map(\.title))
+                            let draft = /* Local editing draft */
+                                example.makeCollection(existingTitles: collections.map(\.title))
 
                             examplePreview = LibraryExamplePreview(
                                 title: example.rawValue, summary: example.summary, lists: draft.lists)
@@ -2381,7 +2403,8 @@ struct BoardListsView: View
                 Button("Preview A month in motion", systemImage: "eye")
                 {
 
-                    let example = FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
+                    let example = /* Seeded example content */
+                        FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
 
                     examplePreview = LibraryExamplePreview(
                         title: "A month in motion",
@@ -2421,7 +2444,7 @@ struct BoardListsView: View
     }
 
 
-    private var templatesMenu: some View
+    private var templatesMenu: some View /* Templates menu */
     {
 
         Menu("Templates", systemImage: "square.stack.3d.up")
@@ -2462,7 +2485,7 @@ struct BoardListsView: View
     /// @post       Directory edits update the shared collections binding; archival uses save-first
     ///             persistence and does not alter Week. Archived collections remain outside active rows
     ///
-    var body: some View
+    var body: some View /* Library navigation and contents */
     {  /* Personal collection directory and management sheets */
 
 
@@ -2525,7 +2548,7 @@ struct BoardListsView: View
                             }
 
 
-                            var active = collections.filter(
+                            var active = collections.filter( /* Active operation state */
                                 \.isActive) /* Active directory entries reordered by the user */
 
                             active.move(fromOffsets: source, toOffset: destination)
@@ -2625,7 +2648,7 @@ struct BoardListsView: View
                 for collection in updated where collection.isActive
                 {
 
-                    let previousIDs = Set(
+                    let previousIDs = Set( /* Previous i ds */
                         old.first(where:
                             {
                                 $0.id == collection.id
@@ -2762,7 +2785,8 @@ struct BoardListsView: View
                 Button(weekExampleAction == "undo" ? "Undo Last Load" : "Load Example Week", role: .destructive)
                 {
 
-                    let success = weekExampleAction == "undo" ? onUndoExampleWeek?() : onLoadExampleWeek?()
+                    let success = /* Operation success flag */
+                        weekExampleAction == "undo" ? onUndoExampleWeek?() : onLoadExampleWeek?()
 
                     if success != true
                     {
@@ -2906,7 +2930,7 @@ struct BoardListsView: View
                         {
 
 
-                            let updated = collections.filter
+                            let updated = collections.filter /* Edited value to publish */
                             {
 
                                 $0.id != deletingCollection.id
@@ -3150,7 +3174,7 @@ struct BoardListsView: View
     /// @return     (some View) two independently accessible creation buttons
     /// @post       Actions present an unsaved form or chooser; collections remain unchanged
     ///
-    private var collectionCreationButtons: some View
+    private var collectionCreationButtons: some View /* Collection creation buttons */
     {  /* List and Board creation shortcuts */
 
 

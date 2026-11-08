@@ -20,10 +20,10 @@ enum MigrationAssetPreview
     struct Result
     {
 
-        let document:     [String: Any]
-        let verifiedCount: Int
-        let missingCount:  Int
-        let issueCount:    Int
+        let document:     [String: Any] /* Source document snapshot */
+        let verifiedCount: Int          /* Verified count           */
+        let missingCount:  Int          /* Missing count            */
+        let issueCount:    Int          /* Issue count              */
 
     }
 
@@ -35,7 +35,7 @@ enum MigrationAssetPreview
     static func signature(_ bytes: Data) -> (String, String)
     {
 
-        let prefix = Array(bytes.prefix(16))
+        let prefix = Array(bytes.prefix(16)) /* Leading lookup or display text */
 
         if prefix.starts(with: [137, 80, 78, 71, 13, 10, 26, 10])
         {
@@ -52,7 +52,7 @@ enum MigrationAssetPreview
         if prefix.count >= 12, String(bytes: prefix[4..<8], encoding: .ascii) == "ftyp"
         {
 
-            let brand = String(bytes: prefix[8..<12], encoding: .ascii)
+            let brand = String(bytes: prefix[8..<12], encoding: .ascii) /* App brand appearance */
 
             if ["M4A ", "M4B "].contains(brand)
             {
@@ -96,21 +96,24 @@ enum MigrationAssetPreview
 
         _ = try MigrationBackupReader.values(in: backup)
 
-        let report                             = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
-        let media                              = report["media"] as! [[String: Any]]
-        var paths: [String: String]            = [:]
-        var available: [String: [String: Any]] = [:]
-        var usages: [String: [[String: Any]]]  = [:]
-        var roles: [String: Set<String>]       = [:]
-        var parents: [String: Set<String>]     = [:]
-        var issues: Set<String>                = []
+        let report                             = /* Validation findings */
+            try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+        let media                              = /* Original media references */
+            report["media"] as! [[String: Any]]
+        var paths: [String: String]            = [:] /* Source filesystem paths      */
+        var available: [String: [String: Any]] = [:] /* Available operation inputs   */
+        var usages: [String: [[String: Any]]]  = [:] /* Retained reference locations */
+        var roles: [String: Set<String>]       = [:] /* Declared content roles       */
+        var parents: [String: Set<String>]     = [:] /* Enclosing record identities  */
+        var issues: Set<String>                = []  /* Validation findings          */
 
         for entry in media
         {
 
-            let path   = entry["path"] as! String
-            let digest = entry["sha256"] as! String
-            let id     = try journal.resolve(MigrationSourceIdentity(recordType: "asset", owner: "owned_media",
+            let path   = entry["path"] as! String   /* Filesystem or navigation path */
+            let digest = entry["sha256"] as! String /* Verified content hash         */
+            let id     =                            /* Record or view identity       */
+                try journal.resolve(MigrationSourceIdentity(recordType: "asset", owner: "owned_media",
                 legacyID: path, discriminator: digest)).uuidString.lowercased()
 
             paths[id] = path
@@ -118,7 +121,7 @@ enum MigrationAssetPreview
 
         }
 
-        let unavailableTargets = records.compactMap { record -> String? in
+        let unavailableTargets = records.compactMap { record -> String? in /* Unavailable targets */
             guard record["record_type"] as? String == "unavailable_reference",
                   let payload = record["payload"] as? [String: Any], payload["target_type"] as? String == "asset" else
             {
@@ -158,13 +161,14 @@ enum MigrationAssetPreview
                 for key in object.keys.sorted()
                 {
 
-                    let child = object[key]!
-                    let next  = path + "/" + key
+                    let child = object[key]!     /* Nested view or record */
+                    let next  = path + "/" + key /* Candidate next state  */
 
                     if ["asset_id", "drawing_asset_id", "photo_asset_id", "avatar_asset_id"].contains(key), let asset = child as? String
                     {
 
-                        let role = key == "drawing_asset_id" ? "drawing_original" :
+                        let role = /* Declared content role */
+                            key == "drawing_asset_id" ? "drawing_original" :
                             (key == "photo_asset_id" ? "appearance_photo" :
                                 (key == "avatar_asset_id" ? "profile_avatar" : "attachment_original"))
 
@@ -180,7 +184,7 @@ enum MigrationAssetPreview
                         else
                         {
 
-                            let kind = object["kind"] as? String
+                            let kind = object["kind"] as? String /* Content kind discriminator */
 
                             roles[asset, default: []].insert(kind == "photo" ? "image" :
                                 (["audio", "video"].contains(kind ?? "") ? kind! : "binary"))
@@ -206,7 +210,7 @@ enum MigrationAssetPreview
             throw MigrationBackupReader.Failure.invalidBackup
         }
 
-        var derivations: [String: String] = [:]
+        var derivations: [String: String] = [:] /* Verified derived-file metadata */
 
         for (child, candidates) in parents
         {
@@ -222,13 +226,13 @@ enum MigrationAssetPreview
             }
         }
 
-        let proposed = derivations
+        let proposed = derivations /* Proposed edit state */
 
         for child in proposed.keys
         {
 
-            var visited: Set<String> = []
-            var current: String?     = child
+            var visited: Set<String> = []    /* Records already traversed  */
+            var current: String?     = child /* Current operation snapshot */
 
             while let node = current
             {
@@ -244,18 +248,22 @@ enum MigrationAssetPreview
             }
         }
 
-        var entries: [[String: Any]] = []
+        var entries: [[String: Any]] = [] /* Entries being processed */
 
         for id in paths.keys.sorted()
         {
 
-            let path        = paths[id]!
-            let filename    = String(path.split(separator: "/").last ?? "")
-            let stored      = available[id]
-            let sourceRoles = roles[id] ?? []
-            let bytes       = try stored.map { _ in try MigrationBackupReader.file(path, in: backup.files) }
-            let detected    = bytes.map(signature) ?? ("binary", "application/octet-stream")
-            let drawing     = sourceRoles == ["drawing_original"]
+            let path        = paths[id]! /* Filesystem or navigation path */
+            let filename    =            /* Original file basename        */
+                String(path.split(separator: "/").last ?? "")
+            let stored      = available[id]   /* Value loaded from persistence */
+            let sourceRoles = roles[id] ?? [] /* Source roles                  */
+            let bytes       =                 /* Serialized or original bytes  */
+                try stored.map { _ in try MigrationBackupReader.file(path, in: backup.files) }
+            let detected    = /* Detected metadata or format */
+                bytes.map(signature) ?? ("binary", "application/octet-stream")
+            let drawing     = /* Drawing content and originals */
+                sourceRoles == ["drawing_original"]
 
             if sourceRoles.count > 1 || (!drawing && detected.0 != "binary" && !sourceRoles.isEmpty && !sourceRoles.contains(detected.0))
             {
@@ -266,7 +274,7 @@ enum MigrationAssetPreview
                 issues.insert("asset_original_unavailable:" + id)
             }
 
-            let kind = drawing ? "drawing_original" : detected.0
+            let kind = drawing ? "drawing_original" : detected.0 /* Content kind discriminator */
 
             entries.append(["asset_id": id, "source_path": path, "kind": kind, "mime_type": detected.1,
                 "original_name": filename, "content_state": stored == nil ? "unavailable" : "described",
@@ -279,7 +287,8 @@ enum MigrationAssetPreview
                 "references": usages[id] ?? []])
         }
 
-        let document: [String: Any] = ["format": "plenact.ios-asset-preview", "format_version": 1,
+        let document: [String: Any] = /* Source document snapshot */
+            ["format": "plenact.ios-asset-preview", "format_version": 1,
             "target_user_data_model_version": "1.0", "account_binding_pending": true,
             "entries": entries, "issues": issues.sorted()]
 

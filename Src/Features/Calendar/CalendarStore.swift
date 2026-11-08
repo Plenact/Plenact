@@ -20,7 +20,7 @@ enum PlanningCalendarStore
 {
 
 
-    static let key = "Plenact.CalendarWeeks.v1"
+    static let key = "Plenact.CalendarWeeks.v1" /* Persistence lookup key */
 
 
     ///
@@ -43,7 +43,8 @@ enum PlanningCalendarStore
             return nil
         }
 
-        let result = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
+        let result = /* Calendar for date calculations */
+            try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
 
         guard result.version == 1, (1 ... 7).contains(result.firstWeekday),
         Set(result.weeks.map(\.startKey)).count == result.weeks.count,

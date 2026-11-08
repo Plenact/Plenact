@@ -26,7 +26,7 @@ final class ChecklistMigrationTests: XCTestCase
     private final class EditingModel: ObservableObject
     {
 
-        @Published var text = "Original"
+        @Published var text = "Original" /* Text being processed */
 
     }
 
@@ -35,9 +35,9 @@ final class ChecklistMigrationTests: XCTestCase
     private struct EditingRow: View
     {
 
-        @ObservedObject var model: EditingModel
+        @ObservedObject var model: EditingModel /* Current data model */
 
-        var body: some View
+        var body: some View /* Editing layout */
         {
 
             ChecklistItemRow(item: model.text, isCompleted: false,
@@ -58,11 +58,13 @@ final class ChecklistMigrationTests: XCTestCase
     func testChecklistTypingKeepsNativeKeyboardFocus() async throws
     {
 
-        let model    = EditingModel()
-        let host     = UIHostingController(rootView: EditingRow(model: model))
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let model    = EditingModel() /* Current data model     */
+        let host     =                /* Synthetic SwiftUI host */
+            UIHostingController(rootView: EditingRow(model: model))
+        let scene    = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         window.rootViewController = host
@@ -89,12 +91,12 @@ final class ChecklistMigrationTests: XCTestCase
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
         }
 
-        let field = try XCTUnwrap(editor(in: host.view))
+        let field = try XCTUnwrap(editor(in: host.view)) /* Native input field */
 
         XCTAssertTrue(field.becomeFirstResponder())
         try await Task.sleep(for: .milliseconds(150))
 
-        let selection = try XCTUnwrap(field.selectedTextRange)
+        let selection = try XCTUnwrap(field.selectedTextRange) /* Current selection state */
 
         XCTAssertTrue(selection.isEmpty)
         XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start),
@@ -129,7 +131,8 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let legacyJSON = """
+        let legacyJSON = /* Legacy JSON */
+            """
                         [
                           {
                             "id": 7,
@@ -183,7 +186,8 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let legacyJSON = """
+        let legacyJSON = /* Legacy JSON */
+            """
                         {
                           "id": "22222222-2222-2222-2222-222222222222",
                           "title": "Actions",
@@ -192,9 +196,9 @@ final class ChecklistMigrationTests: XCTestCase
                         }
                         """ /* Revision 0 checklist fixture */
 
-        let firstDecode = try JSONDecoder().decode(
+        let firstDecode = try JSONDecoder().decode( /* First decode */
             KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* First migration  */
-        let secondDecode = try JSONDecoder().decode(
+        let secondDecode = try JSONDecoder().decode( /* Second decode */
             KanbanChecklist.self, from: Data(legacyJSON.utf8)) /* Repeat migration */
 
         XCTAssertEqual(firstDecode.items.map(\.id), secondDecode.items.map(\.id))
@@ -263,8 +267,8 @@ final class ChecklistMigrationTests: XCTestCase
             ]
         )
 
-        let encoded = try JSONEncoder().encode(checklist) /* Current JSON     */
-        let object  = try XCTUnwrap(
+        let encoded = try JSONEncoder().encode(checklist) /* Current JSON        */
+        let object  = try XCTUnwrap(                      /* Decoded JSON object */
             JSONSerialization.jsonObject(with: encoded) as? [String: Any])           /* JSON object      */
         let items   = try XCTUnwrap(object["items"] as? [[String: Any]])             /* Encoded actions  */
         let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)  /* Round-trip value */
@@ -288,7 +292,8 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let earlierItemJSON = """
+        let earlierItemJSON = /* Earlier item JSON */
+            """
                         {
                           "id": "DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD",
                           "title": "Existing action",
@@ -296,7 +301,7 @@ final class ChecklistMigrationTests: XCTestCase
                         }
                         """ /* Pre-content item fixture */
 
-        let item = try JSONDecoder().decode(
+        let item = try JSONDecoder().decode( /* Item under consideration */
             KanbanChecklistItem.self, from: Data(earlierItemJSON.utf8)) /* Decoded action */
 
         XCTAssertEqual(item.title, "Existing action")
@@ -374,8 +379,8 @@ final class ChecklistMigrationTests: XCTestCase
             }
 
 
-            let actions       = card.checklists.flatMap(\.items) /* Card checklist actions          */
-            let linkedCardIDs = actions.compactMap
+            let actions       = card.checklists.flatMap(\.items) /* Card checklist actions */
+            let linkedCardIDs = actions.compactMap               /* Linked card i ds       */
             {
             item -> Int? in /* Resolved linked-card target IDs */
 
@@ -391,7 +396,7 @@ final class ChecklistMigrationTests: XCTestCase
             }
 
 
-            let detailCount = actions.filter
+            let detailCount = actions.filter /* Detail count */
             {
             item in /* Count reduced Action Details     */
                 guard case .actionDetail = item.content else
@@ -445,7 +450,7 @@ final class ChecklistMigrationTests: XCTestCase
         {
 
 
-            let activityCards = list.cards.filter
+            let activityCards = list.cards.filter /* Activity cards */
             {
                 !$0.isSectionDivider
             }  /* Daily activity cards */
@@ -486,7 +491,8 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let legacyJSON = """
+        let legacyJSON = /* Legacy JSON */
+            """
                         {
                           "id": 9,
                           "word": "Plan the week",
@@ -520,16 +526,16 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"  /* Stable demo user ID            */
-        let card   = KanbanCard(                             /* Card with directory assignment */
+        let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE" /* Stable demo user ID            */
+        let card   = KanbanCard(                            /* Card with directory assignment */
             id: 10,
             word: "Prepare the week",
             listTitle: "Monday",
             members: [.registered(userID: userID, displayName: "Jim")]
         )
 
-        let encoded = try JSONEncoder().encode(card)                            /* Encoded card    */
-        let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded)  /* Round-trip card */
+        let encoded = try JSONEncoder().encode(card)                           /* Encoded card    */
+        let decoded = try JSONDecoder().decode(KanbanCard.self, from: encoded) /* Round-trip card */
 
         XCTAssertEqual(decoded.members.count, 1)
         XCTAssertEqual(decoded.members[0].kind, .registeredUser)

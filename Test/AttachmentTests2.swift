@@ -41,9 +41,9 @@ extension PlenactBoardDocumentTests
 
         format.scale = 1
 
-        let renderer = UIGraphicsImageRenderer(
+        let renderer = UIGraphicsImageRenderer( /* Image rendering context */
             size: CGSize(width: 2400, height: 1600), format: format) /* Synthetic image renderer                   */
-        let bytes = renderer.pngData
+        let bytes = renderer.pngData /* Serialized or original bytes */
         {
         context in /* Rendered PNG bytes for the oversized cover */
             UIColor.systemGreen.setFill()
@@ -51,7 +51,7 @@ extension PlenactBoardDocumentTests
         }
 
 
-        let photo = try CardAttachmentStore.saveMedia(
+        let photo = try CardAttachmentStore.saveMedia( /* Photo selection or source */
             bytes, kind: .photo, fileExtension: "png")  /* Synthetic photo fixture */
         let fileName = try XCTUnwrap(photo.fileName)    /* Stored avatar filename  */
 
@@ -63,12 +63,12 @@ extension PlenactBoardDocumentTests
         }
 
 
-        var card = KanbanCard(
+        var card = KanbanCard( /* Synthetic card fixture */
             id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo]) /* Card value under verification */
 
         try card.setCover(photo.id)
 
-        let image = try XCTUnwrap(
+        let image = try XCTUnwrap( /* Image used by this operation */
             try CardAttachmentStore.coverThumbnail(for: photo).cgImage) /* Synthetic image fixture */
 
         XCTAssertEqual(image.width, 960)
@@ -110,7 +110,7 @@ extension PlenactBoardDocumentTests
 
 
         let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture       */
-        let card  = KanbanCard(
+        let card  = KanbanCard( /* Synthetic card fixture */
             id: 1, word: "Garden", listTitle: "Local", checklists: [], /* Card value under verification */
             attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "",
             appearance: ItemAppearance(accent: .green, icon: .home, background: .teal))
@@ -158,8 +158,8 @@ extension PlenactBoardDocumentTests
         }
 
 
-        let standard = measure(.standard, enabled: true)  /* Standard Card baseline      */
-        let overview = measure(.overview, enabled: true)  /* Overview layout measurement */
+        let standard = measure(.standard, enabled: true) /* Standard Card baseline      */
+        let overview = measure(.overview, enabled: true) /* Overview layout measurement */
 
         XCTAssertGreaterThan(standard, overview)
         XCTAssertGreaterThan(standard, measure(.standard, enabled: false) + 100)
@@ -184,12 +184,12 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let candidate = try CardAttachmentStore.saveMedia(
+        let candidate = try CardAttachmentStore.saveMedia( /* Candidate under validation */
             Data([1, 2, 3]), kind: .photo, fileExtension: "jpg") /* Candidate value for validation */
-        let unrelated = try CardAttachmentStore.saveMedia(
+        let unrelated = try CardAttachmentStore.saveMedia( /* Unrelated content bytes */
             Data([4, 5, 6]), kind: .photo, fileExtension: "jpg")  /* Unrelated retained value */
-        let candidateName = try XCTUnwrap(candidate.fileName)     /* Candidate display name   */
-        let unrelatedName = try XCTUnwrap(unrelated.fileName)     /* Unrelated display name   */
+        let candidateName = try XCTUnwrap(candidate.fileName) /* Candidate display name */
+        let unrelatedName = try XCTUnwrap(unrelated.fileName) /* Unrelated display name */
 
         defer
         {
@@ -199,12 +199,12 @@ extension PlenactBoardDocumentTests
         }
 
 
-        var card = KanbanCard(
+        var card = KanbanCard( /* Synthetic card fixture */
             id: 1, word: "Retained", listTitle: "Archive", checklists: []) /* Card value under verification */
 
         card.attachments = [candidate]
 
-        var archived = KanbanList(
+        var archived = KanbanList( /* Archived records or state */
             id: 1, title: "Archive", cards: [], archivedCards: [card]) /* Archived value for restoration checks */
 
         archived.isArchived = true

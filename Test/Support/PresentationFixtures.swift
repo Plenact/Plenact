@@ -26,10 +26,10 @@ final class NoteNavigationProbe: ObservableObject
 {
 
 
-    @Published var path: [KanbanCard] = []
-    var visibleNotes:    Set<UUID>    = []
+    @Published var path: [KanbanCard] = [] /* Filesystem or navigation path */
+    var visibleNotes:    Set<UUID>    = [] /* Visible notes                 */
 
-    var noteIsVisible:   Bool
+    var noteIsVisible:   Bool /* Note is visible */
     {
         !visibleNotes.isEmpty
     }
@@ -47,9 +47,9 @@ struct NoteNavigationTestView: View
 {
 
 
-    @ObservedObject var probe: NoteNavigationProbe
+    @ObservedObject var probe: NoteNavigationProbe /* Probe comparison fixture */
 
-    var body:                  some View
+    var body:                  some View /* Note Navigation Test layout */
     {
 
         NavigationStack(path: $probe.path)
@@ -94,7 +94,7 @@ final class DirectReturnTestProbe: ObservableObject
 {
 
 
-    @Published var presented = false
+    @Published var presented = false /* Presented state flag */
 
 }
 
@@ -110,12 +110,12 @@ struct DirectReturnTestView: View
 {
 
 
-    @ObservedObject var probe: DirectReturnTestProbe
-    let owner:                 PersonalCollection
-    let week:                  DatedPlanningWeek?
-    let listID:                Int
+    @ObservedObject var probe: DirectReturnTestProbe /* Probe comparison fixture    */
+    let owner:                 PersonalCollection    /* Owning collection or Week   */
+    let week:                  DatedPlanningWeek?    /* Synthetic week fixture      */
+    let listID:                Int                   /* Owner-local List identifier */
 
-    var body:                  some View
+    var body:                  some View /* Direct Return Test layout */
     {
 
         Text("Origin remains here")

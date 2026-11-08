@@ -61,9 +61,9 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
 {
 
 
-    var perspectiveTop:  CGFloat
-    var shortcutsBottom: CGFloat
-    var enabled:         Bool
+    var perspectiveTop:  CGFloat /* Perspective top           */
+    var shortcutsBottom: CGFloat /* Shortcuts bottom          */
+    var enabled:         Bool    /* Feature availability flag */
 
 
     ///
@@ -96,7 +96,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
             return nil
         }
 
-        let revealBoundary = max(24, perspectiveTop - viewport * 0.7)
+        let revealBoundary = max(24, perspectiveTop - viewport * 0.7) /* Reveal boundary */
 
         if proposed > start, start < perspectiveTop - 24,
         start <= revealBoundary, proposed >= revealBoundary

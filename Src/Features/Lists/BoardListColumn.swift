@@ -23,11 +23,11 @@ struct KanbanListView: View
 {
 
 
-    @State private var checkmarkReset: ListCheckmarkReset?
-    @State private var confirmsCheckmarkReset = false
-    @Environment(\.boardViewportMemory) private var viewportMemory
+    @State private var checkmarkReset: ListCheckmarkReset?         /* Checkmark reset          */
+    @State private var confirmsCheckmarkReset = false              /* Confirms checkmark reset */
+    @Environment(\.boardViewportMemory) private var viewportMemory /* Viewport memory          */
 
-    @Environment(\.cardMovementSource) private var draftCollectionID
+    @Environment(\.cardMovementSource) private var draftCollectionID /* Draft collection ID */
 
 
     /// Identifies the modal sheet currently presented by a kanban list
@@ -50,7 +50,7 @@ struct KanbanListView: View
         /// @return     (String) stable sheet identity
         /// @post       Presentation state remains unchanged
         ///
-        var id: String
+        var id: String /* Record or view identity */
         {
             rawValue
         }  /* Stable sheet identity */
@@ -70,7 +70,7 @@ struct KanbanListView: View
     let canMoveLater:       Bool                              /* Indicates whether the list can be moved later in the board   */
     let onAddCard:          (QuickCaptureSubmission) -> Bool  /* The action invoked to add a new card to the list             */
     let onCopyList:         () -> Void                        /* The action invoked to copy the list                          */
-    var onMoveToBoard:      (() -> Void)? = nil
+    var onMoveToBoard:      (() -> Void)? = nil /* Move to board callback */
     let onMoveList:         (Int) -> Void   /* The action invoked to move the list by a specified offset      */
     let onSortList:         (Bool) -> Void  /* The action invoked to sort the list based on a specified order */
     let onArchiveCompleted: () -> Void      /* The action invoked to archive all completed cards in the list  */
@@ -83,9 +83,9 @@ struct KanbanListView: View
     let onDeleteList:          () -> Void     /* Confirmed removal of this list and its retained content  */
     let onDeleteCard:          (Int) -> Void  /* The action invoked to delete a card at a specified index */
     /// Requests archival of an active card by identity
-    let onArchiveCard: (Int) -> Void         /* Archives an active card by identity                */
-    let onUpdateCard:  (KanbanCard) -> Void  /* The action invoked to save edited card information */
-    let onMoveCard:    (Int, Int) -> Void    /* Move a card to a destination index in this list    */
+    let onArchiveCard: (Int) -> Void        /* Archives an active card by identity                */
+    let onUpdateCard:  (KanbanCard) -> Void /* The action invoked to save edited card information */
+    let onMoveCard:    (Int, Int) -> Void   /* Move a card to a destination index in this list    */
     /// Reports list-reorder drag updates to the owning board
     let onListDragChanged: (DragGesture.Value?) -> Void /* Reports list-reorder gesture samples to the Board */
     /// Reports completion or cancellation of a list-reorder drag
@@ -93,75 +93,78 @@ struct KanbanListView: View
     var draggedCardID:    Int?            = nil   /* Active native-drag record identity                      */
     var dropBeforeCardID: Int?            = nil   /* Card identity marking the current insertion boundary    */
     var isCardDropTarget                  = false /* Whether this list contains the current insertion target */
-    var onMoveSection: (Int, Int) -> Void =
+    var onMoveSection: (Int, Int) -> Void = /* Move section callback */
     {
         _, _ in
     }
 
-    var onCardDragBegan: (Int, CGPoint) -> Void =
+    var onCardDragBegan: (Int, CGPoint) -> Void = /* Card drag began callback */
     {
         _, _ in
     }  /* Reports a card identity and initial global pointer           */
 
-    var onCardDragChanged: (Int, CGPoint) -> Void =
+    var onCardDragChanged: (Int, CGPoint) -> Void = /* Card drag changed callback */
     {
         _, _ in
     }  /* Reports a card identity and updated global pointer           */
 
-    var onCardDragEnded: (Int, Bool, CGPoint?) -> Void =
+    var onCardDragEnded: (Int, Bool, CGPoint?) -> Void = /* Card drag ended callback */
     {
         _, _, _ in
     }  /* Ends a card drag with commit intent and final pointer        */
 
     var cardDragToken                 = "" /* Board-session token shared by drag sources and drop surfaces */
-    var onCardDrop: (CGPoint) -> Bool =
+    var onCardDrop: (CGPoint) -> Bool = /* Card drop callback */
     {
         _ in
         false
     }  /* Commits a native drop at its global pointer position         */
 
     var cardMoveDestinations: [KanbanList]       = [] /* Lists offered by the explicit card movement menu             */
-    var onMoveCardToList:     (Int, Int) -> Void =
+    var onMoveCardToList:     (Int, Int) -> Void = /* Move card to list callback */
     {
         _, _ in
     }  /* Moves a selected card to the requested list identity         */
 
-    @State private var inlineCaptureDraft = InlineListCaptureDraft()
-    @State private var guidanceVisible    = false
-    @State private var guidanceFooterVisible: Bool?
-    var onEditList:                           ((String, String, ItemPresentation) -> Bool)? = nil
-    var isNamingNewList                                                                     = false
-    var onFinishNaming: () -> Void                                                          =
+    @State private var inlineCaptureDraft = InlineListCaptureDraft() /* Inline capture draft */
+    @State private var guidanceVisible    = false /* Guidance visible */
+    @State private var guidanceFooterVisible: Bool? /* Guidance footer visible */
+    var onEditList:                           ((String, String, ItemPresentation) -> Bool)? = /* Edit list callback */
+        nil
+    var isNamingNewList                                                                     = /* Naming New List state */
+        false
+    var onFinishNaming: () -> Void                                                          = /* Finish naming callback */
     {
 
     }
 
-    var onOpenDayView: (() -> Void)?                  = nil
-    @State private var opensDayAfterDismissal         = false
-    var boardAppearance: BoardAppearance              = BoardAppearance()
-    var onAppearance:    ((ItemAppearance?) -> Bool)? = nil
-    var isCurrentDay                                  = false
-    var assignedDate: Date?                           = nil
-    var datedTitle:   String?                         = nil
-    var hidesPanelHeader                              = false
-    var listActionsRequest                            = 0
-    var onConsumeListActions: () -> Void              =
+    var onOpenDayView: (() -> Void)?                  = nil /* Open day view callback */
+    @State private var opensDayAfterDismissal         = false /* Opens day after dismissal */
+    var boardAppearance: BoardAppearance              = BoardAppearance() /* Board appearance */
+    var onAppearance:    ((ItemAppearance?) -> Bool)? = nil /* Publish appearance choices */
+    var isCurrentDay                                  = false /* Current Day state */
+    var assignedDate: Date?                           = nil /* Assigned date */
+    var datedTitle:   String?                         = nil /* Dated title */
+    var hidesPanelHeader                              = false /* Hides panel header */
+    var listActionsRequest                            = 0 /* List actions request */
+    var onConsumeListActions: () -> Void              = /* Consume list actions callback */
     {
 
     }
 
 
-    private var styledListTitle: AttributedString
+    private var styledListTitle: AttributedString /* Styled list title */
     {
 
-        var title = AttributedString(list.title)
+        var title = AttributedString(list.title) /* User-facing title */
 
         title.font = .title3.weight(.bold)
 
         if let datedTitle
         {
 
-            var date = AttributedString(String(datedTitle.dropFirst(list.title.count)))
+            var date = /* Date used by this operation */
+                AttributedString(String(datedTitle.dropFirst(list.title.count)))
 
             date.font = .title3.weight(.regular).italic()
             date.foregroundColor = .secondary
@@ -178,17 +181,17 @@ struct KanbanListView: View
     @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
     @State private var isWatching                 = false  /* Indicates whether the user is watching the list      */
 
-    private var effectiveAppearance: ItemAppearance
+    private var effectiveAppearance: ItemAppearance /* Effective appearance */
     {
         boardAppearance.resolved(list.appearance)
     }
 
-    private var usesNoteList: Bool
+    private var usesNoteList: Bool /* Uses note list */
     {
         hidesPanelHeader && list.singleListViewMode == .noteList
     }
 
-    private var listTint: KanbanListTint
+    private var listTint: KanbanListTint /* List tint */
     {
         effectiveAppearance.listBackground ?? .neutral
     }
@@ -200,7 +203,7 @@ struct KanbanListView: View
     /// Measured card heights keyed by stable card identity
     @State private var measuredCardHeights: [Int: CGFloat] = [:] /* Actual card-row heights keyed by identity */
     /// Dynamic Type scaling factor applied to card content
-    @ScaledMetric(relativeTo: .body) private var cardScale =
+    @ScaledMetric(relativeTo: .body) private var cardScale = /* Card scale */
     1.0 /* Text-size scale applied to minimum card dimensions */
     /// Transient state indicating a list title is being held for reordering
     @GestureState private var isHoldingList = false /* Long-press state enabling the list-reorder gesture */
@@ -215,12 +218,12 @@ struct KanbanListView: View
     /// @return     (some Gesture) hold/drag sequence with transient holding-state updates
     /// @post       Successful holds report optional drag values; ending calls onListDragEnded
     ///
-    private var canOpenDatedDay: Bool
+    private var canOpenDatedDay: Bool /* Open Dated Day availability */
     {
         assignedDate != nil && onOpenDayView != nil
     }
 
-    private var dayOpeningLabel: String
+    private var dayOpeningLabel: String /* Day opening label */
     {
 
         assignedDate.map
@@ -231,7 +234,7 @@ struct KanbanListView: View
         ?? list.title
     }
 
-    @ViewBuilder private var listSubtitle: some View
+    @ViewBuilder private var listSubtitle: some View /* List subtitle */
     {
 
         if canOpenDatedDay
@@ -266,7 +269,7 @@ struct KanbanListView: View
     }
 
 
-    private var listReorderGesture: some Gesture
+    private var listReorderGesture: some Gesture /* List reorder gesture */
     {  /* Long-press then drag sequence for reordering this list */
 
         LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
@@ -346,10 +349,10 @@ struct KanbanListView: View
     /// @return     (CGFloat) estimated collection height in points
     /// @post       No card order or layout state is modified
     ///
-    private var cardCollectionContentHeight: CGFloat
+    private var cardCollectionContentHeight: CGFloat /* Card collection content height */
     {  /* Total card content height including row spacing */
 
-        let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero)
+        let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero) /* Row height */
         {
 
         height, card in /* Accumulated measured or estimated card heights  */
@@ -375,10 +378,10 @@ struct KanbanListView: View
     /// @return     (CGFloat) visible card-collection height
     /// @post       Header measurement and card content remain unchanged
     ///
-    private var cardCollectionHeight: CGFloat
+    private var cardCollectionHeight: CGFloat /* Card collection height */
     {  /* Card collection height capped by the remaining list viewport */
 
-        let availableHeight = max(
+        let availableHeight = max( /* Available height */
             1, availableListHeight - (hidesPanelHeader ? 0 : headerHeight) - 24) /* Vertical space remaining after header and panel padding      */
 
         return min(cardCollectionContentHeight, availableHeight)
@@ -412,7 +415,7 @@ struct KanbanListView: View
     }
 
 
-    private var cardDropSurface: some View
+    private var cardDropSurface: some View /* Card drop surface */
     {  /* Native drop receiver covering the list's card collection */
 
         BoardCardDropSurface(
@@ -441,7 +444,7 @@ struct KanbanListView: View
     /// @details    Keeps header gestures and measurement in a separate compiler expression
     /// @return     (some View) the composed List panel content
     ///
-    @ViewBuilder private var panelHeader: some View
+    @ViewBuilder private var panelHeader: some View /* Panel header */
     {
 
         if !hidesPanelHeader
@@ -644,7 +647,7 @@ struct KanbanListView: View
     /// @details    Preserves row identity, ordering, drag targets, and collection sizing
     /// @return     (some View) the composed List panel content
     ///
-    @ViewBuilder private var cardCollection: some View
+    @ViewBuilder private var cardCollection: some View /* Card collection */
     {
 
         List
@@ -991,7 +994,7 @@ struct KanbanListView: View
         {
             heights in
 
-            var updated = measuredCardHeights
+            var updated = measuredCardHeights /* Edited value to publish */
 
             updated.merge(heights, uniquingKeysWith:
                 {
@@ -1024,7 +1027,7 @@ struct KanbanListView: View
     /// @post       Content edits delegate to the parent; tint/watch and edit mode remain local.
     ///             Ending the hold resets drag through the parent callback
     ///
-    var body: some View
+    var body: some View /* Kanban List layout */
     {  /* List panel and card collection */
 
 

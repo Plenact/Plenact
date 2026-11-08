@@ -41,13 +41,14 @@ struct TodayFocusFilterColor
     )?
     {
 
-        let selection = (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
+        let selection = /* Current selection state */
+            (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
         // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral
-        let light: [Int: Int] = [
+        let light: [Int: Int] = [ /* Light-appearance color */
             1: 0x1D4ED8, 2: 0xB42336, 4: 0x276524,
             3: 0x7E22CE, 5: 0x00666B, 6: 0x9A4100, 7: 0x535766
         ]
-        let night: [Int: Int] = [
+        let night: [Int: Int] = [ /* Night lookup entries */
             1: 0x93B8FF, 2: 0xFF9BA8, 4: 0xA3DA83,
             3: 0xD3A6FF, 5: 0x70D8D4, 6: 0xFFBB78, 7: 0xC9CBD4
         ]
@@ -105,41 +106,41 @@ struct TodayFocusSection: View
 
     let list:              KanbanList?   /* Canonical Week list matching the current local weekday */
     let cards:             [KanbanCard]  /* Non-divider cards on that list                         */
-    let entries:           [TodayFocusEntry]
-    let groupsBySection:   Bool
-    var visibleItemCount:  Int = 4
-    let chronological:     Bool
+    let entries:           [TodayFocusEntry] /* Entries being processed */
+    let groupsBySection:   Bool /* Groups by section */
+    var visibleItemCount:  Int = 4 /* Visible item count */
+    let chronological:     Bool /* Time-ordered entries */
 
-    private var openCards: [KanbanCard]
+    private var openCards: [KanbanCard] /* Open cards */
     {
         entries.map(\.card)
     }
 
-    var includesImportant                             = false
-    var includesBookmarked                            = false
-    var includesUpNext                                = false
-    var filtersChangedAt:  Date?                      = nil
-    var bookmarkedCardIDs: Set<Int>                   = []
-    var importantCardIDs:  Set<Int>                   = []
-    var onChangeFilters:   (Bool, Bool, Bool) -> Void =
+    var includesImportant                             = false /* Includes important      */
+    var includesBookmarked                            = false /* Includes bookmarked     */
+    var includesUpNext                                = false /* Includes up next        */
+    var filtersChangedAt:  Date?                      = nil   /* Filters changed at      */
+    var bookmarkedCardIDs: Set<Int>                   = []    /* Bookmarked card i ds    */
+    var importantCardIDs:  Set<Int>                   = []    /* Important card i ds     */
+    var onChangeFilters:   (Bool, Bool, Bool) -> Void =       /* Change filters callback */
     {
         _, _, _ in
     }
 
-    var onRemoveBookmark: (Int) -> Void =
+    var onRemoveBookmark: (Int) -> Void = /* Remove bookmark callback */
     {
         _ in
     }
 
-    var onUpdateDate: (KanbanCard, Bool) -> Bool =
+    var onUpdateDate: (KanbanCard, Bool) -> Bool = /* Update date callback */
     {
         _, _ in false
     }
 
-    let onToggleCard:    (Int) -> Void /* Toggle local completion state */
-    let onOpenCard:      (KanbanCard) -> Void
-    let onDeleteCard:    (Int) -> Bool
-    let onOpenTodayList: () -> Void /* Open the focused single-list Today view */
+    let onToggleCard:    (Int) -> Void        /* Toggle local completion state           */
+    let onOpenCard:      (KanbanCard) -> Void /* Open card callback                      */
+    let onDeleteCard:    (Int) -> Bool        /* Delete card callback                    */
+    let onOpenTodayList: () -> Void           /* Open the focused single-list Today view */
 
     ///
     /// @fcn        TodayFocusSection.focusDateControl
@@ -184,30 +185,30 @@ struct TodayFocusSection: View
     }
 
 
-    private var isPad: Bool
+    private var isPad: Bool /* Pad state */
     {
         UIDevice.current.userInterfaceIdiom == .pad
     }
 
-    @ScaledMetric(relativeTo: .body) private var phoneRowHeight: CGFloat = 48
-    @ScaledMetric(relativeTo: .body) private var padRowHeight:   CGFloat = 54
-    @ScaledMetric(relativeTo: .body) private var phoneTaskSize:  CGFloat = 18
-    @ScaledMetric(relativeTo: .body) private var padTaskSize:    CGFloat = 20
+    @ScaledMetric(relativeTo: .body) private var phoneRowHeight: CGFloat = 48 /* Phone row height */
+    @ScaledMetric(relativeTo: .body) private var padRowHeight:   CGFloat = 54 /* Pad row height   */
+    @ScaledMetric(relativeTo: .body) private var phoneTaskSize:  CGFloat = 18 /* Phone task size  */
+    @ScaledMetric(relativeTo: .body) private var padTaskSize:    CGFloat = 20 /* Pad task size    */
 
-    private var rowHeight:                                       CGFloat
+    private var rowHeight:                                       CGFloat /* Row height */
     {
         isPad ? padRowHeight : phoneRowHeight
     }
 
-    @Environment(\.displayScale) private var displayScale
-    @State private var measuredListingHeight: CGFloat?
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var showsFilterChooser = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showsSelectionContext = true
-    @State private var contextRevision       = UUID()
+    @Environment(\.displayScale) private var displayScale /* Display scale */
+    @State private var measuredListingHeight: CGFloat? /* Measured listing height */
+    @Environment(\.colorScheme) private var colorScheme /* Color scheme */
+    @State private var showsFilterChooser = false /* Filter Chooser visibility */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @State private var showsSelectionContext = true /* Selection Context visibility */
+    @State private var contextRevision       = UUID() /* Context revision */
 
-    private var filterColor: Color
+    private var filterColor: Color /* Filter color */
     {
 
         TodayFocusFilterColor.color(
@@ -216,11 +217,11 @@ struct TodayFocusSection: View
     }
 
     @State private var selectedFocusCard: KanbanCard?  /* Pending item retained during visible tap feedback */
-    @State private var editingDateCard: KanbanCard?
-    @State private var editsStartDate = true
-    @State private var deletingCard: KanbanCard?
+    @State private var editingDateCard: KanbanCard? /* Editing date card */
+    @State private var editsStartDate = true /* Edits start date */
+    @State private var deletingCard: KanbanCard? /* Deleting card */
 
-    @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28
+    @ScaledMetric(relativeTo: .caption) private var headingHeight: CGFloat = 28 /* Heading height */
 
 
     ///
@@ -248,13 +249,13 @@ struct TodayFocusSection: View
     }
 
 
-    private var rowCapacity: Int
+    private var rowCapacity: Int /* Row capacity */
     {
 
         visibleItemCount == 0 ? max(entries.count, 1) : ((1 ... 12).contains(visibleItemCount) ? visibleItemCount : 4)
     }
 
-    private var visibleHeadingCount: Int
+    private var visibleHeadingCount: Int /* Visible heading count */
     {
         entries.prefix(rowCapacity).filter
         {
@@ -262,29 +263,29 @@ struct TodayFocusSection: View
         } .count
     }
 
-    private var rowsHeight: CGFloat
+    private var rowsHeight: CGFloat /* Rows height */
     {
 
         rowHeight * CGFloat(min(entries.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
     }
 
-    private var listingCapacity: CGFloat
+    private var listingCapacity: CGFloat /* Listing capacity */
     {
 
         rowHeight * CGFloat(rowCapacity) + headingHeight * CGFloat(visibleHeadingCount) + 3 / displayScale
     }
 
-    private var listingHeight: CGFloat
+    private var listingHeight: CGFloat /* Listing height */
     {
 
         measuredListingHeight ?? rowsHeight
     }
 
 
-    private var filterLabel: String?
+    private var filterLabel: String? /* Filter label */
     {
 
-        let selected = [
+        let selected = [ /* Current selection */
             (includesUpNext, "Up Next"), (includesImportant, "Important"), (includesBookmarked, "Bookmarked")
         ]
         .filter
@@ -299,7 +300,7 @@ struct TodayFocusSection: View
     }
 
 
-    private var focusTitle: some View
+    private var focusTitle: some View /* Focus title */
     {
 
         Button
@@ -441,7 +442,7 @@ struct TodayFocusSection: View
     ///             schedule information when combined with other selection sources
     /// @return     (Bool) whether time and whole-list progress belong in this Focus presentation
     ///
-    private var showsSchedule: Bool
+    private var showsSchedule: Bool /* Schedule visibility */
     {
 
         TodayFocusPresentation.showsSchedule(important: includesImportant, bookmarked: includesBookmarked,
@@ -449,10 +450,10 @@ struct TodayFocusSection: View
     }
 
 
-    private var completionButton: some View
+    private var completionButton: some View /* Completion button */
     {
 
-        let completedCount = cards.filter(\.isTitleChecked).count
+        let completedCount = cards.filter(\.isTitleChecked).count /* Completed count */
 
         return Button(action: onOpenTodayList)
         {
@@ -474,7 +475,7 @@ struct TodayFocusSection: View
     }
 
 
-    private var focusRows: some View
+    private var focusRows: some View /* Focus rows */
     {
 
         List
@@ -484,7 +485,7 @@ struct TodayFocusSection: View
             {
                 entry in
 
-                let card = entry.card
+                let card = entry.card /* Card under consideration */
 
                 VStack(alignment: .leading, spacing: 0)
                 {
@@ -559,7 +560,8 @@ struct TodayFocusSection: View
                                 else
                                 {
 
-                                    let hasBookmark = bookmarkedCardIDs.contains(card.id)
+                                    let hasBookmark = /* Bookmark availability */
+                                        bookmarkedCardIDs.contains(card.id)
 
                                     HStack(spacing: 3)
                                     {
@@ -700,7 +702,7 @@ struct TodayFocusSection: View
     /// @pre        cards and openCards describe the supplied list and exclude section dividers
     /// @post       Completion and navigation are delegated to supplied callbacks
     ///
-    var body: some View
+    var body: some View /* Today Focus layout */
     {  /* Weekday-list progress and unfinished-card shortcuts */
 
         VStack(alignment: .leading, spacing: 10)
@@ -841,7 +843,7 @@ struct TodayFocusSection: View
             {
                 value, kind in
 
-                var edited = card
+                var edited = card /* Snapshot after requested edits */
 
                 if editsStartDate
                 {
@@ -981,16 +983,17 @@ struct TodayFocusSection: View
 struct TodayFocusCardDetailView: View
 {
 
-    @AppStorage(BoardAppearance.weekStorageKey) private var subtitleBoardAppearanceData = Data()
+    @AppStorage(BoardAppearance.weekStorageKey) private var subtitleBoardAppearanceData = /* Subtitle board appearance data */
+        Data()
 
 
-    @State private var keyboardCard: KanbanCard?
-    let card:                        KanbanCard
-    @Binding var lists:              [KanbanList]
-    @Binding var labelLibrary:       LabelLibrary
-    @Binding var savedCardIDs:       Set<Int>
-    let currentUserName:             String
-    let onDelete:                    (Int) -> Bool
+    @State private var keyboardCard: KanbanCard?   /* Keyboard card            */
+    let card:                        KanbanCard    /* Card under consideration */
+    @Binding var lists:              [KanbanList]  /* Ordered List records     */
+    @Binding var labelLibrary:       LabelLibrary  /* Label library            */
+    @Binding var savedCardIDs:       Set<Int>      /* Saved card i ds          */
+    let currentUserName:             String        /* Current user name        */
+    let onDelete:                    (Int) -> Bool /* Delete the selected item */
 
 
     ///
@@ -1006,7 +1009,7 @@ struct TodayFocusCardDetailView: View
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
 
-        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
@@ -1024,10 +1027,10 @@ struct TodayFocusCardDetailView: View
             })
     }
 
-    var body: some View
+    var body: some View /* Today Focus Card Detail layout */
     {
 
-        let card = keyboardCard ?? self.card
+        let card = keyboardCard ?? self.card /* Card under consideration */
 
         NavigationStack
         {
@@ -1152,7 +1155,7 @@ enum TodayFocusDateUpdate
             return false
         }
 
-        var current = lists[owner].cards[index]
+        var current = lists[owner].cards[index] /* Current operation snapshot */
 
         guard !current.isEditingLocked else
         {
@@ -1195,8 +1198,8 @@ enum TodayFocusDateUpdate
 private struct TodayFocusItemMark: View
 {
 
-    let card: KanbanCard
-    @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 18
+    let card: KanbanCard /* Card under consideration */
+    @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 18 /* Mark size */
 
 
     ///
@@ -1207,7 +1210,7 @@ private struct TodayFocusItemMark: View
     ///             accessible completion label and action
     /// @return     (some View) a consistently sized mark subordinate to the item title
     ///
-    var body: some View
+    var body: some View /* Today Focus Item Mark layout */
     {
         Group
         {
@@ -1253,8 +1256,8 @@ private struct TodayFocusItemMark: View
 private struct TodayFocusSelectionStyle: ButtonStyle
 {
 
-    let isSelected: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let isSelected: Bool /* Selected state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
 
     ///
@@ -1270,8 +1273,8 @@ private struct TodayFocusSelectionStyle: ButtonStyle
     func makeBody(configuration: Configuration) -> some View
     {
 
-        let highlighted = configuration.isPressed || isSelected
-        let gold        = Color(red: 0.90, green: 0.69, blue: 0.27)
+        let highlighted = configuration.isPressed || isSelected /* Current-day highlight state */
+        let gold        = Color(red: 0.90, green: 0.69, blue: 0.27) /* Gold operation value */
 
         configuration.label
             .compositingGroup()

@@ -19,12 +19,12 @@ struct SectionTransferReceipt
 {
 
 
-    let before:      [PersonalCollection]
-    let after:       [PersonalCollection]
-    let source:      WorkspaceListReference
-    let destination: WorkspaceListReference
-    let mapping:     [Int: Int]
-    let heading:     KanbanCard
+    let before:      [PersonalCollection]   /* State before the operation      */
+    let after:       [PersonalCollection]   /* State after the operation       */
+    let source:      WorkspaceListReference /* Source value for this operation */
+    let destination: WorkspaceListReference /* Destination for the operation   */
+    let mapping:     [Int: Int]             /* Source-to-target identity map   */
+    let heading:     KanbanCard             /* Section heading text            */
 
 
     ///
@@ -136,27 +136,29 @@ enum SectionTransfer
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let original    = owners
-        let sourceCards = owners[from].lists[fromList].cards
-        let end         =
+        let original    = owners                             /* Baseline before changes */
+        let sourceCards = owners[from].lists[fromList].cards /* Source cards            */
+        let end         =                                    /* Range end               */
         sourceCards.indices.dropFirst(start + 1).first
         {
             sourceCards[$0].sectionHeading != nil
         }
 
         ?? sourceCards.count
-        let block = Array(sourceCards[start ..< end])
-        let ids   = Set(block.map(\.id))
+        let block = Array(sourceCards[start ..< end]) /* Current grouped content */
+        let ids   = Set(block.map(\.id))              /* Record identifiers      */
 
         guard ids.count == block.count else
         {
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let sameOwner           = source.ownerID == destination.ownerID
-        let reserved            = Set(owners[to].lists.flatMap(\.allCards).map(\.id))
-        var next                = max(reserved.max() ?? -1, ids.max() ?? -1)
-        var mapping: [Int: Int] = [:]
+        let sameOwner           = source.ownerID == destination.ownerID /* Same owner */
+        let reserved            = /* Reserved record identities */
+            Set(owners[to].lists.flatMap(\.allCards).map(\.id))
+        var next                = /* Candidate next state */
+            max(reserved.max() ?? -1, ids.max() ?? -1)
+        var mapping: [Int: Int] = [:] /* Source-to-target identity map */
 
         for card in block
         {
@@ -164,7 +166,7 @@ enum SectionTransfer
             if !sameOwner && reserved.contains(card.id)
             {
 
-                let (value, overflow) = next.addingReportingOverflow(1)
+                let (value, overflow) = next.addingReportingOverflow(1) /* Value overflow */
 
                 guard !overflow else
                 {
@@ -184,7 +186,7 @@ enum SectionTransfer
 
         }
 
-        let dated = block.flatMap
+        let dated = block.flatMap /* Calendar-backed owner */
         {
             card -> [Date] in
             [card.startDateKind == .time ? nil : card.startDate, card.dueDateKind == .time ? nil : card.dueDate]
@@ -195,8 +197,8 @@ enum SectionTransfer
 
         }
 
-        let anchor = sourceDay ?? dated.min()
-        let delta: Int
+        let anchor = sourceDay ?? dated.min() /* Layout anchor position       */
+        let delta: Int                        /* Difference from the baseline */
 
         if shiftDates, let destinationDay, let anchor
         {
@@ -232,11 +234,11 @@ enum SectionTransfer
         func checklist(_ sourceChecklist: KanbanChecklist, owner: UUID, freeze: Bool) -> KanbanChecklist
         {
 
-            let items = sourceChecklist.items.map
+            let items = sourceChecklist.items.map /* Items being processed */
             {
                 original -> KanbanChecklistItem in
 
-                var item = original
+                var item = original /* Item under consideration */
 
                 if case .actionDetail(var detail) = item.content
                 {
@@ -261,7 +263,7 @@ enum SectionTransfer
 
                 }
 
-                let linked: Bool =
+                let linked: Bool = /* Value linked to another owner */
                 {
 
                     if case .linkedCard = item.content
@@ -308,12 +310,13 @@ enum SectionTransfer
                 completedItemIndices: sourceChecklist.completedItemIndices)
         }
 
-        var snapshot = owners
-        let moved    = block.map
+        var snapshot = owners    /* Working state snapshot */
+        let moved    = block.map /* Item after transfer    */
         {
             card -> KanbanCard in
 
-            var result = card.replacingLocation(id: mapping[card.id]!, listTitle: snapshot[to].lists[toList].title)
+            var result = /* Accumulated output value */
+                card.replacingLocation(id: mapping[card.id]!, listTitle: snapshot[to].lists[toList].title)
 
             if delta != 0
             {
@@ -356,7 +359,7 @@ enum SectionTransfer
             for index in snapshot.indices
             {
 
-                let owner = snapshot[index].id
+                let owner = snapshot[index].id /* Owning collection or Week */
 
 
                 ///
@@ -372,7 +375,7 @@ enum SectionTransfer
                 func redirect(_ card: KanbanCard) -> KanbanCard
                 {
 
-                    var result = card
+                    var result = card /* Accumulated output value */
 
                     // Moved cards were already redirected; do not apply an ID mapping twice
                     if owner == destination.ownerID && moved.contains(where:
@@ -404,14 +407,14 @@ enum SectionTransfer
 
         }
 
-        let changed = Set(snapshot.indices.filter
+        let changed = Set(snapshot.indices.filter /* Value with requested edits */
             {
                 snapshot[$0] != original[$0]
             } .map
             {
                 snapshot[$0].id
             })
-        let receipt = SectionTransferReceipt(
+        let receipt = SectionTransferReceipt( /* Saved-operation verification */
             before: original.filter
             {
                 changed.contains($0.id)

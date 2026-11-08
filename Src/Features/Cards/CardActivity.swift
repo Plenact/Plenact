@@ -24,9 +24,9 @@ struct ActivityRow: View
 {
 
 
-    let text:       String      /* The main text content of the activity row */
-    let actorColor: Color       /* The icon color for the activity actor     */
-    let onDelete:   () -> Void  /* Activity deletion callback                */
+    let text:       String     /* The main text content of the activity row */
+    let actorColor: Color      /* The icon color for the activity actor     */
+    let onDelete:   () -> Void /* Activity deletion callback                */
 
 
     ///
@@ -38,7 +38,7 @@ struct ActivityRow: View
     /// @post       Deletion delegates to onDelete rather than removing a stored event directly
     /// @note       Today at 7:00 AM is fixed display copy, not a timestamp from persisted activity
     ///
-    var body: some View
+    var body: some View /* Activity layout */
     {  /* Generated activity text and timestamp */
 
 
@@ -84,9 +84,9 @@ struct CommentActivityRow: View
 {
 
 
-    let comment:     KanbanComment  /* The comment data rendered by the row           */
-    let memberColor: Color          /* The assigned icon color for the comment author */
-    let onDelete:    () -> Void     /* The action invoked when the comment is deleted */
+    let comment:     KanbanComment /* The comment data rendered by the row           */
+    let memberColor: Color         /* The assigned icon color for the comment author */
+    let onDelete:    () -> Void    /* The action invoked when the comment is deleted */
 
     ///
     /// @fcn        CommentActivityRow.body
@@ -97,7 +97,7 @@ struct CommentActivityRow: View
     /// @return     (some View) deletable comment activity row
     /// @post       Rendering does not modify the comment; deletion delegates to onDelete
     ///
-    var body: some View
+    var body: some View /* Comment Activity layout */
     {  /* Posted comment and authoring time */
 
         ActivitySwipeRow(onDelete: onDelete)
@@ -188,7 +188,7 @@ struct ActivitySwipeRow<Content: View>: View
     /// @post       Deletion invokes onDelete without a separate confirmation dialog;
     ///             smaller horizontal releases animate closed or open according to the threshold
     ///
-    var body: some View
+    var body: some View /* Activity Swipe layout */
     {  /* Swipe-to-delete activity container */
 
 
@@ -282,12 +282,12 @@ struct ItemReactionStrip: View
 {
 
 
-    let reactions:      [ItemEmojiReaction]
-    let authorID:       UUID?
-    let onToggle:       (String) -> Void
-    let onAdd:          () -> Void
+    let reactions:      [ItemEmojiReaction] /* Stored item reactions  */
+    let authorID:       UUID?               /* Author ID              */
+    let onToggle:       (String) -> Void    /* Toggle item completion */
+    let onAdd:          () -> Void          /* Add callback           */
 
-    private var emojis: [String]
+    private var emojis: [String] /* Available emoji choices */
     {
         reactions.reduce(into: [])
         {
@@ -300,7 +300,7 @@ struct ItemReactionStrip: View
 
     }
 
-    var body: some View
+    var body: some View /* Item Reaction Strip layout */
     {
 
         ScrollView(.horizontal)
@@ -313,12 +313,12 @@ struct ItemReactionStrip: View
                 {
                     emoji in
 
-                    let matching = reactions.filter
+                    let matching = reactions.filter /* Values matching the query */
                     {
                         $0.emoji == emoji
                     }
 
-                    let mine = matching.contains
+                    let mine = matching.contains /* Mine operation value */
                     {
                         $0.authorID == authorID
                     }
@@ -378,11 +378,11 @@ struct ItemReactionPicker: View
 {
 
 
-    let selected: Set<String>
-    let onChoose: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var custom = ""
-    private let choices       = [
+    let selected: Set<String>                   /* Current selection              */
+    let onChoose: (String) -> Void              /* Choose callback                */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var custom = ""              /* User-defined configuration     */
+    private let choices       = [               /* Available user selections      */
             "❤️", "👍", "🎉", "😊", "✨", "💪", "🔥", "🙌", "🤔", "🙏", "👏", "😂", "😍", "🥰", "🌱", "☀️", "😅", "😮", "😔", "💡", "🎯", "🫶",
             "😎", "✅"
     ]
@@ -404,7 +404,7 @@ struct ItemReactionPicker: View
         dismiss()
     }
 
-    var body: some View
+    var body: some View /* Item Reaction Picker layout */
     {
 
         NavigationStack
@@ -500,9 +500,9 @@ struct ItemReactionPreview: View
 {
 
 
-    let card:           KanbanCard
+    let card:           KanbanCard /* Card under consideration */
 
-    private var emojis: [String]
+    private var emojis: [String] /* Available emoji choices */
     {
 
         card.previewReactions.reduce(into: [])
@@ -516,7 +516,7 @@ struct ItemReactionPreview: View
 
     }
 
-    var body: some View
+    var body: some View /* Item Reaction Preview layout */
     {
 
         if !emojis.isEmpty
@@ -567,7 +567,7 @@ struct ItemReactionPreview: View
 
                     Text(emoji)
 
-                    let count = card.previewReactions.filter
+                    let count = card.previewReactions.filter /* Number of entries */
                     {
                         $0.emoji == emoji
                     } .count

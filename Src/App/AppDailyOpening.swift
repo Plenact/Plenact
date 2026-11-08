@@ -15,8 +15,8 @@ import UIKit.UIGestureRecognizerSubclass
 enum AppDailyOpening
 {
 
-    static let domain = "com.plenact.app.device-navigation"
-    static let key    = "lastDailyWeekOpening"
+    static let domain = "com.plenact.app.device-navigation" /* Lookup or storage namespace */
+    static let key    = "lastDailyWeekOpening"              /* Lookup or persistence key   */
 
 
     /// @fcn AppDailyOpening.claim
@@ -37,7 +37,7 @@ enum AppDailyOpening
             return false
         }
 
-        let day = PlanningDate.key(date, calendar: calendar)
+        let day = PlanningDate.key(date, calendar: calendar) /* Day under consideration */
 
         guard defaults.string(forKey: key) != day else
         {
@@ -76,7 +76,8 @@ extension AppRootView
         }
 
         // A not-yet-mounted Week must read the same top position as an already mounted Week
-        let memory = BoardViewportMemory(owner: week.id.uuidString)
+        let memory = /* Owner-scoped viewport state */
+            BoardViewportMemory(owner: week.id.uuidString)
 
         memory.resetScrollOffsets()
 
@@ -106,10 +107,10 @@ extension AppRootView
 struct DailyWeekOverview
 {
 
-    static let delay: Duration = .milliseconds(1250)
+    static let delay: Duration = .milliseconds(1250) /* Time before starting the transition */
 
-    private(set) var id: UUID?
-    private(set) var deadline: ContinuousClock.Instant?
+    private(set) var id: UUID?                          /* Record UUID                   */
+    private(set) var deadline: ContinuousClock.Instant? /* Monotonic transition deadline */
 
 
     /// Arm only after the daily opening has been claimed
@@ -206,7 +207,7 @@ extension AppRootView
 final class DailyOverviewFade
 {
 
-    private(set) weak var overlay: UIView?
+    private(set) weak var overlay: UIView? /* Temporary display overlay */
 
 
     /// Switch tabs beneath a noninteractive snapshot, respecting Reduce Motion
@@ -270,15 +271,15 @@ final class DailyOverviewFade
 struct DailyOverviewProbe: UIViewControllerRepresentable
 {
 
-    let armed: Bool
-    let onVisible: (Bool) -> Void
-    let onInteraction: () -> Void
+    let armed: Bool               /* Pending one-shot transition */
+    let onVisible: (Bool) -> Void /* Visible callback            */
+    let onInteraction: () -> Void /* Interaction callback        */
 
 
     final class TouchObserver: UIGestureRecognizer
     {
 
-        var interaction: (() -> Void)?
+        var interaction: (() -> Void)? /* Interaction callback */
 
 
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent)
@@ -309,11 +310,11 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
     final class Controller: UIViewController
     {
 
-        var visible: ((Bool) -> Void)?
-        var armed                             = false
-        let observer                          = TouchObserver()
-        var notifications: [NSObjectProtocol] = []
-        weak var observedWindow: UIWindow?
+        var visible: ((Bool) -> Void)? /* Current visibility state */
+        var armed                             = false /* Pending one-shot transition */
+        let observer                          = TouchObserver() /* Native interaction observer */
+        var notifications: [NSObjectProtocol] = [] /* Installed notification observers */
+        weak var observedWindow: UIWindow? /* Observed window */
 
 
         override func viewDidAppear(_ animated: Bool)
@@ -399,7 +400,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
     func makeUIViewController(context: Context) -> Controller
     {
 
-        let controller = Controller()
+        let controller = Controller() /* Native view controller */
 
         controller.view.isUserInteractionEnabled = false
 

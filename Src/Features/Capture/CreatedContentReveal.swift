@@ -21,10 +21,10 @@ struct CreatedContentTarget: Identifiable, Equatable
 {
 
 
-    let id = UUID()
-    let listID:    Int
-    let cardID:    Int
-    let createdAt: Date
+    let id = UUID()     /* Record UUID                 */
+    let listID:    Int  /* Owner-local List identifier */
+    let cardID:    Int  /* Owner-local Card identifier */
+    let createdAt: Date /* Created at                  */
 
 
     ///
@@ -61,8 +61,8 @@ final class CreatedContentReveal: ObservableObject
 {
 
 
-    static let shared = CreatedContentReveal()
-    @Published private(set) var target: CreatedContentTarget?
+    static let shared = CreatedContentReveal()                /* Shared operation value     */
+    @Published private(set) var target: CreatedContentTarget? /* Target under consideration */
 
 
     ///
@@ -124,12 +124,12 @@ struct RevealCreatedContent: ViewModifier
 {
 
 
-    let lists:         [KanbanList]
-    var existingProxy: ScrollViewProxy? = nil
-    @ObservedObject private var reveal  = CreatedContentReveal.shared
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let lists:         [KanbanList] /* Ordered List records */
+    var existingProxy: ScrollViewProxy? = nil /* Existing proxy */
+    @ObservedObject private var reveal  = CreatedContentReveal.shared /* Reveal operation value */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
-    private var request: CreatedContentTarget?
+    private var request: CreatedContentTarget? /* Pending lookup request */
     {
 
         reveal.target.flatMap

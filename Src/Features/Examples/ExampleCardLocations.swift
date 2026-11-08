@@ -19,12 +19,15 @@ enum ExampleCardLocations
 {
 
 
-    static let gym                    = "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
-    static let work                   = "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
-    static let migrationKey           = "Plenact.ExampleCardLocations.Applied.v1"
-    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1"
-    private static let boardKey       = "Plenact.Board.v1"
-    private static let collectionsKey = "Plenact.PersonalCollections.v1"
+    static let gym                    = /* Workout Card fixture */
+        "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
+    static let work                   = /* Work display text */
+        "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
+    static let migrationKey           = /* Migration key */
+        "Plenact.ExampleCardLocations.Applied.v1"
+    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1" /* Backup key */
+    private static let boardKey       = "Plenact.Board.v1" /* Board key */
+    private static let collectionsKey = "Plenact.PersonalCollections.v1" /* Collections key */
 
     ///
     /// Retains the complete workspace values published after a successful location update
@@ -35,9 +38,9 @@ enum ExampleCardLocations
     struct Snapshot
     {
 
-        let lists:       [KanbanList]
-        let calendar:    PlanningCalendarDocument
-        let collections: [PersonalCollection]
+        let lists:       [KanbanList]             /* Ordered List records          */
+        let calendar:    PlanningCalendarDocument /* Date calculation calendar     */
+        let collections: [PersonalCollection]     /* Retained personal collections */
 
     }
 
@@ -90,7 +93,7 @@ enum ExampleCardLocations
                 return list
             }
 
-            let cards = list.cards.map
+            let cards = list.cards.map /* Card records under consideration */
             {
 
             card in
@@ -102,7 +105,7 @@ enum ExampleCardLocations
                     return card
                 }
 
-                var updated = card
+                var updated = card /* Edited value to publish */
 
                 updated.location = location
 
@@ -115,7 +118,7 @@ enum ExampleCardLocations
                 return list
             }
 
-            var updated = list
+            var updated = list /* Edited value to publish */
 
             updated.cards = cards
 
@@ -146,7 +149,7 @@ enum ExampleCardLocations
                 return collection
             }
 
-            var updated = collection
+            var updated = collection /* Edited value to publish */
 
             updated.lists = updating(collection.lists)
 
@@ -182,14 +185,14 @@ enum ExampleCardLocations
             return nil
         }
 
-        let updatedLists       = updating(lists)
-        let updatedCollections = updating(collections)
-        var updatedCalendar    = calendar
+        let updatedLists       = updating(lists)       /* Updated lists       */
+        let updatedCollections = updating(collections) /* Updated collections */
+        var updatedCalendar    = calendar              /* Updated calendar    */
 
         for index in updatedCalendar.weeks.indices
         {
 
-            let week = updatedCalendar.weeks[index]
+            let week = updatedCalendar.weeks[index] /* Dated Week under consideration */
 
             if week.startKey == updatedCalendar.currentWeekKey
             {
@@ -207,7 +210,7 @@ enum ExampleCardLocations
 
         }
 
-        var library = try PlanningRoutineStore.load(from: defaults)
+        var library = try PlanningRoutineStore.load(from: defaults) /* Retained library contents */
 
         for index in library.templates.indices where library.templates[index].collection.isActive
         {
@@ -218,14 +221,14 @@ enum ExampleCardLocations
 
         try PlanningRoutineStore.validate(library)
 
-        let encoder      = JSONEncoder()
-        let replacements = [
+        let encoder      = JSONEncoder() /* JSON encoding configuration */
+        let replacements = [             /* Replacements lookup entries */
             boardKey: try encoder.encode(updatedLists),
             PlanningCalendarStore.key: try encoder.encode(updatedCalendar),
             collectionsKey: try encoder.encode(updatedCollections),
             PlanningRoutineStore.key: try encoder.encode(library)
         ]
-        var previous: [String: Data] = [:]
+        var previous: [String: Data] = [:] /* Previous value for comparison */
 
         for key in replacements.keys
         {
@@ -234,7 +237,7 @@ enum ExampleCardLocations
 
         }
 
-        let backup = try encoder.encode(previous)
+        let backup = try encoder.encode(previous) /* Recoverable native snapshot */
 
         defaults.set(backup, forKey: backupKey)
         guard defaults.synchronize(), defaults.data(forKey: backupKey) == backup else

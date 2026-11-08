@@ -22,44 +22,46 @@ struct QuickNoteComposer: View
 {
 
 
-    @State private var keyboardContextID     = UUID()
-    @StateObject private var attachmentDraft = CreationAttachmentDraft()
+    @State private var keyboardContextID     = UUID() /* Keyboard context ID */
+    @StateObject private var attachmentDraft = CreationAttachmentDraft() /* Attachment draft */
     @Binding var lists: [KanbanList] /* Current destination lists */
-    let onSave:         (Int, String, String, String, ItemPresentation?, [String]?) -> Void
-    let template:       QuickCaptureTemplate?
-    let captureAction:  TodayCaptureAction?
-    let draftKey:       String?
-    @State private var acceptsDraftEdits = true
-    let onSaveCapture:                ((QuickCaptureSubmission) -> Bool)?
-    @State private var drawings:      [DrawingCaptureDraft] = []
-    @State private var drawingToEdit: DrawingCaptureDraft?
-    @State private var offeredDrawing                      = false
-    @State private var photos:         [QuickCapturePhoto] = []
-    @State private var photoSelection: [PhotosPickerItem]  = []
-    @State private var showsPhotoSources                   = false
-    @State private var showsPhotoLibrary                   = false
-    @State private var showsCamera                         = false
-    @State private var offeredPhotoSources                 = false
-    @State private var importingPhotos                     = false
-    @State private var mediaError: String?
-    @StateObject private var voice                             = QuickCaptureVoice()
-    @State private var voiceSaveOption: VoiceCaptureSaveOption = .both
-    @State private var replaceRecording                        = false
-    @State private var hasStartDate                            = false
-    @State private var hasStopDate                             = false
-    @State private var startDate                               = Date.now
-    @State private var stopDate                                = Date.now
-    @State private var includesDateTime                        = false
-    @Environment(\.scenePhase) private var scenePhase
+    let onSave:         (Int, String, String, String, ItemPresentation?, [String]?) -> Void /* Persist the edited value */
+    let template:       QuickCaptureTemplate? /* Reusable planning template */
+    let captureAction:  TodayCaptureAction? /* Capture action */
+    let draftKey:       String? /* Draft key */
+    @State private var acceptsDraftEdits = true /* Accepts draft edits */
+    let onSaveCapture:                ((QuickCaptureSubmission) -> Bool)? /* Save capture callback */
+    @State private var drawings:      [DrawingCaptureDraft] = [] /* Editable drawing originals */
+    @State private var drawingToEdit: DrawingCaptureDraft? /* Drawing to edit */
+    @State private var offeredDrawing                      = false /* Offered drawing */
+    @State private var photos:         [QuickCapturePhoto] = /* Photo selections or gallery entries */
+        []
+    @State private var photoSelection: [PhotosPickerItem]  = []    /* Photo selection          */
+    @State private var showsPhotoSources                   = false /* Photo Sources visibility */
+    @State private var showsPhotoLibrary                   = false /* Photo Library visibility */
+    @State private var showsCamera                         = false /* Camera visibility        */
+    @State private var offeredPhotoSources                 = false /* Offered photo sources    */
+    @State private var importingPhotos                     = false /* Importing photos         */
+    @State private var mediaError: String?                         /* Media error              */
+    @StateObject private var voice                             =   /* Speech capture state     */
+        QuickCaptureVoice()
+    @State private var voiceSaveOption: VoiceCaptureSaveOption = .both /* Voice save option */
+    @State private var replaceRecording                        = false /* Replace recording */
+    @State private var hasStartDate                            = false /* Start Date availability */
+    @State private var hasStopDate                             = false /* Stop Date availability */
+    @State private var startDate                               = Date.now /* Start date */
+    @State private var stopDate                                = Date.now /* Stop date */
+    @State private var includesDateTime                        = false /* Includes date time */
+    @Environment(\.scenePhase) private var scenePhase /* Scene phase */
 
-    private var schedule: QuickCaptureSchedule
+    private var schedule: QuickCaptureSchedule /* Item date and time settings */
     {
 
         QuickCaptureSchedule(
             start: hasStartDate ? startDate : nil, stop: hasStopDate ? stopDate : nil, includesTime: includesDateTime)
     }
 
-    private var voiceReady: Bool
+    private var voiceReady: Bool /* Voice ready */
     {
 
         guard captureAction == .voice else
@@ -75,13 +77,13 @@ struct QuickNoteComposer: View
 
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
-    @State private var presentation: ItemPresentation
-    @State private var createdAt   = Date.now
-    @State private var subtitle    = ""
-    @State private var title       = ""      /* New card title                   */
-    @State private var description = ""      /* Optional card detail             */
-    @State private var selectedListID: Int?  /* Destination selected in the form */
-    @State private var actions:        [KanbanChecklistItem]
+    @State private var presentation: ItemPresentation        /* Current presentation style       */
+    @State private var createdAt   = Date.now                /* Created at                       */
+    @State private var subtitle    = ""                      /* Supporting item text             */
+    @State private var title       = ""                      /* New card title                   */
+    @State private var description = ""                      /* Optional card detail             */
+    @State private var selectedListID: Int?                  /* Destination selected in the form */
+    @State private var actions:        [KanbanChecklistItem] /* Available item operations        */
 
 
     ///
@@ -121,7 +123,7 @@ struct QuickNoteComposer: View
         _lists = lists
         self.draftKey = draftKey
 
-        let savedDraft = draftKey.map
+        let savedDraft = draftKey.map /* Saved draft */
         {
             ListCreationDraft.load(key: $0)
         }
@@ -135,7 +137,8 @@ struct QuickNoteComposer: View
                 })?.newItemPresentation ?? .card)
 
         // Explicit inline writing takes priority over a previously retained composer title
-        let suppliedTitle = initialTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : initialTitle
+        let suppliedTitle = /* Supplied title */
+            initialTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : initialTitle
 
         _title = State(
             initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? suppliedTitle ?? savedDraft?.title
@@ -164,7 +167,7 @@ struct QuickNoteComposer: View
     /// @return     (String) normalized title
     /// @post       The editable title draft remains unchanged
     ///
-    private var trimmedTitle: String
+    private var trimmedTitle: String /* Trimmed title */
     {  /* Card title without surrounding whitespace */
 
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -181,7 +184,7 @@ struct QuickNoteComposer: View
     /// @return     (some View) large-sheet navigation form with Cancel and Add actions
     /// @post       Cancel discards the draft; creating/persisting a submitted card belongs to onSave
     ///
-    private var destinationPicker: some View
+    private var destinationPicker: some View /* Destination picker */
     {
 
         Picker("List", selection: $selectedListID)
@@ -198,7 +201,7 @@ struct QuickNoteComposer: View
     }
 
 
-    private var drawingControls: some View
+    private var drawingControls: some View /* Drawing controls */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -248,7 +251,7 @@ struct QuickNoteComposer: View
 
     }
 
-    private var dateControls: some View
+    private var dateControls: some View /* Date controls */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -284,7 +287,7 @@ struct QuickNoteComposer: View
 
     }
 
-    private var voiceControls: some View
+    private var voiceControls: some View /* Voice controls */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -392,7 +395,7 @@ struct QuickNoteComposer: View
     }
 
 
-    private var photoControls: some View
+    private var photoControls: some View /* Photo controls */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -463,8 +466,9 @@ struct QuickNoteComposer: View
             return
         }
 
-        let status  = AVCaptureDevice.authorizationStatus(for: .video)
-        var allowed = status == .authorized
+        let status  = /* Current operation status */
+            AVCaptureDevice.authorizationStatus(for: .video)
+        var allowed = status == .authorized /* Permitted input values */
 
         if status == .notDetermined
         {
@@ -605,7 +609,7 @@ struct QuickNoteComposer: View
     }
 
 
-    var body: some View
+    var body: some View /* Quick Note Composer layout */
     {  /* New-card form and destination controls */
 
 
@@ -824,7 +828,7 @@ struct QuickNoteComposer: View
                             return
                         }
 
-                        let editedActions = actions.map
+                        let editedActions = actions.map /* Edited actions */
                         {
                             $0.title.trimmingCharacters(in: .whitespacesAndNewlines)
                         }
@@ -833,13 +837,13 @@ struct QuickNoteComposer: View
                             !$0.isEmpty
                         }
 
-                        let originalBody =
+                        let originalBody = /* Original body */
                         presentation == .note
                         ? description : description.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let body =
+                        let body = /* Note or description text */
                         captureAction == .voice
                         ? voiceSaveOption.body(existing: originalBody, transcript: voice.transcript) : originalBody
-                        let actionTitles: [String]? =
+                        let actionTitles: [String]? = /* Action titles */
                         template != nil || captureAction == .checklist || !editedActions.isEmpty
                         ? editedActions : nil
 
@@ -854,7 +858,7 @@ struct QuickNoteComposer: View
                             do
                             {
 
-                                let audio =
+                                let audio = /* Audio attachment content */
                                 captureAction == .voice && voiceSaveOption.savesAudio ? try voice.audioData() : nil
 
                                 guard
@@ -1164,11 +1168,11 @@ struct NewPersonalNoteComposer: View
 {
 
 
-    let availablePersonalLists:        [PersonalCollection]
-    let onSave:                        (UUID, QuickCaptureSubmission, Date) throws -> Void
-    @State private var destinationIDs: [UUID]
-    @State private var createdAt = Date.now
-    private let initialCollectionID: UUID
+    let availablePersonalLists:        [PersonalCollection] /* Available personal lists */
+    let onSave:                        (UUID, QuickCaptureSubmission, Date) throws -> Void /* Persist the edited value */
+    @State private var destinationIDs: [UUID] /* Destination i ds */
+    @State private var createdAt = Date.now /* Created at */
+    private let initialCollectionID: UUID /* Initial collection ID */
 
 
     ///
@@ -1196,7 +1200,7 @@ struct NewPersonalNoteComposer: View
 
     }
 
-    private var destinations: [KanbanList]
+    private var destinations: [KanbanList] /* Available operation destinations */
     {
 
         destinationIDs.enumerated().compactMap
@@ -1235,7 +1239,7 @@ struct NewPersonalNoteComposer: View
             return false
         }
 
-        let ownerID = destinationIDs[capture.listID]
+        let ownerID = destinationIDs[capture.listID] /* Record owner identifier */
 
         guard availablePersonalLists.contains(where:
             {
@@ -1261,7 +1265,7 @@ struct NewPersonalNoteComposer: View
 
     }
 
-    var body: some View
+    var body: some View /* New Personal Note Composer layout */
     {
 
         QuickNoteComposer(

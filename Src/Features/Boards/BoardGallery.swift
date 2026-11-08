@@ -20,9 +20,9 @@ struct BoardGalleryGroup: Identifiable
 {
 
 
-    let id:      Int
-    let divider: KanbanCard?
-    var cards:   [KanbanCard]
+    let id:      Int          /* Owner-local numeric ID           */
+    let divider: KanbanCard?  /* Structural section divider       */
+    var cards:   [KanbanCard] /* Card records under consideration */
 
 
     ///
@@ -39,7 +39,7 @@ struct BoardGalleryGroup: Identifiable
     static func groups(in list: KanbanList) -> [BoardGalleryGroup]
     {
 
-        var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]
+        var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])] /* Groups lookup entries */
 
         for card in DaySections.visible(list.cards)
         {
@@ -74,32 +74,32 @@ struct BoardGalleryView: View
 {
 
 
-    @Environment(\.boardViewportMemory) private var viewportMemory
+    @Environment(\.boardViewportMemory) private var viewportMemory /* Viewport memory */
 
-    let lists:     [KanbanList]
-    let listTitle: (KanbanList) -> String
-    let onOpen:    (KanbanCard, Int) -> Void
-    var onUpdate:  (KanbanCard) -> Void =
+    let lists:     [KanbanList]              /* Ordered List records          */
+    let listTitle: (KanbanList) -> String    /* List title callback           */
+    let onOpen:    (KanbanCard, Int) -> Void /* Open the selected destination */
+    var onUpdate:  (KanbanCard) -> Void =    /* Publish item edits            */
     {
         _ in
     }
 
-    var onMoveSection: (Int, Int, Int) -> Void =
+    var onMoveSection: (Int, Int, Int) -> Void = /* Move section callback */
     {
         _, _, _ in
     }
 
-    var showsListHeadings = true
-    var boardAppearance   = BoardAppearance()
-    @Environment(\.dynamicTypeSize) private var typeSize
+    var showsListHeadings = true                         /* List Headings visibility */
+    var boardAppearance   = BoardAppearance()            /* Board appearance         */
+    @Environment(\.dynamicTypeSize) private var typeSize /* Type size                */
 
-    private var columns: [GridItem]
+    private var columns: [GridItem] /* Visible Board List columns */
     {
 
         [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 260 : 156), spacing: 12, alignment: .top)]
     }
 
-    var body: some View
+    var body: some View /* Board Gallery layout */
     {
 
         ScrollView
@@ -213,17 +213,17 @@ struct BoardGalleryTile: View
 {
 
 
-    let card:       KanbanCard
-    var appearance: ItemAppearance? = nil
-    var boardAppearance             = BoardAppearance()
+    let card:       KanbanCard                          /* Card under consideration    */
+    var appearance: ItemAppearance? = nil               /* Resolved appearance choices */
+    var boardAppearance             = BoardAppearance() /* Board appearance            */
 
-    private var excerpt: String
+    private var excerpt: String /* Short content preview */
     {
 
         PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    var body: some View
+    var body: some View /* Board Gallery layout */
     {
 
         VStack(alignment: .leading, spacing: 10)

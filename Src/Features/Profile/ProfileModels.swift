@@ -24,10 +24,10 @@ struct ProfileColor: Hashable, Codable
 {
 
 
-    var red:         Double   /* sRGB red component                                    */
-    var green:       Double   /* sRGB green component                                  */
-    var blue:        Double   /* sRGB blue component                                   */
-    var legacyToken: String?  /* Legacy palette token retained for compatible encoding */
+    var red:         Double  /* sRGB red component                                    */
+    var green:       Double  /* sRGB green component                                  */
+    var blue:        Double  /* sRGB blue component                                   */
+    var legacyToken: String? /* Legacy palette token retained for compatible encoding */
 
 
     ///
@@ -91,7 +91,7 @@ struct ProfileColor: Hashable, Codable
         let saturation   = min(max(saturation, 0), 1) /* Clamped saturation            */
         let brightness   = min(max(brightness, 0), 1) /* Clamped brightness            */
         let chroma       = brightness * saturation    /* Saturation-scaled color range */
-        let intermediate =
+        let intermediate =                            /* Intermediate operation value  */
         chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))  /* Secondary RGB component              */
         let components: (Double, Double, Double)                        /* RGB values for the active hue sector */
 
@@ -142,7 +142,7 @@ struct ProfileColor: Hashable, Codable
     static let orange   = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")        /* Orange palette color   */
     static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")  /* Graphite palette color */
     static let white    = Self(red: 1, green: 1, blue: 1, legacyToken: "white")           /* White palette color    */
-    static let charcoal = Self(
+    static let charcoal = Self( /* Charcoal operation value */
         red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")                   /* Charcoal palette color */
     static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")     /* Lemon palette color    */
     static let sky   = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")    /* Sky palette color      */
@@ -185,7 +185,7 @@ struct ProfileColor: Hashable, Codable
     /// @pre        RGB components contain the color to convert
     /// @post       The stored RGB components remain unchanged
     ///
-    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double)
+    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) /* Hue saturation brightness */
     {  /* HSB channels derived from the stored RGB values     */
 
         let maximum = max(red, green, blue)  /* Brightest RGB channel                               */
@@ -301,7 +301,7 @@ struct ProfileColor: Hashable, Codable
         {
 
 
-            var container = encoder.container(
+            var container = encoder.container( /* Keyed decoding container */
                 keyedBy: CodingKeys.self) /* Current keyed profile-color encoding container */
 
             try container.encode(red, forKey: .red)
@@ -409,7 +409,7 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
     ///
     /// @return     (String) icon identifier
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable SwiftUI identity from the stored icon token */
@@ -431,7 +431,7 @@ enum TodayFocusOrder: String, Codable, CaseIterable
 
 
     case dayList, chronological
-    var title: String
+    var title: String /* User-facing title */
     {
         self == .dayList ? "Day list order" : "Chronological"
     }
@@ -450,17 +450,17 @@ struct TodayFocusEntry: Identifiable
 {
 
 
-    let card:      KanbanCard
-    let sectionID: Int?
-    let heading:   String?
+    let card:      KanbanCard /* Card under consideration */
+    let sectionID: Int?       /* Section ID               */
+    let heading:   String?    /* Section heading text     */
 
-    var id:        Int
+    var id:        Int /* Owner-local numeric ID */
     {
         card.id
     }
 
     /// Date-only values do not claim a time; a timed start takes precedence over a timed due date
-    var previewTime: (date: Date, isStart: Bool)?
+    var previewTime: (date: Date, isStart: Bool)? /* Preview time */
     {
 
         if let start = card.startDate, card.startDateKind != .date
@@ -476,7 +476,7 @@ struct TodayFocusEntry: Identifiable
         return nil
     }
 
-    var previewTimeLabel: String?
+    var previewTimeLabel: String? /* Preview time label */
     {
 
         previewTime.map
@@ -490,7 +490,7 @@ struct TodayFocusEntry: Identifiable
     }
 
 
-    var scheduleLabel: String?
+    var scheduleLabel: String? /* Schedule label */
     {
 
         if let start = card.startDate
@@ -547,7 +547,8 @@ struct TodayFocusEntry: Identifiable
             if kind == .time
             {
 
-                let parts = calendar.dateComponents([.hour, .minute, .second], from: value)
+                let parts = /* Parsed value components */
+                    calendar.dateComponents([.hour, .minute, .second], from: value)
 
                 return calendar.date(
                     bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
@@ -557,7 +558,7 @@ struct TodayFocusEntry: Identifiable
             if kind == .date
             {
 
-                let start = calendar.startOfDay(for: value)
+                let start = calendar.startOfDay(for: value) /* Range start */
 
                 return end ? calendar.date(byAdding: .day, value: 1, to: start) : start
             }
@@ -565,9 +566,12 @@ struct TodayFocusEntry: Identifiable
             return value
         }
 
-        let start  = resolved(card.startDate, kind: card.startDateKind, end: false)
-        let finish = resolved(card.dueDate, kind: card.dueDateKind, end: true)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let start  = /* Range start */
+            resolved(card.startDate, kind: card.startDateKind, end: false)
+        let finish = /* Finish operation value */
+            resolved(card.dueDate, kind: card.dueDateKind, end: true)
+        let dayEnd = /* Day end */
+            calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
 
         if let start, start >= dayEnd
         {
@@ -578,7 +582,8 @@ struct TodayFocusEntry: Identifiable
         {
 
             // Date-only finish is an exclusive next-midnight boundary
-            let remains = card.dueDateKind == .date ? finish > now : finish >= now
+            let remains = /* Remains operation value */
+                card.dueDateKind == .date ? finish > now : finish >= now
 
             guard remains else
             {
@@ -622,12 +627,14 @@ struct TodayFocusEntry: Identifiable
             return nil
         }
 
-        let kind = card.startDate == nil ? card.dueDateKind : card.startDateKind
+        let kind = /* Content kind discriminator */
+            card.startDate == nil ? card.dueDateKind : card.startDateKind
 
         if kind == .time
         {
 
-            let time = calendar.dateComponents([.hour, .minute, .second], from: value)
+            let time = /* Local schedule time */
+                calendar.dateComponents([.hour, .minute, .second], from: value)
 
             return calendar.date(
                 bySettingHour: time.hour ?? 0, minute: time.minute ?? 0,
@@ -652,12 +659,12 @@ enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 
 
     case tucked, fanned
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
         self == .tucked ? "Tucked" : "Fanned"
     }
@@ -695,7 +702,8 @@ enum DayListTimeOrder
             return nil
         }
 
-        let components = calendar.dateComponents([.hour, .minute, .second], from: time)
+        let components = /* Parsed value components */
+            calendar.dateComponents([.hour, .minute, .second], from: time)
 
         return calendar.date(bySettingHour: components.hour ?? 0, minute: components.minute ?? 0,
             second: components.second ?? 0, of: day)
@@ -715,9 +723,9 @@ enum DayListTimeOrder
     static func cards(_ cards: [KanbanCard], calendar: Calendar = .current) -> [KanbanCard]
     {
 
-        let day                   = calendar.startOfDay(for: .now)
-        var result: [KanbanCard]  = []
-        var section: [KanbanCard] = []
+        let day                   = calendar.startOfDay(for: .now) /* Day under consideration  */
+        var result: [KanbanCard]  = []                             /* Accumulated output value */
+        var section: [KanbanCard] = []                             /* Section lookup entries   */
 
         ///
         /// @fcn        DayListTimeOrder.cards.flush
@@ -733,8 +741,10 @@ enum DayListTimeOrder
 
             lhs, rhs in
 
-                let left  = time(for: lhs.element, on: day, calendar: calendar)
-                let right = time(for: rhs.element, on: day, calendar: calendar)
+                let left  = /* First comparison operand */
+                    time(for: lhs.element, on: day, calendar: calendar)
+                let right = /* Second comparison operand */
+                    time(for: rhs.element, on: day, calendar: calendar)
 
                 switch (left, right)
                 {
@@ -801,7 +811,7 @@ enum DayListTimeOrder
                 return list
             }
 
-            let ordered = cards(list.cards, calendar: calendar)
+            let ordered = cards(list.cards, calendar: calendar) /* Values in display order */
 
             guard ordered != list.cards else
             {
@@ -809,7 +819,7 @@ enum DayListTimeOrder
                 return list
             }
 
-            var updated = list
+            var updated = list /* Edited value to publish */
 
             updated.cards = ordered
 
@@ -834,21 +844,21 @@ struct LocalProfilePreferences: Hashable, Codable
 
     var defaultListID:                Int?  /* Preferred Today list */
     var usesReducedContent:           Bool  /* Hide supporting copy */
-    var scrollsOverflowingTitles:     Bool
-    var importanceStarStyle:          ImportanceStarStyle
-    var enablesLowerCornerBack:       Bool
+    var scrollsOverflowingTitles:     Bool /* Scrolls overflowing titles */
+    var importanceStarStyle:          ImportanceStarStyle /* Importance star style */
+    var enablesLowerCornerBack:       Bool /* Enables lower corner back */
     var usesLargeControls:            Bool /* Use taller key actions */
-    var randomizesNewCardHeaders:     Bool
-    var randomizesNewCardBackgrounds: Bool
-    var showsDueDatesOnNewCards:      Bool
-    var preferredMapsApp:             PreferredMapsApp
-    var keepsDayListsInTimeOrder:     Bool
-    var todayFocusOrder:              TodayFocusOrder
-    var todayFocusGroupsBySection:    Bool
-    var todayFocusIncludesUpNext:     Bool
-    var todayFocusIncludesImportant:  Bool
-    var todayFocusIncludesBookmarked: Bool
-    var todayFocusHidesCompleted:     Bool
+    var randomizesNewCardHeaders:     Bool /* Randomizes new card headers */
+    var randomizesNewCardBackgrounds: Bool /* Randomizes new card backgrounds */
+    var showsDueDatesOnNewCards:      Bool /* Due Dates On New Cards visibility */
+    var preferredMapsApp:             PreferredMapsApp /* Preferred maps app */
+    var keepsDayListsInTimeOrder:     Bool /* Chronological Day List ordering */
+    var todayFocusOrder:              TodayFocusOrder /* Today focus order */
+    var todayFocusGroupsBySection:    Bool /* Today focus groups by section */
+    var todayFocusIncludesUpNext:     Bool /* Today focus includes up next */
+    var todayFocusIncludesImportant:  Bool /* Today focus includes important */
+    var todayFocusIncludesBookmarked: Bool /* Today focus includes bookmarked */
+    var todayFocusHidesCompleted:     Bool /* Today focus hides completed */
     var todayFocusItemCount:          Int   /* Visible row capacity: zero expands all matches; otherwise 1...12 */
     var showsNavigationLabels:        Bool  /* Show labels beneath navigation icons                             */
 
@@ -989,9 +999,9 @@ struct LocalProfilePreferences: Hashable, Codable
     ) -> [TodayFocusEntry]
     {
 
-        var sectionID: Int?
-        var heading: String?
-        var entries: [TodayFocusEntry] = []
+        var sectionID: Int?                 /* Section ID              */
+        var heading: String?                /* Section heading text    */
+        var entries: [TodayFocusEntry] = [] /* Entries being processed */
 
         for card in cards
         {
@@ -1026,7 +1036,7 @@ struct LocalProfilePreferences: Hashable, Codable
         {
 
             // Stable ties and undated items retain the user's original sequence
-            let sectionOrder = Dictionary(
+            let sectionOrder = Dictionary( /* Section order */
                 uniqueKeysWithValues:
                 cards.enumerated().filter
                 {
@@ -1043,12 +1053,12 @@ struct LocalProfilePreferences: Hashable, Codable
                 if todayFocusGroupsBySection
                 {
 
-                    let l = lhs.element.sectionID.flatMap
+                    let l = lhs.element.sectionID.flatMap /* Mapped l values */
                     {
                         sectionOrder[$0]
                     }
                     ?? 0
-                    let r = rhs.element.sectionID.flatMap
+                    let r = rhs.element.sectionID.flatMap /* Mapped r values */
                     {
                         sectionOrder[$0]
                     }
@@ -1061,10 +1071,10 @@ struct LocalProfilePreferences: Hashable, Codable
 
                 }
 
-                let l = keepsDayListsInTimeOrder
+                let l = keepsDayListsInTimeOrder /* L operation value */
                     ? DayListTimeOrder.time(for: lhs.element.card, on: day, calendar: calendar)
                     : lhs.element.scheduleDate(on: day, calendar: calendar)
-                let r = keepsDayListsInTimeOrder
+                let r = keepsDayListsInTimeOrder /* R operation value */
                     ? DayListTimeOrder.time(for: rhs.element.card, on: day, calendar: calendar)
                     : rhs.element.scheduleDate(on: day, calendar: calendar)
 
@@ -1256,13 +1266,13 @@ struct LocalProfile: Identifiable, Hashable, Codable
     /// @pre        displayName contains the name text to summarize
     /// @post       Profile data remains unchanged
     ///
-    var initials: String
+    var initials: String /* Local profile initials */
     {  /* Avatar text */
 
 
-        let components = displayName.split(whereSeparator: \.isWhitespace)  /* Name components */
-        let characters = components.prefix(2).compactMap(\.first)           /* Initial letters */
-        let initials   = String(characters).uppercased()                    /* Avatar initials */
+        let components = displayName.split(whereSeparator: \.isWhitespace) /* Name components */
+        let characters = components.prefix(2).compactMap(\.first)          /* Initial letters */
+        let initials   = String(characters).uppercased()                   /* Avatar initials */
 
         return initials.isEmpty ? "P" : initials
     }

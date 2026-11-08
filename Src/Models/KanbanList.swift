@@ -21,17 +21,17 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 {
 
 
-    let id:                 Int            /* Unique identifier for the kanban list               */
-    private(set) var title: String         /* Title updated with retained card context            */
-    var subtitleOverride:   String? = nil  /* nil preserves legacy generated copy; empty hides it */
+    let id:                 Int           /* Unique identifier for the kanban list               */
+    private(set) var title: String        /* Title updated with retained card context            */
+    var subtitleOverride:   String? = nil /* nil preserves legacy generated copy; empty hides it */
 
     /// Records accepted content edits at the shared owner boundary, including nested value edits
-    var cards: [KanbanCard]
+    var cards: [KanbanCard] /* Card records under consideration */
     {
         didSet
         {
 
-            let previous = Dictionary(
+            let previous = Dictionary( /* Previous value for comparison */
                 oldValue.map
                 {
                     ($0.id, $0)
@@ -55,10 +55,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         }
     }
 
-    var archivedCards:      [KanbanCard]   /* Cards retained in this list's archive               */
-    var isArchived:         Bool = false   /* Whether this list is in the board archive           */
+    var archivedCards:      [KanbanCard] /* Cards retained in this list's archive     */
+    var isArchived:         Bool = false /* Whether this list is in the board archive */
 
-    var singleListViewMode: SingleListViewMode
+    var singleListViewMode: SingleListViewMode /* Single list view mode */
     {
         appearance?.listViewMode ?? .cards
     }
@@ -76,7 +76,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     mutating func setSingleListViewMode(_ mode: SingleListViewMode)
     {
 
-        var value = appearance ?? ItemAppearance()
+        var value = appearance ?? ItemAppearance() /* Value being processed */
 
         value.listViewMode = mode
         appearance = value
@@ -175,13 +175,13 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         Self.fixedIconColor(for: title) ?? appearance?.iconColor ?? collectionColor
     }
 
-    var hasFixedHeaderIcon: Bool
+    var hasFixedHeaderIcon: Bool /* Fixed Header Icon availability */
     {
         Self.defaultHeaderIcon(for: title) != nil
     }
 
     /// The three built-in shortcut Lists always retain their header identity
-    var showsIconInHeader: Bool
+    var showsIconInHeader: Bool /* Icon In Header visibility */
     {
 
         hasFixedHeaderIcon || appearance?.showsIconInHeader == true
@@ -208,7 +208,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
             return nil
         }
 
-        var value = appearance ?? ItemAppearance()
+        var value = appearance ?? ItemAppearance() /* Value being processed */
 
         value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title) ?? .notes
         value.iconColor = Self.fixedHeaderIconColor(for: title) ?? resolvedIconColor(collectionColor: collectionColor)
@@ -218,7 +218,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
 
     /// Today focuses the first actionable Card in saved order without moving records
-    var firstUncheckedTaskID: Int?
+    var firstUncheckedTaskID: Int? /* First unchecked task ID */
     {
 
         guard !isArchived else
@@ -233,12 +233,12 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     }
 
 
-    var appearance: ItemAppearance? = nil
-    private var defaultItemPresentation:
+    var appearance: ItemAppearance? = nil /* Resolved appearance choices */
+    private var defaultItemPresentation:  /* Default item presentation   */
     ItemPresentation? /* Optional persisted default kind for newly created records */
 
     /// Applies only at creation; changing this preference never converts retained items
-    var newItemPresentation: ItemPresentation
+    var newItemPresentation: ItemPresentation /* New item presentation */
     {  /* Effective creation kind with the legacy Card fallback */
 
         get
@@ -282,11 +282,11 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
 
         let isDivider    = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
-        let presentation =
+        let presentation = /* Current presentation style */
         isDivider
         ? ItemPresentation.card
         : (presentationOverride ?? newItemPresentation) /* Item kind selected for the new record         */
-        let checklists: [KanbanChecklist]? =
+        let checklists: [KanbanChecklist]? = /* Owned checklist groups */
         presentation == .note
         ? []
         : actions.map
@@ -300,7 +300,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        var card = KanbanCard(
+        var card = KanbanCard( /* Card under consideration */
             id: id, word: KanbanCard.namedDividerHeading(title) ?? title, listTitle: self.title, isDivider: isDivider,
             checklists: checklists,
             descriptionOverride: presentation == .note ? (description ?? "") : description,
@@ -322,7 +322,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @return     ([KanbanCard]) all cards retained by the list
     /// @post       The list's active and archived collections are unchanged
     ///
-    var allCards: [KanbanCard]
+    var allCards: [KanbanCard] /* All cards */
     {
         cards + archivedCards
     }  /* Active and archived records retained by this list */
@@ -560,7 +560,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @return     (String) supporting text shown beneath the list title
     /// @post       No list state is modified
     ///
-    var subtitle: String
+    var subtitle: String /* Supporting item text */
     {  /* Supporting text for the list header */
 
         if let subtitleOverride
@@ -569,7 +569,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
             return subtitleOverride
         }
 
-        let subtitles = [
+        let subtitles = [ /* Supporting item text values */
                         "Ideas taking shape", "Ready for a little momentum", "Currently in progress",
                         "Nearly across the finish line", "Done, or at least confidently presented"
         ] /* List subtitle options */
@@ -596,7 +596,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     {
 
 
-        let trimmedTitle = proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTitle = /* Trimmed title */
+            proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedTitle.isEmpty else
         {
@@ -683,9 +684,9 @@ extension KanbanList
 struct CardEditChange: Codable, Hashable, Sendable
 {
 
-    let field:         String
-    let previousValue: Data?
-    let newValue:      Data?
+    let field:         String /* Native input field */
+    let previousValue: Data?  /* Previous value     */
+    let newValue:      Data?  /* New value          */
 
 }
 
@@ -700,9 +701,9 @@ struct CardEditChange: Codable, Hashable, Sendable
 struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 {
 
-    let id:        UUID
-    let timestamp: Date
-    let changes:   [CardEditChange]
+    let id:        UUID             /* Record UUID             */
+    let timestamp: Date             /* Stored event timestamp  */
+    let changes:   [CardEditChange] /* Requested content edits */
 
 
     ///
@@ -711,10 +712,10 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
     /// @details    Groups related technical fields, such as a date and its precision, into one label
     /// @return     (String) concise list of changed areas for the history timeline
     ///
-    var summary: String
+    var summary: String /* Aggregate operation results */
     {
 
-        let names = [
+        let names = [ /* Names used by this operation */
             "word": "Title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
             "isTitleChecked": "Completion", "startDate": "Start date", "startDateKind": "Start date",
             "location": "Location", "dueDate": "Due date", "dueDateKind": "Due date", "checklists": "Checklists",
@@ -726,12 +727,12 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
             "listDisplayFormat": "Display format", "isDivider": "Divider",
             "dismissedActivityIDs": "Activity visibility"
         ]
-        var labels: [String] = []
+        var labels: [String] = [] /* Available label definitions */
 
         for change in changes
         {
 
-            let label = names[change.field] ?? "Card details"
+            let label = names[change.field] ?? "Card details" /* Resolved display label */
 
             if !labels.contains(label)
             {
@@ -770,12 +771,12 @@ extension KanbanCard
     func recordingEdits(from previous: KanbanCard, at date: Date = .now) -> KanbanCard
     {
 
-        var result = self
+        var result = self /* Accumulated output value */
 
         result.editHistory = previous.editHistory
 
-        var old = previous
-        var new = self
+        var old = previous /* Previous operation state    */
+        var new = self     /* Replacement operation state */
 
         old.editHistory = nil
         new.editHistory = nil
@@ -794,26 +795,28 @@ extension KanbanCard
             return result
         }
 
-        let excluded: Set<String>     = ["id", "listTitle", "createdAt", "editHistory"]
-        let keys                      = Set(before.keys).union(after.keys).subtracting(excluded).sorted()
-        var changes: [CardEditChange] = []
+        let excluded: Set<String>     = /* Fields omitted by this projection */
+            ["id", "listTitle", "createdAt", "editHistory"]
+        let keys                      = /* Keys used by this operation */
+            Set(before.keys).union(after.keys).subtracting(excluded).sorted()
+        var changes: [CardEditChange] = [] /* Requested content edits */
 
         for key in keys
         {
 
-            let left  = before[key] as? NSObject
-            let right = after[key] as? NSObject
+            let left  = before[key] as? NSObject /* First comparison operand  */
+            let right = after[key] as? NSObject  /* Second comparison operand */
 
             if left == right
             {
                 continue
             }
 
-            let previousValue = try? before[key].map
+            let previousValue = try? before[key].map /* Previous value */
             {
                 try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
             }
-            let newValue = try? after[key].map
+            let newValue = try? after[key].map /* New value */
             {
                 try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
             }
@@ -825,7 +828,7 @@ extension KanbanCard
             return result
         }
 
-        let retained = previous.editHistory ?? []
+        let retained = previous.editHistory ?? [] /* State retained for recovery */
 
         if let prepared = editHistory,
            prepared.count == retained.count + 1,
@@ -844,7 +847,7 @@ extension KanbanCard
         {
 
             // Autosaved typing is one readable update rather than an entry per keystroke
-            let merged = changes.map
+            let merged = changes.map /* Combined content after */
             {
                 change in
                 CardEditChange(

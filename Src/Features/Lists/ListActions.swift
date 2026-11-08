@@ -33,19 +33,19 @@ struct KanbanListActionsSheet: View
 {
 
 
-    @State private var confirmsCheckmarkReset = false
-    @Binding var checkmarkReset: ListCheckmarkReset?
-    let onUpdateCard:            (KanbanCard) -> Void
+    @State private var confirmsCheckmarkReset = false /* Confirms checkmark reset */
+    @Binding var checkmarkReset: ListCheckmarkReset? /* Checkmark reset */
+    let onUpdateCard:            (KanbanCard) -> Void /* Update card callback */
     let list:                    KanbanList  /* The Kanban list this sheet is associated with */
     let canMoveEarlier:          Bool        /* Indicates if the list can be moved earlier    */
     let canMoveLater:            Bool        /* Indicates if the list can be moved later      */
     @Binding var isWatching:     Bool        /* Indicates if the user is watching the list    */
     let onAddCard:               () -> Void  /* Action to perform when adding a card          */
     let onCopyList:              () -> Void  /* Action to perform when copying the list       */
-    var onMoveToBoard:           (() -> Void)? = nil
+    var onMoveToBoard:           (() -> Void)? = nil /* Move to board callback */
     let onMoveList:              (Int) -> Void   /* Action to perform when moving the list by a given offset                   */
     let onSortList:              (Bool) -> Void  /* Action to perform when sorting the list; true for A to Z, false for Z to A */
-    @Binding var cardEditMode:
+    @Binding var cardEditMode: /* Card edit mode */
     EditMode                            /* Manual card ordering in the owning List          */
     let onArchiveCompleted: () -> Void  /* Action to perform when archiving completed cards */
     /// Archived cards available to restore to the active list
@@ -55,15 +55,21 @@ struct KanbanListActionsSheet: View
     let onDeleteArchivedCard:      (Int) -> Void  /* Permanently remove a confirmed archived card     */
     let onArchiveList:             () -> Void     /* Action to perform when archiving the entire list */
     let onDeleteList:              () -> Void     /* Permanently remove this list after confirmation  */
-    var onEditList:                ((String, String, ItemPresentation) -> Bool)? = nil
-    var onAppearance:              ((ItemAppearance?) -> Bool)?                  = nil
-    var inheritedAddItemTextColor: Color                                         = .primary
-    var onOpenDayView:             (() -> Void)?                                 = nil
-    @State private var isEditingAppearance                                       = false
-    @State private var isEditingList                                             = false
+    var onEditList:                ((String, String, ItemPresentation) -> Bool)? = /* Edit list callback */
+        nil
+    var onAppearance:              ((ItemAppearance?) -> Bool)?                  = /* Publish appearance choices */
+        nil
+    var inheritedAddItemTextColor: Color                                         = /* Inherited add item text color */
+        .primary
+    var onOpenDayView:             (() -> Void)?                                 = /* Open day view callback */
+        nil
+    @State private var isEditingAppearance                                       = /* Editing Appearance state */
+        false
+    @State private var isEditingList                                             = /* Editing List state */
+        false
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var sheetHeight: PresentationDetent = .height(624)
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Dynamic type size */
+    @State private var sheetHeight: PresentationDetent = .height(624) /* Sheet height */
     @Environment(\.dismiss) private var dismiss    /* Dismiss action for list operations             */
     @State private var showsArchivedCards = false  /* Archive browser opened from the compact footer */
     @State private var confirmingArchive  = false  /* Archive confirmation presentation state        */
@@ -81,7 +87,7 @@ struct KanbanListActionsSheet: View
     ///             calling dismiss here; copy/move/sort/archive actions dismiss after invoking callbacks
     /// @note       Appearance is persisted on Save; Watch remains a temporary view preference
     ///
-    var body: some View
+    var body: some View /* Kanban List Actions layout */
     {  /* List operation menu */
 
 
@@ -503,11 +509,11 @@ struct CopyListDestinationSheet: View
 {
 
 
-    let source:    KanbanList
-    let access:    PlanningCalendarAccess?
-    let currentID: UUID?
-    let copyHere:  () -> Bool
-    @Environment(\.dismiss) private var dismiss
+    let source:    KanbanList                   /* Source value for this operation */
+    let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
+    let currentID: UUID?                        /* Current ID                      */
+    let copyHere:  () -> Bool                   /* Copy here callback              */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation  */
 
 
     ///
@@ -523,7 +529,7 @@ struct CopyListDestinationSheet: View
     private func destinationWeeks(_ access: PlanningCalendarAccess) -> [DatedPlanningWeek]
     {
 
-        let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id
+        let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id /* Source ID */
 
         return access.document.weeks.filter
         {
@@ -547,8 +553,9 @@ struct CopyListDestinationSheet: View
     private func copy(to week: DatedPlanningWeek, using access: PlanningCalendarAccess)
     {
 
-        var updated = week
-        let copy    = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
+        var updated = week /* Edited value to publish  */
+        let copy    =      /* Independent working copy */
+            ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
 
         updated.collection.lists.append(copy)
         if access.saveWeek(updated)
@@ -561,7 +568,7 @@ struct CopyListDestinationSheet: View
 
     }
 
-    var body: some View
+    var body: some View /* Copy List Destination layout */
     {
 
         NavigationStack
@@ -616,7 +623,7 @@ struct CopyListDestinationSheet: View
                             Button(board.title)
                             {
 
-                                var updated = board
+                                var updated = board /* Edited value to publish */
 
                                 updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
                                 if access.saveLibrary(updated)
@@ -679,12 +686,12 @@ struct MoveListDestinationSheet: View
 {
 
 
-    let source:    KanbanList
-    let access:    PlanningCalendarAccess?
-    let currentID: UUID?
-    @Environment(\.dismiss) private var dismiss
+    let source:    KanbanList                   /* Source value for this operation */
+    let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
+    let currentID: UUID?                        /* Current ID                      */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation  */
 
-    private var sourceID: UUID?
+    private var sourceID: UUID? /* Source ID */
     {
 
         currentID ?? access?.document.weeks.first
@@ -715,7 +722,7 @@ struct MoveListDestinationSheet: View
         dismiss()
     }
 
-    var body: some View
+    var body: some View /* Move List Destination layout */
     {
 
         NavigationStack
@@ -828,12 +835,12 @@ struct ListCheckmarkResetControl: View
 {
 
 
-    let list:                   KanbanList
-    @Binding var session:       ListCheckmarkReset?
-    @Binding var confirmsClear: Bool
-    let onUpdateCard:           (KanbanCard) -> Void
+    let list:                   KanbanList           /* List under consideration  */
+    @Binding var session:       ListCheckmarkReset?  /* Current operation session */
+    @Binding var confirmsClear: Bool                 /* Confirms clear            */
+    let onUpdateCard:           (KanbanCard) -> Void /* Update card callback      */
 
-    var body: some View
+    var body: some View /* List Checkmark Reset Control layout */
     {
 
         Button(
@@ -898,10 +905,10 @@ struct ListCheckmarkResetConfirmation: ViewModifier
 {
 
 
-    let list:                   KanbanList?
-    @Binding var session:       ListCheckmarkReset?
-    @Binding var confirmsClear: Bool
-    let onUpdateCard:           (KanbanCard) -> Void
+    let list:                   KanbanList?          /* List under consideration  */
+    @Binding var session:       ListCheckmarkReset?  /* Current operation session */
+    @Binding var confirmsClear: Bool                 /* Confirms clear            */
+    let onUpdateCard:           (KanbanCard) -> Void /* Update card callback      */
 
 
     ///
@@ -931,7 +938,7 @@ struct ListCheckmarkResetConfirmation: ViewModifier
                     return
                 }
 
-                let (snapshot, cards) = ListCheckmarkReset.reset(list)
+                let (snapshot, cards) = ListCheckmarkReset.reset(list) /* Snapshot cards */
 
                 session = snapshot
 

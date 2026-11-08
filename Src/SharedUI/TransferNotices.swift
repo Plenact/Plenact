@@ -32,11 +32,11 @@ struct TransferConfirmation: Equatable
         case moved, copied
     }
 
-    let title:       String
-    let destination: String
-    var action:      Action = .moved
+    let title:       String          /* User-facing title             */
+    let destination: String          /* Destination for the operation */
+    var action:      Action = .moved /* Requested user operation      */
 
-    var message:     String
+    var message:     String /* User-facing status message */
     {
 
                 "\(action == .moved ? "Moved" : "Copied") ‘\(title)’ to \(destination)."
@@ -57,11 +57,11 @@ final class TransferConfirmationPresenter
 {
 
 
-    static let shared = TransferConfirmationPresenter()
-    private var window:      UIWindow?
-    private var dismissTask: Task<Void, Never>?
-    private var undoOverlay: TransferUndoOverlay?
-    private var undoHost:    UIViewController?
+    static let shared = TransferConfirmationPresenter() /* Shared operation value     */
+    private var window:      UIWindow?                  /* Scene window for rendering */
+    private var dismissTask: Task<Void, Never>?         /* Dismiss task               */
+    private var undoOverlay: TransferUndoOverlay?       /* Undo overlay               */
+    private var undoHost:    UIViewController?          /* Undo host                  */
 
 
     ///
@@ -124,20 +124,20 @@ final class TransferConfirmationPresenter
 
         // Keep native drag sessions in their original window. A second, persistent
         // UIWindow can intercept the system's drag routing even when taps pass through
-        let overlay = TransferUndoOverlay(frame: mainWindow.bounds)
+        let overlay = TransferUndoOverlay(frame: mainWindow.bounds) /* Temporary display overlay */
 
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         overlay.backgroundColor = .clear
         overlay.accessibilityIdentifier = "section.move.undo.overlay"
 
-        let host = UIHostingController(
+        let host = UIHostingController( /* SwiftUI rendering host */
             rootView: SectionUndoToast(
                 message: confirmation.message,
                 undo:
                 {
                     [weak self] in
 
-                    let succeeded = undo()
+                    let succeeded = undo() /* Successful operation result */
 
                     if succeeded
                     {
@@ -233,7 +233,7 @@ final class TransferConfirmationPresenter
 
         dismiss()
 
-        let window = TransferConfirmationWindow(windowScene: scene)
+        let window = TransferConfirmationWindow(windowScene: scene) /* Scene window for rendering */
 
         window.frame = scene.coordinateSpace.bounds
         window.windowLevel = .alert + 1
@@ -284,7 +284,7 @@ final class TransferUndoOverlay: UIView
 {
 
 
-    var touchRegion: CGRect = .zero
+    var touchRegion: CGRect = .zero /* Touch region */
 
 
     ///
@@ -323,9 +323,9 @@ final class TransferConfirmationWindow: UIWindow
 {
 
 
-    var touchRegion:           CGRect = .zero
+    var touchRegion:           CGRect = .zero /* Touch region */
 
-    override var canBecomeKey: Bool
+    override var canBecomeKey: Bool /* Become Key availability */
     {
         false
     }
@@ -366,11 +366,11 @@ struct TransferConfirmationToast: View
 {
 
 
-    let message: String
-    @State private var visible = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let message: String /* User-facing status message */
+    @State private var visible = false /* Current visibility state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
-    var body: some View
+    var body: some View /* Transfer Confirmation Toast layout */
     {
 
         VStack
@@ -438,13 +438,13 @@ struct SectionUndoToast: View
 {
 
 
-    let message: String
-    let undo:    () -> Bool
-    let close:   () -> Void
-    let onFrame: (CGRect) -> Void
-    @State private var failed = false
+    let message: String               /* User-facing status message */
+    let undo:    () -> Bool           /* Restore the prior edit     */
+    let close:   () -> Void           /* Close callback             */
+    let onFrame: (CGRect) -> Void     /* Frame callback             */
+    @State private var failed = false /* Rejected operation result  */
 
-    var body: some View
+    var body: some View /* Section Undo Toast layout */
     {
 
         VStack

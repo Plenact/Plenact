@@ -37,8 +37,8 @@ enum TodayVisionSelection
     ) -> [PlanningSearchResult]
     {
 
-        let key       = PlanningDate.key(date, calendar: calendar)
-        let datedList = access.document.week(for: date, calendar: calendar).flatMap
+        let key       = PlanningDate.key(date, calendar: calendar) /* Local calendar-day key */
+        let datedList = access.document.week(for: date, calendar: calendar).flatMap /* Dated list */
         {
             week in
             week.dayListIDs[key].map
@@ -57,12 +57,13 @@ enum TodayVisionSelection
                 return false
             }
 
-            let onDay = datedList.map
+            let onDay = datedList.map /* Day callback */
             {
                 $0.0 == item.collectionID && $0.1 == item.listID
             }
             ?? false
-            let dated = [item.card.startDate, item.card.dueDate].compactMap
+            let dated = /* Calendar-backed owner */
+                [item.card.startDate, item.card.dueDate].compactMap
             {
                 $0
             } .contains
@@ -71,7 +72,7 @@ enum TodayVisionSelection
                 calendar.isDate($0, inSameDayAs: date)
             }
 
-            let spanning: Bool
+            let spanning: Bool /* Spanning state flag */
 
             if let start = item.card.startDate, let end = item.card.dueDate
             {
@@ -107,35 +108,35 @@ struct TodayVisionView: View
 {
 
 
-    @Binding var plan: DailyPlan
-    let date:          Date
-    let onSave:        () -> Bool
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var step        = 0
-    @State private var showsPicker = false
-    @State private var showsNew    = false
-    @State private var transfer: PlanningSearchResult?
-    @State private var transferError  = false
-    @State private var planSaveFailed = false
-    @State private var saving         = false
+    @Binding var plan: DailyPlan                              /* Daily planning record          */
+    let date:          Date                                   /* Date used by this operation    */
+    let onSave:        () -> Bool                             /* Persist the edited value       */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var step        = 0                        /* Current review step            */
+    @State private var showsPicker = false                    /* Picker visibility              */
+    @State private var showsNew    = false                    /* New visibility                 */
+    @State private var transfer: PlanningSearchResult?        /* Prepared owner-qualified move  */
+    @State private var transferError  = false                 /* Transfer error                 */
+    @State private var planSaveFailed = false                 /* Plan save failed               */
+    @State private var saving         = false                 /* Save operation in progress     */
 
-    private var calendar: Calendar
+    private var calendar: Calendar /* Date calculation calendar */
     {
 
-        var result = access?.document.calendar ?? .current
+        var result = access?.document.calendar ?? .current /* Accumulated output value */
 
         result.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
 
         return result
     }
 
-    private var sources: [PlanningSearchResult]
+    private var sources: [PlanningSearchResult] /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var candidates: [PlanningSearchResult]
+    private var candidates: [PlanningSearchResult] /* Eligible operation targets */
     {
 
         guard let access else
@@ -143,7 +144,7 @@ struct TodayVisionView: View
             return []
         }
 
-        let labels = LabelLibraryStore.load().labels.filter
+        let labels = LabelLibraryStore.load().labels.filter /* Available label definitions */
         {
 
             $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
@@ -153,7 +154,7 @@ struct TodayVisionView: View
             date: date, access: access, referenceLabelIDs: Set(labels.map(\.id)), calendar: calendar)
     }
 
-    private var table: WorkspaceListDestination?
+    private var table: WorkspaceListDestination? /* Table content under review */
     {
 
         WorkspaceBrowseIndex.lists(in: access?.library ?? []).first
@@ -198,7 +199,7 @@ struct TodayVisionView: View
     private func select(_ source: PlanningSearchResult)
     {
 
-        let priority = DailyPlanPriority(source)
+        let priority = DailyPlanPriority(source) /* Selected planning priority */
 
         if !plan.priorities.contains(where:
             {
@@ -229,8 +230,8 @@ struct TodayVisionView: View
 
         saving = true
 
-        let previousStep       = plan.visionStep
-        let previousCompletion = plan.visionCompletedAt
+        let previousStep       = plan.visionStep        /* Previous step       */
+        let previousCompletion = plan.visionCompletedAt /* Previous completion */
 
         plan.visionStep = step == 2 ? nil : step + 1
 
@@ -269,7 +270,7 @@ struct TodayVisionView: View
 
     }
 
-    var body: some View
+    var body: some View /* Today Vision layout */
     {
 
         NavigationStack
@@ -558,7 +559,7 @@ struct TodayVisionView: View
                         return
                     }
 
-                    let reference = DailyPlanPriority(moved)
+                    let reference = DailyPlanPriority(moved) /* Qualified record reference */
 
                     if let index = plan.priorities.firstIndex(where:
                         {
@@ -653,9 +654,9 @@ struct DailyCheckIn: Codable, Equatable
 {
 
 
-    var focus: DailyPlanPriority? = nil
-    var changed                   = ""
-    var savedAt: Date?            = nil
+    var focus: DailyPlanPriority? = nil /* Today Focus selection      */
+    var changed                   = ""  /* Value with requested edits */
+    var savedAt: Date?            = nil /* Saved at                   */
 
 }
 
@@ -671,10 +672,10 @@ struct CheckInMood: Codable, Equatable
 {
 
 
-    let emoji:   String
-    let label:   String
+    let emoji:   String /* Chosen emoji symbol    */
+    let label:   String /* Resolved display label */
 
-    var display: String
+    var display: String /* Display display text */
     {
         emoji + " " + label
     }
@@ -695,10 +696,12 @@ struct CheckInMood: Codable, Equatable
     static func custom(emoji: String, label: String) -> CheckInMood?
     {
 
-        let emoji   = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
-        let label   = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        let scalars = emoji.unicodeScalars
-        let isEmoji =
+        let emoji   = /* Chosen emoji symbol */
+            emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label   = /* Resolved display label */
+            label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let scalars = emoji.unicodeScalars /* Unicode scalar values */
+        let isEmoji =                      /* Emoji state           */
         scalars.contains
         {
             $0.properties.isEmojiPresentation
@@ -736,12 +739,12 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
 
 
     case none, great, good, okay, low, struggling, custom
-    var id: Self
+    var id: Self /* Record or view identity */
     {
         self
     }
 
-    var mood: CheckInMood?
+    var mood: CheckInMood? /* Saved check-in mood */
     {
 
         switch self
@@ -763,7 +766,7 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
 
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -793,20 +796,20 @@ struct DailyCheckInEntry: Codable, Equatable, Identifiable
 {
 
 
-    let id:             String
-    let savedAt:        Date
-    let changed:        String
-    let focus:          DailyPlanPriority?
-    let intention:      String
-    let constraints:    String
-    let concerns:       String
-    let priorities:     [DailyPlanPriority]
-    let completedTasks: Int?
-    let totalTasks:     Int?
-    let notes:          Int?
-    let unavailable:    Int?
-    let legacy:         Bool
-    var mood:           CheckInMood? = nil
+    let id:             String              /* Record or view identity     */
+    let savedAt:        Date                /* Saved at                    */
+    let changed:        String              /* Value with requested edits  */
+    let focus:          DailyPlanPriority?  /* Today Focus selection       */
+    let intention:      String              /* Saved daily intention       */
+    let constraints:    String              /* Available time or capacity  */
+    let concerns:       String              /* Saved planning concerns     */
+    let priorities:     [DailyPlanPriority] /* Ordered planning priorities */
+    let completedTasks: Int?                /* Completed tasks             */
+    let totalTasks:     Int?                /* Total tasks                 */
+    let notes:          Int?                /* Note content records        */
+    let unavailable:    Int?                /* Unresolved reference state  */
+    let legacy:         Bool                /* Earlier-format input        */
+    var mood:           CheckInMood? = nil  /* Saved check-in mood         */
 
 }
 
@@ -823,7 +826,7 @@ extension DailyPlan
 
 
     /// Legacy records have no historical plan/progress snapshot. Do not invent one
-    var checkInHistory: [DailyCheckInEntry]
+    var checkInHistory: [DailyCheckInEntry] /* Check in history */
     {
 
         if let checkIns
@@ -863,9 +866,11 @@ extension DailyPlan
     )
     {
 
-        var entries  = checkInHistory
-        let focus    = DailyCheckInProgress.focus(plan: self, sources: sources)
-        let progress = DailyCheckInProgress.counts(plan: self, sources: sources)
+        var entries  = checkInHistory /* Entries being processed */
+        let focus    =                /* Today Focus selection   */
+            DailyCheckInProgress.focus(plan: self, sources: sources)
+        let progress = /* Operation progress state */
+            DailyCheckInProgress.counts(plan: self, sources: sources)
 
         entries.append(
             .init(
@@ -893,15 +898,15 @@ struct DailyHistoryReviewView: View
 {
 
 
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var date: Date
-    @State private var document = DailyPlanStore.Document()
-    @State private var loadError:       String?
-    @AppStorage private var storedData: Data
-    private let calendar:               Calendar
-    private let defaults:               UserDefaults
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.scenePhase) private var scenePhase         /* Scene phase                    */
+    @State private var date: Date                             /* Date used by this operation    */
+    @State private var document = DailyPlanStore.Document()   /* Daily-plan store snapshot      */
+    @State private var loadError:       String?               /* Load error                     */
+    @AppStorage private var storedData: Data                  /* Stored data                    */
+    private let calendar:               Calendar              /* Date calculation calendar      */
+    private let defaults:               UserDefaults          /* Preference storage domain      */
 
 
     ///
@@ -926,12 +931,12 @@ struct DailyHistoryReviewView: View
 
     }
 
-    private var plan: DailyPlan?
+    private var plan: DailyPlan? /* Daily planning record */
     {
         document.plans[PlanningDate.key(date, calendar: calendar)]
     }
 
-    private var isToday: Bool
+    private var isToday: Bool /* Today state */
     {
         calendar.isDateInToday(date)
     }
@@ -978,7 +983,7 @@ struct DailyHistoryReviewView: View
     private func checkInTime(_ timestamp: Date, timeZoneID: String) -> String
     {
 
-        var style = Date.FormatStyle(date: .omitted, time: .shortened)
+        var style = Date.FormatStyle(date: .omitted, time: .shortened) /* Selected display style */
 
         style.timeZone = TimeZone(identifier: timeZoneID) ?? calendar.timeZone
 
@@ -1018,7 +1023,7 @@ struct DailyHistoryReviewView: View
 
     }
 
-    var body: some View
+    var body: some View /* Daily History Review layout */
     {
 
         NavigationStack
@@ -1078,7 +1083,8 @@ struct DailyHistoryReviewView: View
                         if isToday
                         {
 
-                            let counts = DailyCheckInProgress.counts(plan: plan, sources: access?.searchableItems ?? [])
+                            let counts = /* Aggregate record counts */
+                                DailyCheckInProgress.counts(plan: plan, sources: access?.searchableItems ?? [])
 
                             Text("\(counts.completed) of \(counts.tasks) priority tasks complete").font(.headline)
                             if counts.tasks > 0
@@ -1305,7 +1311,8 @@ enum DailyCheckInProgress
     )
     {
 
-        var result = (completed: 0, tasks: 0, notes: 0, unavailable: 0)
+        var result = /* Accumulated output value */
+            (completed: 0, tasks: 0, notes: 0, unavailable: 0)
 
         for priority in plan.priorities
         {
@@ -1388,44 +1395,44 @@ struct TodayCheckInView: View
 {
 
 
-    @Binding var plan: DailyPlan
-    let date:          Date
-    let onSave:        () -> Bool
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var showsPicker = false
-    @State private var showsNew    = false
-    @State private var saveFailed  = false
+    @Binding var plan: DailyPlan                              /* Daily planning record          */
+    let date:          Date                                   /* Date used by this operation    */
+    let onSave:        () -> Bool                             /* Persist the edited value       */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var showsPicker = false                    /* Picker visibility              */
+    @State private var showsNew    = false                    /* New visibility                 */
+    @State private var saveFailed  = false                    /* Save failed                    */
 
-    private var sources: [PlanningSearchResult]
+    private var sources: [PlanningSearchResult] /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var checkIn: DailyCheckIn
+    private var checkIn: DailyCheckIn /* Check in */
     {
         plan.checkIn ?? DailyCheckIn()
     }
 
-    @State private var changed                       = ""
-    @State private var moodChoice: CheckInMoodChoice = .none
-    @State private var customEmoji                   = ""
-    @State private var customFeeling                 = ""
+    @State private var changed                       = ""    /* Value with requested edits */
+    @State private var moodChoice: CheckInMoodChoice = .none /* Mood choice                */
+    @State private var customEmoji                   = ""    /* Custom emoji               */
+    @State private var customFeeling                 = ""    /* Custom feeling             */
 
-    private var selectedMood: CheckInMood?
+    private var selectedMood: CheckInMood? /* Selected mood */
     {
 
         moodChoice == .custom ? CheckInMood.custom(emoji: customEmoji, label: customFeeling) : moodChoice.mood
     }
 
-    private var hasUnsavedCheckIn: Bool
+    private var hasUnsavedCheckIn: Bool /* Unsaved Check In availability */
     {
 
         !changed.isEmpty || moodChoice != .none || !customEmoji.isEmpty || !customFeeling.isEmpty
     }
 
-    @State private var didSave = false
-    @State private var selectedFocus: DailyPlanPriority?
+    @State private var didSave = false                   /* Save completion flag */
+    @State private var selectedFocus: DailyPlanPriority? /* Selected focus       */
 
 
     ///
@@ -1450,11 +1457,11 @@ struct TodayCheckInView: View
 
     }
 
-    private var focusPlan: DailyPlan
+    private var focusPlan: DailyPlan /* Focus plan */
     {
 
-        var result = plan
-        var latest = checkIn;
+        var result = plan     /* Accumulated output value   */
+        var latest = checkIn; /* Most recent retained value */
 
         latest.focus = selectedFocus;
         result.checkIn = latest
@@ -1462,7 +1469,7 @@ struct TodayCheckInView: View
         return result
     }
 
-    @State private var confirmsLeaving = false
+    @State private var confirmsLeaving = false /* Confirms leaving */
 
 
     ///
@@ -1499,7 +1506,7 @@ struct TodayCheckInView: View
             return
         }
 
-        let previous = plan
+        let previous = plan /* Previous value for comparison */
 
         plan.checkIns = plan.checkInHistory
         plan.checkIn = focusPlan.checkIn
@@ -1522,7 +1529,7 @@ struct TodayCheckInView: View
 
     }
 
-    var body: some View
+    var body: some View /* Today Check In layout */
     {
 
         NavigationStack
@@ -1543,7 +1550,8 @@ struct TodayCheckInView: View
                 Section("Where am I?")
                 {
 
-                    let progress = DailyCheckInProgress.counts(plan: plan, sources: sources)
+                    let progress = /* Operation progress state */
+                        DailyCheckInProgress.counts(plan: plan, sources: sources)
 
                     Text("\(progress.completed) of \(progress.tasks) priority tasks complete").font(.headline)
                     if progress.tasks > 0
@@ -1580,7 +1588,8 @@ struct TodayCheckInView: View
                     {
                         priority in
 
-                        let source = priority.resolve(in: sources)
+                        let source = /* Source value for this operation */
+                            priority.resolve(in: sources)
 
                         HStack(alignment: .top, spacing: 12)
                         {
@@ -1607,7 +1616,7 @@ struct TodayCheckInView: View
                                 if let source, source.card.presentation == .note || !source.card.isTitleChecked
                                 {
 
-                                    let focused =
+                                    let focused = /* Current focus selection */
                                     DailyCheckInProgress.focus(plan: focusPlan, sources: sources)?.id == priority.id
 
                                     Button(focused ? "Next focus ✓" : "Focus on this next")
@@ -1796,7 +1805,7 @@ struct TodayCheckInView: View
                 {
                     source in
 
-                    let priority = DailyPlanPriority(source)
+                    let priority = DailyPlanPriority(source) /* Selected planning priority */
 
                     if !plan.priorities.contains(where:
                         {
@@ -1861,19 +1870,19 @@ struct TodayPlanSummaryPanel: View
 {
 
 
-    @ScaledMetric(relativeTo: .title2) private var headingSize:    CGFloat = 26
-    @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20
-    @ScaledMetric(relativeTo: .body) private var bodySize:         CGFloat = 19
-    let date:                                                      Date
-    let calendar:                                                  Calendar
-    let sources:                                                   [PlanningSearchResult]
-    let onOpen:                                                    () -> Void
-    let welcomesPlan:                                              Bool
-    private let defaults:                                          UserDefaults
-    @AppStorage private var storedData:                            Data
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var plan: DailyPlan?
-    @State private var readFailed = false
+    @ScaledMetric(relativeTo: .title2) private var headingSize:    CGFloat = 26 /* Heading size */
+    @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20 /* Subtitle size */
+    @ScaledMetric(relativeTo: .body) private var bodySize:         CGFloat = 19 /* Body size */
+    let date:                                                      Date /* Date used by this operation */
+    let calendar:                                                  Calendar /* Date calculation calendar */
+    let sources:                                                   [PlanningSearchResult] /* Source records or files */
+    let onOpen:                                                    () -> Void /* Open the selected destination */
+    let welcomesPlan:                                              Bool /* Welcomes plan */
+    private let defaults:                                          UserDefaults /* Preference storage domain */
+    @AppStorage private var storedData:                            Data /* Stored data */
+    @Environment(\.scenePhase) private var scenePhase /* Scene phase */
+    @State private var plan: DailyPlan? /* Daily planning record */
+    @State private var readFailed = false /* Read failed */
 
 
     ///
@@ -1937,7 +1946,7 @@ struct TodayPlanSummaryPanel: View
 
     }
 
-    var body: some View
+    var body: some View /* Today Plan Summary Panel layout */
     {
 
         VStack(alignment: .leading, spacing: 14)
@@ -1993,7 +2002,8 @@ struct TodayPlanSummaryPanel: View
                     {
                         priority in
 
-                        let source = priority.resolve(in: sources)
+                        let source = /* Source value for this operation */
+                            priority.resolve(in: sources)
 
                         HStack(alignment: .top, spacing: 12)
                         {

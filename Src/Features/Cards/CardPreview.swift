@@ -21,8 +21,8 @@ struct CardVisualCompletion: ViewModifier
 {
 
 
-    let card:     KanbanCard
-    let onToggle: () -> Void
+    let card:     KanbanCard /* Card under consideration */
+    let onToggle: () -> Void /* Toggle item completion   */
 
 
     ///
@@ -101,18 +101,18 @@ struct CardVisualCompletion: ViewModifier
 struct KanbanCardView: View
 {
 
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = /* Card Covers visibility */
     true                                            /* Shared display-only preference                                */
     let card:                KanbanCard             /* The kanban card being displayed                               */
     let height:              CGFloat                /* Minimum card height; content may grow                         */
     let displaySettings:     BoardDisplaySettings   /* Settings controlling which elements of the card are displayed */
     var cardBackground:      KanbanListTint?       = nil /* Board-scoped tint, independent of item banner metadata        */
-    var compactCards:        Bool                  = false
-    var titleColor:          ListPreviewTextColor? = nil
-    var supportingTextColor: ListPreviewTextColor? = nil
+    var compactCards:        Bool                  = false /* Compact cards */
+    var titleColor:          ListPreviewTextColor? = nil /* Title color */
+    var supportingTextColor: ListPreviewTextColor? = nil /* Supporting text color */
     var listedOnDate:        Date?                 = nil // Assigned day from the list, independent of its editable title
     /// Layout preset used to select compact card dimensions
     var presentation: BoardPresentation = .standard  /* Board layout controlling the card row's density     */
@@ -120,11 +120,11 @@ struct KanbanCardView: View
     let onUpdateCard: (KanbanCard) -> Void           /* The action invoked when card details are updated    */
     let onDeleteCard: () -> Void                     /* The action invoked when this card is deleted        */
     /// Requests archival of the displayed card
-    let onArchiveCard: () -> Void  /* Archives this card through its containing list             */
-    let onToggle:      () -> Void  /* Callback invoked when the card's title checkbox is toggled */
+    let onArchiveCard: () -> Void /* Archives this card through its containing list             */
+    let onToggle:      () -> Void /* Callback invoked when the card's title checkbox is toggled */
 
     /// Plain writing keeps previews readable without changing the stored rich note
-    private var noteExcerpt: String
+    private var noteExcerpt: String /* Note excerpt */
     {
 
         PlanRichText.plain(card.descriptionOverride ?? "")
@@ -150,7 +150,7 @@ struct KanbanCardView: View
     /// @return     (String) normalized rename text
     /// @post       Card content and draft state remain unchanged
     ///
-    private var trimmedRenameDraft: String
+    private var trimmedRenameDraft: String /* Trimmed rename draft */
     {  /* Normalized rename input */
 
         renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -165,7 +165,7 @@ struct KanbanCardView: View
     /// @return     ([KanbanLabel]) resolved labels for card badges
     /// @post       Unresolved IDs are not removed from the card
     ///
-    private var cardLabels: [KanbanLabel]
+    private var cardLabels: [KanbanLabel] /* Card labels */
     {  /* Resolved labels shown on this card */
 
         card.labelIDs.compactMap
@@ -275,14 +275,14 @@ struct KanbanCardView: View
     /// @post       All card mutations delegate to parent callbacks; local state controls presentations only
     /// @note       Due-date badges require a stored date and this card's saved visibility setting
     ///
-    private var showsHeaderTimes: Bool
+    private var showsHeaderTimes: Bool /* Header Times visibility */
     {
 
         displaySettings.showDueDateBadges && card.showsDueDateInList && card.usesTimeOnlySchedule(on: listedOnDate)
     }
 
 
-    private var headerTimes: some View
+    private var headerTimes: some View /* Header times */
     {
 
         VStack(alignment: .trailing, spacing: 2)
@@ -304,7 +304,7 @@ struct KanbanCardView: View
     }
 
 
-    var body: some View
+    var body: some View /* Kanban Card layout */
     {  /* Compact card summary and card actions */
 
 
@@ -665,7 +665,7 @@ struct KanbanCardView: View
     /// @return     (some View) accessible card-action menu
     /// @post       Card state changes only after a selected action is invoked
     ///
-    private var cardActions: some View
+    private var cardActions: some View /* Card actions */
     {  /* Item-kind, cover, archive, deletion, and editing menu */
 
         Menu
@@ -687,7 +687,8 @@ struct KanbanCardView: View
                                                     {
                                                         visible in
 
-                                                        var updated = card
+                                                        var updated = /* Edited value to publish */
+                                                            card
 
                                                         updated.showsReactionsInPreviews = visible
 
@@ -704,7 +705,8 @@ struct KanbanCardView: View
                                                     {
                                                         visible in
 
-                                                        var updated = card
+                                                        var updated = /* Edited value to publish */
+                                                            card
 
                                                         updated.showsDueDateInList = visible
 
@@ -799,7 +801,7 @@ struct KanbanCardView: View
     /// @post       Card data and display settings remain unchanged
     ///
     @ViewBuilder
-    private var cardBadges: some View
+    private var cardBadges: some View /* Card badges */
     {  /* Enabled discussion, checklist-progress, and due-date indicators */
 
         if card.isEditingLocked
@@ -858,20 +860,21 @@ struct KanbanCardView: View
 struct SingleListNoteRow: View
 {
 
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
-    let card:      KanbanCard
-    let onToggle:  () -> Void
-    var onArchive: (() -> Void)? = nil
-    var onDelete:  (() -> Void)? = nil
-    let onUpdateCard: (KanbanCard) -> Void
-    @State private var confirmsDelete = false
+    let card:      KanbanCard                 /* Card under consideration  */
+    let onToggle:  () -> Void                 /* Toggle item completion    */
+    var onArchive: (() -> Void)? = nil        /* Archive the selected item */
+    var onDelete:  (() -> Void)? = nil        /* Delete the selected item  */
+    let onUpdateCard: (KanbanCard) -> Void    /* Update card callback      */
+    @State private var confirmsDelete = false /* Confirms delete           */
 
-    private var preview: String
+    private var preview: String /* Prepared content preview */
     {
 
-        let subtitle = card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let subtitle = /* Supporting item text */
+            card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if !subtitle.isEmpty
         {
@@ -908,7 +911,7 @@ struct SingleListNoteRow: View
 
     }
 
-    var body: some View
+    var body: some View /* Single List Note layout */
     {
 
         VStack(spacing: 0)

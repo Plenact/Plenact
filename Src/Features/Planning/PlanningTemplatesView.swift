@@ -20,10 +20,10 @@ struct PlanningTemplatesView: View
 {
 
 
-    @Environment(\.dismiss) private var dismiss
-    var onOpenLibrary: (() -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    var onOpenLibrary: (() -> Void)? = nil      /* Open library callback          */
 
-    var body: some View
+    var body: some View /* Planning Templates layout */
     {
 
         NavigationStack
@@ -65,18 +65,18 @@ struct PlanningTemplateLibraryRows: View
 {
 
 
-    var query                        = ""
-    var showsTemplateListings        = true
-    var onOpenLibrary: (() -> Void)? = nil
-    var defaults: UserDefaults       = .standard
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var library: PlanningRoutineLibrary?
-    @State private var sourceDate = Date.now
-    @State var editing:  PlanningRoutineTemplate?
-    @State private var applying: PlanningRoutineTemplate?
-    @State private var completedWeek: ManualWeekOpening?
-    @State var deleting: PlanningRoutineTemplate?
-    @State private var message:  String?
+    var query                        = ""                     /* Search text                   */
+    var showsTemplateListings        = true                   /* Template Listings visibility  */
+    var onOpenLibrary: (() -> Void)? = nil                    /* Open library callback         */
+    var defaults: UserDefaults       = .standard              /* Preference storage domain     */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations   */
+    @State private var library: PlanningRoutineLibrary?       /* Retained library contents     */
+    @State private var sourceDate = Date.now                  /* Source date                   */
+    @State var editing:  PlanningRoutineTemplate?             /* Current editing destination   */
+    @State private var applying: PlanningRoutineTemplate?     /* Template awaiting application */
+    @State private var completedWeek: ManualWeekOpening?      /* Completed week                */
+    @State var deleting: PlanningRoutineTemplate?             /* Item awaiting deletion        */
+    @State private var message:  String?                      /* User-facing status message    */
 
 
     ///
@@ -125,7 +125,7 @@ struct PlanningTemplateLibraryRows: View
             return false
         }
 
-        var next = baseline;
+        var next = baseline; /* Candidate next state */
 
         change(&next)
         do
@@ -185,7 +185,7 @@ struct PlanningTemplateLibraryRows: View
 
     }
 
-    var body: some View
+    var body: some View /* Template Library controls */
     {
 
         Group
@@ -256,7 +256,7 @@ struct PlanningTemplateLibraryRows: View
                     if showsTemplateListings
                     {
 
-                        let matches = library.templates.filter
+                        let matches = library.templates.filter /* Matching source entries */
                         {
 
                             LibraryStarterSearch.matches(
@@ -304,7 +304,7 @@ struct PlanningTemplateLibraryRows: View
                                         Button("Duplicate", systemImage: "plus.square.on.square")
                                         {
 
-                                            var copy = template;
+                                            var copy = template; /* Independent working copy */
 
                                             copy.id = UUID();
                                             copy.name += " Copy";
@@ -484,7 +484,7 @@ struct PlanningTemplateLibraryRows: View
     ///          row avoids duplicate sheet presentations and survives the initial library-load replacement.
     ///          Destructive confirmation stays on its visible template row rather than this offscreen anchor
     /// @return Invisible presentation anchor without changing template content or persistence
-    private var presentationAnchor: some View
+    private var presentationAnchor: some View /* Presentation anchor */
     {
 
         Color.clear
@@ -591,9 +591,9 @@ struct PlanningTemplateEditor: View
 {
 
 
-    @State var template:  PlanningRoutineTemplate
-    let onSave:           (PlanningRoutineTemplate) -> Bool
-    private let original: PlanningRoutineTemplate
+    @State var template:  PlanningRoutineTemplate           /* Reusable planning template */
+    let onSave:           (PlanningRoutineTemplate) -> Bool /* Persist the edited value   */
+    private let original: PlanningRoutineTemplate           /* Baseline before changes    */
 
 
     ///
@@ -616,10 +616,10 @@ struct PlanningTemplateEditor: View
 
     }
 
-    @State private var failed = false
-    @Environment(\.dismiss) private var dismiss
+    @State private var failed = false           /* Rejected operation result      */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
-    var body: some View
+    var body: some View /* Planning Template Editor layout */
     {
 
         NavigationStack
@@ -724,12 +724,12 @@ struct PlanningTemplateListEditor: View
 {
 
 
-    @Binding var list: KanbanList
-    let allLists:      [KanbanList]
-    let anchor:        Date
-    @State private var creationFailed = false
+    @Binding var list: KanbanList             /* List under consideration */
+    let allLists:      [KanbanList]           /* All lists                */
+    let anchor:        Date                   /* Layout anchor position   */
+    @State private var creationFailed = false /* Creation failed          */
 
-    var body:          some View
+    var body:          some View /* Planning Template List Editor layout */
     {
 
         Section(list.title)
@@ -847,7 +847,8 @@ enum PlanningTemplateItemCreation
         createdAt: Date = .now) throws
     {
 
-        let maximum = ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)
+        let maximum = /* Upper supported bound */
+            ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)
 
         guard maximum < Int.max, createdAt.timeIntervalSince1970.isFinite else
         {
@@ -855,8 +856,10 @@ enum PlanningTemplateItemCreation
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let next = try PortableCreationIdentity.reserve(proposed: maximum + 1, root: root)
-        let card = KanbanCard(id: next, word: presentation == .note ? "New note" : "New card",
+        let next = /* Candidate next state */
+            try PortableCreationIdentity.reserve(proposed: maximum + 1, root: root)
+        let card = /* Card under consideration */
+            KanbanCard(id: next, word: presentation == .note ? "New note" : "New card",
             listTitle: list.title, checklists: [], descriptionOverride: "", subtitleOverride: "",
             presentation: presentation, createdAt: createdAt)
 
@@ -876,10 +879,10 @@ struct PlanningTemplateCardEditor: View
 {
 
 
-    @Binding var card: KanbanCard
-    let anchor:        Date
+    @Binding var card: KanbanCard /* Card under consideration */
+    let anchor:        Date       /* Layout anchor position   */
 
-    var body:          some View
+    var body:          some View /* Planning Template Card Editor layout */
     {
 
         Form
@@ -1017,9 +1020,9 @@ struct PlanningTemplateChecklistEditor: View
 {
 
 
-    @Binding var checklist: KanbanChecklist
+    @Binding var checklist: KanbanChecklist /* Checklist group and items */
 
-    private var items:      Binding<[KanbanChecklistItem]>
+    private var items:      Binding<[KanbanChecklistItem]> /* Items being processed */
     {
 
         Binding(
@@ -1037,7 +1040,7 @@ struct PlanningTemplateChecklistEditor: View
             })
     }
 
-    var body: some View
+    var body: some View /* Planning Template Checklist Editor */
     {
 
         Section
@@ -1068,7 +1071,7 @@ struct PlanningTemplateChecklistEditor: View
             {
                 offsets in
 
-                var values = items.wrappedValue;
+                var values = items.wrappedValue; /* Values being processed */
 
                 values.remove(atOffsets: offsets);
 
@@ -1101,17 +1104,19 @@ struct PlanningTemplateApplyView: View
 {
 
 
-    let template: PlanningRoutineTemplate
-    var onWeekCompleted: ((ManualWeekOpening) -> Void)? = nil
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var date                                                  = Date.now
-    @State private var mode:                PlanningTemplateApplication.Mode = .add
-    @State private var baseline:            DatedPlanningWeek?
-    @State private var preview:             DatedPlanningWeek?
-    @State private var exampleImportantIDs: Set<Int> = []
-    @State private var message:             String?
-    @State private var confirmsReplace = false
+    let template: PlanningRoutineTemplate /* Reusable planning template */
+    var onWeekCompleted: ((ManualWeekOpening) -> Void)? = nil /* Week completed callback */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var date                                                  = /* Date used by this operation */
+        Date.now
+    @State private var mode:                PlanningTemplateApplication.Mode = /* Requested operation mode */
+        .add
+    @State private var baseline:            DatedPlanningWeek? /* Original state for comparison */
+    @State private var preview:             DatedPlanningWeek? /* Prepared template preview     */
+    @State private var exampleImportantIDs: Set<Int> = []      /* Example important i ds        */
+    @State private var message:             String?            /* User-facing status message    */
+    @State private var confirmsReplace = false                 /* Confirms replace              */
 
 
     ///
@@ -1135,7 +1140,8 @@ struct PlanningTemplateApplyView: View
 
         baseline = access.document.week(for: date)
 
-        let target = baseline ?? DatedPlanningWeek.make(for: date, calendar: access.document.calendar)
+        let target = /* Target under consideration */
+            baseline ?? DatedPlanningWeek.make(for: date, calendar: access.document.calendar)
 
         do
         {
@@ -1172,7 +1178,7 @@ struct PlanningTemplateApplyView: View
             return
         }
 
-        let persisted: PlanningCalendarDocument?
+        let persisted: PlanningCalendarDocument? /* Previously saved state */
 
         do
         {
@@ -1196,7 +1202,7 @@ struct PlanningTemplateApplyView: View
             return
         }
 
-        let committed: (week: DatedPlanningWeek, importantIDs: Set<Int>)
+        let committed: (week: DatedPlanningWeek, importantIDs: Set<Int>) /* Saved operation result */
 
         do
         {
@@ -1213,7 +1219,7 @@ struct PlanningTemplateApplyView: View
             return
         }
 
-        let saved =
+        let saved = /* Saved state under review */
         committed.importantIDs.isEmpty
         ? access.saveWeek(committed.week)
         : (access.saveExampleWeek?(committed.week, committed.importantIDs) ?? access.saveWeek(committed.week))
@@ -1239,7 +1245,7 @@ struct PlanningTemplateApplyView: View
 
     }
 
-    var body: some View
+    var body: some View /* Template preview and actions */
     {
 
         NavigationStack
@@ -1451,7 +1457,7 @@ enum LibraryStarterSearch
     static func matches(_ query: String, texts: [String]) -> Bool
     {
 
-        let content = texts.joined(separator: " ")
+        let content = texts.joined(separator: " ") /* Content being processed */
 
         return query.split(whereSeparator: \.isWhitespace).allSatisfy
         {
@@ -1502,9 +1508,10 @@ enum LibraryTemplateCapture
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var next    = source
-        let nextID  = (source.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
-        var created = source.collection.lists[index].makeItems(
+        var next    = source /* Candidate next state */
+        let nextID  =        /* Next ID              */
+            (source.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        var created = source.collection.lists[index].makeItems( /* Newly created value */
             startingAt: nextID, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation,
             actions: capture.actions)
@@ -1553,10 +1560,10 @@ struct LibraryQuickTemplateComposer: View
 {
 
 
-    let template: QuickCaptureTemplate
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var originalWeek: DatedPlanningWeek?
+    let template: QuickCaptureTemplate                        /* Reusable planning template     */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var originalWeek: DatedPlanningWeek?       /* Original week                  */
 
 
     ///
@@ -1585,14 +1592,16 @@ struct LibraryQuickTemplateComposer: View
         do
         {
 
-            let updated = try LibraryTemplateCapture.adding(capture, to: current)
+            let updated = /* Edited value to publish */
+                try LibraryTemplateCapture.adding(capture, to: current)
 
             guard access.saveWeek(updated) else
             {
                 return false
             }
 
-            let previousIDs = Set(current.collection.lists.flatMap(\.cards).map(\.id))
+            let previousIDs = /* Previous i ds */
+                Set(current.collection.lists.flatMap(\.cards).map(\.id))
 
             if let list = updated.collection.lists.first(where:
                 {
@@ -1617,7 +1626,7 @@ struct LibraryQuickTemplateComposer: View
 
     }
 
-    var body: some View
+    var body: some View /* Library Quick Template Composer */
     {
 
         Group
@@ -1699,11 +1708,11 @@ struct LibraryExampleWeekTemplateButton: View
 {
 
 
-    @State private var editing:  PlanningRoutineTemplate?
-    @State private var baseline: PlanningRoutineLibrary?
-    @State private var message:  String?
+    @State private var editing:  PlanningRoutineTemplate? /* Current editing destination   */
+    @State private var baseline: PlanningRoutineLibrary?  /* Original state for comparison */
+    @State private var message:  String?                  /* User-facing status message    */
 
-    var body:                    some View
+    var body:                    some View /* Library Example Week Template Button */
     {
 
         Button("Save as a Week template", systemImage: "square.stack.3d.up")
@@ -1714,7 +1723,8 @@ struct LibraryExampleWeekTemplateButton: View
 
                 baseline = try PlanningRoutineStore.load()
 
-                var example = PlanningRoutineLibrary.seeded.templates[0]
+                var example = /* Seeded example content */
+                    PlanningRoutineLibrary.seeded.templates[0]
 
                 example.id = UUID();
                 example.name = "Example Week"
@@ -1740,7 +1750,7 @@ struct LibraryExampleWeekTemplateButton: View
                     return false
                 }
 
-                var next = baseline
+                var next = baseline /* Candidate next state */
 
                 next.templates.append(updated)
                 do

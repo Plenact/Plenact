@@ -22,7 +22,7 @@ struct WorkspaceNoteVisibilityKey: EnvironmentKey
 {
 
 
-    static let defaultValue: (UUID, Bool) -> Void =
+    static let defaultValue: (UUID, Bool) -> Void = /* Fallback environment callback */
     {
         _, _ in
     }
@@ -41,7 +41,7 @@ extension EnvironmentValues
 {
 
 
-    var workspaceNoteVisibility: (UUID, Bool) -> Void
+    var workspaceNoteVisibility: (UUID, Bool) -> Void /* Workspace note visibility callback */
     {
 
         get
@@ -71,7 +71,7 @@ struct WorkspaceBottomBarHeightKey: EnvironmentKey
 {
 
 
-    static let defaultValue: CGFloat = 0
+    static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 }
 
@@ -87,7 +87,7 @@ extension EnvironmentValues
 {
 
 
-    var workspaceBottomBarHeight: CGFloat
+    var workspaceBottomBarHeight: CGFloat /* Workspace bottom bar height */
     {
 
         get
@@ -121,8 +121,8 @@ struct CardKeyboardNavigation
 {
 
 
-    var previous: (() -> Void)? = nil
-    var next:     (() -> Void)? = nil
+    var previous: (() -> Void)? = nil /* Previous value for comparison */
+    var next:     (() -> Void)? = nil /* Candidate next state          */
 
 }
 
@@ -136,7 +136,7 @@ struct CardKeyboardNavigation
 struct CardKeyboardNavigationKey: EnvironmentKey
 {
 
-    static let defaultValue = CardKeyboardNavigation()
+    static let defaultValue = CardKeyboardNavigation() /* Fallback environment value */
 
 }
 
@@ -152,7 +152,7 @@ extension EnvironmentValues
 {
 
 
-    var cardKeyboardNavigation: CardKeyboardNavigation
+    var cardKeyboardNavigation: CardKeyboardNavigation /* Card keyboard navigation */
     {
 
         get
@@ -212,7 +212,7 @@ enum CardKeyboardNeighbors
             return (nil, nil)
         }
 
-        let items = list.cards.filter
+        let items = list.cards.filter /* Items being processed */
         {
             !$0.isSectionDivider
         }
@@ -242,12 +242,12 @@ struct KeyboardCardActions
 {
 
 
-    var exit:             (() -> Void)? = nil
-    var previous:         (() -> Void)? = nil
-    var next:             (() -> Void)? = nil
-    var attachment:       (() -> Void)? = nil
-    var checklist:        (() -> Void)? = nil
-    var showsUpperBorder: Bool?         = nil
+    var exit:             (() -> Void)? = nil /* Exit callback                 */
+    var previous:         (() -> Void)? = nil /* Previous value for comparison */
+    var next:             (() -> Void)? = nil /* Candidate next state          */
+    var attachment:       (() -> Void)? = nil /* Owned attachment content      */
+    var checklist:        (() -> Void)? = nil /* Checklist group and items     */
+    var showsUpperBorder: Bool?         = nil /* Upper Border visibility       */
 
 }
 
@@ -263,9 +263,9 @@ struct KeyboardFormatting
 {
 
 
-    let toggle: (UIFontDescriptor.SymbolicTraits) -> Void
-    let color:  (String) -> Void
-    let font:   (String?, Double?) -> Void
+    let toggle: (UIFontDescriptor.SymbolicTraits) -> Void /* Toggle callback      */
+    let color:  (String) -> Void                          /* Resolved color value */
+    let font:   (String?, Double?) -> Void                /* Resolved text font   */
 
 }
 
@@ -282,12 +282,14 @@ final class PlenactKeyboard
 {
 
 
-    static let shared                                           = PlenactKeyboard()
-    private var observers:        [NSObjectProtocol]            = []
-    private var contexts:         [(UUID, KeyboardCardActions)] = []
-    private weak var activeInput: UIView?
+    static let shared                                           = /* Shared operation value */
+        PlenactKeyboard()
+    private var observers:        [NSObjectProtocol]            = /* Installed change observers */
+        []
+    private var contexts:         [(UUID, KeyboardCardActions)] = [] /* Contexts lookup entries */
+    private weak var activeInput: UIView?                            /* Active input            */
 
-    var actions:                  KeyboardCardActions
+    var actions:                  KeyboardCardActions /* Available item operations */
     {
         contexts.last?.1 ?? KeyboardCardActions()
     }
@@ -449,7 +451,7 @@ final class PlenactKeyboard
     func refreshActive()
     {
 
-        let toolbar =
+        let toolbar = /* Available editor controls */
         (activeInput as? UITextField)?.inputAccessoryView ?? (activeInput as? UITextView)?.inputAccessoryView
 
         (toolbar as? PlenactKeyboardToolbar)?.updateAvailability()
@@ -470,14 +472,17 @@ final class PlenactKeyboardToolbar: UIView
 {
 
 
-    private weak var input: UIView?
-    private let formatting: KeyboardFormatting?
-    private let keyboardBackdrop                                 = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
-    private let upperEdge                                        = CAShapeLayer()
-    private var buttonViews:       [(UIBarButtonItem, UIButton)] = []
-    private var undoButton:        UIBarButtonItem?
-    private var redoButton:        UIBarButtonItem?
-    private var contextualButtons: [(UIBarButtonItem, KeyPath<KeyboardCardActions, (() -> Void)?>)] = []
+    private weak var input: UIView?                                /* Source operation input  */
+    private let formatting: KeyboardFormatting?                    /* Current rich-text style */
+    private let keyboardBackdrop                                 = /* Keyboard backdrop       */
+        UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+    private let upperEdge                                        = /* Upper-edge drawing layer */
+        CAShapeLayer()
+    private var buttonViews:       [(UIBarButtonItem, UIButton)] = [] /* Button views */
+    private var undoButton:        UIBarButtonItem? /* Undo button */
+    private var redoButton:        UIBarButtonItem? /* Redo button */
+    private var contextualButtons: [(UIBarButtonItem, KeyPath<KeyboardCardActions, (() -> Void)?>)] = /* Contextual buttons callback */
+        []
 
 
     ///
@@ -544,11 +549,11 @@ final class PlenactKeyboardToolbar: UIView
 
         super.layoutSubviews()
 
-        let radius: CGFloat = 24
+        let radius: CGFloat = 24 /* Rounded-corner radius */
 
         keyboardBackdrop.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height + radius)
 
-        let shape = CAShapeLayer()
+        let shape = CAShapeLayer() /* Resolved artwork shape */
 
         shape.path =
         UIBezierPath(
@@ -558,7 +563,7 @@ final class PlenactKeyboardToolbar: UIView
         ).cgPath
         keyboardBackdrop.layer.mask = shape
 
-        let edge = UIBezierPath()
+        let edge = UIBezierPath() /* Current layout edge */
 
         edge.move(to: CGPoint(x: 0.25, y: radius))
         edge.addArc(
@@ -617,7 +622,7 @@ final class PlenactKeyboardToolbar: UIView
     private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> UIBarButtonItem
     {
 
-        let item = UIBarButtonItem(
+        let item = UIBarButtonItem( /* Item under consideration */
             image: UIImage(systemName: symbol), primaryAction: UIAction(title: title)
             {
                 _ in
@@ -647,7 +652,7 @@ final class PlenactKeyboardToolbar: UIView
     -> UIBarButtonItem
     {
 
-        let item = action(title, symbol: symbol)
+        let item = action(title, symbol: symbol) /* Item under consideration */
         {
             PlenactKeyboard.shared.actions[keyPath: key]?()
         }
@@ -669,16 +674,21 @@ final class PlenactKeyboardToolbar: UIView
 
         contextualButtons = []
 
-        let exit     = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
-        let previous = contextual("Previous item in this list", symbol: "arrow.left", key: \.previous)
-        let next     = contextual("Next item in this list", symbol: "arrow.right", key: \.next)
-        let undo     = action("Undo text edit", symbol: "arrow.uturn.backward")
+        let exit     = /* Exit operation value */
+            contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
+        let previous = /* Previous value for comparison */
+            contextual("Previous item in this list", symbol: "arrow.left", key: \.previous)
+        let next     = /* Candidate next state */
+            contextual("Next item in this list", symbol: "arrow.right", key: \.next)
+        let undo     = /* Restore the prior edit */
+            action("Undo text edit", symbol: "arrow.uturn.backward")
         {
             [weak self] in
             self?.performUndo(redo: false)
         }
 
-        let redo = action("Redo text edit", symbol: "arrow.uturn.forward")
+        let redo = /* Reapply the reverted edit */
+            action("Redo text edit", symbol: "arrow.uturn.forward")
         {
             [weak self] in
             self?.performUndo(redo: true)
@@ -687,27 +697,32 @@ final class PlenactKeyboardToolbar: UIView
         undoButton = undo;
         redoButton = redo
 
-        let attachment = contextual("Add attachment", symbol: "paperclip", key: \.attachment)
-        let checklist  = contextual("Add checklist", symbol: "checklist", key: \.checklist)
-        let format     = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
+        let attachment = /* Owned attachment content */
+            contextual("Add attachment", symbol: "paperclip", key: \.attachment)
+        let checklist  = /* Checklist group and items */
+            contextual("Add checklist", symbol: "checklist", key: \.checklist)
+        let format     = /* Text formatting action */
+            UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
 
         format.accessibilityLabel = "Font and formatting";
         format.width = 30;
         format.isEnabled = formatting != nil
 
-        let done = action("Hide keyboard", symbol: "chevron.down")
+        let done = action("Hide keyboard", symbol: "chevron.down") /* Done operation value */
         {
             [weak input] in
             input?.resignFirstResponder()
         }
 
-        let models = [exit, previous, next, undo, redo, attachment, checklist, format, done]
+        let models = /* Models lookup entries */
+            [exit, previous, next, undo, redo, attachment, checklist, format, done]
 
         buttonViews = models.map
         {
             item in
 
-            let button = UIButton(type: .system, primaryAction: item.primaryAction)
+            let button = /* Native action control */
+                UIButton(type: .system, primaryAction: item.primaryAction)
 
             button.setTitle(nil, for: .normal)
             button.setImage(item.image, for: .normal)
@@ -721,11 +736,12 @@ final class PlenactKeyboardToolbar: UIView
             return (item, button)
         }
 
-        let middle = UIStackView(arrangedSubviews: buttonViews.dropFirst().dropLast().map
+        let middle = /* Central layout position */
+            UIStackView(arrangedSubviews: buttonViews.dropFirst().dropLast().map
             {
                 $0.1
             })
-        let scroll = UIScrollView();
+        let scroll = UIScrollView(); /* Native scroll view */
 
         scroll.showsHorizontalScrollIndicator = false
         scroll.accessibilityLabel = "Editor actions"
@@ -754,7 +770,8 @@ final class PlenactKeyboardToolbar: UIView
                 middle.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
             ])
 
-        let strip = UIStackView(arrangedSubviews: [buttonViews[0].1, scroll, buttonViews[8].1])
+        let strip = /* Strip operation value */
+            UIStackView(arrangedSubviews: [buttonViews[0].1, scroll, buttonViews[8].1])
 
         subviews.filter
         {
@@ -777,7 +794,7 @@ final class PlenactKeyboardToolbar: UIView
         updateAvailability()
     }
 
-    override var intrinsicContentSize: CGSize
+    override var intrinsicContentSize: CGSize /* Intrinsic content size */
     {
         CGSize(width: UIView.noIntrinsicMetric, height: 44)
     }
@@ -864,7 +881,7 @@ final class PlenactKeyboardToolbar: UIView
     private func formattingMenu() -> UIMenu
     {
 
-        let style = UIMenu(
+        let style = UIMenu( /* Selected display style */
             title: "Style", options: .displayInline,
             children: [
                 UIAction(title: "Bold", image: UIImage(systemName: "bold"))
@@ -878,7 +895,7 @@ final class PlenactKeyboardToolbar: UIView
                     self?.formatting?.toggle(.traitItalic)
                 }
             ])
-        let fonts = UIMenu(
+        let fonts = UIMenu( /* Available text fonts */
             title: "Font",
             children: [
                 ("System", "System"), ("Serif", "Georgia"), ("Sans serif", "AvenirNext-Regular"),
@@ -893,7 +910,7 @@ final class PlenactKeyboardToolbar: UIView
                 }
 
             })
-        let sizes = UIMenu(
+        let sizes = UIMenu( /* Measured layout dimensions */
             title: "Size",
             children: [12.0, 14, 17, 20, 24, 28, 34].map
             {
@@ -905,7 +922,7 @@ final class PlenactKeyboardToolbar: UIView
                 }
 
             })
-        let colors = UIMenu(
+        let colors = UIMenu( /* Colors used by this appearance */
             title: "Color",
             children: PlanRichText.colors.map
             {

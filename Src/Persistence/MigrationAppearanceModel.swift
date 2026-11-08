@@ -26,14 +26,16 @@ enum MigrationAppearanceModel
         context: MigrationContentValues) throws -> [String: Any]
     {
 
-        let workspace       = context.journal.previewWorkspaceID.uuidString.lowercased()
-        var appearance: Any = NSNull()
-        var library: Any    = NSNull()
+        let workspace       = /* Active workspace snapshot */
+            context.journal.previewWorkspaceID.uuidString.lowercased()
+        var appearance: Any = NSNull() /* Resolved appearance choices */
+        var library: Any    = NSNull() /* Retained library contents   */
 
         if let globalWeek
         {
 
-            let id = try context.id("workspace_appearance", owner: "workspace_metadata", legacy: "Plenact.WeekAppearance.v1")
+            let id = /* Portable record identity */
+                try context.id("workspace_appearance", owner: "workspace_metadata", legacy: "Plenact.WeekAppearance.v1")
 
             appearance = ["user_data_model_version": "1.1", "payload_schema_version": 1,
                 "record_type": "workspace_appearance", "id": id, "workspace_id": workspace,
@@ -43,7 +45,8 @@ enum MigrationAppearanceModel
         if artworkPresent
         {
 
-            let id = try context.id("artwork_library", owner: "workspace_metadata", legacy: "Plenact.Studio.Artwork.v1")
+            let id = /* Portable record identity */
+                try context.id("artwork_library", owner: "workspace_metadata", legacy: "Plenact.Studio.Artwork.v1")
 
             library = ["user_data_model_version": "1.1", "payload_schema_version": 1,
                 "record_type": "artwork_library", "id": id, "workspace_id": workspace,

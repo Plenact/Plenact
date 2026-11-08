@@ -327,8 +327,8 @@ extension ContentView
         }
 
 
-        let currentKey = currentName.lowercased()  /* Normalized key for the current member name */
-        let updatedKey = updatedName.lowercased()  /* Normalized key for the updated member name */
+        let currentKey = currentName.lowercased() /* Normalized key for the current member name */
+        let updatedKey = updatedName.lowercased() /* Normalized key for the updated member name */
 
         for listIndex in lists.indices
         {
@@ -338,7 +338,7 @@ extension ContentView
             {
 
 
-                var updatedCard = lists[listIndex].cards[
+                var updatedCard = lists[listIndex].cards[ /* Updated card */
                 cardIndex]                       /* Copy of the current card for in-place updates     */
                 var seenNames: Set<String> = []  /* Track unique member names within the current card */
 
@@ -346,14 +346,15 @@ extension ContentView
                 {
                     assignee in
 
-                    let trimmedMember = assignee.displayName.trimmingCharacters(
+                    let trimmedMember = /* Trimmed member */
+                        assignee.displayName.trimmingCharacters(
                         in: .whitespacesAndNewlines) /* Existing display name   */
-                    let renamedMember =
+                    let renamedMember = /* Renamed member */
                     assignee.kind == .manual
                     && trimmedMember.lowercased() == currentKey /* Match only manual names */
                     ? updatedName
                     : trimmedMember /* Name retained or updated for this assignment */
-                    let normalizedName =
+                    let normalizedName = /* Normalized name */
                     assignee.kind == .registeredUser /* Namespace stable IDs separately from names   */
                     ? "user:\(assignee.userID ?? assignee.id.uuidString)"
                     : "manual:\(renamedMember.lowercased())" /* Stable deduplication key */
@@ -443,7 +444,8 @@ extension ContentView
     {
 
 
-        let normalizedMemberName = memberName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedMemberName = /* Normalized member name */
+            memberName.trimmingCharacters(in: .whitespacesAndNewlines)
         .lowercased() /* Normalized removal key */
 
         guard !normalizedMemberName.isEmpty else
@@ -557,7 +559,7 @@ extension ContentView
     {
 
 
-        let nextListID: Int
+        let nextListID: Int /* Next list ID */
 
         do
         {
@@ -571,12 +573,12 @@ extension ContentView
             return
         }
 
-        let existingTitles = Set(lists.map
+        let existingTitles = Set(lists.map /* Existing titles */
             {
                 $0.title.lowercased()
             })                     /* Normalized current titles */
-        var newTitle = "New List"  /* First candidate list name */
-        var suffix   = 2           /* Duplicate-title suffix    */
+        var newTitle = "New List" /* First candidate list name */
+        var suffix   = 2          /* Duplicate-title suffix    */
 
         while existingTitles.contains(newTitle.lowercased())
         {
@@ -588,7 +590,7 @@ extension ContentView
         }
 
 
-        let newList = KanbanList(id: nextListID, title: newTitle, cards: [])
+        let newList = KanbanList(id: nextListID, title: newTitle, cards: []) /* New list */
 
         lists.append(newList)
 
@@ -623,11 +625,11 @@ extension ContentView
             return false
         }
 
-        let proposedCardID = ((lists + archivedLists).flatMap
+        let proposedCardID = ((lists + archivedLists).flatMap /* Proposed card ID */
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
-        let nextCardID: Int
+        let nextCardID: Int /* Next card ID */
 
         do
         {
@@ -650,7 +652,7 @@ extension ContentView
             return false
         }
 
-        var snapshot = lists
+        var snapshot = lists /* Working state snapshot */
 
         snapshot[listIndex].cards.append(contentsOf: created)
         if let first = created.first
@@ -856,7 +858,8 @@ extension ContentView
 
         var cards = lists[listIndex].cards /* Mutable card-order copy */
 
-        let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+        let reordered = /* Items in the requested order */
+            DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
 
         guard reordered != cards else
         {
@@ -911,7 +914,8 @@ extension ContentView
         }
 
 
-        let copiedList = ListCopying.copy(lists[sourceIndex], into: lists + archivedLists, crossBoard: false)
+        let copiedList = /* Copied list */
+            ListCopying.copy(lists[sourceIndex], into: lists + archivedLists, crossBoard: false)
 
         lists.insert(copiedList, at: sourceIndex + 1)
     }
@@ -1166,8 +1170,8 @@ extension ContentView
 
         var updatedList = lists[listIndex] /* Mutable list copy */
 
-        var sortedCards: [KanbanCard]    = []  /* Cards emitted in sorted order */
-        var currentSection: [KanbanCard] = []  /* Cards before the next divider */
+        var sortedCards: [KanbanCard]    = [] /* Cards emitted in sorted order */
+        var currentSection: [KanbanCard] = [] /* Cards before the next divider */
 
         // Iterate through each card in the list, grouping them by sections and sorting within each section
         for card in updatedList.cards
@@ -1487,7 +1491,7 @@ extension ContentView
     func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
 
-        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
@@ -1500,7 +1504,7 @@ extension ContentView
                     return
                 }
 
-                var path = NavigationPath();
+                var path = NavigationPath(); /* Filesystem or navigation path */
 
                 path.append(target);
 
@@ -1517,7 +1521,7 @@ extension ContentView
                     return
                 }
 
-                var path = NavigationPath();
+                var path = NavigationPath(); /* Filesystem or navigation path */
 
                 path.append(target);
 

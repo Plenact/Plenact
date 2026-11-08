@@ -24,7 +24,7 @@ final class DatabaseActivity: ObservableObject
     static let shared = DatabaseActivity() /* Process-wide activity state observed by database-backed views */
 
     /// Active operation identifiers paired with their visible progress messages
-    @Published private(set) var operations: [(id: UUID, message: String)] =
+    @Published private(set) var operations: [(id: UUID, message: String)] = /* Queued content operations */
     [] /* Active operation identifiers and visible progress messages */
 
     /// Latest error message awaiting dismissal
@@ -37,7 +37,7 @@ final class DatabaseActivity: ObservableObject
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    var isWorking: Bool
+    var isWorking: Bool /* Working state */
     {
         !operations.isEmpty
     }  /* Whether database work is active */
@@ -50,7 +50,7 @@ final class DatabaseActivity: ObservableObject
     ///
     /// @return     (String?) active message, or nil when no operation is active
     ///
-    var message: String?
+    var message: String? /* User-facing status message */
     {
         operations.first?.message
     }  /* Earliest active operation message */
@@ -146,7 +146,7 @@ struct DatabaseActivityOverlay: ViewModifier
 
 
     /// Shared database activity observed by this modifier
-    @ObservedObject private var activity = DatabaseActivity
+    @ObservedObject private var activity = DatabaseActivity /* Activity operation value */
     .shared /* Shared activity source rendered by this overlay */
 
 

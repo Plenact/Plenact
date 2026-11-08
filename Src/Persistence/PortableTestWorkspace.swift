@@ -14,7 +14,7 @@ import Foundation
 struct PortableTestWorkspace
 {
 
-    let root: URL
+    let root: URL /* Workspace or view root */
 
 
     /// @fcn PortableTestWorkspace.live
@@ -24,7 +24,8 @@ struct PortableTestWorkspace
     static func live() throws -> PortableTestWorkspace
     {
 
-        let support = try FileManager.default.url(for: .applicationSupportDirectory,
+        let support = /* Supported operation capability */
+            try FileManager.default.url(for: .applicationSupportDirectory,
             in: .userDomainMask, appropriateFor: nil, create: true)
 
         return PortableTestWorkspace(root: support.appendingPathComponent("PlenactPortableTest", isDirectory: true))
@@ -38,7 +39,7 @@ struct PortableTestWorkspace
     private func state() throws -> [String: Any]
     {
 
-        let path = root.appendingPathComponent("state.json")
+        let path = root.appendingPathComponent("state.json") /* Filesystem or navigation path */
 
         if !FileManager.default.fileExists(atPath: path.path)
         {
@@ -74,8 +75,10 @@ struct PortableTestWorkspace
             throw PortablePackageReview.Failure.invalid
         }
 
-        let folder = root.appendingPathComponent(id, isDirectory: true)
-        let bytes  = try Data(contentsOf: folder.appendingPathComponent("snapshot.bin"))
+        let folder = /* Working folder location */
+            root.appendingPathComponent(id, isDirectory: true)
+        let bytes  = /* Loaded original file bytes */
+            try Data(contentsOf: folder.appendingPathComponent("snapshot.bin"))
 
         guard bytes.count <= LegacyWorkspaceExport.maximumBytes,
               let receipt = try JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("receipt.json"))) as? [String: Any],
@@ -133,7 +136,7 @@ struct PortableTestWorkspace
 
         _ = try PortablePackageReview.review(files: source)
 
-        let previous = try state()
+        let previous = try state() /* Previous value for comparison */
 
         if let active = previous["active"] as? String
         {
@@ -142,16 +145,17 @@ struct PortableTestWorkspace
 
         }
 
-        let manager = FileManager.default
+        let manager = FileManager.default /* Filesystem or media manager */
 
         try manager.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
 
-        let id     = UUID().uuidString.lowercased()
-        let folder = root.appendingPathComponent(id, isDirectory: true)
+        let id     = UUID().uuidString.lowercased() /* Record UUID             */
+        let folder =                                /* Working folder location */
+            root.appendingPathComponent(id, isDirectory: true)
 
         try manager.createDirectory(at: folder, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
 
-        var committed = false
+        var committed = false /* Saved operation result */
 
         defer
         {
@@ -162,12 +166,13 @@ struct PortableTestWorkspace
         }
         try reviewed.snapshot.write(to: folder.appendingPathComponent("snapshot.bin"), options: [.atomic, .completeFileProtection])
 
-        let receipt: [String: Any] = ["format_version": 1, "sha256": MigrationBackupReader.digest(reviewed.snapshot)]
+        let receipt: [String: Any] = /* Saved-operation verification */
+            ["format_version": 1, "sha256": MigrationBackupReader.digest(reviewed.snapshot)]
 
         try JSONSerialization.data(withJSONObject: receipt, options: .sortedKeys)
             .write(to: folder.appendingPathComponent("receipt.json"), options: .atomic)
 
-        let installed = try read(id)
+        let installed = try read(id) /* Installed workspace state */
 
         guard try Data(contentsOf: folder.appendingPathComponent("snapshot.bin")) == reviewed.snapshot else
         {
@@ -175,7 +180,8 @@ struct PortableTestWorkspace
         }
         try beforeCommit?()
 
-        let next: [String: Any] = ["format_version": 1, "active": id, "undo": previous["active"] ?? NSNull(), "can_undo": true]
+        let next: [String: Any] = /* Candidate next state */
+            ["format_version": 1, "active": id, "undo": previous["active"] ?? NSNull(), "can_undo": true]
 
         try JSONSerialization.data(withJSONObject: next, options: .sortedKeys).write(to: root.appendingPathComponent("state.json"), options: .atomic)
 
@@ -197,15 +203,17 @@ struct PortableTestWorkspace
 
         #if targetEnvironment(simulator)
 
-        let current = try state()
+        let current = try state() /* Current operation snapshot */
 
         guard current["can_undo"] as? Bool == true else
         {
             throw PortablePackageReview.Failure.invalid
         }
 
-        let previous            = try (current["undo"] as? String).map { try read($0) }
-        let next: [String: Any] = ["format_version": 1, "active": current["undo"] ?? NSNull(),
+        let previous            = /* Previous value for comparison */
+            try (current["undo"] as? String).map { try read($0) }
+        let next: [String: Any] = /* Candidate next state */
+            ["format_version": 1, "active": current["undo"] ?? NSNull(),
             "undo": current["active"] ?? NSNull(), "can_undo": true]
 
         try JSONSerialization.data(withJSONObject: next, options: .sortedKeys).write(to: root.appendingPathComponent("state.json"), options: .atomic)

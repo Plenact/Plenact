@@ -93,7 +93,8 @@ func editBoardList(
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let subtitleOverride = subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
+        let subtitleOverride = /* Subtitle override */
+            subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
 
         try lists[index].edit(title: title, subtitle: subtitleOverride)
         if let newItemPresentation

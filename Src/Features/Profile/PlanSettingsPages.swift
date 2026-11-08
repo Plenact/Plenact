@@ -15,15 +15,16 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
 
     case appearance, focus, planning, review, navigation, display, maps, data, focusFilters
 
-    static let menuPages: [Self] = [.appearance, .focus, .planning, .review, .navigation, .display, .maps, .data]
+    static let menuPages: [Self] = /* Menu pages */
+        [.appearance, .focus, .planning, .review, .navigation, .display, .maps, .data]
 
-    var id: String
+    var id: String /* Record or view identity */
     {
 
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -41,7 +42,7 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
         }
     }
 
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -66,9 +67,9 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
 struct PlanSettingsMenuRow: View
 {
 
-    let page: PlanSettingsPage
+    let page: PlanSettingsPage /* Current settings destination */
 
-    var body: some View
+    var body: some View /* Plan Settings Menu layout */
     {
 
         HStack
@@ -100,16 +101,16 @@ struct PlanSettingsMenuRow: View
 struct PlanSettingsModulePage: View
 {
 
-    let page: PlanSettingsPage
-    @Binding var preferences: LocalProfilePreferences
-    @Binding var firstWeekday: Int
-    let lists: [KanbanList]
-    let onSave: () -> Void
-    let onStudio: () -> Void
-    let onTemplates: () -> Void
-    let onShortcuts: () -> Void
+    let page: PlanSettingsPage                        /* Current settings destination */
+    @Binding var preferences: LocalProfilePreferences /* Planning and display choices */
+    @Binding var firstWeekday: Int                    /* Calendar week boundary       */
+    let lists: [KanbanList]                           /* Ordered List records         */
+    let onSave: () -> Void                            /* Persist the edited value     */
+    let onStudio: () -> Void                          /* Studio callback              */
+    let onTemplates: () -> Void                       /* Templates callback           */
+    let onShortcuts: () -> Void                       /* Shortcuts callback           */
 
-    var body: some View
+    var body: some View /* Focused preference controls */
     {
 
         Form
@@ -141,7 +142,7 @@ struct PlanSettingsModulePage: View
     /// @brief Bind each existing preference to its focused destination
     /// @return Controls editing only the parent-owned draft, or opening an independent editor
     @ViewBuilder
-    private var content: some View
+    private var content: some View /* Content being processed */
     {
 
         switch page
@@ -316,7 +317,7 @@ struct PlanSettingsModulePage: View
     /// @fcn PlanSettingsModulePage.focusLayout
     /// @brief Keep layout and ordering controls separate from inclusion filters
     /// @return Existing count, ordering and grouping preferences with focused guidance
-    private var focusLayout: some View
+    private var focusLayout: some View /* Focus layout */
     {
 
         Section

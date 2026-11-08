@@ -22,8 +22,8 @@ struct ListItemSwipeDelete: ViewModifier
 {
 
 
-    let enabled:   Bool
-    let onRequest: () -> Void
+    let enabled:   Bool       /* Feature availability flag */
+    let onRequest: () -> Void /* Request callback          */
 
 
     ///

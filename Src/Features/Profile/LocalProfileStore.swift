@@ -133,7 +133,7 @@ enum ProfileAvatarPhotoStore
         let documents = try FileManager.default.url( /* App Documents directory lookup */
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
-        let directory = documents.appendingPathComponent(
+        let directory = documents.appendingPathComponent( /* Working directory location */
                         "ProfileAvatars", isDirectory: true) /* Local avatar-photo subdirectory */
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -236,7 +236,7 @@ enum PlanPreferencesStore
 {
 
 
-    static let key = "Plenact.PlanPreferences.v1"
+    static let key = "Plenact.PlanPreferences.v1" /* Persistence lookup key */
 
 
     ///

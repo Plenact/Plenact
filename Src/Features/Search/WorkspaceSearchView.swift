@@ -23,16 +23,18 @@ struct TodaySearchView: View
 {
 
 
-    let lists:           [KanbanList]        /* Current locally stored Board snapshot    */
-    let onOpenBoardList: (Int) -> Void       /* Navigate to a result's containing list   */
-    let onOpenBoardCard: (Int, Int) -> Void  /* Route to a Week card by list/card IDs    */
-    let onArchiveCard:   (Int) -> Void       /* Canonical Week archive                   */
-    let onDeleteCard:    (Int) -> Bool       /* Confirmed canonical Week deletion result */
-    let onArchiveList:   (Int) -> Void       /* Canonical Week list archive              */
-    let onDeleteList:    (Int) -> Bool       /* Confirmed canonical list deletion result */
+    let lists:           [KanbanList]       /* Current locally stored Board snapshot    */
+    let onOpenBoardList: (Int) -> Void      /* Navigate to a result's containing list   */
+    let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs    */
+    let onArchiveCard:   (Int) -> Void      /* Canonical Week archive                   */
+    let onDeleteCard:    (Int) -> Bool      /* Confirmed canonical Week deletion result */
+    let onArchiveList:   (Int) -> Void      /* Canonical Week list archive              */
+    let onDeleteList:    (Int) -> Bool      /* Confirmed canonical list deletion result */
 
-    var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = nil
-    var onSelectResult: ((TodaySearchResult) -> Void)?                                     = nil
+    var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = /* Result provider callback */
+        nil
+    var onSelectResult: ((TodaySearchResult) -> Void)?                                     = /* Select result callback */
+        nil
 
     @Environment(\.dismiss) private var dismiss                   /* Close the search sheet             */
     @FocusState private var searchFieldFocused: Bool              /* Search field focus state           */
@@ -50,7 +52,7 @@ struct TodaySearchView: View
     /// @return     ([TodaySearchResult]) current display-order matches
     /// @post       Search history and Board state are unchanged
     ///
-    private var results: [TodaySearchResult]
+    private var results: [TodaySearchResult] /* Collected operation results */
     {  /* Matches for the current query and scope */
 
         resultProvider?(query, scope, labelLibrary)
@@ -86,7 +88,7 @@ struct TodaySearchView: View
     /// @return     (some View) plain recent-search list
     /// @post       Interactions affect search state only, not Board content
     ///
-    private var recentSearchList: some View
+    private var recentSearchList: some View /* Recent search list */
     {  /* Previously entered queries available for reuse */
 
         List
@@ -159,7 +161,7 @@ struct TodaySearchView: View
     /// @post       Submission, result selection, and disappearance remember nonblank queries;
     ///             search alone does not modify Board content
     ///
-    var body: some View
+    var body: some View /* Today Search layout */
     {  /* Board search controls and matching destinations */
 
 
@@ -457,11 +459,11 @@ struct SharedSearchLifecycleActions: ViewModifier
 {
 
 
-    let enabled:   Bool
-    let title:     String
-    let kind:      String
-    let onArchive: () -> Void
-    let onDelete:  () -> Bool
+    let enabled:   Bool       /* Feature availability flag  */
+    let title:     String     /* User-facing title          */
+    let kind:      String     /* Content kind discriminator */
+    let onArchive: () -> Void /* Archive the selected item  */
+    let onDelete:  () -> Bool /* Delete the selected item   */
 
 
     ///
@@ -504,14 +506,14 @@ struct PlanningSharedSearchPresentation: ViewModifier
 {
 
 
-    @Binding var isPresented: Bool
-    var onLeaveForHome:       () -> Void =
+    @Binding var isPresented: Bool         /* Presentation visibility */
+    var onLeaveForHome:       () -> Void = /* Leave for home callback */
     {
 
     }
 
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var route: PlanningSearchRoute?
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations      */
+    @State private var route: PlanningSearchRoute?            /* Requested navigation destination */
 
 
     ///

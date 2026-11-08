@@ -22,28 +22,28 @@ struct SessionListGuidance: View
 {
 
 
-    let list:     KanbanList
-    let labels:   LabelLibrary
-    var onReveal: () -> Void =
+    let list:     KanbanList   /* List under consideration    */
+    let labels:   LabelLibrary /* Available label definitions */
+    var onReveal: () -> Void = /* Reveal callback             */
     {
 
     }
 
-    var toggleRequest:        Int            = 0
-    var onPresentationChange: (Bool) -> Void =
+    var toggleRequest:        Int            = 0 /* Toggle request               */
+    var onPresentationChange: (Bool) -> Void =   /* Presentation change callback */
     {
         _ in
     }
 
-    @State private var reportedInitialPresentation = false
-    @State private var automaticRevealAttempted    = false
-    @State private var handledToggleRequest        = 0
-    @State private var entryWasEmpty: Bool
-    @State private var isVisible            = false
-    @State private var hasPreparedLayout    = false
-    @State private var guideHeight: CGFloat = 220
-    @State private var showsReadingView     = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var reportedInitialPresentation = false /* Reported initial presentation */
+    @State private var automaticRevealAttempted    = false /* Automatic reveal attempted */
+    @State private var handledToggleRequest        = 0 /* Handled toggle request */
+    @State private var entryWasEmpty: Bool /* Entry was empty */
+    @State private var isVisible            = false /* Visible state */
+    @State private var hasPreparedLayout    = false /* Prepared Layout availability */
+    @State private var guideHeight: CGFloat = 220 /* Guide height */
+    @State private var showsReadingView     = false /* Reading View visibility */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
 
     ///
@@ -82,7 +82,7 @@ struct SessionListGuidance: View
     }
 
 
-    var body: some View
+    var body: some View /* Session List Guidance layout */
     {
 
         VStack(spacing: 0)
@@ -234,7 +234,7 @@ struct SessionListGuidance: View
             }
 
             // Initial entry prepares the row while capture is hidden before revealing both
-            var layoutTransaction = Transaction(animation: nil)
+            var layoutTransaction = Transaction(animation: nil) /* Layout transaction */
 
             layoutTransaction.disablesAnimations = true
 

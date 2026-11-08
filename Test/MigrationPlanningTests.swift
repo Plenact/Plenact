@@ -27,9 +27,12 @@ final class MigrationPlanningTests: XCTestCase
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
 
-        let domain   = "Plenact.PlanningMigrationTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let domain   = /* Lookup or storage namespace */
+            "Plenact.PlanningMigrationTests." + UUID().uuidString
+        let defaults = /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: domain))
+        let root     = /* Synthetic workspace root */
+            FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer
@@ -38,14 +41,17 @@ final class MigrationPlanningTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
 
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
 
-        let instant = Date(timeIntervalSinceReferenceDate: 814_536_000.123456)
-        let card    = KanbanCard(id: 1, word: "Current title", listTitle: "Day", checklists: [], createdAt: instant)
-        let week    = DatedPlanningWeek.make(for: instant, lists: [KanbanList(id: 1, title: "Day", cards: [card])], calendar: calendar)
+        let instant = /* Reference timestamp */
+            Date(timeIntervalSinceReferenceDate: 814_536_000.123456)
+        let card    = /* Synthetic card fixture */
+            KanbanCard(id: 1, word: "Current title", listTitle: "Day", checklists: [], createdAt: instant)
+        let week    = /* Synthetic week fixture */
+            DatedPlanningWeek.make(for: instant, lists: [KanbanList(id: 1, title: "Day", cards: [card])], calendar: calendar)
 
         /// @fcn MigrationPlanningTests.priority
         /// @brief Construct original priority bytes without consulting current workspace projections
@@ -56,21 +62,26 @@ final class MigrationPlanningTests: XCTestCase
         func priority(owner: UUID, created: Date) throws -> DailyPlanPriority
         {
 
-            let raw: [String: Any] = ["ownerID": owner.uuidString, "cardID": 1, "title": "  Original priority 🪴  ",
+            let raw: [String: Any] = /* Unprocessed source value */
+                ["ownerID": owner.uuidString, "cardID": 1, "title": "  Original priority 🪴  ",
                 "location": "Original location", "sourceCreatedAt": created.timeIntervalSinceReferenceDate]
 
             return try JSONDecoder().decode(DailyPlanPriority.self, from: JSONSerialization.data(withJSONObject: raw))
         }
 
-        let original                     = try priority(owner: week.id, created: instant)
-        let missing                      = try priority(owner: UUID(), created: instant)
-        let reused                       = try priority(owner: week.id, created: instant.addingTimeInterval(-3600))
-        let actions: [DailyReviewAction] = [.keep, .keepTomorrow, .table, .complete, .archive, .queue, .tomorrow,
+        let original                     = /* Baseline before changes */
+            try priority(owner: week.id, created: instant)
+        let missing                      = /* Unavailable reference or input */
+            try priority(owner: UUID(), created: instant)
+        let reused                       = /* Reused comparison fixture */
+            try priority(owner: week.id, created: instant.addingTimeInterval(-3600))
+        let actions: [DailyReviewAction] = /* Available item operations */
+            [.keep, .keepTomorrow, .table, .complete, .archive, .queue, .tomorrow,
             .date(PlanningDate.key(instant.addingTimeInterval(86400), calendar: calendar))]
-        let decisions = actions.enumerated().map { index, action in
+        let decisions = actions.enumerated().map { index, action in /* Saved review decisions */
             DailyReviewDecision(source: original, result: index == 0 ? reused : missing, action: action, recordedAt: instant)
         }
-        var plan = DailyPlan(date: instant, calendar: calendar)
+        var plan = DailyPlan(date: instant, calendar: calendar) /* Daily planning record */
 
         plan.intention = "  Historical intention 🌱  "
         plan.constraints = "Before changes"
@@ -87,11 +98,12 @@ final class MigrationPlanningTests: XCTestCase
         plan.eveningReview = DailyEveningReview(step: 2, completedAt: instant, helped: "What helped", difficult: "",
             tomorrow: "Next", decisions: decisions, achievements: [original])
 
-        var legacy = DailyPlan(date: instant.addingTimeInterval(86400), calendar: calendar)
+        var legacy = /* Earlier-format input */
+            DailyPlan(date: instant.addingTimeInterval(86400), calendar: calendar)
 
         legacy.checkIn = DailyCheckIn(focus: original, changed: "Legacy only", savedAt: instant)
 
-        var weekly = WeeklyReviewRecord(date: instant, calendar: calendar)
+        var weekly = WeeklyReviewRecord(date: instant, calendar: calendar) /* Weekly review state */
 
         weekly.step = 1
         weekly.highlights = "Original weekly reflection"
@@ -99,10 +111,12 @@ final class MigrationPlanningTests: XCTestCase
         weekly.decisions = decisions
         weekly.updatedAt = instant
 
-        var periodic = PeriodicReviewRecord(title: "  Period reflection  ", start: instant,
+        var periodic = /* Periodic review state */
+            PeriodicReviewRecord(title: "  Period reflection  ", start: instant,
             end: instant.addingTimeInterval(7 * 86400), calendar: calendar)
-        let objective = ReviewObjective(title: "Original objective", progress: "Before", nextStep: "First")
-        var current   = objective
+        let objective = /* Objective comparison fixture */
+            ReviewObjective(title: "Original objective", progress: "Before", nextStep: "First")
+        var current   = objective /* Current operation snapshot */
 
         current.status = .paused
         current.progress = "After"
@@ -111,15 +125,19 @@ final class MigrationPlanningTests: XCTestCase
         periodic.priorities = [original]
         periodic.updatedAt = instant
 
-        let daily   = DailyPlanStore.Document(plans: [plan.id: plan, legacy.id: legacy])
-        let weeks   = WeeklyReviewStore.Document(records: [weekly.id: weekly])
-        let periods = PeriodicReviewStore.Document(records: [periodic.id.uuidString: periodic])
-        var rhythm  = ReviewRhythmPreferences()
+        let daily   = /* Daily planning state */
+            DailyPlanStore.Document(plans: [plan.id: plan, legacy.id: legacy])
+        let weeks   = /* Retained dated Weeks */
+            WeeklyReviewStore.Document(records: [weekly.id: weekly])
+        let periods = /* Periods comparison fixture */
+            PeriodicReviewStore.Document(records: [periodic.id.uuidString: periodic])
+        var rhythm  = ReviewRhythmPreferences() /* Review invitation preferences */
 
         rhythm.dailyMinutes = 0
         rhythm.dailyNotifications = true
 
-        var values: [String: Any] = ["Plenact.Board.v1": try JSONEncoder().encode(week.collection.lists),
+        var values: [String: Any] = /* Values being processed */
+            ["Plenact.Board.v1": try JSONEncoder().encode(week.collection.lists),
             "Plenact.CalendarWeeks.v1": try JSONEncoder().encode(PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])),
             "Plenact.DailyPlans.v1": try JSONEncoder().encode(daily), "Plenact.WeeklyReviews.v1": try JSONEncoder().encode(weeks),
             "Plenact.PeriodicReviews.v1": try JSONEncoder().encode(periods), "Plenact.ReviewRhythm.v1": try JSONEncoder().encode(rhythm)]
@@ -127,7 +145,8 @@ final class MigrationPlanningTests: XCTestCase
         try edit?(&values)
         defaults.setPersistentDomain(values, forName: domain)
 
-        let backup = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+        let backup = /* Recoverable native snapshot */
+            try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
         try body(backup, root.appendingPathComponent("Journal/ids.json"))
     }
@@ -141,7 +160,8 @@ final class MigrationPlanningTests: XCTestCase
     private func records(_ preview: MigrationPreview) throws -> [[String: Any]]
     {
 
-        let files = try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
+        let files = /* Files used by this operation */
+            try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
 
         return try files.sorted { $0.key < $1.key }.map {
             try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) as? [String: Any])
@@ -158,50 +178,63 @@ final class MigrationPlanningTests: XCTestCase
 
         try fixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             guard preview.planningRecordCount == 5 else
             {
 
-                let report = try MigrationBackupReader.file("MigrationPreview/Report.json", in: preview.files)
+                let report = /* Validation findings */
+                    try MigrationBackupReader.file("MigrationPreview/Report.json", in: preview.files)
 
                 XCTFail("Planning output missing: " + String(decoding: report, as: UTF8.self))
                 return
             }
 
-            let output     = try records(preview)
-            let card       = try XCTUnwrap(output.first { $0["record_type"] as? String == "card" })
-            let daily      = output.filter { $0["record_type"] as? String == "daily_plan" }
-            let full       = try XCTUnwrap(daily.first { ($0["payload"] as? [String: Any])?["check_ins"] is [Any] })
-            let payload    = try XCTUnwrap(full["payload"] as? [String: Any])
-            let priorities = try XCTUnwrap(payload["priorities"] as? [[String: Any]])
+            let output     = try records(preview) /* Operation output       */
+            let card       =                      /* Synthetic card fixture */
+                try XCTUnwrap(output.first { $0["record_type"] as? String == "card" })
+            let daily      = /* Daily planning state */
+                output.filter { $0["record_type"] as? String == "daily_plan" }
+            let full       = /* Full comparison fixture */
+                try XCTUnwrap(daily.first { ($0["payload"] as? [String: Any])?["check_ins"] is [Any] })
+            let payload    = /* Canonical record payload */
+                try XCTUnwrap(full["payload"] as? [String: Any])
+            let priorities = /* Ordered planning priorities */
+                try XCTUnwrap(payload["priorities"] as? [[String: Any]])
 
             XCTAssertEqual(priorities.first?["card_id"] as? String, card["id"] as? String)
             XCTAssertEqual(priorities.first?["title"] as? String, "  Original priority 🪴  ")
 
-            let history = try XCTUnwrap(payload["check_ins"] as? [[String: Any]])
+            let history = /* Retained edit history */
+                try XCTUnwrap(payload["check_ins"] as? [[String: Any]])
 
             XCTAssertEqual(history.first?["intention"] as? String, "Earlier intention")
             XCTAssertEqual(history.first?["completed_tasks"] as? Int, 0)
             XCTAssertEqual((history.first?["mood"] as? [String: Any])?["label"] as? String, " Unhurried ")
             XCTAssertTrue(daily.contains { ($0["payload"] as? [String: Any])?["check_ins"] is NSNull })
 
-            let periodic = try XCTUnwrap(output.first { $0["record_type"] as? String == "periodic_review" }?["payload"] as? [String: Any])
-            let starting = try XCTUnwrap(periodic["starting_objectives"] as? [[String: Any]])
-            let current  = try XCTUnwrap(periodic["objectives"] as? [[String: Any]])
+            let periodic = /* Periodic review state */
+                try XCTUnwrap(output.first { $0["record_type"] as? String == "periodic_review" }?["payload"] as? [String: Any])
+            let starting = /* Starting comparison fixture */
+                try XCTUnwrap(periodic["starting_objectives"] as? [[String: Any]])
+            let current  = /* Current operation snapshot */
+                try XCTUnwrap(periodic["objectives"] as? [[String: Any]])
 
             XCTAssertEqual(starting.first?["id"] as? String, current.first?["id"] as? String)
             XCTAssertEqual(starting.first?["progress"] as? String, "Before")
             XCTAssertEqual(current.first?["progress"] as? String, "After")
             XCTAssertEqual(current.first?["status"] as? String, "paused")
 
-            let decisions = try XCTUnwrap((payload["evening_review"] as? [String: Any])?["decisions"] as? [[String: Any]])
+            let decisions = /* Saved review decisions */
+                try XCTUnwrap((payload["evening_review"] as? [String: Any])?["decisions"] as? [[String: Any]])
 
             XCTAssertEqual(decisions.count, 8)
             XCTAssertNotEqual((decisions.first?["result"] as? [String: Any])?["card_id"] as? String, card["id"] as? String)
             XCTAssertEqual(preview.planningReviewCount, 3)
 
-            let second = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let second = /* Second comparison value */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: output, options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: records(second), options: .sortedKeys))
@@ -210,7 +243,8 @@ final class MigrationPlanningTests: XCTestCase
             for name in ["PlanningPreview.json", "IdentityJournal.json", "Report.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
                 attachment.name = "Planning-" + name
                 attachment.lifetime = .keepAlways
@@ -218,7 +252,8 @@ final class MigrationPlanningTests: XCTestCase
                 add(attachment)
             }
 
-            let rawSource = try MigrationBackupReader.values(in: backup).mapValues { value -> Any in
+            let rawSource = /* Raw source */
+                try MigrationBackupReader.values(in: backup).mapValues { value -> Any in
                 if let bytes = value as? Data
                 {
                     return (try? JSONSerialization.jsonObject(with: bytes)) ?? NSNull()
@@ -229,7 +264,8 @@ final class MigrationPlanningTests: XCTestCase
             for (name, value) in [("Records", output as Any), ("SourceValues", rawSource as Any)]
             {
 
-                let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: value, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try JSONSerialization.data(withJSONObject: value, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
                 attachment.name = "Planning-" + name + ".json"
                 attachment.lifetime = .keepAlways
@@ -262,11 +298,13 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }) { backup, url in
 
-                let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+                let preview = /* Converted migration preview */
+                    try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
                 XCTAssertEqual(preview.planningRecordCount, 0)
 
-                let evidence = try XCTUnwrap(JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/PlanningPreview.json", in: preview.files)) as? [String: Any])
+                let evidence = /* Retained verification evidence */
+                    try XCTUnwrap(JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/PlanningPreview.json", in: preview.files)) as? [String: Any])
 
                 XCTAssertEqual(evidence["converted_source_stores"] as? [String], empty ? ["Plenact.DailyPlans.v1"] : [])
             }
@@ -285,8 +323,10 @@ final class MigrationPlanningTests: XCTestCase
         {
             try fixture(edit: { values in
 
-                let key      = variant == 6 ? "Plenact.ReviewRhythm.v1" : "Plenact.DailyPlans.v1"
-                var document = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values[key] as? Data)) as? [String: Any])
+                let key      = /* Lookup or persistence key */
+                    variant == 6 ? "Plenact.ReviewRhythm.v1" : "Plenact.DailyPlans.v1"
+                var document = /* Source document snapshot */
+                    try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values[key] as? Data)) as? [String: Any])
 
                 if variant == 6
                 {
@@ -303,9 +343,12 @@ final class MigrationPlanningTests: XCTestCase
                 else
                 {
 
-                    var plans = try XCTUnwrap(document["plans"] as? [String: Any])
-                    let id    = try XCTUnwrap(plans.keys.sorted().first)
-                    var plan  = try XCTUnwrap(plans[id] as? [String: Any])
+                    var plans = /* Saved daily planning records */
+                        try XCTUnwrap(document["plans"] as? [String: Any])
+                    let id    = /* Record or view identity */
+                        try XCTUnwrap(plans.keys.sorted().first)
+                    var plan  = /* Daily planning record */
+                        try XCTUnwrap(plans[id] as? [String: Any])
 
                     if variant == 1
                     {
@@ -328,7 +371,8 @@ final class MigrationPlanningTests: XCTestCase
                     else if variant == 4
                     {
 
-                        var entries = try XCTUnwrap(plan["checkIns"] as? [[String: Any]])
+                        var entries = /* Entries being processed */
+                            try XCTUnwrap(plan["checkIns"] as? [[String: Any]])
 
                         entries[0]["completedTasks"] = 4
                         entries[0]["totalTasks"] = 3
@@ -338,8 +382,10 @@ final class MigrationPlanningTests: XCTestCase
                     else
                     {
 
-                        var review    = try XCTUnwrap(plan["eveningReview"] as? [String: Any])
-                        var decisions = try XCTUnwrap(review["decisions"] as? [[String: Any]])
+                        var review    = /* Review record being inspected */
+                            try XCTUnwrap(plan["eveningReview"] as? [String: Any])
+                        var decisions = /* Saved review decisions */
+                            try XCTUnwrap(review["decisions"] as? [[String: Any]])
 
                         decisions[0]["action"] = ["unknown": [:]]
                         review["decisions"] = decisions
@@ -356,7 +402,8 @@ final class MigrationPlanningTests: XCTestCase
 
             }) { backup, url in
 
-                let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+                let preview = /* Converted migration preview */
+                    try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
                 XCTAssertNil(preview.blockedContentReason)
                 XCTAssertEqual(preview.planningRecordCount, 0)
@@ -377,7 +424,8 @@ final class MigrationPlanningTests: XCTestCase
 
         try fixture(edit: { values in
 
-            var document = try JSONDecoder().decode(DailyPlanStore.Document.self,
+            var document = /* Daily-plan store snapshot */
+                try JSONDecoder().decode(DailyPlanStore.Document.self,
                 from: XCTUnwrap(values["Plenact.DailyPlans.v1"] as? Data))
 
             for key in document.plans.keys
@@ -391,16 +439,18 @@ final class MigrationPlanningTests: XCTestCase
 
         }) { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertEqual(preview.planningRecordCount, 5)
 
-            let output = try records(preview)
+            let output = try records(preview) /* Operation output */
 
             for record in output where record["record_type"] as? String == "daily_plan"
             {
 
-                let payload = try XCTUnwrap(record["payload"] as? [String: Any])
+                let payload = /* Canonical record payload */
+                    try XCTUnwrap(record["payload"] as? [String: Any])
 
                 XCTAssertEqual((payload["check_ins"] as? [Any])?.count, 0)
                 XCTAssertNotNil(payload["check_in"] as? [String: Any])
@@ -422,9 +472,10 @@ final class MigrationPlanningTests: XCTestCase
                 if variant == 0
                 {
 
-                    var doc = try JSONDecoder().decode(WeeklyReviewStore.Document.self,
+                    var doc = /* Decoded store document */
+                        try JSONDecoder().decode(WeeklyReviewStore.Document.self,
                         from: XCTUnwrap(values["Plenact.WeeklyReviews.v1"] as? Data))
-                    let key = try XCTUnwrap(doc.records.keys.first)
+                    let key = try XCTUnwrap(doc.records.keys.first) /* Lookup or persistence key */
 
                     doc.records[key]?.step = 3
                     values["Plenact.WeeklyReviews.v1"] = try JSONEncoder().encode(doc)
@@ -433,10 +484,13 @@ final class MigrationPlanningTests: XCTestCase
                 else if variant == 1 || variant == 3
                 {
 
-                    var raw     = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PeriodicReviews.v1"] as? Data)) as? [String: Any])
-                    var entries = try XCTUnwrap(raw["records"] as? [String: Any])
-                    let key     = try XCTUnwrap(entries.keys.first)
-                    var review  = try XCTUnwrap(entries[key] as? [String: Any])
+                    var raw     = /* Unprocessed source value */
+                        try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PeriodicReviews.v1"] as? Data)) as? [String: Any])
+                    var entries = /* Entries being processed */
+                        try XCTUnwrap(raw["records"] as? [String: Any])
+                    let key     = try XCTUnwrap(entries.keys.first) /* Lookup or persistence key */
+                    var review  = /* Review record being inspected */
+                        try XCTUnwrap(entries[key] as? [String: Any])
 
                     if variant == 1
                     {
@@ -447,7 +501,8 @@ final class MigrationPlanningTests: XCTestCase
                     else
                     {
 
-                        let objectives = try XCTUnwrap(review["objectives"] as? [[String: Any]])
+                        let objectives = /* Period review objectives */
+                            try XCTUnwrap(review["objectives"] as? [[String: Any]])
 
                         review["objectives"] = objectives + objectives
 
@@ -461,10 +516,13 @@ final class MigrationPlanningTests: XCTestCase
                 else
                 {
 
-                    var doc = try JSONDecoder().decode(DailyPlanStore.Document.self,
+                    var doc = /* Decoded store document */
+                        try JSONDecoder().decode(DailyPlanStore.Document.self,
                         from: XCTUnwrap(values["Plenact.DailyPlans.v1"] as? Data))
-                    let key     = try XCTUnwrap(doc.plans.keys.sorted().first)
-                    let entries = try XCTUnwrap(doc.plans[key]?.checkIns)
+                    let key     = /* Lookup or persistence key */
+                        try XCTUnwrap(doc.plans.keys.sorted().first)
+                    let entries = /* Entries being processed */
+                        try XCTUnwrap(doc.plans[key]?.checkIns)
 
                     doc.plans[key]?.checkIns = entries + entries
                     values["Plenact.DailyPlans.v1"] = try JSONEncoder().encode(doc)
@@ -472,7 +530,8 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }) { backup, url in
 
-                let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+                let preview = /* Converted migration preview */
+                    try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
                 XCTAssertEqual(preview.planningRecordCount, 0)
                 XCTAssertEqual(preview.planningReviewCount, 1)
@@ -490,14 +549,17 @@ final class MigrationPlanningTests: XCTestCase
 
         try fixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let output  = try records(preview)
-            let adapter = try PortableEditableContent(records: output, assetFiles: [:])
-            let native  = try adapter.planningDocuments()
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let output  = try records(preview) /* Operation output         */
+            let adapter =                      /* Store conversion adapter */
+                try PortableEditableContent(records: output, assetFiles: [:])
+            let native  = try adapter.planningDocuments() /* Native workspace representation */
 
             XCTAssertEqual(native.daily.plans.count, 2)
 
-            let full = try XCTUnwrap(native.daily.plans.values.first { $0.checkIns != nil })
+            let full = /* Full comparison fixture */
+                try XCTUnwrap(native.daily.plans.values.first { $0.checkIns != nil })
 
             XCTAssertEqual(full.intention, "  Historical intention 🌱  ")
             XCTAssertEqual(full.priorities.first?.title, "  Original priority 🪴  ")
@@ -510,7 +572,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(native.weekly.records.count, 1)
             XCTAssertEqual(native.periodic.records.count, 1)
 
-            let periodic = try XCTUnwrap(native.periodic.records.values.first)
+            let periodic = /* Periodic review state */
+                try XCTUnwrap(native.periodic.records.values.first)
 
             XCTAssertEqual(periodic.startingObjectives.first?.progress, "Before")
             XCTAssertEqual(periodic.objectives.first?.progress, "After")
@@ -518,18 +581,22 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(native.rhythm?.dailyMinutes, 0)
             XCTAssertEqual(native.rhythm?.dailyNotifications, true)
 
-            var malformed = output
-            let index     = try XCTUnwrap(malformed.firstIndex { $0["record_type"] as? String == "daily_plan" })
-            var payload   = try XCTUnwrap(malformed[index]["payload"] as? [String: Any])
+            var malformed = output /* Malformed comparison fixture */
+            let index     =        /* Element position             */
+                try XCTUnwrap(malformed.firstIndex { $0["record_type"] as? String == "daily_plan" })
+            var payload   = /* Canonical record payload */
+                try XCTUnwrap(malformed[index]["payload"] as? [String: Any])
 
             payload["vision_step"] = 3
             malformed[index]["payload"] = payload
 
-            let rejected = try PortableEditableContent(records: malformed, assetFiles: [:])
+            let rejected = /* Rejected comparison fixture */
+                try PortableEditableContent(records: malformed, assetFiles: [:])
 
             XCTAssertThrowsError(try rejected.planningDocuments())
 
-            let attachment = XCTAttachment(data: try JSONEncoder().encode(native.daily), uniformTypeIdentifier: "public.json")
+            let attachment = /* Synthetic test evidence */
+                XCTAttachment(data: try JSONEncoder().encode(native.daily), uniformTypeIdentifier: "public.json")
 
             attachment.name = "EditablePlanning-Daily.json"
             attachment.lifetime = .keepAlways
@@ -549,10 +616,14 @@ final class MigrationPlanningTests: XCTestCase
 
         try fixture(edit: { values in
 
-            let bytes     = values["Plenact.DailyPlans.v1"] as! Data
-            let document  = try JSONDecoder().decode(DailyPlanStore.Document.self, from: bytes)
-            let priority  = document.plans.values.first { !$0.priorities.isEmpty }!.priorities[0]
-            var reference = try MigrationContentValues.object(priority)
+            let bytes     = /* Serialized or original bytes */
+                values["Plenact.DailyPlans.v1"] as! Data
+            let document  = /* Daily-plan store snapshot */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: bytes)
+            let priority  = /* Selected planning priority */
+                document.plans.values.first { !$0.priorities.isEmpty }!.priorities[0]
+            var reference = /* Qualified record reference */
+                try MigrationContentValues.object(priority)
 
             reference["sourceCreatedAt"] = floor(priority.sourceCreatedAt!.timeIntervalSinceReferenceDate)
 
@@ -623,12 +694,17 @@ final class MigrationPlanningTests: XCTestCase
     func testDailyTimestampComparisonPrecision() throws
     {
 
-        let source   = Data(#"{"updatedAt":814536000.123456,"checkIns":[{"savedAt":814536000.123456,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
-        let same     = Data(#"{"updatedAt":814536000.123,"checkIns":[{"savedAt":814536000.123,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
-        let later    = Data(#"{"updatedAt":814536000.124,"checkIns":[{"savedAt":814536000.123,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
-        let changed  = Data(#"{"updatedAt":814536000.123,"checkIns":[{"savedAt":814536000.123,"notes":2,"changed":"Different reflection"}]}"#.utf8)
-        let key      = "Plenact.DailyPlans.v1"
-        let baseline = try PortableEditedExport.nativeJSON(source, store: key) as! [String: Any]
+        let source   = /* Source value for this operation */
+            Data(#"{"updatedAt":814536000.123456,"checkIns":[{"savedAt":814536000.123456,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
+        let same     = /* Same content bytes */
+            Data(#"{"updatedAt":814536000.123,"checkIns":[{"savedAt":814536000.123,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
+        let later    = /* Later content bytes */
+            Data(#"{"updatedAt":814536000.124,"checkIns":[{"savedAt":814536000.123,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
+        let changed  = /* Value with requested edits */
+            Data(#"{"updatedAt":814536000.123,"checkIns":[{"savedAt":814536000.123,"notes":2,"changed":"Different reflection"}]}"#.utf8)
+        let key      = "Plenact.DailyPlans.v1" /* Lookup or persistence key     */
+        let baseline =                         /* Original state for comparison */
+            try PortableEditedExport.nativeJSON(source, store: key) as! [String: Any]
 
         XCTAssertTrue(NSDictionary(dictionary: baseline).isEqual(to: try PortableEditedExport.nativeJSON(same, store: key) as! [String: Any]))
         XCTAssertFalse(NSDictionary(dictionary: baseline).isEqual(to: try PortableEditedExport.nativeJSON(later, store: key) as! [String: Any]))
@@ -646,9 +722,10 @@ final class MigrationPlanningTests: XCTestCase
     func testEveningReflectionFieldsAcceptFocusAndTyping() async throws
     {
 
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let scene    = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -661,11 +738,12 @@ final class MigrationPlanningTests: XCTestCase
             previous?.makeKeyAndVisible()
         }
 
-        var plan = DailyPlan(date: Date(timeIntervalSince1970: 1793016000))
+        var plan = /* Daily planning record */
+            DailyPlan(date: Date(timeIntervalSince1970: 1793016000))
 
         plan.eveningReview = DailyEveningReview(step: 2)
 
-        let host = UIHostingController(rootView: TodayReviewView(
+        let host = UIHostingController(rootView: TodayReviewView( /* Synthetic SwiftUI host */
             plan: Binding(get: { plan }, set: {
 
                 plan = $0
@@ -694,7 +772,8 @@ final class MigrationPlanningTests: XCTestCase
             [view] + view.subviews.flatMap(descendants)
         }
 
-        let fields = descendants(host.view).compactMap { $0 as? UITextView }
+        let fields = /* Rendered text-editing controls */
+            descendants(host.view).compactMap { $0 as? UITextView }
 
         XCTAssertEqual(fields.count, 3)
         for (index, field) in fields.enumerated()
@@ -706,8 +785,9 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertTrue(field.isEditable)
             XCTAssertTrue(field.isUserInteractionEnabled)
 
-            let point = field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
-            let hit   = window.hitTest(point, with: nil)
+            let point = /* Converted input position */
+                field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
+            let hit   = window.hitTest(point, with: nil) /* Hit comparison fixture */
 
             XCTAssertTrue(hit === field || hit?.isDescendant(of: field) == true)
             XCTAssertTrue(field.becomeFirstResponder())
@@ -728,9 +808,10 @@ final class MigrationPlanningTests: XCTestCase
     func testNestedEveningReflectionFieldsAcceptFocusAndTyping() async throws
     {
 
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let scene    = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -743,12 +824,15 @@ final class MigrationPlanningTests: XCTestCase
             previous?.makeKeyAndVisible()
         }
 
-        var plan = DailyPlan(date: Date(timeIntervalSince1970: 1793016000))
+        var plan = /* Daily planning record */
+            DailyPlan(date: Date(timeIntervalSince1970: 1793016000))
 
         plan.eveningReview = DailyEveningReview(step: 2)
 
-        let domain   = "Plenact.NestedReflectionTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        let domain   = /* Lookup or storage namespace */
+            "Plenact.NestedReflectionTests." + UUID().uuidString
+        let defaults = /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: domain))
 
         defer
         {
@@ -757,7 +841,8 @@ final class MigrationPlanningTests: XCTestCase
         }
         defaults.set(try JSONEncoder().encode(DailyPlanStore.Document(plans: [plan.id: plan])), forKey: "Plenact.DailyPlans.v1")
 
-        let host = UIHostingController(rootView: Color.clear.sheet(isPresented: .constant(true))
+        let host = /* Synthetic SwiftUI host */
+            UIHostingController(rootView: Color.clear.sheet(isPresented: .constant(true))
         {
 
             TodayPlanView(date: Date(timeIntervalSince1970: 1793016000), defaults: defaults, opensEveningReview: true)
@@ -780,7 +865,7 @@ final class MigrationPlanningTests: XCTestCase
             [view] + view.subviews.flatMap(descendants)
         }
 
-        var top: UIViewController = host
+        var top: UIViewController = host /* Top comparison fixture */
 
         while let presented = top.presentedViewController
         {
@@ -789,7 +874,8 @@ final class MigrationPlanningTests: XCTestCase
 
         }
 
-        let fields = descendants(top.view).compactMap { $0 as? UITextView }
+        let fields = /* Rendered text-editing controls */
+            descendants(top.view).compactMap { $0 as? UITextView }
 
         XCTAssertEqual(fields.count, 3)
         for (index, field) in fields.enumerated()
@@ -801,8 +887,9 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertTrue(field.isEditable)
             XCTAssertTrue(field.isUserInteractionEnabled)
 
-            let point = field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
-            let hit   = window.hitTest(point, with: nil)
+            let point = /* Converted input position */
+                field.convert(CGPoint(x: field.bounds.midX, y: field.bounds.midY), to: window)
+            let hit   = window.hitTest(point, with: nil) /* Hit comparison fixture */
 
             XCTAssertTrue(hit === field || hit?.isDescendant(of: field) == true)
             XCTAssertTrue(field.becomeFirstResponder())
@@ -824,14 +911,21 @@ final class MigrationPlanningTests: XCTestCase
 
         try portableFixture { backup, url in
 
-            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package   = try MigrationTestPackage.prepare(preview)
-            let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let preview   = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = /* Portable package contents */
+                try MigrationTestPackage.prepare(preview)
+            let candidate = /* Candidate under validation */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
-            let root     = url.deletingLastPathComponent().appendingPathComponent("WeeklyContainer")
-            let stage    = url.deletingLastPathComponent().appendingPathComponent("WeeklyStage")
-            let domain   = "Plenact.WeeklyExportTests." + UUID().uuidString
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            let root     = /* Synthetic workspace root */
+                url.deletingLastPathComponent().appendingPathComponent("WeeklyContainer")
+            let stage    = /* Isolated staging workspace */
+                url.deletingLastPathComponent().appendingPathComponent("WeeklyStage")
+            let domain   = /* Lookup or storage namespace */
+                "Plenact.WeeklyExportTests." + UUID().uuidString
+            let defaults = /* Preference store under test */
+                try XCTUnwrap(UserDefaults(suiteName: domain))
 
             defer
             {
@@ -841,11 +935,14 @@ final class MigrationPlanningTests: XCTestCase
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
 
-            let key               = "Plenact.WeeklyReviews.v1"
-            var document          = try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
-            let id                = try XCTUnwrap(document.records.keys.first)
-            var review            = try XCTUnwrap(document.records[id])
-            let previousDecisions = review.decisions
+            let key               = "Plenact.WeeklyReviews.v1" /* Lookup or persistence key */
+            var document          =                            /* Source document snapshot  */
+                try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
+            let id                = /* Record or view identity */
+                try XCTUnwrap(document.records.keys.first)
+            var review            = /* Review record being inspected */
+                try XCTUnwrap(document.records[id])
+            let previousDecisions = review.decisions /* Previous decisions */
 
             review.highlights = "Edited weekly highlights"
             review.learned = "Edited weekly learning"
@@ -856,14 +953,15 @@ final class MigrationPlanningTests: XCTestCase
             review.updatedAt = Date(timeIntervalSince1970: 1793059200.456789)
             review.completedAt = review.updatedAt
 
-            let priority = try XCTUnwrap(review.priorities.first)
+            let priority = try XCTUnwrap(review.priorities.first) /* Selected planning priority */
 
             review.decisions.append(DailyReviewDecision(source: priority, result: priority, action: .keep,
                 recordedAt: review.updatedAt!))
 
             document.records[id] = review
 
-            var added = WeeklyReviewRecord(date: Date(timeIntervalSince1970: 1793620800), calendar: review.calendar)
+            var added = /* Newly appended item */
+                WeeklyReviewRecord(date: Date(timeIntervalSince1970: 1793620800), calendar: review.calendar)
 
             added.highlights = "New weekly highlights"
             added.updatedAt = review.updatedAt
@@ -874,11 +972,15 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(document), forKey: key)
 
-            let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output  = try PortableEditedExport.prepare(frozen)
-            let bytes   = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let source  = /* Source value for this operation */
+                try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime = /* Retained import evidence */
+                try PortableRuntimeEvidence.capture(root: root)
+            let frozen  = /* Immutable source snapshot */
+                try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output  = try PortableEditedExport.prepare(frozen) /* Operation output */
+            let bytes   = /* Serialized or original bytes */
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
 
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
@@ -886,22 +988,29 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
 
-            let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let rebuilt = /* Reconstructed output value */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
-            let restoredBytes = try XCTUnwrap(rebuilt.values[key] as? Data)
+            let restoredBytes = try XCTUnwrap(rebuilt.values[key] as? Data) /* Restored bytes */
 
             XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(JSONEncoder().encode(document), store: key)])
                 .isEqual(to: ["v": try PortableEditedExport.nativeJSON(restoredBytes, store: key)]))
 
-            let originalAssembly = try JSONSerialization.jsonObject(with:
+            let originalAssembly = /* Assembly before edits */
+                try JSONSerialization.jsonObject(with:
                 MigrationBackupReader.file("Assembly.json", in: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))) as! [String: Any]
-            let editedAssembly = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-            var beforeBase     = (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            var afterBase      = (editedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            var beforePlanning = beforeBase["planning"] as! [String: Any]
-            var afterPlanning  = afterBase["planning"] as! [String: Any]
-            let retained       = beforePlanning.removeValue(forKey: "weekly_reviews") as! [[String: Any]]
-            let exported       = afterPlanning.removeValue(forKey: "weekly_reviews") as! [[String: Any]]
+            let editedAssembly = /* Assembly after edits */
+                try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            var beforeBase     = /* Before base */
+                (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var afterBase      = /* After base */
+                (editedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var beforePlanning = beforeBase["planning"] as! [String: Any] /* Before planning */
+            var afterPlanning  = afterBase["planning"] as! [String: Any] /* After planning */
+            let retained       = /* State retained for recovery */
+                beforePlanning.removeValue(forKey: "weekly_reviews") as! [[String: Any]]
+            let exported       = /* Prepared portable export */
+                afterPlanning.removeValue(forKey: "weekly_reviews") as! [[String: Any]]
 
             XCTAssertTrue(exported.contains { $0["id"] as? String == retained[0]["id"] as? String })
 
@@ -910,7 +1019,8 @@ final class MigrationPlanningTests: XCTestCase
 
             XCTAssertTrue(NSDictionary(dictionary: beforeBase).isEqual(to: afterBase))
 
-            let restored = try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: restoredBytes)
+            let restored = /* Recovered state under review */
+                try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: restoredBytes)
 
             XCTAssertEqual(Array(try XCTUnwrap(restored.records[id]).decisions.dropLast()), previousDecisions)
             for (store, value) in candidate.values where store != key
@@ -924,7 +1034,8 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }
 
-            let fresh = url.deletingLastPathComponent().appendingPathComponent("WeeklyFreshStage")
+            let fresh = /* New isolated instance */
+                url.deletingLastPathComponent().appendingPathComponent("WeeklyFreshStage")
 
             try rebuilt.stage(at: fresh)
             try rebuilt.install(from: fresh, root: root, defaults: defaults, domain: domain)
@@ -933,7 +1044,8 @@ final class MigrationPlanningTests: XCTestCase
             for name in ["Assembly.json", "Manifest.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
 
                 attachment.name = "WeeklyReviewPackage-" + name
@@ -942,22 +1054,24 @@ final class MigrationPlanningTests: XCTestCase
                 add(attachment)
             }
 
-            let blobs = XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
+            let blobs = /* Verified original file blobs */
+                XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
 
             blobs.name = "WeeklyReviewPackage-Blobs.json"
             blobs.lifetime = .keepAlways
 
             add(blobs)
 
-            let valid = try XCTUnwrap(defaults.data(forKey: key))
+            let valid = try XCTUnwrap(defaults.data(forKey: key)) /* Accepted input value */
 
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["firstWeekday": 1],
                 ["startKey": "2026-02-30"], ["timeZoneID": "Invalid/Zone"]]
             {
 
-                var raw     = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-                var records = raw["records"] as! [String: Any]
-                var value   = records[id] as! [String: Any]
+                var raw     = /* Unprocessed source value */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var records = raw["records"] as! [String: Any] /* Records being processed */
+                var value   = records[id] as! [String: Any]    /* Value being processed   */
 
                 value.merge(patch) { _, replacement in replacement }
 
@@ -969,7 +1083,7 @@ final class MigrationPlanningTests: XCTestCase
                     defaults: defaults, domain: domain, root: root)))
             }
 
-            var cleared = restored
+            var cleared = restored /* Value after clearing choices */
 
             cleared.records[id]?.highlights = ""
             cleared.records[id]?.learned = ""
@@ -982,9 +1096,11 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(cleared), forKey: key)
 
-            let clearOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+            let clearOutput = /* Clear output */
+                try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root))
-            let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let clearCandidate = /* Clear candidate */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(clearOutput.fileWrappers?["PortableTestPackage"])))
 
             XCTAssertEqual(try JSONDecoder().decode(WeeklyReviewStore.Document.self,
@@ -1008,14 +1124,21 @@ final class MigrationPlanningTests: XCTestCase
 
         try portableFixture { backup, url in
 
-            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package   = try MigrationTestPackage.prepare(preview)
-            let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let preview   = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = /* Portable package contents */
+                try MigrationTestPackage.prepare(preview)
+            let candidate = /* Candidate under validation */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
-            let root     = url.deletingLastPathComponent().appendingPathComponent("PeriodicContainer")
-            let stage    = url.deletingLastPathComponent().appendingPathComponent("PeriodicStage")
-            let domain   = "Plenact.PeriodicExportTests." + UUID().uuidString
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            let root     = /* Synthetic workspace root */
+                url.deletingLastPathComponent().appendingPathComponent("PeriodicContainer")
+            let stage    = /* Isolated staging workspace */
+                url.deletingLastPathComponent().appendingPathComponent("PeriodicStage")
+            let domain   = /* Lookup or storage namespace */
+                "Plenact.PeriodicExportTests." + UUID().uuidString
+            let defaults = /* Preference store under test */
+                try XCTUnwrap(UserDefaults(suiteName: domain))
 
             defer
             {
@@ -1025,11 +1148,12 @@ final class MigrationPlanningTests: XCTestCase
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
 
-            let key      = "Plenact.PeriodicReviews.v1"
-            var document = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
-            let id       = try XCTUnwrap(document.records.keys.first)
-            var review   = try XCTUnwrap(document.records[id])
-            let starting = review.startingObjectives
+            let key      = "Plenact.PeriodicReviews.v1" /* Lookup or persistence key */
+            var document =                              /* Source document snapshot  */
+                try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
+            let id       = try XCTUnwrap(document.records.keys.first) /* Record or view identity */
+            var review   = try XCTUnwrap(document.records[id]) /* Review record being inspected */
+            let starting = review.startingObjectives /* Starting comparison fixture */
 
             review.highlights = "Edited periodic highlights"
             review.learned = "Edited periodic learning"
@@ -1048,11 +1172,12 @@ final class MigrationPlanningTests: XCTestCase
 
             document.records[id] = review
 
-            var calendar = Calendar(identifier: .gregorian)
+            var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.timeZone = TimeZone(identifier: review.timeZoneID)!
 
-            var added = PeriodicReviewRecord(title: "New periodic review", start: Date(timeIntervalSince1970: 1793620800),
+            var added = /* Newly appended item */
+                PeriodicReviewRecord(title: "New periodic review", start: Date(timeIntervalSince1970: 1793620800),
                 end: Date(timeIntervalSince1970: 1794139200), calendar: calendar)
 
             added.highlights = "New periodic highlights"
@@ -1064,11 +1189,15 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(document), forKey: key)
 
-            let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output  = try PortableEditedExport.prepare(frozen)
-            let bytes   = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let source  = /* Source value for this operation */
+                try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime = /* Retained import evidence */
+                try PortableRuntimeEvidence.capture(root: root)
+            let frozen  = /* Immutable source snapshot */
+                try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output  = try PortableEditedExport.prepare(frozen) /* Operation output */
+            let bytes   = /* Serialized or original bytes */
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
 
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
@@ -1076,22 +1205,29 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
 
-            let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let rebuilt = /* Reconstructed output value */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
-            let restoredBytes = try XCTUnwrap(rebuilt.values[key] as? Data)
+            let restoredBytes = try XCTUnwrap(rebuilt.values[key] as? Data) /* Restored bytes */
 
             XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(JSONEncoder().encode(document), store: key)])
                 .isEqual(to: ["v": try PortableEditedExport.nativeJSON(restoredBytes, store: key)]))
 
-            let originalAssembly = try JSONSerialization.jsonObject(with:
+            let originalAssembly = /* Assembly before edits */
+                try JSONSerialization.jsonObject(with:
                 MigrationBackupReader.file("Assembly.json", in: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))) as! [String: Any]
-            let editedAssembly = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-            var beforeBase     = (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            var afterBase      = (editedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            var beforePlanning = beforeBase["planning"] as! [String: Any]
-            var afterPlanning  = afterBase["planning"] as! [String: Any]
-            let retained       = beforePlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
-            let exported       = afterPlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
+            let editedAssembly = /* Assembly after edits */
+                try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            var beforeBase     = /* Before base */
+                (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var afterBase      = /* After base */
+                (editedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var beforePlanning = beforeBase["planning"] as! [String: Any] /* Before planning */
+            var afterPlanning  = afterBase["planning"] as! [String: Any] /* After planning */
+            let retained       = /* State retained for recovery */
+                beforePlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
+            let exported       = /* Prepared portable export */
+                afterPlanning.removeValue(forKey: "periodic_reviews") as! [[String: Any]]
 
             XCTAssertTrue(exported.contains { $0["id"] as? String == retained[0]["id"] as? String })
 
@@ -1100,7 +1236,8 @@ final class MigrationPlanningTests: XCTestCase
 
             XCTAssertTrue(NSDictionary(dictionary: beforeBase).isEqual(to: afterBase))
 
-            let restored = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: restoredBytes)
+            let restored = /* Recovered state under review */
+                try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: restoredBytes)
 
             XCTAssertEqual(restored.records[id]?.startingObjectives, starting)
             XCTAssertNotEqual(restored.records[id]?.startingObjectives, restored.records[id]?.objectives)
@@ -1117,7 +1254,8 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }
 
-            let fresh = url.deletingLastPathComponent().appendingPathComponent("PeriodicFreshStage")
+            let fresh = /* New isolated instance */
+                url.deletingLastPathComponent().appendingPathComponent("PeriodicFreshStage")
 
             try rebuilt.stage(at: fresh)
             try rebuilt.install(from: fresh, root: root, defaults: defaults, domain: domain)
@@ -1126,7 +1264,8 @@ final class MigrationPlanningTests: XCTestCase
             for name in ["Assembly.json", "Manifest.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
 
                 attachment.name = "PeriodicReviewPackage-" + name
@@ -1135,22 +1274,24 @@ final class MigrationPlanningTests: XCTestCase
                 add(attachment)
             }
 
-            let blobs = XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
+            let blobs = /* Verified original file blobs */
+                XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
 
             blobs.name = "PeriodicReviewPackage-Blobs.json"
             blobs.lifetime = .keepAlways
 
             add(blobs)
 
-            let valid = try XCTUnwrap(defaults.data(forKey: key))
+            let valid = try XCTUnwrap(defaults.data(forKey: key)) /* Accepted input value */
 
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["title": " "],
                 ["startKey": "2026-02-30"], ["endKey": "1900-01-01"], ["endKey": "2026-11-30"], ["timeZoneID": "Invalid/Zone"]]
             {
 
-                var raw     = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-                var records = raw["records"] as! [String: Any]
-                var value   = records[id] as! [String: Any]
+                var raw     = /* Unprocessed source value */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var records = raw["records"] as! [String: Any] /* Records being processed */
+                var value   = records[id] as! [String: Any]    /* Value being processed   */
 
                 value.merge(patch) { _, replacement in replacement }
 
@@ -1162,21 +1303,23 @@ final class MigrationPlanningTests: XCTestCase
                     defaults: defaults, domain: domain, root: root)))
             }
 
-            let objective     = try MigrationContentValues.object(review.objectives[0])
-            var unknownStatus = objective
+            let objective     = /* Objective comparison fixture */
+                try MigrationContentValues.object(review.objectives[0])
+            var unknownStatus = objective /* Unknown status */
 
             unknownStatus["status"] = "Unknown"
 
-            var unknownField = objective
+            var unknownField = objective /* Unknown field */
 
             unknownField["futureField"] = true
 
             for objectives in [[objective, objective], [unknownStatus], [unknownField]]
             {
 
-                var raw     = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-                var records = raw["records"] as! [String: Any]
-                var value   = records[id] as! [String: Any]
+                var raw     = /* Unprocessed source value */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var records = raw["records"] as! [String: Any] /* Records being processed */
+                var value   = records[id] as! [String: Any]    /* Value being processed   */
 
                 value["objectives"] = objectives
                 records[id] = value
@@ -1187,7 +1330,7 @@ final class MigrationPlanningTests: XCTestCase
                     defaults: defaults, domain: domain, root: root)))
             }
 
-            var cleared = restored
+            var cleared = restored /* Value after clearing choices */
 
             cleared.records[id]?.highlights = ""
             cleared.records[id]?.learned = ""
@@ -1200,9 +1343,11 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(cleared), forKey: key)
 
-            let clearOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+            let clearOutput = /* Clear output */
+                try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root))
-            let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let clearCandidate = /* Clear candidate */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(clearOutput.fileWrappers?["PortableTestPackage"])))
 
             XCTAssertEqual(try JSONDecoder().decode(PeriodicReviewStore.Document.self,
@@ -1226,14 +1371,21 @@ final class MigrationPlanningTests: XCTestCase
 
         try portableFixture { backup, url in
 
-            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package   = try MigrationTestPackage.prepare(preview)
-            let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let preview   = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = /* Portable package contents */
+                try MigrationTestPackage.prepare(preview)
+            let candidate = /* Candidate under validation */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
-            let root     = url.deletingLastPathComponent().appendingPathComponent("EveningContainer")
-            let stage    = url.deletingLastPathComponent().appendingPathComponent("EveningStage")
-            let domain   = "Plenact.EveningExportTests." + UUID().uuidString
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            let root     = /* Synthetic workspace root */
+                url.deletingLastPathComponent().appendingPathComponent("EveningContainer")
+            let stage    = /* Isolated staging workspace */
+                url.deletingLastPathComponent().appendingPathComponent("EveningStage")
+            let domain   = /* Lookup or storage namespace */
+                "Plenact.EveningExportTests." + UUID().uuidString
+            let defaults = /* Preference store under test */
+                try XCTUnwrap(UserDefaults(suiteName: domain))
 
             defer
             {
@@ -1243,23 +1395,28 @@ final class MigrationPlanningTests: XCTestCase
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
 
-            let key       = "Plenact.DailyPlans.v1"
-            var document  = try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
-            let date      = try XCTUnwrap(document.plans.keys.sorted().first)
-            let other     = try XCTUnwrap(document.plans.keys.sorted().last)
-            var review    = try XCTUnwrap(document.plans[date]?.eveningReview)
-            let decisions = review.decisions
+            let key       = "Plenact.DailyPlans.v1" /* Lookup or persistence key */
+            var document  =                         /* Daily-plan store snapshot */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
+            let date      = /* Date used by this operation */
+                try XCTUnwrap(document.plans.keys.sorted().first)
+            let other     = /* Independent comparison value */
+                try XCTUnwrap(document.plans.keys.sorted().last)
+            var review    = /* Review record being inspected */
+                try XCTUnwrap(document.plans[date]?.eveningReview)
+            let decisions = review.decisions /* Saved review decisions */
 
             review.helped = "Edited evening reflection"
             review.difficult = "A synthetic difficulty"
             review.tomorrow = "A synthetic next step"
             review.step = 2
 
-            let instant = Date(timeIntervalSince1970: 1793059200.654321)
+            let instant = Date(timeIntervalSince1970: 1793059200.654321) /* Reference timestamp */
 
             review.completedAt = instant
 
-            let priority = try XCTUnwrap(document.plans[date]?.priorities.first)
+            let priority = /* Selected planning priority */
+                try XCTUnwrap(document.plans[date]?.priorities.first)
 
             review.achievements = [priority]
 
@@ -1273,11 +1430,15 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(document), forKey: key)
 
-            let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output  = try PortableEditedExport.prepare(frozen)
-            let bytes   = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let source  = /* Source value for this operation */
+                try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime = /* Retained import evidence */
+                try PortableRuntimeEvidence.capture(root: root)
+            let frozen  = /* Immutable source snapshot */
+                try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output  = try PortableEditedExport.prepare(frozen) /* Operation output */
+            let bytes   = /* Serialized or original bytes */
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
 
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
@@ -1285,12 +1446,15 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
 
-            let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let rebuilt = /* Reconstructed output value */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
-            let restored = try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
-            let original = try JSONDecoder().decode(DailyPlanStore.Document.self,
+            let restored = /* Recovered state under review */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
+            let original = /* Baseline before changes */
+                try JSONDecoder().decode(DailyPlanStore.Document.self,
                 from: XCTUnwrap(candidate.values[key] as? Data))
-            var unaffected = restored
+            var unaffected = restored /* Unaffected comparison fixture */
 
             for day in original.plans.keys
             {
@@ -1302,7 +1466,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(unaffected.version, original.version)
             XCTAssertEqual(unaffected.plans, original.plans)
 
-            let saved = try XCTUnwrap(restored.plans[date]?.eveningReview)
+            let saved = /* Saved state under review */
+                try XCTUnwrap(restored.plans[date]?.eveningReview)
 
             XCTAssertEqual(saved.helped, review.helped)
             XCTAssertEqual(saved.difficult, review.difficult)
@@ -1326,7 +1491,8 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }
 
-            let fresh = url.deletingLastPathComponent().appendingPathComponent("EveningFreshStage")
+            let fresh = /* New isolated instance */
+                url.deletingLastPathComponent().appendingPathComponent("EveningFreshStage")
 
             try rebuilt.stage(at: fresh)
             try rebuilt.install(from: fresh, root: root, defaults: defaults, domain: domain)
@@ -1335,7 +1501,8 @@ final class MigrationPlanningTests: XCTestCase
             for name in ["Assembly.json", "Manifest.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
 
                 attachment.name = "EveningReviewPackage-" + name
@@ -1344,22 +1511,26 @@ final class MigrationPlanningTests: XCTestCase
                 add(attachment)
             }
 
-            let blobs = XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
+            let blobs = /* Verified original file blobs */
+                XCTAttachment(data: Data("{}".utf8), uniformTypeIdentifier: "public.json")
 
             blobs.name = "EveningReviewPackage-Blobs.json"
             blobs.lifetime = .keepAlways
 
             add(blobs)
 
-            let duplicate = try MigrationContentValues.object(review.decisions[0])
+            let duplicate = /* Repeated identity fixture */
+                try MigrationContentValues.object(review.decisions[0])
 
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["decisions": [duplicate, duplicate]]]
             {
 
-                var raw     = try JSONSerialization.jsonObject(with: JSONEncoder().encode(restored)) as! [String: Any]
-                var plans   = raw["plans"] as! [String: Any]
-                var plan    = plans[date] as! [String: Any]
-                var evening = plan["eveningReview"] as! [String: Any]
+                var raw     = /* Unprocessed source value */
+                    try JSONSerialization.jsonObject(with: JSONEncoder().encode(restored)) as! [String: Any]
+                var plans   = raw["plans"] as! [String: Any] /* Saved daily planning records */
+                var plan    = plans[date] as! [String: Any]  /* Daily planning record        */
+                var evening =                                /* Evening comparison fixture   */
+                    plan["eveningReview"] as! [String: Any]
 
                 evening.merge(patch) { _, replacement in replacement }
 
@@ -1372,7 +1543,7 @@ final class MigrationPlanningTests: XCTestCase
                     defaults: defaults, domain: domain, root: root)))
             }
 
-            var invalidDate = restored
+            var invalidDate = restored /* Invalid date */
 
             invalidDate.plans[date]?.eveningReview?.decisions.append(DailyReviewDecision(
                 source: priority, result: priority, action: .date("2026-02-30"), recordedAt: instant))
@@ -1382,17 +1553,20 @@ final class MigrationPlanningTests: XCTestCase
             for remove in [false, true]
             {
 
-                var cleared = restored
+                var cleared = restored /* Value after clearing choices */
 
                 cleared.plans[date]?.eveningReview = remove ? nil : DailyEveningReview()
 
                 defaults.set(try JSONEncoder().encode(cleared), forKey: key)
 
-                let clearedOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                let clearedOutput = /* Cleared output */
+                    try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                     defaults: defaults, domain: domain, root: root))
-                let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                let clearCandidate = /* Clear candidate */
+                    try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                     XCTUnwrap(clearedOutput.fileWrappers?["PortableTestPackage"])))
-                let clearDocument = try JSONDecoder().decode(DailyPlanStore.Document.self,
+                let clearDocument = /* Clear document */
+                    try JSONDecoder().decode(DailyPlanStore.Document.self,
                     from: XCTUnwrap(clearCandidate.values[key] as? Data))
 
                 XCTAssertEqual(clearDocument.plans[date]?.eveningReview, cleared.plans[date]?.eveningReview)
@@ -1412,14 +1586,22 @@ final class MigrationPlanningTests: XCTestCase
 
         try portableFixture { backup, url in
 
-            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package   = try MigrationTestPackage.prepare(preview)
-            let reviewed  = try PortablePackageReview.review(files: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))
-            let candidate = try PortableWorkspaceCandidate.prepare(reviewed)
-            let root      = url.deletingLastPathComponent().appendingPathComponent("DailyExportContainer")
-            let stage     = url.deletingLastPathComponent().appendingPathComponent("DailyExportStage")
-            let domain    = "Plenact.DailyExportTests." + UUID().uuidString
-            let defaults  = try XCTUnwrap(UserDefaults(suiteName: domain))
+            let preview   = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = /* Portable package contents */
+                try MigrationTestPackage.prepare(preview)
+            let reviewed  = /* Verified operation input */
+                try PortablePackageReview.review(files: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))
+            let candidate = /* Candidate under validation */
+                try PortableWorkspaceCandidate.prepare(reviewed)
+            let root      = /* Synthetic workspace root */
+                url.deletingLastPathComponent().appendingPathComponent("DailyExportContainer")
+            let stage     = /* Isolated staging workspace */
+                url.deletingLastPathComponent().appendingPathComponent("DailyExportStage")
+            let domain    = /* Lookup or storage namespace */
+                "Plenact.DailyExportTests." + UUID().uuidString
+            let defaults  = /* Preference store under test */
+                try XCTUnwrap(UserDefaults(suiteName: domain))
 
             defer
             {
@@ -1429,22 +1611,28 @@ final class MigrationPlanningTests: XCTestCase
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
 
-            let key       = "Plenact.DailyPlans.v1"
-            var document  = try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
-            let unchanged = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+            let key       = "Plenact.DailyPlans.v1" /* Lookup or persistence key */
+            var document  =                         /* Daily-plan store snapshot */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(defaults.data(forKey: key)))
+            let unchanged = /* Unchanged comparison fixture */
+                try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root))
-            let originalAssembly = try JSONSerialization.jsonObject(with:
+            let originalAssembly = /* Assembly before edits */
+                try JSONSerialization.jsonObject(with:
                 MigrationBackupReader.file("Assembly.json", in: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))) as! [String: Any]
-            let unchangedAssembly = try JSONSerialization.jsonObject(with:
+            let unchangedAssembly = try JSONSerialization.jsonObject(with: /* Unchanged assembly */
                 MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: unchanged)) as! [String: Any]
-            let originalBase  = (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            let unchangedBase = (unchangedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            let originalBase  = /* Original base */
+                (originalAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            let unchangedBase = /* Unchanged base */
+                (unchangedAssembly["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
 
             XCTAssertTrue(NSDictionary(dictionary: originalBase).isEqual(to: unchangedBase))
 
-            let date            = try XCTUnwrap(document.plans.keys.sorted().first)
-            var plan            = try XCTUnwrap(document.plans[date])
-            let retainedHistory = plan.checkInHistory
+            let date            = /* Date used by this operation */
+                try XCTUnwrap(document.plans.keys.sorted().first)
+            var plan            = try XCTUnwrap(document.plans[date]) /* Daily planning record */
+            let retainedHistory = plan.checkInHistory                 /* Retained history      */
 
             plan.intention = "Edited synthetic intention"
             plan.constraints = "Edited synthetic constraints"
@@ -1456,11 +1644,12 @@ final class MigrationPlanningTests: XCTestCase
 
             document.plans[date] = plan
 
-            var calendar = Calendar(identifier: .gregorian)
+            var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.timeZone = TimeZone(identifier: "America/Chicago")!
 
-            var added = DailyPlan(date: Date(timeIntervalSince1970: 1793016000), calendar: calendar)
+            var added = /* Newly appended item */
+                DailyPlan(date: Date(timeIntervalSince1970: 1793016000), calendar: calendar)
 
             added.intention = "New synthetic daily plan"
             added.updatedAt = plan.updatedAt
@@ -1471,25 +1660,32 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(document), forKey: key)
 
-            let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output  = try PortableEditedExport.prepare(frozen)
+            let source  = /* Source value for this operation */
+                try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime = /* Retained import evidence */
+                try PortableRuntimeEvidence.capture(root: root)
+            let frozen  = /* Immutable source snapshot */
+                try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output  = try PortableEditedExport.prepare(frozen) /* Operation output */
 
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
                 try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: output))
 
-            let bytes    = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
-            let repeated = try PortableEditedExport.prepare(frozen)
+            let bytes    = /* Serialized or original bytes */
+                try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let repeated = /* Result of the repeated operation */
+                try PortableEditedExport.prepare(frozen)
 
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: repeated))
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
 
-            let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let rebuilt = /* Reconstructed output value */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
-            let restored  = try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
-            var projected = plan
+            let restored  = /* Recovered state under review */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
+            var projected = plan /* Reconstructed native values */
 
             projected.updatedAt = Date(timeIntervalSince1970: 1792843200.123)
             projected.checkIn?.savedAt = projected.updatedAt
@@ -1507,7 +1703,7 @@ final class MigrationPlanningTests: XCTestCase
             }
             XCTAssertEqual(restored.plans[date], projected)
 
-            var projectedAdded = added
+            var projectedAdded = added /* Projected added */
 
             projectedAdded.updatedAt = projected.updatedAt
 
@@ -1524,19 +1720,22 @@ final class MigrationPlanningTests: XCTestCase
                 }
             }
 
-            let fresh = url.deletingLastPathComponent().appendingPathComponent("DailyExportFreshStage")
+            let fresh = /* New isolated instance */
+                url.deletingLastPathComponent().appendingPathComponent("DailyExportFreshStage")
 
             try rebuilt.stage(at: fresh)
             try rebuilt.install(from: fresh, root: root, defaults: defaults, domain: domain)
 
-            let reexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+            let reexport = /* Reexport comparison fixture */
+                try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root))
 
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: reexport))
             for name in ["Assembly.json", "Manifest.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
 
                 attachment.name = "DailyPlanPackage-" + name
@@ -1545,20 +1744,23 @@ final class MigrationPlanningTests: XCTestCase
                 add(attachment)
             }
 
-            let wrappers  = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
-            let originals = try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
+            let wrappers  = /* Package file wrappers */
+                try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+            let originals = /* Retained original files */
+                try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
 
                 ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
             })
-            let blobs = XCTAttachment(data: try JSONSerialization.data(withJSONObject: originals), uniformTypeIdentifier: "public.json")
+            let blobs = /* Verified original file blobs */
+                XCTAttachment(data: try JSONSerialization.data(withJSONObject: originals), uniformTypeIdentifier: "public.json")
 
             blobs.name = "DailyPlanPackage-Blobs.json"
             blobs.lifetime = .keepAlways
 
             add(blobs)
 
-            let retainedValid = try XCTUnwrap(defaults.data(forKey: key))
-            var cleared       = restored
+            let retainedValid = try XCTUnwrap(defaults.data(forKey: key)) /* Retained valid */
+            var cleared       = restored /* Value after clearing choices */
 
             cleared.plans[date]?.intention = ""
             cleared.plans[date]?.priorities = []
@@ -1567,19 +1769,23 @@ final class MigrationPlanningTests: XCTestCase
 
             defaults.set(try JSONEncoder().encode(cleared), forKey: key)
 
-            let clearOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+            let clearOutput = /* Clear output */
+                try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root))
-            let clearCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+            let clearCandidate = /* Clear candidate */
+                try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(clearOutput.fileWrappers?["PortableTestPackage"])))
-            let clearDocument = try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(clearCandidate.values[key] as? Data))
+            let clearDocument = /* Clear document */
+                try JSONDecoder().decode(DailyPlanStore.Document.self, from: XCTUnwrap(clearCandidate.values[key] as? Data))
 
             XCTAssertEqual(clearDocument.plans[date], cleared.plans[date])
             defaults.set(retainedValid, forKey: key)
 
-            let valid   = try XCTUnwrap(defaults.data(forKey: key))
-            var raw     = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-            var plans   = raw["plans"] as! [String: Any]
-            var changed = plans[date] as! [String: Any]
+            let valid   = try XCTUnwrap(defaults.data(forKey: key)) /* Accepted input value     */
+            var raw     =                                           /* Unprocessed source value */
+                try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+            var plans   = raw["plans"] as! [String: Any] /* Saved daily planning records */
+            var changed = plans[date] as! [String: Any]  /* Value with requested edits   */
 
             changed["futureField"] = true
             plans[date] = changed
@@ -1592,10 +1798,13 @@ final class MigrationPlanningTests: XCTestCase
                 ["sourceCreatedAt": 1.0]]
             {
 
-                var invalid    = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-                var plans      = invalid["plans"] as! [String: Any]
-                var changed    = plans[date] as! [String: Any]
-                var priorities = changed["priorities"] as! [[String: Any]]
+                var invalid    = /* Input expected to be rejected */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var plans      = /* Saved daily planning records */
+                    invalid["plans"] as! [String: Any]
+                var changed    = plans[date] as! [String: Any] /* Value with requested edits  */
+                var priorities =                               /* Ordered planning priorities */
+                    changed["priorities"] as! [[String: Any]]
 
                 XCTAssertFalse(priorities.isEmpty)
                 priorities[0].merge(patch) { _, replacement in replacement }
@@ -1611,9 +1820,10 @@ final class MigrationPlanningTests: XCTestCase
             for patch: [String: Any] in [["timeZoneID": "Invalid/Zone"], ["id": "2026-02-30"], ["visionStep": 3]]
             {
 
-                var invalid = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
-                var plans   = invalid["plans"] as! [String: Any]
-                var changed = plans[date] as! [String: Any]
+                var invalid = /* Input expected to be rejected */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var plans   = invalid["plans"] as! [String: Any] /* Saved daily planning records */
+                var changed = plans[date] as! [String: Any]      /* Value with requested edits   */
 
                 changed.merge(patch) { _, replacement in replacement }
 
@@ -1655,19 +1865,21 @@ extension MigrationStudioTests
 
             try fixture(edit: { values in
 
-                var calendar = Calendar(identifier: .gregorian)
+                var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
                 calendar.timeZone = TimeZone(identifier: "America/Chicago")!
                 calendar.firstWeekday = 2
 
-                let week = DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200),
+                let week = /* Synthetic week fixture */
+                    DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200),
                     lists: [KanbanList(id: 1, title: "Monday", cards: [])], calendar: calendar)
 
                 values["Plenact.Board.v1"] = try JSONEncoder().encode(week.collection.lists)
                 values["Plenact.CalendarWeeks.v1"] = try JSONEncoder().encode(
                     PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week]))
 
-                var plan = DailyPlan(date: Date(timeIntervalSince1970: 1792843200), calendar: calendar)
+                var plan = /* Daily planning record */
+                    DailyPlan(date: Date(timeIntervalSince1970: 1792843200), calendar: calendar)
 
                 plan.intention = "Retain synthetic planning history"
                 plan.updatedAt = Date(timeIntervalSince1970: 1792843200)
@@ -1681,14 +1893,22 @@ extension MigrationStudioTests
                 }
             }) { backup, url in
 
-                let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-                let package   = try MigrationTestPackage.prepare(preview)
-                let reviewed  = try PortablePackageReview.review(files: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))
-                let candidate = try PortableWorkspaceCandidate.prepare(reviewed)
-                let root      = url.deletingLastPathComponent().appendingPathComponent("RhythmContainer")
-                let stage     = url.deletingLastPathComponent().appendingPathComponent("RhythmStage")
-                let domain    = "Plenact.RhythmExportTests." + UUID().uuidString
-                let defaults  = try XCTUnwrap(UserDefaults(suiteName: domain))
+                let preview   = /* Converted migration preview */
+                    try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+                let package   = /* Portable package contents */
+                    try MigrationTestPackage.prepare(preview)
+                let reviewed  = /* Verified operation input */
+                    try PortablePackageReview.review(files: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))
+                let candidate = /* Candidate under validation */
+                    try PortableWorkspaceCandidate.prepare(reviewed)
+                let root      = /* Synthetic workspace root */
+                    url.deletingLastPathComponent().appendingPathComponent("RhythmContainer")
+                let stage     = /* Isolated staging workspace */
+                    url.deletingLastPathComponent().appendingPathComponent("RhythmStage")
+                let domain    = /* Lookup or storage namespace */
+                    "Plenact.RhythmExportTests." + UUID().uuidString
+                let defaults  = /* Preference store under test */
+                    try XCTUnwrap(UserDefaults(suiteName: domain))
 
                 defer
                 {
@@ -1698,20 +1918,23 @@ extension MigrationStudioTests
                 try candidate.stage(at: stage)
                 try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
 
-                let key     = "Plenact.ReviewRhythm.v1"
-                let runtime = try PortableRuntimeEvidence.capture(root: root)
+                let key     = "Plenact.ReviewRhythm.v1" /* Lookup or persistence key */
+                let runtime =                           /* Retained import evidence  */
+                    try PortableRuntimeEvidence.capture(root: root)
 
                 defaults.set(try JSONEncoder().encode(ReviewRhythmPreferences()), forKey: key)
 
-                let defaultOutput = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                let defaultOutput = /* Default output */
+                    try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                     defaults: defaults, domain: domain, root: root))
-                let defaultCandidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                let defaultCandidate = /* Default candidate */
+                    try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                     XCTUnwrap(defaultOutput.fileWrappers?["PortableTestPackage"])))
 
                 XCTAssertEqual(try JSONDecoder().decode(ReviewRhythmPreferences.self,
                     from: XCTUnwrap(defaultCandidate.values[key] as? Data)), ReviewRhythmPreferences())
 
-                var rhythm = ReviewRhythmPreferences()
+                var rhythm = ReviewRhythmPreferences() /* Review invitation preferences */
 
                 rhythm.dailyInvitations = false
                 rhythm.weeklyInvitations = false
@@ -1723,27 +1946,41 @@ extension MigrationStudioTests
 
                 defaults.set(try JSONEncoder().encode(rhythm), forKey: key)
 
-                let source   = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-                let frozen   = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-                let output   = try PortableEditedExport.prepare(frozen)
-                let bytes    = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
-                let repeated = try PortableEditedExport.prepare(frozen)
+                let source   = /* Source value for this operation */
+                    try XCTUnwrap(defaults.persistentDomain(forName: domain))
+                let frozen   = /* Immutable source snapshot */
+                    try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+                let output   = try PortableEditedExport.prepare(frozen) /* Operation output */
+                let bytes    = /* Serialized or original bytes */
+                    try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+                let repeated = /* Result of the repeated operation */
+                    try PortableEditedExport.prepare(frozen)
 
                 XCTAssertEqual(try PortableRuntimeEvidence.capture(root: root), runtime)
                 XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: repeated))
                 XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
 
-                let originalAssembly = try JSONSerialization.jsonObject(with:
+                let originalAssembly = /* Assembly before edits */
+                    try JSONSerialization.jsonObject(with:
                     MigrationBackupReader.file("Assembly.json", in: XCTUnwrap(package.fileWrappers?["PortableTestPackage"]))) as! [String: Any]
-                let editedAssembly   = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-                var originalExport   = originalAssembly["workspace_export"] as! [String: Any]
-                var editedExport     = editedAssembly["workspace_export"] as! [String: Any]
-                var originalBase     = originalExport["base_workspace"] as! [String: Any]
-                var editedBase       = editedExport["base_workspace"] as! [String: Any]
-                var originalPlanning = originalBase["planning"] as! [String: Any]
-                var editedPlanning   = editedBase["planning"] as! [String: Any]
-                let previous         = originalPlanning.removeValue(forKey: "review_rhythms") as! [[String: Any]]
-                let changed          = editedPlanning.removeValue(forKey: "review_rhythms") as! [[String: Any]]
+                let editedAssembly   = /* Assembly after edits */
+                    try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+                var originalExport   = /* Original export */
+                    originalAssembly["workspace_export"] as! [String: Any]
+                var editedExport     = /* Edited export */
+                    editedAssembly["workspace_export"] as! [String: Any]
+                var originalBase     = /* Original base */
+                    originalExport["base_workspace"] as! [String: Any]
+                var editedBase       = /* Edited base */
+                    editedExport["base_workspace"] as! [String: Any]
+                var originalPlanning = /* Original planning */
+                    originalBase["planning"] as! [String: Any]
+                var editedPlanning   = /* Edited planning */
+                    editedBase["planning"] as! [String: Any]
+                let previous         = /* Previous value for comparison */
+                    originalPlanning.removeValue(forKey: "review_rhythms") as! [[String: Any]]
+                let changed          = /* Value with requested edits */
+                    editedPlanning.removeValue(forKey: "review_rhythms") as! [[String: Any]]
 
                 XCTAssertEqual(changed.count, 1)
                 if existing
@@ -1761,25 +1998,29 @@ extension MigrationStudioTests
                 editedExport.removeValue(forKey: "local_card_deletions")
                 XCTAssertTrue(NSDictionary(dictionary: originalExport).isEqual(to: editedExport))
 
-                let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
+                let rebuilt = /* Reconstructed output value */
+                    try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                     XCTUnwrap(output.fileWrappers?["PortableTestPackage"])))
 
                 XCTAssertEqual(try JSONDecoder().decode(ReviewRhythmPreferences.self,
                     from: XCTUnwrap(rebuilt.values[key] as? Data)), rhythm)
 
-                let freshStage = url.deletingLastPathComponent().appendingPathComponent("RhythmFreshStage")
+                let freshStage = /* New isolated staging workspace */
+                    url.deletingLastPathComponent().appendingPathComponent("RhythmFreshStage")
 
                 try rebuilt.stage(at: freshStage)
                 try rebuilt.install(from: freshStage, root: root, defaults: defaults, domain: domain)
 
-                let reexport = try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
+                let reexport = /* Reexport comparison fixture */
+                    try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                     defaults: defaults, domain: domain, root: root))
 
                 XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: reexport))
                 for name in ["Assembly.json", "Manifest.json"]
                 {
 
-                    let item = XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
+                    let item = /* Synthetic test evidence */
+                        XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                         uniformTypeIdentifier: "public.json")
 
                     item.name = (existing ? "RetainedRhythmPackage-" : "NewRhythmPackage-") + name
@@ -1788,12 +2029,15 @@ extension MigrationStudioTests
                     add(item)
                 }
 
-                let originals = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
-                let blobs     = try Dictionary(uniqueKeysWithValues: originals.map { name, file in
+                let originals = /* Retained original files */
+                    try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+                let blobs     = /* Verified original file blobs */
+                    try Dictionary(uniqueKeysWithValues: originals.map { name, file in
 
                     ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
                 })
-                let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: blobs, options: .sortedKeys),
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try JSONSerialization.data(withJSONObject: blobs, options: .sortedKeys),
                     uniformTypeIdentifier: "public.json")
 
                 attachment.name = (existing ? "RetainedRhythmPackage-" : "NewRhythmPackage-") + "Blobs.json"
@@ -1801,13 +2045,14 @@ extension MigrationStudioTests
 
                 add(attachment)
 
-                let valid = try XCTUnwrap(defaults.data(forKey: key))
+                let valid = try XCTUnwrap(defaults.data(forKey: key)) /* Accepted input value */
 
                 for patch: [String: Any] in [["dailyMinutes": -1], ["weeklyMinutes": 1440],
                     ["weeklyWeekday": 0], ["dailyInvitations": "false"], ["futureField": true]]
                 {
 
-                    var raw = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                    var raw = /* Unprocessed source value */
+                        try JSONSerialization.jsonObject(with: valid) as! [String: Any]
 
                     raw.merge(patch) { _, replacement in replacement }
                     defaults.set(try JSONSerialization.data(withJSONObject: raw), forKey: key)
@@ -1815,7 +2060,8 @@ extension MigrationStudioTests
                         defaults: defaults, domain: domain, root: root)))
                 }
 
-                var incomplete = try JSONSerialization.jsonObject(with: valid) as! [String: Any]
+                var incomplete = /* Incomplete comparison fixture */
+                    try JSONSerialization.jsonObject(with: valid) as! [String: Any]
 
                 incomplete.removeValue(forKey: "dailyNotifications")
                 defaults.set(try JSONSerialization.data(withJSONObject: incomplete), forKey: key)

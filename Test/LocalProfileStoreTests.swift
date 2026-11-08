@@ -22,8 +22,8 @@ final class LocalProfileStoreTests: XCTestCase
 {
 
 
-    private var defaults: UserDefaults!                       /* Isolated test preferences */
-    private let suiteName = "Plenact.LocalProfileStoreTests"  /* Test suite key            */
+    private var defaults: UserDefaults!                      /* Isolated test preferences */
+    private let suiteName = "Plenact.LocalProfileStoreTests" /* Test suite key            */
 
 
     ///
@@ -114,11 +114,11 @@ final class LocalProfileStoreTests: XCTestCase
     {
 
 
-        let legacyPreferencesJSON = Data(
+        let legacyPreferencesJSON = Data( /* Legacy preferences JSON */
                         #"{"defaultListID":3,"usesReducedContent":false,"usesLargeControls":false}"#.utf8
         ) /* Preferences snapshot without navigation-caption field */
 
-        let preferences = try JSONDecoder().decode(
+        let preferences = try JSONDecoder().decode( /* Planning and display choices */
             LocalProfilePreferences.self, from: legacyPreferencesJSON) /* Preferences decoded without navigation-label settings */
 
         XCTAssertTrue(preferences.showsNavigationLabels)
@@ -143,7 +143,7 @@ final class LocalProfileStoreTests: XCTestCase
                         .utf8
         )
 
-        let profile = try JSONDecoder().decode(
+        let profile = try JSONDecoder().decode( /* Synthetic profile fixture */
             LocalProfile.self, from: legacyProfileJSON) /* Profile decoded with initials-avatar defaults */
 
         XCTAssertEqual(profile.avatarIcon, .initials)
@@ -170,7 +170,7 @@ final class LocalProfileStoreTests: XCTestCase
                         .utf8
         )
 
-        let profile = try JSONDecoder().decode(
+        let profile = try JSONDecoder().decode( /* Synthetic profile fixture */
             LocalProfile.self, from: legacyProfileJSON) /* Profile decoded with legacy named colors */
 
         XCTAssertEqual(profile.avatarColor, .teal)
@@ -228,8 +228,8 @@ final class LocalProfileStoreTests: XCTestCase
     {
 
 
-        let data     = Data([1, 2, 3, 4])                      /* Synthetic avatar-image bytes */
-        let fileName = try ProfileAvatarPhotoStore.save(data)  /* Stored avatar filename       */
+        let data     = Data([1, 2, 3, 4])                     /* Synthetic avatar-image bytes */
+        let fileName = try ProfileAvatarPhotoStore.save(data) /* Stored avatar filename       */
 
         defer
         {
@@ -293,7 +293,8 @@ final class LocalProfileStoreTests: XCTestCase
 
         format.scale = 1
 
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100), format: format).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100), format: format).image
         {
 
         context in /* Synthetic two-color crop source */
@@ -304,7 +305,7 @@ final class LocalProfileStoreTests: XCTestCase
         }
 
 
-        let data = try XCTUnwrap(
+        let data = try XCTUnwrap( /* Encoded or loaded bytes */
             AvatarPhotoCrop.jpeg( /* Encoded cropped-avatar JPEG bytes */
                 image: image, side: 100, zoom: 1, offset: CGSize(width: 50, height: 0)
             ))
@@ -313,7 +314,7 @@ final class LocalProfileStoreTests: XCTestCase
         XCTAssertEqual(croppedImage.size, CGSize(width: 512, height: 512))
 
         let colorImage = try XCTUnwrap(CIImage(data: data)) /* Core Image representation of the avatar crop */
-        let average    = try XCTUnwrap(
+        let average    = try XCTUnwrap( /* Average comparison fixture */
             colorImage.applyingFilter(
                                 "CIAreaAverage",
                                 parameters: [ /* Average color sample for the exported crop   */

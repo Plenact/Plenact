@@ -25,17 +25,17 @@ struct ChecklistActionDetailView: View
 {
 
 
-    let title:           String                                 /* Owning action title */
-    let currentUserName: String                                 /* Comment author name */
-    let onSave:          (KanbanChecklistActionDetail) -> Void  /* Save callback       */
+    let title:           String                                /* Owning action title */
+    let currentUserName: String                                /* Comment author name */
+    let onSave:          (KanbanChecklistActionDetail) -> Void /* Save callback       */
 
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal     */
 
-    @State private var detailID:        UUID               /* Stable detail ID  */
-    @State private var descriptionText: String             /* Description draft */
-    @State private var checklists:      [KanbanChecklist]  /* Nested actions    */
-    @State private var comments:        [KanbanComment]    /* Detail comments   */
-    @State private var commentDraft = ""                   /* New comment draft */
+    @State private var detailID:        UUID              /* Stable detail ID  */
+    @State private var descriptionText: String            /* Description draft */
+    @State private var checklists:      [KanbanChecklist] /* Nested actions    */
+    @State private var comments:        [KanbanComment]   /* Detail comments   */
+    @State private var commentDraft = ""                  /* New comment draft */
 
 
     ///
@@ -172,7 +172,7 @@ struct ChecklistActionDetailView: View
     /// @post       Save emits a detail snapshot retaining its ID, then dismisses.
     ///             Cancel discards draft description, completion, and comment edits
     ///
-    var body: some View
+    var body: some View /* Checklist detail editor */
     {  /* Reduced Action Detail editor form */
 
 
@@ -335,31 +335,31 @@ struct ChecklistBlock: View
 {
 
 
-    let checklist: KanbanChecklist /* The checklist data rendered by the block                                */
-    let linkedCardsByID:
+    let checklist: KanbanChecklist /* The checklist data rendered by the block */
+    let linkedCardsByID:           /* Linked cards by ID                       */
     [Int: KanbanCard]                   /* Linked cards keyed by stable ID                  */
-    let onDelete:     () -> Void        /* The action invoked when the checklist is deleted */
-    let onAddItem:    (String) -> Void  /* The action invoked when a new item is added      */
-    let onToggleItem: (Int) -> Void     /* The action invoked when an item is toggled       */
-    let onUpdateItem:
+    let onDelete:     () -> Void       /* The action invoked when the checklist is deleted */
+    let onAddItem:    (String) -> Void /* The action invoked when a new item is added      */
+    let onToggleItem: (Int) -> Void    /* The action invoked when an item is toggled       */
+    let onUpdateItem:                  /* Update item callback                             */
     (Int, String) -> Void            /* The action invoked when item text is edited */
-    let onDeleteItem: (Int) -> Void  /* The action invoked when an item is deleted  */
-    let onOpenActionDetail:
+    let onDeleteItem: (Int) -> Void /* The action invoked when an item is deleted */
+    let onOpenActionDetail:         /* Open action detail callback                */
     (UUID) -> Void                          /* The action invoked for reduced detail                  */
     let onRename:         (String) -> Void  /* The action invoked when the checklist title is renamed */
     let onToggleAllItems: () -> Void        /* The action invoked when all items are toggled          */
-    let onMove:
+    let onMove: /* Move the selected item */
     (ChecklistMoveDirection) -> Void          /* The action invoked when the checklist is moved                          */
     let canMoveUp:                Bool        /* Whether the checklist can be moved up in the list                       */
     let canMoveDown:              Bool        /* Whether the checklist can be moved down in the list                     */
     let focusFirstItem:           Bool        /* Whether the first item should be focused when the checklist is rendered */
     let onFirstItemFocused:       () -> Void  /* The action invoked when the first item receives focus                   */
-    var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil
-    @State private var typeDraft: KanbanChecklistItem?
-    @State private var requestedType = ChecklistItemType.standard
+    var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil /* Change type callback */
+    @State private var typeDraft: KanbanChecklistItem? /* Type draft */
+    @State private var requestedType = ChecklistItemType.standard /* Requested type */
 
-    @State private var newItemText        = ""
-    @State private var confirmsDeletion   = false
+    @State private var newItemText        = "" /* Pending checklist item text */
+    @State private var confirmsDeletion   = false /* Confirms deletion */
     @State private var isRenaming         = false  /* Whether the checklist title is currently being renamed          */
     @State private var titleDraft         = ""     /* The draft text for the checklist title being edited             */
     @State private var hideCompletedItems = false  /* Checklist completed-item filter                                 */
@@ -375,7 +375,7 @@ struct ChecklistBlock: View
     /// @pre        Checklist items and completion indices represent the current checklist state
     /// @post       No checklist state is modified
     ///
-    private var allItemsAreCompleted: Bool
+    private var allItemsAreCompleted: Bool /* All items are completed */
     {  /* Non-empty checklist completion state */
 
 
@@ -394,7 +394,7 @@ struct ChecklistBlock: View
     /// @pre        Checklist data and Hide Completed state are current
     /// @post       Checklist data and completion state remain unchanged
     ///
-    private var visibleItems: [(offset: Int, element: KanbanChecklistItem)]
+    private var visibleItems: [(offset: Int, element: KanbanChecklistItem)] /* Visible items */
     {  /* Filtered actions */
 
 
@@ -547,7 +547,7 @@ struct ChecklistBlock: View
     private func chooseType(_ type: ChecklistItemType, for item: KanbanChecklistItem)
     {
 
-        var updated = item
+        var updated = item /* Edited value to publish */
 
         switch type
         {
@@ -625,7 +625,7 @@ struct ChecklistBlock: View
     }
 
 
-    var body: some View
+    var body: some View /* Checklist controls and actions */
     {  /* Checklist heading, rows, and action menu */
 
 
@@ -934,16 +934,16 @@ struct ChecklistItemRow: View
 {
 
 
-    @Environment(\.planningCalendarAccess) private var planningAccess
-    let planningLinkID:     UUID?
-    let linkedCollectionID: UUID?
-    @Environment(\.cardMovementSource) private var linkedSourceID
+    @Environment(\.planningCalendarAccess) private var planningAccess /* Planning access      */
+    let planningLinkID:     UUID?                                     /* Planning link ID     */
+    let linkedCollectionID: UUID?                                     /* Linked collection ID */
+    @Environment(\.cardMovementSource) private var linkedSourceID     /* Linked source ID     */
 
     let item:           String       /* The editable item text               */
     let isCompleted:    Bool         /* The current completion state         */
     let linkedCardID:   Int?         /* Stable linked card ID, when present  */
     let linkedCard:     KanbanCard?  /* Resolved linked card, when available */
-    var webURL:         URL? = nil
+    var webURL:         URL? = nil /* Web URL */
     let onOpenDetail:   (() -> Void)?     /* Action Detail presentation callback                           */
     let onToggle:       () -> Void        /* The action invoked by the checkbox                            */
     let onUpdate:       (String) -> Void  /* The action invoked by text editing                            */
@@ -1027,7 +1027,7 @@ struct ChecklistItemRow: View
     ///             Vertical-dominant drags are ignored; text/completion changes delegate to callbacks
     /// @note       The parent must install a KanbanCard navigation destination for resolved links
     ///
-    var body: some View
+    var body: some View /* Editable checklist row */
     {  /* Checklist action row and swipe-to-delete control */
 
 
@@ -1232,8 +1232,8 @@ struct ChecklistTextField: UIViewRepresentable
 {
 
 
-    @Binding var text:  String
-    @Binding var focus: Bool
+    @Binding var text:  String /* Text being processed  */
+    @Binding var focus: Bool   /* Today Focus selection */
 
 
     ///
@@ -1263,7 +1263,7 @@ struct ChecklistTextField: UIViewRepresentable
     func makeUIView(context: Context) -> UITextField
     {
 
-        let field = UITextField()
+        let field = UITextField() /* Native input field */
 
         field.autocapitalizationType = .sentences
         field.placeholder = "Item"
@@ -1354,7 +1354,7 @@ struct ChecklistTextField: UIViewRepresentable
     {
 
 
-        var parent: ChecklistTextField
+        var parent: ChecklistTextField /* Latest representable bindings */
 
 
         ///
@@ -1413,7 +1413,7 @@ struct ChecklistTextField: UIViewRepresentable
                     return
                 }
 
-                let end = field.endOfDocument
+                let end = field.endOfDocument /* Range end */
 
                 field.selectedTextRange = field.textRange(from: end, to: end)
 

@@ -23,7 +23,7 @@ struct NoteCreationDateLabel: View
 
     let createdAt: Date /* Original Note creation time shown in the metadata row */
 
-    var body: some View
+    var body: some View /* Note Creation Date Label layout */
     {  /* Formatted Note creation metadata */
 
         ViewThatFits(in: .horizontal)
@@ -97,11 +97,11 @@ struct DetailSection<Content: View>: View
 {
 
 
-    @State private var isCollapsed = false
-    let collapsible:    Bool
-    let title:          String         /* The title of the detail section                    */
-    var trailing:       String?        /* The optional trailing symbol of the detail section */
-    var trailingAction: (() -> Void)?  /* The optional action for the trailing symbol        */
+    @State private var isCollapsed = false /* Collapsed state                                    */
+    let collapsible:    Bool               /* Collapsible state flag                             */
+    let title:          String             /* The title of the detail section                    */
+    var trailing:       String?            /* The optional trailing symbol of the detail section */
+    var trailingAction: (() -> Void)?      /* The optional action for the trailing symbol        */
 
     @ViewBuilder let content: () -> Content /* Content rendered beneath the section heading */
 
@@ -146,7 +146,7 @@ struct DetailSection<Content: View>: View
     /// @post       Tapping an actionable trailing symbol invokes trailingAction;
     ///             a symbol without an action remains decorative
     ///
-    var body: some View
+    var body: some View /* Detail layout */
     {  /* Detail subsection heading and content */
 
 
@@ -242,10 +242,10 @@ struct ActionTile: View
 {
 
 
-    let title:  String      /* The title of the action tile                  */
-    let icon:   String      /* The icon representing the action tile         */
-    let color:  Color       /* The color of the action tile                  */
-    let action: () -> Void  /* The action to perform when the tile is tapped */
+    let title:  String     /* The title of the action tile                  */
+    let icon:   String     /* The icon representing the action tile         */
+    let color:  Color      /* The color of the action tile                  */
+    let action: () -> Void /* The action to perform when the tile is tapped */
 
     ///
     /// @fcn        ActionTile.body
@@ -255,7 +255,7 @@ struct ActionTile: View
     /// @return     (some View) rendered action tile
     /// @post       Tapping delegates to action; rendering itself performs no mutation
     ///
-    var body: some View
+    var body: some View /* Action layout */
     {  /* Compact labeled action button */
 
 
@@ -291,9 +291,9 @@ struct DetailRow: View
 {
 
 
-    let icon:  String  /* The icon representing the detail row     */
-    let title: String  /* The title or label of the detail row     */
-    let value: String  /* The value associated with the detail row */
+    let icon:  String /* The icon representing the detail row     */
+    let title: String /* The title or label of the detail row     */
+    let value: String /* The value associated with the detail row */
 
     ///
     /// @fcn        DetailRow.body
@@ -303,7 +303,7 @@ struct DetailRow: View
     /// @return     (some View) rendered metadata row
     /// @post       The row has no mutation or navigation behavior
     ///
-    var body: some View
+    var body: some View /* Detail layout */
     {  /* Icon, title, and trailing metadata value */
 
 
@@ -341,10 +341,10 @@ struct SectionCollapseButton: View
 {
 
 
-    let title:                String
-    @Binding var isCollapsed: Bool
+    let title:                String /* User-facing title */
+    @Binding var isCollapsed: Bool   /* Collapsed state   */
 
-    var body:                 some View
+    var body:                 some View /* Section Collapse Button layout */
     {
 
         Button

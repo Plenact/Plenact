@@ -43,7 +43,7 @@ enum LocalBackupRestore
         /// @fcn Failure.errorDescription
         /// @brief Explain the failed review without exposing private source values
         /// @return Actionable local-only feedback
-        var errorDescription: String?
+        var errorDescription: String? /* Readable failure explanation */
         {
 
             switch self
@@ -73,14 +73,15 @@ enum LocalBackupRestore
             throw Failure.unsafe
         }
 
-        let manager    = FileManager.default
-        let attributes = try manager.attributesOfItem(atPath: url.path)
-        let kind       = attributes[.type] as? FileAttributeType
+        let manager    = FileManager.default /* Filesystem or media manager */
+        let attributes =                     /* Attributed-text settings    */
+            try manager.attributesOfItem(atPath: url.path)
+        let kind       = attributes[.type] as? FileAttributeType /* Content kind discriminator */
 
         if kind == .typeDirectory
         {
 
-            var children: [String: FileWrapper] = [:]
+            var children: [String: FileWrapper] = [:] /* Nested view or record values */
 
             for child in try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
             {
@@ -100,7 +101,7 @@ enum LocalBackupRestore
             throw Failure.tooLarge
         }
 
-        let data = try Data(contentsOf: url)
+        let data = try Data(contentsOf: url) /* Loaded original file bytes */
 
         guard data.count <= remaining else
         {
@@ -131,7 +132,7 @@ enum LocalBackupRestore
             throw Failure.unsafe
         }
 
-        var result: Set<String> = []
+        var result: Set<String> = [] /* Accumulated output value */
 
         for (name, child) in wrapper.fileWrappers ?? [:]
         {
@@ -151,8 +152,8 @@ enum LocalBackupRestore
     static func review(at url: URL) throws -> ReviewedLocalBackup
     {
 
-        var remaining = LegacyWorkspaceExport.maximumBytes
-        let files     = try readTree(url, remaining: &remaining)
+        var remaining = LegacyWorkspaceExport.maximumBytes       /* Entries still to process     */
+        let files     = try readTree(url, remaining: &remaining) /* Files used by this operation */
 
         guard files.isDirectory,
               let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: files)) as? [String: Any],
@@ -162,14 +163,16 @@ enum LocalBackupRestore
             throw Failure.reviewRequired
         }
 
-        let backup                   = LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
-        let values                   = try MigrationBackupReader.values(in: backup)
-        var actualMedia: Set<String> = []
+        let backup                   = /* Recoverable native snapshot */
+            LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
+        let values                   = /* Values being processed */
+            try MigrationBackupReader.values(in: backup)
+        var actualMedia: Set<String> = [] /* Actual media */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
 
-            var entry: FileWrapper? = files
+            var entry: FileWrapper? = files /* Entry being processed */
 
             for part in area.split(separator: "/")
             {
@@ -203,9 +206,12 @@ enum LocalBackupRestore
             throw Failure.invalid
         }
 
-        let board    = try JSONDecoder().decode([KanbanList].self, from: boardData)
-        let calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: calendarData)
-        let current  = calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
+        let board    = /* Board state under review */
+            try JSONDecoder().decode([KanbanList].self, from: boardData)
+        let calendar = /* Date calculation calendar */
+            try JSONDecoder().decode(PlanningCalendarDocument.self, from: calendarData)
+        let current  = /* Current operation snapshot */
+            calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
 
         guard calendar.version == 1, (1...7).contains(calendar.firstWeekday),
               Set(calendar.weeks.map(\.startKey)).count == calendar.weeks.count,
@@ -215,7 +221,7 @@ enum LocalBackupRestore
             throw Failure.projectionMismatch
         }
 
-        var journal: Data?
+        var journal: Data? /* Migration identity journal */
 
         if files.fileWrappers?["Migration"] != nil
         {
@@ -227,8 +233,10 @@ enum LocalBackupRestore
         if files.fileWrappers?["MigrationPreview"] != nil
         {
 
-            let data      = try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
-            let candidate = try MigrationIdentityJournal.decode(data)
+            let data      = /* Encoded or loaded bytes */
+                try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
+            let candidate = /* Candidate under validation */
+                try MigrationIdentityJournal.decode(data)
 
             guard let preview = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: files)) as? [String: Any],
                   preview["source_preferences_sha256"] as? String == MigrationBackupReader.digest(try boardPreferences(files)),
@@ -241,8 +249,10 @@ enum LocalBackupRestore
             if let journal
             {
 
-                let original = try MigrationIdentityJournal.decode(journal)
-                let mapped   = Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
+                let original = /* Baseline before changes */
+                    try MigrationIdentityJournal.decode(journal)
+                let mapped   = /* Value after identity translation */
+                    Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
 
                 guard original.sourceInstallationID == candidate.sourceInstallationID,
                       original.previewWorkspaceID == candidate.previewWorkspaceID,
@@ -287,19 +297,19 @@ enum LocalBackupRestore
 
         #if targetEnvironment(simulator)
 
-        let manager = FileManager.default
+        let manager = FileManager.default /* Filesystem or media manager */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
 
-            let target = root.appendingPathComponent(area)
+            let target = root.appendingPathComponent(area) /* Target under consideration */
 
             if manager.fileExists(atPath: target.path)
             {
                 try manager.removeItem(at: target)
             }
 
-            var source: FileWrapper? = backup.files
+            var source: FileWrapper? = backup.files /* Source value for this operation */
 
             for part in area.split(separator: "/")
             {
@@ -318,7 +328,8 @@ enum LocalBackupRestore
             }
         }
 
-        let migration = root.appendingPathComponent("Library/Application Support/PlenactMigration")
+        let migration = /* Prepared migration evidence */
+            root.appendingPathComponent("Library/Application Support/PlenactMigration")
 
         if manager.fileExists(atPath: migration.path)
         {
@@ -342,7 +353,8 @@ enum LocalBackupRestore
                 throw Failure.invalid
             }
 
-            let installed = try Data(contentsOf: root.appendingPathComponent(path))
+            let installed = /* Installed workspace state */
+                try Data(contentsOf: root.appendingPathComponent(path))
 
             guard MigrationBackupReader.digest(installed) == entry["sha256"] as? String else
             {
@@ -357,8 +369,10 @@ enum LocalBackupRestore
             }
         }
 
-        let portable = try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
-        let runtime  = root.appendingPathComponent(PortableRuntimeEvidence.area)
+        let portable = /* Canonical portable representation */
+            try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
+        let runtime  = /* Retained import evidence */
+            root.appendingPathComponent(PortableRuntimeEvidence.area)
 
         if manager.fileExists(atPath: runtime.path)
         {
@@ -377,7 +391,8 @@ enum LocalBackupRestore
             }
         }
 
-        var destination = (defaults.persistentDomain(forName: domain) ?? [:]).filter { !LegacyStoreValidation.includes($0.key) }
+        var destination = /* Destination for the operation */
+            (defaults.persistentDomain(forName: domain) ?? [:]).filter { !LegacyStoreValidation.includes($0.key) }
 
         destination.merge(backup.values) { _, imported in imported }
         defaults.setPersistentDomain(destination, forName: domain)
@@ -398,8 +413,8 @@ enum LocalBackupRestore
 struct LocalBackupRestoreAccess
 {
 
-    let restore: (ReviewedLocalBackup) -> Void /* Confirmed restore request */
-    let undo:    () -> Void                   /* Explicit recovery of the pre-import workspace */
+    let restore: (ReviewedLocalBackup) -> Void /* Confirmed restore request                     */
+    let undo:    () -> Void                    /* Explicit recovery of the pre-import workspace */
 
 }
 
@@ -410,7 +425,7 @@ struct LocalBackupRestoreAccess
 private struct LocalBackupRestoreKey: EnvironmentKey
 {
 
-    static let defaultValue: LocalBackupRestoreAccess? = nil
+    static let defaultValue: LocalBackupRestoreAccess? = nil /* Fallback environment value */
 
 }
 
@@ -421,7 +436,7 @@ extension EnvironmentValues
     /// @fcn EnvironmentValues.localBackupRestore
     /// @brief Expose the root-owned explicit restore boundary
     /// @return Optional installed restore callbacks
-    var localBackupRestore: LocalBackupRestoreAccess?
+    var localBackupRestore: LocalBackupRestoreAccess? /* Local backup restore */
     {
 
         get { self[LocalBackupRestoreKey.self] }

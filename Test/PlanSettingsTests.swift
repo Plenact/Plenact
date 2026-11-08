@@ -19,9 +19,9 @@ final class PlanSettingsTests: XCTestCase
     private final class Draft: ObservableObject
     {
 
-        @Published var preferences = LocalProfilePreferences()
-        @Published var weekday     = 2
-        var saves                  = 0
+        @Published var preferences = LocalProfilePreferences() /* Planning and display choices */
+        @Published var weekday     = 2                         /* Calendar weekday number      */
+        var saves                  = 0                         /* Number of requested saves    */
 
     }
 
@@ -30,10 +30,10 @@ final class PlanSettingsTests: XCTestCase
     private struct Page: View
     {
 
-        @ObservedObject var draft: Draft
-        let page: PlanSettingsPage
+        @ObservedObject var draft: Draft /* Local editing draft          */
+        let page: PlanSettingsPage       /* Current settings destination */
 
-        var body: some View
+        var body: some View /* Page layout */
         {
 
             NavigationStack
@@ -70,11 +70,12 @@ final class PlanSettingsTests: XCTestCase
     func testFocusedPagesFitPhoneWithoutSaving() async throws
     {
 
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
-        let draft    = Draft()
-        let original = PlanPreferencesStore.load()
+        let scene    = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window        */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window  */
+        let draft    = Draft()                                   /* Local editing draft     */
+        let original = PlanPreferencesStore.load()               /* Baseline before changes */
 
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
 
@@ -90,7 +91,8 @@ final class PlanSettingsTests: XCTestCase
         for page in PlanSettingsPage.allCases where page != .review
         {
 
-            let host = UIHostingController(rootView: Page(draft: draft, page: page)
+            let host = /* Synthetic SwiftUI host */
+                UIHostingController(rootView: Page(draft: draft, page: page)
                 .environment(\.dynamicTypeSize, .large))
 
             window.rootViewController = host
@@ -99,20 +101,23 @@ final class PlanSettingsTests: XCTestCase
             try await Task.sleep(for: .milliseconds(200))
             host.view.layoutIfNeeded()
 
-            let scroll = try XCTUnwrap(descendants(host.view, of: UIScrollView.self)
+            let scroll = /* Native scroll view */
+                try XCTUnwrap(descendants(host.view, of: UIScrollView.self)
                 .filter { $0.bounds.height > 100 }.max { $0.bounds.height < $1.bounds.height })
-            let fullHeight = scroll.contentSize.height + scroll.adjustedContentInset.top
+            let fullHeight = /* Full height */
+                scroll.contentSize.height + scroll.adjustedContentInset.top
                 + scroll.adjustedContentInset.bottom
 
             print("SETTINGS_PAGE_HEIGHT", page.rawValue, fullHeight, "viewport", scroll.bounds.height)
             XCTAssertLessThanOrEqual(fullHeight, scroll.bounds.height * 1.5 + 2, page.title)
 
-            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
 
                 _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
-            let attachment = XCTAttachment(image: image)
+            let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
 
             attachment.name = "PlanSettings-" + page.rawValue
             attachment.lifetime = .keepAlways
@@ -133,11 +138,13 @@ final class PlanSettingsTests: XCTestCase
     func testDirectoriesAndReminderEditorFitPhone() async throws
     {
 
-        let scene                      = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous                   = scene.windows.first(where: \.isKeyWindow)
-        let window                     = UIWindow(windowScene: scene)
-        let original                   = PlanPreferencesStore.load()
-        let views: [(String, AnyView)] = [
+        let scene                      = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous                   = /* Prior key window */
+            scene.windows.first(where: \.isKeyWindow)
+        let window                     = UIWindow(windowScene: scene) /* Synthetic scene window */
+        let original                   = PlanPreferencesStore.load() /* Baseline before changes */
+        let views: [(String, AnyView)] = [ /* Rendered or configured views */
             ("menu", AnyView(PlanSettingsView(lists: [], onSaveProfile: { _ in XCTFail("Rendering must not save") }))),
             ("studio", AnyView(NavigationStack { StudioSettingsView() })),
             ("review", AnyView(ReviewRhythmSettingsView()))
@@ -157,7 +164,8 @@ final class PlanSettingsTests: XCTestCase
         for (name, view) in views
         {
 
-            let host = UIHostingController(rootView: view.environment(\.dynamicTypeSize, .large))
+            let host = /* Synthetic SwiftUI host */
+                UIHostingController(rootView: view.environment(\.dynamicTypeSize, .large))
 
             window.rootViewController = host
 
@@ -165,20 +173,23 @@ final class PlanSettingsTests: XCTestCase
             try await Task.sleep(for: .milliseconds(250))
             host.view.layoutIfNeeded()
 
-            let scroll = try XCTUnwrap(descendants(host.view, of: UIScrollView.self)
+            let scroll = /* Native scroll view */
+                try XCTUnwrap(descendants(host.view, of: UIScrollView.self)
                 .filter { $0.bounds.height > 100 }.max { $0.bounds.height < $1.bounds.height })
-            let fullHeight = scroll.contentSize.height + scroll.adjustedContentInset.top
+            let fullHeight = /* Full height */
+                scroll.contentSize.height + scroll.adjustedContentInset.top
                 + scroll.adjustedContentInset.bottom
 
             print("SETTINGS_PAGE_HEIGHT", name, fullHeight, "viewport", scroll.bounds.height)
             XCTAssertLessThanOrEqual(fullHeight, scroll.bounds.height * 1.5 + 2, name)
 
-            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
 
                 _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
-            let attachment = XCTAttachment(image: image)
+            let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
 
             attachment.name = "PlanSettings-" + name
             attachment.lifetime = .keepAlways
@@ -196,12 +207,14 @@ final class PlanSettingsTests: XCTestCase
     func testEditingAndSwitchingModulesRetainsUnsavedDraft() async throws
     {
 
-        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
-        let draft    = Draft()
-        let original = PlanPreferencesStore.load()
-        let host     = UIHostingController(rootView: Page(draft: draft, page: .navigation))
+        let scene    = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window        */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window  */
+        let draft    = Draft()                                   /* Local editing draft     */
+        let original = PlanPreferencesStore.load()               /* Baseline before changes */
+        let host     =                                           /* Synthetic SwiftUI host  */
+            UIHostingController(rootView: Page(draft: draft, page: .navigation))
 
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host
@@ -218,15 +231,16 @@ final class PlanSettingsTests: XCTestCase
         try await Task.sleep(for: .milliseconds(250))
         host.view.layoutIfNeeded()
 
-        let control = try XCTUnwrap(descendants(host.view, of: UISwitch.self).first)
-        let before  = draft.preferences
+        let control = /* Native input control */
+            try XCTUnwrap(descendants(host.view, of: UISwitch.self).first)
+        let before  = draft.preferences /* State before the operation */
 
         control.setOn(!control.isOn, animated: false)
         control.sendActions(for: .valueChanged)
         try await Task.sleep(for: .milliseconds(150))
         XCTAssertNotEqual(draft.preferences, before)
 
-        let edited = draft.preferences
+        let edited = draft.preferences /* Snapshot after requested edits */
 
         host.rootView = Page(draft: draft, page: .maps)
 

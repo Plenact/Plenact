@@ -37,7 +37,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     func routineCalendar(firstWeekday: Int = 2) -> Calendar
     {
 
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = firstWeekday
@@ -96,7 +96,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     func planningTestCalendar() -> Calendar
     {
 
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 1
@@ -117,7 +117,8 @@ final class PlenactBoardDocumentTests: XCTestCase
     func drawingFixture() -> PKDrawing
     {
 
-        let points = [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map
+        let points = /* Mapped points values */
+            [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map
         {
 
         index, point in

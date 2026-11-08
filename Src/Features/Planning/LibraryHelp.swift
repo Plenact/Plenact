@@ -19,10 +19,10 @@ struct PlenactHelpSection: Identifiable
 {
 
 
-    let title:      String
-    let paragraphs: [String]
+    let title:      String   /* User-facing title          */
+    let paragraphs: [String] /* Rich-text paragraph values */
 
-    var id:         String
+    var id:         String /* Record or view identity */
     {
         title
     }
@@ -41,13 +41,13 @@ struct PlenactHelpArticle: Identifiable
 {
 
 
-    let id:       String
-    let group:    String
-    let title:    String
-    let summary:  String
-    let symbol:   String
-    let sections: [PlenactHelpSection]
-    var opensPlan = false
+    let id:       String               /* Record or view identity     */
+    let group:    String               /* Related operation entries   */
+    let title:    String               /* User-facing title           */
+    let summary:  String               /* Aggregate operation results */
+    let symbol:   String               /* Selected symbol name        */
+    let sections: [PlenactHelpSection] /* Ordered section groups      */
+    var opensPlan = false              /* Opens plan                  */
 
 
     ///
@@ -62,7 +62,7 @@ struct PlenactHelpArticle: Identifiable
     func matches(_ query: String) -> Bool
     {
 
-        let text = ([group, title, summary] + sections.flatMap
+        let text = ([group, title, summary] + sections.flatMap /* Text being processed */
             {
                 [$0.title] + $0.paragraphs
             }).joined(separator: " ")
@@ -88,7 +88,7 @@ enum PlenactHelpCatalog
 {
 
 
-    static let groups = [
+    static let groups = [ /* Groups lookup entries */
             "Plan a life that matters", "Make Plenact your own", "Your Planning Rhythm", "Your first week with v1.0"
     ]
 
@@ -109,7 +109,7 @@ enum PlenactHelpCatalog
         PlenactHelpSection(title: title, paragraphs: paragraphs)
     }
 
-    static let articles: [PlenactHelpArticle] = [
+    static let articles: [PlenactHelpArticle] = [ /* Articles lookup entries */
         .init(
             id: "life", group: groups[0], title: "Use the planning system for your life",
             summary: "Turn what matters into a realistic next step", symbol: "sun.horizon",
@@ -425,16 +425,16 @@ struct LibraryHelpRows: View
 {
 
 
-    let query:  String
-    var onOpen: (PlenactHelpArticle) -> Void =
+    let query:  String                         /* Search text                   */
+    var onOpen: (PlenactHelpArticle) -> Void = /* Open the selected destination */
     {
         _ in
     }
 
-    var body: some View
+    var body: some View /* Library Help Rows layout */
     {
 
-        let matches = PlenactHelpCatalog.results(for: query)
+        let matches = PlenactHelpCatalog.results(for: query) /* Matching source entries */
 
         Section
         {
@@ -453,7 +453,7 @@ struct LibraryHelpRows: View
         {
             group in
 
-            let articles = matches.filter
+            let articles = matches.filter /* Filtered articles entries */
             {
                 $0.group == group
             }
@@ -524,12 +524,12 @@ struct PlenactHelpArticleView: View
 {
 
 
-    let article: PlenactHelpArticle
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var showsPlan = false
+    let article: PlenactHelpArticle                           /* Article operation value        */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @State private var showsPlan = false                      /* Plan visibility                */
 
-    var body: some View
+    var body: some View /* Plenact Help Article layout */
     {
 
         NavigationStack

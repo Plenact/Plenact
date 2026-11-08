@@ -19,8 +19,8 @@ struct ListCheckmarkReset: Equatable
 {
 
 
-    let previous: [String: Bool]
-    let cleared:  [String: Bool]
+    let previous: [String: Bool] /* Previous value for comparison */
+    let cleared:  [String: Bool] /* Value after clearing choices  */
 
 
     ///
@@ -36,7 +36,7 @@ struct ListCheckmarkReset: Equatable
     static func values(in list: KanbanList) -> [String: Bool]
     {
 
-        var values: [String: Bool] = [:]
+        var values: [String: Bool] = [:] /* Values being processed */
 
         _ = transform(list.cards)
         {
@@ -64,14 +64,14 @@ struct ListCheckmarkReset: Equatable
     static func reset(_ list: KanbanList) -> (ListCheckmarkReset, [KanbanCard])
     {
 
-        let previous = values(in: list)
-        let cards    = transform(list.cards)
+        let previous = values(in: list)      /* Previous value for comparison    */
+        let cards    = transform(list.cards) /* Card records under consideration */
         {
             _, _ in
             false
         }
 
-        var cleared = list;
+        var cleared = list; /* Value after clearing choices */
 
         cleared.cards = cards
 
@@ -144,8 +144,9 @@ struct ListCheckmarkReset: Equatable
                 return original
             }
 
-            var card = original
-            let key  = "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
+            var card = original /* Card under consideration  */
+            let key  =          /* Lookup or persistence key */
+                "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
 
             card.isTitleChecked = change(key, card.isTitleChecked)
             card.checklists = transform(card.checklists, path: key, change: change)
@@ -181,8 +182,8 @@ struct ListCheckmarkReset: Equatable
                 {
                     original in
 
-                    var item = original
-                    let key  = path + "/\(checklist.id)/\(item.id)"
+                    var item = original                             /* Item under consideration  */
+                    let key  = path + "/\(checklist.id)/\(item.id)" /* Lookup or persistence key */
 
                     item.isCompleted = change(key, item.isCompleted)
 

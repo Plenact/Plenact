@@ -119,10 +119,10 @@ struct LibraryRecentItem: Codable, Equatable, Identifiable
 {
 
 
-    let collectionID: UUID
-    let cardID:       Int
+    let collectionID: UUID /* Collection ID               */
+    let cardID:       Int  /* Owner-local Card identifier */
 
-    var id:           String
+    var id:           String /* Record or view identity */
     {
             "\(collectionID.uuidString).\(cardID)"
     }
@@ -141,7 +141,7 @@ enum LibraryRecentStore
 {
 
 
-    static let key = "Plenact.LibraryRecents.v1"
+    static let key = "Plenact.LibraryRecents.v1" /* Persistence lookup key */
 
 
     ///
@@ -182,7 +182,7 @@ enum LibraryRecentStore
 
         ActivityRecentStore.remember(item, defaults: defaults)
 
-        let items = Array(([item] + load(from: defaults).filter
+        let items = Array(([item] + load(from: defaults).filter /* Items being processed */
                 {
                     $0 != item
                 }).prefix(8))
@@ -209,7 +209,7 @@ enum ActivityRecentStore
 {
 
 
-    static let key = "Plenact.ActivityRecents.v1"
+    static let key = "Plenact.ActivityRecents.v1" /* Persistence lookup key */
 
 
     ///
@@ -249,7 +249,7 @@ enum ActivityRecentStore
     static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard)
     {
 
-        let items = Array(([item] + load(from: defaults).filter
+        let items = Array(([item] + load(from: defaults).filter /* Items being processed */
                 {
                     $0 != item
                 }).prefix(20))

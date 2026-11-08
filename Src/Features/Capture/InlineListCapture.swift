@@ -21,9 +21,9 @@ struct ListCreationDraft: Codable, Equatable
 {
 
 
-    var title       = ""
-    var subtitle    = ""
-    var description = ""
+    var title       = "" /* User-facing title           */
+    var subtitle    = "" /* Supporting item text        */
+    var description = "" /* Supporting item description */
 
 
     ///
@@ -117,10 +117,10 @@ final class ListCreationDraftModel: ObservableObject
 {
 
 
-    private let key: String
-    private var acceptsEdits = true
+    private let key: String         /* Lookup or persistence key */
+    private var acceptsEdits = true /* Accepts edits             */
 
-    @Published var title: String
+    @Published var title: String /* User-facing title */
     {
         didSet
         {
@@ -129,7 +129,7 @@ final class ListCreationDraftModel: ObservableObject
 
     }
 
-    @Published var subtitle: String
+    @Published var subtitle: String /* Supporting item text */
     {
         didSet
         {
@@ -138,7 +138,7 @@ final class ListCreationDraftModel: ObservableObject
 
     }
 
-    @Published var description: String
+    @Published var description: String /* Supporting item description */
     {
         didSet
         {
@@ -162,7 +162,7 @@ final class ListCreationDraftModel: ObservableObject
 
         self.key = key
 
-        let saved = ListCreationDraft.load(key: key)
+        let saved = ListCreationDraft.load(key: key) /* Saved state under review */
 
         title = saved.title
         subtitle = saved.subtitle
@@ -184,7 +184,7 @@ final class ListCreationDraftModel: ObservableObject
 
         acceptsEdits = false
 
-        let saved = ListCreationDraft.load(key: key)
+        let saved = ListCreationDraft.load(key: key) /* Saved state under review */
 
         title = saved.title
         subtitle = saved.subtitle
@@ -278,16 +278,16 @@ struct InlineListCapture: View
 {
 
 
-    let list:           KanbanList
-    @Binding var draft: InlineListCaptureDraft
-    var textColor:      Color = .primary
-    var isPresented           = true
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let onCreate:                      (QuickCaptureSubmission) -> Bool
-    let onOpenComposer:                () -> Void
-    @FocusState private var isFocused: Bool
+    let list:           KanbanList /* List under consideration */
+    @Binding var draft: InlineListCaptureDraft /* Local editing draft */
+    var textColor:      Color = .primary /* Text color */
+    var isPresented           = true /* Presentation visibility */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    let onCreate:                      (QuickCaptureSubmission) -> Bool /* Create callback */
+    let onOpenComposer:                () -> Void /* Open composer callback */
+    @FocusState private var isFocused: Bool /* Native editor focus state */
 
-    var body: some View
+    var body: some View /* Inline List Capture layout */
     {
 
         HStack(spacing: 8)
@@ -368,7 +368,7 @@ struct InlineListCapture: View
     private func createInline()
     {
 
-        let previousRevealID = CreatedContentReveal.shared.target?.id
+        let previousRevealID = CreatedContentReveal.shared.target?.id /* Previous reveal ID */
 
         guard draft.submit(to: list, onCreate: onCreate) else
         {
@@ -401,7 +401,7 @@ struct InlineListCaptureDraft
 {
 
 
-    var title = ""
+    var title = "" /* User-facing title */
 
 
     ///
@@ -418,14 +418,15 @@ struct InlineListCaptureDraft
     mutating func submit(to list: KanbanList, onCreate: (QuickCaptureSubmission) -> Bool) -> Bool
     {
 
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = /* Trimmed operation value */
+            title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmed.isEmpty else
         {
             return false
         }
 
-        let capture = QuickCaptureSubmission(
+        let capture = QuickCaptureSubmission( /* Pending new-item capture */
             listID: list.id, title: trimmed, body: "",
             subtitle: "", presentation: list.newItemPresentation, actions: nil, attachments: [], schedule: nil)
 
@@ -453,12 +454,12 @@ struct ListItemComposer: View
 {
 
 
-    let list:         KanbanList
-    let draftKey:     String
-    var initialTitle: String = ""
-    let onCreate:     (QuickCaptureSubmission) -> Bool
+    let list:         KanbanList                       /* List under consideration */
+    let draftKey:     String                           /* Draft key                */
+    var initialTitle: String = ""                      /* Initial title            */
+    let onCreate:     (QuickCaptureSubmission) -> Bool /* Create callback          */
 
-    var body:         some View
+    var body:         some View /* List Item Composer layout */
     {
 
         QuickNoteComposer(
@@ -520,7 +521,7 @@ enum ListItemCreation
             return nil
         }
 
-        var cards = list.makeItems(
+        var cards = list.makeItems( /* Card records under consideration */
             startingAt: id, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle,
             presentation: capture.presentation, actions: capture.actions)

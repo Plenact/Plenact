@@ -27,9 +27,11 @@ final class MigrationAssetTests: XCTestCase
     private func fixture(missing: Bool = false, cycle: Bool = false, _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
 
-        let domain   = "Plenact.AssetTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let domain   = "Plenact.AssetTests." + UUID().uuidString /* Lookup or storage namespace */
+        let defaults =                                           /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: domain))
+        let root     = /* Synthetic workspace root */
+            FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer
@@ -38,12 +40,13 @@ final class MigrationAssetTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
 
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
-        let png      = renderer.pngData { context in
+        let renderer = /* Image rendering context */
+            UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
+        let png      = renderer.pngData { context in /* Encoded preview image */
             UIColor.blue.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
         }
-        let originals: [String: Data] = [
+        let originals: [String: Data] = [ /* Retained original files */
             "Documents/CardAttachments/photo.png": png,
             "Documents/CardAttachments/sketch.png": png,
             "Documents/CardAttachments/sketch.drawing": PKDrawing().dataRepresentation(),
@@ -58,24 +61,27 @@ final class MigrationAssetTests: XCTestCase
         for (path, bytes) in originals
         {
 
-            let file = root.appendingPathComponent(path)
+            let file = root.appendingPathComponent(path) /* File being processed */
 
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try bytes.write(to: file)
         }
 
-        var drawing = KanbanAttachment(fileName: "sketch.png", mediaKind: .photo)
+        var drawing = /* Drawing content and originals */
+            KanbanAttachment(fileName: "sketch.png", mediaKind: .photo)
 
         drawing.drawingFileName = "sketch.drawing"
 
-        var attachments = [KanbanAttachment(fileName: "photo.png", mediaKind: .photo), drawing,
+        var attachments = /* Owned attachment records */
+            [KanbanAttachment(fileName: "photo.png", mediaKind: .photo), drawing,
             KanbanAttachment(fileName: "clip.m4a", mediaKind: .audio),
             KanbanAttachment(fileName: "movie.mov", mediaKind: .video)]
 
         if cycle
         {
 
-            var reverse = KanbanAttachment(fileName: "sketch.drawing", mediaKind: .photo)
+            var reverse = /* Inverse identity lookup */
+                KanbanAttachment(fileName: "sketch.drawing", mediaKind: .photo)
 
             reverse.drawingFileName = "sketch.png"
 
@@ -86,21 +92,25 @@ final class MigrationAssetTests: XCTestCase
             attachments.append(KanbanAttachment(fileName: "absent.jpg", mediaKind: .photo))
         }
 
-        let card = KanbanCard(id: 1, word: "Media fixture", listTitle: "Day", checklists: [],
+        let card = /* Synthetic card fixture */
+            KanbanCard(id: 1, word: "Media fixture", listTitle: "Day", checklists: [],
             attachments: attachments, coverAttachmentID: drawing.id)
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
 
-        let week = DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200),
+        let week = /* Synthetic week fixture */
+            DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200),
             lists: [KanbanList(id: 1, title: "Day", cards: [card])], calendar: calendar)
-        let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
+        let document = /* Working calendar document */
+            PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
 
         defaults.set(try JSONEncoder().encode(document), forKey: "Plenact.CalendarWeeks.v1")
         defaults.set(try JSONEncoder().encode(week.collection.lists), forKey: "Plenact.Board.v1")
 
-        let backup = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+        let backup = /* Recoverable native snapshot */
+            try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
         try body(backup, root.appendingPathComponent("Journal/ids.json"))
     }
@@ -128,35 +138,41 @@ final class MigrationAssetTests: XCTestCase
 
         try fixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertNil(preview.blockedContentReason)
             XCTAssertEqual(preview.verifiedAssetCount, 9)
             XCTAssertEqual(preview.missingAssetCount, 0)
             XCTAssertEqual(preview.assetIssueCount, 0)
 
-            let document = try assetDocument(preview)
+            let document = try assetDocument(preview) /* Source document snapshot */
 
             XCTAssertEqual(document["account_binding_pending"] as? Bool, true)
 
-            let entries = try XCTUnwrap(document["entries"] as? [[String: Any]])
+            let entries = /* Entries being processed */
+                try XCTUnwrap(document["entries"] as? [[String: Any]])
 
             XCTAssertFalse(entries.contains { $0["account_id"] != nil })
 
-            let byPath = Dictionary(uniqueKeysWithValues: try entries.map { (try XCTUnwrap($0["source_path"] as? String), $0) })
+            let byPath = /* By path */
+                Dictionary(uniqueKeysWithValues: try entries.map { (try XCTUnwrap($0["source_path"] as? String), $0) })
 
             for (path, entry) in byPath
             {
 
-                let original = try MigrationBackupReader.file(path, in: backup.files)
+                let original = /* Baseline before changes */
+                    try MigrationBackupReader.file(path, in: backup.files)
 
                 XCTAssertEqual(entry["sha256"] as? String, MigrationBackupReader.digest(original))
                 XCTAssertEqual(entry["byte_length"] as? String, String(original.count))
                 XCTAssertEqual(original, try MigrationBackupReader.file(path, in: preview.files))
             }
 
-            let drawing  = try XCTUnwrap(byPath["Documents/CardAttachments/sketch.drawing"])
-            let rendered = try XCTUnwrap(byPath["Documents/CardAttachments/sketch.png"])
+            let drawing  = /* Drawing content and originals */
+                try XCTUnwrap(byPath["Documents/CardAttachments/sketch.drawing"])
+            let rendered = /* Rendered comparison fixture */
+                try XCTUnwrap(byPath["Documents/CardAttachments/sketch.png"])
 
             XCTAssertEqual(drawing["kind"] as? String, "drawing_original")
             XCTAssertEqual(rendered["derived_from_asset_id"] as? String, drawing["asset_id"] as? String)
@@ -164,12 +180,13 @@ final class MigrationAssetTests: XCTestCase
                 .compactMap { $0["asset_id"] as? String }).count, 4)
             XCTAssertEqual(entries.filter { ($0["references"] as? [Any])?.isEmpty == true }.count, 4)
 
-            let second = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let second = /* Second comparison value */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: document, options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: assetDocument(second), options: .sortedKeys))
 
-            var originals: [String: String] = [:]
+            var originals: [String: String] = [:] /* Retained original files */
 
             for path in byPath.keys
             {
@@ -178,7 +195,8 @@ final class MigrationAssetTests: XCTestCase
 
             }
 
-            let originalAttachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: originals, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            let originalAttachment = /* Original attachment */
+                XCTAttachment(data: try JSONSerialization.data(withJSONObject: originals, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
             originalAttachment.name = "Media-Originals.json"
             originalAttachment.lifetime = .keepAlways
@@ -187,7 +205,8 @@ final class MigrationAssetTests: XCTestCase
             for name in ["AssetPreview.json", "ContentGraph.json"]
             {
 
-                let attachment = XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
+                let attachment = /* Synthetic test evidence */
+                    XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
                 attachment.name = "Media-" + name
                 attachment.lifetime = .keepAlways
@@ -195,9 +214,12 @@ final class MigrationAssetTests: XCTestCase
                 add(attachment)
             }
 
-            let files      = try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
-            let records    = try files.sorted { $0.key < $1.key }.map { try JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) }
-            let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: records, options: .sortedKeys), uniformTypeIdentifier: "public.json")
+            let files      = /* Files used by this operation */
+                try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
+            let records    = /* Records being processed */
+                try files.sorted { $0.key < $1.key }.map { try JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) }
+            let attachment = /* Synthetic test evidence */
+                XCTAttachment(data: try JSONSerialization.data(withJSONObject: records, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
             attachment.name = "Media-Records.json"
             attachment.lifetime = .keepAlways
@@ -216,15 +238,18 @@ final class MigrationAssetTests: XCTestCase
 
         try fixture(missing: true) { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertNil(preview.blockedContentReason)
             XCTAssertEqual(preview.verifiedAssetCount, 9)
             XCTAssertEqual(preview.missingAssetCount, 1)
             XCTAssertEqual(preview.assetIssueCount, 1)
 
-            let entries = try XCTUnwrap(assetDocument(preview)["entries"] as? [[String: Any]])
-            let missing = try XCTUnwrap(entries.first { $0["original_name"] as? String == "absent.jpg" })
+            let entries = /* Entries being processed */
+                try XCTUnwrap(assetDocument(preview)["entries"] as? [[String: Any]])
+            let missing = /* Unavailable reference or input */
+                try XCTUnwrap(entries.first { $0["original_name"] as? String == "absent.jpg" })
 
             XCTAssertEqual(missing["content_state"] as? String, "unavailable")
             XCTAssertTrue(missing["sha256"] is NSNull)
@@ -244,17 +269,21 @@ final class MigrationAssetTests: XCTestCase
         {
             try fixture { backup, url in
 
-                let documents = try XCTUnwrap(backup.files.fileWrappers?["Documents"])
-                let media     = try XCTUnwrap(documents.fileWrappers?["CardAttachments"])
+                let documents = /* Store document snapshots */
+                    try XCTUnwrap(backup.files.fileWrappers?["Documents"])
+                let media     = /* Original media references */
+                    try XCTUnwrap(documents.fileWrappers?["CardAttachments"])
 
                 if variant == 0
                 {
 
-                    let old = try XCTUnwrap(media.fileWrappers?["photo.png"])
+                    let old = /* Previous operation state */
+                        try XCTUnwrap(media.fileWrappers?["photo.png"])
 
                     media.removeFileWrapper(old)
 
-                    let file = FileWrapper(regularFileWithContents: Data([1, 2, 3]))
+                    let file = /* File being processed */
+                        FileWrapper(regularFileWithContents: Data([1, 2, 3]))
 
                     file.preferredFilename = "photo.png"
 
@@ -263,7 +292,8 @@ final class MigrationAssetTests: XCTestCase
                 else
                 {
 
-                    let file = variant == 1 ? FileWrapper(regularFileWithContents: Data([9])) :
+                    let file = /* File being processed */
+                        variant == 1 ? FileWrapper(regularFileWithContents: Data([9])) :
                         FileWrapper(symbolicLinkWithDestinationURL: URL(fileURLWithPath: "/private/tmp/unrelated"))
 
                     file.preferredFilename = "undeclared.bin"
@@ -285,18 +315,20 @@ final class MigrationAssetTests: XCTestCase
 
         try fixture(cycle: true) { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let preview = /* Converted migration preview */
+                try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertNil(preview.blockedContentReason)
             XCTAssertEqual(preview.verifiedAssetCount, 9)
             XCTAssertGreaterThanOrEqual(preview.assetIssueCount, 2)
 
-            let document = try assetDocument(preview)
-            let issues   = try XCTUnwrap(document["issues"] as? [String])
+            let document = try assetDocument(preview) /* Source document snapshot */
+            let issues   = try XCTUnwrap(document["issues"] as? [String]) /* Validation findings */
 
             XCTAssertTrue(issues.contains { $0.hasPrefix("asset_derivation_cycle:") })
 
-            let entries = try XCTUnwrap(document["entries"] as? [[String: Any]])
+            let entries = /* Entries being processed */
+                try XCTUnwrap(document["entries"] as? [[String: Any]])
 
             for entry in entries where ["sketch.png", "sketch.drawing"].contains(entry["original_name"] as? String ?? "")
             {

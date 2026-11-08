@@ -20,8 +20,8 @@ enum DailyReviewTransaction
 {
 
 
-    static let key  = "Plenact.DailyReviewTransaction.v1"
-    static let keys = [
+    static let key  = "Plenact.DailyReviewTransaction.v1" /* Lookup or persistence key   */
+    static let keys = [                                   /* Keys used by this operation */
         PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1",
         DailyPlanStore.key, WeeklyReviewStore.key
     ]
@@ -48,7 +48,7 @@ enum DailyReviewTransaction
             throw CocoaError(.fileWriteUnknown)
         }
 
-        var previous: [String: Any] = [:]
+        var previous: [String: Any] = [:] /* Previous value for comparison */
 
         guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1"]) else
         {
@@ -56,7 +56,7 @@ enum DailyReviewTransaction
             throw CocoaError(.fileWriteUnknown)
         }
 
-        let capturedKeys = Array(Set(keys + additionalKeys))
+        let capturedKeys = Array(Set(keys + additionalKeys)) /* Captured keys */
 
         for name in capturedKeys
         {
@@ -65,7 +65,7 @@ enum DailyReviewTransaction
 
         }
 
-        let data = try PropertyListSerialization.data(
+        let data = try PropertyListSerialization.data( /* Encoded or loaded bytes */
             fromPropertyList: ["version": 1, "previous": previous, "keys": capturedKeys], format: .binary, options: 0)
 
         defaults.set(data, forKey: key)
@@ -107,7 +107,7 @@ enum DailyReviewTransaction
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let capturedKeys = snapshot["keys"] as? [String] ?? keys
+        let capturedKeys = snapshot["keys"] as? [String] ?? keys /* Captured keys */
 
         guard Set(keys).isSubset(of: Set(capturedKeys)),
         Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1"])),
@@ -167,12 +167,13 @@ enum DailyReviewTransaction
     ) throws -> T
     {
 
-        let snapshot = try begin(in: defaults, additionalKeys: additionalKeys)
+        let snapshot = /* Working state snapshot */
+            try begin(in: defaults, additionalKeys: additionalKeys)
 
         do
         {
 
-            let result = try action()
+            let result = try action() /* Result being assembled */
 
             guard defaults.synchronize() else
             {

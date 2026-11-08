@@ -55,7 +55,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (String) presentation identity
     /// @post       No presentation preference is changed
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable Board layout identity */
@@ -69,7 +69,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (String) Standard or Overview
     /// @post       The selected presentation remains unchanged
     ///
-    var title: String
+    var title: String /* User-facing title */
     {
         self == .standard ? "Standard" : "Overview"
     }  /* User-facing Board layout label */
@@ -83,7 +83,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (CGFloat) minimum card height in points
     /// @post       No view or preference state is modified
     ///
-    var minimumCardHeight: CGFloat
+    var minimumCardHeight: CGFloat /* Minimum card height */
     {
         self == .standard ? 112 : 80
     }  /* Minimum row height for the selected layout */
@@ -192,11 +192,11 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
 struct BoardHeader: View
 {
 
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
-    @Environment(\.layoutDirection) private var headerLayoutDirection
-    @Binding var settings: BoardDisplaySettings /* Board display settings                              */
+    @Environment(\.layoutDirection) private var headerLayoutDirection /* Header layout direction */
+    @Binding var settings: BoardDisplaySettings                       /* Board display settings  */
     /// Shared Standard/Overview selection displayed in the Board options menu
     @Binding var presentation: BoardPresentation         /* Shared Standard or Overview layout selection */
     let activeMembers:         [String]                  /* Unique users assigned to active cards        */
@@ -217,38 +217,52 @@ struct BoardHeader: View
     /// Opens the archived-list browser
     let onViewArchivedLists: () -> Void /* Presents this Board's archived lists */
     /// Optional callback that archives the board after confirmation
-    let onArchiveBoard:   (() -> Void)?  /* Optional whole-Board archive action                    */
-    let onDeleteBoard:    (() -> Void)?  /* Confirmed parent-owned Board removal                   */
-    let deleteBoardTitle: String         /* Week content clearing or personal Board deletion label */
+    let onArchiveBoard:   (() -> Void)? /* Optional whole-Board archive action                    */
+    let onDeleteBoard:    (() -> Void)? /* Confirmed parent-owned Board removal                   */
+    let deleteBoardTitle: String        /* Week content clearing or personal Board deletion label */
     /// Navigates to the first active list when more than one list exists
     let onJumpToFirstList: (() -> Void)? /* Optional navigation action revealing the first active list */
     /// Navigates to the last active list when more than one list exists
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
-    var listViewMode:    Binding<SingleListViewMode>?                             = nil
-    var titleAppearance: ItemAppearance?                                          = nil
-    var onAppearance:    (() -> Void)?                                            = nil
-    var onListActions:   (() -> Void)?                                            = nil
-    var onSearch:        (() -> Void)?                                            = nil
-    var onToggleZoom:    (() -> Void)?                                            = nil
-    var onToggleGallery: (() -> Void)?                                            = nil
-    var isGallery                                                                 = false
-    var isPanoramic: Bool                                                         = false
-    var zoomPercentage                                                            = 62
-    var onResetZoom:                (() -> Void)?                                 = nil
-    var onAdjustZoom:               ((AccessibilityAdjustmentDirection) -> Void)? = nil
-    var calendarAccessibilityTitle: String                                        = "Open this month"
-    var onSubtitleTap:              (() -> Void)?                                 = nil
+    var listViewMode:    Binding<SingleListViewMode>?                             = /* List view mode */
+        nil
+    var titleAppearance: ItemAppearance?                                          = /* Title appearance */
+        nil
+    var onAppearance:    (() -> Void)?                                            = /* Publish appearance choices */
+        nil
+    var onListActions:   (() -> Void)?                                            = /* Open List actions */
+        nil
+    var onSearch:        (() -> Void)?                                            = /* Open search */
+        nil
+    var onToggleZoom:    (() -> Void)?                                            = /* Toggle Board zoom */
+        nil
+    var onToggleGallery: (() -> Void)?                                            = /* Toggle Board gallery */
+        nil
+    var isGallery                                                                 = /* Gallery state */
+        false
+    var isPanoramic: Bool                                                         = /* Panoramic state */
+        false
+    var zoomPercentage                                                            = /* Zoom percentage */
+        62
+    var onResetZoom:                (() -> Void)?                                 = /* Reset zoom callback */
+        nil
+    var onAdjustZoom:               ((AccessibilityAdjustmentDirection) -> Void)? = /* Adjust zoom callback */
+        nil
+    var calendarAccessibilityTitle: String                                        = /* Calendar accessibility title */
+        "Open this month"
+    var onSubtitleTap:              (() -> Void)?                                 = /* Subtitle tap callback */
+        nil
     let onAddList:                  () -> Void /* Callback for adding a new list                      */
 
-    @State private var titleOverflows    = false
-    @State private var subtitleOverflows = false
-    @State private var showsBoardOptions = false
-    @State private var pendingBoardAction: BoardOptionsAction?
+    @State private var titleOverflows    = false /* Title overflows */
+    @State private var subtitleOverflows = false /* Subtitle overflows */
+    @State private var showsBoardOptions = false /* Board Options visibility */
+    @State private var pendingBoardAction: BoardOptionsAction? /* Pending board action */
     @State private var showingSettings = false /* Controls the visibility of the board settings sheet */
     /// Controls confirmation before archiving the complete board
-    @State private var confirmsArchiveBoard = false  /* Whole-Board archive confirmation state */
-    @State private var confirmsDeleteBoard  = false  /* Permanent Board deletion confirmation  */
+    @State private var confirmsArchiveBoard = false /* Whole-Board archive confirmation state */
+    @State private var confirmsDeleteBoard  = false /* Permanent Board deletion confirmation  */
 
 
     ///
@@ -304,7 +318,7 @@ struct BoardHeader: View
     }
 
 
-    var titleSwipeArea: some View
+    var titleSwipeArea: some View /* Title swipe area */
     {  /* Header heading surface accepting boundary-navigation swipes */
 
 
@@ -397,7 +411,7 @@ struct BoardHeader: View
     /// @post       User actions invoke supplied callbacks; archive is requested only after confirmation.
     ///             Display settings change through the shared binding, not a separate persisted draft
     ///
-    var body: some View
+    var body: some View /* Board Header layout */
     {  /* Board header and global actions */
 
 
@@ -588,7 +602,7 @@ struct BoardSettingsView: View
 {
 
 
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = /* Card Covers visibility */
     true                                         /* Device-only visibility                   */
     @Binding var settings: BoardDisplaySettings  /* Bound to the board's display preferences */
     /// Shared presentation choice updated immediately from Board settings
@@ -596,14 +610,14 @@ struct BoardSettingsView: View
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for the settings sheet           */
 
-    let activeMembers:    [String]                  /* Active assigned users in board order        */
-    let memberColors:     [String: Color]           /* Member icon colors keyed by normalized name */
-    let onRenameMember:   (String, String) -> Void  /* Rename a member across all assigned cards   */
-    let onDeleteMember:   (String) -> Void          /* Remove a member from all assigned cards     */
-    let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color         */
+    let activeMembers:    [String]                 /* Active assigned users in board order        */
+    let memberColors:     [String: Color]          /* Member icon colors keyed by normalized name */
+    let onRenameMember:   (String, String) -> Void /* Rename a member across all assigned cards   */
+    let onDeleteMember:   (String) -> Void         /* Remove a member from all assigned cards     */
+    let onSetMemberColor: (String, Color) -> Void  /* Update a member's shared icon color         */
 
-    @State private var memberNameDraft  = ""     /* Draft name for renaming a member             */
-    @State private var isRenamingMember = false  /* Flag indicating if member rename in progress */
+    @State private var memberNameDraft  = ""    /* Draft name for renaming a member             */
+    @State private var isRenamingMember = false /* Flag indicating if member rename in progress */
 
     @State private var editingMember:       String?             /* Currently edited member name      */
     @State private var memberToDelete:      String?             /* Member slated for deletion        */
@@ -618,7 +632,7 @@ struct BoardSettingsView: View
     /// @return     (String) trimmed name, which may be empty
     /// @post       Member assignments and draft text remain unchanged
     ///
-    private var trimmedMemberNameDraft: String
+    private var trimmedMemberNameDraft: String /* Trimmed member name draft */
     {  /* Normalized member rename input */
 
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -637,7 +651,7 @@ struct BoardSettingsView: View
     /// @post       Toggle changes update the binding; member actions invoke parent callbacks.
     ///             Done dismisses without reverting already applied settings
     ///
-    var body: some View
+    var body: some View /* Board Settings layout */
     {  /* Board settings and member management form */
 
 
@@ -694,7 +708,7 @@ struct BoardSettingsView: View
                             {
 
 
-                                let memberColor =
+                                let memberColor = /* Member color */
                                 memberColors[member.lowercased()]
                                 ?? .accentColor /* Fallback to accent color if no custom color is set */
 
@@ -913,8 +927,8 @@ struct MemberColorTarget: Identifiable
 {
 
 
-    let member: String  /* The name of the member whose color is being edited */
-    let color:  Color   /* The current color of the member's icon             */
+    let member: String /* The name of the member whose color is being edited */
+    let color:  Color  /* The current color of the member's icon             */
 
     ///
     /// @fcn        MemberColorTarget.id
@@ -924,7 +938,7 @@ struct MemberColorTarget: Identifiable
     /// @return     (String) normalized presentation identity
     /// @post       The member name and seed color remain unchanged
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         member.lowercased()
     }  /* Use the lowercased member name as the unique identifier for the sheet */
@@ -952,11 +966,11 @@ struct MemberColorEditorSheet: View
 {
 
 
-    let memberName: String           /* The name of the member whose color is being edited         */
-    let onSave:     (Color) -> Void  /* The closure to call when the user saves the selected color */
+    let memberName: String          /* The name of the member whose color is being edited         */
+    let onSave:     (Color) -> Void /* The closure to call when the user saves the selected color */
 
-    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the color editor */
-    @State private var selectedColor: Color      /* Draft member icon color             */
+    @Environment(\.dismiss) private var dismiss /* Dismiss action for the color editor */
+    @State private var selectedColor: Color     /* Draft member icon color             */
 
 
     ///
@@ -990,7 +1004,7 @@ struct MemberColorEditorSheet: View
     /// @return     (some View) medium-sheet member color form
     /// @post       Applying/persisting the chosen color belongs to the onSave caller
     ///
-    var body: some View
+    var body: some View /* Member Color Editor layout */
     {  /* Member icon color editor */
 
 
@@ -1073,19 +1087,19 @@ struct BoardOptionsPopover: View
 {
 
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    let canJumpFirst:  Bool
-    let canJumpLast:   Bool
-    let hasAppearance: Bool
-    let canArchive:    Bool
-    let canDelete:     Bool
-    let deleteTitle:   String
-    var hasGallery                                 = false
-    var isGallery                                  = false
-    var canResetZoom                               = false
-    var hasListActions                             = false
-    var listViewMode: Binding<SingleListViewMode>? = nil
-    let onAction:     (BoardOptionsAction) -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Dynamic type size         */
+    let canJumpFirst:  Bool                                     /* Jump First availability   */
+    let canJumpLast:   Bool                                     /* Jump Last availability    */
+    let hasAppearance: Bool                                     /* Appearance availability   */
+    let canArchive:    Bool                                     /* Archive availability      */
+    let canDelete:     Bool                                     /* Delete availability       */
+    let deleteTitle:   String                                   /* Delete title              */
+    var hasGallery                                 = false      /* Gallery availability      */
+    var isGallery                                  = false      /* Gallery state             */
+    var canResetZoom                               = false      /* Reset Zoom availability   */
+    var hasListActions                             = false      /* List Actions availability */
+    var listViewMode: Binding<SingleListViewMode>? = nil        /* List view mode            */
+    let onAction:     (BoardOptionsAction) -> Void              /* Action callback           */
 
 
     ///
@@ -1128,7 +1142,7 @@ struct BoardOptionsPopover: View
     }
 
 
-    var body: some View
+    var body: some View /* Board Options layout */
     {
 
         VStack(spacing: 0)

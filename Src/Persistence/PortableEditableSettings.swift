@@ -27,14 +27,16 @@ extension PortableEditableContent
             return nil
         }
 
-        let payload = try owned(document, kind: "user_preferences", accountID: accountID)
+        let payload = /* Canonical record payload */
+            try owned(document, kind: "user_preferences", accountID: accountID)
 
         guard Set(payload.keys) == ["account_id", "preferences"], let values = payload["preferences"] as? [String: Any] else
         {
             throw Failure.invalid
         }
 
-        var raw = try mapped(values, fields: Dictionary(uniqueKeysWithValues: MigrationSettingsPreview.fields.map { ($0.value, $0.key) }))
+        var raw = /* Unprocessed source value */
+            try mapped(values, fields: Dictionary(uniqueKeysWithValues: MigrationSettingsPreview.fields.map { ($0.value, $0.key) }))
 
         if let target = values["default_list_id"] as? String
         {
@@ -96,8 +98,10 @@ extension PortableEditableContent
             throw Failure.unsupported
         }
 
-        let payload = try owned(document, kind: "user_profile", accountID: accountID)
-        var raw     = try mapped(payload, fields: ["account_id": "_account", "source_profile_id": "_source",
+        let payload = /* Canonical record payload */
+            try owned(document, kind: "user_profile", accountID: accountID)
+        var raw     = /* Unprocessed source value */
+            try mapped(payload, fields: ["account_id": "_account", "source_profile_id": "_source",
             "source_created_at_utc": "createdAt", "display_name": "displayName", "email": "email", "context": "context",
             "avatar_color": "avatarColor", "avatar_icon": "avatarIcon", "avatar_foreground_color": "avatarForegroundColor",
             "avatar_asset_id": "avatarPhotoFileName"])
@@ -123,29 +127,34 @@ extension PortableEditableContent
     func labelLibrary() throws -> LabelLibrary
     {
 
-        let categories       = records.filter { $0["record_type"] as? String == "label_category" }
-        let labels           = records.filter { $0["record_type"] as? String == "label" }
-        let known            = Set(categories.compactMap { $0["id"] as? String })
-        let nativeCategories = try categories.map { record -> [String: Any] in
+        let categories       = /* Supported content categories */
+            records.filter { $0["record_type"] as? String == "label_category" }
+        let labels           = /* Available label definitions */
+            records.filter { $0["record_type"] as? String == "label" }
+        let known            = /* Previously recognized identities */
+            Set(categories.compactMap { $0["id"] as? String })
+        let nativeCategories = /* Native categories */
+            try categories.map { record -> [String: Any] in
             guard let body = record["payload"] as? [String: Any] else
             {
                 throw Failure.invalid
             }
 
-            var raw = try mapped(body, fields: ["name": "name"])
+            var raw = try mapped(body, fields: ["name": "name"]) /* Unprocessed source value */
 
             raw["id"] = record["id"]
 
             return raw
         }
-        let nativeLabels = try labels.map { record -> [String: Any] in
+        let nativeLabels = try labels.map { record -> [String: Any] in /* Native labels */
             guard let body = record["payload"] as? [String: Any], let category = body["category_id"] as? String,
                   known.contains(category) else
             {
                 throw Failure.invalid
             }
 
-            var raw = try mapped(body, fields: ["name": "name", "category_id": "categoryID", "color": "color"])
+            var raw = /* Unprocessed source value */
+                try mapped(body, fields: ["name": "name", "category_id": "categoryID", "color": "color"])
 
             raw["id"] = record["id"]
 
@@ -175,7 +184,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-        var seen = Set<String>()
+        var seen = Set<String>() /* Identities already encountered */
 
         return try array(body["items"]).map { item in
             guard Set(item.keys) == ["collection_id", "list_id"], let owner = item["collection_id"] as? String,
@@ -185,8 +194,8 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            let collection = try record(owner, kind: "collection")
-            let list       = try record(listID, kind: "list")
+            let collection = try record(owner, kind: "collection") /* Personal collection record */
+            let list       = try record(listID, kind: "list")      /* List under consideration   */
 
             guard (list["payload"] as? [String: Any])?["collection_id"] as? String == owner,
                   ((collection["payload"] as? [String: Any])?["list_ids"] as? [String])?.contains(listID) == true else
@@ -207,13 +216,14 @@ extension PortableEditableContent
     func importance(_ selections: [[String: Any]], accountID: String) throws -> [LibraryImportanceItem]
     {
 
-        var seen                            = Set<String>()
-        var output: [LibraryImportanceItem] = []
+        var seen                            = Set<String>() /* Identities already encountered */
+        var output: [LibraryImportanceItem] = []            /* Operation output               */
 
         for selection in selections
         {
 
-            let value = try owned(selection, kind: "content_selection", accountID: accountID)
+            let value = /* Value being processed */
+                try owned(selection, kind: "content_selection", accountID: accountID)
 
             guard Set(value.keys) == ["account_id", "card_id", "bookmarked", "importance"],
                   let cardID = value["card_id"] as? String, seen.insert(cardID).inserted,
@@ -223,14 +233,14 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            let card = try record(cardID, kind: "card")
+            let card = try record(cardID, kind: "card") /* Card under consideration */
 
             guard let listID = (card["payload"] as? [String: Any])?["list_id"] as? String else
             {
                 throw Failure.invalid
             }
 
-            let list = try record(listID, kind: "list")
+            let list = try record(listID, kind: "list") /* List under consideration */
 
             guard let owner = (list["payload"] as? [String: Any])?["collection_id"] as? String,
                   let ownerID = UUID(uuidString: owner) else
@@ -270,14 +280,17 @@ extension PortableEditableContent
             return nil
         }
 
-        let payload = try owned(document, kind: "studio_settings", accountID: accountID)
-        var raw     = try mapped(payload, fields: ["account_id": "_account", "views": "views", "default_card_surface": "defaultCardSurface",
+        let payload = /* Canonical record payload */
+            try owned(document, kind: "studio_settings", accountID: accountID)
+        var raw     = /* Unprocessed source value */
+            try mapped(payload, fields: ["account_id": "_account", "views": "views", "default_card_surface": "defaultCardSurface",
             "default_note_surface": "defaultNoteSurface", "varies_new_surfaces": "variesNewSurfaces", "varies_new_headers": "variesNewHeaders", "palette": "palette"])
 
         raw.removeValue(forKey: "_account")
 
-        var views: [String: Any] = [:]
-        let destinations         = ["today": "Today", "week": "Week", "plans": "Plans", "activity": "Activity",
+        var views: [String: Any] = [:] /* Rendered or configured views     */
+        let destinations         =     /* Available operation destinations */
+            ["today": "Today", "week": "Week", "plans": "Plans", "activity": "Activity",
             "calendar": "Calendar", "search": "Search", "settings": "Settings"]
 
         for view in try array(payload["views"])
@@ -308,7 +321,8 @@ extension PortableEditableContent
     func artwork(_ library: [String: Any]?) throws -> [StudioArtwork]?
     {
 
-        let all = records.filter { $0["record_type"] as? String == "studio_artwork" }
+        let all = /* Filtered all entries */
+            records.filter { $0["record_type"] as? String == "studio_artwork" }
 
         guard let library else
         {
@@ -328,14 +342,15 @@ extension PortableEditableContent
         }
         return try ids.map { id in
 
-            let document = try record(id, kind: "studio_artwork")
+            let document = try record(id, kind: "studio_artwork") /* Source document snapshot */
 
             guard let payload = document["payload"] as? [String: Any] else
             {
                 throw Failure.invalid
             }
 
-            var raw = try mapped(payload, fields: ["name": "name", "surface": "surface", "header": "header",
+            var raw = /* Unprocessed source value */
+                try mapped(payload, fields: ["name": "name", "surface": "surface", "header": "header",
                 "italic_subtitle": "italicSubtitle", "title_color": "titleColor", "text_color": "textColor"])
 
             raw["id"] = id
@@ -365,7 +380,8 @@ extension PortableEditableContent
             throw Failure.invalid
         }
 
-        let raw = try appearance(payload["week_board_defaults"], kind: "board_appearance")
+        let raw = /* Unprocessed source value */
+            try appearance(payload["week_board_defaults"], kind: "board_appearance")
 
         return try JSONDecoder().decode(BoardAppearance.self, from: JSONSerialization.data(withJSONObject: raw))
     }

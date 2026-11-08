@@ -30,7 +30,7 @@ extension Binding where Value == [KanbanList]
     /// @pre        Setter values represent active lists with isArchived false
     /// @post       Constructing the projection does not mutate the underlying snapshot
     ///
-    var activeLists: Binding<[KanbanList]>
+    var activeLists: Binding<[KanbanList]> /* Active lists */
     {  /* Mutable active partition of the Board document */
 
         Binding(
@@ -61,7 +61,7 @@ extension Binding where Value == [KanbanList]
     /// @return     (Binding<[KanbanList]>) projected archived-list binding
     /// @post       Setter writes preserve the active portion; constructing the projection does not write
     ///
-    var archivedLists: Binding<[KanbanList]>
+    var archivedLists: Binding<[KanbanList]> /* Archived lists */
     {  /* Mutable archived partition of the Board document */
 
         Binding(

@@ -36,8 +36,8 @@ struct PlenactDemoAccountSection: View
     @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?  /* Last fetched server snapshot    */
     @State private var remoteDraft:          PlenactBoardDocument?          /* Editable remote-only Board copy */
 
-    @State private var currentRevision: Int64?   /* Last fetched server revision                */
-    @State private var activeOperationCount = 0  /* Number of in-flight demo service operations */
+    @State private var currentRevision: Int64?  /* Last fetched server revision                */
+    @State private var activeOperationCount = 0 /* Number of in-flight demo service operations */
 
     ///
     /// @fcn        PlenactDemoAccountSection.isWorking
@@ -46,15 +46,15 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    private var isWorking: Bool
+    private var isWorking: Bool /* Working state */
     {
         activeOperationCount > 0
     }  /* Whether a demo operation is active    */
 
-    @State private var needsConflictReload = false  /* Stale-draft reload requirement        */
-    @State private var alertMessage        = ""     /* Current alert text                    */
-    @State private var showsAlert          = false  /* Shared-demo alert presentation state  */
-    @State private var confirmsSeed        = false  /* Initial SampleData confirmation state */
+    @State private var needsConflictReload = false /* Stale-draft reload requirement        */
+    @State private var alertMessage        = ""    /* Current alert text                    */
+    @State private var showsAlert          = false /* Shared-demo alert presentation state  */
+    @State private var confirmsSeed        = false /* Initial SampleData confirmation state */
 
     ///
     /// @fcn        PlenactDemoAccountSection.canInitializeSampleBoard
@@ -63,7 +63,7 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true when the SampleData seed action is available
     ///
-    private var canInitializeSampleBoard: Bool
+    private var canInitializeSampleBoard: Bool /* Initialize Sample Board availability */
     {  /* Editor permission and unseeded revision */
 
 
@@ -78,7 +78,7 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true when a draft differs from the last fetched snapshot
     ///
-    private var hasUnsavedRemoteEdits: Bool
+    private var hasUnsavedRemoteEdits: Bool /* Unsaved Remote Edits availability */
     {  /* Draft differs from the fetched snapshot */
 
 
@@ -96,7 +96,7 @@ struct PlenactDemoAccountSection: View
     /// @pre        The view state is initialized from the stored session, when available
     /// @post       Shared-demo mutations occur only through explicit authenticated actions
     ///
-    var body: some View
+    var body: some View /* Plenact Demo Account layout */
     {  /* Account form, directory, and shared Board controls */
 
 
@@ -564,8 +564,8 @@ struct PlenactDemoAccountSection: View
         {
 
 
-            let client   = try PlenactAPIClient()               /* Configured HTTPS API client */
-            let response = try await client.publishSampleData(  /* Initial SampleData response */
+            let client   = try PlenactAPIClient()              /* Configured HTTPS API client */
+            let response = try await client.publishSampleData( /* Initial SampleData response */
                 token: remoteSession.accessToken,
                 user: remoteSession.user,
                 expectedRevision: 0
@@ -699,7 +699,7 @@ struct PlenactDemoAccountSection: View
     {
 
 
-        let isAssigned = card.members.contains
+        let isAssigned = card.members.contains /* Assigned state */
         {  /* Whether the current account is assigned */
 
             $0.kind == .registeredUser && $0.userID?.lowercased() == session.user.userID.lowercased()
@@ -817,7 +817,7 @@ struct PlenactDemoAccountSection: View
                     {
                         user in
 
-                        let assigned = card.members.contains
+                        let assigned = card.members.contains /* Assigned operation value */
                         {  /* Whether this directory user is assigned */
 
                             $0.kind == .registeredUser && $0.userID?.lowercased() == user.userID.lowercased()
@@ -1021,7 +1021,8 @@ struct PlenactDemoAccountSection: View
     {
 
 
-        let displayName = manualAssigneeDrafts[cardID, default: ""].trimmingCharacters(
+        let displayName = /* Display name */
+            manualAssigneeDrafts[cardID, default: ""].trimmingCharacters(
             in: .whitespacesAndNewlines) /* Normalized manual name */
 
         guard !displayName.isEmpty,

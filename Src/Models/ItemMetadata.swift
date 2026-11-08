@@ -36,10 +36,10 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 {
 
 
-    let id:          UUID              /* Stable assignment row ID  */
-    let kind:        CardAssigneeKind  /* Registered or manual      */
-    let userID:      String?           /* Stable registered user ID */
-    var displayName: String            /* Name shown on the card    */
+    let id:          UUID             /* Stable assignment row ID  */
+    let kind:        CardAssigneeKind /* Registered or manual      */
+    let userID:      String?          /* Stable registered user ID */
+    var displayName: String           /* Name shown on the card    */
 
 
     ///
@@ -134,12 +134,12 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
     case card
     case note
 
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable item-kind identity         */
 
-    var title: String
+    var title: String /* User-facing title */
     {
         self == .note ? "Note" : "Card"
     }  /* User-facing name of the item kind */
@@ -160,17 +160,17 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 
     case card, note, divider, picture, title, text
 
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
         rawValue.capitalized
     }
 
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -207,12 +207,12 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 
 
     case date, time, dateAndTime
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -230,12 +230,12 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 
     }
 
-    var includesDate: Bool
+    var includesDate: Bool /* Includes date */
     {
         self != .time
     }
 
-    var includesTime: Bool
+    var includesTime: Bool /* Includes time */
     {
         self != .date
     }
@@ -271,11 +271,11 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     func label(for value: Date) -> String
     {
 
-        let date = DateFormatter()
+        let date = DateFormatter() /* Date used by this operation */
 
         date.dateStyle = .medium
 
-        let time = DateFormatter()
+        let time = DateFormatter() /* Local schedule time */
 
         time.locale = Locale(identifier: "en_US_POSIX")
         time.dateFormat = "h:mm a"
@@ -307,10 +307,10 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 {
 
 
-    var id = UUID()
-    let emoji:    String
-    let authorID: UUID
-    var createdAt = Date()
+    var id = UUID()        /* Record UUID         */
+    let emoji:    String   /* Chosen emoji symbol */
+    let authorID: UUID     /* Author ID           */
+    var createdAt = Date() /* Created at          */
 
 
     ///
@@ -326,7 +326,8 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     static func validatedEmoji(_ input: String) -> String?
     {
 
-        let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = /* Value being processed */
+            input.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard value.count == 1,
         value.unicodeScalars.contains(where:
@@ -397,7 +398,7 @@ enum LocalReactionIdentity
 {
 
 
-    static let key = "Plenact.LocalReactionAuthor.v1"
+    static let key = "Plenact.LocalReactionAuthor.v1" /* Lookup or persistence key */
 
 
     ///
@@ -434,7 +435,7 @@ enum LocalReactionIdentity
             return existing
         }
 
-        let id = UUID();
+        let id = UUID(); /* Record UUID */
 
         defaults.set(id.uuidString, forKey: key);
         return id
@@ -456,10 +457,10 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable
 {
 
 
-    let id:        UUID    /* Unique identifier for the comment                 */
-    let author:    String  /* Author of the comment                             */
-    let body:      String  /* Body text of the comment                          */
-    let createdAt: Date    /* Timestamp indicating when the comment was created */
+    let id:        UUID   /* Unique identifier for the comment                 */
+    let author:    String /* Author of the comment                             */
+    let body:      String /* Body text of the comment                          */
+    let createdAt: Date   /* Timestamp indicating when the comment was created */
 
 
     ///
@@ -523,7 +524,7 @@ enum NoteTextSharing
             sections.append(PlanRichText.plain(body))
         }
 
-        let links = (note.attachments ?? []).compactMap
+        let links = (note.attachments ?? []).compactMap /* Resolved content references */
         {
 
         attachment -> String? in /* Web links appended to the shared Note text */
@@ -563,12 +564,12 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 
 
     case quickActions, media, description, details, checklists, activity
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -604,13 +605,13 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 {
 
 
-    var order:    [CardSection]    = CardSection.allCases
-    var hidden:   Set<CardSection> = []
+    var order:    [CardSection]    = CardSection.allCases /* Display ordering policy  */
+    var hidden:   Set<CardSection> = []                   /* Content visibility state */
 
-    var sections: [CardSection]
+    var sections: [CardSection] /* Ordered section groups */
     {
 
-        var seen: Set<CardSection> = []
+        var seen: Set<CardSection> = [] /* Identities already encountered */
 
         return (order + CardSection.allCases).filter
         {
@@ -633,11 +634,11 @@ struct CardScheduleBadge: Equatable
 {
 
 
-    let title:       String
-    let value:       String
-    let systemImage: String
+    let title:       String /* User-facing title     */
+    let value:       String /* Value being processed */
+    let systemImage: String /* System image          */
 
-    var label:       String
+    var label:       String /* Resolved display label */
     {
         title.isEmpty ? value : title + " · " + value
     }

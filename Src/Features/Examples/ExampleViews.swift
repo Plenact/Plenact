@@ -21,16 +21,18 @@ struct PersonalListExamplesView: View
 {
 
 
-    var onLoadExampleWeek:     (() -> Bool)? = nil
-    var onUndoExampleWeek:     (() -> Bool)? = nil
+    var onLoadExampleWeek:     (() -> Bool)? = nil /* Load example week callback */
+    var onUndoExampleWeek:     (() -> Bool)? = nil /* Undo example week callback */
     let onSelect:              (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
-    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    = nil
-    var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? = nil
+    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    = /* Select mixed template callback */
+        nil
+    var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? = /* Select board example callback */
+        nil
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
-    @State private var confirmsLoadWeek = false
-    @State private var confirmsUndoWeek = false
-    @State private var hasUndoableWeek: Bool
-    @State private var operationError:  String?
+    @State private var confirmsLoadWeek = false /* Confirms load week                   */
+    @State private var confirmsUndoWeek = false /* Confirms undo week                   */
+    @State private var hasUndoableWeek: Bool    /* Undoable Week availability           */
+    @State private var operationError:  String? /* Operation error                      */
 
 
     ///
@@ -74,7 +76,7 @@ struct PersonalListExamplesView: View
     /// @details    Expanding a preview is read-only; Use example opens the save-before-adding flow
     /// @return     (some View) scrollable chooser with an explicit Cancel action
     ///
-    var body: some View
+    var body: some View /* Personal List Examples layout */
     {  /* Personal List example chooser with expandable card previews */
 
         NavigationStack
@@ -203,7 +205,7 @@ struct PersonalListExamplesView: View
                                 {
                                     index in
 
-                                    let item = template.items[index]
+                                    let item = template.items[index] /* Item under consideration */
 
                                     VStack(alignment: .leading, spacing: 6)
                                     {
@@ -436,9 +438,9 @@ struct LibraryDaySectionExamples: View
 {
 
 
-    var query = ""
-    let onPreview: (PlanningRoutineTemplate) -> Void
-    let onApply:   (PlanningRoutineTemplate) -> Void
+    var query = ""                                   /* Search text                */
+    let onPreview: (PlanningRoutineTemplate) -> Void /* Preview callback           */
+    let onApply:   (PlanningRoutineTemplate) -> Void /* Apply the prepared changes */
 
 
     ///
@@ -467,10 +469,10 @@ struct LibraryDaySectionExamples: View
 
     }
 
-    var body: some View
+    var body: some View /* Library Day Section Examples layout */
     {
 
-        let examples = Self.matches(query: query)
+        let examples = Self.matches(query: query) /* Seeded demonstration content */
 
         if !examples.isEmpty
         {
@@ -557,10 +559,10 @@ struct LibraryExamplePreview: Identifiable
 {
 
 
-    var id = UUID()
-    let title:   String
-    let summary: String
-    let lists:   [KanbanList]
+    var id = UUID()           /* Record UUID                 */
+    let title:   String       /* User-facing title           */
+    let summary: String       /* Aggregate operation results */
+    let lists:   [KanbanList] /* Ordered List records        */
 
 }
 
@@ -576,10 +578,10 @@ struct LibraryExamplePreviewView: View
 {
 
 
-    let preview: LibraryExamplePreview
-    @Environment(\.dismiss) private var dismiss
+    let preview: LibraryExamplePreview          /* Prepared content preview       */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
-    var body: some View
+    var body: some View /* Library Example Preview layout */
     {
 
         NavigationStack

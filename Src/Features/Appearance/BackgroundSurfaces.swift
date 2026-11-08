@@ -25,7 +25,7 @@ extension KanbanListTint
 {
 
 
-    var color: Color
+    var color: Color /* Resolved color value */
     {
 
         switch self
@@ -58,7 +58,7 @@ extension ItemAccent
 {
 
 
-    var color: Color
+    var color: Color /* Resolved color value */
     {
 
         switch self
@@ -85,7 +85,7 @@ extension ItemAccent
     }
 
 
-    var darkHeaderColor: Color
+    var darkHeaderColor: Color /* Dark header color */
     {
 
         switch self
@@ -129,20 +129,22 @@ extension ItemAccent
             {
                 traits in
 
-                let tint               = UIColor(self.color).resolvedColor(with: traits)
-                let base               = UIColor.systemBackground.resolvedColor(with: traits)
-                var red: CGFloat       = 0
-                var green: CGFloat     = 0
-                var blue: CGFloat      = 0
-                var alpha: CGFloat     = 0
-                var baseRed: CGFloat   = 0
-                var baseGreen: CGFloat = 0
-                var baseBlue: CGFloat  = 0
+                let tint               = /* Resolved display tint */
+                    UIColor(self.color).resolvedColor(with: traits)
+                let base               = /* Base value before overrides */
+                    UIColor.systemBackground.resolvedColor(with: traits)
+                var red: CGFloat       = 0 /* Resolved red channel     */
+                var green: CGFloat     = 0 /* Resolved green channel   */
+                var blue: CGFloat      = 0 /* Resolved blue channel    */
+                var alpha: CGFloat     = 0 /* Resolved opacity channel */
+                var baseRed: CGFloat   = 0 /* Base red                 */
+                var baseGreen: CGFloat = 0 /* Base green               */
+                var baseBlue: CGFloat  = 0 /* Base blue                */
 
                 tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 base.getRed(&baseRed, green: &baseGreen, blue: &baseBlue, alpha: &alpha)
 
-                let amount: CGFloat = increasedContrast ? 0.10 : 0.16
+                let amount: CGFloat = increasedContrast ? 0.10 : 0.16 /* Amount operation value */
 
                 return UIColor(
                     red: baseRed * (1 - amount) + red * amount,
@@ -167,9 +169,9 @@ struct ItemAppearanceMark: View
 {
 
 
-    let appearance: ItemAppearance?
+    let appearance: ItemAppearance? /* Resolved appearance choices */
 
-    var body: some View
+    var body: some View /* Item Appearance Mark layout */
     {
 
         if let icon = appearance?.icon
@@ -196,8 +198,8 @@ struct ItemBannerBackground: ViewModifier
 {
 
 
-    let appearance: ItemAppearance?
-    @Environment(\.colorSchemeContrast) private var contrast
+    let appearance: ItemAppearance?                          /* Resolved appearance choices   */
+    @Environment(\.colorSchemeContrast) private var contrast /* Accessibility contrast choice */
 
 
     ///
@@ -270,13 +272,13 @@ struct ItemPicturePreview: View
 {
 
 
-    let attachment: KanbanAttachment?
-    var title:      String? = nil
+    let attachment: KanbanAttachment? /* Owned attachment content */
+    var title:      String? = nil     /* User-facing title        */
 
-    private var accessibleDescription: String
+    private var accessibleDescription: String /* Accessible description */
     {
 
-        let text = [title, attachment?.caption]
+        let text = [title, attachment?.caption] /* Text being processed */
         .compactMap
         {
             $0?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -290,10 +292,10 @@ struct ItemPicturePreview: View
         return text.isEmpty ? "Picture" : text
     }
 
-    @State private var image: UIImage?
-    @State private var unavailable = false
+    @State private var image: UIImage?     /* Image used by this operation */
+    @State private var unavailable = false /* Unresolved reference state   */
 
-    var body: some View
+    var body: some View /* Item Picture Preview layout */
     {
 
         Group
@@ -336,7 +338,7 @@ struct ItemPicturePreview: View
                 return
             }
 
-            let result = await Task.detached(priority: .utility)
+            let result = await Task.detached(priority: .utility) /* Result being assembled */
             {
 
                 Result
@@ -382,10 +384,10 @@ struct ItemDisplayFormatMenu: View
 {
 
 
-    let card:     KanbanCard
-    let onUpdate: (KanbanCard) -> Void
+    let card:     KanbanCard           /* Card under consideration */
+    let onUpdate: (KanbanCard) -> Void /* Publish item edits       */
 
-    var body: some View
+    var body: some View /* Item Display Format Menu layout */
     {
 
         Menu
@@ -397,7 +399,7 @@ struct ItemDisplayFormatMenu: View
                 Button
                 {
 
-                    var updated = card
+                    var updated = card /* Edited value to publish */
 
                     updated.displayFormat = format
 
@@ -433,9 +435,9 @@ struct CardDisplayProfilePicker: View
 {
 
 
-    @Binding var selection: BoardCardDetail?
+    @Binding var selection: BoardCardDetail? /* Current selection state */
 
-    var body:               some View
+    var body:               some View /* Card Display Profile Picker layout */
     {
 
         Picker("Card display", selection: $selection)
@@ -463,11 +465,11 @@ extension ListPreviewTextColor
 {
 
 
-    var color: Color
+    var color: Color /* Resolved color value */
     {
 
-        let light: (CGFloat, CGFloat, CGFloat)
-        let dark: (CGFloat, CGFloat, CGFloat)
+        let light: (CGFloat, CGFloat, CGFloat) /* Light-appearance color */
+        let dark: (CGFloat, CGFloat, CGFloat)  /* Dark-appearance color  */
 
         switch self
         {
@@ -514,7 +516,7 @@ extension ListPreviewTextColor
             {
                 traits in
 
-                let rgb = traits.userInterfaceStyle == .dark ? dark : light
+                let rgb = traits.userInterfaceStyle == .dark ? dark : light /* Encoded RGB color */
 
                 return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
             })
@@ -537,7 +539,7 @@ enum CollectionBackgroundPhotoStore
 {
 
 
-    private static let cache = NSCache<NSString, UIImage>()
+    private static let cache = NSCache<NSString, UIImage>() /* Reusable lookup results */
 
 
     ///
@@ -552,9 +554,10 @@ enum CollectionBackgroundPhotoStore
     static func directory() throws -> URL
     {
 
-        let root = try FileManager.default.url(
+        let root = try FileManager.default.url( /* Workspace or view root */
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let url = root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
+        let url = /* Resolved file location */
+            root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
 
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
@@ -609,7 +612,7 @@ enum CollectionBackgroundPhotoStore
     static func save(_ data: Data) throws -> String
     {
 
-        let name = UUID().uuidString + ".jpg"
+        let name = UUID().uuidString + ".jpg" /* Display or lookup name */
 
         try data.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
@@ -690,10 +693,10 @@ struct CollectionBackgroundSurface: View
 {
 
 
-    var background:     CollectionBackground? = nil
-    var draftPhoto:     Data?                 = nil
+    var background:     CollectionBackground? = nil /* Resolved background appearance */
+    var draftPhoto:     Data?                 = nil /* Draft photo                    */
 
-    private var colors: [Color]
+    private var colors: [Color] /* Colors used by this appearance */
     {
 
         switch background?.preset
@@ -717,7 +720,7 @@ struct CollectionBackgroundSurface: View
 
     }
 
-    private var photo: UIImage?
+    private var photo: UIImage? /* Photo selection or source */
     {
 
         switch background?.preset
@@ -746,7 +749,7 @@ struct CollectionBackgroundSurface: View
         return CollectionBackgroundPhotoStore.image(named: background?.photoFileName)
     }
 
-    var body: some View
+    var body: some View /* Collection Background Surface layout */
     {
 
         GeometryReader
@@ -771,7 +774,7 @@ struct CollectionBackgroundSurface: View
                     {
                         context, size in
 
-                        var grain = Path()
+                        var grain = Path() /* Grain operation value */
 
                         for row in stride(from: 0, through: Int(size.height), by: 7)
                         {
@@ -779,7 +782,7 @@ struct CollectionBackgroundSurface: View
                             for column in stride(from: 0, through: Int(size.width), by: 7)
                             {
 
-                                let shift = (row * 17 + column * 13) % 5
+                                let shift = (row * 17 + column * 13) % 5 /* Shift operation value */
 
                                 grain.addEllipse(
                                     in: CGRect(x: CGFloat(column + shift), y: CGFloat(row), width: 0.8, height: 0.8))
@@ -791,7 +794,7 @@ struct CollectionBackgroundSurface: View
                         if preset == .linen || preset == .sandstone
                         {
 
-                            var weave = Path()
+                            var weave = Path() /* Weave operation value */
 
                             for x in stride(from: 0, through: Int(size.width), by: 4)
                             {
@@ -827,7 +830,7 @@ struct CollectionBackgroundSurface: View
 private struct SubtitleItalicKey: EnvironmentKey
 {
 
-    static let defaultValue = false
+    static let defaultValue = false /* Fallback environment value */
 
 }
 
@@ -841,7 +844,7 @@ private struct SubtitleItalicKey: EnvironmentKey
 extension EnvironmentValues
 {
 
-    var inheritedSubtitleItalic: Bool
+    var inheritedSubtitleItalic: Bool /* Inherited subtitle styling */
     {
         get
         {

@@ -30,9 +30,9 @@ struct CardMembersSheet: View
     let onSave:       ([CardAssignee]) -> Void  /* Save typed card assignments                        */
     let memberColors: [String: Color]           /* Shared icon colors keyed by normalized member name */
 
-    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet               */
-    @State private var members: [CardAssignee]   /* Local typed assignments being edited       */
-    @State private var memberDraft = ""          /* Current text input for adding a new member */
+    @Environment(\.dismiss) private var dismiss /* Dismiss action for the sheet               */
+    @State private var members: [CardAssignee]  /* Local typed assignments being edited       */
+    @State private var memberDraft = ""         /* Current text input for adding a new member */
 
     ///
     /// @fcn        CardMembersSheet.trimmedMemberDraft
@@ -42,7 +42,7 @@ struct CardMembersSheet: View
     /// @return     (String) normalized member draft, potentially empty
     /// @post       Draft text and existing assignments remain unchanged
     ///
-    private var trimmedMemberDraft: String
+    private var trimmedMemberDraft: String /* Trimmed member draft */
     {  /* Normalized manual-assignee input */
 
 
@@ -59,7 +59,7 @@ struct CardMembersSheet: View
     /// @return     (Bool) whether Add or implicit draft inclusion on Save is permitted
     /// @post       No assignment is added by validation
     ///
-    private var canAddMember: Bool
+    private var canAddMember: Bool /* Add Member availability */
     {  /* Draft is non-empty and not already assigned */
 
 
@@ -82,13 +82,13 @@ struct CardMembersSheet: View
     /// @return     ([CardAssignee]) normalized assignments preserving first-occurrence order and identity
     /// @post       Local drafts remain unchanged; a valid unsubmitted name can be included in the result
     ///
-    private var normalizedMembers: [CardAssignee]
+    private var normalizedMembers: [CardAssignee] /* Normalized members */
     {  /* Deduplicated assignments prepared for saving */
 
 
         var seenAssignments: Set<String> = [] /* Identity keys already emitted */
 
-        let manualDraft =
+        let manualDraft = /* Manual draft */
         canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : []  /* Optional new manual assignment        */
         let membersToSave = members + manualDraft                      /* Existing assignments plus valid draft */
 
@@ -96,9 +96,9 @@ struct CardMembersSheet: View
         {
             assignee in
 
-            let trimmedName = assignee.displayName.trimmingCharacters(
+            let trimmedName = assignee.displayName.trimmingCharacters( /* Trimmed name */
                 in: .whitespacesAndNewlines) /* Normalized display name   */
-            let identityKey =
+            let identityKey = /* Identity key */
             assignee.kind == .registeredUser /* Stable identity namespace */
             ? "user:\(assignee.userID ?? assignee.id.uuidString)"
             : "manual:\(trimmedName.lowercased())"
@@ -185,7 +185,7 @@ struct CardMembersSheet: View
     /// @post       Save submits normalizedMembers, including a valid pending draft, then dismisses.
     ///             Cancel discards local changes without invoking onSave
     ///
-    var body: some View
+    var body: some View /* Card Members layout */
     {  /* Member assignment editor */
 
 
@@ -352,11 +352,11 @@ struct CardLayoutEditor: View
 {
 
 
-    @State var layout: CardSectionLayout
-    let onSave:        (CardSectionLayout) -> Bool
-    @Environment(\.dismiss) private var dismiss
+    @State var layout: CardSectionLayout           /* Resolved layout configuration  */
+    let onSave:        (CardSectionLayout) -> Bool /* Persist the edited value       */
+    @Environment(\.dismiss) private var dismiss    /* Close the current presentation */
 
-    var body: some View
+    var body: some View /* Card Layout Editor layout */
     {
 
         NavigationStack
@@ -460,12 +460,12 @@ struct CardDateEditorSheet: View
 {
 
 
-    let title:            String
-    let hasExistingValue: Bool
-    let onSave:           (Date?, CardDateKind) -> Bool
-    @Environment(\.dismiss) private var dismiss
-    @State private var date: Date
-    @State private var kind: CardDateKind
+    let title:            String                        /* User-facing title              */
+    let hasExistingValue: Bool                          /* Existing Value availability    */
+    let onSave:           (Date?, CardDateKind) -> Bool /* Persist the edited value       */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
+    @State private var date: Date                       /* Date used by this operation    */
+    @State private var kind: CardDateKind               /* Content kind discriminator     */
 
 
     ///
@@ -492,7 +492,7 @@ struct CardDateEditorSheet: View
 
     }
 
-    var body: some View
+    var body: some View /* Card Date Editor layout */
     {
 
         NavigationStack
@@ -596,13 +596,13 @@ struct ChecklistItemTypeEditor: View
 {
 
 
-    let item:                   KanbanChecklistItem
-    let candidates:             [KanbanCard]
-    let onSave:                 (KanbanChecklistItem) -> Bool
-    @State private var type:    ChecklistItemType
-    @State private var cardID:  Int?
-    @State private var urlText: String
-    @Environment(\.dismiss) private var dismiss
+    let item:                   KanbanChecklistItem           /* Item under consideration       */
+    let candidates:             [KanbanCard]                  /* Eligible operation targets     */
+    let onSave:                 (KanbanChecklistItem) -> Bool /* Persist the edited value       */
+    @State private var type:    ChecklistItemType             /* Content type discriminator     */
+    @State private var cardID:  Int?                          /* Owner-local Card identifier    */
+    @State private var urlText: String                        /* URL text                       */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
 
 
     ///
@@ -633,10 +633,11 @@ struct ChecklistItemTypeEditor: View
 
     }
 
-    private var url: URL?
+    private var url: URL? /* Resource location */
     {
 
-        let text = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = /* Text being processed */
+            urlText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
         url.host?.isEmpty == false
@@ -648,7 +649,7 @@ struct ChecklistItemTypeEditor: View
         return url
     }
 
-    var body: some View
+    var body: some View /* Checklist Item Type Editor layout */
     {
 
         NavigationStack
@@ -723,7 +724,7 @@ struct ChecklistItemTypeEditor: View
                     Button("Save")
                     {
 
-                        var updated = item
+                        var updated = item /* Edited value to publish */
 
                         switch type
                         {
@@ -799,10 +800,10 @@ struct CardInfoEditorSheet: View
     let onSave:       (String, String, String) -> Void  /* Callback receiving the edited card text       */
     let presentation: ItemPresentation                  /* Item kind used for accessible creation labels */
 
-    @Environment(\.dismiss) private var dismiss  /* Dismiss action for the sheet         */
-    @State private var title:       String       /* Draft text for the title field       */
-    @State private var subtitle:    String       /* Draft text for the subtitle field    */
-    @State private var description: String       /* Draft text for the description field */
+    @Environment(\.dismiss) private var dismiss /* Dismiss action for the sheet         */
+    @State private var title:       String      /* Draft text for the title field       */
+    @State private var subtitle:    String      /* Draft text for the subtitle field    */
+    @State private var description: String      /* Draft text for the description field */
 
 
     ///
@@ -815,7 +816,7 @@ struct CardInfoEditorSheet: View
     /// @pre        title contains the current text-field value
     /// @post       The stored title draft is unchanged
     ///
-    private var trimmedTitle: String
+    private var trimmedTitle: String /* Trimmed title */
     {  /* Normalized card title draft */
 
         title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -861,7 +862,7 @@ struct CardInfoEditorSheet: View
     /// @pre        Editor state has been initialized from the selected card
     /// @post       Save invokes onSave with the edited values; Cancel dismisses without applying them
     ///
-    var body: some View
+    var body: some View /* Card Info Editor layout */
     {  /* Card title, subtitle, and description form */
 
 
@@ -941,10 +942,10 @@ struct CardInfoEditorSheet: View
 struct CardPreviewDateEditor: ViewModifier
 {
 
-    let card:     KanbanCard
-    let isStart:  Bool
-    let onUpdate: (KanbanCard) -> Void
-    @State private var isPresented = false
+    let card:     KanbanCard               /* Card under consideration */
+    let isStart:  Bool                     /* Start state              */
+    let onUpdate: (KanbanCard) -> Void     /* Publish item edits       */
+    @State private var isPresented = false /* Presentation visibility  */
 
 
     ///
@@ -994,7 +995,7 @@ struct CardPreviewDateEditor: ViewModifier
                     return false
                 }
 
-                var updated = card
+                var updated = card /* Edited value to publish */
 
                 if isStart
                 {
@@ -1031,8 +1032,8 @@ struct CardPreviewDateEditor: ViewModifier
 struct CardEditHistorySheet: View
 {
 
-    let records: [CardEditRecord]
-    @Environment(\.dismiss) private var dismiss
+    let records: [CardEditRecord]               /* Records being processed        */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
     ///
@@ -1042,7 +1043,7 @@ struct CardEditHistorySheet: View
     ///             when multiple events have the same timestamp. Viewing history never edits it
     /// @return     (some View) read-only history sheet with a Done action
     ///
-    var body: some View
+    var body: some View /* Card Edit History layout */
     {
 
         NavigationStack

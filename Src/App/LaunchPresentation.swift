@@ -23,7 +23,7 @@ enum PlenactLaunchStage: Int, CaseIterable
 
 
     case restore, plans, ready, welcome
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -44,7 +44,7 @@ enum PlenactLaunchStage: Int, CaseIterable
 
     }
 
-    var label: String
+    var label: String /* Resolved display label */
     {
 
         switch self
@@ -89,8 +89,8 @@ struct PlenactLaunchProgress: Equatable
         case waiting, running, complete
     }
 
-    var stage: PlenactLaunchStage = .restore
-    var finished                  = false
+    var stage: PlenactLaunchStage = .restore /* Isolated staging workspace */
+    var finished                  = false    /* Operation completion state */
 
 
     ///
@@ -106,7 +106,7 @@ struct PlenactLaunchProgress: Equatable
     func paced(elapsed: TimeInterval) -> Self
     {
 
-        let index = min(3, max(0, Int(max(0, elapsed) / 0.22)))
+        let index = min(3, max(0, Int(max(0, elapsed) / 0.22))) /* Element position */
 
         return Self(
             stage: PlenactLaunchStage(rawValue: index) ?? .restore,
@@ -149,11 +149,11 @@ struct PlenactLaunchIndicators: View
 {
 
 
-    let progress: PlenactLaunchProgress
-    var animates = true
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let progress: PlenactLaunchProgress /* Operation progress state */
+    var animates = true /* Animates state flag */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
-    var body: some View
+    var body: some View /* Plenact Launch Indicators layout */
     {
 
         HStack(spacing: 44)
@@ -163,7 +163,7 @@ struct PlenactLaunchIndicators: View
             {
                 step in
 
-                let status = progress.status(for: step)
+                let status = progress.status(for: step) /* Current operation status */
 
                 Image(systemName: step.symbol)
                 .font(.system(size: 25.3, weight: .light))
@@ -201,11 +201,11 @@ struct PlenactLaunchSequence: View
 {
 
 
-    let progress: PlenactLaunchProgress
-    var animates: Bool
-    @State private var startedAt = Date()
+    let progress: PlenactLaunchProgress   /* Operation progress state */
+    var animates: Bool                    /* Animates state flag      */
+    @State private var startedAt = Date() /* Started at               */
 
-    var body: some View
+    var body: some View /* Plenact Launch Sequence layout */
     {
 
         TimelineView(.animation(minimumInterval: 1.0 / 30.0))
@@ -232,12 +232,12 @@ struct PlenactLoadingView: View
 {
 
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var animatesLogo = true
-    var fadesShadow  = false
-    var progress     = PlenactLaunchProgress()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    var animatesLogo = true /* Animates logo */
+    var fadesShadow  = false /* Fades shadow */
+    var progress     = PlenactLaunchProgress() /* Operation progress state */
 
-    var body: some View
+    var body: some View /* Plenact Loading layout */
     {
 
         GeometryReader
@@ -326,16 +326,17 @@ final class TodayWelcomeCue: ObservableObject
         case profile, plan
     }
 
-    static let lastDepartureKey             = "Plenact.Welcome.lastDeparture.v1"
-    static let returnInterval: TimeInterval = 4 * 60 * 60
-    @Published private(set) var requestID   = 0
-    @Published private(set) var target: Target?
-    @Published private(set) var illuminated = false
-    private(set) var pending                = false
-    private var hasActivated                = false
-    private var departure: Date?
-    private var generation = 0
-    private let defaults: UserDefaults
+    static let lastDepartureKey             = /* Last departure key */
+        "Plenact.Welcome.lastDeparture.v1"
+    static let returnInterval: TimeInterval = 4 * 60 * 60 /* Return interval               */
+    @Published private(set) var requestID   = 0           /* Request ID                    */
+    @Published private(set) var target: Target?           /* Target under consideration    */
+    @Published private(set) var illuminated = false       /* Illuminated state flag        */
+    private(set) var pending                = false       /* Operation awaiting completion */
+    private var hasActivated                = false       /* Activated availability        */
+    private var departure: Date?                          /* Departure reference date      */
+    private var generation = 0                            /* Current navigation generation */
+    private let defaults: UserDefaults                    /* Preference storage domain     */
 
 
     ///
@@ -369,7 +370,7 @@ final class TodayWelcomeCue: ObservableObject
     func becameActive(at now: Date = .now)
     {
 
-        let shouldGreet = !hasActivated || departure.map
+        let shouldGreet = !hasActivated || departure.map /* Greet decision */
         {
             now.timeIntervalSince($0) >= Self.returnInterval
         }
@@ -426,7 +427,7 @@ final class TodayWelcomeCue: ObservableObject
         generation += 1
         pending = false
 
-        var transaction = Transaction();
+        var transaction = Transaction(); /* Transaction operation value */
 
         transaction.disablesAnimations = true
 
@@ -485,7 +486,7 @@ final class TodayWelcomeCue: ObservableObject
 
         pending = false
 
-        let token = generation
+        let token = generation /* Retained operation token */
 
 
         ///
@@ -632,10 +633,10 @@ struct TodayWelcomeGlow: ViewModifier
 {
 
 
-    let highlighted: Bool
-    var circular         = false
-    private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let highlighted: Bool /* Current-day highlight state */
+    var circular         = false /* Circular state flag */
+    private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44) /* Soft gold */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
 
     ///

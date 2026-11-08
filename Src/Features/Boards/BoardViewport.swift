@@ -21,7 +21,7 @@ enum BoardPanoramicZoom
 {
 
 
-    static let initial: CGFloat = 0.62
+    static let initial: CGFloat = 0.62 /* Initial operation state */
 
 
     ///
@@ -38,8 +38,8 @@ enum BoardPanoramicZoom
         panoramic ? initial : 1
     }
 
-    static let minimum: CGFloat = 0.25
-    static let maximum: CGFloat = 1.25
+    static let minimum: CGFloat = 0.25 /* Lower supported bound */
+    static let maximum: CGFloat = 1.25 /* Upper supported bound */
 
 
     ///
@@ -139,12 +139,12 @@ struct BoardViewportState: Codable, Equatable
 {
 
 
-    var scale: Double                   = 1
-    var panoramic                       = false
-    var gallery                         = false
-    var presentation:  String?          = nil
-    var visibleListID: Int?             = nil
-    var offsets:       [String: Double] = [:]
+    var scale: Double                   = 1     /* Current layout scale          */
+    var panoramic                       = false /* Board overview mode           */
+    var gallery                         = false /* Gallery presentation state    */
+    var presentation:  String?          = nil   /* Current presentation style    */
+    var visibleListID: Int?             = nil   /* Visible list ID               */
+    var offsets:       [String: Double] = [:]   /* Owner-scoped scroll positions */
 
 }
 
@@ -161,12 +161,12 @@ final class BoardViewportMemory
 {
 
 
-    static let prefix = "Plenact.BoardViewport.v1."
-    let key:                 String
-    private let defaults:    UserDefaults
-    var state:               BoardViewportState
-    private var pendingSave: DispatchWorkItem?
-    var horizontalRestoreAllowed = true
+    static let prefix = "Plenact.BoardViewport.v1." /* Viewport persistence key prefix */
+    let key:                 String                 /* Lookup or persistence key       */
+    private let defaults:    UserDefaults           /* Preference storage domain       */
+    var state:               BoardViewportState     /* Current operation state         */
+    private var pendingSave: DispatchWorkItem?      /* Pending save                    */
+    var horizontalRestoreAllowed = true             /* Horizontal restore allowed      */
 
 
     ///
@@ -251,7 +251,7 @@ final class BoardViewportMemory
 
         pendingSave?.cancel()
 
-        let work = DispatchWorkItem
+        let work = DispatchWorkItem /* Work operation value */
         {
             [weak self] in
             self?.flush()
@@ -299,7 +299,7 @@ struct BoardViewportMemoryKey: EnvironmentKey
 {
 
 
-    static let defaultValue: BoardViewportMemory? = nil
+    static let defaultValue: BoardViewportMemory? = nil /* Fallback environment value */
 
 }
 
@@ -315,7 +315,7 @@ extension EnvironmentValues
 {
 
 
-    var boardViewportMemory: BoardViewportMemory?
+    var boardViewportMemory: BoardViewportMemory? /* Board viewport memory */
     {
 
         get
@@ -346,10 +346,10 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 {
 
 
-    let memory: BoardViewportMemory?
-    let key:    String
-    var horizontal = false
-    @Environment(\.appReturnResetRequest) private var resetRequest
+    let memory: BoardViewportMemory?                               /* Owner-scoped viewport state */
+    let key:    String                                             /* Lookup or persistence key   */
+    var horizontal = false                                         /* Horizontal scrolling axis   */
+    @Environment(\.appReturnResetRequest) private var resetRequest /* Reset request               */
 
 
     ///
@@ -363,7 +363,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     {
 
 
-        var attached: (() -> Void)?
+        var attached: (() -> Void)? /* Attached callback */
 
 
         ///
@@ -413,7 +413,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     func makeUIView(context: Context) -> Marker
     {
 
-        let view = Marker();
+        let view = Marker(); /* View being rendered */
 
         view.isUserInteractionEnabled = false
 
@@ -485,16 +485,16 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     {
 
 
-        private var memory: BoardViewportMemory?
-        private var key        = ""
-        private var horizontal = false
-        private weak var scroll: UIScrollView?
-        private var observation: NSKeyValueObservation?
-        private var restored = false
-        private var desired: Double?
-        private var attempts     = 0
-        private var finding      = false
-        private var resetRequest = 0
+        private var memory: BoardViewportMemory?        /* Owner-scoped viewport state  */
+        private var key        = ""                     /* Lookup or persistence key    */
+        private var horizontal = false                  /* Horizontal scrolling axis    */
+        private weak var scroll: UIScrollView?          /* Native scroll view           */
+        private var observation: NSKeyValueObservation? /* Active change observation    */
+        private var restored = false                    /* Recovered state under review */
+        private var desired: Double?                    /* Requested scroll destination */
+        private var attempts     = 0                    /* Restore or retry count       */
+        private var finding      = false                /* Finding state flag           */
+        private var resetRequest = 0                    /* Reset request                */
 
 
         ///
@@ -649,7 +649,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
                 self.attempts += 1
 
-                var parent = marker.superview
+                var parent = marker.superview /* Latest representable bindings */
 
                 for _ in 0 ..< 10
                 {
@@ -754,12 +754,17 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             if let desired = memory?.state.offsets[key] ?? desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging
             {
 
-                let inset    = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
-                let endInset = horizontal ? scroll.adjustedContentInset.right : scroll.adjustedContentInset.bottom
-                let content  = horizontal ? scroll.contentSize.width : scroll.contentSize.height
-                let length   = horizontal ? scroll.bounds.width : scroll.bounds.height
-                let value    = min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
-                var point    = scroll.contentOffset
+                let inset    = /* Viewport content inset */
+                    horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
+                let endInset = /* End inset */
+                    horizontal ? scroll.adjustedContentInset.right : scroll.adjustedContentInset.bottom
+                let content  = /* Content being processed */
+                    horizontal ? scroll.contentSize.width : scroll.contentSize.height
+                let length   = /* Measured content length */
+                    horizontal ? scroll.bounds.width : scroll.bounds.height
+                let value    = /* Value being processed */
+                    min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
+                var point    = scroll.contentOffset /* Converted input position */
 
                 if horizontal
                 {
@@ -798,7 +803,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 return
             }
 
-            let offset =
+            let offset = /* Current position offset */
             horizontal
             ? scroll.contentOffset.x + scroll.adjustedContentInset.left
             : scroll.contentOffset.y + scroll.adjustedContentInset.top
@@ -843,10 +848,10 @@ final class BoardDragGeometryCache
 {
 
 
-    var centers:  [Int: CGFloat] = [:]
-    var cards:    [Int: CGRect]  = [:]
-    var lists:    [Int: CGRect]  = [:]
-    var viewport: CGRect         = .zero
+    var centers:  [Int: CGFloat] = [:]   /* List centers in the viewport     */
+    var cards:    [Int: CGRect]  = [:]   /* Card records under consideration */
+    var lists:    [Int: CGRect]  = [:]   /* Ordered List records             */
+    var viewport: CGRect         = .zero /* Visible scrolling region         */
 
 }
 
@@ -862,11 +867,11 @@ struct BoardZoomHint: View
 {
 
 
-    let percentage: Int
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var visible = true
+    let percentage: Int /* Percentage operation value */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @State private var visible = true /* Current visibility state */
 
-    var body: some View
+    var body: some View /* Board Zoom Hint layout */
     {
 
         Text("Pinch to zoom · \(percentage)%")
@@ -913,8 +918,8 @@ struct BoardPinchState
 {
 
 
-    var magnification: CGFloat = 1
-    var active                 = false
+    var magnification: CGFloat = 1     /* Current pinch scale    */
+    var active                 = false /* Active operation state */
 
 }
 
@@ -929,7 +934,7 @@ struct BoardZoomScrollBehavior: ScrollTargetBehavior
 {
 
 
-    let panoramic: Bool
+    let panoramic: Bool /* Board overview mode */
 
 
     ///

@@ -74,6 +74,7 @@ struct PlanningTemplateLibraryRows: View
     @State private var sourceDate = Date.now
     @State var editing:  PlanningRoutineTemplate?
     @State private var applying: PlanningRoutineTemplate?
+    @State private var completedWeek: ManualWeekOpening?
     @State var deleting: PlanningRoutineTemplate?
     @State private var message:  String?
 
@@ -526,10 +527,24 @@ struct PlanningTemplateLibraryRows: View
             }
 
         }
-        .sheet(item: $applying)
+        .sheet(item: $applying, onDismiss:
+            {
+                guard let completion = completedWeek else
+                {
+
+                    return
+                }
+
+                completedWeek = nil
+
+                access?.completeManualWeek?(completion)
+            })
         {
             template in
-            PlanningTemplateApplyView(template: template)
+            PlanningTemplateApplyView(template: template, onWeekCompleted:
+                {
+                    completedWeek = $0
+                })
         }
         .alert("Templates", isPresented: Binding(get:
                 {
@@ -1087,6 +1102,7 @@ struct PlanningTemplateApplyView: View
 
 
     let template: PlanningRoutineTemplate
+    var onWeekCompleted: ((ManualWeekOpening) -> Void)? = nil
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var date                                                  = Date.now
@@ -1204,6 +1220,13 @@ struct PlanningTemplateApplyView: View
 
         if saved
         {
+
+            if let completion = ManualWeekOpening.completion(week: committed.week,
+                kind: template.kind, mode: mode, hadBaseline: baseline != nil)
+            {
+
+                onWeekCompleted?(completion)
+            }
 
             dismiss()
         }

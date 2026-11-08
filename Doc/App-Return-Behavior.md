@@ -39,3 +39,11 @@ A physical iPhone stopped with `EXC_BAD_ACCESS (code=2)` at `0x16b6cfff0` inside
 `AppNavigationSurface` now defers root navigation and Today/Week/Activity content construction to separate SwiftUI body evaluations. It stores only a builder closure and preserves the original bindings, environments and stable view boundaries. No date formatting, workspace data, or build optimization settings are changed.
 
 On the automated arm64 Simulator, root body value size fell from 19,944 to 2,024 bytes; navigation value size fell from 18,187 to 7,947 bytes. `AppReturnTests.testRootNavigationValueSize` guards an 8 KiB limit for each value. These value sizes are a stack-pressure regression indicator, not a measurement of total runtime stack use. All 16 focused navigation tests passed; the owner must confirm physical-device launch separately.
+
+## Manual Week-template completion — November 8, 2026
+
+A successfully applied Week template now opens the leftmost active List at its top when it creates a Week or replaces an existing Week. Selection follows the stored visual List order, including an undated List before the dated Lists; it does not use today's date or the first-weekday mapping. The owner-specific viewport resets before a cold mount and through the existing scoped reset request for a mounted Board. The daily overview timer is cancelled for this explicit operation.
+
+The preview reports success to its presenter only after checked saving succeeds. After the preview sheet dismisses, the presenter routes to the Week and shows **Week created** or **Week replaced**, with an **OK** button. Save errors retain the preview and show the existing failure message. Day templates, additive edits to an existing Week, ordinary saves and automatic weekly rollover do not invoke this completion flow.
+
+Validation: 21 focused native tests passed, including completion eligibility, visual-order selection, archived/empty List handling, owner-isolated viewport reset, existing mounted Board resets, root-view size limits and template rendering/copying. Manual acceptance remains: replace a Week with a Week template from Library, confirm the completion popup, then verify the leftmost List is visible at its top. No export/re-import is required for this navigation change.

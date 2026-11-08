@@ -47,6 +47,8 @@ struct PlanningCalendarAccess
     var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     = nil
     var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
 
+    var completeManualWeek: ((ManualWeekOpening) -> Void)? = nil
+
     var allRetainedLists: [KanbanList]
     {
         document.weeks.flatMap

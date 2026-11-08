@@ -368,3 +368,102 @@ extension AppRootView
         }
     }
 }
+
+
+/// Describes the navigation that follows a successful manual Week-template operation.
+/// @section Purpose
+///     Keep explicit creation/replacement separate from ordinary edits, day templates and rollover.
+struct ManualWeekOpening
+{
+
+    let week: DatedPlanningWeek
+    let replaced: Bool
+
+    var title: String
+    {
+
+        replaced ? "Week replaced" : "Week created"
+    }
+
+    var firstListID: Int?
+    {
+
+        week.collection.lists.first(where: { !$0.isArchived })?.id
+    }
+
+
+    /// @fcn ManualWeekOpening.completion
+    /// @brief Produce a completion only for explicit Week creation or replacement
+    /// @param[in] week Successfully saved Week
+    /// @param[in] kind Applied template kind
+    /// @param[in] mode Application mode
+    /// @param[in] hadBaseline Whether the Week existed before application
+    /// @return Completion request, or nil for day templates and additive edits to existing Weeks
+    static func completion(week: DatedPlanningWeek, kind: PlanningRoutineTemplate.Kind,
+        mode: PlanningTemplateApplication.Mode, hadBaseline: Bool) -> Self?
+    {
+
+        guard kind == .week, !hadBaseline || mode == .replace else
+        {
+
+            return nil
+        }
+
+        return Self(week: week, replaced: hadBaseline)
+    }
+
+
+    /// @fcn ManualWeekOpening.resetViewport
+    /// @brief Seed the owner's first List at the top before a destination mounts
+    /// @param[in] defaults Device-local viewport domain, isolated by tests
+    /// @return Void; changes navigation memory only
+    @MainActor
+    func resetViewport(in defaults: UserDefaults = .standard)
+    {
+
+        let memory = BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
+
+        memory.resetScrollOffsets()
+
+        memory.state.visibleListID = firstListID
+        memory.state.gallery = false
+
+        memory.flush()
+    }
+}
+
+
+extension AppRootView
+{
+
+    /// @fcn AppRootView.completeManualWeek
+    /// @brief Open a saved manual Week at its leftmost List and confirm completion
+    /// @param[in] completion Successful creation/replacement delivered after the preview dismisses
+    /// @return Void; preserves the saved Week and bypasses the first-daily-opening timer
+    func completeManualWeek(_ completion: ManualWeekOpening)
+    {
+
+        guard let week = calendarDocument?.weeks.first(where: { $0.id == completion.week.id }) else
+        {
+
+            return
+        }
+
+        let opening = ManualWeekOpening(week: week, replaced: completion.replaced)
+
+        dailyOverview.cancel()
+        dailyOverviewFade.cancel()
+        opening.resetViewport()
+
+        displayedPlanningListID = opening.firstListID
+        displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
+        boardTargetCardID = nil
+        boardTargetListID = displayedPlanningWeek == nil ? opening.firstListID : nil
+        weekReturnTargetListID = opening.firstListID
+        weekReturnResetRequest += 1
+        weekRootRequest += 1
+        selectedDestination = .board
+        manualWeekNotice = opening.title
+
+    }
+}

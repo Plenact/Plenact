@@ -16,6 +16,85 @@ final class AppReturnTests: XCTestCase
 {
 
 
+    /// Manual completion follows visual order, not weekday mappings or today's date.
+    func testManualWeekOpeningUsesLeftmostActiveList()
+    {
+
+        let date = Date(timeIntervalSince1970: 1_793_016_000)
+        var week = DatedPlanningWeek.make(for: date, calendar: .current)
+        var archived = KanbanList(id: 9000, title: "Archived", cards: [])
+
+        archived.isArchived = true
+        week.collection.lists.insert(KanbanList(id: 9001, title: "Undated first", cards: []), at: 0)
+        week.collection.lists.insert(archived, at: 0)
+
+        let opening = ManualWeekOpening(week: week, replaced: true)
+
+        XCTAssertEqual(opening.firstListID, 9001)
+        XCTAssertEqual(opening.title, "Week replaced")
+        XCTAssertNotEqual(opening.firstListID, week.dayListIDs.sorted { $0.key < $1.key }.first?.value)
+        week.collection.lists = []
+        XCTAssertNil(ManualWeekOpening(week: week, replaced: false).firstListID)
+    }
+
+
+    /// Ordinary additive edits and day templates must not trigger Week completion navigation.
+    func testManualWeekCompletionScope()
+    {
+
+        let week = DatedPlanningWeek.make(for: .now, calendar: .current)
+
+        XCTAssertEqual(ManualWeekOpening.completion(week: week, kind: .week,
+            mode: .add, hadBaseline: false)?.title, "Week created")
+        XCTAssertEqual(ManualWeekOpening.completion(week: week, kind: .week,
+            mode: .replace, hadBaseline: true)?.title, "Week replaced")
+        XCTAssertNil(ManualWeekOpening.completion(week: week, kind: .week,
+            mode: .add, hadBaseline: true))
+        XCTAssertNil(ManualWeekOpening.completion(week: week, kind: .day,
+            mode: .replace, hadBaseline: true))
+        XCTAssertNil(ManualWeekOpening.completion(week: week, kind: .day,
+            mode: .add, hadBaseline: false))
+    }
+
+
+    /// A destination not yet mounted reads the new top position without resetting another owner.
+    func testManualWeekOpeningResetsOnlyItsViewport() throws
+    {
+
+        let domain = "Plenact.Tests.ManualWeek." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        let week = DatedPlanningWeek.make(for: .now, calendar: .current)
+        let opening = ManualWeekOpening(week: week, replaced: true)
+        let memory = BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
+        let other = BoardViewportMemory(owner: "other", defaults: defaults)
+
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: domain)
+        }
+
+        memory.record(450, for: "horizontal")
+        memory.record(780, for: "list")
+        memory.state.gallery = true
+        memory.state.scale = 0.65
+
+        memory.flush()
+        other.record(333, for: "horizontal")
+        other.flush()
+        opening.resetViewport(in: defaults)
+
+        let reopened = BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
+        let retained = BoardViewportMemory(owner: "other", defaults: defaults)
+
+        XCTAssertEqual(reopened.state.visibleListID, opening.firstListID)
+        XCTAssertTrue(reopened.state.offsets.values.allSatisfy { $0 == 0 })
+        XCTAssertFalse(reopened.state.gallery)
+        XCTAssertEqual(reopened.state.scale, 0.65)
+        XCTAssertEqual(retained.state.offsets["horizontal"], 333)
+    }
+
+
     /// Measure root navigation value sizes without mounting or importing a workspace.
     func testRootNavigationValueSize()
     {

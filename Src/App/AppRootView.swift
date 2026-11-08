@@ -37,6 +37,7 @@ struct AppRootView: View
     @State var confirmsExampleMonth    = false
     @State var confirmsRestoreUserData = false
     @State var workspaceNotice: String?
+    @State var manualWeekNotice: String?
     @State var lists:           [KanbanList] = []                                     /* Complete in-memory Week snapshot  */
     @State var collections                   = TodayListPins.loadInitialCollections() /* Device-local personal collections */
     @State var calendarDocument:        PlanningCalendarDocument?
@@ -313,6 +314,32 @@ struct AppRootView: View
         {
 
             Text(workspaceNotice ?? "")
+        }
+        .alert(manualWeekNotice ?? "Week ready", isPresented: Binding(get:
+            {
+                manualWeekNotice != nil
+            }, set:
+            {
+                if !$0
+                {
+
+                    manualWeekNotice = nil
+
+                }
+            }))
+        {
+
+            Button("OK", role: .cancel)
+            {
+
+                manualWeekNotice = nil
+
+            }
+        }
+        message:
+        {
+
+            Text("Your Week is ready, opened at its first List.")
         }
         .onChange(of: scenePhase)
         {
@@ -1057,7 +1084,7 @@ struct AppRootView: View
             {
                 week, importantIDs in
                 savePlanningWeek(week, exampleImportantIDs: importantIDs)
-            })
+            }, completeManualWeek: completeManualWeek)
     }
 
 

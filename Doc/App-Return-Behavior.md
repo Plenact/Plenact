@@ -31,3 +31,11 @@ Only the first eligible daily opening offers a 1.25-second Week overview. The co
 Any touch (including scrolling), text editing, tab departure, protected editor, or loss of active foreground cancels this opening permanently. Normal same-day returns never start the countdown. The countdown is monotonic and in memory; stale callbacks cannot trigger another opening. The fade uses a noninteractive in-memory snapshot, removed on backgrounding; no image is saved.
 
 For manual acceptance, the next first daily opening should show today's List, then Today after 1.25 untouched seconds. Interaction during a later daily opening should keep Week visible. Rebuilding does not reset an already-consumed daily marker; do not erase data or change the device clock to repeat the check.
+
+## Physical-device launch investigation — November 7, 2026
+
+A physical iPhone stopped with `EXC_BAD_ACCESS (code=2)` at `0x16b6cfff0` inside Foundation formatting, reached from `AppRootView.navigationContent`. The supplied backtrace had no recursive cycle. The guard-shaped address and large debug view construction values indicate stack pressure; the formatter location alone does not establish a formatting defect.
+
+`AppNavigationSurface` now defers root navigation and Today/Week/Activity content construction to separate SwiftUI body evaluations. It stores only a builder closure and preserves the original bindings, environments and stable view boundaries. No date formatting, workspace data, or build optimization settings are changed.
+
+On the automated arm64 Simulator, root body value size fell from 19,944 to 2,024 bytes; navigation value size fell from 18,187 to 7,947 bytes. `AppReturnTests.testRootNavigationValueSize` guards an 8 KiB limit for each value. These value sizes are a stack-pressure regression indicator, not a measurement of total runtime stack use. All 16 focused navigation tests passed; the owner must confirm physical-device launch separately.

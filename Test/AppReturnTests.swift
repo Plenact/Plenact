@@ -16,6 +16,20 @@ final class AppReturnTests: XCTestCase
 {
 
 
+    /// Measure root navigation value sizes without mounting or importing a workspace.
+    func testRootNavigationValueSize()
+    {
+
+        let bodyBytes = MemoryLayout<AppRootView.Body>.size
+        let navigationBytes = MemoryLayout.size(ofValue: AppRootView().navigationContent)
+        print("ROOT_BODY_BYTES", bodyBytes)
+        print("ROOT_NAVIGATION_BYTES", navigationBytes)
+        // Previously 19,944 and 18,187 bytes, repeatedly copied through the root builders.
+        XCTAssertLessThan(bodyBytes, 8_192)
+        XCTAssertLessThan(navigationBytes, 8_192)
+    }
+
+
     /// Verify visible-time boundaries, permanent cancellation and stale timer rejection.
     func testDailyOverviewDeadlineAndCancellation()
     {
